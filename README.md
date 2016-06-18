@@ -1,8 +1,9 @@
 PyCroscopy
 ==========
 
-"They don't think we're microscopists... Let's become pycroscopists then!"
-                                                                         S.J, 2016
+"They don't think we're microscopists... Let's become pycroscopists then!" 
+
+SJ, 2016
 
 0. The What and Why?
 --------------------
