@@ -1,7 +1,7 @@
-from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
+from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.md')) as f:
@@ -31,6 +31,8 @@ setup(
     license='MIT',
     author='S. Somnath, C. Ryan, N. Laanait',
     author_email='pycroscopy@gmail.com',
+
+    # I don't remember how to do this correctly!!!. NL
     dependency='',
     dependency_links=[''],
     install_requires=[''],
