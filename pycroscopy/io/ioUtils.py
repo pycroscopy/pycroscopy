@@ -4,13 +4,11 @@ Created on Tue Nov  3 21:14:25 2015
 
 @author: Suhas Somnath, Chris Smith, Nouamane Laanait
 """
-import h5py
+
 import os
 from Tkinter import Tk;  # To render a dialog that requests the input file
 from tkFileDialog import askopenfilename as fileDialog;  # To render a dialog that requests the input file
-from warnings import warn
 from multiprocessing import cpu_count
-import numpy as np
 from time import strftime
 
 
