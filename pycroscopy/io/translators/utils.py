@@ -12,7 +12,7 @@ import time as tm; # for getting time stamps
 
 
 def interpretFreq(freq_str):
-    '''
+    """
     Interprets a string denoting frequency into its numerical equivalent.
     For example "4 MHz" is translated to 4E+6
     
@@ -25,7 +25,7 @@ def interpretFreq(freq_str):
     -------
     frequency : float
         Frequency in hertz
-    '''
+    """
     components = freq_str.split()
     if components[1] == 'MHz':
         return int(components[0])*1.0E+6
@@ -34,7 +34,7 @@ def interpretFreq(freq_str):
 
 
 def generateDummyMainParms():
-    '''
+    """
     Generates a (dummy) dictionary of parameters that will be used at the root level of the h5 file
     
     Parameters
@@ -45,7 +45,7 @@ def generateDummyMainParms():
     ----------
     main_parms : dictionary
         Dictionary containing basic descriptors that describe a dataset
-    '''        
+    """        
     main_parms = {};   
     main_parms['translate_date'] = tm.strftime("%Y_%m_%d");
     main_parms['instrument'] = 'cypher_west';
@@ -70,7 +70,7 @@ def generateDummyMainParms():
     return main_parms;
     
 def makePositionMat(num_steps):
-    '''
+    """
     Sets the position index matrices and labels for each of the spatial dimensions.
     It is intentionally generic so that it works for any SPM dataset.
     
@@ -84,7 +84,7 @@ def makePositionMat(num_steps):
     --------------
     pos_mat : 2D unsigned int numpy array
         arranged as [steps, spatial dimension]  
-    '''
+    """
 
     num_steps = np.array(num_steps); 
     spat_dims = len(np.where(num_steps > 1)[0]);
@@ -113,7 +113,7 @@ def makePositionMat(num_steps):
     return pos_mat
     
 def getPositionSlicing(pos_lab, curr_pix=None):
-    '''
+    """
     Returns a dictionary of slice objects to help in creating region references 
     to the position indices and values H5 datasets 
     
@@ -130,7 +130,7 @@ def getPositionSlicing(pos_lab, curr_pix=None):
     slice_dict : dictionary
         Dictionary of tuples containing slice objects corresponding to 
         each position axis.
-    '''
+    """
     slice_dict = dict();
     for spat_ind, spat_dim in enumerate(pos_lab):
         slice_dict[spat_dim[0]] = (slice(curr_pix), slice(spat_ind,spat_ind+1))
