@@ -99,6 +99,6 @@ def recommendCores(num_jobs, requested_cores=None):
         recom_chunks = 20
         # intelligently set the cores now.
         requested_cores = min(requested_cores, int(num_jobs / recom_chunks))
-        # print 'Not enough jobs per core. Reducing cores to', recom_cores
+        # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
     return requested_cores

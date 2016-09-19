@@ -87,7 +87,7 @@ class ioHDF5(object):
             subprocess.call(repack_line,stderr = sys.stderr,shell=True)
             sleep(2)
         except:
-            print 'Could not repack hdf5 file'
+            print('Could not repack hdf5 file')
             raise StandardError(sys.stderr)
 
         '''

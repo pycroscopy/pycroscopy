@@ -62,7 +62,7 @@ class MicroDataGroup(MicroData):
         
         Parameters
         ------------
-        Children : list of MicroData objects
+        children : list of MicroData objects
             Children can be a mixture of groups and datasets
             
         Returns
