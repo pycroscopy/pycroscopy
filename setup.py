@@ -4,11 +4,11 @@ from os import path
 from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
-with open(path.join(here, 'README.md')) as f:
+with open(path.join(here, 'README.rst')) as f:
     long_description=f.read()
 
 setup(
-    name='pyCroscopy',
+    name='pycroscopy',
     version='0.0a1',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description= long_description,
@@ -26,6 +26,7 @@ setup(
         'Topic :: Scientific / Engineering :: Information Analysis',
         'Topic :: Scientific/Engineering :: Physics',
         ],
+    keywords='scientific microscopy data analysis',
     packages=find_packages(exclude='tests'),
     url='http://github.com/pycroscopy/pyCroscopy',
     license='MIT',
@@ -33,11 +34,14 @@ setup(
     author_email='pycroscopy@gmail.com',
 
     # I don't remember how to do this correctly!!!. NL
-    dependency='',
-    dependency_links=[''],
-    install_requires=[''],
+    install_requires=['numpy_groupies','pyqtgraph','numpy>=1.11.0',
+                      'h5py>=2.6.0','scipy>=0.17.1','matplotlib',
+                      'scikit-learn>=0.17.1','xlrd>=1.0.0','freetype-py'],#'multiprocess'],
+    #package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',
+    dependency='',
+    dependency_links=[''],
     include_package_data=True,
 
     # If there are data files included in your packages that need to be
