@@ -286,7 +286,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
     return ref_inds
 
 
-def checkAndLinkAncillary(hdf, h5_dset, anc_names, h5_main=None, anc_refs=None):
+def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     """
     This function will add references to auxilliary datasets as attributes
     of an input dataset.
@@ -325,7 +325,7 @@ def checkAndLinkAncillary(hdf, h5_dset, anc_names, h5_main=None, anc_refs=None):
         elif h5_main is not None:
             h5_anc = getAuxData(h5_main, auxDataName=[ref_name])
             if len(h5_anc) == 1:
-                hdf.linkRefAsAlias(h5_dset, h5_anc[0], ref_name)
+                linkRefAsAlias(h5_dset, h5_anc[0], ref_name)
         else:
             warnstring = '{} is not a valid h5py Reference and will be skipped.'.format(repr(h5_ref))
             warn(warnstring)
@@ -342,7 +342,7 @@ def checkAndLinkAncillary(hdf, h5_dset, anc_names, h5_main=None, anc_refs=None):
         """
         __checkAndLinkSingle(anc_refs, anc_names)
 
-    hdf.flush()
+    h5_dset.file.flush()
 
 
 def createRefFromIndices(h5_main, ref_inds):
