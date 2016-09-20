@@ -594,7 +594,7 @@ def checkIfMain(h5_main):
     return success
 
 
-def linkRefs(self, src, trg):
+def linkRefs(src, trg):
     '''
     Creates Dataset attributes that contain references to other Dataset Objects.
     
@@ -612,7 +612,7 @@ def linkRefs(self, src, trg):
     for itm in trg:
         src.attrs[itm.name.split('/')[-1]] = itm.ref
         
-def linkRefAsAlias(self, src, trg, trg_name):
+def linkRefAsAlias(src, trg, trg_name):
     '''
     Creates Dataset attributes that contain references to other Dataset Objects.
     This function is useful when the reference attribute must have a reserved name.
