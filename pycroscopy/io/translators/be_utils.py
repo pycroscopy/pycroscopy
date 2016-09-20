@@ -15,7 +15,7 @@ from ..io_utils import getAvailableMem
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
-from ...processing.procUtils import buildHistogram
+from pycroscopy.processing.proc_utils import buildHistogram
 import h5py
 
 #%%############################################################################
