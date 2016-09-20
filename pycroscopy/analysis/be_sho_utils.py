@@ -11,7 +11,7 @@ from warnings import warn
 import numpy as np
 import matplotlib.pyplot as plt
 from ..io.hdf_utils import getDataSet, getAuxData, findH5group
-from ..vis.plot_utils import plotVSsnapshots, plotSHOMaps
+from ..viz.plot_utils import plotVSsnapshots, plotSHOMaps
 import h5py
 
 #%%
