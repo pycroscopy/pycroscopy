@@ -446,7 +446,7 @@ def filterChunkSerial(raw_data, parm_dict):
         filt_data = np.zeros(shape=(num_sets*pix_per_set,pts_per_set/pix_per_set), dtype=raw_data.dtype)
     cond_data = None
     if parm_dict['hot_inds'] != None:
-        cond_data = np.zeros(shape=(num_sets,parm_dict['hot_inds'].size), dtype=np.ccomplex64)
+        cond_data = np.zeros(shape=(num_sets,parm_dict['hot_inds'].size), dtype=np.complex64)
     
     # Filter each line
     print_set = np.linspace(0,num_sets-1,10, dtype=int) 
