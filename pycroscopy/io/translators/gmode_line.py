@@ -11,10 +11,10 @@ from warnings import warn
 from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
 from .translator import Translator
 from .utils import interpretFreq, makePositionMat, getPositionSlicing, generateDummyMainParms
-from .beutils import parmsToDict
+from .be_utils import parmsToDict
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..iohdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdfutils import getH5DsetRefs
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..hdf_utils import getH5DsetRefs
 
 class GLineTranslator(Translator):
     """

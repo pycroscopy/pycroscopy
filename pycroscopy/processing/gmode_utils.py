@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from warnings import warn
 from multiprocessing import Pool, cpu_count
 import itertools
-from ..io.ioutils import getTimeStamp
-from ..io.hdfutils import getH5DsetRefs, getH5GroupRef
+from ..io.io_utils import getTimeStamp
+from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef
 from ..viz.plot_utils import rainbowPlot
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.microdata import MicroDataGroup, MicroDataset

@@ -7,7 +7,7 @@ Created on Wed Dec 16 10:42:03 2015
 """
 from warnings import warn
 import socket
-from .ioutils import getTimeStamp
+from .io_utils import getTimeStamp
 
 class MicroData(object):
     '''

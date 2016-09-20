@@ -7,7 +7,7 @@ Created on Tue Nov  3 15:07:16 2015
 
 from __future__ import division; # int/int = float
 import abc # Abstract base class https://pymotw.com/2/abc/ <---- This needs to be implemented in a cleaner way
-from ..ioutils import getAvailableMem
+from ..io_utils import getAvailableMem
 
 class Translator(object):
     """

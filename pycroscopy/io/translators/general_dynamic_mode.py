@@ -13,8 +13,8 @@ from .translator import Translator # Because this class extends the abstract Tra
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from .gmode_utils import readGmodeParms
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..iohdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdfutils import getH5DsetRefs
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..hdf_utils import getH5DsetRefs
 
 class GDMTranslator(Translator):
     """

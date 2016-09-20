@@ -7,8 +7,8 @@ Created on Sun May 29 19:09:34 2016
 
 #%% Translate data first 
 
-from pycroscopy.io.ioutils import uiGetFile
-from pycroscopy.io.Translators.fastiv import FastIVTranslator
+from pycroscopy.io.io_utils import uiGetFile
+from pycroscopy.io.Translators.fast_iv import FastIVTranslator
 parm_path = uiGetFile('parms.mat')
 translator = FastIVTranslator()
 h5_path = translator.translate(parm_path)
@@ -19,8 +19,8 @@ import matplotlib.pyplot as plt
 from os import path
 import numpy as np
 from pycroscopy.analysis.PCAutils import doKMeans, doPCA, plotScree, plotLoadingMaps, fastSVD, plotKMeansResults
-from pycroscopy.io.iohdf5 import ioHDF5
-from pycroscopy.io.hdfutils import getH5DsetRefs, findH5group
+from pycroscopy.io.io_hdf5 import ioHDF5
+from pycroscopy.io.hdf_utils import getH5DsetRefs, findH5group
 from pycroscopy.io.translators.utils import makePositionMat, getPositionSlicing
 from pycroscopy.io.microdata import MicroDataGroup, MicroDataset
 from pycroscopy.processing.gmode_utils import testFilter, fftFilterRawData

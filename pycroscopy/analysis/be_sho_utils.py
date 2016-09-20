@@ -10,7 +10,7 @@ from os import path
 from warnings import warn
 import numpy as np
 import matplotlib.pyplot as plt
-from ..io.hdfutils import getDataSet, getAuxData, findH5group
+from ..io.hdf_utils import getDataSet, getAuxData, findH5group
 import h5py
 
 #%%

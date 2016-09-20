@@ -5,7 +5,7 @@ Created on Tue Dec 15 11:10:37 2015
 @author: Suhas Somnath
 """
 import numpy as np
-from .hdfutils import getAuxData
+from .hdf_utils import getAuxData
 
 def maxReadPixels(max_memory, tot_pix, bins_per_step, bytes_per_bin=4):
     """

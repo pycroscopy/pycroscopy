@@ -12,9 +12,9 @@ from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat f
 import h5py
 from .translator import Translator # Because this class extends the abstract Translator class
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from ..hdfutils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..iohdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 
 class SporcTranslator(Translator):
     """

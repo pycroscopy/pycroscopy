@@ -7,9 +7,9 @@ Created on Feb 9, 2016
 import numpy as np
 import os
 from scipy.misc import imread
-from ..iohdf5 import ioHDF5
+from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
-from ..hdfutils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs
 from .translator import Translator
 from .utils import generateDummyMainParms, makePositionMat, getPositionSlicing
 

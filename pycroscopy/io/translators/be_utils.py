@@ -10,9 +10,9 @@ from os import path
 from warnings import warn
 from ..microdata import MicroDataset,MicroDataGroup
 from ..beutils import getSliceForExcWfm,getActiveUDVSsteps,maxReadPixels
-from ..ioutils import getAvailableMem
-from ..hdfutils import getAuxData, getDataSet, getH5DsetRefs
-from ..iohdf5 import ioHDF5
+from ..io_utils import getAvailableMem
+from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs
+from ..io_hdf5 import ioHDF5
 import matplotlib.pyplot as plt
 from ...processing.procUtils import buildHistogram
 import h5py
