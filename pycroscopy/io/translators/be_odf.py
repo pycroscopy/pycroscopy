@@ -15,7 +15,7 @@ from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..be_hdf_utils import maxReadPixels
      
 class BEodfTranslator(Translator):
@@ -340,7 +340,7 @@ class BEodfTranslator(Translator):
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices','Position_Values',
                      'Spectroscopic_Indices','UDVS','Bin_Step', 'Bin_Indices', 'UDVS_Indices',
                      'Bin_Frequencies','Bin_FFT','Bin_Wfm_Type','Noise_Floor', 'Spectroscopic_Values',]
-        self.hdf.linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
 
         
         # Now read the raw data files:

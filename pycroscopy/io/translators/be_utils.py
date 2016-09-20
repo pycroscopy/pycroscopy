@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from ..microdata import MicroDataset,MicroDataGroup
 from ..be_hdf_utils import getActiveUDVSsteps,maxReadPixels
 from ..io_utils import getAvailableMem
-from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs
+from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
 from ...processing.procUtils import buildHistogram
@@ -374,8 +374,8 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         h5_freq_vec = getH5DsetRefs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
         
         # Linking the datasets with the frequency and the spectroscopic variable:
-        hdf.linkRefs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
-        hdf.linkRefs(h5_step_avg, [h5_freq_vec])
+        linkRefs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
+        linkRefs(h5_step_avg, [h5_freq_vec])
         
         """
         Create Region Reference for the plot group in the Raw_Data, Spectroscopic_Indices 
@@ -422,7 +422,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             h5_hist_inds = getH5DsetRefs(['Indices'], h5_hist_grp_refs)[0]
             h5_hist_vals = getH5DsetRefs(['Values'], h5_hist_grp_refs)[0]
             
-            hdf.linkRefs(h5_hist, 
+            linkRefs(h5_hist, 
                          getH5DsetRefs(['Indices','Values'], 
                                        h5_hist_grp_refs))
             

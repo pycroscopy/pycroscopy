@@ -14,7 +14,7 @@ from .utils import interpretFreq, makePositionMat, getPositionSlicing, generateD
 from .be_utils import parmsToDict
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 
 class GLineTranslator(Translator):
     """
@@ -131,7 +131,7 @@ class GLineTranslator(Translator):
             h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0] # We know there is exactly one main data
             
             # Reference linking can certainly take place even before the datasets have reached their final size         
-            hdf.linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+            linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
             
             # Now transfer scan data in the dat file to the h5 file:
             self.__readdatafile(data_paths[f_index],h5_main)

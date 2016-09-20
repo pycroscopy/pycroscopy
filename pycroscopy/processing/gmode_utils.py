@@ -11,7 +11,7 @@ from warnings import warn
 from multiprocessing import Pool, cpu_count
 import itertools
 from ..io.io_utils import getTimeStamp
-from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef
+from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
 from ..viz.plot_utils import rainbowPlot
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.microdata import MicroDataGroup, MicroDataset
@@ -296,12 +296,12 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
-        hdf.linkRefs(h5_filt_data, [h5_comp_filt, h5_main, h5_noise_floors])
+        linkRefs(h5_filt_data, [h5_comp_filt, h5_main, h5_noise_floors])
       
     if write_condensed:
         h5_cond_bins = getH5DsetRefs(['Condensed_Bins'], h5_filt_refs)[0]
         h5_cond_data = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
-        hdf.linkRefs(h5_cond_data, [h5_cond_bins, h5_comp_filt, h5_main, h5_noise_floors])
+        linkRefs(h5_cond_data, [h5_cond_bins, h5_comp_filt, h5_main, h5_noise_floors])
         
     rot_pts = 0
     if 'phase_rot_[pts]' in filter_parms.keys():

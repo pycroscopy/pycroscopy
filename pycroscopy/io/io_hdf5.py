@@ -298,41 +298,6 @@ class ioHDF5(object):
         return refList
    
    
-    def linkRefs(self, src, trg):
-        '''
-        Creates Dataset attributes that contain references to other Dataset Objects.
-        
-        Parameters
-        -----------
-        src : Reference to h5.objects
-            Reference to the the object to which attributes will be added
-        trg : list of references to h5.objects
-            objects whose references that can be accessed from src.attrs
-        
-        Returns
-        --------
-        None
-        '''
-        for itm in trg:
-            src.attrs[itm.name.split('/')[-1]] = itm.ref
-            
-    def linkRefAsAlias(self, src, trg, trg_name):
-        '''
-        Creates Dataset attributes that contain references to other Dataset Objects.
-        This function is useful when the reference attribute must have a reserved name.
-        Such as linking 'SHO_Indices' as 'Spectroscopic_Indices'
-        
-        Parameters
-        ------------
-        src : reference to h5.object
-            Reference to the the object to which attributes will be added
-        trg : reference to h5.object
-            object whose reference that can be accessed from src.attrs
-        trg_name : String
-            Alias / alternate name for trg
-        '''
-        src.attrs[trg_name] = trg.ref
-        
     
     def regionRefs(self, dataset, slices, print_log=False):
         '''
