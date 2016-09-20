@@ -9,12 +9,12 @@ from __future__ import print_function, division; # int/int = float
 import numpy as np; # For array operations
 from os import path, remove# File Path formatting
 from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
-from .Translator import Translator # Because this class extends the abstract Translator class
-from .Utils import makePositionMat, getPositionSlicing, generateDummyMainParms 
+from .translator import Translator # Because this class extends the abstract Translator class
+from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms 
 from .GmodeUtils import readGmodeParms
-from ..SPMnode import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..ioHDF5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..ioHDF5 import getH5DsetRefs
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+from ..iohdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..hdfutils import getH5DsetRefs
 
 class GeneralDynamicMode(Translator):
     """
