@@ -1,5 +1,7 @@
-import hdf_utils
-import io_utils
-import io_hdf5
+__all__= ['hdfutils', 'ioutils', 'iohdf5', 'microdata', 'translators']
+
+import hdfutils
+import ioutils
+import iohdf5
 import microdata
 import translators
