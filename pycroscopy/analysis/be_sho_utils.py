@@ -70,24 +70,24 @@ def plotLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=No
         fig.savefig(save_path, format='png', dpi=300)
 
 
-def getGoodLims(resp_mat):
-    '''
-    Returns the mean and standard deviation of the provided numpy array        
-    
-    Parameters
-    ------------
-    resp_mat : numpy ndarray
-        N dimensional array containing homogenous data
-        
-    Returns
-    ---------
-    mean: float
-        Mean of the complete dataset       
-    std: float
-        Standard deviation of the dataset
-    '''
-    return np.mean(resp_mat), np.std(resp_mat)
-    
+# def getGoodLims(resp_mat):
+#     '''
+#     Returns the mean and standard deviation of the provided numpy array        
+#     
+#     Parameters
+#     ------------
+#     resp_mat : numpy ndarray
+#         N dimensional array containing homogenous data
+#         
+#     Returns
+#     ---------
+#     mean: float
+#         Mean of the complete dataset       
+#     std: float
+#         Standard deviation of the dataset
+#     '''
+#     return np.mean(resp_mat), np.std(resp_mat)
+#     
 
 #%%
 
