@@ -16,11 +16,11 @@ def getTimeStamp():
     Year_Month_Dat-Hour_Minute_Second
 
     Parameters
-    ------
+    ----------
     None
 
     Returns
-    ---------
+    -------
     String
     '''
     return strftime('%Y_%m_%d-%H_%M_%S')
@@ -32,14 +32,14 @@ def uiGetFile(extension, caption='Select File'):
     and returns the absolute filepath of the selecte file\n
 
     Parameters
-    ---------
+    ----------
     extension : String or list of strings
         file extensions to look for
     caption : (Optional) String
         Title for the file browser window
 
     Returns
-    --------
+    -------
     file_path : String
         Absolute path of the chosen file
     '''
@@ -54,11 +54,11 @@ def getAvailableMem():
     Chris Smith -- csmith55@utk.edu
 
     Parameters
-    ------
+    ----------
     None
 
     Returns
-    --------
+    -------
     mem : unsigned int
         Memory in bytes
     '''
@@ -79,7 +79,7 @@ def recommendCores(num_jobs, requested_cores=None):
         Number of logical cores to use for computation
 
     Returns
-    --------
+    -------
     requested_cores : unsigned int
         Number of logical cores to use for computation
     '''
