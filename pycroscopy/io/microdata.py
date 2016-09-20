@@ -7,7 +7,7 @@ Created on Wed Dec 16 10:42:03 2015
 """
 from warnings import warn
 import socket
-from .ioUtils import getTimeStamp
+from .io_utils import getTimeStamp
 
 class MicroData(object):
     '''
@@ -62,7 +62,7 @@ class MicroDataGroup(MicroData):
         
         Parameters
         ------------
-        Children : list of MicroData objects
+        children : list of MicroData objects
             Children can be a mixture of groups and datasets
             
         Returns

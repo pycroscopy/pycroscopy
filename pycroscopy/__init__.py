@@ -1,5 +1,5 @@
 # Not supporting for __all__
-#__all__= ['processing', 'analysis', 'io', 'viz']
+# __all__= ['processing', 'analysis', 'io', 'viz']
 
 import analysis, io, processing, viz
 # need to figure out what to do with external libs: numpy_groupies and pyqtgraph.
