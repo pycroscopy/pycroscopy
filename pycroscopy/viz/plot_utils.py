@@ -12,7 +12,6 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist
 from warnings import warn
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from ..analysis.be_sho_utils import getGoodLims
 
 ###############################################################################
 
@@ -153,7 +152,8 @@ def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None):
     fig,axes=plt.subplots(ncols=3, nrows=2, sharex=True, figsize=(15, 10)) 
     
     for index, ax_hand, data_mat, qty_name in zip(range(len(map_names)), axes.flat, sho_maps, map_names):
-        (amp_mean, amp_std) = getGoodLims(data_mat)          
+        amp_mean = np.mean(data_mat)
+        amp_std = np.std(data_mat)          
         
         pcol0 = ax_hand.pcolor(data_mat, vmin=amp_mean-stdevs*amp_std, 
                                vmax=amp_mean+stdevs*amp_std) 
@@ -208,7 +208,8 @@ def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
     for count, posn in enumerate(xrange(0,num_udvs, delta_pos)):
         
         snapshot = np.squeeze(resp_mat[:,:,posn])
-        (amp_mean, amp_std) = getGoodLims(snapshot)
+        amp_mean = np.mean(snapshot) 
+        amp_std = np.std(snapshot)
         ndims = len(snapshot.shape)
         if ndims == 2:
             axes_lin[count].imshow(snapshot, vmin=amp_mean-stdevs*amp_std, vmax=amp_mean+stdevs*amp_std)
@@ -262,7 +263,8 @@ def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='St
     for index in xrange(num_comps):
         cur_map = np.transpose(eigenvectors[index, :, :])
         ax = axes201.flat[index]
-        (mean, std) = getGoodLims(cur_map)
+        mean = np.mean(cur_map)
+        std = np.std(cur_map)
         ax.imshow(cur_map, cmap='jet',
                   vmin=mean - stdevs * std,
                   vmax=mean + stdevs * std)
@@ -311,7 +313,8 @@ def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='
         funcs = [np.abs, np.angle]
         labels = ['Amplitude', 'Phase']
         for func, lab, ax in zip(funcs, labels, axes):
-            (amp_mean, amp_std) = getGoodLims(func(cur_map))
+            amp_mean = np.mean(func(cur_map))
+            amp_std = np.std(func(cur_map))
             ax.imshow(func(cur_map), cmap='inferno',
                       vmin=amp_mean - stdevs * amp_std,
                       vmax=amp_mean + stdevs * amp_std)
@@ -473,7 +476,8 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorb
 
     for index in xrange(num_comps):
         cur_map = loadings[:, :, index]
-        (amp_mean, amp_std) = getGoodLims(cur_map)
+        amp_mean = np.mean(cur_map)
+        amp_std = np.std(cur_map)
         if show_colorbar:
             pcol0 = axes202.flat[index].pcolor(cur_map, vmin=amp_mean - stdevs * amp_std,
                                                vmax=amp_mean + stdevs * amp_std)
