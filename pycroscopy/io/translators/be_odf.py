@@ -16,7 +16,7 @@ from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generate
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..hdf_utils import getH5DsetRefs
-from ..beutils import maxReadPixels
+from ..be_hdf_utils import maxReadPixels
      
 class BEodfTranslator(Translator):
     """

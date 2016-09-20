@@ -13,13 +13,13 @@ from os import path, listdir, remove # File Path formatting
 from warnings import warn
 import xlrd as xlreader # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat; # To load parameters stored in Matlab .mat file
-from .Utils import makePositionMat, generateDummyMainParms
-from .BEutils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, createSpecVals
-from ..SPMnode import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..ioHDF5 import ioHDF5 # Now the translator is responsible for writing the data.
-from .Translator import Translator
-from ..BEutils import maxReadPixels
-from ..ioUtils import getH5DsetRefs
+from .utils import makePositionMat, generateDummyMainParms
+from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, createSpecVals
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from .translator import Translator
+from ..be_hdf_utils import maxReadPixels
+from ..hdf_utils import getH5DsetRefs
 
 class BEPSndfTranslator(Translator):
     """
