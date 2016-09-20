@@ -11,7 +11,7 @@ from time import strftime
 from PyQt4 import QtGui
 
 def getTimeStamp():
-    '''
+    """
     Teturns the current date and time as a string formatted as:
     Year_Month_Dat-Hour_Minute_Second
 
@@ -22,12 +22,12 @@ def getTimeStamp():
     Returns
     ---------
     String
-    '''
+    """
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
 def uiGetFile(extension, caption='Select File'):
-    '''
+    """
     Presents a File dialog used for selecting the .mat file
     and returns the absolute filepath of the selecte file\n
 
@@ -42,13 +42,13 @@ def uiGetFile(extension, caption='Select File'):
     --------
     file_path : String
         Absolute path of the chosen file
-    '''
+    """
 
     return QtGui.QFileDialog.getOpenFileName(caption=caption, filter=extension)
 
 
 def getAvailableMem():
-    '''
+    """
     Returns the available memory
 
     Chris Smith -- csmith55@utk.edu
@@ -61,14 +61,14 @@ def getAvailableMem():
     --------
     mem : unsigned int
         Memory in bytes
-    '''
+    """
     from psutil import virtual_memory as vm
     mem = vm()
     return getattr(mem, 'available')
 
 
 def recommendCores(num_jobs, requested_cores=None):
-    '''
+    """
     Decides the number of cores to use for parallel computing
 
     Parameters
@@ -82,7 +82,7 @@ def recommendCores(num_jobs, requested_cores=None):
     --------
     requested_cores : unsigned int
         Number of logical cores to use for computation
-    '''
+    """
 
     max_cores = max(1, cpu_count() - 2)
 
@@ -103,79 +103,95 @@ def recommendCores(num_jobs, requested_cores=None):
 
     return requested_cores
 
-def complex_to_float(h5_main):
-    '''
-    Function to convert a complex HDF5 dataset into a scalar dataset
+def complex_to_float(ds_main):
+    """
+    Function to convert a complex ND numpy array or HDF5 dataset into a scalar dataset
     
     Parameters
     ----------
-    h5_main: HDF5 Dataset object with a complex datatype    
-    '''
-    return np.hstack([np.real(h5_main), np.imag(h5_main)])
+    ds_main : complex ND numpy array or ND HDF5 dataset
+        Dataset of interest
 
-def compound_to_scalar(h5_main):
-    '''
-    Function to convert a compound HDF5 dataset into a scalar dataset
+    Returns
+    --------
+    retval : ND real numpy array
+    """
+    return np.hstack([np.real(ds_main), np.imag(ds_main)])
+
+def compound_to_scalar(ds_main):
+    """
+    Converts a compound ND numpy array or HDF5 dataset into a real scalar dataset
     
     Parameters
     ----------
-    h5_main: HDF5 Dataset object with a compound datatype
-    '''
-    if isinstance(h5_main, h5py.Dataset):
-        return np.hstack([np.float32(h5_main[name]) for name in h5_main.dtype.names])
-    elif isinstance(h5_main, np.ndarray):
-        return np.hstack([h5_main[name] for name in h5_main.dtype.names])
+    ds_main : ND numpy array or ND HDF5 dataset object of compound datatype
+        Dataset of interest
+
+    Returns
+    --------
+    retval : ND real numpy array
+    
+    """
+    if isinstance(ds_main, h5py.Dataset):
+        return np.hstack([np.float32(ds_main[name]) for name in ds_main.dtype.names])
+    elif isinstance(ds_main, np.ndarray):
+        return np.hstack([ds_main[name] for name in ds_main.dtype.names])
     else:
-        raise TypeError('Datatype {} not supported in compound_to_scalar'.format(type(h5_main)))
+        raise TypeError('Datatype {} not supported in compound_to_scalar'.format(type(ds_main)))
 
 
-def check_dtype(h5_main):
-    '''
+def check_dtype(ds_main):
+    """
     Checks the datatype of the input dataset and provides the appropriate
     function calls to convert it to a float
 
-    parameter
-    h5_main -- HDF5 Dataset
+    Parameters
+    ------------
+    ds_main : HDF5 Dataset
+        Dataset of interest
 
-    returns
+    Returns
     -------
-    func -- function call that will convert the dataset to a float
-    is_complex -- Boolean, is the input dataset complex
-    is_compound -- Boolean, is the input dataset compound
-    n_features -- Unsigned integer, the length of the 2nd dimension of
-            the data after func is called on it
-    n_samples -- Unsigned integer, the length of the 1st dimension of
-            the data
-    type_mult -- Unsigned integer, multiplier that converts from the
-            typesize of the input dtype to the typesize of the data
-            after func is run on it
-    '''
+    func : function
+        function that will convert the dataset to a float
+    is_complex : Boolean
+        is the input dataset complex?
+    is_compound : Boolean
+        is the input dataset compound?
+    n_features : Unsigned integer, the length of the 2nd dimension of
+        the data after func is called on it
+    n_samples : Unsigned integer
+        the length of the 1st dimension of the data
+    type_mult : Unsigned integer
+        multiplier that converts from the typesize of the input dtype to the
+        typesize of the data after func is run on it
+    """
     is_complex = False
     is_compound = False
-    in_dtype = h5_main.dtype
-    new_dtype = h5_main.dtype
-    n_samples, n_features = h5_main.shape
-    if h5_main.dtype in [np.complex64, np.complex128, np.complex]:
+    in_dtype = ds_main.dtype
+    new_dtype = ds_main.dtype
+    n_samples, n_features = ds_main.shape
+    if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         is_complex = True
-        new_dtype = np.real(h5_main[0, 0]).dtype
+        new_dtype = np.real(ds_main[0, 0]).dtype
         type_mult = new_dtype.itemsize * 2
         func = complex_to_float
         n_features *= 2
-    elif len(h5_main.dtype) > 1:
-        '''
+    elif len(ds_main.dtype) > 1:
+        """
         Some form of compound datatype is in use
         We only support real scalars for the component types at the current time
-        '''
+        """
         is_compound = True
         new_dtype = np.float32
         type_mult = len(in_dtype) * new_dtype(0).itemsize
         func = compound_to_scalar
         n_features *= len(in_dtype)
     else:
-        if h5_main.dtype not in [np.float32, np.float64]:
+        if ds_main.dtype not in [np.float32, np.float64]:
             new_dtype = np.float32
         else:
-            new_dtype = h5_main.dtype.type
+            new_dtype = ds_main.dtype.type
 
         type_mult = new_dtype(0).itemsize
 

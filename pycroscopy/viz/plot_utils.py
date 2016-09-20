@@ -130,7 +130,7 @@ def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
 
 
 def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None): 
-    '''
+    """
     Plots the SHO quantity maps for a single UDVS step
     
     Parameters
@@ -149,7 +149,7 @@ def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None):
     Returns
     ----------
     None
-    '''
+    """
     fig,axes=plt.subplots(ncols=3, nrows=2, sharex=True, figsize=(15, 10)) 
     
     for index, ax_hand, data_mat, qty_name in zip(range(len(map_names)), axes.flat, sho_maps, map_names):
@@ -170,7 +170,7 @@ def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None):
 
 
 def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
-    '''
+    """
     Plots the spatial distribution of the response at evenly spaced UDVS steps
     
     Parameters
@@ -187,7 +187,7 @@ def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
     Returns
     ----------
     None
-    '''
+    """
     
     num_udvs = resp_mat.shape[2]
     if num_udvs >= 9:
@@ -227,7 +227,7 @@ def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
 
 def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='Step', stdevs=2,
                      show_colorbar=True):
-    '''
+    """
     Plots the provided spectrograms from SVD V vector
 
     Parameters:
@@ -250,7 +250,7 @@ def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='St
     Returns:
     ---------
     fig, axes
-    '''
+    """
     import matplotlib.pyplot as plt
     fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
     p_rows = int(np.ceil(np.sqrt(num_comps)))
@@ -277,7 +277,7 @@ def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='St
 ###############################################################################
 
 def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2):
-    '''
+    """
     Plots the provided spectrograms from SVD V vector
 
     Parameters:
@@ -300,7 +300,7 @@ def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='
     Returns:
     ---------
     fig, axes
-    '''
+    """
     fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 8))
     fig201.subplots_adjust(hspace=0.4, wspace=0.4)
     fig201.canvas.set_window_title(title)
@@ -325,7 +325,7 @@ def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='
 ###############################################################################
 
 def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
-    '''
+    """
     Plots the provided spectrograms from SVD V vector
 
     Parameters:
@@ -348,7 +348,7 @@ def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
     Returns:
     ---------
     fig, axes
-    '''
+    """
     funcs = [np.abs, np.angle]
     labels = ['Amplitude', 'Phase']
 
@@ -372,7 +372,7 @@ def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
 ###############################################################################
 
 def plotBELoops(xaxis, xlabel, amp_mat, phase_mat, num_comps, title=None):
-    '''
+    """
     Plots the provided loops from the SHO. Replace / merge with function in BESHOUtils
 
     Parameters:
@@ -393,7 +393,7 @@ def plotBELoops(xaxis, xlabel, amp_mat, phase_mat, num_comps, title=None):
     Returns:
     ---------
     fig, axes
-    '''
+    """
     fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 6))
     fig201.subplots_adjust(hspace=0.4, wspace=0.4)
     fig201.canvas.set_window_title(title)
@@ -416,7 +416,7 @@ def plotBELoops(xaxis, xlabel, amp_mat, phase_mat, num_comps, title=None):
 ###############################################################################
 
 def plotScree(S, title='Scree'):
-    '''
+    """
     Plots the S or scree
 
     Parameters:
@@ -427,7 +427,7 @@ def plotScree(S, title='Scree'):
     Returns:
     ---------
     fig, axes
-    '''
+    """
     fig203 = plt.figure(figsize=(6.5, 6))
     axes203 = fig203.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
     axes203.loglog(np.arange(len(S)) + 1, S, 'b', marker='*')
@@ -444,7 +444,7 @@ def plotScree(S, title='Scree'):
 ###############################################################################
 
 def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorbar=True):
-    '''
+    """
     Plots the provided loading maps
 
     Parameters:
@@ -463,7 +463,7 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorb
     Returns:
     ---------
     fig, axes
-    '''
+    """
     fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
     p_rows = int(np.ceil(np.sqrt(num_comps)))
     p_cols = int(np.floor(num_comps / p_rows))
@@ -496,7 +496,7 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorb
 
 def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.jet,
                       spec_label='Spectroscopic Value', resp_label='Response'):
-    '''
+    """
     label_mat : 2D int numpy array or h5py.Dataset object
                 Spatial map of cluster labels structured as [rows, cols]
     cluster_centroids : 2D array or h5py.Dataset object
@@ -511,7 +511,7 @@ def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.j
                 Label to use for X axis on cluster centroid plot
     resp_label : String (Optional. Default = 'Response')
                 Label to use for Y axis on cluster centroid plot
-    '''
+    """
 
     def __plotCentroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
         num_clusters = centroids.shape[0]
@@ -547,9 +547,9 @@ def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.j
 
     num_clusters = cluster_centroids.shape[0]
     if isinstance(label_mat, h5py.Dataset):
-        '''
+        """
         Reshape label_mat based on linked positions
-        '''
+        """
         pos = label_mat.file[label_mat.attrs['Position_Indices']]
         nx = len(np.unique(pos[:, 0]))
         ny = len(np.unique(pos[:, 1]))
@@ -574,7 +574,7 @@ def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.j
 
 def plotKMeansClusters(label_mat, cluster_centroids,
                        num_cluster=4):
-    '''
+    """
     Plots the provided label mat and centroids
     from KMeans clustering
 
@@ -590,7 +590,7 @@ def plotKMeansClusters(label_mat, cluster_centroids,
     Returns:
     ---------
     fig
-    '''
+    """
 
     if num_cluster < 5:
 
@@ -645,7 +645,7 @@ def plotKMeansClusters(label_mat, cluster_centroids,
 
 def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
                            sort_type='distance', sort_mode=True):
-    '''
+    """
     Creates and plots the dendrograms for the given label_mat and
     eigenvalues
 
@@ -688,7 +688,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     Returns
     ---------
     fig
-    '''
+    """
     if mode == 'Truncated' and not last:
         warn('Warning: Truncated dendrograms requested, but no last cluster given.  Reverting to full dendrograms.')
         mode = 'Full'
