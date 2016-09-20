@@ -10,13 +10,13 @@ import numpy as np; # For array operations
 from os import path, remove # File Path formatting
 from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
 import h5py
-from .Translator import Translator # Because this class extends the abstract Translator class
-from .Utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from ..ioUtils import getH5DsetRefs
-from ..SPMnode import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..ioHDF5 import ioHDF5 # Now the translator is responsible for writing the data.
+from .translator import Translator # Because this class extends the abstract Translator class
+from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
+from ..hdfutils import getH5DsetRefs
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+from ..iohdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 
-class Sporc(Translator):
+class SporcTranslator(Translator):
     """
     Translates G-mode SPORC datasets from .mat files to .h5
     """
