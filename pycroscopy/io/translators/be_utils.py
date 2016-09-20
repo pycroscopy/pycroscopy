@@ -8,12 +8,13 @@ Created on Tue Jan 05 07:55:56 2016
 import numpy as np
 from os import path
 from warnings import warn
+import matplotlib.pyplot as plt
 from ..microdata import MicroDataset,MicroDataGroup
-from ..beutils import getSliceForExcWfm,getActiveUDVSsteps,maxReadPixels
+from ..be_hdf_utils import getActiveUDVSsteps,maxReadPixels
 from ..io_utils import getAvailableMem
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs
 from ..io_hdf5 import ioHDF5
-import matplotlib.pyplot as plt
+from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
 from ...processing.procUtils import buildHistogram
 import h5py
 
@@ -487,163 +488,7 @@ def reshapeMeanData(spec_inds, step_inds, mean_resp):
     return (step_averaged_vec, mean_spectrogram)
     
 ###############################################################################
-    
-def plot1DSpectrum(data_vec,freq,title, figure_path=None):
-    """
-    Plots the Step averaged BE response
-    
-    Parameters
-    ------------
-    data_vec : 1D numpy array
-        Response of one BE pulse
-    freq : 1D numpy array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
-        
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    ax : Matplotlib.pyplot axis 
-        Axis handle
-    """    
-    if len(data_vec) != len(freq):
-#         print '1D:',data_vec.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
-        return
-    freq = freq*1E-3 # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
-    ax[0].plot(freq,np.abs(data_vec)*1E+3)
-    ax[0].set_title('Amplitude (mV)')
-    #ax[0].set_xlabel('Frequency (kHz)')
-    ax[1].plot(freq,np.angle(data_vec)*180/np.pi)
-    ax[1].set_title('Phase (deg)')
-    ax[1].set_xlabel('Frequency (kHz)')
-    fig.suptitle(title + ': mean UDVS, mean spatial response')
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
-    return (fig,ax)
-    
-###############################################################################
-    
-def plot2DSpectrogram(mean_spectrogram,freq,title, figure_path=None):
-    """
-    Plots the position averaged spectrogram
-    
-    Parameters
-    ------------
-    mean_spectrogram : 2D numpy complex array
-        Means spectrogram arranged as [frequency, UDVS step]
-    freq : 1D numpy float array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
-        
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    ax : Matplotlib.pyplot axis 
-        Axis handle
-    """    
-    if mean_spectrogram.shape[1] != len(freq):
-        #  print '2D:',mean_spectrogram.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
-        return
-    freq = freq*1E-3 # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
-    #print mean_spectrogram.shape
-    #print freq.shape
-    ax[0].imshow(np.abs(mean_spectrogram),interpolation='nearest', extent=[freq[0],freq[-1],mean_spectrogram.shape[0],0])
-    ax[0].set_title('Amplitude')
-    #ax[0].set_xticks(freq)
-    #ax[0].set_ylabel('UDVS Step')
-    ax[0].axis('tight')
-    ax[1].imshow(np.angle(mean_spectrogram),interpolation='nearest', extent=[freq[0],freq[-1],mean_spectrogram.shape[0],0])
-    ax[1].set_title('Phase')
-    ax[1].set_xlabel('Frequency (kHz)')
-    #ax[0].set_ylabel('UDVS Step')
-    ax[1].axis('tight')
-    fig.suptitle(title)
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
-    return (fig,ax)
-    
-###############################################################################
-    
-def plotHistgrams(p_hist,p_hbins,title,figure_path=None):
-    """
-    Plots the position averaged spectrogram
-    
-    Parameters
-    ------------
-    p_hist : 2D numpy array
-        histogram data arranged as [physical quantity, frequency bin]
-    p_hbins : 1D numpy array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
-        
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    """    
-    
-    base_fig_size = 7
-    h_fig = base_fig_size
-    w_fig = base_fig_size*4
- 
-    fig = plt.figure(figsize=(w_fig,h_fig))
-    fig.suptitle(title)
-    iplot = 0
-    
-    p_Nx,p_Ny = np.amax(p_hbins,axis=1)+1
-    
-    p_hist = np.reshape(p_hist, (4,p_Ny,p_Nx))
-    
-    iplot +=1
-    p_plot_title = 'Spectral BEHistogram Amp (log10 of counts)'
-    p_plot = fig.add_subplot(1,4,iplot, title = p_plot_title)
-    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[0])),interpolation='nearest')
-    p_plot.axis('tight')
-    fig.colorbar(p_im,fraction=0.1)
-    
-    iplot +=1
-    p_plot_title = 'Spectral BEHistogram Phase (log10 of counts)'
-    p_plot = fig.add_subplot(1,4,iplot, title = p_plot_title)
-    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[1])),interpolation='nearest')
-    p_plot.axis('tight')
-    fig.colorbar(p_im,fraction=0.1)
-    
-    iplot +=1
-    p_plot_title = 'Spectral BEHistogram Real (log10 of counts)'
-    p_plot = fig.add_subplot(1,4,iplot, title = p_plot_title)
-    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[2])),interpolation='nearest')
-    p_plot.axis('tight')
-    fig.colorbar(p_im,fraction=0.1)
-     
-    iplot +=1
-    p_plot_title = 'Spectral BEHistogram Imag (log10 of counts)'
-    p_plot = fig.add_subplot(1,4,iplot, title = p_plot_title)
-    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[3])),interpolation='nearest')
-    p_plot.axis('tight')
-    fig.colorbar(p_im,fraction=0.1)         
-    
-    if figure_path:
-        plt.savefig(figure_path, format='png')
-    
-    return fig
 
-###############################################################################
-    
 def visualizePlotGroups(h5_filepath):
     """
     Visualizes the plot groups present in the provided BE data file
