@@ -14,7 +14,7 @@ import numpy as np
 from warnings import warn
 from time import sleep
 from ..__version__ import version
-from .MicroData import MicroDataGroup
+from .microdata import MicroDataGroup
 
 
 class ioHDF5(object):

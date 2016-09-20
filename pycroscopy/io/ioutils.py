@@ -5,7 +5,6 @@ Created on Tue Nov  3 21:14:25 2015
 @author: Suhas Somnath, Chris Smith, Nouamane Laanait
 """
 
-import os
 from multiprocessing import cpu_count
 from time import strftime
 from PyQt4 import QtGui
