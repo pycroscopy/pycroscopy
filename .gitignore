@@ -84,9 +84,13 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+.spyderworkspace
 
 # Rope project settings
 .ropeproject
 
 # PyCharm project settings
 .idea/
+
+# pypi config file
+.pypirc
