@@ -1,0 +1,171 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 05 07:55:56 2016
+
+@author: Suhas Somnath, Chris Smith
+"""
+import numpy as np
+import sklearn.cluster as cls
+from ..io.io_hdf5 import ioHDF5
+from ..io.hdf_utils import checkIfMain
+from ..io.io_utils import check_dtype, transformToTargetType
+from ..io.microdata import MicroDataGroup, MicroDataset
+from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+
+class Cluster(object):
+    """
+    Pycroscopy wrapper around the sklearn.cluster methods.
+    """
+
+    def __init__(self, h5_main, method_name, num_comps=None, *args, **kwargs):
+        """
+        Constructs the Cluster object
+
+        Parameters
+        ------------
+        h5_main : HDF5 dataset object
+            Main dataset with ancillary spectroscopic, position indices and values datasets
+        method_name : string / unicode
+            Name of the sklearn.cluster estimator
+        num_comps : (optional) unsigned int
+            Number of features / spectroscopic indices to be used to cluster the data. Default = all
+        *args and **kwargs : arguments to be passed to the estimator
+        """
+
+        # check if h5_main is a valid object - is it a hub?
+        if not checkIfMain(h5_main):
+            raise TypeError('Supplied dataset is not a pycroscopy main dataset')
+
+        if method_name == 'FeatureAgglomeration':
+            raise TypeError('Cannot work with FeatureAgglomeration just yet')
+
+        self.h5_main = h5_main
+
+        # Instantiate the clustering object
+        self.estimator = cls.__dict__[method_name].__call__(*args, **kwargs)
+        self.method_name = method_name
+
+        if num_comps is None:
+            num_comps = self.h5_main.shape[1]
+        self.num_comps = num_comps
+        self.data_slice = (slice(None), slice(0, num_comps))
+
+        # figure out the operation taht needs need to be performed to convert to real scalar
+        retval = check_dtype(h5_main)
+        self.data_transform_func, self.data_is_complex, self.data_is_compound, \
+        self.data_n_features, self.data_n_samples, self.data_type_mult = retval
+
+
+    def doCluster(self):
+        """
+        Clusters the hdf5 dataset, calculates mean response for each cluster, and writes the labels and mean response back to the h5 file
+
+        Returns
+        --------
+        h5_group : HDF5 Group reference
+            Reference to the group that contains the clustering results
+        """
+        self.__fit()
+        mean_response = self.__getMeanResponse(self.results.labels_)
+        return self.__writeToHDF5(self.results.labels_, mean_response)
+
+    def __fit(self):
+        """
+        Fits the provided dataset
+
+        Returns
+        ------
+        None
+        """
+        # perform fit on the real dataset
+        self.results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+
+    def __getMeanResponse(self, labels):
+        """
+        Gets the mean response for each cluster
+
+        Parameters
+        -------------
+        labels : 1D unsigned int array
+            Array of cluster labels as obtained from the fit
+
+        Returns
+        ---------
+        mean_resp : 2D numpy array
+            Array of the mean response for each cluster arranged as [cluster number, response]
+        """
+        num_clusts = len(np.unique(labels))
+        mean_resp = np.zeros(shape=(num_clusts,self.num_comps), dtype=self.h5_main.dtype)
+        for clust_ind in xrange(num_clusts):
+            # get all pixels with this label
+            targ_pos = np.where(labels == clust_ind)
+            # slice to get the responses for all these pixels
+            data_chunk = self.h5_main[targ_pos, self.data_slice[1]]
+            #transform to real from whatever type it was
+            avg_data = np.mean(self.data_transform_func(data_chunk),axis=0)
+            # transform back to the source data type and insert into the mean response
+            mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
+        return mean_resp
+
+    def __writeToHDF5(self, labels, mean_response):
+        """
+        Writes the labels and mean response to the h5 file
+
+        Parameters
+        ------------
+        labels : 1D unsigned int array
+            Array of cluster labels as obtained from the fit
+        mean_response : 2D numpy array
+            Array of the mean response for each cluster arranged as [cluster number, response]
+
+        Returns
+        ---------
+        h5_labels : HDF5 Group reference
+            Reference to the group that contains the clustering results
+        """
+        num_clusters = mean_response.shape[0]
+        ds_label_mat = MicroDataset('Labels', np.float32(labels), dtype=np.float32)
+        clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
+
+        ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))
+        ds_cluster_vals = MicroDataset('Cluster_Values', np.float32(clust_ind_mat))
+        ds_cluster_centroids = MicroDataset('Mean_Response', mean_response, dtype=mean_response.dtype)
+
+        # write the labels and the mean response to h5
+        clust_slices = {'Cluster': (slice(None), slice(0, 1))}
+        ds_cluster_inds.attrs['labels'] = clust_slices
+        ds_cluster_inds.attrs['units'] = ['']
+        ds_cluster_vals.attrs['labels'] = clust_slices
+        ds_cluster_vals.attrs['units'] = ['']
+
+        kmeans_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Cluster_', self.h5_main.parent.name[1:])
+        kmeans_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals])
+
+        kmeans_grp.attrs['num_clusters'] = num_clusters
+        kmeans_grp.attrs['num_samples'] = self.h5_main.shape[0]
+        kmeans_grp.attrs['cluster_method'] = self.method_name
+        if self.num_comps is not None:
+            kmeans_grp.attrs['components_used'] = self.num_comps
+
+        hdf = ioHDF5(self.h5_main.file)
+        h5_kmeans_refs = hdf.writeData(kmeans_grp)
+
+        h5_labels = getH5DsetRefs(['Labels'], h5_kmeans_refs)[0]
+        h5_centroids = getH5DsetRefs(['Mean_Response'], h5_kmeans_refs)[0]
+        h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_kmeans_refs)[0]
+        h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_kmeans_refs)[0]
+
+        checkAndLinkAncillary(h5_labels,
+                              ['Position_Indices', 'Position_Values'],
+                              h5_main=self.h5_main)
+
+        checkAndLinkAncillary(h5_centroids,
+                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
+                              h5_main=self.h5_main)
+
+        checkAndLinkAncillary(h5_centroids,
+                              ['Position_Indices', 'Position_Values'],
+                              anc_refs=[h5_clust_inds, h5_clust_vals])
+
+        # return the h5 group object
+        return h5_labels.parent
