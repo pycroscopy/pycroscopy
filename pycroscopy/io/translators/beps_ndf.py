@@ -19,7 +19,7 @@ from ..microdata import MicroDataGroup, MicroDataset # The building blocks for d
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from .translator import Translator
 from ..be_hdf_utils import maxReadPixels
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 
 class BEPSndfTranslator(Translator):
     """
@@ -235,7 +235,7 @@ class BEPSndfTranslator(Translator):
                      'Spectroscopic_Indices','Bin_Step', 'Bin_Indices', 'Bin_Wfm_Type',
                      'Bin_Frequencies','Bin_FFT', 'UDVS','UDVS_Labels', 'Noise_Floor','Spectroscopic_Values',
                      'UDVS_Indices']
-        self.hdf.linkRefs(self.ds_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(self.ds_main, getH5DsetRefs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
         generatePlotGroups(self.ds_main, self.hdf, self.mean_resp, 

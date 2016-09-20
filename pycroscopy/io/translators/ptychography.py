@@ -9,7 +9,7 @@ import os
 from scipy.misc import imread
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 from .translator import Translator
 from .utils import generateDummyMainParms, makePositionMat, getPositionSlicing
 
@@ -216,7 +216,7 @@ class PtychographyTranslator(Translator):
                         'Spectroscopic_Values', 
                         'Position_Indices', 
                         'Position_Values']
-        hdf.linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
         
         hdf.flush()
         
