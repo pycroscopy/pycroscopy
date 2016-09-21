@@ -65,11 +65,11 @@ class Cluster(object):
         h5_group : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
-        self.__fit()
-        mean_response = self.__getMeanResponse(self.results.labels_)
-        return self.__writeToHDF5(self.results.labels_, mean_response)
+        self._fit()
+        mean_response = self._getMeanResponse(self.results.labels_)
+        return self._writeToHDF5(self.results.labels_, mean_response)
 
-    def __fit(self):
+    def _fit(self):
         """
         Fits the provided dataset
 
@@ -79,8 +79,9 @@ class Cluster(object):
         """
         # perform fit on the real dataset
         self.results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+        
 
-    def __getMeanResponse(self, labels):
+    def _getMeanResponse(self, labels):
         """
         Gets the mean response for each cluster
 
@@ -107,7 +108,7 @@ class Cluster(object):
             mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
         return mean_resp
 
-    def __writeToHDF5(self, labels, mean_response):
+    def _writeToHDF5(self, labels, mean_response):
         """
         Writes the labels and mean response to the h5 file
 
