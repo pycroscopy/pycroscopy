@@ -1,16 +1,16 @@
-PyCroscopy
+pycroscopy
 ==========
 
 See <https://pycroscopy.github.io/pycroscopy/> for more info.
 
 0. Description
---------------------
+--------------
 A python package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy,
 scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
 Classes implemented here are ported to a high performance computing platform at Oak Ridge National Laboratory (ORNL).
 
 1. Package Structure
------------------
+--------------------
 The package structure is simple, with 4 main modules:
    1. `io`: Input/Output from custom & proprietary microscope formats to HDF5.
    2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.

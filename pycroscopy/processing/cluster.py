@@ -32,12 +32,15 @@ class Cluster(object):
         *args and **kwargs : arguments to be passed to the estimator
         """
 
+        allowed_methods = ['AgglomerativeClustering','Birch','KMeans',
+                           'MiniBatchKMeans','SpectralClustering']
+        
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
             raise TypeError('Supplied dataset is not a pycroscopy main dataset')
 
-        if method_name == 'FeatureAgglomeration':
-            raise TypeError('Cannot work with FeatureAgglomeration just yet')
+        if method_name not in allowed_methods:
+            raise TypeError('Cannot work with {} just yet'.format(method_name))
 
         self.h5_main = h5_main
 
