@@ -1,5 +1,8 @@
 import fft
 import gmode_utils
+import cluster
+import proc_utils
+import decomposition
 
 def no_impl(*args,**kwargs):
     raise NotImplementedError("You need to install Multiprocess package (pip,github) to do a parallel Computation.\n"
