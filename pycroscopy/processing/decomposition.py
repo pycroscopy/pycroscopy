@@ -36,7 +36,10 @@ class Decomposition(object):
         if n_components is not None:
             kwargs['n_components'] = n_components
 
-        allowed_methods = ['']
+        allowed_methods = ['FactorAnalysis','FastICA','IncrementalPCA',
+                             'MiniBatchSparsePCA','NMF','PCA',
+                             'ProjectedGradientNMF','RandomizedPCA',
+                             'SparsePCA','TruncatedSVD']
 
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
