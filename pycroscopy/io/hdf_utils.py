@@ -17,7 +17,7 @@ def getDataSet(h5Parent, dataName):
     and returns a list of reference(s).
 
     Parameters
-    -----------
+    ----------
     h5Parent : h5py.File reference.
         Reference to file, the file must be open and in read-mode.
     dataName : string.
@@ -25,7 +25,7 @@ def getDataSet(h5Parent, dataName):
         then references to all Dataset objects that contain this name are returned.
 
     Returns
-    ---------
+    -------
     list of h5py.Reference of the dataset.
     """
     if isinstance(h5Parent, h5py.File) or isinstance(h5Parent, h5py.Group):
@@ -46,14 +46,14 @@ def getAuxData(parentData, **kwargs):
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
     Parameters
-    ------------
+    ----------
     parentData : h5py.Dataset
         Dataset object reference.
     auxDataName : list of strings, optional, default = all (DataSet.attrs).
         Name of auxiliary Dataset object to return.
 
     Returns
-    -----------
+    -------
     list of h5py.Reference of auxiliary dataset objects.
     """
     auxDataName = kwargs.get('auxDataName', parentData.attrs.iterkeys())
@@ -79,7 +79,7 @@ def getDataAttr(parentData, **kwargs):
     Returns attribute associated with some DataSet.
 
     Parameters
-    -----------
+    ----------
     parentData : h5py.Dataset
         Dataset object reference.
     attrName : list of strings, optional, default = all (DataSet.attrs).
@@ -111,7 +111,7 @@ def getH5DsetRefs(ds_names, h5_refs):
     this method returns H5 Dataset objects corresponding to the names
 
     Parameters
-    --------
+    ----------
     ds_names : List of strings
         names of target datasets
     h5_refs : List of H5 dataset references
@@ -138,13 +138,13 @@ def getH5GroupRef(group_name, h5_refs):
     is unknown (due to the autoindexing in ioHDF5)
 
     Parameters
-    -----------
+    ----------
     group_name : unicode / string
         Names of the datagroup
     h5_refs : List of H5 dataset references
 
-    Returns:
-    ----------
+    Returns
+    -------
     h5_grp
     """
     for dset in h5_refs:
@@ -159,14 +159,14 @@ def findH5group(h5_main, tool_name):
     Given a dataset and a tool name, return the list of all groups
 
     Parameters
-    -----------
+    ----------
     h5_main : h5 dataset reference
         Reference to the target dataset to which the tool was applied
     tool_name : String / unicode
         Name of the tool applied to the target dataset
 
     Returns
-    ---------
+    -------
     groups : list of references to h5 group objects
         groups whose name contains the tool name and the dataset name
     """
@@ -186,7 +186,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
     correspond to the reference.
 
     Parameters
-    ---------
+    ----------
         ref - HDF5 Region Reference
         h5_main - HDF5 object that the reference can be returned
                 from
@@ -198,7 +198,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
                 points - the reference is returns as a list of tuples of points
 
     Returns
-    --------
+    -------
         ref_inds - Array of indices in the source dataset that
                 ref accesses
     """
@@ -209,13 +209,13 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
             Convert a pair of tuples representing two opposite corners of an HDF5 region reference
             into a list of arrays for each dimension.
 
-            Parameters:
-            -----------
+            Parameters
+            ----------
             start - Tuple holding the starting indices of the region
             stop - Tuple holding the final indices of the region
 
-            Outputs:
-            --------
+            Returns
+            -------
             inds - Tuple of arrays containing the list of points in each dimension
             """
             ranges = []
@@ -242,13 +242,13 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
             Convert a pair of tuples representing two opposite corners of an HDF5 region reference
             into a pair of slices.
 
-            Parameters:
-            -----------
+            Parameters
+            ----------
             start - Tuple holding the starting indices of the region
             stop - Tuple holding the final indices of the region
 
-            Outputs:
-            --------
+            Returns
+            -------
             slices - pair of slices representing the region
             """
             slices = []
@@ -300,8 +300,8 @@ def checkAndLinkAncillary(hdf, h5_dset, anc_names, h5_main=None, anc_refs=None):
     @author: Suhas Somnath
     edited - Chris Smith
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     hdf -- ioHDF object associated with the HDF5 file
     h5_dset -- HDF5 dataset to which the attributes will be written\
     anc_names -- list of strings containing the attribute names to be used
@@ -312,8 +312,8 @@ def checkAndLinkAncillary(hdf, h5_dset, anc_names, h5_main=None, anc_refs=None):
     *Note: either h5_main or anc_ref MUST be provided and anc_ref has the
         higher priority if both are present.
 
-    Outputs:
-    --------
+    Returns
+    -------
     None
     """
 
@@ -350,14 +350,14 @@ def createRefFromIndices(h5_main, ref_inds):
     Create a region reference in the destination dataset using an iterable of pairs of indices
     representing the start and end points of a hyperslab block
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     h5_main - HDF5 dataset which the region will be in
     ref_inds - Iterable of index pairs, [start indices, final indices] for each block in the
             hyperslab
 
-    Outputs:
-    --------
+    Returns
+    -------
     new_ref - Region reference in h5_main for the blocks of points defined by ref_inds
     """
     h5_space = h5_main.id.get_space()
@@ -380,7 +380,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
 
-    Inputs:
+    Parameters
+    ----------
         h5_main : HDF5 Dataset, 2D data to be reshaped
         h5_pos : (Optional) HDF5 Dataset, Position indices corresponding to
                 rows in ds_main
