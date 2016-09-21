@@ -14,7 +14,7 @@ from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
 
 class Cluster(object):
     """
-    Pycroscopy wrapper around the sklearn.cluster methods.
+    Pycroscopy wrapper around the sklearn.cluster classes.
     """
 
     def __init__(self, h5_main, method_name, num_comps=None, *args, **kwargs):
@@ -32,12 +32,15 @@ class Cluster(object):
         *args and **kwargs : arguments to be passed to the estimator
         """
 
+        allowed_methods = ['AgglomerativeClustering','Birch','KMeans',
+                           'MiniBatchKMeans','SpectralClustering']
+        
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
             raise TypeError('Supplied dataset is not a pycroscopy main dataset')
 
-        if method_name == 'FeatureAgglomeration':
-            raise TypeError('Cannot work with FeatureAgglomeration just yet')
+        if method_name not in allowed_methods:
+            raise TypeError('Cannot work with {} just yet'.format(method_name))
 
         self.h5_main = h5_main
 
@@ -50,7 +53,7 @@ class Cluster(object):
         self.num_comps = num_comps
         self.data_slice = (slice(None), slice(0, num_comps))
 
-        # figure out the operation taht needs need to be performed to convert to real scalar
+        # figure out the operation that needs need to be performed to convert to real scalar
         retval = check_dtype(h5_main)
         self.data_transform_func, self.data_is_complex, self.data_is_compound, \
         self.data_n_features, self.data_n_samples, self.data_type_mult = retval
@@ -139,22 +142,22 @@ class Cluster(object):
         ds_cluster_vals.attrs['labels'] = clust_slices
         ds_cluster_vals.attrs['units'] = ['']
 
-        kmeans_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Cluster_', self.h5_main.parent.name[1:])
-        kmeans_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals])
+        cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Cluster_', self.h5_main.parent.name[1:])
+        cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals])
 
-        kmeans_grp.attrs['num_clusters'] = num_clusters
-        kmeans_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        kmeans_grp.attrs['cluster_method'] = self.method_name
+        cluster_grp.attrs['num_clusters'] = num_clusters
+        cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
+        cluster_grp.attrs['cluster_method'] = self.method_name
         if self.num_comps is not None:
-            kmeans_grp.attrs['components_used'] = self.num_comps
+            cluster_grp.attrs['components_used'] = self.num_comps
 
         hdf = ioHDF5(self.h5_main.file)
-        h5_kmeans_refs = hdf.writeData(kmeans_grp)
+        h5_clust_refs = hdf.writeData(cluster_grp)
 
-        h5_labels = getH5DsetRefs(['Labels'], h5_kmeans_refs)[0]
-        h5_centroids = getH5DsetRefs(['Mean_Response'], h5_kmeans_refs)[0]
-        h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_kmeans_refs)[0]
-        h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_kmeans_refs)[0]
+        h5_labels = getH5DsetRefs(['Labels'], h5_clust_refs)[0]
+        h5_centroids = getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
+        h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
+        h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
 
         checkAndLinkAncillary(h5_labels,
                               ['Position_Indices', 'Position_Values'],
