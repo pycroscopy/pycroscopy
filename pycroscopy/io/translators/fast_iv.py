@@ -14,7 +14,7 @@ from .translator import Translator
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 
 class FastIVTranslator(Translator):
     """
@@ -105,7 +105,7 @@ class FastIVTranslator(Translator):
                                   ds_ex_efm, ds_raw_data])
             h5_refs = hdf.writeData(chan_grp, print_log=False)
             h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-            hdf.linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+            linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
             raw_datasets.append(h5_raw)
             
         # Now that the N channels have been made, populate them with the actual data....

@@ -18,11 +18,11 @@ def getTimeStamp():
     Year_Month_Dat-Hour_Minute_Second
 
     Parameters
-    ------
+    ----------
     None
 
     Returns
-    ---------
+    -------
     String
     """
     return strftime('%Y_%m_%d-%H_%M_%S')
@@ -34,14 +34,14 @@ def uiGetFile(extension, caption='Select File'):
     and returns the absolute filepath of the selecte file\n
 
     Parameters
-    ---------
+    ----------
     extension : String or list of strings
         file extensions to look for
     caption : (Optional) String
         Title for the file browser window
 
     Returns
-    --------
+    -------
     file_path : String
         Absolute path of the chosen file
     """
@@ -56,11 +56,11 @@ def getAvailableMem():
     Chris Smith -- csmith55@utk.edu
 
     Parameters
-    ------
+    ----------
     None
 
     Returns
-    --------
+    -------
     mem : unsigned int
         Memory in bytes
     """
@@ -81,7 +81,7 @@ def recommendCores(num_jobs, requested_cores=None):
         Number of logical cores to use for computation
 
     Returns
-    --------
+    -------
     requested_cores : unsigned int
         Number of logical cores to use for computation
     """
@@ -108,14 +108,14 @@ def recommendCores(num_jobs, requested_cores=None):
 def complex_to_float(ds_main):
     """
     Function to convert a complex ND numpy array or HDF5 dataset into a scalar dataset
-    
+
     Parameters
     ----------
     ds_main : complex ND numpy array or ND HDF5 dataset
         Dataset of interest
 
     Returns
-    --------
+    -------
     retval : ND real numpy array
     """
     return np.hstack([np.real(ds_main), np.imag(ds_main)])
@@ -123,16 +123,16 @@ def complex_to_float(ds_main):
 def compound_to_scalar(ds_main):
     """
     Converts a compound ND numpy array or HDF5 dataset into a real scalar dataset
-    
+
     Parameters
     ----------
     ds_main : ND numpy array or ND HDF5 dataset object of compound datatype
         Dataset of interest
 
     Returns
-    --------
+    -------
     retval : ND real numpy array
-    
+
     """
     if isinstance(ds_main, h5py.Dataset):
         return np.hstack([np.float32(ds_main[name]) for name in ds_main.dtype.names])
@@ -148,7 +148,7 @@ def check_dtype(ds_main):
     function calls to convert it to a float
 
     Parameters
-    ------------
+    ----------
     ds_main : HDF5 Dataset
         Dataset of interest
 
@@ -200,3 +200,105 @@ def check_dtype(ds_main):
         func = new_dtype
 
     return func, is_complex, is_compound, n_features, n_samples, type_mult
+
+
+def realToComplex(ds_real):
+    """
+    Puts the real and imaginary sections together to make complex dataset
+
+    Parameters
+    ------------
+    ds_real : 2D real numpy array or HDF5 dataset
+        Data arranged as [instance, 2 x features]
+        where the first half of the features are the real component and the
+        second half contains the imaginary components
+
+    Returns
+    ----------
+    ds_compound : 2D complex numpy array
+        Data arranged as [sample, features]
+    """
+    return ds_real[:, :int(0.5 * ds_real.shape[1])] + 1j * ds_real[:, int(0.5 * ds_real.shape[1]):]
+
+
+def realToCompound(ds_real, compound_type):
+    """
+    Converts a real dataset to a compound dataset of the provided compound d-type
+
+    Parameters
+    ------------
+    ds_real : 2D real numpy array or HDF5 dataset
+        Data arranged as [instance, 2 x features]
+        where the first half of the features are the real component and the
+        second half contains the imaginary components
+    compound_type : dtype
+        Target complex datatype
+
+    Returns
+    ----------
+    ds_compound : 2D complex numpy array
+        Data arranged as [sample, features]
+    """
+    new_spec_length = ds_real.shape[1]/len(compound_type)
+    if new_spec_length % 1:
+        raise TypeError('Provided compound type was not compatible by numbr of elements')
+
+    new_spec_length = int(new_spec_length)
+    ds_compound = np.empty([ds_real.shape[0], new_spec_length], dtype=compound_type)
+    for iname, name in enumerate(compound_type.names):
+        istart = iname * ds_compound.shape[1]
+        iend = (iname + 1) * ds_compound.shape[1]
+        ds_compound[name] = ds_real[:, istart:iend]
+
+    return ds_compound
+
+def transformToTargetType(ds_real, new_dtype):
+    """
+    Transforms real data into the target dtype
+
+    Parameters
+    ----------
+    ds_real : 2D real numpy array or HDF5 dataset
+        Data arranged as [instance, 2 x features]
+        where the first half of the features are the real component and the
+        second half contains the imaginary components
+    new_dtype : dtype
+        Target datatype
+
+    Returns
+    ----------
+    retval : 2D numpy array
+        Data of the target data type
+    """
+    if new_dtype in [np.complex64, np.complex128, np.complex]:
+        return realToComplex(new_dtype)
+    elif len(new_dtype) > 1:
+        return realToCompound(ds_real, new_dtype)
+    else:
+        return new_dtype(ds_real)
+
+
+def transformToReal(ds_main):
+    """
+    Transforms real data into the target dtype
+
+    Parameters
+    ----------
+    ds_real : 2D real numpy array or HDF5 dataset
+        Data arranged as [instance, 2 x features]
+        where the first half of the features are the real component and the
+        second half contains the imaginary components
+    new_dtype : dtype
+        Target datatype
+
+    Returns
+    ----------
+    retval : 2D numpy array
+        Data of the target data type
+    """
+    if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
+        return complex_to_float(ds_main)
+    elif len(ds_main.dtype) > 1:
+        return compound_to_scalar(ds_main)
+    else:
+        return ds_main

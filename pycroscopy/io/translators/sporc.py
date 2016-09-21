@@ -12,7 +12,7 @@ from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat f
 import h5py
 from .translator import Translator # Because this class extends the abstract Translator class
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 
@@ -114,7 +114,7 @@ class SporcTranslator(Translator):
         #Now doing linkrefs:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices','Position_Values',
                      'Spectroscopic_Indices','Spectroscopic_Values']
-        hdf.linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
         
         print('reading raw data now...')
         

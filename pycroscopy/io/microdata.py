@@ -61,12 +61,12 @@ class MicroDataGroup(MicroData):
         Adds Children to the class to make a tree structure.
         
         Parameters
-        ------------
+        ----------
         children : list of MicroData objects
             Children can be a mixture of groups and datasets
             
         Returns
-        --------
+        -------
         None
         '''
         for child in children:
@@ -81,11 +81,11 @@ class MicroDataGroup(MicroData):
         Return the tree structure given by MicroDataGroup.
         
         Parameters
-        ---------
+        ----------
         None
         
         Returns
-        --------
+        -------
         None
         '''        
         def __tree(child, parent):
@@ -110,7 +110,7 @@ class MicroDataset(MicroData):
     def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent = None, resizable=False, maxshape=None):
         '''
         Parameters
-        ------------
+        ----------
         name : String
             Name of the dataset
         data : Object
@@ -134,7 +134,7 @@ class MicroDataset(MicroData):
             Make sure to specify the dtype appropriately. The provided data will be ignored
             
         Examples
-        -----------   
+        --------   
         1. Small auxillary datasets :
         
         >>> ds_ex_efm = MicroDataset('Excitation_Waveform', np.arange(10))

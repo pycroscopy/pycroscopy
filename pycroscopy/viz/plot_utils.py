@@ -12,6 +12,51 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist
 from warnings import warn
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from ..analysis.utils.be_loop import loopFitFunction
+
+
+def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
+    '''
+    Plots the loop guess, fit, source projected loops for a single cycle
+
+    Parameters
+    ----------
+    Vdc - 1D float numpy array
+        DC offset vector (unshifted)
+    ds_proj_loops - 2D numpy array
+        Projected loops arranged as [position, Vdc]
+    ds_guess - 1D compound numpy array
+        Loop guesses arranged as [position]
+    ds_fit - 1D compound numpy array
+        Loop fits arranged as [position]
+    title - (Optional) String / unicode
+        Title for the figure
+
+    Returns
+    ----------
+    fig - matplotlib.pyplot.figure object
+        Figure handle
+    axes - 2D array of matplotlib.pyplot.axis handles
+        handles to axes in the 2d figure
+    '''
+    shift_ind = int(-1 * len(Vdc) / 4)
+    Vdc_shifted = np.roll(Vdc, shift_ind)
+
+    num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
+    fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
+    positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
+    for ax, pos in zip(axes.flat, positions):
+        ax.plot(Vdc, ds_proj_loops[pos, :], 'k', label='Raw')
+        ax.plot(Vdc_shifted, loopFitFunction(Vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
+        ax.plot(Vdc_shifted, loopFitFunction(Vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
+        ax.set_xlabel('V_DC (V)')
+        ax.set_ylabel('PR (a.u.)')
+        ax.set_title('Loop ' + str(pos))
+    ax.legend()
+    fig.suptitle(title)
+    fig.tight_layout()
+
+    return fig, axes
 
 ###############################################################################
 

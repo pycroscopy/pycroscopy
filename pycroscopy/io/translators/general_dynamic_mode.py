@@ -14,7 +14,7 @@ from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from .gmode_utils import readGmodeParms
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs
 
 class GDMTranslator(Translator):
     """
@@ -127,7 +127,7 @@ class GDMTranslator(Translator):
         aux_ds_names = ['Position_Indices','Position_Values',
                      'Spectroscopic_Indices','Spectroscopic_Values',
                      'Excitation_Frequencies', 'Bin_Frequencies']
-        hdf.linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
 
         # Now read the raw data files:
         pos_ind = 0

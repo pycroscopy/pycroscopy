@@ -1,7 +1,6 @@
 import fft
 import gmode_utils
 
-
 def no_impl(*args,**kwargs):
     raise NotImplementedError("You need to install Multiprocess package (pip,github) to do a parallel Computation.\n"
                               "Switching to the serial version. ")

@@ -23,11 +23,11 @@ class ioHDF5(object):
     def __init__(self, file_handle,cachemult=1):
         '''
         Handles:
-            + I/O operation from HDF5 file.\n
+            + I/O operation from HDF5 file.
             + Utilities to get data and associated auxiliary.
         
-        Parameters:
-        --------
+        Parameters
+        ----------
         file_handle : Object - String or Unicode or open hdf5 file
             Absolute path to the h5 file or an open hdf5 file
         cachemult : unsigned int (Optional. default = 1)
@@ -121,16 +121,16 @@ class ioHDF5(object):
         
     def writeData(self, data, print_log=False):
         '''
-        Writes data into the hdf5 file and assigns data attributes such as region references.\n
+        Writes data into the hdf5 file and assigns data attributes such as region references.
         The tree structure is inferred from the AFMData Object.
         
         Parameters
-        -------------
+        ----------
         data : Instance of MicroData
             Tree structure describing the organization of the data
             
         Returns
-        ----------
+        -------
         refList : List of HDF5dataset or HDF5Datagroup references
             References to the objects written
         '''
@@ -299,41 +299,6 @@ class ioHDF5(object):
         return refList
    
    
-    def linkRefs(self, src, trg):
-        '''
-        Creates Dataset attributes that contain references to other Dataset Objects.
-        
-        Parameters
-        -----------
-        src : Reference to h5.objects
-            Reference to the the object to which attributes will be added
-        trg : list of references to h5.objects
-            objects whose references that can be accessed from src.attrs
-        
-        Returns
-        --------
-        None
-        '''
-        for itm in trg:
-            src.attrs[itm.name.split('/')[-1]] = itm.ref
-            
-    def linkRefAsAlias(self, src, trg, trg_name):
-        '''
-        Creates Dataset attributes that contain references to other Dataset Objects.
-        This function is useful when the reference attribute must have a reserved name.
-        Such as linking 'SHO_Indices' as 'Spectroscopic_Indices'
-        
-        Parameters
-        ------------
-        src : reference to h5.object
-            Reference to the the object to which attributes will be added
-        trg : reference to h5.object
-            object whose reference that can be accessed from src.attrs
-        trg_name : String
-            Alias / alternate name for trg
-        '''
-        src.attrs[trg_name] = trg.ref
-        
     
     def regionRefs(self, dataset, slices, print_log=False):
         '''
