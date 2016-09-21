@@ -167,3 +167,37 @@ def doSVD(h5_main, num_comps=None):
         h5_V.attrs[key] = pca_ref
 
     return h5_pca_grp
+
+
+###############################################################################
+
+def simplifiedKPCA(kpca, source_data):
+    '''
+    Performs kernel PCA on the provided dataset and returns the familiar
+    eigenvector, eigenvalue, and scree matrices.
+
+    Note that the positions in the eigenvalues may need to be transposed
+
+    Parameters
+    --------
+    kpca : KernelPCA object
+        configured Kernel PCA object ready to perform analysis
+    source_data : 2D numpy array
+        Data arranged as [iteration, features] example - [position, time]
+
+    Returns
+    ---------
+    eigenvalues : 2D numpy array
+        Eigenvalues in the original space arranged as [component,iteration]
+    scree : 1D numpy array
+        S component
+    eigenvector : 2D numpy array
+        Eigenvectors in the original space arranged as [component,features]
+    '''
+    X_kpca = kpca.fit(source_data.T)
+    eigenvectors = X_kpca.alphas_.T
+    eigenvalues = X_kpca.fit_transform(source_data)
+    # kpca_explained_variance = np.var(kpca.fit_transform(source_data), axis=0)
+    # information_content = kpca_explained_variance / np.sum(kpca_explained_variance)
+    scree = kpca.lambdas_
+    return eigenvalues, scree, eigenvectors
