@@ -2,19 +2,20 @@
 """
 Created on Wed Oct 21 12:29:33 2015
 Main Class in charge of writing/reading to/from hdf5 file.
-@author: nouamanelaanait, Suhas Somnath, Chris Smith
+@author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
-
-import h5py
-import sys
 import os
 import subprocess
-import numpy as np
-from warnings import warn
+import sys
 from time import sleep
-from ..__version__ import version
+from warnings import warn
+
+import h5py
+import numpy as np
+
 from .microdata import MicroDataGroup
+from ..__version__ import version
 
 
 class ioHDF5(object):
@@ -22,11 +23,11 @@ class ioHDF5(object):
     def __init__(self, file_handle,cachemult=1):
         '''
         Handles:
-            + I/O operation from HDF5 file.\n
+            + I/O operation from HDF5 file.
             + Utilities to get data and associated auxiliary.
         
-        Parameters:
-        --------
+        Parameters
+        ----------
         file_handle : Object - String or Unicode or open hdf5 file
             Absolute path to the h5 file or an open hdf5 file
         cachemult : unsigned int (Optional. default = 1)
@@ -120,16 +121,16 @@ class ioHDF5(object):
         
     def writeData(self, data, print_log=False):
         '''
-        Writes data into the hdf5 file and assigns data attributes such as region references.\n
+        Writes data into the hdf5 file and assigns data attributes such as region references.
         The tree structure is inferred from the AFMData Object.
         
         Parameters
-        -------------
+        ----------
         data : Instance of MicroData
             Tree structure describing the organization of the data
             
         Returns
-        ----------
+        -------
         refList : List of HDF5dataset or HDF5Datagroup references
             References to the objects written
         '''
