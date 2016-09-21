@@ -6,12 +6,16 @@ Created on Fri Jan 08 16:08:20 2016
 """
 
 from __future__ import division # int/int = float
+
 from os import path
 from warnings import warn
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
+
+# TODO: Get rid of relative imports.
 from ..io.hdf_utils import getDataSet, getAuxData, findH5group
-from ..vis.plot_utils import plotVSsnapshots, plotSHOMaps
+from ..viz.plot_utils import plotVSsnapshots, plotSHOMaps
 import h5py
 
 #%%

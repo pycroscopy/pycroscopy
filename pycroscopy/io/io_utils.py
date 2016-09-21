@@ -2,13 +2,15 @@
 """
 Created on Tue Nov  3 21:14:25 2015
 
-@author: Suhas Somnath, Chris Smith, Nouamane Laanait
+@author: Suhas Somnath, Chris Smith
 """
-import h5py
-import numpy as np
 from multiprocessing import cpu_count
 from time import strftime
+
+import h5py
+import numpy as np
 from PyQt4 import QtGui
+
 
 def getTimeStamp():
     """

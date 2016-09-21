@@ -2,19 +2,20 @@
 """
 Created on Wed Oct 21 12:29:33 2015
 Main Class in charge of writing/reading to/from hdf5 file.
-@author: nouamanelaanait, Suhas Somnath, Chris Smith
+@author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
-
-import h5py
-import sys
 import os
 import subprocess
-import numpy as np
-from warnings import warn
+import sys
 from time import sleep
-from ..__version__ import version
+from warnings import warn
+
+import h5py
+import numpy as np
+
 from .microdata import MicroDataGroup
+from ..__version__ import version
 
 
 class ioHDF5(object):

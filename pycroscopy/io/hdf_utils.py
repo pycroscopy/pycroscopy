@@ -4,7 +4,7 @@ from __future__ import print_function
 """
 Created on Tue Nov  3 21:14:25 2015
 
-@author: Suhas Somnath, Chris Smith
+@author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 import h5py
 from warnings import warn
