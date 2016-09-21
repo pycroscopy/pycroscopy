@@ -4,14 +4,17 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
-import numpy as np
 import os
+
+import numpy as np
 from scipy.misc import imread
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
-from ..hdf_utils import getH5DsetRefs, linkRefs
+
 from .translator import Translator
 from .utils import generateDummyMainParms, makePositionMat, getPositionSlicing
+from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..io_hdf5 import ioHDF5
+from ..microdata import MicroDataGroup, MicroDataset
+
 
 class PtychographyTranslator(Translator):
     """

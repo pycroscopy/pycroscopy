@@ -6,15 +6,19 @@ Created on Tue Mar 29 16:04:34 2016
 """
 
 from __future__ import print_function, division; # int/int = float
-import numpy as np; # For array operations
+
 from os import path, remove # File Path formatting
-from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
+
 import h5py
+import numpy as np; # For array operations
+from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
+
 from .translator import Translator # Because this class extends the abstract Translator class
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+
 
 class SporcTranslator(Translator):
     """

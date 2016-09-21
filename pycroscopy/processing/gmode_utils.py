@@ -5,16 +5,18 @@ Created on Thu May 05 13:29:12 2016
 @author: Suhas Somnath
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
-from warnings import warn
-from multiprocessing import Pool, cpu_count
 import itertools
-from ..io.io_utils import getTimeStamp
-from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
-from ..viz.plot_utils import rainbowPlot
+from multiprocessing import Pool, cpu_count
+from warnings import warn
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
+from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
+from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
+from ..viz.plot_utils import rainbowPlot
 
 
 ###############################################################################

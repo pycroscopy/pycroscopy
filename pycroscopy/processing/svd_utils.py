@@ -6,12 +6,14 @@ Created on Mon Mar 28 09:45:08 2016
 """
 
 import time
-import numpy as np
 from warnings import warn
+
+import numpy as np
 from sklearn.utils.extmath import randomized_svd
-from ..io.io_hdf5 import ioHDF5
+
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, \
     getH5RegRefIndices, createRefFromIndices, checkIfMain
+from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype
 from ..io.microdata import MicroDataset, MicroDataGroup
 

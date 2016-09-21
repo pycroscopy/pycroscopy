@@ -5,9 +5,11 @@ Created on Wed Dec 16 10:42:03 2015
 @author: Suhas Somnath, Numan Laanait
 
 """
-from warnings import warn
 import socket
+from warnings import warn
+
 from .io_utils import getTimeStamp
+
 
 class MicroData(object):
     '''

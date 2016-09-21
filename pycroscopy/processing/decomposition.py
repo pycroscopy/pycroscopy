@@ -4,14 +4,16 @@ Created on Tue Jan 05 07:55:56 2016
 
 @author: Suhas Somnath, Chris Smith
 """
+import h5py
 import numpy as np
 import sklearn.decomposition as dec
-import h5py
-from ..io.io_hdf5 import ioHDF5
+
 from ..io.hdf_utils import checkIfMain
+from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+
 
 class Decomposition(object):
     """

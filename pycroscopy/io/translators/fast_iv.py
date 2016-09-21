@@ -6,15 +6,19 @@ Created on Sun May 29 17:58:35 2016
 """
 
 from __future__ import division # int/int = float
-import numpy as np # For array operations
+
 from os import path, remove # File Path formatting
 from warnings import warn
+
 import h5py
+import numpy as np # For array operations
+
 from .translator import Translator
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+
 
 class FastIVTranslator(Translator):
     """

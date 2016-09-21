@@ -5,16 +5,20 @@ Created on Sat Nov 07 15:21:46 2015
 @author: Suhas Somnath
 """
 from __future__ import division, print_function # int/int = float
-import numpy as np # For array operations
+
 from os import path, listdir, remove # File Path formatting
 from warnings import warn
+
+import numpy as np # For array operations
 from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
+
+from .be_utils import parmsToDict
 from .translator import Translator
 from .utils import interpretFreq, makePositionMat, getPositionSlicing, generateDummyMainParms
-from .be_utils import parmsToDict
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+
 
 class GLineTranslator(Translator):
     """

@@ -6,11 +6,13 @@ Created on Tue Jan 05 07:55:56 2016
 """
 import numpy as np
 import sklearn.cluster as cls
-from ..io.io_hdf5 import ioHDF5
+
 from ..io.hdf_utils import checkIfMain
+from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+
 
 class Cluster(object):
     """

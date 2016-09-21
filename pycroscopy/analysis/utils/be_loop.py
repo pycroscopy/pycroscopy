@@ -8,13 +8,15 @@ Various helper functions for aiding loop fitting and projection
 """
 
 from __future__ import division
-from scipy.special import erf, erfinv
+
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import stats
 from scipy.optimize import least_squares
-from scipy.spatial import ConvexHull
-import matplotlib.pyplot as plt
 from scipy.optimize import leastsq
+from scipy.spatial import ConvexHull
+from scipy.special import erf, erfinv
+
 
 ###############################################################################
 

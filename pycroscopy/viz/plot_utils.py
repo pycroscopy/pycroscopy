@@ -5,13 +5,16 @@ Created on Thu May 05 13:29:12 2016
 @author: Suhas Somnath
 """
 from __future__ import division # int/int = float
-import numpy as np
-import matplotlib.pyplot as plt
+
+from warnings import warn
+
 import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist
-from warnings import warn
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+
 from ..analysis.utils.be_loop import loopFitFunction
 
 

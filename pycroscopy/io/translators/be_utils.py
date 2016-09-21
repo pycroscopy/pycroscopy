@@ -8,18 +8,18 @@ Created on Tue Jan 05 07:55:56 2016
 from os import path
 from warnings import warn
 
+import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
-from ..hdf_utils import getH5DsetRefs
-from ..microdata import MicroDataset,MicroDataGroup
 from ..be_hdf_utils import getActiveUDVSsteps,maxReadPixels
-from ..io_utils import getAvailableMem
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
-from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
+from ..io_utils import getAvailableMem
+from ..microdata import MicroDataset,MicroDataGroup
 from ...processing.proc_utils import buildHistogram
-import h5py
+from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
+
 
 #%%############################################################################
 

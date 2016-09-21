@@ -6,18 +6,22 @@ Created on Tue Nov  3 15:24:12 2015
 """
 
 from __future__ import division; # int/int = float
-import numpy as np; # For array operations
-from warnings import warn
+
 from os import path, listdir, remove # File Path formatting
+from warnings import warn
+
+import numpy as np; # For array operations
 from scipy.io.matlab import loadmat; # To load parameters stored in Matlab .mat file
+
+from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals
 from .translator import Translator # Because this class extends the abstract Translator class
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..be_hdf_utils import maxReadPixels
-     
+from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+
+
 class BEodfTranslator(Translator):
     """
     Translates either the Band Excitation (BE) scan or Band Excitation 
