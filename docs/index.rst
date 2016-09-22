@@ -25,14 +25,31 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+
+    pycroscopy.analysis
+    pycroscopy.io
+    pycroscopy.processing
+    pycroscopy.tests
+    pycroscopy.viz
+
+Submodules
+----------
+
+pycroscopy.versioner module
+---------------------------
+
+.. automodule:: pycroscopy.versioner
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 
+Module contents
+---------------
 
-Indices and tables
-==================
+.. automodule:: pycroscopy
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
