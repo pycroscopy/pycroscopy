@@ -32,8 +32,6 @@ Contents:
     pycroscopy.tests
     pycroscopy.viz
 
-Submodules
-----------
 
 pycroscopy.versioner module
 ---------------------------

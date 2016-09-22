@@ -51,8 +51,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pycroscopy'
-copyright = u'2016, Suhas Somnath, Chris Ryan, Numan Laanait'
-author = u'Suhas Somnath, Chris Ryan, Numan Laanait'
+copyright = u'2016, Numan Laanait, Suhas Somnath, Chris Ryan'
+author = u'Numan Laanait, Suhas Somnath, Chris Ryan'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -113,7 +113,7 @@ todo_include_todos = True
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'classic'
+html_theme = 'default'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
