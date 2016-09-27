@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # TODO: Get rid of relative imports.
-from ..io.hdf_utils import getDataSet, getAuxData, findH5group
-from ..viz.plot_utils import plotVSsnapshots, plotSHOMaps
+from pycroscopy.io.hdf_utils import getDataSet, getAuxData, findH5group
+from pycroscopy.viz.plot_utils import plotVSsnapshots, plotSHOMaps
 import h5py
 
 #%%

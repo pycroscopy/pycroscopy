@@ -1,1 +1,1 @@
-import be_sho_utils
+from pycroscopy.analysis.utils import be_sho_utils
