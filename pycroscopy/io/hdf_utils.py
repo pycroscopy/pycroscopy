@@ -392,7 +392,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
         attempt to find them as attributes of h5_main.  If that fails, it will
         generate dummy values for them.
 
-    Outputs:
+    Returns
+    -------
         ds_Nd : N-D numpy array
             N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
         success : boolean or string
@@ -455,28 +456,17 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
-    #######################################################
+    '''
+    Sort the indices from fastest to slowest
+    '''
+    pos_sort = get_sort_order(np.transpose(ds_pos))
+    spec_sort = get_sort_order(ds_spec)
 
-    """
-    Find how quickly the spectroscopic values are changing in each row
-    and the order of rows from fastest changing to slowest.
-    """
-    change_count = [len(np.where([row[i] != row[i - 1] for i in xrange(len(row))])[0]) for row in ds_spec]
-    change_sort = np.argsort(change_count)[::-1]
-
-    """
-    Get the number of unique values in the index arrays
-    This gives us the size of each dimension
-    Spectroscopic must go in the row order determined above
-    """
-    pos_dims = [len(np.unique(col)) for col in np.array(np.transpose(ds_pos), ndmin=2)]
-    spec_dims = [len(np.unique(row)) for row in np.array(ds_spec, ndmin=2)]
-
-    if isinstance(h5_main, h5py.Dataset):
-        ds_main = h5_main[()]
-    elif isinstance(h5_main, np.ndarray):
-        ds_main = h5_main
-    spec_dims = [len(np.unique(row)) for row in np.array(ds_spec[change_sort], ndmin=2)]
+    '''
+    Get the size of each dimension in the sorted order
+    '''
+    pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
+    spec_dims = get_dimensionality(ds_spec, spec_sort)
 
     ds_main = h5_main[()]
 
@@ -503,12 +493,57 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Now we transpose the axes associated with the spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    swap_axes = np.append(np.arange(len(pos_dims)),
-                          change_sort[::-1] + len(pos_dims))
+    swap_axes = np.append(np.argsort(pos_sort),
+                          np.argsort(spec_sort)+len(pos_dims))
 
     ds_Nd = np.transpose(ds_Nd, swap_axes)
 
     return ds_Nd, True
+
+
+def get_dimensionality(ds_index, index_sort=None):
+    """
+    Get the size of each index dimension in a specified sort order
+
+    Parameters
+    ----------
+    ds_index : 2D HDF5 Dataset or numpy array
+        Row matrix of indices
+    index_sort : Iterable of unsigned integers (Optional)
+        Order of rows sorted from fastest to slowest
+
+    Returns
+    -------
+    sorted_dims : list of unsigned integers
+        Dimensionality of each row in ds_index.  If index_sort is supplied, it will be in the sorted order
+    """
+    if index_sort is None:
+        index_sort = np.arange(ds_index.shape[0])
+
+    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index[index_sort], ndmin=2)]
+
+    return sorted_dims
+
+
+def get_sort_order(ds_spec):
+    """
+    Find how quickly the spectroscopic values are changing in each row
+    and the order of rows from fastest changing to slowest.
+
+    Parameters
+    ----------
+    ds_spec : 2D HDF5 dataset or numpy array
+        Rows of indices to be sorted from fastest changing to slowest
+
+    Returns
+    -------
+    change_sort : List of unsigned integers
+        Order of rows sorted from fastest changing to slowest
+    """
+    change_count = [len(np.where([row[i] != row[i - 1] for i in xrange(len(row))])[0]) for row in ds_spec]
+    change_sort = np.argsort(change_count)[::-1]
+
+    return change_sort
 
 
 def copyAttributes(source, dest, skip_refs=True):
