@@ -45,8 +45,11 @@ def uiGetFile(extension, caption='Select File'):
     file_path : String
         Absolute path of the chosen file
     """
+    app = QtGui.QApplication([])
+    path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=extension)
+    app.exit()
 
-    return QtGui.QFileDialog.getOpenFileName(caption=caption, filter=extension)
+    return path
 
 
 def getAvailableMem():
