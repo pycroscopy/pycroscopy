@@ -46,7 +46,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
         Absolute path of the chosen file
     """
     app = QtGui.QApplication([])
-    path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=extension)
+    path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
     app.exit()
 
     return path
