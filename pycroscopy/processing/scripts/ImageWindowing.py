@@ -15,7 +15,7 @@ from pycroscopy.viz.plot_utils import plotScree, plotLoadingMaps, plotSpectrogra
 from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
-    imagepath = uiGetFile(filter='Image File (*.tiff, *.jpg, *.png', caption='Select Image File')
+    imagepath = uiGetFile(filter='Image File (*.tiff *.tif *.jpeg *.jpg *.png)', caption='Select Image File')
 
     save_plots  = True
     show_plots  = False
