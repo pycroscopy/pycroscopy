@@ -50,7 +50,7 @@ class ioHDF5(object):
             except:
                 raise
             self.path = file_handle
-        elif type(file_handle) == h5py._hl.files.File:
+        elif type(file_handle) == h5py.File:
             # file handle is actually an open hdf file
             if file_handle.mode == 'r':
                 warn('ioHDF5 cannot work with open HDF5 files in read mode. Change to r+ or w')
@@ -85,7 +85,7 @@ class ioHDF5(object):
         '''
         try:
             repack_line = 'h5repack '+self.path+' '+tmpfile
-            subprocess.call(repack_line,stderr = sys.stderr,shell=True)
+            subprocess.call(repack_line, shell=True)
             sleep(2)
         except:
             print('Could not repack hdf5 file')
@@ -98,13 +98,14 @@ class ioHDF5(object):
             os.remove(self.path)
             os.rename(tmpfile, self.path)
         except:
-            raise #StandardError(os.error)
+            print('Could not copy repacked file to original path.')
+            raise StandardError(os.error)
         
         '''
         Open the repacked file
         '''
         self.file = h5py.File(self.path, mode = 'r+')
-    
+
     def close(self):
         '''Close h5.file'''
         self.file.close()
