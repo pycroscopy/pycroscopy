@@ -1,15 +1,18 @@
-'''
+"""
 Created on Jun 22, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
-'''
+"""
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 from time import time
+import sys
+sys.path.append('../../../')
 from pycroscopy.processing.image_processing import ImageWindow
-from pycroscopy.analysis.PCAutils import doPCA, plotScree, plotLoadingMaps, plotSpectrograms
-from pycroscopy.io.ioUtils import uiGetFile
+from pycroscopy.processing.svd_utils import doSVD
+from pycroscopy.viz.plot_utils import plotScree, plotLoadingMaps, plotSpectrograms
+from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
     imagepath = uiGetFile(filter='Image File (*.tiff, *.jpg, *.png', caption='Select Image File')
