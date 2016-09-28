@@ -13,7 +13,7 @@ from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs
 from ..io.translators.utils import getPositionSlicing, makePositionMat
 from ..io.microdata import MicroDataGroup, MicroDataset
 
@@ -118,7 +118,7 @@ class ImageWindow(object):
             Link references to raw
             '''
             aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-            self.hdf.linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, image_refs))
+            linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, image_refs))
 
         else:
             self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
@@ -309,7 +309,7 @@ class ImageWindow(object):
         Link references to windowed dataset
         '''
         aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        self.hdf.linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
+        linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
 
         self.hdf.flush()
 
