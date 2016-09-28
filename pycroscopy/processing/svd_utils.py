@@ -143,10 +143,12 @@ def doSVD(h5_main, num_comps=None):
                           h5_main=h5_main)
 
     checkAndLinkAncillary(h5_V,
-                          ['Position_Indices', 'Position_Values'])
+                          ['Position_Indices', 'Position_Values'],
+                          anc_refs=[h5_pca_inds, h5_S])
 
     checkAndLinkAncillary(h5_U,
-                          ['Spectroscopic_Indices', 'Spectroscopic_Values'])
+                          ['Spectroscopic_Indices', 'Spectroscopic_Values'],
+                          anc_refs=[h5_pca_inds, h5_S])
 
     checkAndLinkAncillary(h5_V,
                           ['Spectroscopic_Indices', 'Spectroscopic_Values'],
