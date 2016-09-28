@@ -25,12 +25,12 @@ if __name__ == '__main__':
     num_comp    = 64
     plot_comps  = 9
     clean_comps = 5
-    
+
     folder, filename = os.path.split(os.path.abspath(imagepath))
     basename, _ = os.path.splitext(filename)
 
     h5_path = os.path.join(folder, basename+'.h5')
-    
+
     iw = ImageWindow(imagepath, h5_path, reset=True)
 
     h5_file = iw.h5_file
@@ -54,7 +54,7 @@ if __name__ == '__main__':
     '''
     Do PCA on the windowed image
     '''
-    h5_pca = doPCA(iw.hdf, h5_wins, num_comps=num_comp, max_mem=max_mem)
+    h5_pca = doSVD(h5_wins, num_comps=num_comp)
 
     h5_U = h5_pca['U']
     h5_S = h5_pca['S']
