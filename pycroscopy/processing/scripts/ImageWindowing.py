@@ -48,7 +48,7 @@ if __name__ == '__main__':
     Do the windowing on the normalized image
     '''
     t0 = time()
-    h5_wins = iw.do_windowing(h5_norm, num_peaks=num_peaks, fit_win=fit_win, save_plots=save_plots, show_plots=show_plots)
+    h5_wins = iw.do_windowing(h5_norm, num_peaks=num_peaks, save_plots=save_plots, show_plots=show_plots)
     print 'Windowing took {} seconds.'.format(time()-t0)
 
     '''
