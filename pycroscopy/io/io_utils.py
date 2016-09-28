@@ -28,7 +28,7 @@ def getTimeStamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
-def uiGetFile(extension, caption='Select File'):
+def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     """
     Presents a File dialog used for selecting the .mat file
     and returns the absolute filepath of the selecte file\n
