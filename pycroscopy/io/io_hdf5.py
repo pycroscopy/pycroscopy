@@ -85,22 +85,27 @@ class ioHDF5(object):
         '''
         try:
             repack_line = 'h5repack '+self.path+' '+tmpfile
-            subprocess.call(repack_line, shell=True)
+            subprocess.check_output(repack_line,
+                                    stderr=subprocess.STDOUT,
+                                    shell=True)
             sleep(2)
-        except:
+        except subprocess.CalledProcessError as err:
             print('Could not repack hdf5 file')
-            raise StandardError(sys.stderr)
+            raise Exception(err.output)
 
         '''
         Delete the original file and move the temporary file to the originals path
         '''
+# TODO Find way to get the real OS error that works in and out of Spyder
         try:
             os.remove(self.path)
             os.rename(tmpfile, self.path)
         except:
             print('Could not copy repacked file to original path.')
-            raise StandardError(os.error)
-        
+            print('The original file is located {}'.format(self.path))
+            print('The repacked file is located {}'.format(tmpfile))
+            raise
+
         '''
         Open the repacked file
         '''
