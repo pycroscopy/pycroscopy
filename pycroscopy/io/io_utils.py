@@ -49,7 +49,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
     app.exit()
 
-    return path
+    return str(path)
 
 
 def getAvailableMem():

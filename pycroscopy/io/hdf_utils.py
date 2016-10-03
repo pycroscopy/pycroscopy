@@ -336,11 +336,22 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
         """
         for ref_name, h5_ref in zip(anc_names, anc_refs):
             __checkAndLinkSingle(h5_ref, ref_name)
-    else:
+    elif anc_refs is not None:
         """
         anc_refs is just a single value
         """
         __checkAndLinkSingle(anc_refs, anc_names)
+    elif isinstance(anc_names, str) or isinstance(anc_names, unicode):
+        """
+        Single name provided
+        """
+        __checkAndLinkSingle(None, anc_names)
+    else:
+        """
+        Iterable of names provided
+        """
+        for name in anc_names:
+            __checkAndLinkSingle(None, name)
 
     h5_dset.file.flush()
 

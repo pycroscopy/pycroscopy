@@ -915,40 +915,41 @@ class ImageWindow(object):
         plt.close(fig)
 
 
-def __get_component_slice(components):
-    """
-    Check the components object to determine how to use it to slice the dataset
+    @staticmethod
+    def __get_component_slice(components):
+        """
+        Check the components object to determine how to use it to slice the dataset
 
-    Parameters
-    ----------
-    components : integer, iterable of integers, slice, or None
+        Parameters
+        ----------
+        components : integer, iterable of integers, slice, or None
 
-            Input Types
-            integer: Components less than the input will be kept
-            length 2 iterable of integers: Integers define start and stop of component slice to retain
-            other iterable of integers or slice: Selection of component indices to retain
-    Returns
-    -------
-    comp_slice : slice or numpy array of uints
-            Slice or array specifying which components should be kept
-    """
-    comp_slice = slice(None)
+                Input Types
+                integer: Components less than the input will be kept
+                length 2 iterable of integers: Integers define start and stop of component slice to retain
+                other iterable of integers or slice: Selection of component indices to retain
+        Returns
+        -------
+        comp_slice : slice or numpy array of uints
+                Slice or array specifying which components should be kept
+        """
+        comp_slice = slice(None)
 
-    if isinstance(components, int):
-        # Component is integer
-        comp_slice = slice(0, components)
-    elif hasattr(components, '__iter__') and not isinstance(components, dict):
-        # Component is array, list, or tuple
-        if len(components) == 2:
-            # If only 2 numbers are given, use them as the start and stop of a slice
-            comp_slice = slice(int(components[0]), int(components[1]))
+        if isinstance(components, int):
+            # Component is integer
+            comp_slice = slice(0, components)
+        elif hasattr(components, '__iter__') and not isinstance(components, dict):
+            # Component is array, list, or tuple
+            if len(components) == 2:
+                # If only 2 numbers are given, use them as the start and stop of a slice
+                comp_slice = slice(int(components[0]), int(components[1]))
+            else:
+                #Convert components to an unsigned integer array
+                comp_slice = np.uint(np.round(components))
+        elif isinstance(components, slice):
+            # Components is already a slice
+            comp_slice = components
         else:
-            #Convert components to an unsigned integer array
-            comp_slice = np.uint(np.round(components))
-    elif isinstance(components, slice):
-        # Components is already a slice
-        comp_slice = components
-    else:
-        raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
+            raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
 
-    return comp_slice
+        return comp_slice

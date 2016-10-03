@@ -15,7 +15,7 @@ from pycroscopy.viz.plot_utils import plotScree, plotLoadingMaps, plotSpectrogra
 from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
-    imagepath = uiGetFile(filter='Image File (*.tiff, *.jpg, *.png', caption='Select Image File')
+    imagepath = uiGetFile(filter='Image File (*.tiff *.tif *.jpeg *.jpg *.png)', caption='Select Image File')
 
     save_plots  = True
     show_plots  = False
@@ -25,12 +25,12 @@ if __name__ == '__main__':
     num_comp    = 64
     plot_comps  = 9
     clean_comps = 5
-    
+
     folder, filename = os.path.split(os.path.abspath(imagepath))
     basename, _ = os.path.splitext(filename)
 
     h5_path = os.path.join(folder, basename+'.h5')
-    
+
     iw = ImageWindow(imagepath, h5_path, reset=True)
 
     h5_file = iw.h5_file
@@ -48,13 +48,13 @@ if __name__ == '__main__':
     Do the windowing on the normalized image
     '''
     t0 = time()
-    h5_wins = iw.do_windowing(h5_norm, num_peaks=num_peaks, fit_win=fit_win, save_plots=save_plots, show_plots=show_plots)
+    h5_wins = iw.do_windowing(h5_norm, num_peaks=num_peaks, save_plots=save_plots, show_plots=show_plots)
     print 'Windowing took {} seconds.'.format(time()-t0)
 
     '''
     Do PCA on the windowed image
     '''
-    h5_pca = doPCA(iw.hdf, h5_wins, num_comps=num_comp, max_mem=max_mem)
+    h5_pca = doSVD(h5_wins, num_comps=num_comp)
 
     h5_U = h5_pca['U']
     h5_S = h5_pca['S']
