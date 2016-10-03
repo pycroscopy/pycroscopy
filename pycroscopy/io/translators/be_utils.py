@@ -222,45 +222,39 @@ def getSpectroscopicParmLabel(expt_type):
 
 def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     """
-    This functiona normalizes the BE waveform to correct the phase by diving by
-    the excitation.
-    This funciton is INCORRECT and needs to be fixed for 2nd and 3rd harmonics. 
-    See commented sections
-    
+    This function normalizes the BE waveform to correct the phase by diving by the excitation
+
     Parameters
     ------------
-    spectrogram_mat : 2D complex numpy array 
-        BE response arranged as [bins x steps]
+    spectrogram_mat : 2D complex numpy array
+        BE response arranged as [bins, steps]
     FFT_BE_wave : 1D complex numpy array
-        FFT of the BE waveform at the appropriate bins. Number of bins must match
+        FFT of the BE waveform at the appropriate bins. Number of bins must match with spectrogram_mat
     harmonic : unsigned int
         nth harmonic of the excitation waveform
-        
+
     Returns
-    ------------ 
+    ----------
     spectrogram_mat : 2D complex numpy array
-        Phase normalized spectrogram 
+        Normalized BE response spectrogram
+
     """
-    # Spectrum data phase correction    
-    correction_factor = 1
-    """
-    FFT_max_abs2 = max(abs(FFT_BE_wave))
-    FFT_max_abs1 = max(abs(FFT_BE_wave[:,BE_bin_ind])) #get the max of the abs of the response
-    FFT_max_abs1 = max(max(abs(VS_FFT_mat[:,BE_bin_ind]))) #get the max of the abs of the response
-    correction_factor = FFT_max_abs1/FFT_max_abs2
-    """
+
+    BE_wave = np.fft.ifftshift(np.fft.ifft(FFT_BE_wave))
     scaling_factor = 1
+
     if harmonic == 2:
-        scaling_factor = 2 * np.exp(1j*np.pi*3/2)
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 2)) / (2 * np.exp(1j * 3 * np.pi * 0.5))
     elif harmonic == 3:
-        scaling_factor = 4 * np.exp(1j*np.pi)
-        
-    # spectrogram_mat = np.transpose(spectrogram_mat.transpose()/(FFT_BE_wave**harmonic))
-    
-    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave,[spectrogram_mat.shape[1],1]))    
-    spectrogram_mat = spectrogram_mat/(F_AO_spectrogram**harmonic)
-    spectrogram_mat = spectrogram_mat/correction_factor/scaling_factor
-    
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 3)) / (4 * np.exp(1j * np.pi))
+    elif harmonic >= 4:
+        print "Warning these high harmonics are not supported in translator."
+
+    # Generate transfer functions
+    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave / scaling_factor, [spectrogram_mat.shape[1], 1]))
+    # Divide by transfer function
+    spectrogram_mat = spectrogram_mat / (F_AO_spectrogram)
+
     return spectrogram_mat
     
 ###############################################################################
