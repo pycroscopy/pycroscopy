@@ -98,4 +98,4 @@ ENV/
 .pypirc
 
 # Folder for testing scripts
-.test_scripts/
+test_scripts/
