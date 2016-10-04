@@ -12,6 +12,30 @@ pycroscopy.analysis.utils.be_loop module
     :undoc-members:
     :show-inheritance:
 
+pycroscopy.analysis.utils.be_sho module
+---------------------------------------
+
+.. automodule:: pycroscopy.analysis.utils.be_sho
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycroscopy.analysis.utils.be_sho_utils module
+---------------------------------------------
+
+.. automodule:: pycroscopy.analysis.utils.be_sho_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycroscopy.analysis.utils.tree module
+-------------------------------------
+
+.. automodule:: pycroscopy.analysis.utils.tree
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
