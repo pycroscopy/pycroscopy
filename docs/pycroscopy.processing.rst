@@ -59,14 +59,6 @@ pycroscopy.processing.gmode_utils module
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.processing.image_processing module
----------------------------------------------
-
-.. automodule:: pycroscopy.processing.image_processing
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pycroscopy.processing.proc_utils module
 ---------------------------------------
 
