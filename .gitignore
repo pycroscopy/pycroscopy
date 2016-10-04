@@ -96,3 +96,6 @@ ENV/
 
 # pypi config file
 .pypirc
+
+# Folder for testing scripts
+.test_scripts/
