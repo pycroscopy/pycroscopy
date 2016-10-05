@@ -70,9 +70,9 @@ def doSVD(h5_main, num_comps=None):
 
     U, S, V = randomized_svd(func(h5_main), num_comps, n_iter=3)
 
-    pca_type = 'sklearn-randomized'
+    svd_type = 'sklearn-randomized'
 
-    print 'PCA took {} seconds.  Writing results to file.'.format((time.time() - t1))
+    print 'SVD took {} seconds.  Writing results to file.'.format((time.time() - t1))
 
     '''
     Create datasets for V and S, deleting original arrays afterward to save
@@ -106,29 +106,29 @@ def doSVD(h5_main, num_comps=None):
     Create the Group to hold the results and add the existing datasets as
     children
     '''
-    grp_name = dset_name + '-PCA_'
-    pca_grp = MicroDataGroup(grp_name, h5_main.parent.name[1:])
-    pca_grp.addChildren([ds_V, ds_S, ds_U, ds_inds])
+    grp_name = dset_name + '-SVD_'
+    svd_grp = MicroDataGroup(grp_name, h5_main.parent.name[1:])
+    svd_grp.addChildren([ds_V, ds_S, ds_U, ds_inds])
 
     '''
     Write the attributes to the group
     '''
-    pca_grp.attrs['num_components'] = num_comps
-    pca_grp.attrs['pca_method'] = pca_type
+    svd_grp.attrs['num_components'] = num_comps
+    svd_grp.attrs['svd_method'] = svd_type
 
     '''
     Write the data and retrieve the HDF5 objects then delete the Microdatasets
     '''
     hdf = ioHDF5(h5_main.file)
-    h5_pca_refs = hdf.writeData(pca_grp)
+    h5_svd_refs = hdf.writeData(svd_grp)
 
-    h5_U = getH5DsetRefs(['U'], h5_pca_refs)[0]
-    h5_S = getH5DsetRefs(['S'], h5_pca_refs)[0]
-    h5_V = getH5DsetRefs(['V'], h5_pca_refs)[0]
-    h5_pca_inds = getH5DsetRefs(['Component_Indices'], h5_pca_refs)[0]
-    h5_pca_grp = h5_S.parent
+    h5_U = getH5DsetRefs(['U'], h5_svd_refs)[0]
+    h5_S = getH5DsetRefs(['S'], h5_svd_refs)[0]
+    h5_V = getH5DsetRefs(['V'], h5_svd_refs)[0]
+    h5_svd_inds = getH5DsetRefs(['Component_Indices'], h5_svd_refs)[0]
+    h5_svd_grp = h5_S.parent
 
-    del ds_S, ds_V, ds_U, pca_grp
+    del ds_S, ds_V, ds_U, svd_grp
 
     # Will attempt to see if there is anything linked to this dataset.
     # Since I was meticulous about the translators that I wrote, I know I will find something here
@@ -138,11 +138,11 @@ def doSVD(h5_main, num_comps=None):
 
     checkAndLinkAncillary(h5_V,
                           ['Position_Indices', 'Position_Values'],
-                          anc_refs=[h5_pca_inds, h5_S])
+                          anc_refs=[h5_svd_inds, h5_S])
 
     checkAndLinkAncillary(h5_U,
                           ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                          anc_refs=[h5_pca_inds, h5_S])
+                          anc_refs=[h5_svd_inds, h5_S])
 
     checkAndLinkAncillary(h5_V,
                           ['Spectroscopic_Indices', 'Spectroscopic_Values'],
@@ -160,11 +160,11 @@ def doSVD(h5_main, num_comps=None):
         ref_inds = ref_inds.reshape([-1, 2, 2])
         ref_inds[:, 1, 0] = h5_V.shape[0] - 1
 
-        pca_ref = createRefFromIndices(h5_V, ref_inds)
+        svd_ref = createRefFromIndices(h5_V, ref_inds)
 
-        h5_V.attrs[key] = pca_ref
+        h5_V.attrs[key] = svd_ref
 
-    return h5_pca_grp
+    return h5_svd_grp
 
 
 ###############################################################################
