@@ -727,11 +727,11 @@ class BEPSndfParser(object):
         Returns the excitation wave type as an integer
         
         Parameters
-        -----------
+        ----------
         None
         
         Returns
-        ---------
+        -------
         wave_type : int
             Wave type. Positive number means chirp up, negative number is chirp down.
         """
@@ -742,11 +742,11 @@ class BEPSndfParser(object):
         Returns the total number of spatial pixels. This includes X, Y, Z, Laser positions
         
         Parameters
-        -----------
+        ----------
         None 
         
         Returns
-        ---------
+        -------
         num_pix : unsigned int
             Number of pixels in this file
         """
@@ -758,10 +758,10 @@ class BEPSndfParser(object):
         organized from fastest to slowest varying dimension
         
         Parameters
-        -----------
+        ----------
         
         Returns
-        -----------
+        -------
         Laser steps, Z steps, Y steps, X steps : unsigned ints
         """
         return (self.__num_laser_steps__,self.__num_z_steps__,self.__num_x_steps__,self.__num_y_steps__)
@@ -781,7 +781,7 @@ class BEPSndfParser(object):
         None
         
         Returns
-        ------
+        -------
         None
         """
         count = 0
@@ -844,13 +844,9 @@ class BEPSndfParser(object):
         Returns a BEpixel object containing the parsed information within a pixel.
         Moves pixel index up by one.
         This is where one could conceivably read the file in one pass instead of making 100,000 file I/Os.
-        
-        Parameters
-        ---------
-        None
-        
+
         Returns
-        --------
+        -------
         pixel : BEPSndfPixel
             Object that describes the data contained within the pixel
         """
@@ -889,7 +885,7 @@ class BEPSndfPixel(object):
         Initializes the pixel instance by parsing the provided data. 
         
         Parameters
-        ---------------
+        ----------
         data_vec : 1D float numpy array
             Data contained within each pixel
         harm: unsigned int
@@ -981,17 +977,18 @@ class BEPSndfPixel(object):
         to tell if any parameter has changed between these pixels
         
         Parameters
-        ------------
+        ----------
         prevPixel : BEPSndfPixel object
             The other pixel object to compare this pixel to
             
         Returns
-        -------------
+        -------
         is_different : Boolean
             Whether or not these pixel objects share the same parameters
-        
-        Typical things that change during BEPS
-        --------------
+
+        Notes
+        -----
+        *Typical things that change during BEPS*
         1. BE parameters:
             a. Center Frequency, Band Width - changes in the BE_bin_w
             b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly - FFT should show changes

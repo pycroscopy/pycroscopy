@@ -150,7 +150,8 @@ def getH5GroupRef(group_name, h5_refs):
 
     Returns
     -------
-    h5_grp
+    h5_grp : HDF5 Object Reference
+        reference to group that matches the `group_name`
     """
     for dset in h5_refs:
         if dset.name.split('/')[-1].startswith(group_name):
@@ -192,20 +193,22 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
 
     Parameters
     ----------
-        ref - HDF5 Region Reference
-        h5_main - HDF5 object that the reference can be returned
-                from
-        return_method - String, what for should the reference indices be returned
-            Options:
-                slices - default, the reference is return as pairs of slices
-                corners - the reference is returned as pairs of corners representing the
-                        starting and ending indices of each block
-                points - the reference is returns as a list of tuples of points
+    ref : HDF5 Region Reference
+    h5_main : HDF5 Dataset
+        dataset that the reference can be returned from
+    return_method : {'slices', 'corners', 'points'}
+        slices : the reference is return as pairs of slices
+
+        corners : the reference is returned as pairs of corners representing
+        the starting and ending indices of each block
+
+        points : the reference is returns as a list of tuples of points
 
     Returns
     -------
-        ref_inds - Array of indices in the source dataset that
-                ref accesses
+    ref_inds : Numpy Array
+        array of indices in the source dataset that ref accesses
+
     """
 
     if return_method == 'points':
@@ -216,12 +219,15 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
 
             Parameters
             ----------
-            start - Tuple holding the starting indices of the region
-            stop - Tuple holding the final indices of the region
+            start : Tuple
+                the starting indices of the region
+            stop : Tuple
+                the final indices of the region
 
             Returns
             -------
-            inds - Tuple of arrays containing the list of points in each dimension
+            inds : Tuple of arrays
+                the list of points in each dimension
             """
             ranges = []
             for i in xrange(len(start)):
@@ -249,12 +255,15 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
 
             Parameters
             ----------
-            start - Tuple holding the starting indices of the region
-            stop - Tuple holding the final indices of the region
+            start : Tuple
+                the starting indices of the region
+            stop : Tuple
+                the final indices of the region
 
             Returns
             -------
-            slices - pair of slices representing the region
+            slices : list
+                pair of slices representing the region
             """
             slices = []
             for idim in xrange(len(start)):
@@ -307,19 +316,25 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
 
     Parameters
     ----------
-    hdf -- ioHDF object associated with the HDF5 file
-    h5_dset -- HDF5 dataset to which the attributes will be written\
-    anc_names -- list of strings containing the attribute names to be used
-    h5_main -- Optional, HDF5 dataset from which attributes will be copied
-            if anc_refs is None
-    anc_refs -- Optional, HDF5 references that correspond to the strings in
-            anc_names
-    *Note: either h5_main or anc_ref MUST be provided and anc_ref has the
-        higher priority if both are present.
+    hdf : ioHDF5 object
+        object associated with the HDF5 file
+    h5_dset : HDF5 Dataset
+        dataset to which the attributes will be written
+    anc_names : list of str
+        the attribute names to be used
+    h5_main : HDF5 Dataset, optional
+        dataset from which attributes will be copied if `anc_refs` is None
+    anc_refs : list of HDF5 Object References, optional
+        references that correspond to the strings in `anc_names`
 
     Returns
     -------
     None
+
+    Notes
+    -----
+    Either `h5_main` or `anc_refs` MUST be provided and `anc_refs` has the
+    higher priority if both are present.
     """
 
     def __checkAndLinkSingle(h5_ref, ref_name):
@@ -368,13 +383,16 @@ def createRefFromIndices(h5_main, ref_inds):
 
     Parameters
     ----------
-    h5_main - HDF5 dataset which the region will be in
-    ref_inds - Iterable of index pairs, [start indices, final indices] for each block in the
-            hyperslab
+    h5_main : HDF5 dataset
+        dataset the region will be created in
+    ref_inds : Iterable
+        index pairs, [start indices, final indices] for each block in the
+        hyperslab
 
     Returns
     -------
-    new_ref - Region reference in h5_main for the blocks of points defined by ref_inds
+    new_ref : HDF5 Region reference
+        reference in `h5_main` for the blocks of points defined by `ref_inds`
     """
     h5_space = h5_main.id.get_space()
     h5_space.select_none()
@@ -398,15 +416,12 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
 
     Parameters
     ----------
-        h5_main : HDF5 Dataset, 2D data to be reshaped
-        h5_pos : (Optional) HDF5 Dataset, Position indices corresponding to
-                rows in ds_main
-        h5_spec : (Optional) HDF5 Dataset, Spectroscopic indices corresponding
-                to columns in ds_main
-
-        If either h5_pos or h5_spec are not provided, the function will first
-        attempt to find them as attributes of h5_main.  If that fails, it will
-        generate dummy values for them.
+        h5_main : HDF5 Dataset
+            2D data to be reshaped
+        h5_pos : HDF5 Dataset, optional
+            Position indices corresponding to rows in `h5_main`
+        h5_spec : HDF5 Dataset, optional
+            Spectroscopic indices corresponding to columns in `h5_main`
 
     Returns
     -------
@@ -414,9 +429,17 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
         success : boolean or string
             True if full reshape was successful
+
             "Positions" if it was only possible to reshape by
             the position dimensions
+
             False if no reshape was possible
+
+    Notes
+    -----
+    If either `h5_pos` or `h5_spec` are not provided, the function will first
+    attempt to find them as attributes of `h5_main`.  If that fails, it will
+    generate dummy values for them.
     """
 
     if h5_pos is None:
@@ -606,13 +629,20 @@ def checkIfMain(h5_main):
     """
     Checks the input dataset to see if it has all the neccessary
     features to be considered a Main dataset.  This means it is
-     2D and has the following attributes
-        Position_Indices
-        Position_Values
-        Spectroscopic_Indices
-        Spectroscopic_Values
-    :param h5_main: HDF5 Dataset
-    :return: success: Boolean, did all tests pass
+    2D and has the following attributes
+    Position_Indices
+    Position_Values
+    Spectroscopic_Indices
+    Spectroscopic_Values
+
+    Parameters
+    ----------
+    h5_main : HDF5 Dataset
+
+    Returns
+    -------
+    success : Boolean
+        True if all tests pass
     """
     # Check that h5_main is a dataset
     success = isinstance(h5_main, h5py.Dataset)
@@ -647,29 +677,29 @@ def checkIfMain(h5_main):
 
 
 def linkRefs(src, trg):
-    '''
+    """
     Creates Dataset attributes that contain references to other Dataset Objects.
-    
+
     Parameters
     -----------
     src : Reference to h5.objects
         Reference to the the object to which attributes will be added
     trg : list of references to h5.objects
         objects whose references that can be accessed from src.attrs
-    
+
     Returns
     --------
     None
-    '''
+    """
     for itm in trg:
         src.attrs[itm.name.split('/')[-1]] = itm.ref
         
 def linkRefAsAlias(src, trg, trg_name):
-    '''
+    """
     Creates Dataset attributes that contain references to other Dataset Objects.
     This function is useful when the reference attribute must have a reserved name.
     Such as linking 'SHO_Indices' as 'Spectroscopic_Indices'
-    
+
     Parameters
     ------------
     src : reference to h5.object
@@ -678,5 +708,5 @@ def linkRefAsAlias(src, trg, trg_name):
         object whose reference that can be accessed from src.attrs
     trg_name : String
         Alias / alternate name for trg
-    '''
+    """
     src.attrs[trg_name] = trg.ref

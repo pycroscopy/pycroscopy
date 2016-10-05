@@ -21,18 +21,18 @@ from ..__version__ import version
 class ioHDF5(object):
 
     def __init__(self, file_handle,cachemult=1):
-        '''
+        """
         Handles:
             + I/O operation from HDF5 file.
             + Utilities to get data and associated auxiliary.
-        
+
         Parameters
         ----------
         file_handle : Object - String or Unicode or open hdf5 file
             Absolute path to the h5 file or an open hdf5 file
         cachemult : unsigned int (Optional. default = 1)
             Cache multiplier
-        '''
+        """
         if type(file_handle) in [str, unicode]:
             # file handle is actually a file path
             propfaid = h5py.h5p.create(h5py.h5p.FILE_ACCESS)
@@ -59,24 +59,24 @@ class ioHDF5(object):
             self.path = file_handle.filename
 
     def clear(self):
-        '''
+        """
         Clear h5.file of all contents
-        
+
         file.clear() only removes the contents, it does not free up previously allocated space.
         To do so, it's necessary to use the h5repack command after clearing.
-        Because the file must be closed and reopened, it is best to call this 
+        Because the file must be closed and reopened, it is best to call this
         function immediately after the creation of the ioHDF5 object.
-        '''
+        """
         self.file.clear()
         self.repack()
 
 
     def repack(self):
-        '''
+        """
         Uses the h5repack command to recover cleared space in an hdf5 file.
         h5repack can also be used to change chunking and compression, but these options have
         not yet been implemented here.
-        '''
+        """
         self.close()
         tmpfile = self.path+'.tmp'
 

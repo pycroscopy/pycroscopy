@@ -27,15 +27,21 @@ class ImageWindow(object):
         """
         Setup the image windowing
 
-        Parameters:
-        -----------
-            image_path -- File path to the input image file to be read and windowed.
-            h5_path -- file path to the hdf5 file in which to store the image and it's windows
-            max_RAM_mb -- (Optional) integer maximum amount of ram, in Mb, to use in windowing
-                    Default 1024
-            cores -- (Optional) integer number of [logical] CPU cores to use in windowing
-                    Defualt None, use number of available cores minus 2
-            reset -- (Optional) boolean, should all data in the hdf5 file be deleted
+        Parameters
+        ----------
+            image_path : str
+                File path to the input image file to be read and windowed.
+            h5_path : str
+                file path to the hdf5 file in which to store the image and it's windows
+            max_RAM_mb : int, optional
+                integer maximum amount of ram, in Mb, to use in windowing
+                Default 1024
+            cores : int, optional
+                integer number of [logical] CPU cores to use in windowing
+                Defualt None, use number of available cores minus 2
+            reset : Boolean, optional
+                should all data in the hdf5 file be deleted
+
         """
         if not os.path.exists(os.path.abspath(image_path)):
             raise ValueError('Specified image does not exist.')
@@ -132,13 +138,15 @@ class ImageWindow(object):
         """
         Normalize the image and save the result to the h5 file
 
-        Parameters:
+        Parameters
         ----------
-        h5_raw - (Optional) HDF5 Dataset, Raw image to be normalized
+        h5_raw : HDF5 Dataset, optional
+            Raw image to be normalized, will use self.h5_raw if not provided
 
-        Returns:
+        Returns
         -------
-        h5_norm - HDF5 dataset, normalized image
+        h5_norm : HDF5 dataset
+            normalized image
         """
         if h5_raw is None:
             h5_raw = self.h5_raw
@@ -175,36 +183,27 @@ class ImageWindow(object):
         """
         Extract the windows from the normalized image and write them to the file
 
-        Parameters:
-        -----------
-            h5_main -- (Optional) HDF5 dataset, normalized image
-            win_x -- (Optional) integer size of the window, in pixels, in the horizontal direction
-                    Default None, a guess will be made based on the FFT of the image
-            win_y -- (Optional) integer size of the window, in pixels, in the vertical direction
-                    Default None, a guess will be made based on the FFT of the image
-            win_step_x -- (Optional) integer step size, in pixels, to take between windows in the horizontal
-                                   direction
-                    Default 1
-            win_step_y -- (Optional) integer step size, in pixels, to take between windows in the vertical
-                                   direction
-                    Default 1
-            num_peaks -- (Optional) Integer number of peaks to use when calculating the optimal window size.
-                                    If both win_x and win_y are specified, num_peaks is not used.
-                    Default 2
-            fit_win -- (Optional) Logical, if True then when guessing the fit it will return the window
-                                    size as determined by a leastsquares fit.  If False, the value returned
-                                    will be determined by an analytic guess.  Ignored if both win_x and
-                                    win_y are given.
-                    Default True
-            save_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and saved to disk.  Ignored if both win_x and win_y are given.
-                    Default True
-            show_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and shown on screen.  Ignored if both win_x and win_y are given.
-                    Default False
-        Returns:
-        --------
-            h5_wins -- HDF5 dataset containing the windows.
+        Parameters
+        ----------
+            h5_main : HDF5 dataset, optional
+                normalized image
+            win_x : int, optional
+                size of the window, in pixels, in the horizontal direction
+                Default None, a guess will be made based on the FFT of the image
+            win_y : int, optional
+                size of the window, in pixels, in the vertical direction
+                Default None, a guess will be made based on the FFT of the image
+            win_step_x : int, optional
+                step size, in pixels, to take between windows in the horizontal direction
+                Default 1
+            win_step_y : int, optional
+                step size, in pixels, to take between windows in the vertical direction
+                Default 1
+
+        Returns
+        -------
+            h5_wins : HDF5 Dataset
+                Dataset containing the flattened windows
         """
         if h5_main is None:
             if self.h5_norm is None:
@@ -225,8 +224,8 @@ class ImageWindow(object):
 
         except KeyError:
             '''
-        Position Indices dataset does not exist
-        Assume square image
+            Position Indices dataset does not exist
+            Assume square image
             '''
             x_pix = np.int(np.sqrt(h5_main.size))
             y_pix = x_pix
@@ -340,22 +339,23 @@ class ImageWindow(object):
         
         return h5_wins
 
-    def clean_windows(self, h5_win = None, n_comp=None):
+    def clean_windows(self, h5_win=None, n_comp=None):
         """
         Rebuild the Image from the PCA results on the windows.
         Optionally, only use components less than n_comp.
 
-        Parameters:
-        -----------
-        h5_win: (Optional) hdf5 Dataset, dataset containing
-                windowed image and which PCA was performed on
-        n_comp: (Optional) integer, components above this number
-                will be discarded
+        Parameters
+        ----------
+        h5_win : hdf5 Dataset, optional
+                windowed image which PCA was performed on
+                will try to use self.h5_wins if no dataset is provided
+        n_comp : int, optional
+            components above this number will be discarded
 
-        Returns:
-        --------
-        clean_wins: HDF5 Dataset object containing the cleaned
-                windows
+        Returns
+        -------
+        clean_wins : HDF5 Dataset
+            Dataset containing the cleaned windows
         """
         if h5_win is None:
             if self.h5_wins is None:
@@ -427,14 +427,15 @@ class ImageWindow(object):
         """
         Reconstructs the cleaned image from the windowed dataset
 
-        Parameters:
+        Parameters
         ----------
-        h5_win: (Optional) HDF5 dataset object; The windowed image
-                to be reconstructed.
+        h5_win : HDF5 dataset , optional
+            The windowed image to be reconstructed.
 
-        Returns:
-        --------
-        h5_clean: HDF5 dataset object containing the cleaned image
+        Returns
+        -------
+        h5_clean : HDF5 dataset
+            The cleaned image
         """
         if h5_win is None:
             if self.clean_wins is None:
@@ -514,23 +515,23 @@ class ImageWindow(object):
         Rebuild the Image from the PCA results on the windows
         Optionally, only use components less than n_comp.
 
-        Parameters:
-        -----------
-        h5_win: (Optional) hdf5 Dataset, dataset containing
-                windowed image and which PCA was performed on
-        components: (Optional) integer, iterable of integers, or slice
-                Defines which components to keep
+        Parameters
+        ----------
+        h5_win : hdf5 Dataset, optional
+            dataset containing the windowed image which PCA was performed on
+        components: {int, iterable of int, slice} optional
+            Defines which components to keep
 
-                Input Types
-                integer: Components less than the input will be kept
-                length 2 iterable of integers: Integers define start and stop of component slice to retain
-                other iterable of integers or slice: Selection of component indices to retain
+            Input Types
+            integer : Components less than the input will be kept
+            length 2 iterable of integers : Integers define start and stop of component slice to retain
+            other iterable of integers or slice : Selection of component indices to retain
 
 
-        Returns:
-        --------
-        clean_wins: HDF5 Dataset object containing the cleaned
-                windows
+        Returns
+        -------
+        clean_wins : HDF5 Dataset
+            the cleaned windows
         """
 
         if h5_win is None:
@@ -637,32 +638,37 @@ class ImageWindow(object):
 
         return h5_clean
 
-
     def plot_clean_image(self, h5_clean=None, image_path=None, image_type='png',
                          save_plots=True, show_plots=False, cmap='jet'):
-        '''
+        """
         Plot the cleaned image stored in the HDF5 dataset h5_clean
-        
-        Parameters:
-        -----------
-        h5_clean: (Optional) HDF5 dataset, cleaned image to be plotted
-        image_path: (Optional) string, path to save cleaned image file
-                Default None, '_clean' will be appened to the name of the input 
-                image
-        image_type: (Optional) string, image format to save the cleaned image as
-                Default 'png', all formats recognized by matplotlib.pyplot.imsave 
-                are allowed
-        save_plots: (Optional) boolean, If true, the image will be saved to image_path
-                with the extention specified by image_type
-                Default True
-        show_plots: (Optional) boolean, if true, the image will be displayed on the screen 
-                Default False
-        cmap: (Optional) string, matplotlib colormap string designation
-        
-        Returns:
-        --------
-        clean_image: Axis_Image object, object holding the plot of the cleaned image
-        '''
+
+        Parameters
+        ----------
+        h5_clean : HDF5 dataset, optional
+            cleaned image to be plotted
+        image_path : str, optional
+            path to save cleaned image file
+            Default None, '_clean' will be appened to the name of the input image
+        image_type : str, optional
+            image format to save the cleaned image as
+            Default 'png', all formats recognized by matplotlib.pyplot.imsave
+            are allowed
+        save_plots : Boolean, pptional
+            If true, the image will be saved to image_path
+            with the extention specified by image_type
+            Default True
+        show_plots : Boolean, optional
+            If true, the image will be displayed on the screen
+            Default False
+        cmap : str, optional
+            matplotlib colormap string designation
+
+        Returns
+        -------
+        clean_image : Axis_Image
+            object holding the plot of the cleaned image
+        """
         if h5_clean is None:
             if self.h5_clean is None:
                 warn('You must clean an image before it can be plotted.')
@@ -711,25 +717,31 @@ class ImageWindow(object):
         """
         Take the normalized image and extract from it an optimal window size
 
-        Parameters:
-        -----------
-            image -- 2D numpy array holding the normalized image
-            num_peaks -- (Optional) integer number of peaks to use during least squares fit
-                    Default 2
-            do_fit -- (Optional) Logical, if True then when guessing the fit it will return the window
-                            size as determined by a leastsquares fit.  If False, the value returned will
-                            be determined by an analytic guess.
-                    Default True
-            save_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and saved to disk.  Ignored if do_fit is false.
-                    Default True
-            show_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and shown on screen.  Ignored if do_fit is false.
-                    Default False
+        Parameters
+        ----------
+            image : numpy array
+                2D array holding the normalized image
+            num_peaks : int, optional
+                number of peaks to use during least squares fit
+                Default 2
+            do_fit : Boolean, optional
+                If True then when guessing the fit it will return the window
+                size as determined by a leastsquares fit.  If False, the value returned will
+                be determined by an analytic guess.
+                Default True
+            save_plots : Boolean, optional
+                If True then a plot showing the quality of the fit will be
+                generated and saved to disk.  Ignored if do_fit is false.
+                Default True
+            show_plots : Boolean, optional
+                If True then a plot showing the quality of the fit will be
+                generated and shown on screen.  Ignored if do_fit is false.
+                Default False
 
-        Output:
+        Returns
         -------
-            window_size -- integer optimal window size in pixels
+            window_size : int
+                Optimal window size in pixels
         """
         
         print('Determining appropriate window size from image.')
@@ -865,23 +877,31 @@ class ImageWindow(object):
         """
         Generate a plot showing the quality of the least-squares fit to the peaks of the FFT of the image
 
-        Parameters:
-        -----------
-            r_vec -- 1D numpy array of unsorted radii in pixels
-            r_sort -- 1D numpy array of the sorted radii
-            fft_absimage -- 1D numpy array of the absolute value of the FFT of the normalized image
-            fft_abssort -- 1D numpy array of FFT_absimage after being sorted to match r_sort
-            guess --  1D numpy array of the gaussian guess
-            fit -- 1D numpy array of the fitted gaussian
-            save_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and saved to disk.
-                    Default True
-            show_plots -- (Optional) Logical, if True then a plot showing the quality of the fit will be
-                            generated and shown on screen.
-                    Default False
+        Parameters
+        ----------
+            r_vec : numpy array
+                1D array of unsorted radii in pixels
+            r_sort : numpy array
+                1D array of the sorted radii
+            fft_absimage : numpy array
+                1D array of the absolute value of the FFT of the normalized image
+            fft_abssort : numpy array
+                1D array of FFT_absimage after being sorted to match r_sort
+            guess :  numpy array
+                1D array of the gaussian guess
+            fit : numpy array
+                1D array of the fitted gaussian
+            save_plots : Boolean, optional
+                If True then a plot showing the quality of the fit will be
+                generated and saved to disk.
+                Default True
+            show_plots : Boolean, optional
+                If True then a plot showing the quality of the fit will be
+                generated and shown on screen.
+                Default False
 
-        Outputs:
-        --------
+        Returns
+        -------
             None
         """
         
@@ -922,17 +942,18 @@ class ImageWindow(object):
 
         Parameters
         ----------
-        components : integer, iterable of integers, slice, or None
-
-                Input Types
-                integer: Components less than the input will be kept
-                length 2 iterable of integers: Integers define start and stop of component slice to retain
-                other iterable of integers or slice: Selection of component indices to retain
+        components : {int, iterable of ints, slice, or None}
+            Input Options
+            integer: Components less than the input will be kept
+            length 2 iterable of integers: Integers define start and stop of component slice to retain
+            other iterable of integers or slice: Selection of component indices to retain
+            None: All components will be used
         Returns
         -------
         comp_slice : slice or numpy array of uints
-                Slice or array specifying which components should be kept
+            Slice or array specifying which components should be kept
         """
+
         comp_slice = slice(None)
 
         if isinstance(components, int):
@@ -949,7 +970,7 @@ class ImageWindow(object):
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components
-        else:
+        elif components is not None:
             raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
 
         return comp_slice

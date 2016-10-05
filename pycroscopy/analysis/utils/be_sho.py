@@ -8,6 +8,7 @@ Created on Mon Sep 28 11:35:57 2015
 import numpy as np
 from numpy import exp, abs, sqrt, sum, real, imag, arctan2, append
 
+
 def SHOfunc(parms, w_vec):
     """
     Generates the SHO response over the given frequency band
@@ -16,8 +17,11 @@ def SHOfunc(parms, w_vec):
     -----------
     parms : list or tuple
         SHO parae=(A,w0,Q,phi)
+    w_vec : 1D numpy array
+        Vector of frequency values
     """
     return parms[0] * exp(1j * parms[3]) * parms[1] ** 2 / (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
+
 
 def SHOestimateFit(w_vec, resp_vec, num_points=5):
     """
@@ -25,7 +29,7 @@ def SHOestimateFit(w_vec, resp_vec, num_points=5):
 
     Parameters
     ------------
-    w_vec: 1D numpy array or list
+    w_vec : 1D numpy array or list
         Vector of BE frequencies
     resp_vec : 1D complex numpy array or list
         BE response vector as a function of frequency
@@ -98,6 +102,7 @@ def SHOestimateFit(w_vec, resp_vec, num_points=5):
         
     return p0
 
+
 def SHOfastGuess(w_vec, resp_vec, qual_factor=10):
     """
     Default SHO guess from the maximum value of the response
@@ -116,37 +121,40 @@ def SHOfastGuess(w_vec, resp_vec, qual_factor=10):
     retval : 1D numpy array
         SHO fit parameters arranged as [amplitude, frequency, quality factor, phase]
     """
-    amp_vec =abs(resp_vec)
-    i_max=np.argmax(amp_vec )
-    return np.array([np.max(amp_vec ) / qual_factor, w_vec[i_max], qual_factor, np.angle(resp_vec[i_max])])
-    
+    amp_vec = abs(resp_vec)
+    i_max = np.argmax(amp_vec)
+    return np.array([np.max(amp_vec) / qual_factor, w_vec[i_max], qual_factor, np.angle(resp_vec[i_max])])
+
+
 def SHOlowerBound(w_vec):
     """
     Provides the lower bound for the SHO fitting function
+
     Parameters
-    ------------
-    w_vec: 1D numpy array or list
+    ----------
+    w_vec : 1D numpy array or list
         Vector of BE frequencies
 
     Returns
-    ---------
+    -------
     retval : tuple
         SHO fit parameters arranged as amplitude, frequency, quality factor, phase
     """
     return 0, np.min(w_vec), -1e5, -np.pi
-    
+
+
 def SHOupperBound(w_vec):
     """
     Provides the upper bound for the SHO fitting function
+
     Parameters
-    ------------
+    ----------
     w_vec: 1D numpy array or list
         Vector of BE frequencies
 
     Returns
-    ---------
+    -------
     retval : tuple
         SHO fit parameters arranged as amplitude, frequency, quality factor, phase
     """
-    return 1e5,np.max(w_vec), 1e5,np.pi
-    
+    return 1e5, np.max(w_vec), 1e5, np.pi

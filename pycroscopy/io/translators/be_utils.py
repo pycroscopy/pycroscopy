@@ -204,12 +204,14 @@ def getSpectroscopicParmLabel(expt_type):
     Returns the label for the spectroscopic parameter in the plot group. 
     
     Parameters
-    ---------
-    * expt_type -- Type of the experiment - found in the parms.txt file
+    ----------
+    expt_type : str
+        Type of the experiment - found in the parms.txt file
     
     Returns
-    ---------
-    String - label for the spectroscopic parameter axis in the plot
+    -------
+    str
+        label for the spectroscopic parameter axis in the plot
     """
     
     if expt_type in ['DC modulation mode','current mode']:

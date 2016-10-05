@@ -704,42 +704,37 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     Parameters
     -------------
     label_mat : 2D real numpy array
-                structured as [rows, cols], from KMeans clustering
+        structured as [rows, cols], from KMeans clustering
     e_vals: 3D real numpy array of eigenvalues
-            structured as [component, rows, cols]
+        structured as [component, rows, cols]
     num_comps : int
-                Number of components used to make eigenvalues
-    num_cluster: int
-                 Number of cluster used to make the label_mat
+        Number of components used to make eigenvalues
+    num_cluster : int
+        Number of cluster used to make the label_mat
     mode: str, optional
-          How should the dendrograms be created.
-          "Full" -- use all clusters when creating the dendrograms
-          "Truncated" -- stop showing clusters after 'last'
+        How should the dendrograms be created.
+        "Full" -- use all clusters when creating the dendrograms
+        "Truncated" -- stop showing clusters after 'last'
     last: int, optional - should be provided when using "Truncated"
-          How many merged clusters should be shown when using
-          "Truncated" mode
-    sort_type: str, optional
-          What type of sorting should be used when plotting the
-          dendrograms.  Options are:
-              count    Default
-                  Uses the count_sort from scipy.cluster.hierachy.dendrogram
-              distance
-                  Uses the distance_sort from scipy.cluster.hierachy.dendrogram
-    sort_mode: str or bool, optional
-          For the chosen sort_type, which mode should be used.
-          Options:
-              False    Default
-                  Does no sorting
-              'ascending' or True
-                  The child with the minimum of the chosen sort parameter is
-                  plotted first
-              'descending'
-                  The child with the maximum of the chosen sort parameter is
-                  plotted first
+        How many merged clusters should be shown when using
+        "Truncated" mode
+    sort_type: {'count', 'distance'}, optional
+        What type of sorting should be used when plotting the
+        dendrograms.  Options are:
+        count - Uses the count_sort from scipy.cluster.hierachy.dendrogram
+        distance - Uses the distance_sort from scipy.cluster.hierachy.dendrogram
+    sort_mode: {False, True, 'ascending', 'descending'}, optional
+        For the chosen sort_type, which mode should be used.
+        False - Does no sorting
+        'ascending' or True - The child with the minimum of the chosen sort
+        parameter is plotted first
+        'descending' - The child with the maximum of the chosen sort parameter is
+        plotted first
 
     Returns
     ---------
-    fig
+    fig : matplotlib.pyplot Figure object
+        Figure containing the dendrogram
     """
     if mode == 'Truncated' and not last:
         warn('Warning: Truncated dendrograms requested, but no last cluster given.  Reverting to full dendrograms.')

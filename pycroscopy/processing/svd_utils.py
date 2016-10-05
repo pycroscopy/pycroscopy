@@ -21,27 +21,21 @@ from ..io.microdata import MicroDataset, MicroDataGroup
 ###############################################################################
 
 def doSVD(h5_main, num_comps=None):
-    '''
+    """
     Does SVD on the provided dataset and writes the result. File is not closed
 
-    Parameters:
-    ---------
+    Parameters
+    ----------
     h5_main : h5py.Dataset reference
         Reference to the dataset on which SVD will be performed
     num_comps : Unsigned integer (Optional)
         Number of principal components of interest
-    max_mem : integer (Optional)
-        Maximum amount of memory, in Mb, that the code is allowed to use
 
-    * Note : If ancillary datasets are not provided, thus function will attempt
-    to find any appropriately named datasets linked to the main dataset. Linking
-    is recommended to make it easier for data agnostic visualization
-
-    Returns:
-    ----------
+    Returns
+    -------
     h5_pca : h5py.Datagroup reference
         Reference to the group containing the PCA results
-    '''
+    """
 
     if not checkIfMain(h5_main):
         warn('Dataset does not meet requirements for performing PCA.')
@@ -176,28 +170,29 @@ def doSVD(h5_main, num_comps=None):
 ###############################################################################
 
 def simplifiedKPCA(kpca, source_data):
-    '''
+    """
     Performs kernel PCA on the provided dataset and returns the familiar
     eigenvector, eigenvalue, and scree matrices.
 
     Note that the positions in the eigenvalues may need to be transposed
 
     Parameters
-    --------
+    ----------
     kpca : KernelPCA object
         configured Kernel PCA object ready to perform analysis
     source_data : 2D numpy array
         Data arranged as [iteration, features] example - [position, time]
 
     Returns
-    ---------
+    -------
     eigenvalues : 2D numpy array
         Eigenvalues in the original space arranged as [component,iteration]
     scree : 1D numpy array
         S component
     eigenvector : 2D numpy array
         Eigenvectors in the original space arranged as [component,features]
-    '''
+
+    """
     X_kpca = kpca.fit(source_data.T)
     eigenvectors = X_kpca.alphas_.T
     eigenvalues = X_kpca.fit_transform(source_data)
