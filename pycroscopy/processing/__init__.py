@@ -1,13 +1,13 @@
 
-__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'fft', 'gmode_utils', 'proc_utils']
-
 from . import fft
 from . import gmode_utils
 from . import proc_utils
+from . import svd_utils
+from .svd_utils import doSVD
 from . import decomposition
+from .decomposition import Decomposition
 from . import cluster
 from .cluster import Cluster
-from .decomposition import Decomposition
 from . import image_processing
 from .image_processing import ImageWindow
 
@@ -30,3 +30,4 @@ else:
     FeatureExtractor = FeatureExtractorParallel
     geoTransformer = geoTransformerParallel
 
+__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils']
