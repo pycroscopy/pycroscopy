@@ -277,7 +277,7 @@ def transformToTargetType(ds_real, new_dtype):
         Data of the target data type
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
-        return realToComplex(new_dtype)
+        return realToComplex(ds_real)
     elif len(new_dtype) > 1:
         return realToCompound(ds_real, new_dtype)
     else:
