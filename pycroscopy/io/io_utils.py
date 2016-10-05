@@ -11,6 +11,9 @@ import h5py
 import numpy as np
 from PyQt4 import QtGui
 
+__all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
+           'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
+           'recommendCores']
 
 def getTimeStamp():
     """

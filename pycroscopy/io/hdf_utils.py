@@ -10,6 +10,11 @@ import h5py
 from warnings import warn
 import numpy as np
 
+__all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
+           'getAuxData', 'getDataAttr', 'getH5GroupRef', 'checkIfMain', 'checkAndLinkAncillary',
+           'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
+           'findH5group']
+
 
 def getDataSet(h5Parent, dataName):
     """
