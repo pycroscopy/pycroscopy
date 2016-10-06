@@ -46,7 +46,7 @@ Module contents
 ---------------
 
 .. automodule:: pycroscopy
-    :members:
+    :members: io, analysis, processing, viz
     :undoc-members:
     :show-inheritance:
 
