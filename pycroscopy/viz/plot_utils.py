@@ -7,7 +7,7 @@ Created on Thu May 05 13:29:12 2016
 from __future__ import division # int/int = float
 
 from warnings import warn
-
+import os
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
@@ -704,42 +704,37 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     Parameters
     -------------
     label_mat : 2D real numpy array
-                structured as [rows, cols], from KMeans clustering
+        structured as [rows, cols], from KMeans clustering
     e_vals: 3D real numpy array of eigenvalues
-            structured as [component, rows, cols]
+        structured as [component, rows, cols]
     num_comps : int
-                Number of components used to make eigenvalues
-    num_cluster: int
-                 Number of cluster used to make the label_mat
+        Number of components used to make eigenvalues
+    num_cluster : int
+        Number of cluster used to make the label_mat
     mode: str, optional
-          How should the dendrograms be created.
-          "Full" -- use all clusters when creating the dendrograms
-          "Truncated" -- stop showing clusters after 'last'
+        How should the dendrograms be created.
+        "Full" -- use all clusters when creating the dendrograms
+        "Truncated" -- stop showing clusters after 'last'
     last: int, optional - should be provided when using "Truncated"
-          How many merged clusters should be shown when using
-          "Truncated" mode
-    sort_type: str, optional
-          What type of sorting should be used when plotting the
-          dendrograms.  Options are:
-              count    Default
-                  Uses the count_sort from scipy.cluster.hierachy.dendrogram
-              distance
-                  Uses the distance_sort from scipy.cluster.hierachy.dendrogram
-    sort_mode: str or bool, optional
-          For the chosen sort_type, which mode should be used.
-          Options:
-              False    Default
-                  Does no sorting
-              'ascending' or True
-                  The child with the minimum of the chosen sort parameter is
-                  plotted first
-              'descending'
-                  The child with the maximum of the chosen sort parameter is
-                  plotted first
+        How many merged clusters should be shown when using
+        "Truncated" mode
+    sort_type: {'count', 'distance'}, optional
+        What type of sorting should be used when plotting the
+        dendrograms.  Options are:
+        count - Uses the count_sort from scipy.cluster.hierachy.dendrogram
+        distance - Uses the distance_sort from scipy.cluster.hierachy.dendrogram
+    sort_mode: {False, True, 'ascending', 'descending'}, optional
+        For the chosen sort_type, which mode should be used.
+        False - Does no sorting
+        'ascending' or True - The child with the minimum of the chosen sort
+        parameter is plotted first
+        'descending' - The child with the maximum of the chosen sort parameter is
+        plotted first
 
     Returns
     ---------
-    fig
+    fig : matplotlib.pyplot Figure object
+        Figure containing the dendrogram
     """
     if mode == 'Truncated' and not last:
         warn('Warning: Truncated dendrograms requested, but no last cluster given.  Reverting to full dendrograms.')
@@ -948,3 +943,215 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
         plt.savefig(figure_path, format='png')
 
     return fig
+
+
+def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=None):
+    '''
+    Plots BE loops from up to 9 positions (evenly separated)
+
+    Parameters
+    -----------
+    dc_vec : 1D numpy array
+        X axis - DC offset / AC amplitude
+    resp_mat : real 2D numpy array
+        containing quantity such as amplitude or phase organized as
+        [position, spectroscopic index]
+    x_label : (optional) String
+        X Label for all plots
+    y_label : (optional) String
+        Y label for all plots
+    title : (optional) String
+        Main plot title
+    save_path : (Optional) String
+        Absolute path to write the figure to
+
+    Returns
+    -----------
+    None
+    '''
+    num_pos = resp_mat.shape[0]
+    if num_pos >= 9:
+        tot_plots = 9
+    elif num_pos >= 4:
+        tot_plots = 4
+    else:
+        tot_plots = 1
+    delta_pos = int(np.ceil(num_pos / tot_plots))
+
+    fig, axes = plt.subplots(nrows=int(tot_plots ** 0.5), ncols=int(tot_plots ** 0.5),
+                             figsize=(12, 12))
+    if tot_plots > 1:
+        axes_lin = axes.reshape(tot_plots)
+    else:
+        axes_lin = axes
+
+    for count, posn in enumerate(xrange(0, num_pos, delta_pos)):
+        axes_lin[count].plot(dc_vec, np.squeeze(resp_mat[posn, :]))
+        axes_lin[count].set_title('Pixel #' + str(posn))
+        axes_lin[count].set_xlabel(x_label)
+        axes_lin[count].set_ylabel(y_label)
+        axes_lin[count].axis('tight')
+        axes_lin[count].set_aspect('auto')
+
+    fig.suptitle(title)
+    fig.tight_layout()
+    if save_path:
+        fig.savefig(save_path, format='png', dpi=300)
+
+
+def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
+    '''
+    Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
+    Note: The file MUST contain SHO fit gusses at the very least
+
+    Parameters
+    ----------
+    h5_main : HDF5 Dataset
+        dataset to be plotted
+    save_plots : (Optional) Boolean
+        Whether or not to save plots to files in the same directory as the h5 file
+    show_plots : (Optional) Boolean
+        Whether or not to display the plots on the screen
+
+    Returns
+    -------
+    None
+    '''
+
+    h5_file = h5_main.file
+
+    expt_type = h5_file.attrs['data_type']
+    if expt_type not in ['BEPSData', 'BELineData']:
+        warn('Unsupported data format')
+        return
+    isBEPS = expt_type == 'BEPSData'
+
+    (folder_path, basename) = os.path.split(h5_file.filename)
+    basename, _ = os.path.splitext(basename)
+
+    sho_grp = h5_main.parent
+    chan_grp = sho_grp.parent
+
+    grp_name = '_'.join(chan_grp.name[1:].split('/'))
+    grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
+
+    try:
+        h5_pos = h5_file[h5_main.attrs['Position_Indices']]
+    except KeyError:
+        print('No Position_Indices found as attribute of {}'.format(h5_main.name))
+        print('Rows and columns will be calculated from dataset shape.')
+        num_rows = int(np.floor((np.sqrt(h5_main.shape[0]))))
+        num_cols = int(np.reshape(h5_main, [num_rows, -1, h5_main.shape[1]]).shape[1])
+    else:
+        num_rows = len(np.unique(h5_pos[:,0]))
+        num_cols = len(np.unique(h5_pos[:,1]))
+
+    try:
+        h5_spec_inds = h5_file[h5_main.attrs['Spectroscopic_Indices']]
+        h5_spec_vals = h5_file[h5_main.attrs['Spectroscopic_Values']]
+    # except KeyError:
+    #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
+    #     raise
+    except:
+        raise
+
+    # Assume that there's enough memory to load all the guesses into memory
+    amp_mat = h5_main['Amplitude [V]'] * 1000  # convert to mV ahead of time
+    freq_mat = h5_main['Frequency [Hz]'] / 1000
+    q_mat = h5_main['Quality Factor']
+    phase_mat = h5_main['Phase [rad]']
+    rsqr_mat = h5_main['R2 Criterion']
+
+    if isBEPS:
+        meas_type = chan_grp.parent.attrs['VS_mode']
+        # basically 3 kinds for now - DC/current, AC, UD - lets ignore this
+        if meas_type == 'load user defined VS Wave from file':
+            warn('Not handling custom experiments for now')
+            h5_file.close()
+            return
+
+        # Plot amplitude and phase maps at one or more UDVS steps
+
+        if meas_type == 'AC modulation mode with time reversal':
+            center = int(h5_spec_vals.shape[1] * 0.5)
+            ac_vec = h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center]
+            forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
+            plt_title = grp_name + '_Forward_Loops'
+            if save_plots:
+                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+            plotSHOLoops(ac_vec, forw_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
+            rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
+            plt_title = grp_name + '_Reverse_Loops'
+            if save_plots:
+                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+            plotSHOLoops(ac_vec, rev_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
+            plt_title = grp_name + '_Forward_Snaps'
+            if save_plots:
+                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+            plotVSsnapshots(forw_resp.reshape(num_rows, num_cols, forw_resp.shape[1]), title=plt_title,
+                            save_path=plt_path)
+            plt_title = grp_name + '_Reverse_Snaps'
+            if save_plots:
+                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+            plotVSsnapshots(rev_resp.reshape(num_rows, num_cols, rev_resp.shape[1]), title=plt_title,
+                            save_path=plt_path)
+        else:
+            # plot loops at a few locations
+            dc_vec = h5_spec_vals[h5_spec_vals.attrs['DC_Offset']]
+            if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
+
+                in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
+                in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
+                plt_title = grp_name + '_In_Field_Loops'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotSHOLoops(dc_vec, in_phase * in_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
+                             save_path=plt_path)
+                out_phase = np.squeeze(phase_mat[:, slice(1, None, 2)])
+                out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
+                plt_title = grp_name + '_Out_of_Field_Loops'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotSHOLoops(dc_vec, out_phase * out_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
+                             save_path=plt_path)
+                # print 'trying to reshape', in_phase.shape, 'into', in_phase.shape[0],',',num_rows,',',num_cols
+                plt_title = grp_name + '_In_Field_Snaps'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotVSsnapshots(in_phase.reshape(num_rows, num_cols, in_phase.shape[1]), title=plt_title,
+                                save_path=plt_path)
+                plt_title = grp_name + '_Out_of_Field_Snaps'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotVSsnapshots(out_phase.reshape(num_rows, num_cols, out_phase.shape[1]), title=plt_title,
+                                save_path=plt_path)
+            else:
+                plt_title = grp_name + '_Loops'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
+                             save_path=plt_path)
+                plt_title = grp_name + '_Snaps'
+                if save_plots:
+                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
+                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title,
+                                save_path=plt_path)
+
+    else:  # BE-Line can only visualize the amplitude and phase maps:
+        amp_mat = amp_mat.reshape(num_rows, num_cols)
+        freq_mat = freq_mat.reshape(num_rows, num_cols)
+        q_mat = q_mat.reshape(num_rows, num_cols)
+        phase_mat = phase_mat.reshape(num_rows, num_cols)
+        rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
+        if save_plots:
+            plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
+        plotSHOMaps([amp_mat * 1E+3, freq_mat, q_mat, phase_mat, rsqr_mat],
+                    ['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor',
+                     'Phase (deg)', 'R^2 Criterion'], title=grp_name, save_path=plt_path)
+
+    if show_plots:
+        plt.show()
+
+    plt.close('all')
+
+    h5_file.close()

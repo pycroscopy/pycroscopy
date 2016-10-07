@@ -143,7 +143,14 @@ class Decomposition(object):
 
         decomp_grp.attrs['num_components'] = components.shape[0]
         decomp_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        decomp_grp.attrs['decomposition_method'] = self.method_name
+        decomp_grp.attrs['decomposition_algorithm'] = self.method_name
+
+        '''
+        Get the parameters of the estimator used and write them
+        as attributes of the group
+        '''
+        for parm, val in self.estimator.get_params().iteritems():
+            decomp_grp.attrs[parm] = val
 
         hdf = ioHDF5(self.h5_main.file)
         h5_decomp_refs = hdf.writeData(decomp_grp)

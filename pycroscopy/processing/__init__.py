@@ -1,8 +1,15 @@
-import fft
-import gmode_utils
-import cluster
-import proc_utils
-import decomposition
+
+from . import fft
+from . import gmode_utils
+from . import proc_utils
+from . import svd_utils
+from .svd_utils import doSVD
+from . import decomposition
+from .decomposition import Decomposition
+from . import cluster
+from .cluster import Cluster
+from . import image_processing
+from .image_processing import ImageWindow
 
 def no_impl(*args,**kwargs):
     raise NotImplementedError("You need to install Multiprocess package (pip,github) to do a parallel Computation.\n"
@@ -22,3 +29,5 @@ except ImportError:
 else:
     FeatureExtractor = FeatureExtractorParallel
     geoTransformer = geoTransformerParallel
+
+__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils']
