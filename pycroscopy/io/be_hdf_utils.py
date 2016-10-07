@@ -5,6 +5,7 @@ Created on Tue Dec 15 11:10:37 2015
 @author: Suhas Somnath
 """
 import numpy as np
+
 from .hdf_utils import getAuxData
 
 __all__ = [
@@ -336,4 +337,32 @@ def isSimpleDataset(h5_main, isBEPS=True):
             return False   
     else:
         # BE-Line
-        return True    
+        return True
+
+
+def isReshapable(h5_main, step_start_inds=None):
+    """
+    A BE dataset is said to be reshape-able if the number of bins per steps is constant. Even if the dataset contains
+    multiple excitation waveforms (harmonics), We know that the measurement is always at the resonance peak, so the
+    frequency vector should not change.
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset object
+        Reference to the main dataset
+    step_start_inds : list or 1D array
+        Indices that correspond to the start of each BE pulse / UDVS step
+
+    Returns
+    ---------
+    reshapable : Boolean
+        Whether or not the number of bins per step are constant in this dataset
+    """
+    if step_start_inds is None:
+        h5_spec_inds = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+    # Adding the size of the main dataset as the last (virtual) step
+    step_start_inds = np.hstack((step_start_inds, h5_main.shape[1]))
+    num_bins = np.diff(step_start_inds)
+    step_types = np.unique(num_bins)
+    return len(step_types) == 1

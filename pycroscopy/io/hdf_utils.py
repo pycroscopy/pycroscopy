@@ -710,3 +710,211 @@ def linkRefAsAlias(src, trg, trg_name):
         Alias / alternate name for trg
     """
     src.attrs[trg_name] = trg.ref
+
+
+def copyRegionRefs(h5_source, h5_target):
+    """
+    Check the input dataset for plot groups, copy them if they exist
+    Also make references in the Spectroscopic Values and Indices tables
+
+    Parameters
+    ----------
+    h5_source : HDF5 Dataset
+            source dataset to copy references from
+    h5_target : HDF5 Dataset
+            target dataset the references from h5_source are copied to
+
+    Returns
+    -------
+    None
+    """
+    '''
+    Check both h5_source and h5_target to ensure that are Main
+    '''
+    if not all([checkIfMain(h5_source), checkIfMain(h5_target)]):
+        raise TypeError('Inputs to copyRegionRefs must be HDF5 Datasets.')
+
+    h5_source_inds = h5_source.file[h5_source.attrs['Spectroscopic_Indices']]
+
+    h5_spec_inds = h5_target.file[h5_target.attrs['Spectroscopic_Indices']]
+    h5_spec_vals = h5_target.file[h5_target.attrs['Spectroscopic_Values']]
+
+
+    for key in h5_source.attrs.iterkeys():
+        if '_Plot_Group' not in key:
+            continue
+
+        if h5_source_inds.shape[0] == h5_spec_inds.shape[0]:
+            '''
+            Spectroscopic dimensions are identical.
+            Do direct copy.
+            '''
+            ref_inds = simpleRefCopy(h5_source, h5_target, key)
+
+        else:
+            '''
+        Spectroscopic dimensions are different.
+        Do the dimenion reducing copy.
+            '''
+            ref_inds = reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_spec_inds, key)
+        '''
+        Create references for Spectroscopic Indices and Values
+        Set the end-point of each hyperslab in the position dimension to the number of
+        rows in the index array
+        '''
+        ref_inds[:, 1, 0][ref_inds[:, 1, 0] > h5_spec_inds.shape[0]] = h5_spec_inds.shape[0] - 1
+        spec_inds_ref = createRefFromIndices(h5_spec_inds, ref_inds)
+        h5_spec_inds.attrs[key] = spec_inds_ref
+        spec_vals_ref = createRefFromIndices(h5_spec_vals, ref_inds)
+        h5_spec_vals.attrs[key] = spec_vals_ref
+
+
+def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
+    """
+    Copies a region reference from one dataset to another taking into account that a dimension
+    has been lost from source to target
+
+    Parameter
+    ---------
+    h5_source : HDF5 Dataset
+            source dataset for region reference copy
+    h5_target : HDF5 Dataset
+            target dataset for region reference copy
+    h5_source_inds : HDF5 Dataset
+            indices of each dimension of the h5_source dataset
+    h5_target_inds : HDF5 Dataset
+            indices of each dimension of the h5_target dataset
+    key : String
+            Name of attribute in h5_source that contains
+            the Region Reference to copy
+    Return
+    ------
+    ref_inds : Nx2x2 array of unsigned integers
+            Array containing pairs of points that define
+            the corners of each hyperslab in the region
+            reference
+    """
+
+    '''
+    Determine which dimension is missing from the target
+    '''
+    lost_dim = []
+    for dim in h5_source_inds.attrs['labels']:
+        if dim not in h5_target_inds.attrs['labels']:
+            lost_dim.append(np.where(h5_source_inds.attrs['labels'] == dim)[0])
+    ref = h5_source.attrs[key]
+    ref_inds = getH5RegRefIndices(ref, h5_source, return_method='corners')
+    '''
+    Convert to proper spectroscopic dimensions
+    First is special case for a region reference that spans the entire dataset
+    '''
+    if len(ref_inds.shape) == 2 and all(ref_inds[0] == [0, 0]) and all(ref_inds[1] + 1 == h5_source.shape):
+        ref_inds[1, 1] = h5_target.shape[1] - 1
+        ref_inds = np.expand_dims(ref_inds, 0)
+    else:
+        '''
+    More common case of reference made of hyperslabs
+        '''
+        spec_ind_zeroes = np.where(h5_source_inds[lost_dim] == 0)[1]
+
+        ref_inds = ref_inds.reshape([-1, 2, 2])
+
+        for start, stop in ref_inds[:-1]:
+            start[1] = np.where(start[1] == spec_ind_zeroes)[0]
+            stop[1] = np.where(stop[1] == spec_ind_zeroes - 1)[0] - 1
+
+        ref_inds[-1, 0, 1] = np.where(ref_inds[-1, 0, 1] == spec_ind_zeroes)[0]
+        stop = np.where(ref_inds[-1, 1, 1] == spec_ind_zeroes - 1)[0]
+        if stop.size == 0:
+            stop = len(spec_ind_zeroes)
+        ref_inds[-1, 1, 1] = stop - 1
+    '''
+    Create the new reference from the indices
+    '''
+    h5_target.attrs[key] = createRefFromIndices(h5_target, ref_inds)
+
+    return ref_inds
+
+
+def simpleRefCopy(h5_source, h5_target, key):
+    """
+    Copies a region reference from one dataset to another
+    without alteration
+
+    Parameter
+    ---------
+    h5_source : HDF5 Dataset
+            source dataset for region reference copy
+    h5_target : HDF5 Dataset
+            target dataset for region reference copy
+    key : String
+            Name of attribute in h5_source that contains
+            the Region Reference to copy
+    Return
+    ------
+    ref_inds : Nx2x2 array of unsigned integers
+            Array containing pairs of points that define
+            the corners of each hyperslab in the region
+            reference
+    """
+
+    ref = h5_source.attrs[key]
+    ref_inds = getH5RegRefIndices(ref, h5_source, return_method='corners')
+    ref_inds = ref_inds.reshape([-1, 2, 2])
+    ref_inds[:, 1, 1] = h5_target.shape[1] - 1
+    target_ref = createRefFromIndices(h5_target, ref_inds)
+    h5_target.attrs[key] = target_ref
+    return ref_inds
+
+
+def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename='Spectroscopic'):
+    """
+    Creates new Spectroscopic Indices and Values datasets from the input datasets
+    and keeps the dimensions specified in not_freq
+
+    Parameters
+    ----------
+    h5_spec_inds : HDF5 Dataset
+            Spectroscopic indices dataset
+    h5_spec_vals : HDF5 Dataset
+            Spectroscopic values dataset
+    keep_dim : Numpy Array, Boolean
+            Array designating which rows of the input spectroscopic datasets to keep
+    step_starts : Numpy Array, Unsigned Integers
+            Array specifying the start of each step in the reduced datasets
+    basename : String
+            String to which '_Indices' and '_Values' will be appended to get the names
+            of the new datasets
+
+    Returns
+    -------
+    ds_inds : MicroDataset
+            Reduced Spectroscopic indices dataset
+    ds_vals : MicroDataset
+            Reduces Spectroscopic values dataset
+    """
+    '''
+    Extract all rows that we want to keep from input indices and values
+    '''
+    ind_mat = h5_spec_inds[keep_dim, :][:, step_starts]
+    val_mat = h5_spec_vals[keep_dim, :][:, step_starts]
+    '''
+    Create new MicroDatasets to hold the data
+    Name them based on basename
+    '''
+    ds_inds = MicroDataset(basename+'_Indices', ind_mat, dtype=h5_spec_inds.dtype)
+    ds_vals = MicroDataset(basename+'_Values', val_mat, dtype=h5_spec_vals.dtype)
+    # Extracting the labels from the original spectroscopic data sets
+    sho_inds_labs = h5_spec_inds.attrs['labels'][keep_dim]
+    # Creating the dimension slices for the new spectroscopic data sets
+    inds_slices = dict()
+    for row_ind, row_name in enumerate(sho_inds_labs):
+        inds_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
+
+    # Adding the labels and units to the new spectroscopic data sets
+    ds_inds.attrs['labels'] = inds_slices
+    ds_inds.attrs['units'] = h5_spec_inds.attrs['units'][keep_dim]
+    ds_vals.attrs['labels'] = inds_slices
+    ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
+
+    return ds_inds, ds_vals
