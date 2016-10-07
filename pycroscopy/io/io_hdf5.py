@@ -185,6 +185,8 @@ class ioHDF5(object):
             except:
                 raise
             for key in data.attrs.iterkeys():
+                if data.attrs[key] is None:
+                    continue
                 g.attrs[key] = data.attrs[key]
             if print_log: print('Wrote attributes to group: {} \n'.format(data.name))
             root = g.name
