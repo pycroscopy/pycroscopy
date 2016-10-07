@@ -195,13 +195,7 @@ class Model(object):
         """
 
         self.__createGuessDatasets()
-        """
-        read first chunk
-        while chunk is not empty:
-            call the actual guess function on this data
-            write the guess to the H5 dataset
-            request for next chunk
-        """
+
         processors = kwargs.get("processors", self.__maxCpus)
         gm = GuessMethods()
         if strategy["method"] in gm.methods:
@@ -210,6 +204,14 @@ class Model(object):
                 # start pool of workers
                 print('launching %i kernels...'%(processors))
                 pool = multiprocess.Pool(processors)
+                # TODO: this is where we do the following
+                """
+                read first chunk
+                while chunk is not empty:
+                call the actual guess function on this data
+                write the guess to the H5 dataset
+                request for next chunk
+                """
                 tasks = [(vector) for vector in data]
                 chunk = int(data.shape[0]/processors)
                 jobs = pool.imap(func, tasks, chunksize = chunk)
