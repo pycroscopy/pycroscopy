@@ -1,10 +1,10 @@
-pycroscopy.tests package
-========================
+pycroscopy.analysis.tests package
+=================================
 
 Submodules
 ----------
 
-.. automodule:: pycroscopy.tests.test_123
+.. automodule:: pycroscopy.analysis.tests.test_123
     :members:
     :undoc-members:
     :show-inheritance:
@@ -13,7 +13,7 @@ Submodules
 Module contents
 ---------------
 
-.. automodule:: pycroscopy.tests
+.. automodule:: pycroscopy.analysis.tests
     :members:
     :undoc-members:
     :show-inheritance:

@@ -12,18 +12,17 @@ Subpackages
 Submodules
 ----------
 
-pycroscopy.analysis.be_sho_utils module
----------------------------------------
-
-.. automodule:: pycroscopy.analysis.be_sho_utils
+.. automodule:: pycroscopy.analysis.Model
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.utils module
---------------------------------
+.. automodule:: pycroscopy.analysis.be_sho_model
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
-.. automodule:: pycroscopy.analysis.utils
+.. automodule:: pycroscopy.analysis.guess_methods
     :members:
     :undoc-members:
     :show-inheritance:

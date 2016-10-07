@@ -11,64 +11,45 @@ Subpackages
 Submodules
 ----------
 
-pycroscopy.processing.cluster module
-------------------------------------
-
 .. automodule:: pycroscopy.processing.cluster
     :members:
     :undoc-members:
     :show-inheritance:
-
-pycroscopy.processing.decomposition module
-------------------------------------------
 
 .. automodule:: pycroscopy.processing.decomposition
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.processing.feature_extraction module
------------------------------------------------
-
 .. automodule:: pycroscopy.processing.feature_extraction
     :members:
     :undoc-members:
     :show-inheritance:
-
-pycroscopy.processing.fft module
---------------------------------
 
 .. automodule:: pycroscopy.processing.fft
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.processing.geometric_transformation module
------------------------------------------------------
-
 .. automodule:: pycroscopy.processing.geometric_transformation
     :members:
     :undoc-members:
     :show-inheritance:
-
-pycroscopy.processing.gmode_utils module
-----------------------------------------
 
 .. automodule:: pycroscopy.processing.gmode_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.processing.proc_utils module
----------------------------------------
+.. automodule:: pycroscopy.processing.image_processing
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 .. automodule:: pycroscopy.processing.proc_utils
     :members:
     :undoc-members:
     :show-inheritance:
-
-pycroscopy.processing.svd_utils module
---------------------------------------
 
 .. automodule:: pycroscopy.processing.svd_utils
     :members:
