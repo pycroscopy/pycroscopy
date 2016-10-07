@@ -9,12 +9,10 @@ from __future__ import division # int/int = float
 from warnings import warn
 import os
 import h5py
+import scipy
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.cluster.hierarchy import linkage, dendrogram
-from scipy.spatial.distance import pdist
-
 from ..analysis.utils.be_loop import loopFitFunction
 
 
@@ -770,14 +768,16 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
 
 
         # Get the distrance between cluster means
-    distance_mat = pdist(centroid_mat)
+    distance_mat = scipy.spatial.distance.pdist(centroid_mat)
 
     # get hierachical pairings of clusters
-    linkage_pairing = linkage(distance_mat, 'weighted')
+    linkage_pairing = scipy.cluster.hierarchy.linkage(distance_mat, 'weighted')
     linkage_pairing[:, 3] = linkage_pairing[:, 3] / max(linkage_pairing[:, 3])
 
     fig = plt.figure()
-    dendrogram(linkage_pairing, p=last, truncate_mode=mode, count_sort=c_sort, distance_sort=d_sort, leaf_rotation=90)
+    scipy.cluster.hierarchy.dendrogram(linkage_pairing, p=last, truncate_mode=mode,
+                                       count_sort=c_sort, distance_sort=d_sort,
+                                       leaf_rotation=90)
 
     fig.axes[0].set_title('Dendrogram')
     fig.axes[0].set_xlabel('Index or (cluster size)')
