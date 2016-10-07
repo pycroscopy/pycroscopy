@@ -6,14 +6,11 @@ Created on Thu Jan 07 16:06:39 2016
 """
 
 from __future__ import division
-
 from warnings import warn
-
 import numpy as np
 from scipy.signal import find_peaks_cwt
-
 from .Model import Model
-from ..io.be_hdf_utils import isReshapable
+from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs
 from ..io.hdf_utils import getAuxData, getH5DsetRefs, \
     getH5RegRefIndices, createRefFromIndices
@@ -33,9 +30,9 @@ class BESHOmodel(Model):
             self.h5_fit = None
             self.fit_points = 5
             self.udvs_step_starts = None
-            self.is_reshapable = False
+            self.is_reshapable = True
         else:
-            warn('Provided dataset is not "Main" dataset and lacks necessary ancillary datasets!')
+            warn('Provided dataset is not "Main" dataset or lacks necessary ancillary datasets!')
 
 
     def __createGuessDatasets(self):
@@ -57,13 +54,13 @@ class BESHOmodel(Model):
         h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
         self.udvs_step_starts = np.where(h5_spec_inds[0] == 0)[0]
-        num_udvs_steps = len(self.udvs_step_starts)
+        self.num_udvs_steps = len(self.udvs_step_starts)
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
         ds_guess = MicroDataset('Guess', data=[],
-                                maxshape=(self.h5_main.shape[0], num_udvs_steps),
-                                chunking=(1, num_udvs_steps), dtype=sho32)
+                                maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
+                                chunking=(1, self.num_udvs_steps), dtype=sho32)
 
         not_freq = h5_spec_inds.attrs['labels'] != 'Frequency'
         if h5_spec_inds.shape[0] > 1:
@@ -172,10 +169,9 @@ class BESHOmodel(Model):
 
         Returns:
         --------
-        dset : n dimensional array
-            A portion of the main dataset
+        None
         """
-        pass
+        self.data = reshapeToOneStep(self.h5_main.value, self.num_udvs_steps)
 
     def __getGuessChunk(self):
         """
@@ -187,10 +183,12 @@ class BESHOmodel(Model):
 
         Returns:
         --------
-        dset : n dimensional array
-            A portion of the guess dataset
+        None
         """
-        pass
+        guess_mat = self.h5_guess['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]'][:, :]#[st_pix:en_pix, :]
+        # don't keep the R^2.
+        self.guess = reshapeToOneStep(guess_mat, self.num_udvs_steps)
+        # bear in mind that this self.guess is a compound dataset.
 
     def __setDataChunk(self, data_chunk, is_guess=False):
         """
@@ -203,7 +201,12 @@ class BESHOmodel(Model):
         is_guess : Boolean
             Flag that differentiates the guess from the fit
         """
-        pass
+
+        reorganized = reshapeToNsteps(data_chunk, self.num_udvs_steps)
+        if is_guess:
+            self.h5_guess[:, :] = reorganized
+        else:
+            self.h5_fit[:, :] = reorganized
 
     def computeGuess(self, data, strategy='Wavelet_Peaks', **kwargs):
         '''
