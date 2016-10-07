@@ -149,9 +149,16 @@ class Cluster(object):
 
         cluster_grp.attrs['num_clusters'] = num_clusters
         cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        cluster_grp.attrs['cluster_method'] = self.method_name
+        cluster_grp.attrs['cluster_algorithm'] = self.method_name
         if self.num_comps is not None:
             cluster_grp.attrs['components_used'] = self.num_comps
+
+        '''
+        Get the parameters of the estimator used and write them
+        as attributes of the group
+        '''
+        for parm, val in self.estimator.get_params().iteritems():
+            cluster_grp.attrs[parm] = val
 
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)
