@@ -281,7 +281,7 @@ def transformToTargetType(ds_real, new_dtype):
     elif len(new_dtype) > 1:
         return realToCompound(ds_real, new_dtype)
     else:
-        return new_dtype(ds_real)
+        return new_dtype.type(ds_real)
 
 
 def transformToReal(ds_main):
