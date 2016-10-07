@@ -27,7 +27,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     This function does not care about the file structure etc.
     
     Parameters
-    ---------
+    ----------
     resp_wfm : 1D numpy float array
         Raw response waveform in the time domain
     filter_parms : dictionary
@@ -42,7 +42,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC 
     
     Filter Parameters
-    -----------
+    -----------------
     noise_threshold : float 
         0<1 eg 1E-4
     comb_[Hz] : Retain harmonics of frequency 
@@ -59,7 +59,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         Number of pixels to filter simultaneously
     
     Returns
-    ---------
+    -------
     filt_data : 1D numpy float array
         Filtered signal in the time domain
     """
@@ -140,7 +140,7 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
     Filters G-mode data using specified filter parameters and writes results to file.
         
     Parameters
-    ------------
+    ----------
     hdf : Active ioHDF object
         Object that will be used for writing back to the data file
     h5_main : HDF5 dataset object
@@ -155,7 +155,7 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         Number of cores to use for processing data in parallel
         
     Returns
-    ---------------
+    -------
     HDF5 group reference containing filtered dataset
     """ 
     
@@ -163,7 +163,7 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         """
         Returns the maximum number of pixels that can be stored in memory considering the output data and the number of cores
         
-        Inputs:
+        Parameters
         ----------
         h5_raw : HDF5 Dataset reference
             Dataset containing the raw data
@@ -201,8 +201,8 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         appropriate function. Decides whether or not serial / parallel processing
         is appropriate, number of cores, number of chunks, etc.
         
-        Inputs:
-        -----------
+        Parameters
+        ----------
         raw_mat : 2D numpy array
             Raw data arranged as [repetition, points per measurement]
         parm_dict : Dictionary
@@ -210,8 +210,8 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         recom_cores : unsigned int
             Number of cores to use for processing data in parallel
         
-        Returns:
-        ---------
+        Returns
+        -------
         (noise_floors, filt_data, cond_data)
         
         noise_floors : 1D numpy array
@@ -351,7 +351,7 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     """
     Filters the provided dataset in parallel
     
-    Inputs:
+    Parameters
     ----------
     raw_data : 2D numpy array
         Raw data arranged as [repetition, points per measurement]
@@ -360,8 +360,8 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     num_cores : unsigned int
         Number of cores to use for processing data in parallel
     
-    Returns:
-    ---------
+    Returns
+    -------
     (noise_floors, filt_data, cond_data)
     
     noise_floors : 1D numpy array
@@ -419,15 +419,15 @@ def filterChunkSerial(raw_data, parm_dict):
     """
     Filters the provided dataset serially
     
-    Inputs:
+    Parameters
     ----------
     raw_data : 2D numpy array
         Raw data arranged as [repetition, points per measurement]
     parm_dict : Dictionary
         Parameters necessary for filtering
     
-    Returns:
-    ---------
+    Returns
+    -------
     (noise_floors, filt_data, cond_data)
     
     noise_floors : 1D numpy array
@@ -471,16 +471,14 @@ def unitFilter(single_parm):
     Filters a single instance of a signal. 
     This is the function that is called in parallel
     
-    Inputs:
-    --------
+    Parameters
+    ----------
     single_parm : Tuple
         Parameters and data for filtering a single data instance. 
         Constructed as (raw_data_vec, parm_dict)
     
-    Returns:
-    --------
-    (noise_floor, filt_data, cond_data)
-    
+    Returns
+    -------
     noise_floors : float
         Noise floor
     filt_data : 1D numpy array or None
@@ -522,7 +520,7 @@ def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
     """
     Returns the time domain representation of waveform(s) that are compressed in the frequency space
     
-    Inputs:
+    Parameters
     ----------
     F_condensed_mat : 1D or 2D complex numpy arrays
         Frequency domain signals arranged as [position, frequency]. 
@@ -535,13 +533,13 @@ def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
         This index array will be necessary to reverse map the condensed 
         FFT into its original form
         
-    Returns:
-    -------------
+    Returns
+    -------
     time_resp : 2D numpy array
         Time domain response arranged as [position, time]
         
-    Implemntation Note:
-    -----------
+    Implemntation Note
+    ------------------
     Memory is given higher priority here, so this function loops over the position
     instead of doing the inverse FFT on the complete data.
     """

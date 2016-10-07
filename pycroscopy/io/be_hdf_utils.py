@@ -8,6 +8,12 @@ import numpy as np
 
 from .hdf_utils import getAuxData
 
+__all__ = [
+    'maxReadPixels', 'getActiveUDVSsteps', 'getDataIndicesForUDVSstep', 'getForExcitWfm',
+    'getIndicesforPlotGroup', 'getSliceForExcWfm', 'generateTestSpectroscopicData', 'getSpecSliceForUDVSstep',
+    'isSimpleDataset', 'reshapeToNsteps', 'reshapeToOneStep'
+    ]
+
 
 def maxReadPixels(max_memory, tot_pix, bins_per_step, bytes_per_bin=4):
     """
@@ -266,7 +272,7 @@ def generateTestSpectroscopicData(num_bins=7, num_steps=3, num_pos=4):
     full_data : 2D numpy array
         Data organized as [steps x bins, positions]
     """
-    full_data = np.zeros((num_steps * num_bins, num_pos));
+    full_data = np.zeros((num_steps * num_bins, num_pos))
     for pos in xrange(num_pos):
         bin_count=0
         for step in xrange(num_steps):

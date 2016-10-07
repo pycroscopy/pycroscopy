@@ -17,9 +17,9 @@ from skimage.transform import warp, SimilarityTransform
 
 # Functions
 def euclidMatch(Matches, keypts1, keypts2, misalign):
-    ''' Function that thresholds the matches, found from a comparison of
+    """ Function that thresholds the matches, found from a comparison of
     their descriptors, by the maximum expected misalignment.
-    '''
+    """
     filteredMatches = np.array([])
     deltaX =(keypts1[Matches[:,0],:][:,0]-keypts2[Matches[:,1],:][:,0])**2
     deltaY =(keypts1[Matches[:,0],:][:,1]-keypts2[Matches[:,1],:][:,1])**2
@@ -166,7 +166,7 @@ class TranslationTransform(object):
         return self._apply_mat(coords, self.params)
 
     def inverse(self, coords):
-        ''' Apply inverse transformation.
+        """ Apply inverse transformation.
 
         Parameters
         ----------
@@ -178,7 +178,7 @@ class TranslationTransform(object):
         coords : (N, 2) array
             Transformed coordinates.
 
-        '''
+        """
         return self._apply_mat(coords, self._inv_matrix)
     def residuals(self, src, dst):
         """Determine residuals of transformed destination coordinates.
@@ -723,12 +723,12 @@ class geoTransformerParallel(object):
         return results
 
 class geoTransformerSerial(object):
-    ''' This object contains methods to perform geometric transformations on
+    """ This object contains methods to perform geometric transformations on
     a sequence of images. Some of the capabilities are:
     + Homography by feature extraction.
     + Intensity-based image registration.
     + Projection Correction.
-    '''
+    """
 
     def __init__(self):
         self.__init__
@@ -736,15 +736,15 @@ class geoTransformerSerial(object):
         self.features = []
 
     def clearData(self):
-        ''' This is a Method to clear the data from the object.
-        '''
+        """ This is a Method to clear the data from the object.
+        """
         del self.data
         self.data = []
 
     def loadData(self, dataset):
-        ''' This is a Method that loads h5 Dataset to be corrected.
+        """ This is a Method that loads h5 Dataset to be corrected.
             input: h5 dataset
-        '''
+        """
         if not isinstance(dataset, h5py.Dataset):
             warnings.warn( 'Error: Data must be an h5 Dataset object'   )
         else:
@@ -753,18 +753,18 @@ class geoTransformerSerial(object):
             self.data = self.data.reshape(-1,dim,dim)
 
     def loadFeatures(self, features):
-        ''' This is a Method that loads features to be used for homography etc ...
+        """ This is a Method that loads features to be used for homography etc ...
         input:
             features : [keypoints, descriptors].
                 These can come from FeatureExtractor.getFeatures() or elsewhere.
                 The format is :
                     keypoints = [np.ndarray([y_position, x_position])]
                     descriptors = [np.ndarray()]
-        '''
+        """
         self.features = features
 
     def matchFeatures(self, **kwargs):
-        ''' This is a Method that computes similarity between keypoints based on their
+        """ This is a Method that computes similarity between keypoints based on their
         descriptors. Currently only skimage.feature.match_descriptors is implemented.
         In the future will need to add opencv2.matchers.
         Input:
@@ -773,7 +773,7 @@ class geoTransformerSerial(object):
                     Used to filter the matches before optimizing the transformation.
         Output:
             Matches.
-        '''
+        """
         desc = self.features[-1]
         keypts = self.features[0]
         maxDis = kwargs.get('maximum_distance', np.infty)
@@ -814,7 +814,7 @@ class geoTransformerSerial(object):
 
     #TODO: Need Better Error Handling.
     def findTransformation(self, transform, matches, processes, **kwargs):
-        ''' This is a Method that finds the optimal transformation between two images
+        """ This is a Method that finds the optimal transformation between two images
         given matching features using a random sample consensus.
             Input:
                 transform: skimage.transform object
@@ -824,7 +824,7 @@ class geoTransformerSerial(object):
 
             Output:
                 Transformations.
-        '''
+        """
 
         keypts = self.features[0]
 
@@ -850,7 +850,7 @@ class geoTransformerSerial(object):
 
 
     def applyTransformation(self, transforms, **kwargs):
-        ''' This is the method that takes the list of transformation found by findTransformation
+        """ This is the method that takes the list of transformation found by findTransformation
          and applies them to the data set.
 
          Input:
@@ -867,7 +867,7 @@ class geoTransformerSerial(object):
         Output:
             Transformed images, transformations
 
-        '''
+        """
         dic = ['processors','origin','transformation']
         for key in kwargs.keys():
             if key not in dic:
@@ -954,14 +954,14 @@ class geoTransformerSerial(object):
         return transImages, chainTransforms
 
     def correlationTransformation(self, **kwargs):
-        ''' Uses Cross-correlation to find a translation between 2 images.
+        """ Uses Cross-correlation to find a translation between 2 images.
             Input:
                 Processors: int, optional
                     Number of processors to use, default = 1.
 
             Output:
                 Transformations.
-        '''
+        """
 
         processes = kwargs.get('processors', 1)
 

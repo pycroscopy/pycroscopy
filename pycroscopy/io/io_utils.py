@@ -11,6 +11,9 @@ import h5py
 import numpy as np
 from PyQt4 import QtGui
 
+__all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
+           'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
+           'recommendCores']
 
 def getTimeStamp():
     """
@@ -28,7 +31,7 @@ def getTimeStamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
-def uiGetFile(extension, caption='Select File'):
+def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     """
     Presents a File dialog used for selecting the .mat file
     and returns the absolute filepath of the selecte file\n
@@ -45,8 +48,11 @@ def uiGetFile(extension, caption='Select File'):
     file_path : String
         Absolute path of the chosen file
     """
+    app = QtGui.QApplication([])
+    path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
+    app.exit()
 
-    return QtGui.QFileDialog.getOpenFileName(caption=caption, filter=extension)
+    return str(path)
 
 
 def getAvailableMem():
@@ -271,11 +277,11 @@ def transformToTargetType(ds_real, new_dtype):
         Data of the target data type
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
-        return realToComplex(new_dtype)
+        return realToComplex(ds_real)
     elif len(new_dtype) > 1:
         return realToCompound(ds_real, new_dtype)
     else:
-        return new_dtype(ds_real)
+        return new_dtype.type(ds_real)
 
 
 def transformToReal(ds_main):

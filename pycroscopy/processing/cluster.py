@@ -101,14 +101,14 @@ class Cluster(object):
             Array of the mean response for each cluster arranged as [cluster number, response]
         """
         num_clusts = len(np.unique(labels))
-        mean_resp = np.zeros(shape=(num_clusts,self.num_comps), dtype=self.h5_main.dtype)
+        mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
         for clust_ind in xrange(num_clusts):
             # get all pixels with this label
-            targ_pos = np.where(labels == clust_ind)
-            # slice to get the responses for all these pixels
-            data_chunk = self.h5_main[targ_pos, self.data_slice[1]]
+            targ_pos = np.where(labels == clust_ind)[0]
+            # slice to get the responses for all these pixels, ensure that it's 2d
+            data_chunk = np.atleast_2d(self.h5_main[targ_pos, self.data_slice[1]])
             #transform to real from whatever type it was
-            avg_data = np.mean(self.data_transform_func(data_chunk),axis=0)
+            avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
             mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
         return mean_resp
@@ -149,9 +149,16 @@ class Cluster(object):
 
         cluster_grp.attrs['num_clusters'] = num_clusters
         cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        cluster_grp.attrs['cluster_method'] = self.method_name
+        cluster_grp.attrs['cluster_algorithm'] = self.method_name
         if self.num_comps is not None:
             cluster_grp.attrs['components_used'] = self.num_comps
+
+        '''
+        Get the parameters of the estimator used and write them
+        as attributes of the group
+        '''
+        for parm, val in self.estimator.get_params().iteritems():
+            cluster_grp.attrs[parm] = val
 
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)

@@ -6,24 +6,23 @@ Created on Tue Oct 20 17:42:41 2015
 """
 ###############################################################################
 
-import numpy as np;# for all array, data operations
-import matplotlib.pyplot as plt; # for all plots
+import numpy as np  # for all array, data operations
+import matplotlib.pyplot as plt  # for all plots
 from scipy.special import erf  
 from warnings import warn
 
-###############################################################################
 
 def getNoiseFloor(fft_data,tolerance):
     """
-    Paramters:
-    -----------
+    Paramters
+    ---------
     fft_data : 1D or 2D complex numpy array
         Signal in frequency space (ie - after FFT shifting) arranged as (channel or repetition, signal)
     tolerance : unsigned float
         Tolerance to noise. A smaller value gets rid of more noise.
         
-    Returns:
-    -----------
+    Returns
+    -------
     noise_floor : 1D real numpy array 
         One value per channel / repetition
     """
