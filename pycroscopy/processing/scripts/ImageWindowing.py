@@ -15,8 +15,14 @@ from pycroscopy.viz.plot_utils import plotScree, plotLoadingMaps, plotSpectrogra
 from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
+    '''
+    Select the image file
+    '''
     imagepath = uiGetFile(filter='Image File (*.tiff *.tif *.jpeg *.jpg *.png)', caption='Select Image File')
 
+    '''
+    Set up parameters
+    '''
     save_plots  = True
     show_plots  = False
     fit_win     = True
@@ -26,11 +32,17 @@ if __name__ == '__main__':
     plot_comps  = 9
     clean_comps = 5
 
+    '''
+    Parse the path
+    '''
     folder, filename = os.path.split(os.path.abspath(imagepath))
     basename, _ = os.path.splitext(filename)
 
     h5_path = os.path.join(folder, basename+'.h5')
 
+    '''
+    Initialize the windowing
+    '''
     iw = ImageWindow(imagepath, h5_path, reset=True)
 
     h5_file = iw.h5_file
@@ -38,7 +50,7 @@ if __name__ == '__main__':
     h5_raw = iw.h5_raw
     
     '''
-    Do the normalization
+    Normalize the raw image
     '''
     t0 = time()
     h5_norm = iw.normalize_image(h5_raw)
