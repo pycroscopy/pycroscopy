@@ -9,6 +9,7 @@ Created on Tue Nov  3 21:14:25 2015
 import h5py
 from warnings import warn
 import numpy as np
+from .microdata import MicroDataset
 
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'getDataAttr', 'getH5GroupRef', 'checkIfMain', 'checkAndLinkAncillary',

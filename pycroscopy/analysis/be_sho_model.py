@@ -6,33 +6,34 @@ Created on Thu Jan 07 16:06:39 2016
 """
 
 from __future__ import division
+
 from warnings import warn
+
 import numpy as np
 from scipy.signal import find_peaks_cwt
-from .Model import Model
+
+from .model import Model
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
-from ..io.hdf_utils import buildReducedSpec, copyRegionRefs
+from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs
 from ..io.hdf_utils import getAuxData, getH5DsetRefs, \
     getH5RegRefIndices, createRefFromIndices
-from ..io.io_hdf5 import ioHDF5
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 sho32 = np.dtype([('Amplitude [V]',np.float32),('Frequency [Hz]',np.float32),('Quality Factor',np.float32),('Phase [rad]',np.float32),('R2 Criterion',np.float32)])
 
 class BESHOmodel(Model):
+    """
+    Analysis of Band excitation spectra with harmonic oscillator responses.
+    """
 
-    def __init__(self, h5_main):
-
-        if super.__isLegal(h5_main,variables=['Frequency']):
-            self.hdf = ioHDF5(self.h5_main.file)
-            self.h5_main = h5_main
-            self.h5_guess = None
-            self.h5_fit = None
-            self.fit_points = 5
-            self.udvs_step_starts = None
-            self.is_reshapable = True
-        else:
-            warn('Provided dataset is not "Main" dataset or lacks necessary ancillary datasets!')
+    def __init__(self, h5_main, variables=['Frequency']):
+        super(BESHOmodel,self).__init__(h5_main, variables)
+        self.h5_main = h5_main
+        self.h5_guess = None
+        self.h5_fit = None
+        self.fit_points = 5
+        self.step_start_inds = None
+        self.is_reshapable = True
 
 
     def __createGuessDatasets(self):
@@ -53,8 +54,8 @@ class BESHOmodel(Model):
         h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
-        self.udvs_step_starts = np.where(h5_spec_inds[0] == 0)[0]
-        self.num_udvs_steps = len(self.udvs_step_starts)
+        self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+        self.num_udvs_steps = len(self.step_start_inds)
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
@@ -66,7 +67,7 @@ class BESHOmodel(Model):
         if h5_spec_inds.shape[0] > 1:
             # More than just the frequency dimension, eg Vdc etc - makes it a BEPS dataset
 
-            ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.udvs_step_starts)
+            ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
         else:
             '''
@@ -98,11 +99,10 @@ class BESHOmodel(Model):
                                     h5_sho_grp_refs)[0]
 
         # Reference linking before actual fitting
-        self.hdf.linkRefs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
-
+        linkRefs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
         # Linking ancillary position datasets:
         aux_dsets = getAuxData(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
-        self.hdf.linkRefs(self.h5_guess, aux_dsets)
+        linkRefs(self.h5_guess, aux_dsets)
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
@@ -208,7 +208,7 @@ class BESHOmodel(Model):
         else:
             self.h5_fit[:, :] = reorganized
 
-    def computeGuess(self, data, strategy='Wavelet_Peaks', **kwargs):
+    def computeGuess(self,strategy='Wavelet_Peaks', **kwargs):
         '''
 
         Parameters
@@ -221,8 +221,10 @@ class BESHOmodel(Model):
         -------
 
         '''
-
-        super.computeGuess()
+        self.__createGuessDatasets()
+        self.__getDataChunk()
+        ampl = np.abs()
+        super(BESHOmodel,self).computeGuess(self.data,strategy=strategy)
 
 
 

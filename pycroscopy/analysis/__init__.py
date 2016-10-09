@@ -1,9 +1,8 @@
-from . import Model
-from .Model import Model
-from . import guess_methods
-from .guess_methods import GuessMethods
 from . import utils
+from .be_sho_model import BESHOmodel
+from .guess_methods import GuessMethods
+from .model import Model
 from .utils import *
 
-__all__ = ['Model', 'GuessMethods', 'utils']
+__all__ = ['GuessMethods', 'Model', 'BESHOmodel','utils']
 __all__ += utils.__all__
