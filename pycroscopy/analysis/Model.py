@@ -1,6 +1,6 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Numan Laanait
+@author: Numan Laanait, Suhas Somnath
 """
 
 from warnings import warn
@@ -11,7 +11,10 @@ import psutil
 from .guess_methods import GuessMethods
 from ..io.hdf_utils import checkIfMain,getAuxData
 from ..io.io_hdf5 import ioHDF5
-
+try:
+    import multiprocess as mp
+except ImportError:
+    raise ImportError()
 
 class Model(object):
     """
@@ -54,7 +57,6 @@ class Model(object):
         # Determining the max size of the data that can be put into memory
         self.__setMemoryAndCPUs()
 
-
     def __setMemoryAndCPUs(self):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
@@ -72,9 +74,6 @@ class Model(object):
         self.__maxMemoryMB = psutil.virtual_memory().available/1e6 # in MB
 
         self.__maxDataChunk = self.__maxMemoryMB/self.__maxCpus
-
-
-
 
     def __isLegal(self, h5_main, variables):
         """
@@ -109,7 +108,6 @@ class Model(object):
             legal = False
 
         return legal
-
 
     def __getDataChunk(self):
         """
@@ -174,7 +172,7 @@ class Model(object):
         self.guess = None # replace with actual h5 dataset
         pass
 
-    def computeGuess(self, strategy='Wavelet_Peaks', options={"peaks_widths": np.array([10,200])}, **kwargs):
+    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
         """
 
         Parameters
@@ -200,13 +198,19 @@ class Model(object):
 
         processors = kwargs.get("processors", self.__maxCpus)
         gm = GuessMethods()
-        if strategy["method"] in gm.methods:
-            func = gm.__getattribute__(strategy["method"])(strategy["kwargs"])
+        if strategy in gm.methods:
+            func = gm.__getattribute__(strategy)(**options)
             if self.__parallel:
                 # start pool of workers
-                print('launching %i kernels...'%(processors))
-                pool = multiprocess.Pool(processors)
+                print('Computing Guesses In parallel ...')
+                print('launching %i kernels...'%processors)
+                # import multiprocess
+                pool = mp.Pool(processors)
                 # TODO: this is where we do the following
+                """
+                Begin while()
+                """
+
                 """
                 read first chunk
                 while chunk is not empty:
@@ -214,26 +218,28 @@ class Model(object):
                 write the guess to the H5 dataset
                 request for next chunk
                 """
-                tasks = [(vector) for vector in self.data]
-                chunk = int(self.data.shape[0]/processors)
+                # TODO: Remove the dummy slice from self.data
+                slic = slice(0,400,None)
+                tasks = [vector for vector in self.data[slic]]
+                chunk = int(self.data[slic].shape[0]/processors)
                 jobs = pool.imap(func, tasks, chunksize = chunk)
 
-                # get peaks from different processes
-                results =[]
-                print('Extracting Peaks...')
-                try:
-                    for j in jobs:
-                        results.append(j)
-                except ValueError:
-                    print('Error: ValueError something about 2d- image. Probably one of the ORB input params are wrong')
-                self.guesses = results
+                # get Results from different processes
+                print('Extracting Guesses...')
+                results = np.array([j for j in jobs])
+                """
+                End while()
+                """
+                print('closing %i kernels...'%processors)
+                pool.close()
             else:
-                results = np.array([ func(vec) for vec in vector])
+                print("Computing Guesses In Serial ...")
+                slic = slice(0,400,None)
+                results = np.array([ func(vector) for vector in self.data[slic]])
+
+            return results
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' %(strategy))
-
-
-
 
     def __createFitDataset(self):
         """

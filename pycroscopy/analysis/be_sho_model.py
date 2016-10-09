@@ -1,8 +1,6 @@
-# -*- coding: utf-8 -*-
 """
-Created on Thu Jan 07 16:06:39 2016
-
-@author: Suhas Somnath, Chris R. Smith, Numan Laanait
+Created on 7/17/16 10:08 AM
+@author: Numan Laanait, Suhas Somnath
 """
 
 from __future__ import division
@@ -208,7 +206,7 @@ class BESHOmodel(Model):
         else:
             self.h5_fit[:, :] = reorganized
 
-    def computeGuess(self,strategy='Wavelet_Peaks', **kwargs):
+    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
         '''
 
         Parameters
@@ -223,8 +221,23 @@ class BESHOmodel(Model):
         '''
         self.__createGuessDatasets()
         self.__getDataChunk()
-        ampl = np.abs()
-        super(BESHOmodel,self).computeGuess(self.data,strategy=strategy)
+        self.guess = super(BESHOmodel,self).computeGuess(strategy=strategy,**options)
+
+        # Extracting and reshaping the remaining parameters for SHO
+        # TODO: Remove the dummy slice from self.data
+        slic = slice(0,400,None)
+        if strategy in ['wavelet_peaks','relative_maximum','absolute_maximum']:
+            peaks = np.array([g[0] for g in self.guess])
+            ampl = np.abs(self.data[slic])
+            res_ampl = np.array([ampl[ind,peaks[ind]] for ind in np.arange(peaks.size)])
+            # res_freq = getfrequencyarray [peaks]
+            q_factor = np.ones_like(self.guess)*10
+            phase = np.angle(self.data[slic])
+            res_phase = np.array([phase[ind,peaks[ind]] for ind in np.arange(peaks.size)])
+
+        return res_ampl, q_factor, res_phase
+
+
 
 
 
