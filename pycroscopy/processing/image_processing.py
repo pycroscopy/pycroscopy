@@ -13,7 +13,7 @@ from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group
 from ..io.translators.utils import getPositionSlicing, makePositionMat
 from ..io.microdata import MicroDataGroup, MicroDataset
 
@@ -551,12 +551,12 @@ class ImageWindow(object):
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            pca_name = win_name + '-PCA_000'
-            win_pca = h5_win.parent[pca_name]
+            svd_name = findH5group(h5_win, 'SVD')[-1]
+            win_svd = h5_win.parent[svd_name]
 
-            h5_S = win_pca['S']
-            h5_U = win_pca['U']
-            h5_V = win_pca['V']
+            h5_S = win_svd['S']
+            h5_U = win_svd['U']
+            h5_V = win_svd['V']
 
         except KeyError:
             warnstring = 'PCA Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
@@ -621,7 +621,7 @@ class ImageWindow(object):
 
         clean_image[np.isnan(clean_image)] = 0
 
-        clean_grp = MicroDataGroup('Cleaned_Image', win_pca.name[1:])
+        clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
 
         ds_clean = MicroDataset('Cleaned_Image', clean_image.flatten())
 
