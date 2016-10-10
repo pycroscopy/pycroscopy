@@ -51,8 +51,9 @@ class Cluster(object):
         self.method_name = method_name
 
         if num_comps is None:
-            num_comps = self.h5_main.shape[1]
-        self.num_comps = num_comps
+            self.num_comps = self.h5_main.shape[1]
+        else:
+            self.num_comps = np.min([num_comps, self.h5_main.shape[1]])
         self.data_slice = (slice(None), slice(0, num_comps))
 
         # figure out the operation that needs need to be performed to convert to real scalar
