@@ -551,8 +551,7 @@ class ImageWindow(object):
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            svd_name = findH5group(h5_win, 'SVD')[-1]
-            win_svd = h5_win.parent[svd_name]
+            win_svd = findH5group(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
