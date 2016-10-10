@@ -546,23 +546,38 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorb
 
 ###############################################################################
 
-def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.jet,
-                      spec_label='Spectroscopic Value', resp_label='Response'):
+def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
+                       spec_label='Spectroscopic Value', resp_label='Response'):
     """
-    label_mat : 2D int numpy array or h5py.Dataset object
-                Spatial map of cluster labels structured as [rows, cols]
-    cluster_centroids : 2D array or h5py.Dataset object
-                Centroids arranged as [cluster number, features]
-    spec_val : (Optional) 1D float numpy array or h5py.Dataset object
-                X axis to plot the centroids against
-                If no value is specified, the data is plotted against the index
-    cmap : plt.cm object (Optional. Default = plt.cm.jet)
-                Colormap to use for the labels map and the centroid.
-                Advised to pick a map where the centroid plots show clearly
-    spec_label : String (Optional. Default = 'Spectroscopic Value')
-                Label to use for X axis on cluster centroid plot
-    resp_label : String (Optional. Default = 'Response')
-                Label to use for Y axis on cluster centroid plot
+    Plot the cluster labels and mean response for each cluster
+
+    Parameters
+    ----------
+    label_mat : 2D ndarray or h5py.Dataset of ints
+        Spatial map of cluster labels structured as [rows, cols]
+    mean_response : 2D ndarray or h5py.Dataset
+        Mean value of each cluster over all samples 
+        arranged as [cluster number, features]
+    spec_val :  1D ndarray or h5py.Dataset of floats, optional
+        X axis to plot the centroids against
+        If no value is specified, the data is plotted against the index
+    cmap : plt.cm object or str, optional
+        Colormap to use for the labels map and the centroid.
+        Advised to pick a map where the centroid plots show clearly.
+        Default = matplotlib.pyplot.cm.jet
+    spec_label : str, optional
+        Label to use for X axis on cluster centroid plot
+        Default = 'Spectroscopic Value'
+    resp_label : str, optional
+        Label to use for Y axis on cluster centroid plot
+         Default = 'Response'
+
+    Returns
+    -------
+    fig : Figure
+        Figure containing the plots
+    axes : 1D array_like of axes objects
+        Axes of the individual plots within `fig`
     """
 
     def __plotCentroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
@@ -572,32 +587,41 @@ def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.j
                     label='Cluster {}'.format(clust),
                     color=cmap(int(255 * clust / (num_clusters - 1))))
         ax.set_ylabel(y_label)
-        ax.legend(loc='best')
+        # ax.legend(loc='best')
         if title:
             ax.set_title(title)
             ax.set_xlabel(spec_label)
 
     if type(spec_val) == type(None):
-        spec_val = np.arange(cluster_centroids.shape[1])
+        spec_val = np.arange(mean_response.shape[1])
 
-    if cluster_centroids.dtype in [np.complex64, np.complex128, np.complex]:
+    if mean_response.dtype in [np.complex64, np.complex128, np.complex]:
         fig = plt.figure(figsize=(12, 8))
-        ax_map = plt.subplot2grid((2, 10), (0, 0), colspan=6, rowspan=2)
-        ax_amp = plt.subplot2grid((2, 10), (0, 6), colspan=4)
-        ax_phase = plt.subplot2grid((2, 10), (1, 6), colspan=4)
+        ax_map = plt.subplot2grid((2, 12), (0, 0), colspan=6, rowspan=2)
+        ax_amp = plt.subplot2grid((2, 12), (0, 6), colspan=4)
+        ax_phase = plt.subplot2grid((2, 12), (1, 6), colspan=4)
         axes = [ax_map, ax_amp, ax_phase]
 
-        __plotCentroids(np.abs(cluster_centroids), ax_amp, spec_val, spec_label,
-                        resp_label + ' - Amplitude', cmap, 'Centroids')
-        __plotCentroids(np.angle(cluster_centroids), ax_phase, spec_val, spec_label,
+        __plotCentroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
+                        resp_label + ' - Amplitude', cmap, 'Mean Response')
+        __plotCentroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
                         resp_label + ' - Phase', cmap)
-    else:
-        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-        ax_map = axes[0]
-        __plotCentroids(cluster_centroids, axes[1], spec_val, spec_label,
-                        resp_label, cmap, 'Centroids')
+        plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
-    num_clusters = cluster_centroids.shape[0]
+
+    else:
+        fig = plt.figure(figsize=(12, 8))
+        ax_map = plt.subplot2grid((1, 12), (0, 0), colspan=6)
+        ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
+        axes = [ax_map, ax_resp]
+        __plotCentroids(mean_response, ax_resp, spec_val, spec_label,
+                        resp_label, cmap, 'Mean Response')
+        plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
+
+    fleg = plt.figlegend(plot_handles, plot_labels, loc='center right',
+                         borderaxespad=0.0)
+    num_clusters = mean_response.shape[0]
+
     if isinstance(label_mat, h5py.Dataset):
         """
         Reshape label_mat based on linked positions
@@ -610,14 +634,12 @@ def plotKMeansResults(label_mat, cluster_centroids, spec_val=None, cmap=plt.cm.j
     divider = make_axes_locatable(ax_map)
     cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
     fig.colorbar(im, cax=cax)
-    # pcol0 = ax_map.pcolor(label_mat, cmap=cmap)
-    # fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
     ax_map.set_title('Cluster Label Map')
 
     fig.tight_layout()
-    fig.suptitle('k-Means result')
-    fig.canvas.set_window_title('k-Means result')
+    fig.suptitle('Cluster results')
+    fig.canvas.set_window_title('Cluster results')
 
     return fig, axes
 
