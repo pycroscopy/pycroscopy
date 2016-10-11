@@ -39,9 +39,8 @@ class Decomposition(object):
             kwargs['n_components'] = n_components
 
         allowed_methods = ['FactorAnalysis','FastICA','IncrementalPCA',
-                             'MiniBatchSparsePCA','NMF','PCA',
-                             'ProjectedGradientNMF','RandomizedPCA',
-                             'SparsePCA','TruncatedSVD']
+                           'MiniBatchSparsePCA','NMF','PCA','RandomizedPCA',
+                           'SparsePCA','TruncatedSVD']
 
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
@@ -84,7 +83,10 @@ class Decomposition(object):
         None
         """
         # perform fit on the real dataset
-        self.estimator.fit(self.data_transform_func(self.h5_main))
+        if self.method_name=='NMF':
+            self.estimator.fit(self.data_transform_func(np.abs(self.h5_main)))
+        else:
+            self.estimator.fit(self.data_transform_func(self.h5_main))
         
     def _transform(self, data=None):
         """
@@ -101,7 +103,10 @@ class Decomposition(object):
         None
         """
         if data is None:
-            self.projection = self.estimator.transform(self.data_transform_func(self.h5_main))
+            if self.method_name=='NMF':
+                self.projection = self.estimator.transform(self.data_transform_func(np.abs(self.h5_main)))
+            else:
+                self.projection = self.estimator.transform(self.data_transform_func(self.h5_main))
         else:
             if isinstance(data, h5py.Dataset):
                 if data.shape[0] == self.h5_main.shape[0]:

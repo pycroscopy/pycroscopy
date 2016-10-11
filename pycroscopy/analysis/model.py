@@ -1,25 +1,28 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Numan Laanait
+@author: Numan Laanait, Suhas Somnath
 """
 
 from warnings import warn
 
 import numpy as np
 import psutil
-import scipy.optimize
 
 from .guess_methods import GuessMethods
 from ..io.hdf_utils import checkIfMain,getAuxData
-
+from ..io.io_hdf5 import ioHDF5
+try:
+    import multiprocess as mp
+except ImportError:
+    raise ImportError()
 
 class Model(object):
     """
-    Class encapsulating the typical routines performed during model-dependent analysis of data.
+    Encapsulates the typical routines performed during model-dependent analysis of data.
     This abstract class should be extended to cover different types of imaging modalities.
 
     """
-    def __init__(self, h5_main):
+    def __init__(self, h5_main, variables=['Frequency']):
         """
         For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
         after testing the basic components.
@@ -29,15 +32,17 @@ class Model(object):
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
-
+        variables : list(string), Default ['Frequency']
+            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
         Returns:
         -------
         None
         """
         # Checking if dataset is "Main"
-        if self.__isLegal(h5_main):
-            self.dataset = h5_main
-            self.__has_guess_dataset = False
+        if self.__isLegal(h5_main, variables):
+            self.h5_main = h5_main
+            self.hdf = ioHDF5(self.h5_main.file)
+
         else:
             warn('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
             return
@@ -51,7 +56,6 @@ class Model(object):
 
         # Determining the max size of the data that can be put into memory
         self.__setMemoryAndCPUs()
-
 
     def __setMemoryAndCPUs(self):
         """
@@ -71,10 +75,7 @@ class Model(object):
 
         self.__maxDataChunk = self.__maxMemoryMB/self.__maxCpus
 
-
-
-
-    def __isLegal(self, h5_main, variables=['Frequency', 'Vdc']):
+    def __isLegal(self, h5_main, variables):
         """
         Checks whether or not the provided object can be analyzed by this Model class.
         Classes that extend this class will do additional checks to ensure that the supplied dataset is legal.
@@ -98,8 +99,8 @@ class Model(object):
 
         # Check if variables are in the attributes of spectroscopic indices
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        assert isinstance(h5_spec_vals, list)
-        cond_B =  set(variables).issubset(set(h5_spec_vals))
+        # assert isinstance(h5_spec_vals, list)
+        cond_B =  set(variables).issubset(set(h5_spec_vals.attrs.keys()))
 
         if cond_A and cond_B:
             legal = True
@@ -107,7 +108,6 @@ class Model(object):
             legal = False
 
         return legal
-
 
     def __getDataChunk(self):
         """
@@ -122,7 +122,7 @@ class Model(object):
         dset : n dimensional array
             A portion of the main dataset
         """
-        pass
+        self.data = None
 
     def __getGuessChunk(self):
         """
@@ -137,7 +137,7 @@ class Model(object):
         dset : n dimensional array
             A portion of the guess dataset
         """
-        pass
+        self.guess = None
 
     def __setDataChunk(self, data_chunk, is_guess=False):
         """
@@ -172,7 +172,7 @@ class Model(object):
         self.guess = None # replace with actual h5 dataset
         pass
 
-    def computeGuess(self,data, strategy='Wavelet_Peaks', options={"peaks_widths": np.array([10,200])}, **kwargs):
+    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
         """
 
         Parameters
@@ -198,13 +198,19 @@ class Model(object):
 
         processors = kwargs.get("processors", self.__maxCpus)
         gm = GuessMethods()
-        if strategy["method"] in gm.methods:
-            func = gm.__getattribute__(strategy["method"])(strategy["kwargs"])
+        if strategy in gm.methods:
+            func = gm.__getattribute__(strategy)(**options)
             if self.__parallel:
                 # start pool of workers
-                print('launching %i kernels...'%(processors))
-                pool = multiprocess.Pool(processors)
+                print('Computing Guesses In parallel ...')
+                print('launching %i kernels...'%processors)
+                # import multiprocess
+                pool = mp.Pool(processors)
                 # TODO: this is where we do the following
+                """
+                Begin while()
+                """
+
                 """
                 read first chunk
                 while chunk is not empty:
@@ -212,26 +218,28 @@ class Model(object):
                 write the guess to the H5 dataset
                 request for next chunk
                 """
-                tasks = [(vector) for vector in data]
-                chunk = int(data.shape[0]/processors)
+                # TODO: Remove the dummy slice from self.data
+                slic = slice(0,400,None)
+                tasks = [vector for vector in self.data[slic]]
+                chunk = int(self.data[slic].shape[0]/processors)
                 jobs = pool.imap(func, tasks, chunksize = chunk)
 
-                # get peaks from different processes
-                results =[]
-                print('Extracting Peaks...')
-                try:
-                    for j in jobs:
-                        results.append(j)
-                except ValueError:
-                    print('Error: ValueError something about 2d- image. Probably one of the ORB input params are wrong')
-                self.guesses = results
+                # get Results from different processes
+                print('Extracting Guesses...')
+                results = np.array([j for j in jobs])
+                """
+                End while()
+                """
+                print('closing %i kernels...'%processors)
+                pool.close()
             else:
-                results = np.array([ func(vec) for vec in vector])
+                print("Computing Guesses In Serial ...")
+                slic = slice(0,400,None)
+                results = np.array([ func(vector) for vector in self.data[slic]])
+
+            return results
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' %(strategy))
-
-
-
 
     def __createFitDataset(self):
         """
@@ -276,7 +284,7 @@ class Model(object):
         """
         pass
 
-    def __optimize(self, func, data, guess, solver, parallel='multiprocess', processors=min(1,abs(mp.cpu_count()-2)), **kwargs):
+    # def __optimize(self, func, data, guess, solver, parallel='multiprocess', processors=min(1,abs(mp.cpu_count()-2)), **kwargs):
         """
         Parameters:
         -----
@@ -301,28 +309,28 @@ class Model(object):
         Results of the optimization.
 
         """
-        try:
-            self.solver = scipy.optimize.__dict__[solver]
-        except KeyError:
-            warn('Solver %s does not exist!' %(solver))
-
-        def _callSolver(data, guessChunk):
-            results = self.solver.__call__(func,guessChunk,**kwargs)
-            return results
-
-        if parallel=='multiprocess':
-            # start pool of workers
-            print('launching %i kernels...'%(processors))
-            pool = mp.Pool(processors)
-            # Divvy up the tasks and run them
-            tasks = [(dataChunk,guessChunk) for (dataChunk,guessChunk) in zip(data,guess)]
-            chunk = int(data.shape[0]/processors)
-            jobs = pool.imap(_callSolver, tasks, chunksize = chunk)
-            # Collect the results
-            results =[]
-            print('Extracting Peaks...')
-            try:
-                for j in jobs:
-                    results.append(j)
-            except ValueError:
-                warn('It appears that one of the jobs failed.')
+        # try:
+        #     self.solver = scipy.optimize.__dict__[solver]
+        # except KeyError:
+        #     warn('Solver %s does not exist!' %(solver))
+        #
+        # def _callSolver(data, guessChunk):
+        #     results = self.solver.__call__(func,guessChunk,**kwargs)
+        #     return results
+        #
+        # if parallel=='multiprocess':
+        #     # start pool of workers
+        #     print('launching %i kernels...'%(processors))
+        #     pool = mp.Pool(processors)
+        #     # Divvy up the tasks and run them
+        #     tasks = [(dataChunk,guessChunk) for (dataChunk,guessChunk) in zip(data,guess)]
+        #     chunk = int(data.shape[0]/processors)
+        #     jobs = pool.imap(_callSolver, tasks, chunksize = chunk)
+        #     # Collect the results
+        #     results =[]
+        #     print('Extracting Peaks...')
+        #     try:
+        #         for j in jobs:
+        #             results.append(j)
+        #     except ValueError:
+        #         warn('It appears that one of the jobs failed.')

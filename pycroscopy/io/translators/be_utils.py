@@ -1220,6 +1220,7 @@ class BEHistogram():
         m_groups = [data.parent for data in h5_main]
         print('{} Measurement groups found.'.format(len(m_groups)))
 
+        
         for im, group in enumerate(m_groups):
 
             p_groups = []
@@ -1488,9 +1489,14 @@ class BEHistogram():
 """
 
 
-#         Estimate maximum number of pixels to read at once
+        """
+        Estimate maximum number of pixels to read at once
+        """
         max_pixels = maxReadPixels(self.max_mem,self.N_pixels, self.num_udvs_steps, bytes_per_bin=h5_main.dtype.itemsize*self.N_y_bins*self.N_freqs)
 
+        """
+        Divide the pixels into chunks that will fit in memory
+        """
         pix_chunks = np.append(np.arange(0,self.N_pixels,max_pixels,dtype=np.int),self.N_pixels)
 
         """

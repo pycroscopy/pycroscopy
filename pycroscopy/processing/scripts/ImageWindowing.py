@@ -96,7 +96,7 @@ if __name__ == '__main__':
     fig201, axes201 = plotSpectrograms(np.reshape(h5_V[:plot_comps,:],[-1,num_x,num_x]), num_comps=plot_comps, title='Eigenvectors')
     fig201.savefig(os.path.join(folder,pca_name+'_PCA_Eigenvectors.png'), format='png', dpi=300)
     plt.close(fig201)
-    del fig201,axes201
+    del fig201, axes201
 
     '''
     Build a cleaned image from the cleaned windows

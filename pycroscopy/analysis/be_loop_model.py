@@ -12,17 +12,15 @@ Pending changes and bug fixes:
 """
 
 from __future__ import division
+
 from warnings import warn
+
 import numpy as np
-from .Model import Model
-from ..io.hdf_utils import buildReducedSpec, copyRegionRefs
-from ..io.hdf_utils import getAuxData, getH5DsetRefs, \
-    getH5RegRefIndices, createRefFromIndices
+
+from .model import Model
+from ..io.hdf_utils import getH5DsetRefs, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from ..io.microdata import MicroDataset, MicroDataGroup
-from .utils.be_loop import generateGuess, fitLoop, loopFitFunction
-from ..io.hdf_utils import checkIfMain, getDataSet, findH5group, getH5DsetRefs, getAuxData
-from ..io.io_hdf5 import ioHDF5
 
 crit32 = np.dtype([('AIC_loop', np.float32),
                    ('BIC_loop', np.float32),
