@@ -21,7 +21,8 @@ import mock
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.misc', 'scipy.special', 'PyQt4', 'h5py',
-                'mpl_toolkits.axes_grid1']
+                'mpl_toolkits.axes_grid1', 'scipy.optimize',
+                'scipy.spatial']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 # -- General configuration ------------------------------------------------
