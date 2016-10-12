@@ -24,6 +24,7 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
                 'scipy.spatial', 'scipy.signal', 'scipy.weave',
                 'scipy.io.matlab', 'sklearn', 'sklearn.utils',
+                'sklearn.cluster', 'sklearn.decomposition',
                 'sklearn.utils.extmath']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
