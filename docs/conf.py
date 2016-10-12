@@ -23,7 +23,8 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'scipy.misc', 'scipy.special', 'PyQt4', 'h5py',
                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
                 'scipy.spatial', 'scipy.signal', 'scipy.weave',
-                'scipy.io.matlab', 'sklearn', 'sklearn.utils.extmath']
+                'scipy.io.matlab', 'sklearn', 'sklearn.utils',
+                'sklearn.utils.extmath']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 # -- General configuration ------------------------------------------------
