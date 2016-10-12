@@ -12,7 +12,7 @@ Subpackages
 Submodules
 ----------
 
-.. automodule:: pycroscopy.analysis.Model
+.. automodule:: pycroscopy.analysis.be_loop_model
     :members:
     :undoc-members:
     :show-inheritance:
@@ -23,6 +23,11 @@ Submodules
     :show-inheritance:
 
 .. automodule:: pycroscopy.analysis.guess_methods
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. automodule:: pycroscopy.analysis.model
     :members:
     :undoc-members:
     :show-inheritance:
