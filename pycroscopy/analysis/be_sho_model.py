@@ -233,7 +233,7 @@ class BESHOmodel(Model):
         super(BESHOmodel, self)._setResults(is_guess)
 
     def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
-        '''
+        """
 
         Parameters
         ----------
@@ -244,7 +244,7 @@ class BESHOmodel(Model):
         Returns
         -------
 
-        '''
+        """
         super(BESHOmodel, self).computeGuess(strategy=strategy, **options)
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
