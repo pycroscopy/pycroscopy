@@ -157,7 +157,7 @@ class ImageWindow(object):
 
         immin = np.min(image)
         immax = np.max(image)
-        image = (image-immin)/(immax-immin)
+        image = np.float32(image-immin)/(immax-immin)
         
         norm_group = MicroDataGroup('Raw_Image-Normalized', h5_grp.name[1:])
         ds_norm_image = MicroDataset('Normalized_Image', image, dtype=np.float32)
