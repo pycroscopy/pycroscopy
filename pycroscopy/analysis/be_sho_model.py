@@ -232,7 +232,7 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
+    def computeGuess(self, strategy='wavelet_peaks', options={'peak_widths': np.array([50, 150]), 'peak_step':20}, **kwargs):
         '''
 
         Parameters
@@ -245,7 +245,7 @@ class BESHOmodel(Model):
         -------
 
         '''
-        super(BESHOmodel, self).computeGuess(strategy=strategy, **options)
+        super(BESHOmodel, self).computeGuess(strategy=strategy, options=options)
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
         """
@@ -264,11 +264,13 @@ class BESHOmodel(Model):
             # peak_inds = np.array([pixel[0] for pixel in results])
             peak_inds = np.zeros(shape=(len(results)), dtype=np.uint32)
             for pix_ind, pixel in enumerate(results):
-                try:
+                if len(pixel) == 1:  # majority of cases - one peak found
                     peak_inds[pix_ind] = pixel[0]
-                except IndexError:
-                    pass  # don't bother if it was empty. it will be set to 0 anyway
-
+                elif len(pixel) == 0:  # no peak found
+                    peak_inds[pix_ind] = int(0.5*self.data.shape[1])  # set to center of band
+                else:  # more than one peak found
+                    dist = np.abs(np.array(pixel) - int(0.5*self.data.shape[1]))
+                    peak_inds[pix_ind] = pixel[np.argmin(dist)]  # set to peak closest to center of band
             if verbose: print('Peak positions of shape {}'.format(peak_inds.shape))
             # First get the value (from the raw data) at these positions:
             comp_vals = np.array(
@@ -278,7 +280,7 @@ class BESHOmodel(Model):
             sho_vec['Phase [rad]'] = np.angle(comp_vals)  # Phase in radians
             sho_vec['Frequency [Hz]'] = self.freq_vec[peak_inds]  # Frequency
             sho_vec['Quality Factor'] = np.ones_like(results) * 10  # Quality factor
-
+            # Add something here for the R^2
         return sho_vec
 
 

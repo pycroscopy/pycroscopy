@@ -1096,7 +1096,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
 
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
-            ac_vec = h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center]
+            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center])
             forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
             plt_title = grp_name + '_Forward_Loops'
             if save_plots:
@@ -1119,7 +1119,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
                             save_path=plt_path)
         else:
             # plot loops at a few locations
-            dc_vec = h5_spec_vals[h5_spec_vals.attrs['DC_Offset']]
+            dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
             if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
 
                 in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
