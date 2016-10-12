@@ -24,13 +24,13 @@ class Mock(MagicMock):
     def __getattr__(cls, name):
             return Mock()
 
-# MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
-#                 'scipy.misc', 'scipy.special', 'PyQt4', 'h5py',
-#                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
-#                 'scipy.spatial', 'scipy.signal', 'scipy.weave',
-#                 'scipy.io.matlab', 'sklearn']
-MOCK_MODULES = ['numpy', 'scipy', 'matplotlib',  'PyQt4', 'h5py',
-                'mpl_toolkits.axes_grid1', 'sklearn']
+MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
+                'scipy.misc', 'scipy.special', 'PyQt4', 'h5py',
+                'mpl_toolkits.axes_grid1', 'scipy.optimize',
+                'scipy.spatial', 'scipy.signal', 'scipy.weave',
+                'scipy.io.matlab', 'sklearn']
+# MOCK_MODULES = ['numpy', 'scipy', 'matplotlib',  'PyQt4', 'h5py',
+#                 'mpl_toolkits.axes_grid1', 'sklearn']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 # -- General configuration ------------------------------------------------
 
