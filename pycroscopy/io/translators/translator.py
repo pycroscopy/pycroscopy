@@ -9,6 +9,7 @@ from __future__ import division
 import abc
 import numpy as np
 from ..io_utils import getAvailableMem
+from ..hdf_utils import linkRefAsAlias
 from .utils import makePositionMat, getPositionSlicing
 from ..microdata import MicroDataset
 
@@ -140,7 +141,7 @@ class Translator(object):
         is specified.
         """
 
-    @abc.abstractmethod
+    @staticmethod
     def _linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals):
         """
         Links the object references to the four position and spectrosocpic datasets as
@@ -160,8 +161,7 @@ class Translator(object):
         Dataset that will be linked with the name 'Spectroscopic_Values'
 
         """
-
-        h5_main.attrs['Position_Indices'] = h5_pos_inds.ref
-        h5_main.attrs['Position_Values'] = h5_pos_vals.ref
-        h5_main.attrs['Spectroscopic_Indices'] = h5_spec_inds.ref
-        h5_main.attrs['Spectroscopic_Values'] = h5_spec_vals.ref
+        linkRefAsAlias(h5_main, 'Position_Indices', h5_pos_inds)
+        linkRefAsAlias(h5_main, 'Position_Values', h5_pos_vals)
+        linkRefAsAlias(h5_main, 'Spectroscopic_Indices', h5_spec_inds)
+        linkRefAsAlias(h5_main, 'Spectroscopic_Values', h5_spec_vals)
