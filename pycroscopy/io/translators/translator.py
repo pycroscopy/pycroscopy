@@ -46,6 +46,7 @@ class Translator(object):
     @abc.abstractmethod
     def _parsefilepath(self, input_path):
         """
+        Abstract method
         Parses the `input_path` to determine the `basename` and find
         the appropriate data files
 
@@ -159,9 +160,15 @@ class Translator(object):
         Dataset that will be linked with the name 'Spectroscopic_Indices'
         h5_spec_vals : h5py.Dataset
         Dataset that will be linked with the name 'Spectroscopic_Values'
-
         """
         linkRefAsAlias(h5_main, 'Position_Indices', h5_pos_inds)
         linkRefAsAlias(h5_main, 'Position_Values', h5_pos_vals)
         linkRefAsAlias(h5_main, 'Spectroscopic_Indices', h5_spec_inds)
         linkRefAsAlias(h5_main, 'Spectroscopic_Values', h5_spec_vals)
+
+    @abc.abstractmethod
+    def _read_data(self):
+        """
+        Abstract method
+        Reads the data into the hdf5 datasets.
+        """
