@@ -91,6 +91,37 @@ def rainbowPlot(ax, ao_vec, ai_vec, num_steps=32):
     fig.colorbar(CS3)"""
 
 
+def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
+    """
+    Plots a 2d map with a tight z axis, with or without color bars.
+    Note that the direction of the y axis is flipped if the color bar is required
+
+    Parameters
+    ----------
+    axis : matplotlib.pyplot.axis object
+        Axis to plot this map onto
+    data : 2D real numpy array
+        Data to be plotted
+    stdevs : unsigned int (Optional. Default = 2)
+        Number of standard deviations to consider for plotting
+    show_colorbar : Boolean (Optional. Default = True)
+        Whether or not to show the color bar
+    Returns
+    -------
+    """
+    data_mean = np.mean(data)
+    data_std = np.std(data)
+    if show_colorbar:
+        pcol0 = axis.pcolor(data,
+                            vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
+        axis.figure.colorbar(pcol0, ax=axis)
+        axis.axis('tight')
+    else:
+        axis.imshow(data, interpolation='none',
+                    vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
+    axis.set_aspect('auto')
+
+
 ###############################################################################
 
 def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
@@ -492,7 +523,7 @@ def plotScree(S, title='Scree'):
 
 ###############################################################################
 
-def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorbar=True):
+def plotLoadingMaps(loadings, num_comps=4, stdevs=2, show_colorbar=True, **kwargs):
     """
     Plots the provided loading maps
 
@@ -521,22 +552,8 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, colormap='jet', show_colorb
     fig202.canvas.set_window_title("Loading Maps")
 
     for index in xrange(num_comps):
-        cur_map = loadings[:, :, index]
-        amp_mean = np.mean(cur_map)
-        amp_std = np.std(cur_map)
-        if show_colorbar:
-            pcol0 = axes202.flat[index].pcolor(cur_map, vmin=amp_mean - stdevs * amp_std,
-                                               vmax=amp_mean + stdevs * amp_std)
-            fig202.colorbar(pcol0, ax=axes202.flat[index])
-            axes202.flat[index].axis('tight')
-        else:
-            axes202.flat[index].imshow(cur_map, cmap=colormap,
-                                       interpolation='none',
-                                       vmin=amp_mean - stdevs * amp_std,
-                                       vmax=amp_mean + stdevs * amp_std)
-
+        plot_map(axes202.flat[index], loadings[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
         axes202.flat[index].set_title('Loading %d' % (index + 1))
-        axes202.flat[index].set_aspect('auto')
     fig202.tight_layout()
 
     return fig202, axes202
