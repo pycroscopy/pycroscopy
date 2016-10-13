@@ -39,54 +39,61 @@ class PtychographyTranslator(Translator):
                 
         # Get the list of all files with the .tif extension and the number of files in the list
 
-        file_list, num_files = self._parsefilepath(image_path, '.tif')
-          
+        file_list = self._parsefilepath(image_path, '.tif')
+
+        num_files = len(file_list)
+
         # Open the hdf5 thisfile and delete any contents
         try:
             hdf = ioHDF5(h5_path)
             hdf.clear()
         except:
             raise
-                
+
+        self.hdf = hdf
+
         # Set up the basic parameters associated with this set of images
         
-        (usize,vsize),data_type = self._getimagesize(os.path.join(image_path, file_list[0]))
+        (usize, vsize), data_type = self._getimagesize(os.path.join(image_path, file_list[0]))
         num_pixels = usize*vsize
         
         scan_size = np.int(np.sqrt(num_files))
         num_files = scan_size**2
         
-        mean_ronch = np.zeros(num_pixels, dtype=np.float32)
-        
-        h5_main, h5_mean_spec, h5_ronch = self._setupH5(num_files, hdf, usize,
+        h5_main, h5_mean_spec, h5_ronch = self._setupH5(num_files, usize,
                                                         vsize, np.float32,
                                                         num_pixels,
                                                         scan_size)
 
-        for ifile, thisfile in enumerate(file_list[:num_files]):
+        self._read_data(file_list[:num_files], h5_main, h5_mean_spec, h5_ronch, image_path, num_pixels)
 
-            selected = (ifile+1) % round(num_files/16) == 0
+        return h5_main
+
+    def _read_data(self, file_list, h5_main, h5_mean_spec, h5_ronch, image_path, num_pixels):
+
+        mean_ronch = np.zeros(num_pixels, dtype=np.float32)
+
+        num_files = len(file_list)
+
+        for ifile, thisfile in enumerate(file_list):
+
+            selected = (ifile + 1) % round(num_files / 16) == 0
             if selected:
-                print('Processing file...{}% - reading: {}'.format(round(100*ifile/num_files), thisfile))
-            
+                print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
+
             image = imread(os.path.join(image_path, thisfile))
             image = image.reshape(num_pixels)
             h5_main[ifile, :] = image
-            
-            h5_mean_spec[ifile] = np.mean(image)
-            
-            mean_ronch += image
-            
-            hdf.flush()
-        
-        # print('{}, {}'.format(np.max(mean_ronch), np.min(mean_ronch)))
-        
-        h5_ronch[:] = mean_ronch/num_files
-        
-        hdf.flush()
 
-        return h5_main
-        
+            h5_mean_spec[ifile] = np.mean(image)
+
+            mean_ronch += image
+
+            self.hdf.flush()
+
+        h5_ronch[:] = mean_ronch / num_files
+        self.hdf.flush()
+
     @staticmethod
     def _parsefilepath(path, ftype='all'):
         """
@@ -112,21 +119,20 @@ class PtychographyTranslator(Translator):
         # If no file type specified, return full list
         if ftype == 'all':
             numfiles = len(file_list)
-            return file_list, numfiles
+            return file_list
 
         # Remove files of type other than the request ftype from the list
         new_file_list = []
         for this_thing in file_list:
-            split = os.path.splitext(this_thing)
-            if len(split) < 2:
+            if not os.path.isfile(os.path.join(path, this_thing)):
                 continue
+
+            split = os.path.splitext(this_thing)
             ext = split[1]
             if ext == ftype:
-                new_file_list.append(this_thing)
+                new_file_list.append(os.path.join(path,this_thing))
 
-        numfiles = len(new_file_list)
-        
-        return new_file_list, numfiles
+        return new_file_list
 
     @staticmethod
     def _getimagesize(image):
@@ -173,19 +179,17 @@ class PtychographyTranslator(Translator):
     
         return ds_spec_ind, ds_spec_vals
     
-    # @staticmethod
-    # def __buildposition(num_files, scan_size):
-    #     pos_mat = makePositionMat([scan_size, scan_size])
-    #     pos_slices = getPositionSlicing(['X', 'Y'], num_files)
-    #     ds_pos_ind = MicroDataset('Position_Indices', pos_mat, dtype=np.uint32)
-    #     ds_pos_ind.attrs['labels'] = pos_slices
-    #     ds_pos_val = MicroDataset('Position_Values', pos_mat)
-    #     ds_pos_val.attrs['labels'] = pos_slices
-    #     ds_pos_val.attrs['units'] = ['pixel', 'pixel']
-    #
-    #     return ds_pos_ind, ds_pos_val
+    def _setupH5(self, num_files, usize, vsize, data_type, num_pixels, scan_size):
+        """
 
-    def _setupH5(self, num_files, hdf, usize, vsize, data_type, num_pixels, scan_size):
+        :param num_files:
+        :param usize:
+        :param vsize:
+        :param data_type:
+        :param num_pixels:
+        :param scan_size:
+        :return:
+        """
         main_parms = generateDummyMainParms()
         main_parms['num_images'] = num_files
         main_parms['datatype'] = 'ptychography'
@@ -220,7 +224,7 @@ class PtychographyTranslator(Translator):
         # print('Writing following tree to this file:')
         # meas_grp.showTree()
 
-        h5_refs = hdf.writeData(meas_grp)
+        h5_refs = self.hdf.writeData(meas_grp)
         h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
         h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
         h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
@@ -230,8 +234,8 @@ class PtychographyTranslator(Translator):
                         'Spectroscopic_Values']
 
         self._linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
-        
-        hdf.flush()
+
+        self.hdf.flush()
         
         return h5_main, h5_mean_spec, h5_ronch
 
