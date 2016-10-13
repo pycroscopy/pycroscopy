@@ -232,8 +232,8 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def computeGuess(self, strategy='wavelet_peaks', options={'peak_widths': np.array([50, 150]), 'peak_step':20}, **kwargs):
-        '''
+    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
+        """
 
         Parameters
         ----------
@@ -244,8 +244,8 @@ class BESHOmodel(Model):
         Returns
         -------
 
-        '''
-        super(BESHOmodel, self).computeGuess(strategy=strategy, options=options)
+        """
+        super(BESHOmodel, self).computeGuess(strategy=strategy, **options)
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
         """
