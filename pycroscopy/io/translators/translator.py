@@ -51,7 +51,8 @@ class Translator(object):
         """
         pass
 
-    def _buildpositiondatasets(self, dimensions, steps=None, initial_values=None, labels=None,
+    @staticmethod
+    def _buildpositiondatasets(dimensions, steps=None, initial_values=None, labels=None,
                                units=None):
         """
         Builds the MicroDatasets for the position indices and values
@@ -139,7 +140,8 @@ class Translator(object):
         is specified.
         """
 
-    def _linkformain(self, h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals):
+    @abc.abstractmethod
+    def _linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals):
         """
         Links the object references to the four position and spectrosocpic datasets as
         attributes of `h5_main`
@@ -159,3 +161,7 @@ class Translator(object):
 
         """
 
+        h5_main.attrs['Position_Indices'] = h5_pos_inds.ref
+        h5_main.attrs['Position_Values'] = h5_pos_vals.ref
+        h5_main.attrs['Spectroscopic_Indices'] = h5_spec_inds.ref
+        h5_main.attrs['Spectroscopic_Values'] = h5_spec_vals.ref
