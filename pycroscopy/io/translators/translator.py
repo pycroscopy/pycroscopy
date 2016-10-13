@@ -161,10 +161,10 @@ class Translator(object):
         h5_spec_vals : h5py.Dataset
         Dataset that will be linked with the name 'Spectroscopic_Values'
         """
-        linkRefAsAlias(h5_main, 'Position_Indices', h5_pos_inds)
-        linkRefAsAlias(h5_main, 'Position_Values', h5_pos_vals)
-        linkRefAsAlias(h5_main, 'Spectroscopic_Indices', h5_spec_inds)
-        linkRefAsAlias(h5_main, 'Spectroscopic_Values', h5_spec_vals)
+        linkRefAsAlias(h5_main, h5_pos_inds, 'Position_Indices')
+        linkRefAsAlias(h5_main, h5_pos_vals, 'Position_Values')
+        linkRefAsAlias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
+        linkRefAsAlias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
 
     @abc.abstractmethod
     def _read_data(self):
