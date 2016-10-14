@@ -133,51 +133,6 @@ class ImageWindow(object):
         self.h5_wins = None
         self.h5_clean = None
 
-
-    def normalize_image(self, h5_raw=None):
-        """
-        Normalize the image and save the result to the h5 file
-
-        Parameters
-        ----------
-        h5_raw : HDF5 Dataset, optional
-            Raw image to be normalized, will use self.h5_raw if not provided
-
-        Returns
-        -------
-        h5_norm : HDF5 dataset
-            normalized image
-        """
-        if h5_raw is None:
-            h5_raw = self.h5_raw
-        h5_grp = h5_raw.parent
-        image = h5_raw[()]
-        
-        print('Normalizing the Raw image.')
-
-        immin = np.min(image)
-        immax = np.max(image)
-        image = np.float32(image-immin)/(immax-immin)
-        
-        norm_group = MicroDataGroup('Raw_Image-Normalized', h5_grp.name[1:])
-        ds_norm_image = MicroDataset('Normalized_Image', image, dtype=np.float32)
-        
-        norm_group.addChildren([ds_norm_image])
-        
-        norm_refs = self.hdf.writeData(norm_group)
-        
-        h5_norm = getH5DsetRefs(['Normalized_Image'], norm_refs)[0]
-
-        '''
-        Copy attributes from raw to norm
-        '''
-        copyAttributes(self.h5_raw, h5_norm, skip_refs=False)
-
-        self.h5_norm = h5_norm
-
-        return h5_norm
-
-
     def do_windowing(self, h5_main=None, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
                      *args, **kwargs):
         """
@@ -186,7 +141,7 @@ class ImageWindow(object):
         Parameters
         ----------
             h5_main : HDF5 dataset, optional
-                normalized image
+                image to be windowed
             win_x : int, optional
                 size of the window, in pixels, in the horizontal direction
                 Default None, a guess will be made based on the FFT of the image
@@ -206,11 +161,7 @@ class ImageWindow(object):
                 Dataset containing the flattened windows
         """
         if h5_main is None:
-            if self.h5_norm is None:
-                self.normalize_image()
-            h5_main = self.h5_norm
-        else:
-            self.h5_norm = h5_main
+            h5_main = self.h5_main
 
         parent = h5_main.parent
 
@@ -276,12 +227,19 @@ class ImageWindow(object):
         ds_pix_inds = MicroDataset('Spectroscopic_Indices',data=win_pix_mat, dtype= np.int32)
         ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype = np.float32)
         ds_pix_vals = MicroDataset('Spectroscopic_Values',data=win_pix_mat, dtype= np.float32)
-        
+
+        '''
+        Calculate the chunk size
+        '''
+        chunk_mem_size = 10240
+        bytes_per_chunk = win_pix*h5_main.dtype.itemsize
+        num_chunks = int(max(1, min(n_wins, np.rint(chunk_mem_size/bytes_per_chunk))))
+
         ds_windows = MicroDataset('Image_Windows',
                                   data=[],
-                                  maxshape=[n_wins,win_pix],
-                                  dtype=np.float32,
-                                  chunking=(1,win_pix),
+                                  maxshape=[n_wins, win_pix],
+                                  dtype=h5_main.dtype,
+                                  chunking=(num_chunks, win_pix),
                                   compression='gzip')
         
         basename = h5_main.name.split('/')[-1]
@@ -315,7 +273,7 @@ class ImageWindow(object):
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x,x+win_x),slice(y,y+win_y)] for x,y in win_pos_mat]
+        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in win_pos_mat]
         
         '''
         Read each slice and write it to the dataset
@@ -323,7 +281,7 @@ class ImageWindow(object):
         for islice, this_slice in enumerate(win_slices):
             selected = islice % np.rint(n_wins/10) == 0
             if selected:
-                per_done = np.rint(100*(islice)/(n_wins))
+                per_done = np.rint(100*islice/n_wins)
                 print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
                                                                                (this_slice[0].start,
                                                                                 this_slice[1].start),
@@ -719,7 +677,7 @@ class ImageWindow(object):
         Parameters
         ----------
             image : numpy array
-                2D array holding the normalized image
+                2D array holding the image
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
@@ -744,7 +702,13 @@ class ImageWindow(object):
         """
         
         print('Determining appropriate window size from image.')
-        
+        '''
+        Normalize the image
+        '''
+        immin = np.min(image)
+        immax = np.max(image)
+        image = np.float32(image - immin) / (immax - immin)
+
         '''
         Perform an fft on the normalize image 
         '''
