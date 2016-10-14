@@ -226,7 +226,7 @@ class ImageWindow(object):
         ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
         ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
         ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
-        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtyp=np.float32)
+        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
 
         '''
         Calculate the chunk size
