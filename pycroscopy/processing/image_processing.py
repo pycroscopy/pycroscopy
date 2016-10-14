@@ -205,8 +205,8 @@ class ImageWindow(object):
         '''
         im_x, im_y = image.shape
 
-        x_steps = np.arange(0,im_x-win_x, win_step_x, dtype=np.uint32)
-        y_steps = np.arange(0,im_y-win_y, win_step_y, dtype=np.uint32)
+        x_steps = np.arange(0, im_x-win_x+1, win_step_x, dtype=np.uint32)
+        y_steps = np.arange(0, im_y-win_y+1, win_step_y, dtype=np.uint32)
         
         nx = len(x_steps)
         ny = len(y_steps)
@@ -215,18 +215,18 @@ class ImageWindow(object):
         
         win_pix = win_x*win_y
         
-        win_pos_mat = np.array([np.tile(x_steps,ny),
-                                np.repeat(y_steps,nx)]).T
+        win_pos_mat = np.array([np.tile(x_steps, ny),
+                                np.repeat(y_steps, nx)]).T
         
         win_pix_mat = makePositionMat([win_x, win_y])
 
         '''
         Set up the HDF5 Group and Datasets for the windowed data
         '''
-        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype = np.int32)
-        ds_pix_inds = MicroDataset('Spectroscopic_Indices',data=win_pix_mat, dtype= np.int32)
-        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype = np.float32)
-        ds_pix_vals = MicroDataset('Spectroscopic_Values',data=win_pix_mat, dtype= np.float32)
+        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
+        ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
+        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
+        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtyp=np.float32)
 
         '''
         Calculate the chunk size
@@ -351,12 +351,13 @@ class ImageWindow(object):
         grp_name = win_name+'-Cleaned_Windows_'
         clean_grp = MicroDataGroup(grp_name, win_pca.name[1:])     
         
-        ds_wins = MicroDataset('Cleaned_Windows',data=[],dtype=h5_win.dtype,chunking=h5_win.chunks,maxshape=h5_win.shape)
-        for key,val in h5_win.attrs.iteritems():
+        ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
+                               chunking=h5_win.chunks, maxshape=h5_win.shape)
+        for key, val in h5_win.attrs.iteritems():
             ds_wins.attrs[key] = val
         
         clean_grp.addChildren([ds_wins])
-        for key,val in h5_win.parent.attrs.iteritems():
+        for key, val in h5_win.parent.attrs.iteritems():
             clean_grp.attrs[key] = val
 
         clean_grp.attrs['retained_comps'] = n_comp
@@ -366,15 +367,15 @@ class ImageWindow(object):
         '''
         Generate a cleaned set of windows
         '''
-        if win_pca.attrs['pca_method']=='sklearn-incremental':
+        if win_pca.attrs['pca_method'] == 'sklearn-incremental':
             batch_size = win_pca.attrs['batch_size']
-            V = np.dot(np.diag(S),V)
-            batches = gen_batches(U.shape[0],batch_size)
+            V = np.dot(np.diag(S), V)
+            batches = gen_batches(U.shape[0], batch_size)
             for batch in batches:
-                new_wins[batch,:] = np.dot(U[batch,:], V)
+                new_wins[batch, :] = np.dot(U[batch, :], V)
         else:
-            new_wins[:,:] = np.dot(U,np.dot(np.diag(S),V))
-        del U,S,V
+            new_wins[:, :] = np.dot(U, np.dot(np.diag(S), V))
+        del U, S, V
         
         self.clean_wins = new_wins
         
@@ -415,8 +416,8 @@ class ImageWindow(object):
         '''
         Calculate the steps taken to create original windows
         '''
-        x_steps = np.arange(0, im_x-win_x, win_step_x)
-        y_steps = np.arange(0, im_y-win_y, win_step_y)
+        x_steps = np.arange(0, im_x-win_x+1, win_step_x)
+        y_steps = np.arange(0, im_y-win_y+1, win_step_y)
         
         '''
         Initialize arrays to hold summed windows and counts for each position
