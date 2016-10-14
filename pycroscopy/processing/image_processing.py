@@ -96,7 +96,7 @@ class ImageWindow(object):
             chan_grp = MicroDataGroup('Channel_')
             meas_grp.addChildren([chan_grp])
 
-            ds_rawimage = MicroDataset('Raw_Data', image.flatten(), dtype=np.float32)
+            ds_rawimage = MicroDataset('Raw_Data', image.flatten())
 
             '''
         Build Spectroscopic and Position datasets for the image
