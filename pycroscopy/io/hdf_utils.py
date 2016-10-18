@@ -129,8 +129,8 @@ def getH5DsetRefs(ds_names, h5_refs):
         Corresponding references
     """
     aux_dset = []
-    for dset in h5_refs:
-        for ds_name in ds_names:
+    for ds_name in ds_names:
+        for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
                 aux_dset.append(dset)
     return aux_dset
@@ -694,7 +694,8 @@ def linkRefs(src, trg):
     """
     for itm in trg:
         src.attrs[itm.name.split('/')[-1]] = itm.ref
-        
+
+
 def linkRefAsAlias(src, trg, trg_name):
     """
     Creates Dataset attributes that contain references to other Dataset Objects.
@@ -703,9 +704,9 @@ def linkRefAsAlias(src, trg, trg_name):
 
     Parameters
     ------------
-    src : reference to h5.object
+    src : h5py.Dataset
         Reference to the the object to which attributes will be added
-    trg : reference to h5.object
+    trg : h5py.Dataset
         object whose reference that can be accessed from src.attrs
     trg_name : String
         Alias / alternate name for trg
