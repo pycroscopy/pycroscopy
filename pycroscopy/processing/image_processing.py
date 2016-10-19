@@ -7,13 +7,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from warnings import warn
-from scipy.misc import imread
+from skimage.data import imread
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks
 from ..io.translators.utils import getPositionSlicing, makePositionMat
 from ..io.microdata import MicroDataGroup, MicroDataset
 
@@ -46,7 +46,7 @@ class ImageWindow(object):
         if not os.path.exists(os.path.abspath(image_path)):
             raise ValueError('Specified image does not exist.')
         else:
-            self.image_path = image_path
+            self.image_path = os.path.abspath(image_path)
         
         self.hdf = ioHDF5(os.path.abspath(h5_path))
         
@@ -71,25 +71,9 @@ class ImageWindow(object):
         Read the original image and build the file tree
             '''
             try:
-                image = imread(os.path.abspath(self.image_path))
+                image = imread(self.image_path, as_grey=True)
             except:
                 raise
-            '''
-        Convert the image to greyscale
-            '''
-            if len(np.shape(image)) == 3:
-                '''
-        If an alpha channel exists, multiply values by alpha
-                '''
-                if np.shape(image)[2] == 4:
-                    for ic in xrange(3):
-                        image[:, :, ic] == np.multiply(image[:, :, ic], image[:, :, -1])
-                '''
-        Take the mean of all color values if present
-                '''
-                image = np.mean(image, axis=2, dtype=np.float32)
-            else:
-                image = image
 
             meas_grp = MicroDataGroup('Measurement_')
             
@@ -231,15 +215,12 @@ class ImageWindow(object):
         '''
         Calculate the chunk size
         '''
-        chunk_mem_size = 10240
-        bytes_per_chunk = win_pix*h5_main.dtype.itemsize
-        num_chunks = int(max(1, min(n_wins, np.rint(chunk_mem_size/bytes_per_chunk))))
-
+        win_chunks = calc_chunks([n_wins, win_pix], h5_main.dtype.itemsize, unit_chunks=[1, win_pix])
         ds_windows = MicroDataset('Image_Windows',
                                   data=[],
                                   maxshape=[n_wins, win_pix],
                                   dtype=h5_main.dtype,
-                                  chunking=(num_chunks, win_pix),
+                                  chunking=win_chunks,
                                   compression='gzip')
         
         basename = h5_main.name.split('/')[-1]
