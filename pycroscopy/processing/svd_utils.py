@@ -12,7 +12,7 @@ import numpy as np
 from sklearn.utils.extmath import randomized_svd
 
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, \
-    getH5RegRefIndices, createRefFromIndices, checkIfMain
+    getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -82,24 +82,27 @@ def doSVD(h5_main, num_comps=None):
     ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
     del S
 
-    ds_U = MicroDataset('U', data=np.float32(U), chunking=(1, num_comps))
+    u_chunks = calc_chunks(U.shape, np.float32(0).itemsize, unit_chunks=[1, num_comps])
+    ds_U = MicroDataset('U', data=np.float32(U), chunking=u_chunks)
     del U
 
     if is_complex:
         # Put the real and imaginary sections together to make complex V
         V = V[:, :int(0.5 * V.shape[1])] + 1j * V[:, int(0.5 * V.shape[1]):]
-        ds_V = MicroDataset('V', data=np.complex64(V), chunking=(num_comps, 1))
+        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        ds_V = MicroDataset('V', data=np.complex64(V), chunking=v_chunks)
     elif is_compound:
         V2 = np.empty([V.shape[0], h5_main.shape[1]], dtype=h5_main.dtype)
         for iname, name in enumerate(h5_main.dtype.names):
             istart = iname * V2.shape[1]
             iend = (iname + 1) * V2.shape[1]
             V2[name] = V[:, istart:iend]
-
-        ds_V = MicroDataset('V', data=V2, chunking=(num_comps, 1))
+        v_chunks = calc_chunks(V2.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        ds_V = MicroDataset('V', data=V2, chunking=v_chunks)
         del V2
     else:
-        ds_V = MicroDataset('V', data=np.float32(V), chunking=(num_comps, 1))
+        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        ds_V = MicroDataset('V', data=np.float32(V), chunking=v_chunks)
     del V
 
     '''
