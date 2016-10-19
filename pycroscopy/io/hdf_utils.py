@@ -920,3 +920,78 @@ def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename
     ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
 
     return ds_inds, ds_vals
+
+
+def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
+    """
+    Calculate the chunk size for the HDF5 dataset based on the dimensions and the
+    maximum chunk size in memory
+
+    Parameters
+    ----------
+    dimensions : array_like of int
+        Shape of the data to be chunked
+    data_size : int
+        Size of an entry in the data in bytes
+    unit_chunks : array_like of int, optional
+        Unit size of the chunking in each dimension.  Must be the same size as
+        the shape of `ds_main`.  Default None, `unit_chunks` is set to 1 in all
+        dimensions
+    max_chunk_mem : int, optional
+        Maximum size of the chunk in memory in bytes.  Default 10240b or 10Mb
+
+    Returns
+    -------
+    chunking : tuple of int
+        Calculated maximum size of a chunk in each dimension that is as close to the
+        requested `max_chunk_mem` as posible while having steps based on the input
+        `unit_chunks`.
+    """
+    '''
+    Ensure that dimensions is an array
+    '''
+    dimensions = np.asarray(dimensions, dtype=np.uint)
+    '''
+    Set the unit_chunks to all ones if not given.  Ensure it is an array if it is.
+    '''
+    if unit_chunks is None:
+        unit_chunks = np.ones_like(dimensions)
+    else:
+        unit_chunks = np.asarray(unit_chunks, dtype=np.uint)
+
+    if unit_chunks.shape != dimensions.shape:
+        raise ValueError('Unit chunk size must have the same shape as the input dataset.')
+
+    '''
+    Save the original size of unit_chunks to use for incrementing the chunk size during
+     loop
+    '''
+    base_chunks = unit_chunks
+
+    '''
+    Loop until chunk_size is greater than the maximum chunk_mem or the chunk_size is equal to
+    that of dimensions
+    '''
+    while np.prod(unit_chunks)*data_size <= max_chunk_mem:
+        '''
+        Check if all chunk dimensions are greater or equal to the
+        actual dimensions.  Exit the loop if true.
+        '''
+        if np.all(unit_chunks >= dimensions):
+            break
+
+        '''
+        Find the index of the next chunk to be increased and increment it by the base_chunk
+        size
+        '''
+        ichunk = np.argmax(dimensions/unit_chunks)
+        unit_chunks[ichunk] += base_chunks[ichunk]
+
+    '''
+    Ensure that the size of the chunks is between one and the dimension size.
+    '''
+    unit_chunks = np.clip(unit_chunks, np.ones_like(unit_chunks), dimensions)
+
+    chunking = tuple(unit_chunks)
+
+    return chunking
