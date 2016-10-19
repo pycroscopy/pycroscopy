@@ -534,8 +534,8 @@ class ImageWindow(object):
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in
-                      np.array([np.tile(x_steps, nx), np.repeat(y_steps, ny)]).T]
+        h5_win_pos = h5_win.file[h5_win.attrs['Position_Indices']]
+        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in h5_win_pos]
 
         '''
         Loop over all windows.  Increment counts for window positions and
@@ -644,7 +644,7 @@ class ImageWindow(object):
                 basename = basename+'_clean.'+image_type
                 image_path = os.path.join(image_dir, basename)
             
-            plt.imsave(image_path, image, format=image_type)
+            plt.imsave(image_path, image, format=image_type, cmap='greyscale', interpolation='none')
         
         if show_plots:
             plt.show()
