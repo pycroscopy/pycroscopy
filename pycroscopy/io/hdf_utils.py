@@ -938,7 +938,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
         the shape of `ds_main`.  Default None, `unit_chunks` is set to 1 in all
         dimensions
     max_chunk_mem : int, optional
-        Maximum size of the chunk in memory in bytes.  Default 10240b or 10Mb
+        Maximum size of the chunk in memory in bytes.  Default 10240b or 10kb
 
     Returns
     -------
