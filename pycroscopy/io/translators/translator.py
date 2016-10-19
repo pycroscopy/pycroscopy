@@ -10,7 +10,7 @@ import abc
 import numpy as np
 from ..io_utils import getAvailableMem
 from ..hdf_utils import linkRefAsAlias
-from .utils import makePositionMat, getPositionSlicing
+from .utils import makePositionMat, getPositionSlicing, getSpectralSlicing
 from ..microdata import MicroDataset
 
 
@@ -94,7 +94,7 @@ class Translator(object):
         """
 
         if steps is None:
-            steps = np.zeros_like(dimensions)
+            steps = np.ones_like(dimensions)
         elif len(steps) != len(dimensions):
             raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
 
@@ -134,13 +134,90 @@ class Translator(object):
 
         return ds_pos_inds, ds_pos_vals
 
-    @abc.abstractmethod
-    def _buildspectroscopicdatasets(self):
+    @staticmethod
+    def _buildspectroscopicdatasets(dimensions, steps=None, initial_values=None, labels=None,
+                                    units=None):
         """
-        Builds the Microdatasets for the spectroscopic indices and values of
-        the data.  Because this is very experiment specific, no standard i/o
-        is specified.
+        Builds the MicroDatasets for the position indices and values
+        of the data
+
+        Parameters
+        ----------
+        dimensions : array_like of numpy.uint
+            Integer values for the length of each dimension
+        steps : array_like of float, optional
+            Floating point values for the step-size in each dimension.  One
+            if not specified.
+        initial_values : array_like of float, optional
+            Floating point for the zeroth value in each dimension.  Zero if
+            not specified.
+        labels : array_like of str, optional
+            The names of each dimension.  Empty strings will be used if not
+            specified.
+
+        units : array_like of str, optional
+            The units of each dimension.  Empty strings will be used if not
+            specified.
+
+        Returns
+        -------
+        ds_spec_inds : Microdataset of numpy.uint
+            Dataset containing the position indices
+        ds_spec_vals : Microdataset of float
+            Dataset containing the value at each position
+
+        Notes
+        -----
+        `steps`, `initial_values`, `labels`, and 'units' must be the same length as
+        `dimensions` whenthey are specified.
+
+        Dimensions should be in the order from fastest varying to slowest.
         """
+
+        if steps is None:
+            steps = np.ones_like(dimensions)
+        elif len(steps) != len(dimensions):
+            raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
+        steps = np.atleast_2d(steps).transpose()
+
+        if initial_values is None:
+            initial_values = np.zeros_like(dimensions)
+        elif len(initial_values) != len(dimensions):
+            raise ValueError('The arrays for initial values and dimension sizes must be the same.')
+        initial_values = np.atleast_2d(initial_values).transpose()
+
+        if labels is None:
+            labels = ['' for _ in len(dimensions)]
+        elif len(labels) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
+
+
+        # Get the indices for each dimension
+        spec_inds = makePositionMat(dimensions).transpose()
+
+        # Convert the indices to values
+        spec_vals = initial_values + np.float32(spec_inds)*steps
+
+        # Create the slices that will define the labels
+        spec_slices = getSpectralSlicing(labels)
+
+        # Create the MicroDatasets for both Indices and Values
+        ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_inds.attrs['labels'] = spec_slices
+
+        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_vals, dtype=np.float32)
+        ds_spec_vals.attrs['labels'] = spec_slices
+
+        if units is None:
+            pass
+        elif len(units) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+        else:
+            ds_spec_inds.attrs['units'] = units
+            ds_spec_vals.attrs['units'] = units
+
+        return ds_spec_inds, ds_spec_vals
 
     @staticmethod
     def _linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals):
