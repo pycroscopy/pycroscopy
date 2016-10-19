@@ -7,11 +7,14 @@ Created on Feb 9, 2016
 import os
 
 import numpy as np
-from scipy.misc import imread
+# from scipy.misc import imread
+
+from skimage.data import imread
+from skimage.measure import block_reduce
 
 from .translator import Translator
-from .utils import generateDummyMainParms, makePositionMat, getPositionSlicing
-from ..hdf_utils import getH5DsetRefs, linkRefs
+from .utils import generateDummyMainParms
+from ..hdf_utils import getH5DsetRefs
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -20,21 +23,37 @@ class PtychographyTranslator(Translator):
     """
     Translate Pytchography data from a set of images to an HDF5 file
     """
+    def __init__(self, *args, **kwargs):
+        super(PtychographyTranslator, self).__init__(*args, **kwargs)
 
-    def translate(self, h5_path, image_path):
+        self.rebin = False
+        self.bin_factor = 1
+        self.hdf = None
+        self.binning_func = self.__no_bin
+        self.bin_func = None
+
+    def translate(self, h5_path, image_path, bin_factor=None, bin_func=np.mean):
         """
         Basic method that adds Ptychography data to existing hdf5 thisfile
         You must have already done the basic translation with BEodfTranslator
         
         Parameters
         ----------------
-        h5_path : Absolute thisfile path for the data thisfile.
-            Must be in hdf5 format
-        image_path : Absolute path to folder holding the image files 
-            
+        h5_path : str
+            Absolute path to where the HDF5 file should be located
+        image_path : str
+            Absolute path to folder holding the image files
+        bin_factor : array_like of uint
+            Downsampling factor for each dimension
+        bin_func : callable
+            Function which will be called to calculate the return value
+            of each block.  Function must implement an axis parameter,
+            i.e. numpy.mean
+
         Returns
         ----------
-        None
+        h5_main : h5py.Dataset
+            HDF5 Dataset object that contains the flattened images
         """
                 
         # Get the list of all files with the .tif extension and the number of files in the list
@@ -55,6 +74,21 @@ class PtychographyTranslator(Translator):
         # Set up the basic parameters associated with this set of images
         
         (usize, vsize), data_type = self._getimagesize(os.path.join(image_path, file_list[0]))
+
+        if bin_factor is not None:
+            self.rebin = True
+            if isinstance(bin_factor, int):
+                self.bin_factor = (bin_factor, bin_factor)
+            elif len(bin_factor) == 2:
+                self.bin_factor = tuple(bin_factor)
+            else:
+                raise ValueError('Input parameter `bin_factor` must be a length 2 array_like or an integer.' +
+                                 '{} was given.'.format(bin_factor))
+            usize = int(usize / self.bin_factor[0])
+            vsize = int(vsize / self.bin_factor[1])
+            self.binning_func = block_reduce
+            self.bin_func = bin_func
+
         num_pixels = usize*vsize
         
         scan_size = np.int(np.sqrt(num_files))
@@ -81,8 +115,9 @@ class PtychographyTranslator(Translator):
             if selected:
                 print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
 
-            image = imread(os.path.join(image_path, thisfile))
-            image = image.reshape(num_pixels)
+            image = imread(os.path.join(image_path, thisfile), as_grey=True)
+            image = self.binning_func(image, self.bin_factor, self.bin_func)
+            image = image.flatten()
             h5_main[ifile, :] = image
 
             h5_mean_spec[ifile] = np.mean(image)
@@ -93,6 +128,31 @@ class PtychographyTranslator(Translator):
 
         h5_ronch[:] = mean_ronch / num_files
         self.hdf.flush()
+
+    def downSampRoncVec(self, ronch_vec, binning_factor):
+        """
+        Downsample the image by taking the mean over nearby values
+
+        Parameters
+        ----------
+        ronch_vec : ndarray
+            Image data
+        binning_factor : int
+            factor to reduce the size of the image by
+
+        Returns
+        -------
+        ronc_mat3_mean : ndarray
+            Flattened downsampled image
+        """
+        ccd_pix = int(np.sqrt(ronch_vec.size))
+        ronc_mat = ronch_vec.reshape(ccd_pix, ccd_pix)
+        ronc_mat2 = ronc_mat.reshape(ccd_pix, ccd_pix / binning_factor, binning_factor)
+        ronc_mat2_mean = ronc_mat2.mean(2)  # take the mean along the 3rd dimension
+        ronc_mat3 = ronc_mat2_mean.reshape(ccd_pix / binning_factor, binning_factor, -1)
+        ronc_mat3_mean = ronc_mat3.mean(1)
+
+        return ronc_mat3_mean.reshape(-1)
 
     @staticmethod
     def _parsefilepath(path, ftype='all'):
@@ -157,39 +217,39 @@ class PtychographyTranslator(Translator):
         size = tmp.shape
         
         return size, tmp.dtype
-    
-    def _buildspectroscopicdatasets(self, usize, vsize, num_pixels):
-        """
 
-        :param usize:
-        :param vsize:
-        :param num_pixels:
-        :return:
-        """
-        super(PtychographyTranslator, self)._buildspectroscopicdatasets()
-
-        spec_mat = makePositionMat([usize, vsize])
-        spec_slices = {'U': (slice(0, 1, None), slice(0, num_pixels, None)),
-                       'V': (slice(1, 2, None), slice(0, num_pixels, None))}
-        ds_spec_ind = MicroDataset('Spectroscopic_Indices', np.transpose(spec_mat), dtype=np.uint32)
-        ds_spec_ind.attrs['labels'] = spec_slices
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', np.transpose(spec_mat), dtype=np.float32)
-        ds_spec_vals.attrs['labels'] = spec_slices
-        ds_spec_vals.attrs['units'] = ['', '']
     
-        return ds_spec_ind, ds_spec_vals
-    
-    def _setupH5(self, num_files, usize, vsize, data_type, num_pixels, scan_size):
+    def _setupH5(self, num_files, usize, vsize, data_type, scan_size):
         """
+        Setup the HDF5 file in which to store the data including creating
+        the Position and Spectroscopic datasets
 
-        :param num_files:
-        :param usize:
-        :param vsize:
-        :param data_type:
-        :param num_pixels:
-        :param scan_size:
-        :return:
+        Parameters
+        ----------
+        num_files : int
+            Number of images
+        usize : int
+            Number of pixel columns in the images
+        vsize : int
+            Number of pixel rows in the images
+        data_type : type
+            Data type to save image as
+        scan_size : int
+            Number of images in each dimension
+
+        Returns
+        -------
+        h5_main : h5py.Dataset
+            HDF5 Dataset that the images will be written into
+        h5_mean_spec : h5py.Dataset
+            HDF5 Dataset that the mean over all positions will be written
+            into
+        h5_ronch : h5py.Dataset
+            HDF5 Dateset that the mean over all Spectroscopic steps will be
+            written into
         """
+        num_pixels = usize*vsize
+
         main_parms = generateDummyMainParms()
         main_parms['num_images'] = num_files
         main_parms['datatype'] = 'ptychography'
@@ -204,7 +264,10 @@ class PtychographyTranslator(Translator):
         meas_grp.attrs = main_parms
         chan_grp = MicroDataGroup('Channel_000')
     # Get the Position and Spectroscopic Datasets
-        ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
+    #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
+        ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets((usize, vsize),
+                                                                     labels=['U', 'V'],
+                                                                     units=['pixel', 'pixel'])
         ds_pos_ind, ds_pos_val = self._buildpositiondatasets([scan_size, scan_size], labels=['X', 'Y'], units=['pixel', 'pixel'])
 
     # Allocate space for Main_Data and Pixel averaged Data
@@ -239,4 +302,25 @@ class PtychographyTranslator(Translator):
         
         return h5_main, h5_mean_spec, h5_ronch
 
+    def __no_bin(self, image, *args, **kwargs):
+        """
+        Does absolutely nothing to the image.  Exists so that we can have
+        a bin function to call whether we actually rebin the image or not.
 
+        Parameters
+        ----------
+        image : ndarray
+            Image
+        args:
+            Argument list
+        kwargs:
+            Keyword argument list
+
+        Returns
+        -------
+        image : ndarray
+            The input image
+        """
+
+
+        return image
