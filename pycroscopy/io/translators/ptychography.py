@@ -14,7 +14,7 @@ from skimage.measure import block_reduce
 
 from .translator import Translator
 from .utils import generateDummyMainParms
-from ..hdf_utils import getH5DsetRefs
+from ..hdf_utils import getH5DsetRefs, calc_chunks
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -96,7 +96,6 @@ class PtychographyTranslator(Translator):
         
         h5_main, h5_mean_spec, h5_ronch = self._setupH5(num_files, usize,
                                                         vsize, np.float32,
-                                                        num_pixels,
                                                         scan_size)
 
         self._read_data(file_list[:num_files], h5_main, h5_mean_spec, h5_ronch, image_path, num_pixels)
@@ -270,9 +269,11 @@ class PtychographyTranslator(Translator):
                                                                      units=['pixel', 'pixel'])
         ds_pos_ind, ds_pos_val = self._buildpositiondatasets([scan_size, scan_size], labels=['X', 'Y'], units=['pixel', 'pixel'])
 
+        ds_chunking = calc_chunks([num_files, num_pixels], data_type(0).itemsize, unit_chunks=(1, num_pixels))
+
     # Allocate space for Main_Data and Pixel averaged Data
         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
-                                    chunking=(1, num_pixels), dtype=data_type, compression='gzip')
+                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
         ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
                                           data=np.zeros(num_pixels, dtype=np.float32),
                                           dtype=np.float32)
