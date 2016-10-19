@@ -50,17 +50,10 @@ if __name__ == '__main__':
     h5_raw = iw.h5_raw
     
     '''
-    Normalize the raw image
-    '''
-    t0 = time()
-    h5_norm = iw.normalize_image(h5_raw)
-    print 'Normalization took {} seconds.'.format(time()-t0)
-
-    '''
     Do the windowing on the normalized image
     '''
     t0 = time()
-    h5_wins = iw.do_windowing(h5_norm, num_peaks=num_peaks, save_plots=save_plots, show_plots=show_plots)
+    h5_wins = iw.do_windowing(h5_raw, num_peaks=num_peaks, save_plots=save_plots, show_plots=show_plots)
     print 'Windowing took {} seconds.'.format(time()-t0)
 
     '''

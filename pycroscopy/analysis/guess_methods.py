@@ -39,8 +39,10 @@ class GuessMethods(object):
         # vector = args
         try:
             peakwidth_bounds = kwargs.get('peak_widths')
-            wavelet_widths = np.linspace(peakwidth_bounds[0],peakwidth_bounds[1],20)
             kwargs.pop('peak_widths')
+            peak_width_step = kwargs.get('peak_step', 20)
+            kwargs.pop('peak_step')
+            wavelet_widths = np.linspace(peakwidth_bounds[0],peakwidth_bounds[1],peak_width_step)
             def wpeaks(vector):
                 peakIndices = find_peaks_cwt(np.abs(vector), wavelet_widths,**kwargs)
                 return peakIndices

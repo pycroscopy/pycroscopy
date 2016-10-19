@@ -48,7 +48,7 @@ class BELoopmodel(Model):
         else:
             warn('Provided dataset is not "Main" dataset or lacks necessary ancillary datasets!')
 
-    def __createGuessDatasets(self):
+    def _createGuessDatasets(self):
         """
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
@@ -112,7 +112,7 @@ class BELoopmodel(Model):
         Also make references in the Spectroscopic Values and Indices tables
         '''
 
-    def __createFitDataset(self):
+    def _createFitDataset(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.

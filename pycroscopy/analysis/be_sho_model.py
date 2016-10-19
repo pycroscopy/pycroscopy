@@ -1,6 +1,6 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Numan Laanait, Suhas Somnath
+@author: Suhas Somnath, Numan Laanait
 """
 
 from __future__ import division
@@ -12,12 +12,14 @@ from scipy.signal import find_peaks_cwt
 
 from .model import Model
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
-from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs
-from ..io.hdf_utils import getAuxData, getH5DsetRefs, \
+from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
     getH5RegRefIndices, createRefFromIndices
 from ..io.microdata import MicroDataset, MicroDataGroup
 
-sho32 = np.dtype([('Amplitude [V]',np.float32),('Frequency [Hz]',np.float32),('Quality Factor',np.float32),('Phase [rad]',np.float32),('R2 Criterion',np.float32)])
+sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
+                  ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
+                  ('R2 Criterion', np.float32)])
+
 
 class BESHOmodel(Model):
     """
@@ -25,16 +27,12 @@ class BESHOmodel(Model):
     """
 
     def __init__(self, h5_main, variables=['Frequency']):
-        super(BESHOmodel,self).__init__(h5_main, variables)
-        self.h5_main = h5_main
-        self.h5_guess = None
-        self.h5_fit = None
-        self.fit_points = 5
+        super(BESHOmodel, self).__init__(h5_main, variables)
         self.step_start_inds = None
         self.is_reshapable = True
 
 
-    def __createGuessDatasets(self):
+    def _createGuessDatasets(self):
         """
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
@@ -54,6 +52,9 @@ class BESHOmodel(Model):
 
         self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
+
+        # find the frequency vector and hold in memory
+        self.__getFrequencyVector()
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
@@ -104,7 +105,7 @@ class BESHOmodel(Model):
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
-    def __createFitDataset(self):
+    def _createFitDataset(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.
@@ -157,7 +158,19 @@ class BESHOmodel(Model):
         # Reference linking
         self.hdf.linkRefs(self.h5_main, [self.h5_fit])
 
-    def __getDataChunk(self):
+    def __getFrequencyVector(self):
+        """
+        Assumes that the data is reshape-able
+        :return:
+        """
+        h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        if len(self.step_start_inds) == 1:  # BE-Line
+            end_ind = h5_spec_vals.shape[1]
+        else:  # BEPS
+            end_ind = self.step_start_inds[1]
+        self.freq_vec = h5_spec_vals[0, self.step_start_inds[0]:end_ind]
+
+    def _getDataChunk(self, verbose=False):
         """
         Returns a chunk of data for the guess or the fit
 
@@ -169,9 +182,14 @@ class BESHOmodel(Model):
         --------
         None
         """
-        self.data = reshapeToOneStep(self.h5_main.value, self.num_udvs_steps)
+        super(BESHOmodel, self)._getDataChunk()
+        # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
+        if self.data is not None:
+            if verbose: print('Got raw data of shape {} from super'.format(self.data.shape))
+            self.data = reshapeToOneStep(self.data, self.num_udvs_steps)
+            if verbose: print('Reshaped raw data to shape {}'.format(self.data.shape))
 
-    def __getGuessChunk(self):
+    def _getGuessChunk(self):
         """
         Returns a chunk of guess dataset corresponding to the main dataset
 
@@ -183,12 +201,14 @@ class BESHOmodel(Model):
         --------
         None
         """
-        guess_mat = self.h5_guess['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]'][:, :]#[st_pix:en_pix, :]
+        super(BESHOmodel, self)._getGuessChunk()
+        # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
+        self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
-        self.guess = reshapeToOneStep(guess_mat, self.num_udvs_steps)
+        self.guess = self.guess['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]']
         # bear in mind that this self.guess is a compound dataset.
 
-    def __setDataChunk(self, data_chunk, is_guess=False):
+    def _setResults(self, is_guess=False, verbose=False):
         """
         Writes the provided chunk of data into the guess or fit datasets. This method is responsible for any and all book-keeping
 
@@ -199,15 +219,21 @@ class BESHOmodel(Model):
         is_guess : Boolean
             Flag that differentiates the guess from the fit
         """
-
-        reorganized = reshapeToNsteps(data_chunk, self.num_udvs_steps)
         if is_guess:
-            self.h5_guess[:, :] = reorganized
+            # prepare to reshape:
+            self.guess = np.transpose(np.atleast_2d(self.guess))
+            if verbose: print('Prepared guess of shape {} before reshaping'.format(self.guess.shape))
+            self.guess = reshapeToNsteps(self.guess, self.num_udvs_steps)
+            if verbose: print('Reshaped guess to shape {}'.format(self.guess.shape))
         else:
-            self.h5_fit[:, :] = reorganized
+            self.fit = np.transpose(np.atleast_2d(self.fit))
+            self.fit = reshapeToNsteps(self.fit, self.num_udvs_steps)
+
+        # ask super to take care of the rest, which is a standardized operation
+        super(BESHOmodel, self)._setResults(is_guess)
 
     def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
-        '''
+        """
 
         Parameters
         ----------
@@ -218,26 +244,44 @@ class BESHOmodel(Model):
         Returns
         -------
 
-        '''
-        self.__createGuessDatasets()
-        self.__getDataChunk()
-        self.guess = super(BESHOmodel,self).computeGuess(strategy=strategy,**options)
+        """
+        super(BESHOmodel, self).computeGuess(strategy=strategy, **options)
+
+    def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
+        """
+        Model specific calculation and or reformatting of the raw guess or fit results
+        :param results:
+        :return:
+        """
+        if verbose: print('Strategy to use: {}'.format(strategy))
+        # Create an empty dataset to store the guess parameters
+        sho_vec = np.zeros(shape=(len(results)), dtype=sho32)
+        if verbose: print('Raw results and compound SHO vector of shape {}'.format(len(results)))
 
         # Extracting and reshaping the remaining parameters for SHO
-        # TODO: Remove the dummy slice from self.data
-        slic = slice(0,400,None)
-        if strategy in ['wavelet_peaks','relative_maximum','absolute_maximum']:
-            peaks = np.array([g[0] for g in self.guess])
-            ampl = np.abs(self.data[slic])
-            res_ampl = np.array([ampl[ind,peaks[ind]] for ind in np.arange(peaks.size)])
-            # res_freq = getfrequencyarray [peaks]
-            q_factor = np.ones_like(self.guess)*10
-            phase = np.angle(self.data[slic])
-            res_phase = np.array([phase[ind,peaks[ind]] for ind in np.arange(peaks.size)])
-
-        return res_ampl, q_factor, res_phase
-
-
+        if strategy in ['wavelet_peaks', 'relative_maximum', 'absolute_maximum']:
+            # wavelet_peaks sometimes finds 0, 1, 2, or more peaks. Need to handle that:
+            # peak_inds = np.array([pixel[0] for pixel in results])
+            peak_inds = np.zeros(shape=(len(results)), dtype=np.uint32)
+            for pix_ind, pixel in enumerate(results):
+                if len(pixel) == 1:  # majority of cases - one peak found
+                    peak_inds[pix_ind] = pixel[0]
+                elif len(pixel) == 0:  # no peak found
+                    peak_inds[pix_ind] = int(0.5*self.data.shape[1])  # set to center of band
+                else:  # more than one peak found
+                    dist = np.abs(np.array(pixel) - int(0.5*self.data.shape[1]))
+                    peak_inds[pix_ind] = pixel[np.argmin(dist)]  # set to peak closest to center of band
+            if verbose: print('Peak positions of shape {}'.format(peak_inds.shape))
+            # First get the value (from the raw data) at these positions:
+            comp_vals = np.array(
+                [self.data[pixel_ind, peak_inds[pixel_ind]] for pixel_ind in np.arange(peak_inds.size)])
+            if verbose: print('Complex values at peak positions of shape {}'.format(comp_vals.shape))
+            sho_vec['Amplitude [V]'] = np.abs(comp_vals)  # Amplitude
+            sho_vec['Phase [rad]'] = np.angle(comp_vals)  # Phase in radians
+            sho_vec['Frequency [Hz]'] = self.freq_vec[peak_inds]  # Frequency
+            sho_vec['Quality Factor'] = np.ones_like(results) * 10  # Quality factor
+            # Add something here for the R^2
+        return sho_vec
 
 
 

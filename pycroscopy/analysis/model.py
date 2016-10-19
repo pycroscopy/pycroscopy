@@ -39,7 +39,7 @@ class Model(object):
         None
         """
         # Checking if dataset is "Main"
-        if self.__isLegal(h5_main, variables):
+        if self._isLegal(h5_main, variables):
             self.h5_main = h5_main
             self.hdf = ioHDF5(self.h5_main.file)
 
@@ -55,9 +55,18 @@ class Model(object):
             self.__parallel = False
 
         # Determining the max size of the data that can be put into memory
-        self.__setMemoryAndCPUs()
+        self._setMemoryAndCPUs()
 
-    def __setMemoryAndCPUs(self):
+        self.__start_pos = 0
+        self.__end_pos = self.h5_main.shape[0]
+        self.h5_guess = None
+        self.h5_fit = None
+
+        self.data = None
+        self.guess = None
+        self.fit = None
+
+    def _setMemoryAndCPUs(self):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -75,7 +84,13 @@ class Model(object):
 
         self.__maxDataChunk = self.__maxMemoryMB/self.__maxCpus
 
-    def __isLegal(self, h5_main, variables):
+        # Now calculate the number of positions that can be stored in memory in one go.
+        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1]/1e6
+        self.__max_pos_per_read = int(np.floor(self.__maxDataChunk / mb_per_position))
+        print('Allowed to read {} pixels per chunk'.format(self.__max_pos_per_read))
+
+
+    def _isLegal(self, h5_main, variables):
         """
         Checks whether or not the provided object can be analyzed by this Model class.
         Classes that extend this class will do additional checks to ensure that the supplied dataset is legal.
@@ -109,7 +124,7 @@ class Model(object):
 
         return legal
 
-    def __getDataChunk(self):
+    def _getDataChunk(self):
         """
         Returns a chunk of data for the guess or the fit
 
@@ -119,14 +134,24 @@ class Model(object):
 
         Returns:
         --------
-        dset : n dimensional array
-            A portion of the main dataset
         """
-        self.data = None
+        if self.__start_pos < self.h5_main.shape[0]:
+            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self.__max_pos_per_read))
+            self.data = self.h5_main[self.__start_pos:self.__end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self.__start_pos, self.__end_pos, self.h5_main.shape[0]))
 
-    def __getGuessChunk(self):
+            # Now update the start position
+            self.__start_pos = self.__end_pos
+        else:
+            print('Finished reading all data!')
+            self.data = None
+
+
+    def _getGuessChunk(self):
         """
-        Returns a chunk of guess dataset corresponding to the main dataset
+        Returns a chunk of guess dataset corresponding to the main dataset.
+        Should be called BEFORE _getDataChunk since it relies upon current values of
+        self.__start_pos, self.__end_pos
 
         Parameters:
         -----
@@ -134,25 +159,38 @@ class Model(object):
 
         Returns:
         --------
-        dset : n dimensional array
-            A portion of the guess dataset
         """
-        self.guess = None
+        if self.data is None:
+            self.guess = None
+        else:
+            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
 
-    def __setDataChunk(self, data_chunk, is_guess=False):
+    def _setResults(self, is_guess=False):
         """
-        Writes the provided chunk of data into the guess or fit datasets. This method is responsible for any and all book-keeping
+        Writes the provided guess or fit results into appropriate datasets.
+        Given that the guess and fit datasets are relatively small, we should be able to hold them in memory just fine
 
         Parameters
         ---------
-        data_chunk : nd array
-            n dimensional array of the same type as the guess / fit dataset
         is_guess : Boolean
             Flag that differentiates the guess from the fit
         """
-        pass
+        if is_guess:
+            targ_dset = self.h5_guess
+            source_dset = self.guess
+        else:
+            targ_dset = self.h5_fit
+            source_dset = self.fit
 
-    def __createGuessDatasets(self):
+        """print('Writing data to positions: {} to {}'.format(self.__start_pos, self.__end_pos))
+        targ_dset[self.__start_pos:self.__end_pos, :] = source_dset"""
+        targ_dset[:, :] = source_dset
+
+        # flush the file
+        self.hdf.flush()
+        print('Finished writing to file!')
+
+    def _createGuessDatasets(self):
         """
         Model specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
         link the guess dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
@@ -169,6 +207,7 @@ class Model(object):
         -------
         None
         """
+        warn('Please override the _createGuessDatasets specific to your model')
         self.guess = None # replace with actual h5 dataset
         pass
 
@@ -194,54 +233,63 @@ class Model(object):
 
         """
 
-        self.__createGuessDatasets()
+        self._createGuessDatasets()
+        self.__start_pos = 0
 
         processors = kwargs.get("processors", self.__maxCpus)
         gm = GuessMethods()
         if strategy in gm.methods:
             func = gm.__getattribute__(strategy)(**options)
+            results = list()
             if self.__parallel:
                 # start pool of workers
-                print('Computing Guesses In parallel ...')
-                print('launching %i kernels...'%processors)
-                # import multiprocess
+                print('Computing Guesses In parallel ... launching %i kernels...' % processors)
                 pool = mp.Pool(processors)
-                # TODO: this is where we do the following
-                """
-                Begin while()
-                """
+                self._getDataChunk()
+                while self.data is not None:  # as long as we have not reached the end of this data set:
+                    # apply guess to this data chunk:
+                    tasks = [vector for vector in self.data]
+                    chunk = int(self.data.shape[0] / processors)
+                    jobs = pool.imap(func, tasks, chunksize=chunk)
+                    # get Results from different processes
+                    print('Extracting Guesses...')
+                    temp = [j for j in jobs]
+                    # Reformat the data to the appropriate type and or do additional computation now
+                    results.append(self._reformatResults(temp, strategy))
+                    # read the next chunk
+                    self._getDataChunk()
 
-                """
-                read first chunk
-                while chunk is not empty:
-                call the actual guess function on this data
-                write the guess to the H5 dataset
-                request for next chunk
-                """
-                # TODO: Remove the dummy slice from self.data
-                slic = slice(0,400,None)
-                tasks = [vector for vector in self.data[slic]]
-                chunk = int(self.data[slic].shape[0]/processors)
-                jobs = pool.imap(func, tasks, chunksize = chunk)
-
-                # get Results from different processes
-                print('Extracting Guesses...')
-                results = np.array([j for j in jobs])
-                """
-                End while()
-                """
-                print('closing %i kernels...'%processors)
+                # Finished reading the entire data set
+                print('closing %i kernels...' % processors)
                 pool.close()
             else:
                 print("Computing Guesses In Serial ...")
-                slic = slice(0,400,None)
-                results = np.array([ func(vector) for vector in self.data[slic]])
+                self._getDataChunk()
+                while self.data is not None:  # as long as we have not reached the end of this data set:
+                    temp = [func(vector) for vector in self.data]
+                    results.append(self._reformatResults(temp, strategy))
+                    # read the next chunk
+                    self._getDataChunk()
 
-            return results
+            # reorder to get one numpy array out
+            self.guess = np.hstack(tuple(results))
+            print('Completed computing guess. Writing to file.')
+
+            # Write to file
+            self._setResults(is_guess=True)
         else:
-            warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' %(strategy))
+            warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
-    def __createFitDataset(self):
+
+    def _reformatResults(self, results, strategy='wavelet_peaks'):
+        """
+        Model specific restructuring / reformatting of the parallel compute results
+        :param results:
+        :return:
+        """
+        return np.array(results)
+
+    def _createFitDataset(self):
         """
         Model specific call that will write the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.
@@ -256,7 +304,8 @@ class Model(object):
         -------
         None
         """
-        self.fit = None  # replace with actual h5 dataset
+        warn('Please override the _createFitDataset specific to your model')
+        self.h5_fit = None  # replace with actual h5 dataset
         pass
 
     def computeFit(self):
@@ -271,10 +320,11 @@ class Model(object):
         ----------
         None
         """
-        if not self.guess is None:
+        if not self.h5_guess is None:
             print("You need to guess before fitting")
             return None
         self.__createFitDatasets()
+        self.__start_pos = 0
         """
         read first data + guess chunks
         while chunks are not empty:

@@ -7,5 +7,5 @@ from .guess_methods import GuessMethods
 from . import model
 from .model import Model
 
-__all__ = ['GuessMethods', 'Model', 'BESHOmodel','utils']
+__all__ = ['GuessMethods', 'Model', 'BESHOmodel', 'utils']
 __all__ += utils.__all__

@@ -7,13 +7,13 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from warnings import warn
-from scipy.misc import imread
+from skimage.data import imread
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks
 from ..io.translators.utils import getPositionSlicing, makePositionMat
 from ..io.microdata import MicroDataGroup, MicroDataset
 
@@ -46,7 +46,7 @@ class ImageWindow(object):
         if not os.path.exists(os.path.abspath(image_path)):
             raise ValueError('Specified image does not exist.')
         else:
-            self.image_path = image_path
+            self.image_path = os.path.abspath(image_path)
         
         self.hdf = ioHDF5(os.path.abspath(h5_path))
         
@@ -71,32 +71,16 @@ class ImageWindow(object):
         Read the original image and build the file tree
             '''
             try:
-                image = imread(os.path.abspath(self.image_path))
+                image = imread(self.image_path, as_grey=True)
             except:
                 raise
-            '''
-        Convert the image to greyscale
-            '''
-            if len(np.shape(image)) == 3:
-                '''
-        If an alpha channel exists, multiply values by alpha
-                '''
-                if np.shape(image)[2] == 4:
-                    for ic in xrange(3):
-                        image[:, :, ic] == np.multiply(image[:, :, ic], image[:, :, -1])
-                '''
-        Take the mean of all color values if present
-                '''
-                image = np.mean(image, axis=2, dtype=np.float32)
-            else:
-                image = image
 
             meas_grp = MicroDataGroup('Measurement_')
             
             chan_grp = MicroDataGroup('Channel_')
             meas_grp.addChildren([chan_grp])
 
-            ds_rawimage = MicroDataset('Raw_Data', image.flatten(), dtype=np.float32)
+            ds_rawimage = MicroDataset('Raw_Data', image.flatten())
 
             '''
         Build Spectroscopic and Position datasets for the image
@@ -133,51 +117,6 @@ class ImageWindow(object):
         self.h5_wins = None
         self.h5_clean = None
 
-
-    def normalize_image(self, h5_raw=None):
-        """
-        Normalize the image and save the result to the h5 file
-
-        Parameters
-        ----------
-        h5_raw : HDF5 Dataset, optional
-            Raw image to be normalized, will use self.h5_raw if not provided
-
-        Returns
-        -------
-        h5_norm : HDF5 dataset
-            normalized image
-        """
-        if h5_raw is None:
-            h5_raw = self.h5_raw
-        h5_grp = h5_raw.parent
-        image = h5_raw[()]
-        
-        print('Normalizing the Raw image.')
-
-        immin = np.min(image)
-        immax = np.max(image)
-        image = (image-immin)/(immax-immin)
-        
-        norm_group = MicroDataGroup('Raw_Image-Normalized', h5_grp.name[1:])
-        ds_norm_image = MicroDataset('Normalized_Image', image, dtype=np.float32)
-        
-        norm_group.addChildren([ds_norm_image])
-        
-        norm_refs = self.hdf.writeData(norm_group)
-        
-        h5_norm = getH5DsetRefs(['Normalized_Image'], norm_refs)[0]
-
-        '''
-        Copy attributes from raw to norm
-        '''
-        copyAttributes(self.h5_raw, h5_norm, skip_refs=False)
-
-        self.h5_norm = h5_norm
-
-        return h5_norm
-
-
     def do_windowing(self, h5_main=None, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
                      *args, **kwargs):
         """
@@ -186,7 +125,7 @@ class ImageWindow(object):
         Parameters
         ----------
             h5_main : HDF5 dataset, optional
-                normalized image
+                image to be windowed
             win_x : int, optional
                 size of the window, in pixels, in the horizontal direction
                 Default None, a guess will be made based on the FFT of the image
@@ -206,11 +145,7 @@ class ImageWindow(object):
                 Dataset containing the flattened windows
         """
         if h5_main is None:
-            if self.h5_norm is None:
-                self.normalize_image()
-            h5_main = self.h5_norm
-        else:
-            self.h5_norm = h5_main
+            h5_main = self.h5_main
 
         parent = h5_main.parent
 
@@ -254,8 +189,8 @@ class ImageWindow(object):
         '''
         im_x, im_y = image.shape
 
-        x_steps = np.arange(0,im_x-win_x, win_step_x, dtype=np.uint32)
-        y_steps = np.arange(0,im_y-win_y, win_step_y, dtype=np.uint32)
+        x_steps = np.arange(0, im_x-win_x+1, win_step_x, dtype=np.uint32)
+        y_steps = np.arange(0, im_y-win_y+1, win_step_y, dtype=np.uint32)
         
         nx = len(x_steps)
         ny = len(y_steps)
@@ -264,24 +199,28 @@ class ImageWindow(object):
         
         win_pix = win_x*win_y
         
-        win_pos_mat = np.array([np.tile(x_steps,ny),
-                                np.repeat(y_steps,nx)]).T
+        win_pos_mat = np.array([np.tile(x_steps, ny),
+                                np.repeat(y_steps, nx)]).T
         
         win_pix_mat = makePositionMat([win_x, win_y])
 
         '''
         Set up the HDF5 Group and Datasets for the windowed data
         '''
-        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype = np.int32)
-        ds_pix_inds = MicroDataset('Spectroscopic_Indices',data=win_pix_mat, dtype= np.int32)
-        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype = np.float32)
-        ds_pix_vals = MicroDataset('Spectroscopic_Values',data=win_pix_mat, dtype= np.float32)
-        
+        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
+        ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
+        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
+        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+
+        '''
+        Calculate the chunk size
+        '''
+        win_chunks = calc_chunks([n_wins, win_pix], h5_main.dtype.itemsize, unit_chunks=[1, win_pix])
         ds_windows = MicroDataset('Image_Windows',
                                   data=[],
-                                  maxshape=[n_wins,win_pix],
-                                  dtype=np.float32,
-                                  chunking=(1,win_pix),
+                                  maxshape=[n_wins, win_pix],
+                                  dtype=h5_main.dtype,
+                                  chunking=win_chunks,
                                   compression='gzip')
         
         basename = h5_main.name.split('/')[-1]
@@ -315,7 +254,7 @@ class ImageWindow(object):
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x,x+win_x),slice(y,y+win_y)] for x,y in win_pos_mat]
+        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in win_pos_mat]
         
         '''
         Read each slice and write it to the dataset
@@ -323,7 +262,7 @@ class ImageWindow(object):
         for islice, this_slice in enumerate(win_slices):
             selected = islice % np.rint(n_wins/10) == 0
             if selected:
-                per_done = np.rint(100*(islice)/(n_wins))
+                per_done = np.rint(100*islice/n_wins)
                 print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
                                                                                (this_slice[0].start,
                                                                                 this_slice[1].start),
@@ -393,12 +332,13 @@ class ImageWindow(object):
         grp_name = win_name+'-Cleaned_Windows_'
         clean_grp = MicroDataGroup(grp_name, win_pca.name[1:])     
         
-        ds_wins = MicroDataset('Cleaned_Windows',data=[],dtype=h5_win.dtype,chunking=h5_win.chunks,maxshape=h5_win.shape)
-        for key,val in h5_win.attrs.iteritems():
+        ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
+                               chunking=h5_win.chunks, maxshape=h5_win.shape)
+        for key, val in h5_win.attrs.iteritems():
             ds_wins.attrs[key] = val
         
         clean_grp.addChildren([ds_wins])
-        for key,val in h5_win.parent.attrs.iteritems():
+        for key, val in h5_win.parent.attrs.iteritems():
             clean_grp.attrs[key] = val
 
         clean_grp.attrs['retained_comps'] = n_comp
@@ -408,15 +348,15 @@ class ImageWindow(object):
         '''
         Generate a cleaned set of windows
         '''
-        if win_pca.attrs['pca_method']=='sklearn-incremental':
+        if win_pca.attrs['pca_method'] == 'sklearn-incremental':
             batch_size = win_pca.attrs['batch_size']
-            V = np.dot(np.diag(S),V)
-            batches = gen_batches(U.shape[0],batch_size)
+            V = np.dot(np.diag(S), V)
+            batches = gen_batches(U.shape[0], batch_size)
             for batch in batches:
-                new_wins[batch,:] = np.dot(U[batch,:], V)
+                new_wins[batch, :] = np.dot(U[batch, :], V)
         else:
-            new_wins[:,:] = np.dot(U,np.dot(np.diag(S),V))
-        del U,S,V
+            new_wins[:, :] = np.dot(U, np.dot(np.diag(S), V))
+        del U, S, V
         
         self.clean_wins = new_wins
         
@@ -457,8 +397,8 @@ class ImageWindow(object):
         '''
         Calculate the steps taken to create original windows
         '''
-        x_steps = np.arange(0, im_x-win_x, win_step_x)
-        y_steps = np.arange(0, im_y-win_y, win_step_y)
+        x_steps = np.arange(0, im_x-win_x+1, win_step_x)
+        y_steps = np.arange(0, im_y-win_y+1, win_step_y)
         
         '''
         Initialize arrays to hold summed windows and counts for each position
@@ -594,8 +534,8 @@ class ImageWindow(object):
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in
-                      np.array([np.tile(x_steps, nx), np.repeat(y_steps, ny)]).T]
+        h5_win_pos = h5_win.file[h5_win.attrs['Position_Indices']]
+        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in h5_win_pos]
 
         '''
         Loop over all windows.  Increment counts for window positions and
@@ -704,7 +644,7 @@ class ImageWindow(object):
                 basename = basename+'_clean.'+image_type
                 image_path = os.path.join(image_dir, basename)
             
-            plt.imsave(image_path, image, format=image_type)
+            plt.imsave(image_path, image, format=image_type, cmap='gray')
         
         if show_plots:
             plt.show()
@@ -719,7 +659,7 @@ class ImageWindow(object):
         Parameters
         ----------
             image : numpy array
-                2D array holding the normalized image
+                2D array holding the image
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
@@ -744,7 +684,13 @@ class ImageWindow(object):
         """
         
         print('Determining appropriate window size from image.')
-        
+        '''
+        Normalize the image
+        '''
+        immin = np.min(image)
+        immax = np.max(image)
+        image = np.float32(image - immin) / (immax - immin)
+
         '''
         Perform an fft on the normalize image 
         '''
