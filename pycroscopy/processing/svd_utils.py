@@ -53,9 +53,9 @@ def doSVD(h5_main, num_comps=None):
     func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_main)
 
     if num_comps is None:
-        num_comps = n_samples
+        num_comps = min(n_samples, n_features)
     else:
-        num_comps = min(n_samples, num_comps)
+        num_comps = min(n_samples, n_features, num_comps)
 
     '''
     Check if a number of compnents has been set and ensure that the number is less than
@@ -82,13 +82,13 @@ def doSVD(h5_main, num_comps=None):
     ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
     del S
 
-    ds_U = MicroDataset('U', data=np.float32(U))
+    ds_U = MicroDataset('U', data=np.float32(U), chunking=(1, num_comps))
     del U
 
     if is_complex:
         # Put the real and imaginary sections together to make complex V
         V = V[:, :int(0.5 * V.shape[1])] + 1j * V[:, int(0.5 * V.shape[1]):]
-        ds_V = MicroDataset('V', data=np.complex64(V))
+        ds_V = MicroDataset('V', data=np.complex64(V), chunking=(num_comps, 1))
     elif is_compound:
         V2 = np.empty([V.shape[0], h5_main.shape[1]], dtype=h5_main.dtype)
         for iname, name in enumerate(h5_main.dtype.names):
@@ -96,10 +96,10 @@ def doSVD(h5_main, num_comps=None):
             iend = (iname + 1) * V2.shape[1]
             V2[name] = V[:, istart:iend]
 
-        ds_V = MicroDataset('V', data=V2)
+        ds_V = MicroDataset('V', data=V2, chunking=(num_comps, 1))
         del V2
     else:
-        ds_V = MicroDataset('V', data=np.float32(V))
+        ds_V = MicroDataset('V', data=np.float32(V), chunking=(num_comps, 1))
     del V
 
     '''
