@@ -111,7 +111,8 @@ def makePositionMat(num_steps):
             pos_ind+= 1
     
     return pos_mat
-    
+
+
 def getPositionSlicing(pos_lab, curr_pix=None):
     """
     Returns a dictionary of slice objects to help in creating region references 
@@ -135,4 +136,29 @@ def getPositionSlicing(pos_lab, curr_pix=None):
     for spat_ind, spat_dim in enumerate(pos_lab):
         slice_dict[spat_dim[0]] = (slice(curr_pix), slice(spat_ind,spat_ind+1))
     return slice_dict
-    
+
+
+def getSpectralSlicing(spec_lab, curr_spec=None):
+    """
+    Returns a dictionary of slice objects to help in creating region references
+    to the spectroscopic indices and values H5 datasets
+
+    Parameters
+    ------------
+    spec_lab : List of strings
+        Labels of each of the Spectroscopic axes
+    curr_spec : (Optional) unsigned int
+        Last position in the spectroscopic matrix. Useful in experiments where the
+        parameters have changed (eg. BEPS new data format)
+
+    Returns
+    ------------
+    slice_dict : dictionary
+        Dictionary of tuples containing slice objects corresponding to
+        each Spectroscopic axis.
+    """
+    slice_dict = dict()
+    for spat_ind, spat_dim in enumerate(spec_lab):
+        slice_dict[spat_dim[0]] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
+    return slice_dict
+
