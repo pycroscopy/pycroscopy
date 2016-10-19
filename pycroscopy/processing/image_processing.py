@@ -644,7 +644,7 @@ class ImageWindow(object):
                 basename = basename+'_clean.'+image_type
                 image_path = os.path.join(image_dir, basename)
             
-            plt.imsave(image_path, image, format=image_type, cmap='greyscale', interpolation='none')
+            plt.imsave(image_path, image, format=image_type, cmap='gray')
         
         if show_plots:
             plt.show()
