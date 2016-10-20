@@ -172,11 +172,10 @@ class ImageWindow(object):
 
         '''
         If a window size has not been specified, obtain a guess value from 
-        __window_size_extract
+        window_size_extract
         '''
         if win_x is None or win_y is None:
-            win_size = self.__window_size_extract(image, *args, **kwargs)
-            win_size = int(win_size/2)*2
+            win_size = self.window_size_extract(h5_main, *args, **kwargs)
             if win_x is None:
                 win_x = win_size
             if win_y is None:
@@ -224,7 +223,7 @@ class ImageWindow(object):
                                   compression='gzip')
         
         basename = h5_main.name.split('/')[-1]
-        ds_group = MicroDataGroup(basename+'-Windowing_',parent.name[1:])
+        ds_group = MicroDataGroup(basename+'-Windowing_', parent.name[1:])
         
         ds_group.addChildren([ds_windows, ds_pos_inds, ds_pix_inds,
                               ds_pos_vals, ds_pix_vals])
@@ -524,7 +523,7 @@ class ImageWindow(object):
         '''
         Initialize arrays to hold summed windows and counts for each position
         '''
-        counts = np.zeros([im_x, im_y], np.uint8)
+        counts = np.zeros([im_x, im_y], np.uint32)
         accum = np.zeros([im_x, im_y], np.float32)
 
         nx = len(x_steps)
@@ -652,14 +651,14 @@ class ImageWindow(object):
         return clean_image
 
 
-    def __window_size_extract(self, image, num_peaks=2, do_fit=True, save_plots=True, show_plots=False):
+    def window_size_extract(self, h5_main, num_peaks=2, do_fit=True, save_plots=True, show_plots=False):
         """
         Take the normalized image and extract from it an optimal window size
 
         Parameters
         ----------
-            image : numpy array
-                2D array holding the image
+            h5_main : h5py.Dataset
+                HDF5 dataset holding the image
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
@@ -687,9 +686,29 @@ class ImageWindow(object):
         '''
         Normalize the image
         '''
-        immin = np.min(image)
-        immax = np.max(image)
-        image = np.float32(image - immin) / (immax - immin)
+        immin = np.min(h5_main)
+        immax = np.max(h5_main)
+        image = np.float32(h5_main - immin) / (immax - immin)
+
+        '''
+        Reshape the image based on the position indices
+        '''
+        try:
+            h5_pos = h5_main.file[h5_main.attrs['Position_Indices']][()]
+            x_pix = len(np.unique(h5_pos[:, 0]))
+            y_pix = len(np.unique(h5_pos[:, 1]))
+
+        except KeyError:
+            '''
+            Position Indices dataset does not exist
+            Assume square image
+            '''
+            x_pix = np.int(np.sqrt(h5_main.size))
+            y_pix = x_pix
+
+        except:
+            raise
+        image = image.reshape([x_pix, y_pix])
 
         '''
         Perform an fft on the normalize image 
@@ -814,7 +833,9 @@ class ImageWindow(object):
 
         else:
             window_size = im_shape/(r_sort[0]+0.5)
-        
+
+        window_size = int(window_size / 2) * 2
+
         return window_size
 
 

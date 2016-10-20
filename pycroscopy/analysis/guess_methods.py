@@ -14,6 +14,10 @@ class GuessMethods(object):
     This is a container class for the different strategies used to find guesses by which an optimization routine
     is initialized.
     To implement a new guess generation strategy, add it following exactly how it's done below.
+
+    In essence, the guess methods here need to return a callable function that will take a feature vector as the sole
+    input and return the guess parameters. The guess methods here use the keyword arguments to configure the returned
+    function.
     """
     def __init__(self):
         self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']
@@ -25,27 +29,42 @@ class GuessMethods(object):
 
         Parameters
         ----------
-        args: numpy arrays.
-            The first argument is the data vector.
-            The second argument are the peak width bounds.
+        args: dictionary
+            List of optional parmeters for this function - not used.
 
-        kwargs: Passed to find_peaks_cwt().
+        kwargs: dictionary
+            Passed to find_peaks_cwt().
 
         Returns
         -------
         wpeaks: callable function.
-
         """
-        # vector = args
         try:
-            peakwidth_bounds = kwargs.get('peak_widths')
+            peak_width_bounds = kwargs.get('peak_widths')
             kwargs.pop('peak_widths')
             peak_width_step = kwargs.get('peak_step', 20)
             kwargs.pop('peak_step')
-            wavelet_widths = np.linspace(peakwidth_bounds[0],peakwidth_bounds[1],peak_width_step)
+            # The below numpy array is used to configure the returned function wpeaks
+            wavelet_widths = np.linspace(peak_width_bounds[0], peak_width_bounds[1], peak_width_step)
+
             def wpeaks(vector):
-                peakIndices = find_peaks_cwt(np.abs(vector), wavelet_widths,**kwargs)
-                return peakIndices
+                """
+                This is the function that will be mapped by multiprocess. This is a wrapper around the scipy function.
+                It uses a parameter - wavelet_widths that is configured outside this function.
+
+                Parameters
+                ----------
+                vector : 1D numpy array
+                    Feature vector containing peaks
+
+                Returns
+                -------
+                peak_indices : list
+                    List of indices of peaks within the prescribed peak widths
+                """
+                peak_indices = find_peaks_cwt(np.abs(vector), wavelet_widths, **kwargs)
+                return peak_indices
+
             return wpeaks
         except KeyError:
             warn('Error: Please specify "peak_widths" kwarg to use this method')

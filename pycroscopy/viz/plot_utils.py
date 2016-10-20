@@ -16,6 +16,39 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..analysis.utils.be_loop import loopFitFunction
 
 
+def set_tick_font_size(axes, font_size):
+    """
+    Sets the font size of the ticks in the provided axes
+
+    Parameters
+    ----------
+    axes : matplotlib.pyplot.axis object or list of axis objects
+        axes to set font sizes
+    font_size : unigned int
+        Font size
+    """
+
+    def __set_axis_tick(axis):
+        """
+        Sets the font sizes to the x and y axis in the given axis object
+
+        Parameters
+        ----------
+        axis : matplotlib.pyplot.axis object
+            axis to set font sizes
+        """
+        for tick in axis.xaxis.get_major_ticks():
+            tick.label.set_fontsize(font_size)
+        for tick in axis.yaxis.get_major_ticks():
+            tick.label.set_fontsize(font_size)
+
+    if hasattr(axes, '__iter__'):
+        for axis in axes:
+            __set_axis_tick(axis)
+    else:
+        __set_axis_tick(axes)
+
+
 def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     '''
     Plots the loop guess, fit, source projected loops for a single cycle
@@ -560,7 +593,8 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, show_colorbar=True, **kwarg
 
 
 ###############################################################################
-
+# TODO: Pull the spectroscopic value from the h5 dataset if 1D and nothing is specified
+# TODO: Pull the name of the spectroscopic axis as well
 def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
                        spec_label='Spectroscopic Value', resp_label='Response'):
     """
@@ -1184,7 +1218,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
-        plotSHOMaps([amp_mat * 1E+3, freq_mat, q_mat, phase_mat, rsqr_mat],
+        plotSHOMaps([amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat],
                     ['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor',
                      'Phase (deg)', 'R^2 Criterion'], title=grp_name, save_path=plt_path)
 
