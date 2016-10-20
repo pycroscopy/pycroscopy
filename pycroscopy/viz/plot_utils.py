@@ -1184,7 +1184,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
-        plotSHOMaps([amp_mat * 1E+3, freq_mat, q_mat, phase_mat, rsqr_mat],
+        plotSHOMaps([amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat],
                     ['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor',
                      'Phase (deg)', 'R^2 Criterion'], title=grp_name, save_path=plt_path)
 
