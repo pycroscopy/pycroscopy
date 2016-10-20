@@ -406,7 +406,7 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     
     # Extract data for each line...
     print_set = np.linspace(0, num_sets-1, 10, dtype=int)
-    for set_ind in xrange(num_sets):
+    for set_ind in range(num_sets):
         if set_ind in print_set:
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
         
@@ -456,7 +456,7 @@ def filterChunkSerial(raw_data, parm_dict):
     
     # Filter each line
     print_set = np.linspace(0,num_sets-1,10, dtype=int) 
-    for set_ind in xrange(num_sets):
+    for set_ind in range(num_sets):
         if set_ind in print_set:
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
 
