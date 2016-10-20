@@ -48,12 +48,24 @@ if __name__ == '__main__':
     h5_file = iw.h5_file
     
     h5_raw = iw.h5_raw
-    
+
     '''
-    Do the windowing on the normalized image
+    Extract an optimum window size from the image
+    '''
+    win_size = iw.window_size_extract(h5_raw,
+                                      num_peaks,
+                                      save_plots=save_plots,
+                                      show_plots=show_plots)
+
+    '''
+    Do the windowing
     '''
     t0 = time()
-    h5_wins = iw.do_windowing(h5_raw, num_peaks=num_peaks, save_plots=save_plots, show_plots=show_plots)
+    h5_wins = iw.do_windowing(h5_raw,
+                              win_x=win_size,
+                              win_y=win_size,
+                              save_plots=save_plots,
+                              show_plots=show_plots)
     print 'Windowing took {} seconds.'.format(time()-t0)
 
     '''
