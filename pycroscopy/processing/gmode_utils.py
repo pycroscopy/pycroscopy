@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
 """
 Created on Thu May 05 13:29:12 2016
 
@@ -66,7 +68,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     
     num_pts = len(resp_wfm)
     
-    show_loops = type(excit_wfm) != type(None)
+    show_loops = excit_wfm is not None
     show_plots = show_plots or show_loops
     
     noise_band_filter = 1
@@ -74,19 +76,21 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     harmonic_filter = 1
     
     if type(filter_parms['band_filt_[Hz]']) in [list, np.ndarray]:
-        noise_band_filter = noiseBandFilter(num_pts, samp_rate, filter_parms['band_filt_[Hz]'][0], filter_parms['band_filt_[Hz]'][1])
+        noise_band_filter = noiseBandFilter(num_pts, samp_rate, filter_parms['band_filt_[Hz]'][0],
+                                            filter_parms['band_filt_[Hz]'][1])
     if filter_parms['LPF_cutOff_[Hz]'] > 0:
-        low_pass_filter = makeLPF(num_pts,samp_rate, filter_parms['LPF_cutOff_[Hz]'])
+        low_pass_filter = makeLPF(num_pts, samp_rate, filter_parms['LPF_cutOff_[Hz]'])
     if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
-        harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, filter_parms['comb_[Hz]'][0], filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
+        harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, filter_parms['comb_[Hz]'][0],
+                                              filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
     composite_filter =  noise_band_filter * low_pass_filter * harmonic_filter
         
     F_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
     
     if show_plots:       
         l_ind = int(0.5*num_pts)
-        r_ind = max(np.where(composite_filter>0)[0])    
-        w_vec = np.linspace(-0.5*samp_rate,0.5*samp_rate,num_pts)*1E-3
+        r_ind = max(np.where(composite_filter > 0)[0])
+        w_vec = np.linspace(-0.5*samp_rate, 0.5*samp_rate, num_pts)*1E-3
         if central_resp_size:
             sz = int(0.5*central_resp_size)
             l_resp_ind = -sz+l_ind
@@ -97,7 +101,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         
         fig = plt.figure(figsize=(12, 8))
         lhs_colspan = 2
-        if show_loops == False:
+        if show_loops is False:
             lhs_colspan = 4
         else:
             ax_loops = plt.subplot2grid((2, 4), (0, 2), colspan=2, rowspan=2)
@@ -108,14 +112,14 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     noise_floor = getNoiseFloor(F_pix_data, filter_parms['noise_threshold'])[0]
     if show_plots:
         amp = np.abs(F_pix_data)
-        ax_raw.plot(w_vec[l_ind:r_ind],np.log(amp[l_ind:r_ind]))
-        ax_raw.plot(w_vec[l_ind:r_ind],np.log((composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp))))
-        ax_raw.plot(w_vec[l_ind:r_ind],np.log(np.ones(r_ind-l_ind)*noise_floor))
+        ax_raw.plot(w_vec[l_ind:r_ind], np.log(amp[l_ind:r_ind]))
+        ax_raw.plot(w_vec[l_ind:r_ind], np.log((composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp))))
+        ax_raw.plot(w_vec[l_ind:r_ind], np.log(np.ones(r_ind-l_ind)*noise_floor))
         ax_raw.set_title('Raw Signal')
     F_pix_data = F_pix_data * composite_filter
     F_pix_data[np.abs(F_pix_data) < noise_floor] = 0
     if show_plots:
-        ax_filt.plot(w_vec[l_ind:r_ind],np.log(np.abs(F_pix_data[l_ind:r_ind])))
+        ax_filt.plot(w_vec[l_ind:r_ind], np.log(np.abs(F_pix_data[l_ind:r_ind])))
         ax_filt.set_title('Filtered Signal')
         ax_filt.set_xlabel('Frequency(kHz)')
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(F_pix_data)))
@@ -128,7 +132,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         ax_loops.set_xlabel('Input Bias (V)')
         ax_loops.set_ylabel('Deflection (mV)')
         axes.append(ax_loops)
-    fig.tight_layout()
+        fig.tight_layout()
     return filt_data, fig, axes
         
   
@@ -159,9 +163,10 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
     HDF5 group reference containing filtered dataset
     """ 
     
-    def __maxPixelRead__(h5_raw, num_cores, store_filt=True, hot_bins=None, bytes_per_bin=2, max_RAM_gb=16):
+    def __max_pixel_read(h5_raw, num_cores, store_filt=True, hot_bins=None, bytes_per_bin=2, max_RAM_gb=16):
         """
-        Returns the maximum number of pixels that can be stored in memory considering the output data and the number of cores
+        Returns the maximum number of pixels that can be stored in memory considering the output data and the
+        number of cores
         
         Parameters
         ----------
@@ -184,18 +189,18 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
             bytes_per_bin *= 2   
         bytes_per_pix = h5_raw.shape[1] * bytes_per_bin
         # account for the hot bins separately
-        if type(hot_bins) != type(None):
-            bytes_per_pix += len(hot_bins) * 8 # complex64
+        if hot_bins is not None:
+            bytes_per_pix += len(hot_bins) * 8  # complex64
         
         # Multiply this memory requirement per pixel by the number of cores
         bytes_per_pix *= num_cores
         
         max_pix = np.rint(max_RAM_gb*1024**3 / bytes_per_pix)
-        max_pix = max(1,min(h5_raw.shape[0], max_pix))
-        print 'Allowed to read', max_pix, 'of', h5_raw.shape[0], 'pixels'        
+        max_pix = max(1, min(h5_raw.shape[0], max_pix))
+        print('Allowed to read', max_pix, 'of', h5_raw.shape[0], 'pixels')
         return np.uint(max_pix)
         
-    def __filterChunk__(raw_mat,parm_dict,recom_cores):
+    def __filter_chunk(raw_mat, parm_dict, recom_cores):
         """
         This function delegates the actual fitting responsibility to the
         appropriate function. Decides whether or not serial / parallel processing
@@ -221,32 +226,31 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         cond_data : 2D complex numpy array
             [set of measurements, frequency bins containing data]
         """
-        max_cores = max(1,cpu_count()-2)
+        max_cores = max(1, cpu_count()-2)
             
         recom_chunks = int(raw_mat.shape[0]/recom_cores)
-        
-        print 'recom cores:',recom_cores,'Total pixels:',raw_mat.shape[0],', Recom chunks:',recom_chunks
-        
+
+        print('recom cores:', recom_cores, 'Total pixels:', raw_mat.shape[0], ', Recom chunks:', recom_chunks)
+
         if recom_cores > 1 and recom_chunks < 10:
             min_jobs = 20
             reduced_cores = int(raw_mat.shape[0]/min_jobs)
             # intelligently set the cores now. 
-            recom_cores= min(max_cores,reduced_cores)
-            print 'Not enough jobs per core. Reducing cores to', recom_cores
-            
+            recom_cores = min(max_cores, reduced_cores)
+            print('Not enough jobs per core. Reducing cores to', recom_cores)
+
         if recom_cores > 1:
             return filterChunkParallel(raw_mat, parm_dict, recom_cores)
         else:
             return filterChunkSerial(raw_mat, parm_dict)
-            
-  
-    max_cores = max(1,cpu_count()-2)
+
+    max_cores = max(1, cpu_count() - 2)
     if not num_cores:
         num_cores = max_cores
     
-    if write_filtered == False and write_condensed == False:
-       warn('You need to write the filtered and/or the condensed dataset to the file')
-       return
+    if write_filtered is False and write_condensed is False:
+        warn('You need to write the filtered and/or the condensed dataset to the file')
+        return
     
     num_effective_pix = h5_main.shape[0]*1.0/filter_parms['num_pix']
     if num_effective_pix % 1 > 0:
@@ -263,31 +267,31 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
     # ioHDF now handles automatic indexing
     grp_name = h5_main.name.split('/')[-1] + '-FFT_Filtering_' 
         
-    ds_comp_filt = MicroDataset('Composite_Filter',np.float32(composite_filter))
-    ds_noise_floors = MicroDataset('Noise_Floors', 
-                      data=np.zeros(shape=(num_effective_pix), dtype=np.float32))
+    ds_comp_filt = MicroDataset('Composite_Filter', np.float32(composite_filter))
+    ds_noise_floors = MicroDataset('Noise_Floors',
+                                   data=np.zeros(shape=num_effective_pix, dtype=np.float32))
                                         
-    grp_filt = MicroDataGroup(grp_name,h5_main.parent.name)
+    grp_filt = MicroDataGroup(grp_name, h5_main.parent.name)
     filter_parms['timestamp'] = getTimeStamp()
     filter_parms['algorithm'] = 'GmodeUtils-Parallel'
     grp_filt.attrs = filter_parms
-    grp_filt.addChildren([ds_comp_filt,ds_noise_floors])
+    grp_filt.addChildren([ds_comp_filt, ds_noise_floors])
      
     if write_filtered:
-        ds_filt_data = MicroDataset('Filtered_Data', data=[],maxshape=h5_main.maxshape, 
+        ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=h5_main.maxshape,
                                     dtype=np.float32, chunking=h5_main.chunks, compression='gzip')
         grp_filt.addChildren([ds_filt_data])
     
     hot_inds = None        
     if write_condensed:
         hot_inds = np.where(composite_filter > 0)[0]
-        hot_inds = np.uint(hot_inds[int(0.5*len(hot_inds)):]) # only need to keep half the data
-        ds_cond_bins = MicroDataset('Condensed_Bins',hot_inds)    
-        ds_cond_data = MicroDataset('Condensed_Data', data=[],maxshape=(num_effective_pix,len(hot_inds)), 
-                                dtype=np.complex, chunking=(1,len(hot_inds)), compression='gzip')
+        hot_inds = np.uint(hot_inds[int(0.5*len(hot_inds)):])  # only need to keep half the data
+        ds_cond_bins = MicroDataset('Condensed_Bins', hot_inds)
+        ds_cond_data = MicroDataset('Condensed_Data', data=[], maxshape=(num_effective_pix, len(hot_inds)),
+                                    dtype=np.complex, chunking=(1, len(hot_inds)), compression='gzip')
         grp_filt.addChildren([ds_cond_bins, ds_cond_data])
                 
-    #grp_filt.showTree()
+    # grp_filt.showTree()
     h5_filt_refs = hdf.writeData(grp_filt)
     
     h5_filtr_grp = getH5GroupRef(grp_name, h5_filt_refs)
@@ -311,42 +315,43 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
                   
     print('Filtering data now. Be patient, this could take a few minutes') 
 
-    max_pix = __maxPixelRead__(h5_main, 10, store_filt=write_filtered, hot_bins=hot_inds, bytes_per_bin=2, max_RAM_gb=16)
+    max_pix = __max_pixel_read(h5_main, 10, store_filt=write_filtered, hot_bins=hot_inds, bytes_per_bin=2, max_RAM_gb=16)
     # Ensure that whole sets of pixels can be read.
     max_pix = np.uint(filter_parms['num_pix']*np.floor(max_pix/filter_parms['num_pix']))
     
-    parm_dict = {'filter_parms':filter_parms, 'composite_filter': composite_filter,
+    parm_dict = {'filter_parms': filter_parms, 'composite_filter': composite_filter,
                  'rot_pts': rot_pts, 'hot_inds': hot_inds}
     
     st_pix = 0
     line_count = 0
     while st_pix < h5_main.shape[0]:
-        en_pix = int(min(h5_main.shape[0],st_pix + max_pix))
-        print 'Reading pixels:', st_pix, 'to',en_pix, 'of', h5_main.shape[0]
-        raw_mat = h5_main[st_pix:en_pix,:]
+        en_pix = int(min(h5_main.shape[0], st_pix + max_pix))
+        print('Reading pixels:', st_pix, 'to', en_pix, 'of', h5_main.shape[0])
+        raw_mat = h5_main[st_pix:en_pix, :]
         # reshape to (set of pix, data in each set of pix)
         # print 'raw mat originally of shape:', raw_mat.shape
-        raw_mat = raw_mat.reshape(-1,filter_parms['num_pix']*raw_mat.shape[1])
+        raw_mat = raw_mat.reshape(-1, filter_parms['num_pix'] * raw_mat.shape[1])
         num_lines = raw_mat.shape[0]
         # print 'After collapsing pixels, raw mat now of shape:', raw_mat.shape
-        (nse_flrs, filt_data, cond_data) = __filterChunk__(raw_mat,parm_dict,num_cores)        
+        (nse_flrs, filt_data, cond_data) = __filter_chunk(raw_mat, parm_dict, num_cores)
         # Insert things into appropriate HDF datasets
-        print 'Writing filtered data to h5'
+        print('Writing filtered data to h5')
         # print 'Noise floors of shape:', nse_flrs.shape
-        h5_noise_floors[line_count:line_count+num_lines] = nse_flrs
+        h5_noise_floors[line_count: line_count + num_lines] = nse_flrs
         if write_condensed:
             #print 'Condensed data of shape:', cond_data.shape
-            h5_cond_data[line_count:line_count+num_lines,:] = cond_data
+            h5_cond_data[line_count: line_count + num_lines, :] = cond_data
         if write_filtered:
             #print 'Filtered data of shape:', filt_data.shape
-            h5_filt_data[st_pix:en_pix,:] = filt_data
+            h5_filt_data[st_pix:en_pix, :] = filt_data
         hdf.flush()
         st_pix = en_pix
     
     return h5_filtr_grp
               
 ###############################################################################  
-              
+
+
 def filterChunkParallel(raw_data, parm_dict, num_cores):
     """
     Filters the provided dataset in parallel
@@ -375,46 +380,45 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     pix_per_set = parm_dict['filter_parms']['num_pix']
     num_sets = raw_data.shape[0]
     pts_per_set = raw_data.shape[1]
-    #print 'sending unit filter data of size', pts_per_set
-    noise_floors = np.zeros(shape=(num_sets), dtype=np.float32)
+    # print('sending unit filter data of size', pts_per_set)
+    noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
     filt_data = None
     if not parm_dict['rot_pts']:
-        filt_data = np.zeros(shape=(num_sets*pix_per_set,pts_per_set/pix_per_set), dtype=raw_data.dtype)
+        filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
     cond_data = None
-    if type(parm_dict['hot_inds']) != type(None):
-        cond_data = np.zeros(shape=(num_sets,parm_dict['hot_inds'].size), dtype=np.complex64)
+    if parm_dict['hot_inds'] is not None:
+        cond_data = np.zeros(shape=(num_sets, parm_dict['hot_inds'].size), dtype=np.complex64)
         
     # Set up single parameter:
-    sing_parm = itertools.izip(raw_data,itertools.repeat(parm_dict))
+    sing_parm = itertools.izip(raw_data, itertools.repeat(parm_dict))
     
     # Setup parallel processing:
-    #num_cores = 10
-    pool=Pool(processes=num_cores, maxtasksperchild=None)
+    # num_cores = 10
+    pool = Pool(processes=num_cores, maxtasksperchild=None)
     
     # Start parallel processing:
     num_chunks = int(np.ceil(raw_data.shape[0]/num_cores))
-    parallel_results=pool.imap(unitFilter, sing_parm, chunksize=num_chunks)
+    parallel_results = pool.imap(unitFilter, sing_parm, chunksize=num_chunks)
     pool.close()
     pool.join()
     
     print('Done parallel computing. Now extracting data and populating matrices')
     
     # Extract data for each line...
-    print_set = np.linspace(0,num_sets-1,10, dtype=int) 
+    print_set = np.linspace(0, num_sets-1, 10, dtype=int)
     for set_ind in xrange(num_sets):
         if set_ind in print_set:
-            print 'Reading...', np.rint(100*set_ind/num_sets) , '% complete'
+            print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
         
         (noise_floors[set_ind], filt_data_set, cond_data_set) = parallel_results.next()
-        if type(parm_dict['hot_inds']) != type(None):
-            cond_data[set_ind,:] = cond_data_set
-        if parm_dict['rot_pts'] != None:
-            filt_data[set_ind*pix_per_set:(set_ind+1)*pix_per_set,:] = filt_data_set      
+        if parm_dict['hot_inds'] is not None:
+            cond_data[set_ind, :] = cond_data_set
+        if parm_dict['rot_pts'] is not None:
+            filt_data[set_ind*pix_per_set:(set_ind+1)*pix_per_set, :] = filt_data_set
             
-    return (noise_floors, filt_data, cond_data)      
+    return noise_floors, filt_data, cond_data
  
- 
- 
+
 def filterChunkSerial(raw_data, parm_dict):        
     """
     Filters the provided dataset serially
@@ -441,29 +445,29 @@ def filterChunkSerial(raw_data, parm_dict):
     pix_per_set = parm_dict['filter_parms']['num_pix']
     num_sets = raw_data.shape[0]
     pts_per_set = raw_data.shape[1]
-    #print 'sending unit filter data of size', pts_per_set
+    # print ('sending unit filter data of size', pts_per_set)
     noise_floors = np.zeros(shape=(num_sets), dtype=np.float32)
     filt_data = None
-    if parm_dict['rot_pts'] != None:
+    if parm_dict['rot_pts'] is not None:
         filt_data = np.zeros(shape=(num_sets*pix_per_set,pts_per_set/pix_per_set), dtype=raw_data.dtype)
     cond_data = None
-    if parm_dict['hot_inds'] != None:
+    if parm_dict['hot_inds'] is not None:
         cond_data = np.zeros(shape=(num_sets,parm_dict['hot_inds'].size), dtype=np.complex64)
     
     # Filter each line
     print_set = np.linspace(0,num_sets-1,10, dtype=int) 
     for set_ind in xrange(num_sets):
         if set_ind in print_set:
-            print 'Reading...', np.rint(100*set_ind/num_sets) , '% complete'
-        
-        #parm_dict['t_raw'] = raw_data[set_ind,:]
-        (noise_floors[set_ind], filt_data_set, cond_data_set) = unitFilter((raw_data[set_ind,:],parm_dict))
-        if parm_dict['hot_inds'] != None:
-            cond_data[set_ind,:] = cond_data_set
-        if parm_dict['rot_pts'] != None:
-            filt_data[set_ind*pix_per_set:(set_ind+1)*pix_per_set,:] = filt_data_set      
+            print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
+
+        # parm_dict['t_raw'] = raw_data[set_ind,:]
+        (noise_floors[set_ind], filt_data_set, cond_data_set) = unitFilter((raw_data[set_ind, :], parm_dict))
+        if parm_dict['hot_inds'] is not None:
+            cond_data[set_ind, :] = cond_data_set
+        if parm_dict['rot_pts'] is not None:
+            filt_data[set_ind*pix_per_set:(set_ind+1)*pix_per_set, :] = filt_data_set
             
-    return (noise_floors, filt_data, cond_data)
+    return noise_floors, filt_data, cond_data
 
      
 def unitFilter(single_parm):
@@ -489,7 +493,7 @@ def unitFilter(single_parm):
     # unpack all the variables from the sole input
     t_raw = single_parm[0]
     parm_dict = single_parm[1]
-    #t_raw = parm_dict['t_raw']
+    # t_raw = parm_dict['t_raw']
     filter_parms = parm_dict['filter_parms']
     composite_filter = parm_dict['composite_filter']
     rot_pts = parm_dict['rot_pts']
@@ -502,19 +506,20 @@ def unitFilter(single_parm):
     F_data[np.abs(F_data) < noise_floor] = 0
     cond_data = None
     filt_data = None
-    if hot_inds != None:
+    if hot_inds is not None:
         cond_data = F_data[hot_inds]
-    if rot_pts != None:
+    if rot_pts is not None:
         t_clean = np.real(np.fft.ifft(np.fft.ifftshift(F_data)))
-        filt_mat = t_clean.reshape(filter_parms['num_pix'],-1) 
+        filt_mat = t_clean.reshape(filter_parms['num_pix'], -1)
         if rot_pts > 0:
             filt_data = np.roll(filt_mat, rot_pts, axis=1)
         else:
             filt_data = filt_mat
             
-    return (noise_floor, filt_data, cond_data)
+    return noise_floor, filt_data, cond_data
 
 ###############################################################################
+
 
 def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
     """
@@ -545,14 +550,12 @@ def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
     """
     F_condensed_mat = np.atleast_2d(F_condensed_mat)
     hot_inds_mirror = np.flipud(num_pts - hot_inds)
-    time_resp = np.zeros(shape=(F_condensed_mat.shape[0],num_pts), dtype=np.float32)    
-    for pos in xrange(F_condensed_mat.shape[0]):
-        F_complete = np.zeros(shape=(num_pts), dtype=np.complex)
-        F_complete[hot_inds] = F_condensed_mat[pos,:]
+    time_resp = np.zeros(shape=(F_condensed_mat.shape[0], num_pts), dtype=np.float32)
+    for pos in range(F_condensed_mat.shape[0]):
+        F_complete = np.zeros(shape=num_pts, dtype=np.complex)
+        F_complete[hot_inds] = F_condensed_mat[pos, :]
         # Now add the mirror (FFT in negative X axis that was removed)
-        F_complete[hot_inds_mirror] = np.flipud(F_condensed_mat[pos,:])    
-        time_resp[pos,:] = np.real(np.fft.ifft(np.fft.ifftshift(F_complete)))
+        F_complete[hot_inds_mirror] = np.flipud(F_condensed_mat[pos, :])
+        time_resp[pos, :] = np.real(np.fft.ifft(np.fft.ifftshift(F_complete)))
     
     return np.squeeze(time_resp)
-
-              
