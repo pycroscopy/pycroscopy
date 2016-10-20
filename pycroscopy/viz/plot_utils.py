@@ -12,8 +12,6 @@ import h5py
 import scipy
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.cluster.hierarchy import linkage
-from scipy.spatial.distance import pdist
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..analysis.utils.be_loop import loopFitFunction
 
@@ -689,54 +687,11 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
     ax_map.set_title('Cluster Label Map')
 
     fig.tight_layout()
-    fig.suptitle('Cluster results')
+    fig.suptitle('Cluster')
     fig.canvas.set_window_title('Cluster results')
 
     return fig, axes
 
-
-def reorder_clusters(labels, mean_response):
-    """
-    Reorders clusters by the distances between the clusters
-
-    Parameters
-    ----------
-    labels : 1D unsigned int numpy array
-        Labels for the clusters
-    mean_response : 2D numpy array
-        Mean response of each cluster arranged as [cluster , features]
-
-    Returns
-    -------
-    new_labels : 1D unsigned int numpy array
-        Labels for the clusters arranged by distances
-    new_mean_response : 2D numpy array
-        Mean response of each cluster arranged as [cluster , features]
-    """
-
-    num_clusters = mean_response.shape[0]
-    # Get the distance between cluster means
-    distance_mat = pdist(mean_response)
-    # get hierarchical pairings of clusters
-    linkage_pairing = linkage(distance_mat, 'weighted')
-
-    # get the new order - this has been checked to be OK
-    new_cluster_order = []
-    for row in range(linkage_pairing.shape[0]):
-        for col in range(2):
-            if linkage_pairing[row, col] < num_clusters:
-                new_cluster_order.append(int(linkage_pairing[row, col]))
-
-    # Now that we know the order, rearrange the clusters and labels:
-    new_labels = np.zeros(shape=labels.shape, dtype=labels.dtype)
-    new_mean_response = np.zeros(shape=mean_response.shape, dtype=mean_response.dtype)
-
-    # Reorder clusters
-    for old_clust_ind, new_clust_ind in enumerate(new_cluster_order):
-        new_labels[np.where(labels == new_clust_ind)[0]] = old_clust_ind
-        new_mean_response[old_clust_ind] = mean_response[new_clust_ind]
-
-    return new_labels, new_mean_response
 
 ###############################################################################
 
