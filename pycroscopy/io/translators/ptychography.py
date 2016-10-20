@@ -32,7 +32,7 @@ class PtychographyTranslator(Translator):
         self.binning_func = self.__no_bin
         self.bin_func = None
 
-    def translate(self, h5_path, image_path, bin_factor=None, bin_func=np.mean):
+    def translate(self, h5_path, image_path, bin_factor=None, bin_func=np.mean, num_images=None):
         """
         Basic method that adds Ptychography data to existing hdf5 thisfile
         You must have already done the basic translation with BEodfTranslator
@@ -60,7 +60,10 @@ class PtychographyTranslator(Translator):
 
         file_list = self._parsefilepath(image_path, '.tif')
 
-        num_files = len(file_list)
+        if num_images is None:
+            num_files = len(file_list)
+        else:
+            num_files = num_images
 
         # Open the hdf5 thisfile and delete any contents
         try:
@@ -95,7 +98,7 @@ class PtychographyTranslator(Translator):
         num_files = scan_size**2
         
         h5_main, h5_mean_spec, h5_ronch = self._setupH5(num_files, usize,
-                                                        vsize, np.float32,
+                                                        vsize, np.uint8,
                                                         scan_size)
 
         self._read_data(file_list[:num_files], h5_main, h5_mean_spec, h5_ronch, image_path, num_pixels)
