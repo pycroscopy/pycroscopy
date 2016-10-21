@@ -11,6 +11,7 @@ import os
 import h5py
 import scipy
 import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..analysis.utils.be_loop import loopFitFunction
@@ -48,6 +49,35 @@ def set_tick_font_size(axes, font_size):
     else:
         __set_axis_tick(axes)
 
+def cmap_jet_white_center():
+    """
+    Generates the jet colormap with a white center
+
+    Returns
+    -------
+    white_jet : matplotlib.colors.LinearSegmentedColormap object
+        color map object that can be used in place of plt.cm.jet
+    """
+    # For red - central column is like brightness
+    # For blue - last column is like brightness
+    cdict = {'red': ((0.00, 0.0, 0.0),
+                     (0.30, 0.0, 0.0),
+                     (0.50, 1.0, 1.0),
+                     (0.90, 1.0, 1.0),
+                     (1.00, 0.5, 1.0)),
+             'green': ((0.00, 0.0, 0.0),
+                       (0.10, 0.0, 0.0),
+                       (0.42, 1.0, 1.0),
+                       (0.58, 1.0, 1.0),
+                       (0.90, 0.0, 0.0),
+                       (1.00, 0.0, 0.0)),
+             'blue': ((0.00, 0.0, 0.5),
+                      (0.10, 1.0, 1.0),
+                      (0.50, 1.0, 1.0),
+                      (0.70, 0.0, 0.0),
+                      (1.00, 0.0, 0.0))
+             }
+    return LinearSegmentedColormap('white_jet', cdict)
 
 def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     '''
