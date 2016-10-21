@@ -3,6 +3,7 @@ from . import be_hdf_utils
 from . import io_hdf5
 from .io_hdf5 import ioHDF5
 from . import io_utils
+from .io_utils import *
 from . import microdata
 from .microdata import MicroDataset, MicroDataGroup
 from . import translators
