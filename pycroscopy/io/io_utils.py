@@ -13,7 +13,7 @@ from PyQt4 import QtGui
 
 __all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
-           'recommendCores']
+           'recommendCores', 'uiGetDirectory']
 
 def getTimeStamp():
     """
@@ -33,14 +33,15 @@ def getTimeStamp():
 
 def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     """
-    Presents a File dialog used for selecting the .mat file
-    and returns the absolute filepath of the selecte file\n
+    Presents a File dialog used for selecting a file of the
+    type specified in `filter` and returns the absolute
+    filepath of that file.
 
     Parameters
     ----------
-    extension : String or list of strings
+    filter : str or list of str, oftional
         file extensions to look for
-    caption : (Optional) String
+    caption : str, optional
         Title for the file browser window
 
     Returns
@@ -50,6 +51,27 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     """
     app = QtGui.QApplication([])
     path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
+    app.exit()
+
+    return str(path)
+
+
+def uiGetDirectory(caption='Select Data Directory'):
+    """
+    Presents a File dialog used for selecting a directory
+
+    Parameters
+    ----------
+    caption : str, optional
+        Title for the file browser window
+
+    Returns
+    -------
+    file_path : String
+        Absolute path of the chosen file
+    """
+    app = QtGui.QApplication([])
+    path = QtGui.QFileDialog.getExistingDirectory(caption=caption)
     app.exit()
 
     return str(path)
