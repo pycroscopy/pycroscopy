@@ -15,7 +15,7 @@ from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..analysis.utils.be_loop import loopFitFunction
-from pycroscopy.io.hdf_utils import reshape_to_Ndims, get_formatted_labels
+from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
 
 def set_tick_font_size(axes, font_size):
@@ -79,6 +79,33 @@ def cmap_jet_white_center():
                       (1.00, 0.0, 0.0))
              }
     return LinearSegmentedColormap('white_jet', cdict)
+
+def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
+    """
+    Create an N-bin discrete colormap from the specified input map
+
+    Parameters
+    ----------
+    num_bins : unsigned int
+        Number of discrete bins
+    base_cmap : matplotlib.colors.LinearSegmentedColormap object
+        Base color map to discretize
+
+    Returns
+    -------
+    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+        Discretized color map
+
+    Credits
+    -------
+    Jake VanderPlas
+    License: BSD-style
+    """
+
+    base = plt.cm.get_cmap(base_cmap)
+    color_list = base(np.linspace(0, 1, num_bins))
+    cmap_name = base.name + str(num_bins)
+    return base.from_list(cmap_name, color_list, num_bins)
 
 def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     '''
@@ -813,11 +840,11 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
 
     return fig, axes
 
-
 ###############################################################################
 
-def plotKMeansClusters(label_mat, cluster_centroids,
-                       max_centroids=4, x_label='', y_label=''):
+
+def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
+                       spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
     """
     Plots the provided labels mat and centroids from clustering
 
@@ -869,20 +896,33 @@ def plotKMeansClusters(label_mat, cluster_centroids,
         axes_handles = [fax1, fax2, fax3, fax4, fax5, fax6, fax7, fax8, fax9, fax10]
 
     # First plot the labels map:
-    im = fax1.imshow(label_mat, interpolation='none')
+    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0],
+                                                      base_cmap=plt.cm.jet))
+    fig501.colorbar(pcol0, ax=fax1)
+    fax1.axis('tight')
+    fax1.set_aspect('auto')
     fax1.set_title('K-means Cluster Map')
+    """im = fax1.imshow(label_mat, interpolation='none')
     divider = make_axes_locatable(fax1)
     cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
-    plt.colorbar(im, cax=cax)
+    plt.colorbar(im, cax=cax)"""
+
+    if spec_val is None and cluster_centroids.ndim == 2:
+        spec_val = np.arange(cluster_centroids.shape[1])
 
     # Plot results
-    for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(1, max_centroids + 1)):
-        ax.plot(cluster_centroids[index - 1, :], 'g-')
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
+    for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(max_centroids)):
+        if cluster_centroids.ndim == 2:
+            ax.plot(spec_val, cluster_centroids[index, :],
+                    color=plt.cm.jet(int(255 * index / (cluster_centroids.shape[0] - 1))))
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
+        elif cluster_centroids.ndim == 3:
+            plot_map(ax, cluster_centroids[index], show_colorbar=True)
         ax.set_title('Centroid: %d' % index)
 
     fig501.subplots_adjust(hspace=0.60, wspace=0.60)
+    fig501.tight_layout()
 
     return fig501
 
