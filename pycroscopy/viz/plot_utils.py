@@ -828,14 +828,18 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ax_map.set_xticklabels(pos_ticks[0][x_ticks])
         ax_map.set_yticklabels(pos_ticks[1][y_ticks])
 
-    divider = make_axes_locatable(ax_map)
+    """divider = make_axes_locatable(ax_map)
     cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
-    fig.colorbar(im, cax=cax)
+    fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
+                 cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.jet))
+    ax_map.axis('tight')"""
+    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.jet))
+    fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
+    ax_map.set_aspect('auto')
     ax_map.set_title('Cluster Label Map')
 
     fig.tight_layout()
-    fig.suptitle('Cluster')
     fig.canvas.set_window_title('Cluster results')
 
     return fig, axes
@@ -856,6 +860,9 @@ def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
                        structured as [cluster,features]
     max_centroids : unsigned int
                     Number of centroids to plot
+    spec_val :  array-like
+        X axis to plot the centroids against
+        If no value is specified, the data is plotted against the index
     x_label : String / unicode
               X label for centroid plots
     y_label : String / unicode
@@ -898,10 +905,10 @@ def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
     # First plot the labels map:
     pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0],
                                                       base_cmap=plt.cm.jet))
-    fig501.colorbar(pcol0, ax=fax1)
+    fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
     fax1.axis('tight')
     fax1.set_aspect('auto')
-    fax1.set_title('K-means Cluster Map')
+    fax1.set_title('Cluster Label Map')
     """im = fax1.imshow(label_mat, interpolation='none')
     divider = make_axes_locatable(fax1)
     cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
