@@ -50,7 +50,7 @@ class FastIVTranslator(Translator):
         # Now start creating datasets and populating:
         ds_spec_inds, ds_spec_vals = self._buildspectroscopicdatasets((len(excit_wfm)),
                                                                       labels=['Bias'],
-                                                                      units=['sec'])
+                                                                      units=['V'])
         ds_spec_vals.data = excit_wfm  # The data generated above varies linearly. Override.
 
         ds_pos_ind, ds_pos_val = self._buildpositiondatasets([parm_dict['grid_num_rows']],
@@ -67,6 +67,8 @@ class FastIVTranslator(Translator):
         ds_raw_data = MicroDataset('Raw_Data', data=[],
                                    maxshape=(parm_dict['grid_num_rows'], len(excit_wfm)),
                                    dtype=np.float16, chunking=(1, len(excit_wfm)), compression='gzip')
+        ds_raw_data.attrs['labels'] = ['Current']
+        ds_raw_data.attrs['units'] = ['1E-{} A'.format(parm_dict['IO_amplifier_gain'])]
         
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
