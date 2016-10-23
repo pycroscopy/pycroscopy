@@ -5,7 +5,6 @@ Created on Thu May 05 13:29:12 2016
 @author: Suhas Somnath
 """
 from __future__ import division # int/int = float
-
 from warnings import warn
 import os
 import h5py
@@ -357,20 +356,14 @@ def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None):
     ----------
     None
     """
-    fig,axes=plt.subplots(ncols=3, nrows=2, sharex=True, figsize=(15, 10)) 
+    fig, axes = plt.subplots(ncols=3, nrows=2, sharex=True, figsize=(15, 10))
     
     for index, ax_hand, data_mat, qty_name in zip(range(len(map_names)), axes.flat, sho_maps, map_names):
-        amp_mean = np.mean(data_mat)
-        amp_std = np.std(data_mat)          
-        
-        pcol0 = ax_hand.pcolor(data_mat, vmin=amp_mean-stdevs*amp_std, 
-                               vmax=amp_mean+stdevs*amp_std) 
-        ax_hand.axis('tight') 
-        fig.colorbar(pcol0, ax=ax_hand) 
+        plot_map(ax_hand, data_mat, stdevs=stdevs)
         ax_hand.set_title(qty_name) 
          
-    plt.setp([ax.get_xticklabels() for ax in axes[0,:]], visible=True) 
-    axes[1,2].axis('off') 
+    plt.setp([ax.get_xticklabels() for ax in axes[0, :]], visible=True)
+    axes[1, 2].axis('off')
     
     plt.tight_layout()   
     if save_path:
@@ -654,13 +647,14 @@ def plotScree(S, title='Scree'):
 
 ###############################################################################
 
-def plotLoadingMaps(loadings, num_comps=4, stdevs=2, show_colorbar=True, **kwargs):
+def plot_map_stack(map_stack, num_comps=4, stdevs=2, show_colorbar=True,
+                   title='Component', heading='Map Stack', **kwargs):
     """
-    Plots the provided loading maps
+    Plots the provided stack of maps
 
     Parameters:
     -------------
-    loadings : 3D real numpy array
+    map_stack : 3D real numpy array
         structured as [rows, cols, component]
     num_comps : int
         Number of components to plot
@@ -680,11 +674,12 @@ def plotLoadingMaps(loadings, num_comps=4, stdevs=2, show_colorbar=True, **kwarg
     p_cols = int(np.floor(num_comps / p_rows))
     fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
     fig202.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig202.canvas.set_window_title("Loading Maps")
+    fig202.canvas.set_window_title(heading)
+    fig202.suptitle(heading, fontsize=16)
 
     for index in xrange(num_comps):
-        plot_map(axes202.flat[index], loadings[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
-        axes202.flat[index].set_title('Loading %d' % (index + 1))
+        plot_map(axes202.flat[index], map_stack[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
+        axes202.flat[index].set_title('{} {}'.format(title, index))
     fig202.tight_layout()
 
     return fig202, axes202
