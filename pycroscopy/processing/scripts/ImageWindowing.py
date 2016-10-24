@@ -11,7 +11,7 @@ import sys
 sys.path.append('../../../')
 from pycroscopy.processing.image_processing import ImageWindow
 from pycroscopy.processing.svd_utils import doSVD
-from pycroscopy.viz.plot_utils import plotScree, plotLoadingMaps, plotSpectrograms
+from pycroscopy.viz.plot_utils import plotScree, plot_map_stack, plotSpectrograms
 from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
@@ -91,8 +91,8 @@ if __name__ == '__main__':
     stdevs = 2
 
     print 'Plotting Loading Maps'
-    fig202, axes202 = plotLoadingMaps(np.reshape(h5_U[:, :plot_comps], [num_rows, num_cols, -1]),
-                                      num_comps=plot_comps, stdevs=2, show_colorbar=True)
+    fig202, axes202 = plot_map_stack(np.reshape(h5_U[:, :plot_comps], [num_rows, num_cols, -1]),
+                                     num_comps=plot_comps, stdevs=2, show_colorbar=True)
     fig202.savefig(os.path.join(folder, svd_name+'_SVD_Loadings.png'), format='png', dpi=300)
     plt.close(fig202)
     del fig203, fig202, axes203, axes202
