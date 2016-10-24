@@ -9,7 +9,7 @@ from __future__ import division
 import abc
 import numpy as np
 from ..io_utils import getAvailableMem
-from ..hdf_utils import linkRefAsAlias
+from ..hdf_utils import linkRefAsAlias, linkRefs
 from .utils import makePositionMat, getPositionSlicing, getSpectralSlicing
 from ..microdata import MicroDataset
 
@@ -220,7 +220,7 @@ class Translator(object):
         return ds_spec_inds, ds_spec_vals
 
     @staticmethod
-    def _linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals):
+    def _linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
         """
         Links the object references to the four position and spectrosocpic datasets as
         attributes of `h5_main`
@@ -237,11 +237,15 @@ class Translator(object):
         Dataset that will be linked with the name 'Spectroscopic_Indices'
         h5_spec_vals : h5py.Dataset
         Dataset that will be linked with the name 'Spectroscopic_Values'
+        anc_dsets : (Optional) list of h5py.Dataset objects
+        Datasets that will be linked with their own names
         """
         linkRefAsAlias(h5_main, h5_pos_inds, 'Position_Indices')
         linkRefAsAlias(h5_main, h5_pos_vals, 'Position_Values')
         linkRefAsAlias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
         linkRefAsAlias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
+        for dset in anc_dsets:
+            linkRefs(h5_main, dset)
 
     @abc.abstractmethod
     def _read_data(self):
