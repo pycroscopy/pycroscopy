@@ -41,31 +41,13 @@ Pycroscopy requires the installation of the base python libraries, a C compiler,
       
    3. Install multiprocess for parallel computation tasks
    
-      a. Max or Linux users: 
-      
-         Open a terminal and type: 
+      Open a terminal (mac / linux) or command prompt (windows) and type:
             
-            pip install multiprocess
-         
-      b. Windows users:
-      
-         * Download multiprocess from <https://pypi.python.org/pypi/multiprocess#downloads> and extract to a folder
-         
-         * Open the Command Prompt by going to Start >> Run >> type:
-            
-            cmd.exe
-         
-         * Navigate to where the folder was extracted
-         
-         * Type:
-         
-               python setup.py build
-               
-               python setup.py install
+         pip install multiprocess
                
    4. Install pycroscopy:
    
-      open a terminal (mac / linux) or command prompt (windows) and type:
+      Open a terminal (mac / linux) or command prompt (windows) and type:
       
          pip install pycroscopy
          
