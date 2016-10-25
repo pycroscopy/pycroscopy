@@ -19,9 +19,10 @@ The package structure is simple, with 4 main modules:
 
 Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`. 
 
-
 2. Installation
 ---------------
+Pycroscopy requires the installation of the base python libraries, a C compiler, and preferrably - a development environment such as Spyder from Continuum or PyCharm. 
+
    1. Install Anaconda 2.5.0 Python 2.7 64-bit:
       
       a. Mac users: <https://repo.continuum.io/archive/Anaconda2-2.5.0-MacOSX-x86_64.pkg>
@@ -69,5 +70,3 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
          pip install pycroscopy
          
    5. Enjoy pycroscopy!
-               
-         
