@@ -39,44 +39,36 @@ class FastIVTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
-        parm_dict, excit_wfm = self.__getparms(parm_path)
+        parm_dict, excit_wfm = self._read_parms(parm_path)
         folder_path, base_name = path.split(parm_path)
         waste, base_name = path.split(folder_path)
         
         h5_path = path.join(folder_path, base_name+'.h5')
         if path.exists(h5_path):
             remove(h5_path)
-           
-        # prepare and write spectroscopic values
-        spec_ind_mat = np.atleast_2d(np.arange(len(excit_wfm)))
-        # spec_val_mat = 1.0*spec_ind_mat/parm_dict['IO_samp_rate_[Hz]']
-           
-        pos_mat = makePositionMat([parm_dict['grid_num_rows']])
-        
-        pos_slices = getPositionSlicing(['Y'], parm_dict['grid_num_rows'])
-        
+
         # Now start creating datasets and populating:
-        ds_pos_ind = MicroDataset('Position_Indices', pos_mat)
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat) * parm_dict['grid_scan_height_[m]'])
-        ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = ['m']
-        
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_ind_mat)
-        ds_spec_inds.attrs['labels'] = {'Time Index': (slice(0, 1), slice(None))}
-        
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', np.atleast_2d(excit_wfm))
-        ds_spec_vals.attrs['labels'] = {'Bias': (slice(0, 1), slice(None))}
-        ds_spec_vals.attrs['units'] = ['sec']
+        ds_spec_inds, ds_spec_vals = self._buildspectroscopicdatasets((len(excit_wfm)),
+                                                                      labels=['Bias'],
+                                                                      units=['V'])
+        ds_spec_vals.data = excit_wfm  # The data generated above varies linearly. Override.
+
+        ds_pos_ind, ds_pos_val = self._buildpositiondatasets([parm_dict['grid_num_rows']],
+                                                             steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
+                                                                    parm_dict['grid_num_rows']],
+                                                             labels=['Y'],
+                                                             units=['m'])
                 
         ds_ex_efm = MicroDataset('Excitation_Waveform', excit_wfm)
         
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
-        # For some reason, compression is more effective on time series data
+        # For some reason, compression is effective only on time series data
         ds_raw_data = MicroDataset('Raw_Data', data=[],
                                    maxshape=(parm_dict['grid_num_rows'], len(excit_wfm)),
                                    dtype=np.float16, chunking=(1, len(excit_wfm)), compression='gzip')
+        ds_raw_data.attrs['labels'] = ['Current']
+        ds_raw_data.attrs['units'] = ['1E-{} A'.format(parm_dict['IO_amplifier_gain'])]
         
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
@@ -99,7 +91,7 @@ class FastIVTranslator(Translator):
         # spm_data.showTree()
         hdf.writeData(spm_data, print_log=False)
 
-        raw_datasets = list()        
+        self.raw_datasets = list()
         
         for chan_index in range(num_ai_chans):
             
@@ -110,10 +102,25 @@ class FastIVTranslator(Translator):
             h5_refs = hdf.writeData(chan_grp, print_log=False)
             h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
-            raw_datasets.append(h5_raw)
+            self.raw_datasets.append(h5_raw)
             
         # Now that the N channels have been made, populate them with the actual data....
-        
+        self._read_data(parm_dict, folder_path)
+
+        hdf.close()        
+        return h5_path
+
+    def _read_data(self, parm_dict, folder_path):
+        """
+        Reads raw data and populats the h5 datasets
+
+        Parameters
+        ----------
+        parm_dict : Dictionary
+            dictionary containing parameters for this data
+        folder_path : string / unicode
+            Absolute path of folder containing the data
+        """
         for line_ind in range(parm_dict['grid_num_rows']):
             if line_ind % np.round(parm_dict['grid_num_rows']/10) == 0:
                 print('Reading data in line {} of {}'.format(line_ind+1, parm_dict['grid_num_rows']))
@@ -121,20 +128,17 @@ class FastIVTranslator(Translator):
             if path.exists(file_path):
                 h5_f = h5py.File(file_path, 'r')
                 h5_data = h5_f['data']
-                if h5_data.shape[0] >= len(excit_wfm) and h5_data.shape[1] == len(raw_datasets):
-                    for chan, h5_chan in enumerate(raw_datasets):
+                if h5_data.shape[0] >= parm_dict['excitation_length'] and h5_data.shape[1] == len(self.raw_datasets):
+                    for chan, h5_chan in enumerate(self.raw_datasets):
                         h5_chan[line_ind, :] = np.float16(h5_data[:-1*parm_dict['excitation_extra_pts'], chan])
-                    hdf.flush()
+                        h5_chan.file.flush()
                 else:
                     warn('No data found for Line '+str(line_ind))
             else:
                 warn('File not found for: line '+str(line_ind))
-            
-        hdf.close()        
-        return h5_path
 
     @staticmethod
-    def __getparms(parm_path):
+    def _read_parms(parm_path):
         """
         Copies experimental parameters from the .mat file to a dictionary
         
@@ -167,10 +171,11 @@ class FastIVTranslator(Translator):
         extra_pts = len(excit_wfm) % pts_per_cycle
         parm_dict['excitation_extra_pts'] = extra_pts
         line_time = np.float32(h5_f['line_time'][0][0])
-        excess_time = line_time - extra_pts/parm_dict['IO_samp_rate_[Hz]']
+        excess_time = line_time - 1.0*extra_pts/parm_dict['IO_samp_rate_[Hz]']
         parm_dict['excitation_duration_[sec]'] = line_time - excess_time
         excit_wfm = excit_wfm[:-extra_pts]
-        
+        parm_dict['excitation_length'] = len(excit_wfm)
+
         parm_dict['grid_num_rows'] = np.int32(h5_f['num_lines'][0][0])
         parm_dict['grid_num_cols'] = np.int32(h5_f['num_pixels'][0][0])
         

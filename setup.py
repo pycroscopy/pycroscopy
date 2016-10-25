@@ -5,13 +5,13 @@ from setuptools import setup, find_packages
 
 here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'README.rst')) as f:
-    long_description=f.read()
+    long_description = f.read()
 
 setup(
     name='pycroscopy',
-    version='0.0a4',
+    version='0.0a8',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
-    long_description= long_description,
+    long_description=long_description,
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
@@ -34,11 +34,11 @@ setup(
     author_email='pycroscopy@gmail.com',
 
     # I don't remember how to do this correctly!!!. NL
-    install_requires=['numpy_groupies','pyqtgraph','numpy>=1.11.0',
-                      'h5py>=2.6.0','scipy>=0.17.1','matplotlib',
-                      'scikit-learn>=0.17.1','xlrd>=1.0.0',
-                      'psutil','scikit-image>=0.12.3'],#'multiprocess'],
-    #package_data={'sample':['dataset_1.dat']}
+    install_requires=['numpy_groupies', 'pyqtgraph', 'numpy>=1.11.0',
+                      'h5py>=2.6.0', 'scipy>=0.17.1', 'matplotlib',
+                      'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
+                      'psutil', 'scikit-image>=0.12.3'],  # 'multiprocess'],
+    # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',
     dependency='',

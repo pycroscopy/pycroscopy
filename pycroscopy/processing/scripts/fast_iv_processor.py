@@ -8,7 +8,7 @@ Created on Sun May 29 19:09:34 2016
 #%% Translate data first 
 
 from pycroscopy.io.io_utils import uiGetFile
-from pycroscopy.io.Translators.fast_iv import FastIVTranslator
+from pycroscopy.io.translators.fast_iv import FastIVTranslator
 parm_path = uiGetFile('parms.mat')
 translator = FastIVTranslator()
 h5_path = translator.translate(parm_path)

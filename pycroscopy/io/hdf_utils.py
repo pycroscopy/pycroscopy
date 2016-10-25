@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 """
 Created on Tue Nov  3 21:14:25 2015
 
-@author: Numan Laanait, Suhas Somnath, Chris Smith
+@author: Suhas Somnath, Chris Smith, Numan Laanait
 """
+from __future__ import print_function
 import h5py
 from warnings import warn
 import numpy as np
@@ -14,7 +13,7 @@ from .microdata import MicroDataset
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'getDataAttr', 'getH5GroupRef', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group']
+           'findH5group', 'get_formatted_labels']
 
 
 def getDataSet(h5Parent, dataName):
@@ -408,6 +407,41 @@ def createRefFromIndices(h5_main, ref_inds):
     new_ref = h5py.h5r.create(h5_main.id, b'.', h5py.h5r.DATASET_REGION, space=h5_space)
 
     return new_ref
+
+
+def get_formatted_labels(h5_dset):
+    """
+    Takes any dataset which has the labels and units attributes and returns a list of strings
+    formatted as 'label k (unit k)'
+
+    Parameters
+    ----------
+    h5_dset : h5py.Dataset object
+        dataset which has labels and units attributes
+
+    Returns
+    -------
+    labels : list
+        list of strings formatted as 'label k (unit k)'
+    """
+    try:
+        labs = h5_dset.attrs['labels']
+        try:
+            units = h5_dset.attrs['units']
+        except KeyError:
+            warn('units attribute was missing')
+            units = ['' for lab in labs]
+
+        if len(labs) != len(units):
+            warn('Labels and units have different sizes!')
+            return None
+        labels = []
+        for lab, unit in zip(labs, units):
+            labels.append('{} ({})'.format(lab, unit))
+        return labels
+    except KeyError:
+        warn('labels attribute was missing')
+        return None
 
 
 def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
