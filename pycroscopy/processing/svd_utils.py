@@ -80,6 +80,8 @@ def doSVD(h5_main, num_comps=None):
     '''
     ds_S = MicroDataset('S', data=np.float32(S))
     ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
+    ds_inds.attrs['labels'] = {'components': [slice(0, None)]}
+    ds_inds.attrs['units'] = ''
     del S
 
     u_chunks = calc_chunks(U.shape, np.float32(0).itemsize, unit_chunks=[1, num_comps])
