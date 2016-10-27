@@ -79,8 +79,10 @@ def doSVD(h5_main, num_comps=None):
     memory.
     '''
     ds_S = MicroDataset('S', data=np.float32(S))
+    ds_S.attrs['labels'] = {'Principal Component': [slice(0, None)]}
+    ds_S.attrs['units'] = ''
     ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
-    ds_inds.attrs['labels'] = {'components': [slice(0, None)]}
+    ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
     ds_inds.attrs['units'] = ''
     del S
 
