@@ -1029,3 +1029,31 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     chunking = tuple(unit_chunks)
 
     return chunking
+
+
+def linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
+    """
+    Links the object references to the four position and spectrosocpic datasets as
+    attributes of `h5_main`
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset
+    2D Dataset which will have the references added as attributes
+    h5_pos_inds : h5py.Dataset
+    Dataset that will be linked with the name 'Position_Indices'
+    h5_pos_vals : h5py.Dataset
+    Dataset that will be linked with the name 'Position_Values'
+    h5_spec_inds : h5py.Dataset
+    Dataset that will be linked with the name 'Spectroscopic_Indices'
+    h5_spec_vals : h5py.Dataset
+    Dataset that will be linked with the name 'Spectroscopic_Values'
+    anc_dsets : (Optional) list of h5py.Dataset objects
+    Datasets that will be linked with their own names
+    """
+    linkRefAsAlias(h5_main, h5_pos_inds, 'Position_Indices')
+    linkRefAsAlias(h5_main, h5_pos_vals, 'Position_Values')
+    linkRefAsAlias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
+    linkRefAsAlias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
+    for dset in anc_dsets:
+        linkRefs(h5_main, dset)
