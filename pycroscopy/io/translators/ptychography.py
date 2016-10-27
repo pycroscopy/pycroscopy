@@ -102,7 +102,7 @@ class PtychographyTranslator(Translator):
             self.bin_func = bin_func
 
         num_files = scan_size_x*scan_size_y
-        h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.uint8, scan_size_x, scan_size_y)
+        h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32, scan_size_x, scan_size_y)
 
         self._read_data(file_list[start_image:start_image+num_files],
                         h5_main, h5_mean_spec, h5_ronch, image_path)
@@ -278,17 +278,20 @@ class PtychographyTranslator(Translator):
         num_pixels = usize*vsize
         num_files = scan_size_x*scan_size_y
 
-        main_parms = generateDummyMainParms()
-        main_parms['num_images'] = num_files
-        main_parms['datatype'] = 'ptychography'
-        main_parms['image_size_u'] = usize
-        main_parms['image_size_v'] = vsize
-        main_parms['num_pixels'] = num_pixels
-        main_parms['translator'] = 'Ptychography'
-        main_parms['scan_size_x'] = scan_size_x
-        main_parms['scan_size_y'] = scan_size_y
+        root_parms = generateDummyMainParms()
+        root_parms['data_type'] = 'PtychographyData'
+
+        main_parms = {'num_images': num_files,
+                      'image_size_u': usize,
+                      'image_size_v': vsize,
+                      'num_pixels': num_pixels,
+                      'translator': 'Ptychography',
+                      'scan_size_x': scan_size_x,
+                      'scan_size_y': scan_size_y}
     # Create the hdf5 data Group
-        meas_grp = MicroDataGroup('Measurement_000', parent='/')
+        root_grp = MicroDataGroup('/')
+        root_grp.attrs = root_parms
+        meas_grp = MicroDataGroup('Measurement_000')
         meas_grp.attrs = main_parms
         chan_grp = MicroDataGroup('Channel_000')
     # Get the Position and Spectroscopic Datasets
@@ -318,10 +321,11 @@ class PtychographyTranslator(Translator):
                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
         meas_grp.addChildren([chan_grp])
 
+        root_grp.addChildren([meas_grp])
         # print('Writing following tree to this file:')
-        # meas_grp.showTree()
+        # root_grp.showTree()
 
-        h5_refs = self.hdf.writeData(meas_grp)
+        h5_refs = self.hdf.writeData(root_grp)
         h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
         h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
         h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
@@ -330,7 +334,7 @@ class PtychographyTranslator(Translator):
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        self._linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        _linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
         
