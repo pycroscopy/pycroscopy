@@ -19,7 +19,7 @@ from ..microdata import MicroDataGroup, MicroDataset # The building blocks for d
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from .translator import Translator
 from ..be_hdf_utils import maxReadPixels
-from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 
 class BEPSndfTranslator(Translator):
     """
@@ -51,7 +51,7 @@ class BEPSndfTranslator(Translator):
         """
         ## Read the parameter files
         if debug: print('BEndfTranslator: Getting file paths')
-        (parm_filepath,udvs_filepath, parms_mat_path) = self.__getParmFilePaths(data_filepath)
+        (parm_filepath, udvs_filepath, parms_mat_path) = self._parsefilepath(data_filepath)
         if debug: print('BEndfTranslator: Reading Parms text file')
         (isBEPS,self.parm_dict) = parmsToDict(parm_filepath)
         self.parm_dict['data_type'] = 'BEPSData'
@@ -140,43 +140,63 @@ class BEPSndfTranslator(Translator):
         
         ########################################################
         # Reading and parsing the .dat file(s) 
-        
-        print('Reading data file(s)')
 
-        self.dset_index = 0
-        self.ds_pixel_start_indx = 0            
+        self._read_data(parsers, unique_waves, show_plots=False, save_plots=True, do_histogram=False,)
         
+        self.hdf.close()
+            
+        return h5_path
+
+    def _read_data(self, parsers, unique_waves, show_plots, save_plots, do_histogram):
+        """
+        Loops over all pixels and reads the data into the HDF5 file.
+
+        Parameters
+        ----------
+        parsers : list of BEPSndfPixel
+            List of parser object that will read the pixel data from the files
+        unique_waves : numpy.ndarray of int
+            Array denoting the unique waveforms in the experiment
+        show_plots : Boolean, optional
+            Should generated plots be shown during translation.  Default True
+        save_plots : Boolean, optional
+            Should generated plots be saved to disk during translation.  Default True
+        do_histogram : Boolean, optional
+            Should histograms be generated for the different plot groups.  Default False
+
+        Returns
+        -------
+        None
+        """
+        print('Reading data file(s)')
+        self.dset_index = 0
+        self.ds_pixel_start_indx = 0
         for pixel_ind in xrange(self.max_pixels):
-            
-            if (100.0*(pixel_ind+1)/self.max_pixels)%10 == 0:
-                print('{} % complete'.format(int(100*(pixel_ind+1)/self.max_pixels)))
-            
+
+            if (100.0 * (pixel_ind + 1) / self.max_pixels) % 10 == 0:
+                print('{} % complete'.format(int(100 * (pixel_ind + 1) / self.max_pixels)))
+
             # First read the next pixel from all parsers:
             current_pixels = {}
             for prsr in parsers:
                 current_pixels[prsr.getWaveType()] = prsr.readPixel()
-        
-            if pixel_ind == 0:               
+
+            if pixel_ind == 0:
                 h5_refs = self.__initializeDataSet(self.max_pixels, current_pixels)
-                prev_pixels = current_pixels # This is here only to avoid annoying warnings. 
-            else: 
+                prev_pixels = current_pixels  # This is here only to avoid annoying warnings.
+            else:
                 if current_pixels[unique_waves[0]].isDifferentFrom(prev_pixels[unique_waves[0]]):
                     # Some parameter has changed. Write current group and make new group
                     self.__closeDataset(h5_refs, show_plots, save_plots, do_histogram)
                     self.ds_pixel_start_indx = pixel_ind
                     h5_refs = self.__initializeDataSet(self.max_pixels - pixel_ind, current_pixels)
-            
+
             # print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
             self.__appendPixelData(current_pixels)
-            
+
             prev_pixels = current_pixels
-        
         self.__closeDataset(h5_refs, show_plots, save_plots, do_histogram)
-        
-        self.hdf.close()
-            
-        return h5_path
-        
+
     ###################################################################################################
         
     def __closeDataset(self, h5_refs, show_plots, save_plots, do_histogram):
@@ -242,7 +262,7 @@ class BEPSndfTranslator(Translator):
                            self.folder_path, self.basename,
                            self.max_resp, self.min_resp, 
                            max_mem_mb=self.max_ram,
-                           spec_label = self.spec_label, 
+                           spec_label=self.spec_label,
                            show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram)
         
@@ -354,9 +374,10 @@ class BEPSndfTranslator(Translator):
         """
         Create the Spectroscopic Values tables
         """
-        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names =  createSpecVals(self.udvs_mat, spec_inds, bin_freqs, exec_bin_vec, 
-                                                                                                      curr_parm_dict, np.array(self.udvs_labs), self.udvs_units)
-        
+        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = \
+            createSpecVals(self.udvs_mat, spec_inds, bin_freqs, exec_bin_vec,
+                           curr_parm_dict, np.array(self.udvs_labs), self.udvs_units)
+
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name]=(slice(row_ind,row_ind+1),slice(None))            
@@ -372,8 +393,6 @@ class BEPSndfTranslator(Translator):
             ds_spec_mat.attrs[label]= names
             ds_spec_vals_mat.attrs[label]= names
 
-#         ds_spec_vals_labs = MicroDataset('Spectroscopic_Values_Labels',np.array(spec_vals_labs))
-#         ds_main_data = MicroDataset('Raw_Data', np.zeros(shape=(tot_pts,1), dtype=np.complex64), chunking=(tot_bins,1), compression='gzip', dtype=np.complex64, resizable=True)
         """
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares of UDVS steps by pixels.
         N is determined dinamically based on the dimensions of the dataset.  Currently it is set such that individual
@@ -386,7 +405,14 @@ class BEPSndfTranslator(Translator):
         chunking = np.floor(np.sqrt(pixel_chunking))
         chunking = max(1, chunking)
         chunking = min(actual_udvs_steps, num_pix, chunking)
-        ds_main_data = MicroDataset('Raw_Data', np.zeros(shape=(1,tot_pts), dtype=np.complex64), chunking=(chunking,chunking*max_bins_per_pixel), resizable=True,compression='gzip')
+        beps_chunks = calc_chunks([num_pix, tot_pts],
+                                  np.complex64(0).itemsize,
+                                  unit_chunks=(1, max_bins_per_pixel))
+        ds_main_data = MicroDataset('Raw_Data',
+                                    np.zeros(shape=(1, tot_pts), dtype=np.complex64),
+                                    chunking=beps_chunks,
+                                    resizable=True,
+                                    compression='gzip')
         
         ds_noise = MicroDataset('Noise_Floor', np.zeros(shape=(1,3,actual_udvs_steps), dtype=np.float32), chunking=(1,3,actual_udvs_steps), compression='gzip', dtype=np.float32, resizable=True)
         noise_labs = ['super_band','inter_bin_band','sub_band']
@@ -499,18 +525,18 @@ class BEPSndfTranslator(Translator):
                
     ###################################################################################################
     
-    def __getParmFilePaths(self,data_filepath):
+    def _parsefilepath(self, data_filepath):
         """
         Returns the filepaths to the parms text file and UDVS spreadsheet.\n
         Note: This function also initializes the basename and the folder_path for this instance
         
         Parameters
-        ---------
+        ----------
         data_filepath : String / unicode
             Absolute path of the data file (.dat) in the newdatafolder
         
         Returns
-        ---------
+        -------
         parm_filepath : String / unicode
             absolute filepath of the parms text file
         udvs_filepath : String / unicode
@@ -518,26 +544,29 @@ class BEPSndfTranslator(Translator):
         parms_mat_path : String / unicode
             absolute filepath of the .mat parms file
         """
-        (self.folder_path, tail) = path.split(data_filepath) # folderpath should end in newdataformat, tail must be the .dat file name
-        (main_folder_path,tail) = path.split(self.folder_path) # main_folder_path is the folder above newdataformat or the relative root
+        # folderpath should end in newdataformat, tail must be the .dat file name
+        (self.folder_path, tail) = path.split(data_filepath)
+        # main_folder_path is the folder above newdataformat or the relative root
+        (main_folder_path, tail) = path.split(self.folder_path)
         
         parms_mat_path = None
+        parm_filepath = None
         for filenames in listdir(main_folder_path):
             if filenames.endswith('.txt') and filenames.find('parm') > 0:
-                parm_filepath = path.join(main_folder_path,filenames)
+                parm_filepath = path.join(main_folder_path, filenames)
             elif filenames.endswith('more_parms.mat'):
-                parms_mat_path = path.join(main_folder_path,filenames)
+                parms_mat_path = path.join(main_folder_path, filenames)
         for filenames in listdir(self.folder_path):
             if (filenames.endswith('.xlsx') or filenames.endswith('.xls')) and filenames.find('UD_VS') > 0:
-                udvs_filepath = path.join(self.folder_path,filenames)
+                udvs_filepath = path.join(self.folder_path, filenames)
                 break
                 
-        (tail,self.basename) = path.split(main_folder_path)     
+        (tail, self.basename) = path.split(main_folder_path)
         
-        return (parm_filepath, udvs_filepath, parms_mat_path)
+        return parm_filepath, udvs_filepath, parms_mat_path
         
     ###################################################################################################
-        
+
     def __assembleParsers(self):
         """
         Returns a list of BEPSndfParser objects per excitation wavetype.
