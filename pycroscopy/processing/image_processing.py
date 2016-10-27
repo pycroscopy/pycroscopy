@@ -14,7 +14,7 @@ from multiprocessing import cpu_count
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks
-from ..io.translators.utils import getPositionSlicing, makePositionMat
+from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 class ImageWindow(object):
@@ -74,13 +74,16 @@ class ImageWindow(object):
                 image = imread(self.image_path, as_grey=True)
             except:
                 raise
+            root_grp = MicroDataGroup('/')
+            root_grp.attrs['data_type'] = 'ImageData'
 
             meas_grp = MicroDataGroup('Measurement_')
             
             chan_grp = MicroDataGroup('Channel_')
+            root_grp.addChildren([meas_grp])
             meas_grp.addChildren([chan_grp])
 
-            ds_rawimage = MicroDataset('Raw_Data', image.flatten())
+            ds_rawimage = MicroDataset('Raw_Data', np.reshape(image, (-1, 1)))
 
             '''
         Build Spectroscopic and Position datasets for the image
@@ -90,17 +93,25 @@ class ImageWindow(object):
 
             ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
             ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
+            spec_lab = getSpectralSlicing(['Image'])
+            ds_spec_inds.attrs['labels'] = spec_lab
+            ds_spec_inds.attrs['units'] = ''
+            ds_spec_vals.attrs['labels'] = spec_lab
+            ds_spec_vals.attrs['units'] = ''
 
             ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
             ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
 
-            ds_pos_inds.attrs['labels'] = getPositionSlicing(['X','Y'])
-            ds_pos_vals.attrs['labels'] = getPositionSlicing(['X','Y'])
+            pos_lab = getPositionSlicing(['X', 'Y'])
+            ds_pos_inds.attrs['labels'] = pos_lab
+            ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
+            ds_pos_vals.attrs['labels'] = pos_lab
+            ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
 
             chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
                                   ds_pos_inds, ds_pos_vals])
 
-            image_refs = self.hdf.writeData(meas_grp)
+            image_refs = self.hdf.writeData(root_grp)
             
             self.h5_raw = getH5DsetRefs(['Raw_Data'], image_refs)[0]
 
@@ -112,10 +123,16 @@ class ImageWindow(object):
 
         else:
             self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
-            
+
+        '''
+        Initialize class variables to None
+        '''
         self.h5_norm = None
         self.h5_wins = None
         self.h5_clean = None
+        self.h5_noise = None
+        self.h5_fft_clean = None
+        self.h5_fft_noise = None
 
     def do_windowing(self, h5_main=None, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
                      *args, **kwargs):
@@ -210,6 +227,18 @@ class ImageWindow(object):
         ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
         ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
         ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+
+        pos_labels = getPositionSlicing(['Window Origin X', 'Window Origin Y'])
+        ds_pos_inds.attrs['labels'] = pos_labels
+        ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
+        ds_pos_vals.attrs['labels'] = pos_labels
+        ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
+
+        pix_labels = getSpectralSlicing(['U', 'V'])
+        ds_pix_inds.attrs['labels'] = pix_labels
+        ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
+        ds_pix_vals.attrs['labels'] = pix_labels
+        ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
 
         '''
         Calculate the chunk size
@@ -559,25 +588,44 @@ class ImageWindow(object):
 
         clean_image[np.isnan(clean_image)] = 0
 
+        '''
+        Calculate the removed noise and FFTs
+        '''
+        removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
+        fft_clean = np.fft.fft(clean_image)
+        fft_noise = np.fft.fft(removed_noise)
+
+        '''
+        Create datasets for results, link them properly, and write them to file
+        '''
         clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
+        ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
+        ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
+        ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
+        ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
 
-        ds_clean = MicroDataset('Cleaned_Image', clean_image.flatten())
-
-        clean_grp.addChildren([ds_clean])
+        clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
         h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
+        h5_noise = getH5DsetRefs(['Removed_Noise'], image_refs)[0]
+        h5_fft_clean = getH5DsetRefs(['FFT_Cleaned_Image'], image_refs)[0]
+        h5_fft_noise = getH5DsetRefs(['FFT_Removed_Noise'], image_refs)[0]
 
         copyAttributes(self.h5_raw, h5_clean, skip_refs=False)
+        copyAttributes(self.h5_raw, h5_noise, skip_refs=False)
+        copyAttributes(self.h5_raw, h5_fft_clean, skip_refs=False)
+        copyAttributes(self.h5_raw, h5_fft_noise, skip_refs=False)
 
         self.h5_clean = h5_clean
+        self.h5_noise = h5_noise
 
         return h5_clean
 
     def plot_clean_image(self, h5_clean=None, image_path=None, image_type='png',
-                         save_plots=True, show_plots=False, cmap='jet'):
+                         save_plots=True, show_plots=False, cmap='gray'):
         """
         Plot the cleaned image stored in the HDF5 dataset h5_clean
 
@@ -634,8 +682,6 @@ class ImageWindow(object):
 
         image = h5_clean[()].reshape(x_pix, y_pix)
 
-        clean_image = plt.imshow(image)
-        
         if save_plots:
             if image_path is None:
                 image_dir, basename = os.path.split(self.image_path)
@@ -643,8 +689,9 @@ class ImageWindow(object):
                 basename = basename+'_clean.'+image_type
                 image_path = os.path.join(image_dir, basename)
             
-            plt.imsave(image_path, image, format=image_type, cmap='gray')
-        
+            plt.imsave(image_path, image, format=image_type, cmap=cmap)
+
+        clean_image = plt.imshow(image, cmap=cmap)
         if show_plots:
             plt.show()
         
