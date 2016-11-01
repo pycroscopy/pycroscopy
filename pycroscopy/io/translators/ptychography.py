@@ -14,7 +14,7 @@ from skimage.measure import block_reduce
 
 from .translator import Translator
 from .utils import generateDummyMainParms
-from ..hdf_utils import getH5DsetRefs, calc_chunks
+from ..hdf_utils import getH5DsetRefs, calc_chunks, linkformain
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -334,7 +334,7 @@ class PtychographyTranslator(Translator):
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        _linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
         
