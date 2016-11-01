@@ -284,24 +284,40 @@ class ImageWindow(object):
         Create slice object from the positions
         '''
         win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in win_pos_mat]
-        
-        '''
-        Read each slice and write it to the dataset
-        '''
-        for islice, this_slice in enumerate(win_slices):
-            selected = islice % np.rint(n_wins/10) == 0
-            if selected:
-                per_done = np.rint(100*islice/n_wins)
-                print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
-                                                                               (this_slice[0].start,
-                                                                                this_slice[1].start),
-                                                                               (this_slice[0].stop,
-                                                                                this_slice[1].stop),
-                                                                               islice))
-    
-            h5_wins[islice] = image[this_slice].flatten()
 
-        self.hdf.flush()
+        '''
+        Calculate the size of a given batch that will fit in the available memory
+        '''
+        mem_per_win = win_x*win_y*h5_wins.dtype.itemsize
+        if self.cores is None:
+            free_mem = self.max_memory-image.size*image.itemsize
+        else:
+            free_mem = self.max_memory*2-image.size*image.itemsize
+        batch_size = free_mem/mem_per_win
+        batch_slices = gen_batches(n_wins, batch_size)
+
+        for ibatch, batch in enumerate(batch_slices):
+            batch_wins = np.zeros([batch.stop-batch.start, win_pix], dtype=np.float32)
+            '''
+            Read each slice and write it to the dataset
+            '''
+            for islice, this_slice in enumerate(win_slices[batch]):
+                iwin = ibatch*batch_size+islice
+                selected = iwin % np.rint(n_wins/10) == 0
+
+                if selected:
+                    per_done = np.rint(100*islice/n_wins)
+                    print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
+                                                                                   (this_slice[0].start,
+                                                                                    this_slice[1].start),
+                                                                                   (this_slice[0].stop,
+                                                                                    this_slice[1].stop),
+                                                                                   islice))
+
+                batch_wins[islice] = image[this_slice].flatten()
+
+            h5_wins[batch] = batch_wins
+            self.hdf.flush()
         
         self.h5_wins = h5_wins
         
@@ -686,14 +702,6 @@ class ImageWindow(object):
         im_y = h5_win.parent.attrs['image_y']
         win_x = h5_win.parent.attrs['win_x']
         win_y = h5_win.parent.attrs['win_y']
-        # win_step_x = h5_win.parent.attrs['win_step_x']
-        # win_step_y = h5_win.parent.attrs['win_step_x']
-
-        # '''
-        # Calculate the steps taken to create original windows
-        # '''
-        # x_steps = np.arange(0, im_x - win_x+1, win_step_x)
-        # y_steps = np.arange(0, im_y - win_y+1, win_step_y)
 
         '''
         Initialize arrays to hold summed windows and counts for each position
@@ -701,16 +709,12 @@ class ImageWindow(object):
         counts = np.zeros([im_x, im_y], np.uint32)
         accum = np.zeros([im_x, im_y], np.float32)
 
-        # nx = len(x_steps)
-        # ny = len(y_steps)
-        # n_wins = nx * ny
-
         '''
         Create slice object from the positions
         '''
         ds_win_pos = h5_win.file[h5_win.attrs['Position_Indices']][()]
         win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in ds_win_pos]
-        n_wins = ds_win_pos.size
+        n_wins = ds_win_pos.shape[0]
         '''
         Create a matrix to add when counting.
         h5_V is usually small so go ahead and take S.V
@@ -737,7 +741,7 @@ class ImageWindow(object):
         '''
         for ibatch, batch in enumerate(batch_slices):
             ds_U = h5_U[batch, comp_slice]
-            batch_wins = np.dot(ds_U, ds_V)
+            batch_wins = np.dot(ds_U, ds_V).reshape([-1, win_x, win_y])
             del ds_U
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch*batch_size+islice
@@ -748,7 +752,7 @@ class ImageWindow(object):
 
                 counts[this_slice] += ones
 
-                accum[this_slice] += batch_wins[islice].reshape(win_x, win_y)
+                accum[this_slice] += batch_wins[islice]
 
             clean_image = accum / counts
 
