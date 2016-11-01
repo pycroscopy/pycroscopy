@@ -12,7 +12,6 @@ import scipy
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 import numpy as np
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 from ..analysis.utils.be_loop import loopFitFunction
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
@@ -78,6 +77,24 @@ def cmap_jet_white_center():
                       (1.00, 0.0, 0.0))
              }
     return LinearSegmentedColormap('white_jet', cdict)
+
+def cmap_hot_desaturated():
+    hot_desaturated = [(1, (255, 76, 76, 255)),
+                       (0.857, (107, 0, 0, 255)),
+                       (0.714, (255, 96, 0, 255)),
+                       (0.571, (255, 255, 0, 255)),
+                       (0.429, (0, 127, 0, 255)),
+                       (0.285, (0, 255, 255, 255)),
+                       (0.143, (0, 0, 91, 255)),
+                       (0, (71, 71, 219, 255))]
+
+    cdict = {'red': tuple([(dist, colors[0]/255.0, colors[0]/255.0) for (dist, colors) in hot_desaturated][::-1]),
+             'green': tuple([(dist, colors[1]/255.0, colors[1]/255.0) for (dist, colors) in hot_desaturated][::-1]),
+             'blue': tuple([(dist, colors[2]/255.0, colors[2]/255.0) for (dist, colors) in hot_desaturated][::-1])}
+
+    return LinearSegmentedColormap('hot_desaturated', cdict)
+
+
 
 def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
     """
@@ -755,6 +772,10 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
     resp_label : str, optional
         Label to use for Y axis on cluster centroid plot
          Default = 'Response'
+    pos_labels : array_like of str, optional
+        Labels to use for the X and Y axes on the Label map
+        Default = ('X', 'Y')
+    pos_ticks : array_like of int
 
     Returns
     -------
@@ -788,7 +809,6 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
                         resp_label + ' - Phase', cmap)
         plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
-
     else:
         fig = plt.figure(figsize=(12, 8))
         ax_map = plt.subplot2grid((1, 12), (0, 0), colspan=6)
@@ -811,7 +831,7 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ny = len(np.unique(pos[:, 1]))
         label_mat = label_mat[()].reshape(nx, ny)
 
-    im = ax_map.imshow(label_mat, interpolation='none')
+    # im = ax_map.imshow(label_mat, interpolation='none')
     ax_map.set_xlabel(pos_labels[0])
     ax_map.set_ylabel(pos_labels[1])
 
