@@ -763,7 +763,7 @@ class ImageWindow(object):
 
                 accum[this_slice] += batch_wins[islice]
 
-            clean_image = np.divide(accum, counts)
+        clean_image = np.divide(accum, counts)
 
         clean_image[np.isnan(clean_image)] = 0
 
