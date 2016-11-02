@@ -600,7 +600,7 @@ class ImageWindow(object):
         ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
 
         for islice, this_slice in enumerate(win_slices):
-            if iwin % np.rint(n_wins / 10) == 0:
+            if islice % np.rint(n_wins / 10) == 0:
                 per_done = np.rint(100 * (islice) / (n_wins))
                 print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
 
@@ -909,9 +909,9 @@ class ImageWindow(object):
         add current window to total.
         '''
         for ibatch, batch in enumerate(batch_slices):
-            ds_U = h5_U[batch]
-            batch_wins = [comp_wins*ds_V for comp_wins in ds_U]
-            del ds_U
+            # batch_wins = np.multiply(h5_U[batch][:, None, :],
+            #                          ds_V[None, :, :])
+            batch_wins = h5_U[batch][:, None, :]*ds_V[None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch * batch_size + islice
                 if iwin % np.rint(n_wins / 10) == 0:
@@ -919,8 +919,11 @@ class ImageWindow(object):
                     print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
                 counts[this_slice] += ones
+                # counts[this_slice] = np.add(counts[this_slice], ones)
 
                 clean_image[this_slice] += batch_wins[islice].reshape(win_x, win_y, num_comps)
+                # clean_image[this_slice] = np.add(clean_image[this_slice],
+                #                                  batch_wins[islice].reshape(win_x, win_y, num_comps))
 
         clean_image = np.divide(clean_image, counts)
         del counts
