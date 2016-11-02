@@ -199,6 +199,12 @@ class ImageWindow(object):
                 win_y = win_size
 
         '''
+        Step size must be less than 1/4th the image size
+        '''
+        win_step_x = min(x_pix/4, win_step_x)
+        win_step_y = min(y_pix/4, win_step_y)
+
+        '''
         Prevent windows from being less that twice the step size and more than half the image size
         '''
         win_x = max(2*win_step_x, min(x_pix, win_x))
