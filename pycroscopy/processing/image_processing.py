@@ -63,8 +63,6 @@ class ImageWindow(object):
         if self.cores != 1:
             self.max_memory = int(self.max_memory/2)
         
-        self.h5_file = self.hdf.file
-        
         if reset:
             self.hdf.clear()
             '''
@@ -123,6 +121,8 @@ class ImageWindow(object):
 
         else:
             self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
+
+        self.h5_file = self.hdf.file
 
         '''
         Initialize class variables to None
@@ -931,11 +931,11 @@ class ImageWindow(object):
         self.hdf.flush()
 
         h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
-        h5_comps = self.h5_file[h5_V.attrs['Position_Indices']]
+        h5_comp_inds = h5_clean.file[h5_V.attrs['Position_Indices']]
         h5_spec_inds = self.h5_file[self.h5_raw.attrs['Spectroscopic_Indices']]
         h5_spec_vals = self.h5_file[self.h5_raw.attrs['Spectroscopic_Values']]
 
-        linkformain(h5_clean, h5_comps, h5_S, h5_spec_inds, h5_spec_vals)
+        linkformain(h5_clean, h5_comp_inds, h5_S, h5_spec_inds, h5_spec_vals)
 
         self.h5_clean = h5_clean
 
