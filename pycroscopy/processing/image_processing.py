@@ -574,7 +574,7 @@ class ImageWindow(object):
         Initialize arrays to hold summed windows and counts for each position
         '''
         counts = np.zeros([im_x, im_y], np.uint32)
-        accum = np.zeros([im_x, im_y], np.float32)
+        clean_image = np.zeros([im_x, im_y], np.float32)
 
         nx = len(x_steps)
         ny = len(y_steps)
@@ -603,9 +603,9 @@ class ImageWindow(object):
 
             this_win = np.dot(h5_U[islice, comp_slice], ds_V)
 
-            accum[this_slice] += this_win.reshape(win_x, win_y)
+            clean_image[this_slice] += this_win.reshape(win_x, win_y)
 
-        clean_image = accum / counts
+        clean_image = np.divide(clean_image, counts)
 
         clean_image[np.isnan(clean_image)] = 0
 
@@ -757,7 +757,7 @@ class ImageWindow(object):
 
                 accum[this_slice] += batch_wins[islice]
 
-            clean_image = accum / counts
+            clean_image = np.divide(accum, counts)
 
         clean_image[np.isnan(clean_image)] = 0
 
