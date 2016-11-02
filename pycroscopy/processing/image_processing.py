@@ -11,10 +11,9 @@ from skimage.data import imread
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
-from time import time
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
 from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
 from ..io.microdata import MicroDataGroup, MicroDataset
 
@@ -608,8 +607,8 @@ class ImageWindow(object):
         Calculate the removed noise and FFTs
         '''
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
-        fft_clean = np.fft.fft(clean_image)
-        fft_noise = np.fft.fft(removed_noise)
+        fft_clean = np.fft.fft2(clean_image)
+        fft_noise = np.fft.fft2(removed_noise)
 
         '''
         Create datasets for results, link them properly, and write them to file
@@ -671,7 +670,7 @@ class ImageWindow(object):
             h5_win = self.h5_wins
 
         print('Cleaning the image by removing unwanted components.')
-        t0 = time()
+
         comp_slice = self.__get_component_slice(components)
 
         '''
@@ -733,8 +732,6 @@ class ImageWindow(object):
         batch_size = free_mem/mem_per_win
         batch_slices = gen_batches(n_wins, batch_size)
 
-        print('Cleaning setup took {}s.'.format(time()-t0))
-        # print batch_size
         '''
         Loop over all batches.  Increment counts for window positions and
         add current window to total.
@@ -762,13 +759,14 @@ class ImageWindow(object):
         Calculate the removed noise and FFTs
         '''
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
-        fft_clean = np.fft.fft(clean_image)
-        fft_noise = np.fft.fft(removed_noise)
+        fft_clean = np.fft.fft2(clean_image)
+        fft_noise = np.fft.fft2(removed_noise)
 
         '''
         Create datasets for results, link them properly, and write them to file
         '''
         clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
+        clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
         ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
         ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
         ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
@@ -794,7 +792,7 @@ class ImageWindow(object):
 
         return h5_clean
 
-    def clean_and_build_separate_components(self, h5_win=None, components=None):
+    def clean_and_build_separate_components(self, h5_win=None):
         """
         Rebuild the Image from the PCA results on the windows
         Optionally, only use components less than n_comp.
@@ -803,14 +801,6 @@ class ImageWindow(object):
         ----------
         h5_win : hdf5 Dataset, optional
             dataset containing the windowed image which PCA was performed on
-        components: {int, iterable of int, slice} optional
-            Defines which components to keep
-
-            Input Types
-            integer : Components less than the input will be kept
-            length 2 iterable of integers : Integers define start and stop of component slice to retain
-            other iterable of integers or slice : Selection of component indices to retain
-
 
         Returns
         -------
@@ -825,8 +815,6 @@ class ImageWindow(object):
             h5_win = self.h5_wins
 
         print('Cleaning the image by removing unwanted components.')
-
-        comp_slice = self.__get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the PCA results
@@ -856,94 +844,100 @@ class ImageWindow(object):
         im_y = h5_win.parent.attrs['image_y']
         win_x = h5_win.parent.attrs['win_x']
         win_y = h5_win.parent.attrs['win_y']
-        win_step_x = h5_win.parent.attrs['win_step_x']
-        win_step_y = h5_win.parent.attrs['win_step_x']
+        # win_step_x = h5_win.parent.attrs['win_step_x']
+        # win_step_y = h5_win.parent.attrs['win_step_x']
 
-        '''
-        Calculate the steps taken to create original windows
-        '''
-        x_steps = np.arange(0, im_x - win_x, win_step_x)
-        y_steps = np.arange(0, im_y - win_y, win_step_y)
+        # '''
+        # Calculate the steps taken to create original windows
+        # '''
+        # x_steps = np.arange(0, im_x - win_x, win_step_x)
+        # y_steps = np.arange(0, im_y - win_y, win_step_y)
 
-        '''
-        Initialize arrays to hold summed windows and counts for each position
-        '''
-        counts = np.zeros([im_x, im_y], np.uint32)
-        accum = np.zeros([im_x, im_y], np.float32)
-
-        nx = len(x_steps)
-        ny = len(y_steps)
-        n_wins = nx * ny
+        # nx = len(x_steps)
+        # ny = len(y_steps)
+        # n_wins = nx * ny
 
         '''
         Create slice object from the positions
         '''
-        h5_win_pos = h5_win.file[h5_win.attrs['Position_Indices']]
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in h5_win_pos]
+        ds_win_pos = h5_win.file[h5_win.attrs['Position_Indices']][()]
+        win_slices = [[slice(x, x+win_x), slice(y, y+win_y), slice(None)] for x, y in ds_win_pos]
+        n_wins = len(ds_win_pos)
 
         '''
-        Loop over all windows.  Increment counts for window positions and
-        add current window to total.
+        Go ahead and take the dot product of S and V.  Get the number of components
+        from the length of S
         '''
-        ones = np.ones([win_x, win_y], dtype=counts.dtype)
-        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
-        num_comps = len(h5_S[comp_slice])
+        ds_V = np.dot(np.diag(h5_S[()]), h5_V[()]).T
+        num_comps = len(h5_S)
 
+        '''
+        Initialize arrays to hold summed windows and counts for each position
+        '''
+        counts = np.zeros([im_x, im_y, num_comps], dtype=np.uint32)
         clean_image = np.zeros([im_x, im_y, num_comps], dtype=np.float32)
 
-        for icomp in xrange(num_comps):
-            print('Reconstructing Component...{}'.format(icomp))
-            ds_U = h5_U[:, icomp]
+        '''
+        Calculate the size of a given batch that will fit in the available memory
+        '''
+        mem_per_win = ds_V.itemsize*ds_V.size
+        if self.cores is None:
+            free_mem = self.max_memory-ds_V.size*ds_V.itemsize
+        else:
+            free_mem = self.max_memory*2-ds_V.size*ds_V.itemsize
+        batch_size = free_mem/mem_per_win
+        if batch_size < 1:
+            raise MemoryError('Not enough memory to perform Image Cleaning.')
+        batch_slices = gen_batches(n_wins, batch_size)
 
-            for islice, this_slice in enumerate(win_slices):
-                selected = islice % np.rint(n_wins / 10) == 0
+        '''
+        Loop over all batches.  Increment counts for window positions and
+        add current window to total.
+        '''
+        for ibatch, batch in enumerate(batch_slices):
+            ds_U = h5_U[batch]
+            batch_wins = [comp_wins*ds_V for comp_wins in ds_U]
+            del ds_U
+            for islice, this_slice in enumerate(win_slices[batch]):
+                iwin = ibatch * batch_size + islice
+                selected = iwin % np.rint(n_wins / 10) == 0
                 if selected:
-                    per_done = np.rint(100 * islice / n_wins)
-                    print('Reconstructing Component...{}% -- step # {}'.format(per_done, islice))
+                    per_done = np.rint(100 * iwin / n_wins)
+                    print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
-                counts[this_slice] += ones
+                counts[this_slice] += 1
 
-                this_win = np.dot(ds_U[islice], ds_V[icomp])
+                clean_image[this_slice] += batch_wins[islice].reshape(win_x, win_y, num_comps)
 
-                accum[this_slice] += this_win.reshape(win_x, win_y)
-
-            clean_image[:, :, icomp] = accum / counts
-
+        clean_image /= counts
+        del counts
         clean_image[np.isnan(clean_image)] = 0
-
-        '''
-        Calculate the removed noise and FFTs
-        '''
-        removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
-        fft_clean = np.fft.fft(clean_image)
-        fft_noise = np.fft.fft(removed_noise)
 
         '''
         Create datasets for results, link them properly, and write them to file
         '''
         clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
-        ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape, num_comps))
-        ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape, num_comps))
-        ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape, num_comps))
-        ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape, num_comps))
 
-        clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
+        clean_chunking = calc_chunks([im_x*im_y, num_comps],
+                                     clean_image.dtype.itemsize)
+        ds_clean = MicroDataset('Cleaned_Image',
+                                data=clean_image.reshape(im_x*im_y, num_comps),
+                                chunking=clean_chunking,
+                                compression='gzip')
+
+        clean_grp.addChildren([ds_clean])
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
         h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
-        h5_noise = getH5DsetRefs(['Removed_Noise'], image_refs)[0]
-        h5_fft_clean = getH5DsetRefs(['FFT_Cleaned_Image'], image_refs)[0]
-        h5_fft_noise = getH5DsetRefs(['FFT_Removed_Noise'], image_refs)[0]
+        h5_comps = self.h5_file[h5_V.attrs['Position_Indices']]
+        h5_spec_inds = self.h5_file[self.h5_raw.attrs['Spectroscopic_Indices']]
+        h5_spec_vals = self.h5_file[self.h5_raw.attrs['Spectroscopic_Values']]
 
-        copyAttributes(self.h5_raw, h5_clean, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_noise, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_fft_clean, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_fft_noise, skip_refs=False)
+        linkformain(h5_clean, h5_comps, h5_S, h5_spec_inds, h5_spec_vals)
 
         self.h5_clean = h5_clean
-        self.h5_noise = h5_noise
 
         return h5_clean
 
