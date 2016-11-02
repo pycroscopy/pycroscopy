@@ -197,7 +197,13 @@ class ImageWindow(object):
                 win_x = win_size
             if win_y is None:
                 win_y = win_size
-        
+
+        '''
+        Prevent windows from being less that twice the step size and more than half the image size
+        '''
+        win_x = max(2*win_step_x, min(x_pix, win_x))
+        win_y = max(2*win_step_y, min(y_pix, win_y))
+
         print('Optimal window size determined to be {wx}x{wy} pixels.'.format(wx=win_x, wy=win_y))
         
         '''
@@ -874,6 +880,7 @@ class ImageWindow(object):
         '''
         Initialize arrays to hold summed windows and counts for each position
         '''
+        ones = np.ones([win_x, win_y, num_comps], dtype=np.uint32)
         counts = np.zeros([im_x, im_y, num_comps], dtype=np.uint32)
         clean_image = np.zeros([im_x, im_y, num_comps], dtype=np.float32)
 
@@ -905,11 +912,11 @@ class ImageWindow(object):
                     per_done = np.rint(100 * iwin / n_wins)
                     print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
-                counts[this_slice] += 1
+                counts[this_slice] += ones
 
                 clean_image[this_slice] += batch_wins[islice].reshape(win_x, win_y, num_comps)
 
-        clean_image /= counts
+        clean_image = np.divide(clean_image, counts)
         del counts
         clean_image[np.isnan(clean_image)] = 0
 
