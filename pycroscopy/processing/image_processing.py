@@ -600,8 +600,7 @@ class ImageWindow(object):
         ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
 
         for islice, this_slice in enumerate(win_slices):
-            selected = islice % np.rint(n_wins / 10) == 0
-            if selected:
+            if iwin % np.rint(n_wins / 10) == 0:
                 per_done = np.rint(100 * (islice) / (n_wins))
                 print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
 
@@ -744,6 +743,8 @@ class ImageWindow(object):
         batch_size = free_mem/mem_per_win
         batch_slices = gen_batches(n_wins, batch_size)
 
+        print('Reconstructing in batches of {} windows.'.format(batch_size))
+
         '''
         Loop over all batches.  Increment counts for window positions and
         add current window to total.
@@ -754,8 +755,7 @@ class ImageWindow(object):
             del ds_U
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch*batch_size+islice
-                selected = iwin % np.rint(n_wins / 10) == 0
-                if selected:
+                if iwin % np.rint(n_wins / 10) == 0:
                     per_done = np.rint(100 * iwin / n_wins)
                     print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
 
@@ -903,6 +903,7 @@ class ImageWindow(object):
             raise MemoryError('Not enough memory to perform Image Cleaning.')
         batch_slices = gen_batches(n_wins, batch_size)
 
+        print('Reconstructing in batches of {} windows.'.format(batch_size))
         '''
         Loop over all batches.  Increment counts for window positions and
         add current window to total.
@@ -913,8 +914,7 @@ class ImageWindow(object):
             del ds_U
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch * batch_size + islice
-                selected = iwin % np.rint(n_wins / 10) == 0
-                if selected:
+                if iwin % np.rint(n_wins / 10) == 0:
                     per_done = np.rint(100 * iwin / n_wins)
                     print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
