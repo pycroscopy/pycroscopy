@@ -11,6 +11,7 @@ from skimage.data import imread
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
 from multiprocessing import cpu_count
+from time import time
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
@@ -227,10 +228,10 @@ class ImageWindow(object):
         
         win_pix = win_x*win_y
         
-        win_pos_mat = np.array([np.tile(x_steps, ny),
-                                np.repeat(y_steps, nx)]).T
+        win_pos_mat = np.array([np.repeat(x_steps, ny),
+                                np.tile(y_steps, nx)]).T
         
-        win_pix_mat = makePositionMat([win_x, win_y])
+        win_pix_mat = makePositionMat([win_x, win_y]).T
 
         '''
         Set up the HDF5 Group and Datasets for the windowed data
@@ -317,7 +318,7 @@ class ImageWindow(object):
                 selected = iwin % np.rint(n_wins/10) == 0
 
                 if selected:
-                    per_done = np.rint(100*islice/n_wins)
+                    per_done = np.rint(100*iwin/n_wins)
                     print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
                                                                                    (this_slice[0].start,
                                                                                     this_slice[1].start),
@@ -804,7 +805,7 @@ class ImageWindow(object):
 
         return h5_clean
 
-    def clean_and_build_separate_components(self, h5_win=None):
+    def clean_and_build_separate_components(self, h5_win=None, components=None):
         """
         Rebuild the Image from the PCA results on the windows
         Optionally, only use components less than n_comp.
@@ -813,6 +814,14 @@ class ImageWindow(object):
         ----------
         h5_win : hdf5 Dataset, optional
             dataset containing the windowed image which PCA was performed on
+        components : {int, iterable of int, slice} optional
+            Defines which components to keep
+            Default - None, all components kept
+
+            Input Types
+            integer : Components less than the input will be kept
+            length 2 iterable of integers : Integers define start and stop of component slice to retain
+            other iterable of integers or slice : Selection of component indices to retain
 
         Returns
         -------
@@ -827,6 +836,7 @@ class ImageWindow(object):
             h5_win = self.h5_wins
 
         print('Cleaning the image by removing unwanted components.')
+        comp_slice = self.__get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the PCA results
@@ -856,18 +866,6 @@ class ImageWindow(object):
         im_y = h5_win.parent.attrs['image_y']
         win_x = h5_win.parent.attrs['win_x']
         win_y = h5_win.parent.attrs['win_y']
-        # win_step_x = h5_win.parent.attrs['win_step_x']
-        # win_step_y = h5_win.parent.attrs['win_step_x']
-
-        # '''
-        # Calculate the steps taken to create original windows
-        # '''
-        # x_steps = np.arange(0, im_x - win_x, win_step_x)
-        # y_steps = np.arange(0, im_y - win_y, win_step_y)
-
-        # nx = len(x_steps)
-        # ny = len(y_steps)
-        # n_wins = nx * ny
 
         '''
         Create slice object from the positions
@@ -880,8 +878,8 @@ class ImageWindow(object):
         Go ahead and take the dot product of S and V.  Get the number of components
         from the length of S
         '''
-        ds_V = np.dot(np.diag(h5_S[()]), h5_V[()]).T
-        num_comps = len(h5_S)
+        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :]).T
+        num_comps = ds_V.shape[1]
 
         '''
         Initialize arrays to hold summed windows and counts for each position
@@ -893,7 +891,7 @@ class ImageWindow(object):
         '''
         Calculate the size of a given batch that will fit in the available memory
         '''
-        mem_per_win = ds_V.itemsize*ds_V.size
+        mem_per_win = ds_V.itemsize*(num_comps+ds_V.size)
         if self.cores is None:
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
@@ -909,23 +907,21 @@ class ImageWindow(object):
         add current window to total.
         '''
         for ibatch, batch in enumerate(batch_slices):
-            # batch_wins = np.multiply(h5_U[batch][:, None, :],
-            #                          ds_V[None, :, :])
-            batch_wins = h5_U[batch][:, None, :]*ds_V[None, :, :]
+            ds_U = h5_U[batch, comp_slice]
+            batch_wins = ds_U[:, None, :]*ds_V[None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
-                iwin = ibatch * batch_size + islice
-                if iwin % np.rint(n_wins / 10) == 0:
-                    per_done = np.rint(100 * iwin / n_wins)
-                    print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
+                # iwin = ibatch * batch_size + islice
+                # if iwin % np.rint(n_wins / 10) == 0:
+                #     per_done = np.rint(100 * iwin / n_wins)
+                #     print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
                 counts[this_slice] += ones
-                # counts[this_slice] = np.add(counts[this_slice], ones)
 
                 clean_image[this_slice] += batch_wins[islice].reshape(win_x, win_y, num_comps)
-                # clean_image[this_slice] = np.add(clean_image[this_slice],
-                #                                  batch_wins[islice].reshape(win_x, win_y, num_comps))
 
-        clean_image = np.divide(clean_image, counts)
+        del ds_U, ds_V
+
+        clean_image /= counts
         del counts
         clean_image[np.isnan(clean_image)] = 0
 
