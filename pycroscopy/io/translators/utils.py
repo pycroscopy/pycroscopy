@@ -132,9 +132,9 @@ def getPositionSlicing(pos_lab, curr_pix=None):
         Dictionary of tuples containing slice objects corresponding to 
         each position axis.
     """
-    slice_dict = dict();
+    slice_dict = dict()
     for spat_ind, spat_dim in enumerate(pos_lab):
-        slice_dict[spat_dim[0]] = (slice(curr_pix), slice(spat_ind,spat_ind+1))
+        slice_dict[spat_dim] = (slice(curr_pix), slice(spat_ind, spat_ind+1))
     return slice_dict
 
 
@@ -159,6 +159,6 @@ def getSpectralSlicing(spec_lab, curr_spec=None):
     """
     slice_dict = dict()
     for spat_ind, spat_dim in enumerate(spec_lab):
-        slice_dict[spat_dim[0]] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
+        slice_dict[spat_dim] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
     return slice_dict
 
