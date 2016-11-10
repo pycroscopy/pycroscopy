@@ -20,7 +20,9 @@ from . import ptychography
 from .ptychography import PtychographyTranslator
 from . import sporc
 from .sporc import SporcTranslator
+from . import time_series
+from .time_series import MovieTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'FastIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
-           'SporcTranslator']
+           'SporcTranslator', 'MovieTranslator']

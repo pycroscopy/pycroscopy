@@ -4,19 +4,19 @@ Created on Jun 16, 2016
 @author: Chris Smith -- csmith55@utk.edu
 """
 import os
-import numpy as np
-import matplotlib.pyplot as plt
+from multiprocessing import cpu_count
 from warnings import warn
-from skimage.data import imread
+import matplotlib.pyplot as plt
+import numpy as np
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
-from multiprocessing import cpu_count
-from time import time
+from ..io.io_image import read_image, read_dm3
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
-from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
 from ..io.microdata import MicroDataGroup, MicroDataset
+from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
+
 
 class ImageWindow(object):
     """
@@ -65,16 +65,20 @@ class ImageWindow(object):
             self.max_memory = int(self.max_memory/2)
         
         if reset:
-            self.hdf.clear()
-            '''
-        Read the original image and build the file tree
-            '''
-            try:
-                image = imread(self.image_path, as_grey=True)
-            except:
-                raise
+            if len(self.hdf.file.keys()) >= 1:
+                self.hdf.clear()
+
             root_grp = MicroDataGroup('/')
             root_grp.attrs['data_type'] = 'ImageData'
+
+            _, exten = os.path.splitext(self.image_path)
+            if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
+                image = read_image(self.image_path, greyscale=True)
+            elif exten in ['.dm3']:
+                image, image_parms = read_dm3(self.image_path)
+                if image.ndim == 3:
+                    image = np.sum(image, axis=0)
+                root_grp.attrs.update(image_parms)
 
             meas_grp = MicroDataGroup('Measurement_')
             
@@ -910,10 +914,10 @@ class ImageWindow(object):
             ds_U = h5_U[batch, comp_slice]
             batch_wins = ds_U[:, None, :]*ds_V[None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
-                # iwin = ibatch * batch_size + islice
-                # if iwin % np.rint(n_wins / 10) == 0:
-                #     per_done = np.rint(100 * iwin / n_wins)
-                #     print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
+                iwin = ibatch * batch_size + islice
+                if iwin % np.rint(n_wins / 10) == 0:
+                    per_done = np.rint(100 * iwin / n_wins)
+                    print('Reconstructing Image...{}% -- step # {}'.format(per_done, iwin))
 
                 counts[this_slice] += ones
 
@@ -1137,7 +1141,7 @@ class ImageWindow(object):
         local_max = []
         for k in xrange(1, fimabs_max.size-1):
             if fimabs_max[k-1] < fimabs_max[k] and fimabs_max[k] > fimabs_max[k+1]:
-                count+= 1
+                count += 1
                 local_max.append(k)
         
         '''
