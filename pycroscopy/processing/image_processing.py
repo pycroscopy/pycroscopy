@@ -73,7 +73,7 @@ class ImageWindow(object):
 
             _, exten = os.path.splitext(self.image_path)
             if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
-                image = read_image(self.image_path, greyscale=True)
+                image, _ = read_image(self.image_path, as_grey=True)
             elif exten in ['.dm3']:
                 image, image_parms = read_dm3(self.image_path)
                 if image.ndim == 3:
