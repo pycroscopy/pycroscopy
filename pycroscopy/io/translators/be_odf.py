@@ -17,7 +17,7 @@ from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generate
 from .translator import Translator # Because this class extends the abstract Translator class
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
 from ..be_hdf_utils import maxReadPixels
-from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks, linkformain
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 
@@ -27,7 +27,12 @@ class BEodfTranslator(Translator):
     Translates either the Band Excitation (BE) scan or Band Excitation 
     Polarization Switching (BEPS) data format from the old data format(s) to .h5
     """
-        
+    def __init__(self, *args, **kwargs):
+        super(BEodfTranslator, self).__init__(*args, **kwargs)
+
+        self.hdf = None
+        self.h5_raw = None
+
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False):
         """
         Translates .dat data file(s) to a single .h5 file
@@ -50,7 +55,7 @@ class BEodfTranslator(Translator):
             Absolute path of the resultant .h5 file
         """
         (folder_path, basename) = path.split(file_path)
-        (basename, path_dict) = self.__getFilePaths(file_path)
+        (basename, path_dict) = self._parsefilepath(file_path)
             
         h5_path = path.join(folder_path,basename+'.h5')
         tot_bins_multiplier = 1
@@ -111,14 +116,14 @@ class BEodfTranslator(Translator):
         num_cols = int(parm_dict['grid_num_cols']);
         num_pix = num_rows*num_cols;
         tot_bins = real_size/(num_pix*4);
-        #Check for case where only a single pixel is missing. 
-        check_bins = real_size/((num_pix-1)*4) 
+        # Check for case where only a single pixel is missing.
+        check_bins = real_size/((num_pix-1)*4)
         
         if tot_bins % 1 and check_bins % 1: 
             warn('Aborting! Some parameter appears to have changed in-between')
             return;
         elif not tot_bins % 1:
-#             Everything's ok
+            # Everything's ok
             pass
         elif not check_bins % 1:
             tot_bins = check_bins
@@ -235,14 +240,13 @@ class BEodfTranslator(Translator):
         ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
         
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
-        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names =  createSpecVals(UDVS_mat, spec_inds, bin_freqs, exec_bin_vec, 
-                                                                                                      parm_dict, UDVS_labs, UDVS_units)
-        
+        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat, spec_inds, bin_freqs, exec_bin_vec,
+                                                                                                     parm_dict, UDVS_labs, UDVS_units)
+
         spec_vals_slices = dict()
 #         if len(spec_vals_labs) == 1:
 #             spec_vals_slices[spec_vals_labs[0]]=(slice(0,1,None),)
 #         else:
-
 
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name]=(slice(row_ind,row_ind+1),slice(None))
@@ -254,14 +258,11 @@ class BEodfTranslator(Translator):
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:
-            label=entry[0]+'_parameters'
+            label = entry[0]+'_parameters'
             names = entry[1]
             ds_spec_mat.attrs[label]= names
             ds_spec_vals_mat.attrs[label]= names        
-#         ds_spec_vals_labs = MicroDataset('Spectroscopic_Values_Labels',np.array(spec_vals_labs))
-        
-        
-        
+
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
         ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix,3,num_actual_udvs_steps), dtype=np.float32), chunking=(1,3,num_actual_udvs_steps))
         noise_labs = ['super_band','inter_bin_band','sub_band']
@@ -270,39 +271,29 @@ class BEodfTranslator(Translator):
             noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
         ds_noise_floor.attrs['labels'] = noise_slices
         ds_noise_floor.attrs['units'] = ['','','']
-#         ds_noise_labs = MicroDataset('Noise_Labels',np.array(noise_labs))
-        
-        """ 
-        ONLY ALLOCATING SPACE FOR MAIN DATA HERE!
-        Chunk by each UDVS step - this makes it easy / quick to:
-            1. read data for a single UDVS step from all pixels
-            2. read an entire / multiple pixels at a time
-        The only problem is that a typical UDVS step containing 50 steps occupies only 400 bytes.
-        This is smaller than the recommended chunk sizes of 10,000 - 999,999 bytes
-        meaning that the metadata would be very substantial.
-        This assumption is fine since we almost do not handle any user defined cases
-        """       
-#         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(tot_bins,num_pix), dtype=np.complex64, chunking=(tot_bins,1), compression='gzip')
 
         """
-        New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares of UDVS steps by pixels.
-        N is determined dinamically based on the dimensions of the dataset.  Currently it is set such that individual
-        chunks are less than 10kB in size.
+        New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
+        of UDVS steps by pixels.  N is determined dinamically based on the dimensions of the
+        dataset.  Currently it is set such that individual chunks are less than 10kB in size.
         
         Chris Smith -- csmith55@utk.edu
         """
-        pixel_chunking = maxReadPixels(10240, num_pix*num_actual_udvs_steps, bins_per_step, np.dtype('complex64').itemsize)
-        chunking = np.floor(np.sqrt(pixel_chunking))
-        chunking = max(1, chunking)
-        chunking = min(num_actual_udvs_steps, num_pix, chunking)
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix,tot_bins), dtype=np.complex64, chunking=(chunking,chunking*bins_per_step), compression='gzip')
+        BEPS_chunks = calc_chunks([num_pix, tot_bins],
+                                  np.complex64(0).itemsize,
+                                  unit_chunks=(1, bins_per_step))
+        ds_main_data = MicroDataset('Raw_Data', data=[],
+                                    maxshape=(num_pix, tot_bins),
+                                    dtype=np.complex64,
+                                    chunking=BEPS_chunks,
+                                    compression='gzip')
         
         chan_grp = MicroDataGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
         chan_grp.addChildren([ds_main_data, ds_noise_floor])
         chan_grp.addChildren([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,ds_wfm_typ,ds_spec_vals_mat,
-                              ds_UDVS_inds])        
+                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,
+                              ds_wfm_typ, ds_spec_vals_mat, ds_UDVS_inds])
         
         # technically should change the date, etc.
         meas_grp = MicroDataGroup('Measurement_')
@@ -317,8 +308,7 @@ class BEodfTranslator(Translator):
             global_parms['experiment_date'] = parm_dict['File_date_and_time']
         except KeyError:
             global_parms['experiment_date'] = '1:1:1'
-        
-        
+
         # assuming that the experiment was completed:
         global_parms['current_position_x'] = parm_dict['grid_num_cols']-1;
         global_parms['current_position_y'] = parm_dict['grid_num_rows']-1;
@@ -327,8 +317,6 @@ class BEodfTranslator(Translator):
             
         spm_data.attrs = global_parms
         spm_data.addChildren([meas_grp])
-        
-        #spm_data.showTree()
         
         if path.exists(h5_path):
             remove(h5_path)
@@ -346,23 +334,7 @@ class BEodfTranslator(Translator):
                      'Bin_Frequencies','Bin_FFT','Bin_Wfm_Type','Noise_Floor', 'Spectroscopic_Values',]
         linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
 
-        
-        # Now read the raw data files:
-        if not isBEPS:
-            # Do this for all BE-Line (always small enough to read in one shot)
-            self.__quickReadData(path_dict['read_real'],path_dict['read_imag'])
-        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':             
-            # Do this for out-of-field BEPS ONLY that is also small (256 MB)
-            self.__quickReadData(path_dict['read_real'],path_dict['read_imag'])
-        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
-            # Do this for in-field only 
-            self.__quickReadData(path_dict['write_real'],path_dict['write_imag'])
-        else:
-            # Large BEPS datasets OR those with in-and-out of field
-            self.__readBEPSData(path_dict,UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
-
- 
-        self.hdf.file.flush()
+        self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix)
         
         generatePlotGroups(self.h5_raw, self.hdf, self.mean_resp, folder_path, basename,
                            self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
@@ -372,7 +344,46 @@ class BEodfTranslator(Translator):
         self.hdf.close()
         
         return h5_path
-        
+
+    def _read_data(self, UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix):
+        """
+        Checks if the data is BEPS or BELine and calls the correct function to read the data from
+        file
+
+        Parameters
+        ----------
+        UDVS_mat : numpy.ndarray of float
+            UDVS table
+        parm_dict : dict
+            Experimental parameters
+        path_dict : dict
+            Dictionary of data files to be read
+        real_size : dict
+            Size of each data file
+        isBEPS : boolean
+            Is the data BEPS
+        add_pix : boolean
+            Does the reader need to add extra pixels to the end of the dataset
+
+        Returns
+        -------
+        None
+        """
+        # Now read the raw data files:
+        if not isBEPS:
+            # Do this for all BE-Line (always small enough to read in one shot)
+            self.__quickReadData(path_dict['read_real'], path_dict['read_imag'])
+        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
+            # Do this for out-of-field BEPS ONLY that is also small (256 MB)
+            self.__quickReadData(path_dict['read_real'], path_dict['read_imag'])
+        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
+            # Do this for in-field only
+            self.__quickReadData(path_dict['write_real'], path_dict['write_imag'])
+        else:
+            # Large BEPS datasets OR those with in-and-out of field
+            self.__readBEPSData(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
+        self.hdf.file.flush()
+
     def __readBEPSData(self, path_dict, udvs_steps, mode, add_pixel=False):
         """
         Reads the imaginary and real data files pixelwise and writes to the H5 file 
@@ -499,8 +510,7 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')       
         
-        
-    def __getFilePaths(self,data_filepath):
+    def _parsefilepath(self, data_filepath):
         """
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary
@@ -532,7 +542,7 @@ class BEodfTranslator(Translator):
         path_dict = dict()
         
         for file_name in listdir(folder_path):
-            abs_path = path.join(folder_path,file_name)
+            abs_path = path.join(folder_path, file_name)
             if file_name.endswith('.txt') and file_name.find('parm') > 0:
                 path_dict['parm_txt'] = abs_path
             elif file_name.find('.mat') > 0:
@@ -551,7 +561,7 @@ class BEodfTranslator(Translator):
                     file_tag += '_imag'
                 path_dict[file_tag] = abs_path
 
-        return (basename, path_dict)
+        return basename, path_dict
         
     def __readOldMatBEvecs(self,file_path):
         """
