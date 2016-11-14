@@ -341,13 +341,13 @@ class ImageWindow(object):
 
     def clean_windows(self, h5_win=None, n_comp=None):
         """
-        Rebuild the Image from the PCA results on the windows.
+        Rebuild the Image from the SVD results on the windows.
         Optionally, only use components less than n_comp.
 
         Parameters
         ----------
         h5_win : hdf5 Dataset, optional
-                windowed image which PCA was performed on
+                windowed image which SVD was performed on
                 will try to use self.h5_wins if no dataset is provided
         n_comp : int, optional
             components above this number will be discarded
@@ -359,21 +359,21 @@ class ImageWindow(object):
         """
         if h5_win is None:
             if self.h5_wins is None:
-                warn('You must perform windowing on an image followed by PCA on the window before you can clean it.')
+                warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
                 return
             h5_win = self.h5_wins
         
         print('Cleaning the image by removing components past {}.'.format(n_comp))
         
         '''
-        Read the 1st n_comp componets from the PCA results
+        Read the 1st n_comp componets from the SVD results
         on h5_win
         '''
         comp_slice = slice(0,n_comp)
         win_name = h5_win.name.split('/')[-1]
         
         try:
-            pca_name = win_name+'-PCA_000'
+            pca_name = win_name+'-SVD_000'
             win_pca = h5_win.parent[pca_name]
         
             S = win_pca['S'][comp_slice]
@@ -381,7 +381,7 @@ class ImageWindow(object):
             V = win_pca['V'][comp_slice,:]
         
         except KeyError:
-            warnstring = 'PCA Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
+            warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
             warn(warnstring)
             return
         except:
@@ -512,13 +512,13 @@ class ImageWindow(object):
 
     def clean_and_build(self, h5_win=None, components=None):
         """
-        Rebuild the Image from the PCA results on the windows
+        Rebuild the Image from the SVD results on the windows
         Optionally, only use components less than n_comp.
 
         Parameters
         ----------
         h5_win : hdf5 Dataset, optional
-            dataset containing the windowed image which PCA was performed on
+            dataset containing the windowed image which SVD was performed on
         components: {int, iterable of int, slice} optional
             Defines which components to keep
 
@@ -536,7 +536,7 @@ class ImageWindow(object):
 
         if h5_win is None:
             if self.h5_wins is None:
-                warn('You must perform windowing on an image followed by PCA on the window before you can clean it.')
+                warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
                 return
             h5_win = self.h5_wins
 
@@ -545,20 +545,20 @@ class ImageWindow(object):
         comp_slice = self.__get_component_slice(components)
 
         '''
-        Read the 1st n_comp components from the PCA results
+        Read the 1st n_comp components from the SVD results
         on h5_win
         '''
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            win_svd = findH5group(h5_win, 'PCA')[-1]
+            win_svd = findH5group(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
             h5_V = win_svd['V']
 
         except KeyError:
-            warnstring = 'PCA Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
+            warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
             warn(warnstring)
             return
         except:
@@ -657,13 +657,13 @@ class ImageWindow(object):
 
     def clean_and_build_batch(self, h5_win=None, components=None):
         """
-        Rebuild the Image from the PCA results on the windows
+        Rebuild the Image from the SVD results on the windows
         Optionally, only use components less than n_comp.
 
         Parameters
         ----------
         h5_win : hdf5 Dataset, optional
-            dataset containing the windowed image which PCA was performed on
+            dataset containing the windowed image which SVD was performed on
         components : {int, iterable of int, slice} optional
             Defines which components to keep
             Default - None, all components kept
@@ -681,7 +681,7 @@ class ImageWindow(object):
 
         if h5_win is None:
             if self.h5_wins is None:
-                warn('You must perform windowing on an image followed by PCA on the window before you can clean it.')
+                warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
                 return
             h5_win = self.h5_wins
 
@@ -690,20 +690,20 @@ class ImageWindow(object):
         comp_slice = self.__get_component_slice(components)
 
         '''
-        Read the 1st n_comp components from the PCA results
+        Read the 1st n_comp components from the SVD results
         on h5_win
         '''
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            win_svd = findH5group(h5_win, 'PCA')[-1]
+            win_svd = findH5group(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
             h5_V = win_svd['V']
 
         except KeyError:
-            warnstring = 'PCA Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
+            warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
             warn(warnstring)
             return
         except:
@@ -811,13 +811,13 @@ class ImageWindow(object):
 
     def clean_and_build_separate_components(self, h5_win=None, components=None):
         """
-        Rebuild the Image from the PCA results on the windows
+        Rebuild the Image from the SVD results on the windows
         Optionally, only use components less than n_comp.
 
         Parameters
         ----------
         h5_win : hdf5 Dataset, optional
-            dataset containing the windowed image which PCA was performed on
+            dataset containing the windowed image which SVD was performed on
         components : {int, iterable of int, slice} optional
             Defines which components to keep
             Default - None, all components kept
@@ -835,7 +835,7 @@ class ImageWindow(object):
 
         if h5_win is None:
             if self.h5_wins is None:
-                warn('You must perform windowing on an image followed by PCA on the window before you can clean it.')
+                warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
                 return
             h5_win = self.h5_wins
 
@@ -843,20 +843,20 @@ class ImageWindow(object):
         comp_slice = self.__get_component_slice(components)
 
         '''
-        Read the 1st n_comp components from the PCA results
+        Read the 1st n_comp components from the SVD results
         on h5_win
         '''
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            win_svd = findH5group(h5_win, 'PCA')[-1]
+            win_svd = findH5group(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
             h5_V = win_svd['V']
 
         except KeyError:
-            warnstring = 'PCA Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
+            warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
             warn(warnstring)
             return
         except:
