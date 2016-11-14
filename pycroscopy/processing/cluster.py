@@ -93,6 +93,7 @@ class Cluster(object):
         ------
         None
         """
+        print('Performing clustering on {}.'.format(self.h5_main.name))
         # perform fit on the real dataset
         self.results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
 
@@ -110,6 +111,7 @@ class Cluster(object):
         mean_resp : 2D numpy array
             Array of the mean response for each cluster arranged as [cluster number, response]
         """
+        print('Calculated the Mean Response of each cluster.')
         num_clusts = len(np.unique(labels))
         mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
         for clust_ind in range(num_clusts):
@@ -139,6 +141,7 @@ class Cluster(object):
         h5_labels : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
+        print('Writing clustering results to file.')
         num_clusters = mean_response.shape[0]
         ds_label_mat = MicroDataset('Labels', np.float32(labels), dtype=np.float32)
         clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
@@ -146,6 +149,8 @@ class Cluster(object):
         ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))
         ds_cluster_vals = MicroDataset('Cluster_Values', np.float32(clust_ind_mat))
         ds_cluster_centroids = MicroDataset('Mean_Response', mean_response, dtype=mean_response.dtype)
+        ds_label_inds = MicroDataset('Label_Spectroscopic_Indices', np.atleast_2d([0]), dtype=np.uint32)
+        ds_label_vals = MicroDataset('Label_Spectroscopic_Values', np.atleast_2d([0]), dtype=np.float32)
 
         # write the labels and the mean response to h5
         clust_slices = {'Cluster': (slice(None), slice(0, 1))}
@@ -155,7 +160,8 @@ class Cluster(object):
         ds_cluster_vals.attrs['units'] = ['']
 
         cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Cluster_', self.h5_main.parent.name[1:])
-        cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals])
+        cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
+                                 ds_label_vals])
 
         cluster_grp.attrs['num_clusters'] = num_clusters
         cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
@@ -177,10 +183,20 @@ class Cluster(object):
         h5_centroids = getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
         h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
         h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
+        h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
+        h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
+
+        h5_label_inds.attrs['labels'] = ''
+        h5_label_inds.attrs['units'] = ''
+        h5_label_vals.attrs['labels'] = ''
+        h5_label_vals.attrs['units'] = ''
 
         checkAndLinkAncillary(h5_labels,
                               ['Position_Indices', 'Position_Values'],
                               h5_main=self.h5_main)
+        checkAndLinkAncillary(h5_labels,
+                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
+                              anc_refs=[h5_label_inds, h5_label_vals])
 
         checkAndLinkAncillary(h5_centroids,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
