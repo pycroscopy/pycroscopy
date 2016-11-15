@@ -86,14 +86,14 @@ def doSVD(h5_main, num_comps=None):
     ds_inds.attrs['units'] = ''
     del S
 
-    u_chunks = calc_chunks(U.shape, np.float32(0).itemsize, unit_chunks=[1, num_comps])
+    u_chunks = calc_chunks(U.shape, np.float32(0).itemsize)
     ds_U = MicroDataset('U', data=np.float32(U), chunking=u_chunks)
     del U
 
     if is_complex:
         # Put the real and imaginary sections together to make complex V
         V = V[:, :int(0.5 * V.shape[1])] + 1j * V[:, int(0.5 * V.shape[1]):]
-        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize)
         ds_V = MicroDataset('V', data=np.complex64(V), chunking=v_chunks)
     elif is_compound:
         V2 = np.empty([V.shape[0], h5_main.shape[1]], dtype=h5_main.dtype)
@@ -101,11 +101,11 @@ def doSVD(h5_main, num_comps=None):
             istart = iname * V2.shape[1]
             iend = (iname + 1) * V2.shape[1]
             V2[name] = V[:, istart:iend]
-        v_chunks = calc_chunks(V2.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        v_chunks = calc_chunks(V2.shape, h5_main.dtype.itemsize)
         ds_V = MicroDataset('V', data=V2, chunking=v_chunks)
         del V2
     else:
-        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize, unit_chunks=(num_comps, 1))
+        v_chunks = calc_chunks(V.shape, h5_main.dtype.itemsize)
         ds_V = MicroDataset('V', data=np.float32(V), chunking=v_chunks)
     del V
 
