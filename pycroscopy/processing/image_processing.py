@@ -373,12 +373,12 @@ class ImageWindow(object):
         win_name = h5_win.name.split('/')[-1]
         
         try:
-            pca_name = win_name+'-SVD_000'
-            win_pca = h5_win.parent[pca_name]
+            svd_name = win_name+'-SVD_000'
+            win_svd = h5_win.parent[svd_name]
         
-            S = win_pca['S'][comp_slice]
-            U = win_pca['U'][:,comp_slice]
-            V = win_pca['V'][comp_slice,:]
+            S = win_svd['S'][comp_slice]
+            U = win_svd['U'][:,comp_slice]
+            V = win_svd['V'][comp_slice,:]
         
         except KeyError:
             warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
@@ -391,7 +391,7 @@ class ImageWindow(object):
         Creat the new Group to how the cleaned windows
         '''
         grp_name = win_name+'-Cleaned_Windows_'
-        clean_grp = MicroDataGroup(grp_name, win_pca.name[1:])     
+        clean_grp = MicroDataGroup(grp_name, win_svd.name[1:])     
         
         ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
                                chunking=h5_win.chunks, maxshape=h5_win.shape)
@@ -409,8 +409,8 @@ class ImageWindow(object):
         '''
         Generate a cleaned set of windows
         '''
-        if win_pca.attrs['pca_method'] == 'sklearn-incremental':
-            batch_size = win_pca.attrs['batch_size']
+        if win_svd.attrs['svd_method'] == 'sklearn-incremental':
+            batch_size = win_svd.attrs['batch_size']
             V = np.dot(np.diag(S), V)
             batches = gen_batches(U.shape[0], batch_size)
             for batch in batches:
@@ -629,7 +629,7 @@ class ImageWindow(object):
         '''
         Create datasets for results, link them properly, and write them to file
         '''
-        clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
+        clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
         ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
         ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
         ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
@@ -782,7 +782,7 @@ class ImageWindow(object):
         '''
         Create datasets for results, link them properly, and write them to file
         '''
-        clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
+        clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
         clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
         ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
         ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
@@ -932,7 +932,7 @@ class ImageWindow(object):
         '''
         Create datasets for results, link them properly, and write them to file
         '''
-        clean_grp = MicroDataGroup('Cleaned_Image', win_svd.name[1:])
+        clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
 
         clean_chunking = calc_chunks([im_x*im_y, num_comps],
                                      clean_image.dtype.itemsize)
