@@ -7,6 +7,7 @@ from warnings import warn
 
 import numpy as np
 from scipy.signal import find_peaks_cwt
+from .utils.be_sho import SHOestimateGuess, SHOfunc
 
 
 class GuessMethods(object):
@@ -20,7 +21,7 @@ class GuessMethods(object):
     function.
     """
     def __init__(self):
-        self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']
+        self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes', 'complex_gaussian']
 
     @classmethod
     def wavelet_peaks(self, *args, **kwargs):
@@ -69,7 +70,6 @@ class GuessMethods(object):
         except KeyError:
             warn('Error: Please specify "peak_widths" kwarg to use this method')
 
-
     @classmethod
     def absolute_maximum(self, *args, **kwargs):
         """
@@ -95,3 +95,68 @@ class GuessMethods(object):
     @classmethod
     def gaussianProcesses(self, *args, **kwargs):
         pass
+
+    @classmethod
+    def complex_gaussian(self, *args, **kwargs):
+        """
+        Sets up the needed parameters for the analytic approximation for the
+        Gaussian fit of complex data.
+
+        Parameters
+        ----------
+        args: numpy arrays.
+
+        kwargs: Passed to SHOEstimateFit().
+
+        Returns
+        -------
+        sho_guess: callable function.
+
+        """
+        try:
+            w_vec = kwargs.pop('frequencies')
+            lower_bounds = kwargs.pop('lower_bounds', [0, np.min(w_vec), -1e5, -np.pi])
+            lower_bounds = kwargs.pop('upper_bounds', [1e5, np.max(w_vec), 1e5, np.pi])
+            num_points = kwargs.pop('num_points', 5)
+
+            def sho_guess(resp_vec):
+
+                guess = SHOestimateGuess(w_vec, resp_vec, num_points)
+
+                guess = np.hstack([guess, np.array(r_square(resp_vec, SHOfunc, guess, w_vec))])
+
+                return guess
+
+            return sho_guess
+        except KeyError:
+            warn('Error: Please specify "peak_widths" kwarg to use this method')
+
+
+def r_square(data_vec, func, *args, **kwargs):
+    """
+    R-square for estimation of the fitting quality
+    Typical result is in the range (0,1), where 1 is the best fitting
+
+    Parameters
+    ----------
+    data_vec : array_like
+        Measured data points
+    func : callable function
+        Should return a numpy.ndarray of the same shape as data_vec
+    args :
+        Parameters to be pased to func
+    kwargs :
+        Keyword parameters to be pased to func
+
+    Returns
+    -------
+    r_squared : float
+        The R^2 value for the current data_vec and parameters
+    """
+    data_mean = np.mean(data_vec)
+    ss_tot = sum(abs(data_vec - data_mean) ** 2)
+    ss_res = sum(abs(data_vec - func(*args, **kwargs)) ** 2)
+
+    r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+
+    return r_squared
