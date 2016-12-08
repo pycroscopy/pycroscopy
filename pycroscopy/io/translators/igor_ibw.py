@@ -44,10 +44,13 @@ class IgorIBWTranslator(Translator):
         ibw_wave = ibw_obj.get('wave')
         parm_dict = self._read_parms(ibw_wave)
         chan_labels, chan_units = self._get_chan_labels(ibw_wave)
+        print(chan_labels)
+        print(chan_units)
 
         # Get the data to figure out if this is an image or a force curve
         images = ibw_wave.get('wData')
         if images.ndim == 3:  # Image stack
+            print('Found image stack of size {}'.format(images.shape))
             type_suffix = 'Image'
             images = images.transpose(2, 0, 1)  # [chan, Y, X] image
             images = np.reshape(images, (images.shape[0], -1))  # 2D [chan, Y*X points]
@@ -63,6 +66,7 @@ class IgorIBWTranslator(Translator):
             ds_spec_inds, ds_spec_vals = self._buildspectroscopicdatasets([1], steps=1, labels=['arb'], units=['a.u.'])
 
         else:  # single force curve
+            print('Found force curve of size {}'.format(images.shape))
             type_suffix = 'ForceCurve'
             images = images.transpose()  # [chan x Z] force curve
 
@@ -91,6 +95,7 @@ class IgorIBWTranslator(Translator):
             ds_raw_data.attrs['labels'] = [chan_name]
             ds_raw_data.attrs['units'] = [chan_unit]
             chan_raw_dsets.append(ds_raw_data)
+        print('Finished preparing raw datasets')
 
         # Prepare the tree structure
         # technically should change the date, etc.
@@ -102,6 +107,7 @@ class IgorIBWTranslator(Translator):
         meas_grp = MicroDataGroup('Measurement_000')
         meas_grp.attrs = parm_dict
         spm_data.addChildren([meas_grp])
+        print('Finished preparing tree trunk')
 
         # Prepare the .h5 file:
         folder_path, base_name = path.split(file_path)
@@ -114,6 +120,7 @@ class IgorIBWTranslator(Translator):
         hdf = ioHDF5(h5_path)
         # spm_data.showTree()
         hdf.writeData(spm_data, print_log=False)
+        print('Finished writing tree trunk')
 
         # Standard list of auxiliary datasets that get linked with the raw dataset:
         aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
@@ -126,6 +133,7 @@ class IgorIBWTranslator(Translator):
             h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
 
+        print('Finished writing all channels')
         hdf.close()
         return h5_path
 

@@ -25,4 +25,4 @@ from .time_series import MovieTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'FastIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
-           'SporcTranslator', 'MovieTranslator']
+           'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator']
