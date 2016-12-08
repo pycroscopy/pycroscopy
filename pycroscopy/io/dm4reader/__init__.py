@@ -87,9 +87,9 @@ def read_root_tag_dir_header_dm4(dmfile, endian):
         
     issorted = struct.unpack_from(endian + 'b', dmfile.read(1))[0]
     isclosed = struct.unpack_from(endian + 'b', dmfile.read(1))[0]
-    num_tags =  struct.unpack_from('>Q', dmfile.read(8))[0] #DM4 specifies this property as always big endian
+    num_tags = struct.unpack_from('>Q', dmfile.read(8))[0] #DM4 specifies this property as always big endian
       
-    return DM4DirHeader(20,None, 0, issorted, isclosed, num_tags, DM4_header_size) 
+    return DM4DirHeader(20, None, 0, issorted, isclosed, num_tags, DM4_header_size)
 
 def read_tag_header_dm4(dmfile, endian):
     '''Read the tag from the file.  Leaves file at the end of the tag data, ready to read the next tag from the file'''
@@ -116,7 +116,7 @@ def _read_tag_name(dmfile, endian):
     tag_name_len = struct.unpack_from('>H',dmfile.read(2))[0] #DM4 specifies this property as always big endian
     tag_name = None
     if tag_name_len > 0:
-        data =  dmfile.read(tag_name_len)
+        data = dmfile.read(tag_name_len)
         try:
             tag_name = data.decode('utf-8', errors='ignore')
         except UnicodeDecodeError as e:
@@ -292,14 +292,14 @@ class DM4File:
             
         dir_obj = DM4File.DM4TagDir(directory_tag.name, directory_tag, {},[], {}, [])
         
-        for iTag in range(0,directory_tag.num_tags):
+        for iTag in range(0, directory_tag.num_tags):
             tag = read_tag_header_dm4(self.hfile, self.endian_str)
             if tag is None:
                 break
             
             if tag_is_directory(tag):
                 if tag.name is None:
-                    dir_obj.unnamed_subdirs.append( self.read_directory(tag))
+                    dir_obj.unnamed_subdirs.append(self.read_directory(tag))
                 else:
                     dir_obj.named_subdirs[tag.name] = self.read_directory(tag) 
             else:

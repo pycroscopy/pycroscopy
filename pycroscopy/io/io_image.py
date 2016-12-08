@@ -104,22 +104,27 @@ def _parse_dm3_parms(image_parms, prefix=''):
 
     return new_parms
 
-def read_dm4(file_path, get_parms=True):
+def read_dm4(file_path, *args, **kwargs):
     """
     Read dm4 file
 
     :param file_path:
-    :param get_parms:
     :return:
     """
+    get_parms = kwargs.pop('get_parms', True)
+    offset = kwargs.pop('offset', None)
+
+    file_parms = dict()
     dm4_file = dm4reader.DM4File.open(file_path)
+    # if offset is not None:
     tags = dm4_file.read_directory()
     image_list = tags.named_subdirs['ImageList'].unnamed_subdirs
+    # else:
+    #     dm4_file.hfile.seek(offset)
+    #     image_list =
     for image_dir in image_list:
-        image_parm_dict = dict()
         image_data_tag = image_dir.named_subdirs['ImageData']
         image_tag = image_data_tag.named_tags['Data']
-        image_tags_dir = image_dir.named_subdirs['ImageTags']
 
         XDim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[0])
         YDim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[1])
@@ -129,6 +134,7 @@ def read_dm4(file_path, get_parms=True):
 
     if get_parms:
         file_parms = parse_dm4_parms(dm4_file, tags, '')
+        # file_parms['Image_Offset'] = image_list.dm4_tag.data_offset
 
     return image_array, file_parms
 
