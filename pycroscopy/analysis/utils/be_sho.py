@@ -23,7 +23,7 @@ def SHOfunc(parms, w_vec):
     return parms[0] * exp(1j * parms[3]) * parms[1] ** 2 / (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
 
 
-def SHOestimateFit(w_vec, resp_vec, num_points=5):
+def SHOestimateGuess(w_vec, resp_vec, num_points=5):
     """
     Generates good initial guesses for fitting
 
@@ -42,8 +42,7 @@ def SHOestimateFit(w_vec, resp_vec, num_points=5):
         SHO fit parameters arranged as amplitude, frequency, quality factor, phase
     """
     
-#     num_points=5
-    ii= np.argsort(abs(resp_vec))[::-1]
+    ii = np.argsort(abs(resp_vec))[::-1]
     
     a_mat=np.array([])
     e_vec=np.array([])
@@ -124,7 +123,6 @@ def SHOfastGuess(w_vec, resp_vec, qual_factor=10):
     amp_vec = abs(resp_vec)
     i_max = np.argmax(amp_vec)
     return np.array([np.max(amp_vec) / qual_factor, w_vec[i_max], qual_factor, np.angle(resp_vec[i_max])])
-
 
 def SHOlowerBound(w_vec):
     """

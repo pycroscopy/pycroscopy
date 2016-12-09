@@ -7,14 +7,15 @@ from warnings import warn
 
 import numpy as np
 import psutil
-
+import scipy
 from .guess_methods import GuessMethods
-from ..io.hdf_utils import checkIfMain,getAuxData
+from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 try:
     import multiprocess as mp
 except ImportError:
     raise ImportError()
+
 
 class Model(object):
     """
@@ -49,10 +50,10 @@ class Model(object):
         # Checking if parallel processing will be used
         try:
             import multiprocess
-            self.__parallel = True
+            self._parallel = True
         except ImportError:
             warn("Multiprocess package (pip,github) is needed for parallel computation.\nSwitching to serial version.")
-            self.__parallel = False
+            self._parallel = False
 
         # Determining the max size of the data that can be put into memory
         self._setMemoryAndCPUs()
@@ -76,18 +77,18 @@ class Model(object):
         None
         """
 
-        if self.__parallel:
-            self.__maxCpus = psutil.cpu_count() - 1
+        if self._parallel:
+            self._maxCpus = psutil.cpu_count() - 2
         else:
-            self.__maxCpus = 1
-        self.__maxMemoryMB = psutil.virtual_memory().available/1e6 # in MB
+            self._maxCpus = 1
+        self._maxMemoryMB = psutil.virtual_memory().available / 1e6 # in MB
 
-        self.__maxDataChunk = self.__maxMemoryMB/self.__maxCpus
+        self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
         # Now calculate the number of positions that can be stored in memory in one go.
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1]/1e6
-        self.__max_pos_per_read = int(np.floor(self.__maxDataChunk / mb_per_position))
-        print('Allowed to read {} pixels per chunk'.format(self.__max_pos_per_read))
+        self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
+        print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
 
 
     def _isLegal(self, h5_main, variables):
@@ -136,7 +137,7 @@ class Model(object):
         --------
         """
         if self.__start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self.__max_pos_per_read))
+            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self.__start_pos:self.__end_pos, :]
             print('Reading pixels {} to {} of {}'.format(self.__start_pos, self.__end_pos, self.h5_main.shape[0]))
 
@@ -161,7 +162,8 @@ class Model(object):
         --------
         """
         if self.data is None:
-            self.guess = None
+            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
         else:
             self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
 
@@ -211,6 +213,27 @@ class Model(object):
         self.guess = None # replace with actual h5 dataset
         pass
 
+    def _createFitDatasets(self):
+        """
+        Model specific call that will write the h5 group, fit dataset, corresponding spectroscopic datasets and also
+        link the fit dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
+        within this function.
+
+        The fit dataset will NOT be populated here but will be populated by the __setData function
+        The guess dataset should NOT be populated here unless the user calls the optimize function.
+
+        Parameters
+        --------
+        None
+
+        Returns
+        -------
+        None
+        """
+        warn('Please override the _createFitDatasets specific to your model')
+        self.fit = None # replace with actual h5 dataset
+        pass
+
     def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
         """
 
@@ -236,12 +259,12 @@ class Model(object):
         self._createGuessDatasets()
         self.__start_pos = 0
 
-        processors = kwargs.get("processors", self.__maxCpus)
+        processors = kwargs.get("processors", self._maxCpus)
         gm = GuessMethods()
         if strategy in gm.methods:
             func = gm.__getattribute__(strategy)(**options)
             results = list()
-            if self.__parallel:
+            if self._parallel:
                 # start pool of workers
                 print('Computing Guesses In parallel ... launching %i kernels...' % processors)
                 pool = mp.Pool(processors)
@@ -323,8 +346,8 @@ class Model(object):
         if not self.h5_guess is None:
             print("You need to guess before fitting")
             return None
-        self.__createFitDatasets()
-        self.__start_pos = 0
+        self._createFitDatasets()
+        self._start_pos = 0
         """
         read first data + guess chunks
         while chunks are not empty:
@@ -334,7 +357,8 @@ class Model(object):
         """
         pass
 
-    # def __optimize(self, func, data, guess, solver, parallel='multiprocess', processors=min(1,abs(mp.cpu_count()-2)), **kwargs):
+    def _optimize(self, func, data, guess, solver, parallel='multiprocess',
+                  processors=max(1, abs(mp.cpu_count()-2)), **kwargs):
         """
         Parameters:
         -----
@@ -359,28 +383,71 @@ class Model(object):
         Results of the optimization.
 
         """
-        # try:
-        #     self.solver = scipy.optimize.__dict__[solver]
-        # except KeyError:
-        #     warn('Solver %s does not exist!' %(solver))
-        #
-        # def _callSolver(data, guessChunk):
-        #     results = self.solver.__call__(func,guessChunk,**kwargs)
-        #     return results
-        #
-        # if parallel=='multiprocess':
-        #     # start pool of workers
-        #     print('launching %i kernels...'%(processors))
-        #     pool = mp.Pool(processors)
-        #     # Divvy up the tasks and run them
-        #     tasks = [(dataChunk,guessChunk) for (dataChunk,guessChunk) in zip(data,guess)]
-        #     chunk = int(data.shape[0]/processors)
-        #     jobs = pool.imap(_callSolver, tasks, chunksize = chunk)
-        #     # Collect the results
-        #     results =[]
-        #     print('Extracting Peaks...')
-        #     try:
-        #         for j in jobs:
-        #             results.append(j)
-        #     except ValueError:
-        #         warn('It appears that one of the jobs failed.')
+        try:
+            self.solver = scipy.optimize.__dict__[solver]
+        except KeyError:
+            warn('Solver %s does not exist!' %(solver))
+
+        def _callSolver(input):
+            data = input[0]
+            guess = input[1]
+            results = self.solver.__call__(func, guess, args=[data], **kwargs)
+            self.solver.__call__(func, guess, args=[data], **kwargs)
+            return results
+
+        if parallel=='multiprocess':
+            # start pool of workers
+            print('launching %i kernels...'%(processors))
+            pool = mp.Pool(processors)
+            # Divvy up the tasks and run them
+            tasks = [(data_vec, guess_vec) for (data_vec, guess_vec) in zip(data, guess)]
+            chunk = int(data.shape[0]/processors)
+            jobs = pool.imap(_callSolver, tasks, chunksize=chunk)
+            # Collect the results
+            results = list()
+            print('Extracting Peaks...')
+            try:
+                for j in jobs:
+                    results.append(j.x, j.fun)
+            except ValueError:
+                warn('It appears that one of the jobs failed.')
+            except:
+                raise
+            pool.close()
+        else:
+            results = list()
+            for (data_vec, guess_vec) in zip(data, guess):
+                tmp = _callSolver([data_vec, guess_vec])
+                results.append(np.append(tmp.x, tmp.fun))
+
+        return results
+
+    @staticmethod
+    def _r_square(data_vec, func, *args, **kwargs):
+        """
+        R-square for estimation of the fitting quality
+        Typical result is in the range (0,1), where 1 is the best fitting
+
+        Parameters
+        ----------
+        data_vec : array_like
+            Measured data points
+        func : callable function
+            Should return a numpy.ndarray of the same shape as data_vec
+        args :
+            Parameters to be pased to func
+        kwargs :
+            Keyword parameters to be pased to func
+
+        Returns
+        -------
+        r_squared : float
+            The R^2 value for the current data_vec and parameters
+        """
+        data_mean = np.mean(data_vec)
+        ss_tot = sum(abs(data_vec - data_mean) ** 2)
+        ss_res = sum(abs(data_vec - func(*args, **kwargs)) ** 2)
+
+        r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+
+        return r_squared

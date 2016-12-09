@@ -9,7 +9,7 @@ from time import strftime
 
 import h5py
 import numpy as np
-from PyQt4 import QtGui
+from PyQt5 import QtWidgets
 
 __all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
@@ -48,8 +48,8 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     file_path : String
         Absolute path of the chosen file
     """
-    app = QtGui.QApplication([])
-    path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
+    app = QtWidgets.QApplication([])
+    path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
     app.exit()
 
     return str(path)
