@@ -36,7 +36,7 @@ class OneViewTranslator(Translator):
         self.root_image_list = list()
         self.crop_method = 'percent'
         self.crop_ammount = None
-        self.image_list_offset = None
+        self.image_list_tag = None
 
     def translate(self, h5_path, image_path, bin_factor=None, bin_func=np.mean, start_image=0, scan_size_x=None,
                   scan_size_y=None, crop_ammount=None, crop_method='percent'):
@@ -103,7 +103,7 @@ class OneViewTranslator(Translator):
         size, image_parms = self._getimageparms(file_list[0])
         usize, vsize = size
 
-        self.image_list_offset = image_parms.pop('Image_Offset', None)
+        self.image_list_tag = image_parms.pop('Image_Tag', None)
 
         if crop_ammount is not None:
             tmp, _ = read_image(file_list[0])
@@ -269,7 +269,8 @@ class OneViewTranslator(Translator):
             if selected:
                 print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
 
-            image, _ = read_image(os.path.join(image_path, thisfile), get_parms=False)
+            image, _ = read_image(os.path.join(image_path, thisfile), get_parms=False, header=self.image_list_tag)
+            # image, _ = read_image(os.path.join(image_path, thisfile), get_parms=False)
             image = self.crop_ronc(image)
             image = self.binning_func(image, self.bin_factor, self.bin_func)
             image = image.flatten()

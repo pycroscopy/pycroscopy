@@ -29,23 +29,11 @@ def read_image(image_path, *args, **kwargs):
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.dm3':
-        try:
-            image, extra = read_dm3(image_path, *args, **kwargs)
-            return image, extra
-        except:
-            raise
+        return read_dm3(image_path, *args, **kwargs)
     elif ext == '.dm4':
-        try:
-            image, extra = read_dm4(image_path, *args, **kwargs)
-            return image, extra
-        except:
-            raise
+        return read_dm4(image_path, *args, **kwargs)
     else:
-        try:
-            image = imread(image_path, *args, **kwargs)
-            return image, dict()
-        except:
-            raise
+        return imread(image_path, *args, **kwargs), dict()
 
 
 def read_dm3(image_path, get_parms=True):
@@ -112,16 +100,18 @@ def read_dm4(file_path, *args, **kwargs):
     :return:
     """
     get_parms = kwargs.pop('get_parms', True)
-    offset = kwargs.pop('offset', None)
+    header = kwargs.pop('header', None)
 
     file_parms = dict()
     dm4_file = dm4reader.DM4File.open(file_path)
-    # if offset is not None:
-    tags = dm4_file.read_directory()
-    image_list = tags.named_subdirs['ImageList'].unnamed_subdirs
-    # else:
-    #     dm4_file.hfile.seek(offset)
-    #     image_list =
+    if header is None:
+        tags = dm4_file.read_directory()
+        header = tags.named_subdirs['ImageList'].dm4_tag
+        image_list = tags.named_subdirs['ImageList'].unnamed_subdirs
+    else:
+        dm4_file.hfile.seek(header.offset)
+        image_list = dm4_file.read_directory(header)
+
     for image_dir in image_list:
         image_data_tag = image_dir.named_subdirs['ImageData']
         image_tag = image_data_tag.named_tags['Data']
@@ -134,7 +124,7 @@ def read_dm4(file_path, *args, **kwargs):
 
     if get_parms:
         file_parms = parse_dm4_parms(dm4_file, tags, '')
-        # file_parms['Image_Offset'] = image_list.dm4_tag.data_offset
+        file_parms['Image_Tag'] = header
 
     return image_array, file_parms
 
