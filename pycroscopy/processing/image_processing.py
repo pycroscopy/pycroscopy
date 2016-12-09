@@ -1333,7 +1333,7 @@ def radially_average_correlation(data_mat, num_r_bin):
     num_r_bin : unsigned int
         Number of spatial bins to analyze
 
-    Returns:
+    Returns
     --------
     a_mat : 2D real numpy array
         Noise spectrum of the image
