@@ -128,6 +128,7 @@ class ImageWindow(object):
             self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
 
         self.h5_file = self.hdf.file
+        self.h5_file.flush()
 
         '''
         Initialize class variables to None
