@@ -1372,7 +1372,7 @@ def radially_average_correlation(data_mat, num_r_bin):
 
     step = 1 / (num_r_bin * 1.0 - 1)
     for k, r_bin in enumerate(np.linspace(0, 1, num_r_bin)):
-        b = np.where((r_vec < r_bin + step) * (r_vec > r_bin) is True)[0]
+        b = np.where((r_vec < r_bin + step) * (r_vec > r_bin) == True)[0]
 
         if b.size == 0:
             a_rad_avg_vec[k] = np.nan
