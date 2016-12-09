@@ -329,8 +329,12 @@ class BESHOmodel(Model):
 
         self._createFitDataset()
         self.__start_pos = 0
+        parallel = ''
 
         processors = kwargs.get("processors", self._maxCpus)
+        if processors > 1:
+            parallel = 'parallel'
+
         w_vec = self.freq_vec
 
         def sho_fit(parm_vec, resp_vec):
@@ -350,7 +354,8 @@ class BESHOmodel(Model):
         while self.data is not None:
             data = np.array(self.data[()],copy=True)
             guess = np.array(self.guess[()], copy=True)
-            temp = self._optimize(sho_fit, data, guess, solver='least_squares', processors=processors)
+            temp = self._optimize(sho_fit, data, guess, solver='least_squares',
+                                  processors=processors, parallel=parallel)
             results.append(self._reformatResults(temp, 'complex_gaussian'))
             self._getGuessChunk()
             self._getDataChunk()
