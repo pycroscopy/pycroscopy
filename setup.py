@@ -9,7 +9,7 @@ with open(path.join(here, 'README.rst')) as f:
 
 setup(
     name='pycroscopy',
-    version='0.0a10',
+    version='0.0a14',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description=long_description,
     classifiers=[
@@ -23,7 +23,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
-        'Topic :: Scientific/Engineering :: Information Analysis',
+        # 'Topic :: Scientific / Engineering :: Information Analysis',
         'Topic :: Scientific/Engineering :: Physics',
         ],
     keywords='scientific microscopy data analysis',
@@ -33,10 +33,11 @@ setup(
     author='S. Somnath, C. Ryan, N. Laanait',
     author_email='pycroscopy@gmail.com',
 
-    install_requires=['numpy_groupies', 'pyqtgraph', 'numpy>=1.11.0',
+    # I don't remember how to do this correctly!!!. NL
+    install_requires=['numpy_groupies', 'pyqtgraph>=0.10', 'numpy>=1.11.0',
                       'h5py>=2.6.0', 'scipy>=0.17.1', 'matplotlib',
                       'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
-                      'psutil', 'scikit-image>=0.12.3', 'igor'],  # 'multiprocess'],
+                      'psutil', 'scikit-image>=0.12.3', 'pyqt>=5.6'],  # 'multiprocess'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',

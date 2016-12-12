@@ -388,16 +388,12 @@ class Model(object):
         except KeyError:
             warn('Solver %s does not exist!' %(solver))
 
-        def _callSolver(data, guess):
-            try:
-                # self.solver = scipy.optimize.__dict__[solver]
-                results = scipy.optimize.minimize(func,guess, args=[data],method="Powell")
-                return results
-            except KeyError:
-                warn('Solver %s does not exist!' % (solver))
-            # results = self.solver.__call__(func, guess, args=[data], **kwargs)
-            # self.solver.__call__(func, guess, args=[data], **kwargs)
-            # return results
+        def _callSolver(input):
+            data = input[0]
+            guess = input[1]
+            results = self.solver.__call__(func, guess, args=[data], **kwargs)
+            self.solver.__call__(func, guess, args=[data], **kwargs)
+            return results
 
         if parallel=='multiprocess':
             # start pool of workers
@@ -421,7 +417,7 @@ class Model(object):
         else:
             results = list()
             for (data_vec, guess_vec) in zip(data, guess):
-                tmp = _callSolver(data_vec, guess_vec)
+                tmp = _callSolver([data_vec, guess_vec])
                 results.append(np.append(tmp.x, tmp.fun))
 
         return results
