@@ -24,7 +24,7 @@ class ImageWindow(object):
     windows to an HDF5 file.
     """
 
-    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True):
+    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True, **image_args):
         """
         Setup the image windowing
 
@@ -52,7 +52,7 @@ class ImageWindow(object):
         self.hdf = ioHDF5(os.path.abspath(h5_path))
         
         # Ensuring that at least one core is available for use / 2 cores are available for other use
-        max_cores = max(1,cpu_count()-2)
+        max_cores = max(1, cpu_count()-2)
 #         print 'max_cores',max_cores         
         if cores is not None: 
             cores = min(round(abs(cores)), max_cores)
@@ -73,12 +73,13 @@ class ImageWindow(object):
 
             _, exten = os.path.splitext(self.image_path)
             if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
-                image, _ = read_image(self.image_path, as_grey=True)
-            elif exten in ['.dm3']:
-                image, image_parms = read_dm3(self.image_path)
-                if image.ndim == 3:
-                    image = np.sum(image, axis=0)
-                root_grp.attrs.update(image_parms)
+                image_args['as_grey'] = True
+
+            image, image_parms = read_image(self.image_path, **image_args)
+
+            if image.ndim == 3:
+                image = np.sum(image, axis=0)
+            root_grp.attrs.update(image_parms)
 
             meas_grp = MicroDataGroup('Measurement_')
             
