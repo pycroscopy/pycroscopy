@@ -84,12 +84,12 @@ class ioHDF5(object):
         Repack the opened hdf5 file into a temporary file
         '''
         try:
-            repack_line = ' '.join(['h5repack',self.path,tmpfile])
+            repack_line = ' '.join(['h5repack', '"'+self.path+'"', '"'+tmpfile+'"'])
             subprocess.check_output(repack_line,
                                     stderr=subprocess.STDOUT,
                                     shell=True)
             # Check that the file is done being modified
-            while time()-os.stat(tmpfile).st_mtime <= 1:
+            while time()-os.stat('"'+tmpfile+'"').st_mtime <= 1:
                 sleep(0.5)
         except subprocess.CalledProcessError as err:
             print('Could not repack hdf5 file')
