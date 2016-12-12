@@ -19,7 +19,7 @@ sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
 
 def guess_methods_init(arg, **kwarg):
     func = BESHOmodel._guessMethodsInit(arg[-1], **kwarg)
-    print func
+    return func(arg[0])
     # return gm.(*arg, **kwarg)
 
 
