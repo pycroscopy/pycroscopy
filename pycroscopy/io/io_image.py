@@ -32,6 +32,8 @@ def read_image(image_path, *args, **kwargs):
         return read_dm3(image_path, *args, **kwargs)
     elif ext == '.dm4':
         return read_dm4(image_path, *args, **kwargs)
+    elif ext == '.txt':
+        return read_txt(image_path, *args, **kwargs), dict()
     else:
         return imread(image_path, *args, **kwargs), dict()
 
@@ -116,11 +118,11 @@ def read_dm4(file_path, *args, **kwargs):
         image_data_tag = image_dir.named_subdirs['ImageData']
         image_tag = image_data_tag.named_tags['Data']
 
-        XDim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[0])
-        YDim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[1])
+        x_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[0])
+        y_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[1])
 
         image_array = np.array(dm4_file.read_tag_data(image_tag), dtype=np.uint16)
-        image_array = np.reshape(image_array, (YDim, XDim))
+        image_array = np.reshape(image_array, (y_dim, x_dim))
 
     if get_parms:
         file_parms = parse_dm4_parms(dm4_file, tags, '')
@@ -238,3 +240,22 @@ def try_tag_to_string(tag_data):
             raise
 
     return tag_data
+
+
+def read_txt(image_path, *args, **kwargs):
+    """
+
+    :param image_path:
+    :param args:
+    :param kwargs:
+    :return:
+    """
+
+    header_lines = kwargs.pop('header_lines', 0)
+    delimiter = kwargs.pop('delimiter', None)
+
+    image = np.loadtxt(image_path,
+                       skiprows=header_lines,
+                       delimiter=delimiter)
+
+    return image
