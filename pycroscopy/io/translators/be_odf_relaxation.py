@@ -18,6 +18,10 @@ from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs
 
+nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
+                 ('sub_band', np.float32)])
+
+
 class BEodfRelaxationTranslator(Translator):
     """
     Translates old Relaxation data into the new H5 format. This is for the files generated from
@@ -183,12 +187,13 @@ class BEodfRelaxationTranslator(Translator):
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
         
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix,3,num_actual_udvs_steps), dtype=np.float32), chunking=(1,3,num_actual_udvs_steps))
-        noise_labs = ['super_band','inter_bin_band','sub_band']
-        noise_slices = dict()
-        for col_ind, col_name in enumerate(noise_labs):
-            noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
-        ds_noise_floor.attrs['labels'] = noise_slices
+        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
+                                      chunking=(1, num_actual_udvs_steps))
+        # noise_labs = ['super_band','inter_bin_band','sub_band']
+        # noise_slices = dict()
+        # for col_ind, col_name in enumerate(noise_labs):
+        #     noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
+        # ds_noise_floor.attrs['labels'] = noise_slices
         
         """ 
         ONLY ALLOCATING SPACE FOR MAIN DATA HERE!

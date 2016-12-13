@@ -89,6 +89,7 @@ class ioHDF5(object):
                                     stderr=subprocess.STDOUT,
                                     shell=True)
             # Check that the file is done being modified
+            sleep(0.1)
             while time()-os.stat('"'+tmpfile+'"').st_mtime <= 1:
                 sleep(0.5)
         except subprocess.CalledProcessError as err:
@@ -183,6 +184,8 @@ class ioHDF5(object):
                 g = f[data.parent][data.name]
                 print('Group already exists: {}'.format(g.name))
             except:
+                f.flush()
+                f.close()
                 raise
             for key in data.attrs.iterkeys():
                 if data.attrs[key] is None:
@@ -212,6 +215,8 @@ class ioHDF5(object):
                     itm = f[parent][child.name]
                     print('Found Group already exists {}'.format(itm.name))
                 except:
+                    f.flush()
+                    f.close()
                     raise
                 for key in child.attrs.iterkeys():
                     itm.attrs[key] = child.attrs[key]
@@ -234,6 +239,8 @@ class ioHDF5(object):
                             itm = f[parent][child.name]
                             warn('Found Dataset already exists {}'.format(itm.name))
                         except:
+                            f.flush()
+                            f.close()
                             raise
                     else:
                         # In many cases, we DON'T need resizable datasets but we know the max-size
@@ -248,6 +255,8 @@ class ioHDF5(object):
                             itm = f[parent][child.name]
                             warn('Found Dataset already exists {}'.format(itm.name))
                         except:
+                            f.flush()
+                            f.close()
                             raise
                 else:
                     # Resizable but the written files are significantly larger
@@ -263,6 +272,8 @@ class ioHDF5(object):
                         itm = f[parent][child.name]
                         warn('Found Dataset already exists {}'.format(itm.name))
                     except:
+                        f.flush()
+                        f.close()
                         raise
 
                 if print_log: print('Created Dataset {}'.format(itm.name))

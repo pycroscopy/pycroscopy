@@ -21,6 +21,10 @@ from .translator import Translator
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 
+nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
+                 ('sub_band', np.float32)])
+
+
 class BEPSndfTranslator(Translator):
     """
     Translates Band Excitation Polarization Switching (BEPS) datasets from .dat
@@ -228,11 +232,11 @@ class BEPSndfTranslator(Translator):
         meas_grp.attrs['num_pix'] = self.ds_pixel_index
         
         # Add region references to the now-completed Noise floor dataset
-        noise_slices = dict();
-        noise_slices['super_band'] = (slice(None), slice(0,1), slice(None));
-        noise_slices['inter_bin_band'] = (slice(None), slice(1,2), slice(None));
-        noise_slices['sub_band'] = (slice(None), slice(2,3), slice(None));
-        self.hdf.regionRefs(self.ds_noise, noise_slices)
+        # noise_slices = dict();
+        # noise_slices['super_band'] = (slice(None), slice(0,1), slice(None));
+        # noise_slices['inter_bin_band'] = (slice(None), slice(1,2), slice(None));
+        # noise_slices['sub_band'] = (slice(None), slice(2,3), slice(None));
+        # self.hdf.regionRefs(self.ds_noise, noise_slices)
         
         # Write position specific datasets now that the dataset is complete
         pos_slice_dict = dict();
@@ -413,14 +417,15 @@ class BEPSndfTranslator(Translator):
                                     chunking=beps_chunks,
                                     resizable=True,
                                     compression='gzip')
-        
-        ds_noise = MicroDataset('Noise_Floor', np.zeros(shape=(1,3,actual_udvs_steps), dtype=np.float32), chunking=(1,3,actual_udvs_steps), compression='gzip', dtype=np.float32, resizable=True)
-        noise_labs = ['super_band','inter_bin_band','sub_band']
-        noise_slices = dict()
-        for col_ind, col_name in enumerate(noise_labs):
-            noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
-        ds_noise.attrs['labels'] = noise_slices
-        ds_noise.attrs['units'] = ['','','']
+
+        ds_noise = MicroDataset('Noise_Floor', np.zeros(shape=(1, actual_udvs_steps), dtype=nf32),
+                                chunking=(1, actual_udvs_steps), resizable=True, compression='gzip')
+        # noise_labs = ['super_band','inter_bin_band','sub_band']
+        # noise_slices = dict()
+        # for col_ind, col_name in enumerate(noise_labs):
+        #     noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
+        # ds_noise.attrs['labels'] = noise_slices
+        # ds_noise.attrs['units'] = ['','','']
 #         ds_noise_labs = MicroDataset('Noise_Labels',np.array(noise_labs))
         # Allocate space for the first pixel for now and write along with the complete tree...
         # Positions CANNOT be written at this time since we don't know if the parameter changed
@@ -474,7 +479,7 @@ class BEPSndfTranslator(Translator):
         else:
 
             data_vec = np.zeros(shape=(self.ds_main.shape[1]), dtype=np.complex64)
-            noise_mat = np.zeros(shape=(3,self.ds_noise.shape[2]), dtype=np.float32)
+            noise_mat = np.zeros(shape=(3, self.ds_noise.shape[1]), dtype=np.float32)
             
             internal_step_index = {}
             for wave_type in self.__unique_waves__:
@@ -496,8 +501,8 @@ class BEPSndfTranslator(Translator):
                 noise_pix = pixel_data[wave_type].noise_floor_mat
                 enind = stind + pixel_data[wave_type].num_bins
                                 
-                data_vec[stind:enind] = data_pix[:,internal_step_index[wave_type]]
-                noise_mat[:,step_counter] = np.float32(noise_pix[:,internal_step_index[wave_type]])
+                data_vec[stind:enind] = data_pix[:, internal_step_index[wave_type]]
+                noise_mat[:, step_counter] = np.float32(noise_pix[:, internal_step_index[wave_type]])
                 
                 stind = enind;
                 internal_step_index[wave_type] += 1
@@ -511,8 +516,9 @@ class BEPSndfTranslator(Translator):
             self.ds_main.resize(self.ds_main.shape[0]+1, axis = 0)
             self.ds_noise.resize(self.ds_noise.shape[0]+1, axis = 0)
 
-        self.ds_main[-1,:] = data_vec
-        self.ds_noise[-1,:,:] = noise_mat
+        self.ds_main[-1, :] = data_vec
+        self.ds_noise[-1] = np.array([tuple(noise) for noise in noise_mat.T], dtype=nf32)
+
         self.hdf.file.flush()
         
         # Take mean response here:
