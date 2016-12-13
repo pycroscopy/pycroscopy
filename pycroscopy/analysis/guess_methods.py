@@ -23,8 +23,8 @@ class GuessMethods(object):
     def __init__(self):
         self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes', 'complex_gaussian']
 
-    @classmethod
-    def wavelet_peaks(self, *args, **kwargs):
+    @staticmethod
+    def wavelet_peaks(*args, **kwargs):
         """
         This is a wrapper over scipy.signal.find_peaks_cwt() that finds peaks in the data using wavelet convolution.
 
@@ -70,8 +70,8 @@ class GuessMethods(object):
         except KeyError:
             warn('Error: Please specify "peak_widths" kwarg to use this method')
 
-    @classmethod
-    def absolute_maximum(self, *args, **kwargs):
+    @staticmethod
+    def absolute_maximum( *args, **kwargs):
         """
         Finds maximum in 1d-array
         Parameters
@@ -88,16 +88,16 @@ class GuessMethods(object):
             return vec_max
         return fastpeak
 
-    @classmethod
-    def relative_maximum(self, *args, **kwargs):
+    @staticmethod
+    def relative_maximum(*args, **kwargs):
         pass
 
-    @classmethod
-    def gaussianProcesses(self, *args, **kwargs):
+    @staticmethod
+    def gaussianProcesses(*args, **kwargs):
         pass
 
-    @classmethod
-    def complex_gaussian(self, *args, **kwargs):
+    @staticmethod
+    def complex_gaussian(*args, **kwargs):
         """
         Sets up the needed parameters for the analytic approximation for the
         Gaussian fit of complex data.

@@ -11,10 +11,12 @@ import scipy
 from .guess_methods import GuessMethods
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
-try:
-    import multiprocess as mp
-except ImportError:
-    raise ImportError()
+from .optimize import Optimize
+import multiprocessing as mp
+# try:
+#     import multiprocess as mp
+# except ImportError:
+#     raise ImportError()
 
 
 class Model(object):
@@ -23,7 +25,7 @@ class Model(object):
     This abstract class should be extended to cover different types of imaging modalities.
 
     """
-    def __init__(self, h5_main, variables=['Frequency']):
+    def __init__(self, h5_main, variables=['Frequency'], parallel=True):
         """
         For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
         after testing the basic components.
@@ -48,17 +50,12 @@ class Model(object):
             warn('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
             return
         # Checking if parallel processing will be used
-        try:
-            import multiprocess
-            self._parallel = True
-        except ImportError:
-            warn("Multiprocess package (pip,github) is needed for parallel computation.\nSwitching to serial version.")
-            self._parallel = False
+        self._parallel=parallel
 
         # Determining the max size of the data that can be put into memory
         self._setMemoryAndCPUs()
 
-        self.__start_pos = 0
+        self._start_pos = 0
         self.__end_pos = self.h5_main.shape[0]
         self.h5_guess = None
         self.h5_fit = None
@@ -136,13 +133,13 @@ class Model(object):
         Returns:
         --------
         """
-        if self.__start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self.__start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self.__start_pos, self.__end_pos, self.h5_main.shape[0]))
+        if self._start_pos < self.h5_main.shape[0]:
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self.__start_pos = self.__end_pos
+            self._start_pos = self.__end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -162,10 +159,10 @@ class Model(object):
         --------
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
         else:
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
 
     def _setResults(self, is_guess=False):
         """
@@ -234,7 +231,8 @@ class Model(object):
         self.fit = None # replace with actual h5 dataset
         pass
 
-    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
+    def doGuess(self, processors=4, strategy='wavelet_peaks',
+                options={"peak_widths": np.array([10,200]), "peak_step":20}, **kwargs):
         """
 
         Parameters
@@ -244,7 +242,7 @@ class Model(object):
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
         options: dict
-            Default {"peaks_widths": np.array([10,200])}}.
+            Default, options for wavelet_peaks {"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
         kwargs:
@@ -257,42 +255,18 @@ class Model(object):
         """
 
         self._createGuessDatasets()
-        self.__start_pos = 0
-
-        processors = kwargs.get("processors", self._maxCpus)
+        self._start_pos = 0
+        self._getDataChunk()
+        processors = min(processors, self._maxCpus)
         gm = GuessMethods()
+        results = list()
         if strategy in gm.methods:
-            func = gm.__getattribute__(strategy)(**options)
-            results = list()
-            if self._parallel:
-                # start pool of workers
-                print('Computing Guesses In parallel ... launching %i kernels...' % processors)
-                pool = mp.Pool(processors)
+            print("Using %s to find guesses...\n" % (strategy))
+            while self.data is not None:
+                opt = Optimize(data=self.data, parallel=self._parallel)
+                temp = opt.computeGuess(processors=processors, strategy=strategy, options=options)
+                results.append(self._reformatResults(temp, strategy))
                 self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    # apply guess to this data chunk:
-                    tasks = [vector for vector in self.data]
-                    chunk = int(self.data.shape[0] / processors)
-                    jobs = pool.imap(func, tasks, chunksize=chunk)
-                    # get Results from different processes
-                    print('Extracting Guesses...')
-                    temp = [j for j in jobs]
-                    # Reformat the data to the appropriate type and or do additional computation now
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
-
-                # Finished reading the entire data set
-                print('closing %i kernels...' % processors)
-                pool.close()
-            else:
-                print("Computing Guesses In Serial ...")
-                self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    temp = [func(vector) for vector in self.data]
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
 
             # reorder to get one numpy array out
             self.guess = np.hstack(tuple(results))
@@ -302,6 +276,46 @@ class Model(object):
             self._setResults(is_guess=True)
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
+
+        #     if self._parallel:
+        #         # start pool of workers
+        #         print('Computing Guesses In parallel ... launching %i kernels...' % processors)
+        #         pool = mp.Pool(processors)
+        #         self._getDataChunk()
+        #         while self.data is not None:  # as long as we have not reached the end of this data set:
+        #             opt = Optimize(data=self.data, parallel=self._)
+        #             # apply guess to this data chunk:
+        #             tasks = [vector for vector in self.data]
+        #             chunk = int(self.data.shape[0] / processors)
+        #             jobs = pool.imap(func, tasks, chunksize=chunk)
+        #             # get Results from different processes
+        #             print('Extracting Guesses...')
+        #             temp = [j for j in jobs]
+        #             # Reformat the data to the appropriate type and or do additional computation now
+        #             results.append(self._reformatResults(temp, strategy))
+        #             # read the next chunk
+        #             self._getDataChunk()
+        #
+        #         # Finished reading the entire data set
+        #         print('closing %i kernels...' % processors)
+        #         pool.close()
+        #     else:
+        #         print("Computing Guesses In Serial ...")
+        #         self._getDataChunk()
+        #         while self.data is not None:  # as long as we have not reached the end of this data set:
+        #             temp = [func(vector) for vector in self.data]
+        #             results.append(self._reformatResults(temp, strategy))
+        #             # read the next chunk
+        #             self._getDataChunk()
+        #
+        #     # reorder to get one numpy array out
+        #     self.guess = np.hstack(tuple(results))
+        #     print('Completed computing guess. Writing to file.')
+        #
+        #     # Write to file
+        #     self._setResults(is_guess=True)
+        # else:
+        #     warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
 
     def _reformatResults(self, results, strategy='wavelet_peaks'):
