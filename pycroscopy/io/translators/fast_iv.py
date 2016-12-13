@@ -24,7 +24,10 @@ class FastIVTranslator(Translator):
     """
     Translates G-mode Fast IV datasets from .mat files to .h5
     """
-    
+
+    def _parsefilepath(self, input_path):
+        pass
+
     def translate(self, parm_path):
         """      
         The main function that translates the provided file into a .h5 file
@@ -48,16 +51,14 @@ class FastIVTranslator(Translator):
             remove(h5_path)
 
         # Now start creating datasets and populating:
-        ds_spec_inds, ds_spec_vals = self._buildspectroscopicdatasets((len(excit_wfm)),
-                                                                      labels=['Bias'],
-                                                                      units=['V'])
+        ds_spec_inds, ds_spec_vals = self._build_ind_val_dsets((len(excit_wfm)), is_spectral=True,
+                                                               labels=['Bias'], units=['V'])
         ds_spec_vals.data = excit_wfm  # The data generated above varies linearly. Override.
 
-        ds_pos_ind, ds_pos_val = self._buildpositiondatasets([parm_dict['grid_num_rows']],
-                                                             steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
-                                                                    parm_dict['grid_num_rows']],
-                                                             labels=['Y'],
-                                                             units=['m'])
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([parm_dict['grid_num_rows']], is_spectral=False,
+                                                           steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
+                                                                  parm_dict['grid_num_rows']],
+                                                           labels=['Y'], units=['m'])
                 
         ds_ex_efm = MicroDataset('Excitation_Waveform', excit_wfm)
         
