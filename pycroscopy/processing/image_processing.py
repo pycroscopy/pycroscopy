@@ -24,7 +24,7 @@ class ImageWindow(object):
     windows to an HDF5 file.
     """
 
-    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True):
+    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True, **image_args):
         """
         Setup the image windowing
 
@@ -52,7 +52,7 @@ class ImageWindow(object):
         self.hdf = ioHDF5(os.path.abspath(h5_path))
         
         # Ensuring that at least one core is available for use / 2 cores are available for other use
-        max_cores = max(1,cpu_count()-2)
+        max_cores = max(1, cpu_count()-2)
 #         print 'max_cores',max_cores         
         if cores is not None: 
             cores = min(round(abs(cores)), max_cores)
@@ -73,12 +73,13 @@ class ImageWindow(object):
 
             _, exten = os.path.splitext(self.image_path)
             if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
-                image, _ = read_image(self.image_path, as_grey=True)
-            elif exten in ['.dm3']:
-                image, image_parms = read_dm3(self.image_path)
-                if image.ndim == 3:
-                    image = np.sum(image, axis=0)
-                root_grp.attrs.update(image_parms)
+                image_args['as_grey'] = True
+
+            image, image_parms = read_image(self.image_path, **image_args)
+
+            if image.ndim == 3:
+                image = np.sum(image, axis=0)
+            root_grp.attrs.update(image_parms)
 
             meas_grp = MicroDataGroup('Measurement_')
             
@@ -1321,3 +1322,71 @@ class ImageWindow(object):
             raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
 
         return comp_slice
+
+
+def radially_average_correlation(data_mat, num_r_bin):
+    """
+    Calculates the radially average correlation functions for a given 2D image
+
+    Parameters
+    ----------
+    data_mat : 2D real numpy array
+        Image to analyze
+    num_r_bin : unsigned int
+        Number of spatial bins to analyze
+
+    Returns
+    --------
+    a_mat : 2D real numpy array
+        Noise spectrum of the image
+    a_rad_avg_vec : 1D real numpy array
+        Average value of the correlation as a function of feature size
+    a_rad_max_vec : 1D real numpy array
+        Maximum value of the correlation as a function of feature size
+    a_rad_min_vec : 1D real numpy array
+        Minimum value of the correlation as a function of feature size
+    a_rad_std_vec : 1D real numpy array
+        Standard deviation of the correlation as a function of feature size
+    """
+    x_size = data_mat.shape[0]
+    y_size = data_mat.shape[1]
+
+    x_mesh, y_mesh = np.meshgrid(np.linspace(-1, 1, x_size),
+                                 np.linspace(-1, 1, y_size))
+    r_vec = np.sqrt(x_mesh ** 2 + y_mesh ** 2).flatten()
+
+    s_mat = (np.abs(np.fft.fftshift(np.fft.fft2(data_mat)))) ** 2
+    a_mat = np.abs(np.fft.fftshift((np.fft.ifft2(s_mat))))
+
+    min_a = np.min(a_mat)
+    a_mat = a_mat - min_a
+    max_a = np.max(a_mat)
+    a_mat = a_mat / max_a
+
+    a_vec = a_mat.flatten()
+
+    # bin results based on r
+    a_rad_avg_vec = np.zeros(num_r_bin)
+    a_rad_max_vec = np.zeros(a_rad_avg_vec.shape)
+    a_rad_min_vec = np.zeros(a_rad_avg_vec.shape)
+    a_rad_std_vec = np.zeros(a_rad_avg_vec.shape)
+    r_bin_vec = np.zeros(a_rad_avg_vec.shape)
+
+    step = 1 / (num_r_bin * 1.0 - 1)
+    for k, r_bin in enumerate(np.linspace(0, 1, num_r_bin)):
+        b = np.where((r_vec < r_bin + step) * (r_vec > r_bin) == True)[0]
+
+        if b.size == 0:
+            a_rad_avg_vec[k] = np.nan
+            a_rad_min_vec[k] = np.nan
+            a_rad_max_vec[k] = np.nan
+            a_rad_std_vec[k] = np.nan
+        else:
+            a_bin = a_vec[b]
+            a_rad_avg_vec[k] = np.mean(a_bin)
+            a_rad_min_vec[k] = np.min(a_bin)
+            a_rad_max_vec[k] = np.max(a_bin)
+            a_rad_std_vec[k] = np.std(a_bin)
+        r_bin_vec[k] = r_bin + 0.5 * step
+
+    return a_mat, a_rad_avg_vec, a_rad_max_vec, a_rad_min_vec, a_rad_std_vec

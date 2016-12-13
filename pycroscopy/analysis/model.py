@@ -11,10 +11,10 @@ import scipy
 from .guess_methods import GuessMethods
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
-try:
-    import multiprocess as mp
-except ImportError:
-    raise ImportError()
+# try:
+#     import multiprocess as mp
+# except ImportError:
+#     raise ImportError()
 
 
 class Model(object):
