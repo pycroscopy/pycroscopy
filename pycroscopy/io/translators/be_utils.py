@@ -11,19 +11,18 @@ from warnings import warn
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import xlrd as xlreader
 
-from ..be_hdf_utils import getActiveUDVSsteps,maxReadPixels
+from ..be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ..io_utils import getAvailableMem
-from ..microdata import MicroDataset,MicroDataGroup
+from ..microdata import MicroDataset, MicroDataGroup
 from ...processing.proc_utils import buildHistogram
 from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
 
 
-#%%############################################################################
-
-def parmsToDict(filepath,parms_to_remove = []): 
+def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 
     Also indentifies whether this is a BEPS or BELine dataset.
@@ -31,7 +30,7 @@ def parmsToDict(filepath,parms_to_remove = []):
     Parameters
     -----------
     filepath : String / Unicode
-        Absolute path of the parameters text file.
+        Absolute path of the parameters text or spreadsheet file.
     parms_to_remove : List of string (Optional)
         keys that this function should attempt to remove from the dictionary
     
@@ -41,35 +40,58 @@ def parmsToDict(filepath,parms_to_remove = []):
         whether this dataset is BEPS or BE Line.
     parm_dict : Dictionary
         experimental parameters
-    """      
-    isBEPS = False;
-    f = open(filepath,'r')
-    parm_dict = {};
-    lines = f.readlines()
-    f.close()
-     
+    """
+    verbose = False
+
+    lines = list()
+
+    if filepath.lower().endswith('.txt'):
+        file_handle = open(filepath, 'r')
+        raw_lines = file_handle.readlines()
+        file_handle.close()
+        for line in raw_lines:
+            line = line.rstrip()
+            if len(line) > 0:
+                lines.append(line.split(" : "))
+
+    elif filepath.lower().endswith('.xls') or filepath.lower().endswith('.xlsx'):
+        workbook = xlreader.open_workbook(filepath)
+        worksheet = workbook.sheet_by_index(0)
+        for row in range(worksheet.nrows):
+            temp = list()
+            for col in range(worksheet.ncols):
+                try:
+                    val = str(worksheet.cell(row, col).value).strip()
+                    if len(val) > 0:
+                        temp.append(val)
+                except ValueError:
+                    pass
+                except:
+                    raise
+            lines.append(temp)
+    else:
+        warn('Parameter file not of expected format: text or spreadsheet')
+        return None
+
+    if verbose:
+        print("Finished reading the file")
+
+    is_beps = False
+    parm_dict = dict()
+
     prefix = 'File_'
-    for line in lines:
-        line = line.rstrip();
-        fields = line.split(" : ");
-     
+    for fields in lines:
         # Ignore the parameters describing the GUI choices
         if prefix == 'Multi_':
             continue
-     
-        """
-        Check if the line is a group header or parameter/value pair
-        """
+
+        # Check if the line is a group header or parameter/value pair
         if len(fields) == 2:
-            """
-            Get the current name/value pair, and clean up the name
-            """
-            name = fields[0].strip().replace('# ','num_').replace('#','num_').replace(' ','_')
-            value = fields[1] 
-            
-            """
-            Rename specific parameters
-            """
+            # Get the current name/value pair, and clean up the name
+            name = fields[0].strip().replace('# ', 'num_').replace('#', 'num_').replace(' ', '_')
+            value = fields[1]
+
+            # Rename specific parameters
             if name == '1_mode':
                 name = 'mode'
             if name == 'IO_rate':
@@ -100,16 +122,11 @@ def parmsToDict(filepath,parms_to_remove = []):
                 name = 'set_pulst_duration_[s]'
             if name == 'step_edge_smoothing[s]':
                 name = 'step_edge_smoothing_[s]'
-            
-                
-            """
-            Append the prefix to the name
-            """
+
+            # Append the prefix to the name
             name = prefix+name.lstrip(prefix)
-            
-            """
-            Write parameter to parm_dict    
-            """
+
+            # Write parameter to parm_dict
             try:
                 num = float(value)
                 parm_dict[name] = num
@@ -120,18 +137,14 @@ def parmsToDict(filepath,parms_to_remove = []):
             except:
                 raise
         elif len(fields) == 1:
-            """
-            Change the parameter prefix to the new one from the group header
-            """
+            # Change the parameter prefix to the new one from the group header
             prefix = fields[0].strip('<').strip('>')
             prefix = prefix.split()[0]+'_'
-        
-            """
-            Check if there are VS Parameters.  Set isBEPS to true if so.
-            """
-            isBEPS = isBEPS or prefix == 'VS_'
-    
-    if isBEPS:
+
+            # Check if there are VS Parameters.  Set isBEPS to true if so.
+            is_beps = is_beps or prefix == 'VS_'
+
+    if is_beps:
         useless_parms = \
             ['Multi_1_BE_response_spectra',
              'Multi_2_BE_amplitude_spectra',
@@ -143,7 +156,7 @@ def parmsToDict(filepath,parms_to_remove = []):
              'Multi_8_VS_amplitude_loops',
              'Multi_9_VS_phase_loops',
              'Multi_10_topography',
-             'Multi_11_mean_channel_2'];
+             'Multi_11_mean_channel_2']
     else:
         useless_parms = \
             ['Multi_1_BE_response_spectra',
@@ -158,29 +171,35 @@ def parmsToDict(filepath,parms_to_remove = []):
              'Multi_10_phase_map',
              'Multi_11_topography',
              'Multi_12_AI_time_domain',
-             'Multi_13_AI_Fourier_amplitude'];
-        
-    useless_parms.extend(parms_to_remove);
-    
+             'Multi_13_AI_Fourier_amplitude']
+
+    if verbose:
+        print("Finished parsing the text pairs. isBEPS = {}".format(is_beps))
+
+    useless_parms.extend(parms_to_remove)
+
     # Now remove the list of useless parameters:
     for uparm in useless_parms:
         try:
-            del parm_dict[uparm];
+            del parm_dict[uparm]
         except KeyError:
             #warn('Parameter to be deleted does not exist')
-            pass;
+            pass
         except:
             raise
-    del uparm, useless_parms;
-    
-    if isBEPS:
+    del uparm, useless_parms
+
+    if verbose:
+        print("Finished removing useless parameters")
+
+    if is_beps:
         # fix the DC type in the parms:
-        if parm_dict['VS_measure_in_field_loops'] == 'out-of-field only': 
+        if parm_dict['VS_measure_in_field_loops'] == 'out-of-field only':
             parm_dict['VS_measure_in_field_loops'] = 'out-of-field'
-        elif parm_dict['VS_measure_in_field_loops'] == 'in-field only': 
+        elif parm_dict['VS_measure_in_field_loops'] == 'in-field only':
             parm_dict['VS_measure_in_field_loops'] = 'in-field'
-        
-    return (isBEPS,parm_dict);
+
+    return is_beps, parm_dict
     
 ###############################################################################
     
@@ -573,7 +592,7 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
     # Now remove from the labels and the matrix
     udvs_mat = np.delete(udvs_mat, col_inds, axis=1)
 #     col_inds.sort(reverse=True)
-    [udvs_units.pop(ind) for ind in xrange(len(col_inds),0,-1)]
+    [udvs_units.pop(ind) for ind in range(len(col_inds),0,-1)]
     udvs_labs = [col for col in udvs_labs if col not in found_cols]
     
     return (udvs_mat, udvs_labs, udvs_units)
@@ -636,7 +655,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         if not usr_defined:
             DC = UDVS[:,1]
-            for step in xrange(0,DC.size,2):
+            for step in range(0,DC.size,2):
                 DC[step+1]=DC[step]
             UDVS[:,1] = DC
         
@@ -665,7 +684,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Loop over all columns in udvs_mat
         """
-        for i in xrange(1,num_cols):
+        for i in range(1,num_cols):
             """
             Find all unique values in the current column
             """
@@ -859,7 +878,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         FORC=-1
         cycle=-1
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
@@ -981,7 +1000,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         FORC=-1
         cycle=-1
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
@@ -1073,7 +1092,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Main loop over all steps
         """
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Get the wave form for each step from udvs_mat
             """
@@ -1108,7 +1127,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         Find how quickly the spectroscopic values are changing in each row 
         and the order of row from fastest changing to slowest.
         """
-        change_count = [len(np.where([row[i] != row[i-1] for i in xrange(len(row))])[0]) for row in ds_spec_val_mat]
+        change_count = [len(np.where([row[i] != row[i-1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
         change_sort = np.argsort(change_count)[::-1]
         
         """
@@ -1116,7 +1135,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         index table based on those changed
         """
         indices = np.zeros(ds_spec_val_mat.shape[0])
-        for jcol in xrange(1,ds_spec_val_mat.shape[1]):
+        for jcol in range(1,ds_spec_val_mat.shape[1]):
             this_col = ds_spec_val_mat[change_sort,jcol]
             last_col = ds_spec_val_mat[change_sort,jcol-1]
 
@@ -1459,8 +1478,8 @@ class BEHistogram():
 
         hist_index_labels = ['Frequency Bin','Spectroscopic Bin']
 
-        for isbin in xrange(hist_shape[1]):
-            for ifbin in xrange(hist_shape[2]):
+        for isbin in range(hist_shape[1]):
+            for ifbin in range(hist_shape[2]):
                 ihbin = ifbin+isbin*hist_shape[2]
                 hist_indices[0,ihbin] = ifbin
                 hist_indices[1,ihbin] = isbin
@@ -1506,15 +1525,15 @@ class BEHistogram():
         """
         loop over pixels
         """
-        for ichunk in xrange(len(pix_chunks)-1):
+        for ichunk in range(len(pix_chunks)-1):
             if debug: print 'pixel chunk',ichunk
 
-            chunk = xrange(pix_chunks[ichunk],pix_chunks[ichunk+1])
+            chunk = range(pix_chunks[ichunk],pix_chunks[ichunk+1])
 
             """
         Loop over active UDVS steps
             """
-            for iudvs in xrange(self.num_udvs_steps):
+            for iudvs in range(self.num_udvs_steps):
                 selected = (iudvs+chunk[0]*self.num_udvs_steps)%np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
                 if selected:
                     per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))
