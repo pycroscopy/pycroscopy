@@ -12,11 +12,8 @@ from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxDat
             copyAttributes
 from ..io.microdata import MicroDataset, MicroDataGroup
 from .guess_methods import GuessMethods
+import multiprocessing as mp
 
-# try:
-#     import multiprocess as mp
-# except ImportError:
-#     raise ImportError()
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
                   ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
@@ -171,13 +168,13 @@ class BESHOmodel(Model):
         --------
         None
         """
-        if self.__start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self.__start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self.__start_pos, self.__end_pos, self.h5_main.shape[0]))
+        if self._start_pos < self.h5_main.shape[0]:
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self.__start_pos = self.__end_pos
+            self._start_pos = self.__end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -200,10 +197,10 @@ class BESHOmodel(Model):
         None
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
         else:
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
@@ -236,7 +233,8 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
+    def doGuess(self, processors=4, strategy='wavelet_peaks',
+                     options={"peak_widths": np.array([10,200]),"peak_step":20}, **kwargs):
         """
 
         Parameters
@@ -246,7 +244,7 @@ class BESHOmodel(Model):
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
         options: dict
-            Default {"peaks_widths": np.array([10,200])}}.
+            Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
         kwargs:
@@ -257,53 +255,54 @@ class BESHOmodel(Model):
         -------
 
         """
-
+        processors = min(processors, self._maxCpus)
         self._createGuessDatasets()
-        self.__start_pos = 0
+        self._start_pos = 0
+        super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, **options)
 
-        processors = kwargs.get("processors", self._maxCpus)
-        gm = GuessMethods()
-        if strategy in gm.methods:
-            func = gm.__getattribute__(strategy)(frequencies=self.freq_vec, **options)
-            results = list()
-            if self._parallel:
-                # start pool of workers
-                print('Computing Guesses In parallel ... launching %i kernels...' % processors)
-                pool = mp.Pool(processors)
-                self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    # apply guess to this data chunk:
-                    tasks = [vector for vector in self.data]
-                    chunk = int(self.data.shape[0] / processors)
-                    jobs = pool.imap(func, tasks, chunksize=chunk)
-                    # get Results from different processes
-                    print('Extracting Guesses...')
-                    temp = [j for j in jobs]
-                    # Reformat the data to the appropriate type and or do additional computation now
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
-
-                # Finished reading the entire data set
-                print('closing %i kernels...' % processors)
-                pool.close()
-            else:
-                print("Computing Guesses In Serial ...")
-                self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    temp = [func(vector) for vector in self.data]
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
-
-            # reorder to get one numpy array out
-            self.guess = np.hstack(tuple(results))
-            print('Completed computing guess. Writing to file.')
-
-            # Write to file
-            self._setResults(is_guess=True)
-        else:
-            warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
+        # processors = kwargs.get("processors", self._maxCpus)
+        # gm = GuessMethods()
+        # if strategy in gm.methods:
+        #     func = gm.__getattribute__(strategy)(frequencies=self.freq_vec, **options)
+        #     results = list()
+        #     if self._parallel:
+        #         # start pool of workers
+        #         print('Computing Guesses In parallel ... launching %i kernels...' % processors)
+        #         pool = mp.Pool(processors)
+        #         self._getDataChunk()
+        #         while self.data is not None:  # as long as we have not reached the end of this data set:
+        #             # apply guess to this data chunk:
+        #             tasks = [vector for vector in self.data]
+        #             chunk = int(self.data.shape[0] / processors)
+        #             jobs = pool.imap(func, tasks, chunksize=chunk)
+        #             # get Results from different processes
+        #             print('Extracting Guesses...')
+        #             temp = [j for j in jobs]
+        #             # Reformat the data to the appropriate type and or do additional computation now
+        #             results.append(self._reformatResults(temp, strategy))
+        #             # read the next chunk
+        #             self._getDataChunk()
+        #
+        #         # Finished reading the entire data set
+        #         print('closing %i kernels...' % processors)
+        #         pool.close()
+        #     else:
+        #         print("Computing Guesses In Serial ...")
+        #         self._getDataChunk()
+        #         while self.data is not None:  # as long as we have not reached the end of this data set:
+        #             temp = [func(vector) for vector in self.data]
+        #             results.append(self._reformatResults(temp, strategy))
+        #             # read the next chunk
+        #             self._getDataChunk()
+        #
+        #     # reorder to get one numpy array out
+        #     self.guess = np.hstack(tuple(results))
+        #     print('Completed computing guess. Writing to file.')
+        #
+        #     # Write to file
+        #     self._setResults(is_guess=True)
+        # else:
+        #     warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
 
     def computeFit(self, strategy='SHO', options={}, **kwargs):
@@ -328,7 +327,7 @@ class BESHOmodel(Model):
         """
 
         self._createFitDataset()
-        self.__start_pos = 0
+        self._start_pos = 0
         parallel = ''
 
         processors = kwargs.get("processors", self._maxCpus)
