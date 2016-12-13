@@ -21,6 +21,8 @@ from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks, linkformain
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 
+nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
+                 ('sub_band', np.float32)])
 
 class BEodfTranslator(Translator):
     """
@@ -264,13 +266,13 @@ class BEodfTranslator(Translator):
             ds_spec_vals_mat.attrs[label]= names        
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix,3,num_actual_udvs_steps), dtype=np.float32), chunking=(1,3,num_actual_udvs_steps))
-        noise_labs = ['super_band','inter_bin_band','sub_band']
-        noise_slices = dict()
-        for col_ind, col_name in enumerate(noise_labs):
-            noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
-        ds_noise_floor.attrs['labels'] = noise_slices
-        ds_noise_floor.attrs['units'] = ['','','']
+        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32), chunking=(1,num_actual_udvs_steps))
+        # noise_labs = ['']
+        # noise_slices = dict()
+        # for col_ind, col_name in enumerate(noise_labs):
+        #     noise_slices[col_name] = (slice(None))
+        # ds_noise_floor.attrs['labels'] = noise_slices
+        # ds_noise_floor.attrs['units'] = ['','','']
 
         """
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
