@@ -28,7 +28,7 @@ class Translator(object):
         """
         Parameters
         -----------
-        max_mem_mb : unsigned integer
+        max_ram_mb : unsigned integer
             Maximum system memory (in megabytes) that the translator can use
             
         Returns
@@ -36,7 +36,7 @@ class Translator(object):
         Translator object
         """
         self.max_ram = min(max_mem_mb*1024**2, 0.75*getAvailableMem())
-    
+
     @abc.abstractmethod
     def translate(self, filepath):
         """
@@ -64,10 +64,10 @@ class Translator(object):
 
         Parameters
         ----------
+        is_spectral : Boolean
+            Spectroscopic (True) or Position (False)
         dimensions : array_like of numpy.uint
             Integer values for the length of each dimension
-        is_spectral : Boolean, Optional
-            desired dataset - Spectroscopic (True) or Position (False)
         steps : array_like of float, optional
             Floating point values for the step-size in each dimension.  One
             if not specified.
@@ -102,7 +102,8 @@ class Translator(object):
             steps = np.ones_like(dimensions)
         elif len(steps) != len(dimensions):
             raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
-        steps = np.atleast_2d(steps)
+        if is_spectral:
+            steps = np.atleast_2d(steps).transpose()
         if verbose:
             print(steps.shape)
             print(steps)
@@ -111,32 +112,25 @@ class Translator(object):
             initial_values = np.zeros_like(dimensions)
         elif len(initial_values) != len(dimensions):
             raise ValueError('The arrays for initial values and dimension sizes must be the same.')
-        initial_values = np.atleast_2d(initial_values)
-
+        if is_spectral:
+            initial_values = np.atleast_2d(initial_values).transpose()
         if verbose:
             print(initial_values.shape)
             print(initial_values)
 
         if labels is None:
-            labels = ['' for _ in dimensions]
+            labels = ['' for _ in len(dimensions)]
         elif len(labels) != len(dimensions):
             raise ValueError('The arrays for labels and dimension sizes must be the same.')
 
         # Get the indices for all dimensions
-        indices = makePositionMat(dimensions)
-
+        indices = makePositionMat(dimensions).transpose()
         if verbose:
             print(indices.shape)
             print(indices)
 
-        # Take transpose for all datasets
-        if is_spectral:
-            steps = steps.transpose()
-            initial_values = initial_values.transpose()
-            indices = indices.transpose()
-
         # Convert the indices to values
-        values = initial_values + np.float32(indices)*steps
+        spec_vals = initial_values + np.float32(indices)*steps
 
         # Create the slices that will define the labels
         if is_spectral:
@@ -150,7 +144,7 @@ class Translator(object):
         ds_indices = MicroDataset(mode + '_Indices', indices, dtype=np.uint32)
         ds_indices.attrs['labels'] = region_slices
 
-        ds_values = MicroDataset(mode + 'Values', values, dtype=np.float32)
+        ds_values = MicroDataset(mode + 'Values', spec_vals, dtype=np.float32)
         ds_values.attrs['labels'] = region_slices
 
         if units is None:
@@ -169,4 +163,5 @@ class Translator(object):
         Abstract method
         Reads the data into the hdf5 datasets.
         """
-        pass
+
+
