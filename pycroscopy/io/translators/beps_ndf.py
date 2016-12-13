@@ -6,17 +6,17 @@ Created on Tue Nov  3 15:07:16 2015
 
 """
 
-from __future__ import division # int/int = float
-#import abc # Abstract base class https://pymotw.com/2/abc/ <---- This needs to be implemented in a cleaner way
-import numpy as np # For array operations
-from os import path, listdir, remove # File Path formatting
+from __future__ import division  # int/int = float
+import numpy as np
+from os import path, listdir, remove
 from warnings import warn
-import xlrd as xlreader # To read the UDVS spreadsheet
-from scipy.io.matlab import loadmat; # To load parameters stored in Matlab .mat file
+import xlrd as xlreader  # To read the UDVS spreadsheet
+from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 from .utils import makePositionMat, generateDummyMainParms
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, createSpecVals
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
-from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
+from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
+    createSpecVals
+from ..microdata import MicroDataGroup, MicroDataset
+from ..io_hdf5 import ioHDF5
 from .translator import Translator
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
@@ -117,7 +117,7 @@ class BEPSndfTranslator(Translator):
         self.pos_labels = ['Laser Spot','Z','X','Y']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels>1)[0]]
         self.pos_mat = makePositionMat(s_pixels)
-        self.pos_units = ['' for _ in xrange(len(self.pos_labels))]     
+        self.pos_units = ['' for _ in range(len(self.pos_labels))]     
 #         self.pos_mat = np.int32(self.pos_mat)
         
         # Helping Eric out a bit. Remove this section at a later time:
@@ -175,7 +175,7 @@ class BEPSndfTranslator(Translator):
         print('Reading data file(s)')
         self.dset_index = 0
         self.ds_pixel_start_indx = 0
-        for pixel_ind in xrange(self.max_pixels):
+        for pixel_ind in range(self.max_pixels):
 
             if (100.0 * (pixel_ind + 1) / self.max_pixels) % 10 == 0:
                 print('{} % complete'.format(int(100 * (pixel_ind + 1) / self.max_pixels)))
@@ -189,7 +189,7 @@ class BEPSndfTranslator(Translator):
                 h5_refs = self.__initializeDataSet(self.max_pixels, current_pixels)
                 prev_pixels = current_pixels  # This is here only to avoid annoying warnings.
             else:
-                if current_pixels[unique_waves[0]].isDifferentFrom(prev_pixels[unique_waves[0]]):
+                if current_pixels[unique_waves[0]].is_different_from(prev_pixels[unique_waves[0]]):
                     # Some parameter has changed. Write current group and make new group
                     self.__closeDataset(h5_refs, show_plots, save_plots, do_histogram)
                     self.ds_pixel_start_indx = pixel_ind
@@ -533,7 +533,7 @@ class BEPSndfTranslator(Translator):
     
     def _parsefilepath(self, data_filepath):
         """
-        Returns the filepaths to the parms text file and UDVS spreadsheet.\n
+        Returns the file paths to the parms text file and UDVS spreadsheet.\n
         Note: This function also initializes the basename and the folder_path for this instance
         
         Parameters
@@ -647,16 +647,16 @@ class BEPSndfTranslator(Translator):
         workbook = xlreader.open_workbook(udvs_filepath)
         worksheet = workbook.sheet_by_index(0)
         udvs_labs = list()
-        for col in xrange(worksheet.ncols):
+        for col in range(worksheet.ncols):
             udvs_labs.append(str(worksheet.cell(0,col).value))
         # sometimes, the first few columns are named incorrectly. FORCE them to be named correclty:
-        udvs_units = list(['' for _ in xrange(len(udvs_labs))])
+        udvs_units = list(['' for _ in range(len(udvs_labs))])
         udvs_labs[0:5] = ['step_num','dc_offset','ac_amp','wave_type','wave_mod']
         udvs_units[0:5] = ['', 'V', 'A', '', '']
         
         udvs_mat = np.zeros(shape=(worksheet.nrows-1, worksheet.ncols),dtype=np.float32)
-        for row in xrange(1,worksheet.nrows):
-            for col in xrange(worksheet.ncols):
+        for row in range(1,worksheet.nrows):
+            for col in range(worksheet.ncols):
                 try:
                     udvs_mat[row-1,col] = worksheet.cell(row,col).value
                 except ValueError:
@@ -733,7 +733,7 @@ class BEPSndfParser(object):
     Each wave type is given its own Parser object since it has a file of its own
     """
     
-    def __init__(self,file_path,wave_type=1,scout=True):
+    def __init__(self, file_path, wave_type=1, scout=True):
         """
         Initializes the BEPSndfParser object with following inputs:
         
@@ -799,7 +799,7 @@ class BEPSndfParser(object):
         -------
         Laser steps, Z steps, Y steps, X steps : unsigned ints
         """
-        return (self.__num_laser_steps__,self.__num_z_steps__,self.__num_x_steps__,self.__num_y_steps__)
+        return self.__num_laser_steps__,self.__num_z_steps__,self.__num_x_steps__,self.__num_y_steps__
     
     # Don't use this to figure out if something changes. You need pixel to previous pixel comparison    
     def __scout(self):
@@ -810,24 +810,16 @@ class BEPSndfParser(object):
         For phase checking, it is recommended that this function be modified to 
         also keep track of the byte positions of the pixels so that pixels can be 
         directly accessed if need be.
-        
-        Parameters
-        ----------
-        None
-        
-        Returns
-        -------
-        None
         """
         count = 0
         self.__num_pixels__ = 0
         while True:
             self.__pixel_indices__.append(self.__start_point__*4)
-            self.__file_handle__.seek(self.__start_point__*4,0)
-            spectrogram_length = int(np.fromstring(self.__file_handle__.read(4), dtype='f')[0]) #length of spectrogram
+            self.__file_handle__.seek(self.__start_point__*4, 0)
+            spectrogram_length = int(np.fromstring(self.__file_handle__.read(4), dtype='f')[0])  # length of spectrogram
             
             if count == 0:
-                self.__file_handle__.seek(self.__start_point__*4,0)
+                self.__file_handle__.seek(self.__start_point__*4, 0)
                 data_vec = np.fromstring(self.__file_handle__.read(spectrogram_length*4), dtype='f')
                 pix = BEPSndfPixel(data_vec,self.__wave_type__)
                 self.__num_x_steps__ = pix.num_x_steps
@@ -844,8 +836,9 @@ class BEPSndfParser(object):
                 # Laser position spectroscopy is NOT accounted for anywhere. 
                 # It is impossible to find out from the parms.txt, UD_VS, or the binary .dat file
                 num_laser_steps = 1.0*count/(self.__num_z_steps__*self.__num_y_steps__*self.__num_x_steps__)                
-                if num_laser_steps%1.0 != 0:
-                    print('Some parameter changed inbetween. BEPS NDF Translator does not handle this usecase at the moment')
+                if num_laser_steps % 1.0 != 0:
+                    print('Some parameter changed inbetween. \
+                          BEPS NDF Translator does not handle this usecase at the moment')
                 else:
                     self.__num_laser_steps__ = int(num_laser_steps)
                 
@@ -858,17 +851,17 @@ class BEPSndfParser(object):
         
         spat_dim = 0
         if self.__num_z_steps__ > 1:
-            #print('Z is varying')
+            # print('Z is varying')
             spat_dim += 1
         if self.__num_y_steps__ > 1:
-            #print('Y is varying')
+            # print('Y is varying')
             spat_dim += 1
         if self.__num_x_steps__ > 1:
-            #print('X is varying')
+            # print('X is varying')
             spat_dim += 1
         if self.__num_laser_steps__ > 1:
             # Laser spot position vector is junk in the .dat file
-            #print('Laser position / unknown parameter varying')
+            # print('Laser position / unknown parameter varying')
             spat_dim += 1
         # print('Total of {} spatial dimensions'.format(spat_dim))
         self.__spat_dim__ = spat_dim
@@ -891,7 +884,7 @@ class BEPSndfParser(object):
             return -1
         
         self.__file_handle__.seek(self.__start_point__*4,0)
-        spectrogram_length = int(np.fromstring(self.__file_handle__.read(4), dtype='f')[0]) #length of spectrogram
+        spectrogram_length = int(np.fromstring(self.__file_handle__.read(4), dtype='f')[0])  # length of spectrogram
         self.__file_handle__.seek(self.__start_point__*4,0)
         data_vec = np.fromstring(self.__file_handle__.read(spectrogram_length*4), dtype='f')
        
@@ -903,10 +896,8 @@ class BEPSndfParser(object):
             self.__EOF__ = True
             self.__file_handle__.close()
                 
-        return BEPSndfPixel(data_vec,abs(self.__wave_type__))    
+        return BEPSndfPixel(data_vec, abs(self.__wave_type__))
         
-
-#%% This class parses a data vector 
 
 class BEPSndfPixel(object):
     """
@@ -915,7 +906,7 @@ class BEPSndfPixel(object):
     Access desired parameter directly without get methods.
     """
     
-    def __init__(self, data_vec,harm=1):
+    def __init__(self, data_vec, harm=1):
         """
         Initializes the pixel instance by parsing the provided data. 
         
@@ -938,65 +929,67 @@ class BEPSndfPixel(object):
         self.spectrogram_length = int(data_vec[0]) 
         
         # calculate indices for parsing
-        s1 = int(data_vec[2]) # total rows in pixel
-        s2 = int(data_vec[3]) # total cols in pixel
+        s1 = int(data_vec[2])  # total rows in pixel
+        s2 = int(data_vec[3])  # total cols in pixel
         data_vec1 = data_vec[2:self.spectrogram_length]    
-        data_mat1 = data_vec1.reshape(s1,s2)
-        spect_size1 = int(data_mat1[1,0]) # total rows in spectrogram set
-        self.num_bins = int(spect_size1/2)  # or, len(BE_bin_w)
-        self.num_steps = int(data_mat1[1,1]) # total cols in spectrogram set 
-        s3 = int(s1-spect_size1) #row index of beginning of spectrogram set
-        s4 = int(s2-self.num_steps) #col index of beginning of spectrogram set
+        data_mat1 = data_vec1.reshape(s1, s2)
+        spect_size1 = int(data_mat1[1, 0])  # total rows in spectrogram set
+        self.num_bins = int(spect_size1/2)   # or, len(BE_bin_w)
+        self.num_steps = int(data_mat1[1, 1])  # total cols in spectrogram set 
+        s3 = int(s1-spect_size1)  # row index of beginning of spectrogram set
+        s4 = int(s2-self.num_steps)  # col index of beginning of spectrogram set
             
-        self.wave_label =  data_mat1[2,0] # This is useless
-        self.wave_modulation_type = data_mat1[2,1] # this is the one with useful information
-        #print 'Pixel #',self.spatial_index,' Wave label: ', self.wave_label, ', Wave Type: ', self.wave_modulation_type
+        self.wave_label = data_mat1[2, 0]  # This is useless
+        self.wave_modulation_type = data_mat1[2, 1]  #  this is the one with useful information
+        # print 'Pixel #',self.spatial_index,' Wave label: ', self.wave_label, ', Wave Type: ', self.wave_modulation_type
         
         # First get the information from the columns:   
-        FFT_BE_wave_real = data_mat1[s3:s3-0+self.num_bins,1] #real part of excitation waveform  
-        FFT_BE_wave_imag = data_mat1[s3+self.num_bins:s3-0+spect_size1,1]  #imaginary part of excitation waveform  
+        FFT_BE_wave_real = data_mat1[s3:s3-0+self.num_bins, 1]  # real part of excitation waveform  
+        FFT_BE_wave_imag = data_mat1[s3+self.num_bins:s3-0+spect_size1, 1]  # imaginary part of excitation waveform  
         
-        # Though typecasting the combination of the real and imaginary data looks fine in HDFviewer and Spyder, Labview sees such data as an array of clusters having "r" and "i" elements 
-        #self.FFT_BE_wave = np.complex64(FFT_BE_wave_real + 1j*FFT_BE_wave_imag) 
+        """ Though typecasting the combination of the real and imaginary data looks fine in HDFviewer and Spyder, 
+        Labview sees such data as an array of clusters having 'r' and 'i' elements """
+        # self.FFT_BE_wave = np.complex64(FFT_BE_wave_real + 1j*FFT_BE_wave_imag) 
         
-        #complex excitation waveform !!! due to a problem in the acquisition software, this may not be normalzed properly
-        self.FFT_BE_wave = np.zeros(self.num_bins, dtype=np.complex64);
-        self.FFT_BE_wave.real = FFT_BE_wave_real;
-        self.FFT_BE_wave.imag = FFT_BE_wave_imag;
+        # complex excitation waveform! due to a problem in the acquisition software, this may not be normalized properly
+        self.FFT_BE_wave = np.zeros(self.num_bins, dtype=np.complex64)
+        self.FFT_BE_wave.real = FFT_BE_wave_real
+        self.FFT_BE_wave.imag = FFT_BE_wave_imag
         
         del FFT_BE_wave_real, FFT_BE_wave_imag            
         
-        self.BE_bin_w = data_mat1[s3:s3-0+self.num_bins,2] # vector of band frequencies
-        self.BE_bin_ind = data_mat1[s3+self.num_bins:s3-0+spect_size1,2] # vector of band indices (out of all accesible frequencies below Nyquist frequency)
+        self.BE_bin_w = data_mat1[s3:s3-0+self.num_bins, 2]  # vector of band frequencies
+        self.BE_bin_ind = data_mat1[s3+self.num_bins:s3-0+spect_size1, 2]  # vector of band indices (out of all accesible frequencies below Nyquist frequency)
      
         # Now look at the top few rows to get more information: 
-        self.DAQ_channel = data_mat1[2,2]
-        self.num_x_steps = int(data_mat1[3,0])
-        self.num_y_steps = int(data_mat1[4,0])
-        self.num_z_steps = int(data_mat1[5,0])
-        self.z_index = int(data_mat1[5,1] - 1)        
-        self.y_index = int(data_mat1[4,1] - 1)
-        self.x_index = int(data_mat1[3,1] - 1)
+        self.DAQ_channel = data_mat1[2, 2]
+        self.num_x_steps = int(data_mat1[3, 0])
+        self.num_y_steps = int(data_mat1[4, 0])
+        self.num_z_steps = int(data_mat1[5, 0])
+        self.z_index = int(data_mat1[5, 1] - 1)        
+        self.y_index = int(data_mat1[4, 1] - 1)
+        self.x_index = int(data_mat1[3, 1] - 1)
      
-        self.step_ind_vec = data_mat1[0,s4:] # vector of step indices   
-        self.DC_off_vec = data_mat1[1,s4:] # vector of dc offsets  voltages
-        self.AC_amp_vec = data_mat1[2,s4:] # vector of ac amplitude voltages 
-        self.noise_floor_mat = data_mat1[3:6,s4:] # matrix of noise floor data. Use this information to exclude bins during fitting         
-        #plot_group_list_mat = data_mat1[6:s3-2,s4:] # matrix of plot groups
+        self.step_ind_vec = data_mat1[0, s4:]  # vector of step indices   
+        self.DC_off_vec = data_mat1[1, s4:]  # vector of dc offsets  voltages
+        self.AC_amp_vec = data_mat1[2, s4:]  # vector of ac amplitude voltages 
+        self.noise_floor_mat = data_mat1[3:6, s4:]  # matrix of noise floor data. Use this information to exclude bins during fitting         
+        # plot_group_list_mat = data_mat1[6:s3-2, s4:]  # matrix of plot groups
         
         # Here come the optional parameter rows:
-        self.deflVolt_vec = data_mat1[s3-2,s4:] # vector of dc cantilever deflection
+        self.deflVolt_vec = data_mat1[s3-2, s4:]  # vector of dc cantilever deflection
         # I think this is how the defl setpoint vec should be fixed:
         self.deflVolt_vec[np.isnan(self.deflVolt_vec)] = 0
         # so far, this vector seemed to match the DC offset vector....
         
-        self.laser_spot_pos_vec = data_mat1[s3-1,s4:] # NEVER used
+        self.laser_spot_pos_vec = data_mat1[s3-1, s4:]  # NEVER used
         
         # Actual data for this pixel:
-        spectrogram_real_mat = data_mat1[s3:s3+self.num_bins,s4:] #real part of response spectrogram
-        spectrogram_imag_mat = data_mat1[s3+self.num_bins:s3+spect_size1,s4:] #imaginary part of response spectrogram
+        spectrogram_real_mat = data_mat1[s3:s3+self.num_bins, s4:]  # real part of response spectrogram
+        spectrogram_imag_mat = data_mat1[s3+self.num_bins:s3+spect_size1, s4:]  # imaginary part of response spectrogram
         # Be consistent and ensure that the data is also stored as 64 bit complex as in the array creation
-        self.spectrogram_mat = np.complex64(spectrogram_real_mat + 1j*spectrogram_imag_mat) #complex part of response spectrogram
+        # complex part of response spectrogram
+        self.spectrogram_mat = np.complex64(spectrogram_real_mat + 1j*spectrogram_imag_mat)  
         del spectrogram_real_mat, spectrogram_imag_mat 
                 
         self.spectrogram_mat = normalizeBEresponse(self.spectrogram_mat, self.FFT_BE_wave, harm)
@@ -1004,16 +997,15 @@ class BEPSndfPixel(object):
         #  Reshape as one column (its free in Python anyway):
         temp_mat = self.spectrogram_mat.transpose() 
         self.spectrogram_vec = temp_mat.reshape(self.spectrogram_mat.size)
-    
-            
-    def isDifferentFrom(self,prevPixel):
+
+    def is_different_from(self, prev_pixel):
         """
         Compares parameters in this object with those another BEPSndfPixel object 
         to tell if any parameter has changed between these pixels
         
         Parameters
         ----------
-        prevPixel : BEPSndfPixel object
+        prev_pixel : BEPSndfPixel object
             The other pixel object to compare this pixel to
             
         Returns
@@ -1039,44 +1031,43 @@ class BEPSndfPixel(object):
         """
         disp_on = True        
         
-        
-        if self.spectrogram_length != prevPixel.spectrogram_length:
+        if self.spectrogram_length != prev_pixel.spectrogram_length:
             if disp_on:
                 print('Spectrogram Length changed on pixel {}'.format(self.spatial_index))
             return True
                         
-        if self.num_bins != prevPixel.num_bins:
+        if self.num_bins != prev_pixel.num_bins:
             if disp_on:
                 print('Number of bins changed on on pixel {}'.format(self.spatial_index))
             return True
             
-        if not np.array_equal(self.BE_bin_w,prevPixel.BE_bin_w):
+        if not np.array_equal(self.BE_bin_w, prev_pixel.BE_bin_w):
             if disp_on:
                 print('Bin Frequencies changed on pixel {}'.format(self.spatial_index))
             return True
             
-        if not np.array_equal(self.FFT_BE_wave, prevPixel.FFT_BE_wave):
+        if not np.array_equal(self.FFT_BE_wave, prev_pixel.FFT_BE_wave):
             if disp_on:
                 print('BE FFT changed on pixel {}'.format(self.spatial_index))
             return True
             
-        if not np.array_equal(self.AC_amp_vec, prevPixel.AC_amp_vec):
+        if not np.array_equal(self.AC_amp_vec, prev_pixel.AC_amp_vec):
             if disp_on:
                 print('AC amplitude (UDVS) changed on pixel {}'.format(self.spatial_index))
             return True
         
-        if not np.array_equal(self.DC_off_vec, prevPixel.DC_off_vec):
+        if not np.array_equal(self.DC_off_vec, prev_pixel.DC_off_vec):
             if disp_on:
                 print('DC offset (UDVS) changed on pixel {}'.format(self.spatial_index))
             return True
         
         # I was told that this section was just garbage in the file.
-        #if not np.array_equal(self.laser_spot_pos_vec, prevPixel.laser_spot_pos_vec):
-            #print 'Laser spot position vec was different....'
-            #print self.laser_spot_pos_vec
-            #return True
+        # if not np.array_equal(self.laser_spot_pos_vec, prev_pixel.laser_spot_pos_vec):
+            # print 'Laser spot position vec was different....'
+            # print self.laser_spot_pos_vec
+            # return True
             
-        if not np.array_equal(self.deflVolt_vec, prevPixel.deflVolt_vec):
+        if not np.array_equal(self.deflVolt_vec, prev_pixel.deflVolt_vec):
             print('deflVolt_vec vec was different....')
             return True
         
