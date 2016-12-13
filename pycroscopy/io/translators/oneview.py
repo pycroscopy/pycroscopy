@@ -460,13 +460,10 @@ class OneViewTranslator(Translator):
         meas_grp.attrs = main_parms
         chan_grp = MicroDataGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
-        #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets((usize, vsize),
-                                                                     labels=['U', 'V'],
-                                                                     units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = self._buildpositiondatasets([scan_size_x, scan_size_y],
-                                                             labels=['X', 'Y'],
-                                                             units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets((usize, vsize), is_spectral=True,
+                                                              labels=['U', 'V'], units=['pixel', 'pixel'])
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
+                                                           labels=['X', 'Y'], units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
