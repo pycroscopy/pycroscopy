@@ -22,6 +22,7 @@ from ..microdata import MicroDataGroup, MicroDataset
 nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
                  ('sub_band', np.float32)])
 
+
 class BEodfTranslator(Translator):
     """
     Translates either the Band Excitation (BE) scan or Band Excitation 
@@ -152,19 +153,15 @@ class BEodfTranslator(Translator):
         bin_freqs = np.float32(bin_freqs)
         bin_FFT = np.complex64(bin_FFT)
         ex_wfm = np.float32(ex_wfm)
-            
+
+        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
+
         self.FFT_BE_wave = bin_FFT
-        pos_mat = makePositionMat([num_cols, num_rows])
+        pos_mat = makePositionMat()
         pos_slices = getPositionSlicing(['X', 'Y'], num_pix)
-        
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)     
-        ds_pos_ind = MicroDataset('Position_Indices', pos_mat, dtype=np.uint32)
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_ind.attrs['units'] = ['' for _ in range(len(pos_slices))]
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
-        ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = ['' for _ in range(len(pos_slices))]
-#         ds_pos_labs = MicroDataset('Position_Labels',np.array(pos_labs))
+
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
+                                                           labels=['X', 'Y'], units=['m', 'm'], verbose=False)
         
         if isBEPS:
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
