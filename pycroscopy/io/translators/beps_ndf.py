@@ -479,7 +479,7 @@ class BEPSndfTranslator(Translator):
         else:
 
             data_vec = np.zeros(shape=(self.ds_main.shape[1]), dtype=np.complex64)
-            noise_mat = np.zeros(shape=(3, self.ds_noise.shape[2]), dtype=np.float32)
+            noise_mat = np.zeros(shape=(3, self.ds_noise.shape[1]), dtype=np.float32)
             
             internal_step_index = {}
             for wave_type in self.__unique_waves__:

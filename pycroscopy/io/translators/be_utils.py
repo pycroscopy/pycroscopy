@@ -225,7 +225,7 @@ def getSpectroscopicParmLabel(expt_type):
 def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     """
     This function normalizes the BE waveform to correct the phase by diving by the excitation
-
+    
     Parameters
     ------------
     spectrogram_mat : 2D complex numpy array
@@ -234,29 +234,28 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
         FFT of the BE waveform at the appropriate bins. Number of bins must match with spectrogram_mat
     harmonic : unsigned int
         nth harmonic of the excitation waveform
-
+        
     Returns
     ----------
     spectrogram_mat : 2D complex numpy array
         Normalized BE response spectrogram
 
-    """
-
+    """  
     BE_wave = np.fft.ifftshift(np.fft.ifft(FFT_BE_wave))
     scaling_factor = 1
-
+      
     if harmonic == 2:
-        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 2)) / (2 * np.exp(1j * 3 * np.pi * 0.5))
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**2))/(2*np.exp(1j*3*np.pi*0.5))
     elif harmonic == 3:
-        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 3)) / (4 * np.exp(1j * np.pi))
-    elif harmonic >= 4:
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**3))/(4*np.exp(1j*np.pi))
+    elif harmonic>=4:
         print "Warning these high harmonics are not supported in translator."
-
+ 
     # Generate transfer functions
-    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave / scaling_factor, [spectrogram_mat.shape[1], 1]))
+    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave/scaling_factor, [spectrogram_mat.shape[1], 1]))
     # Divide by transfer function
-    spectrogram_mat = spectrogram_mat / (F_AO_spectrogram)
-
+    spectrogram_mat = spectrogram_mat/(F_AO_spectrogram)
+  
     return spectrogram_mat
     
 ###############################################################################
