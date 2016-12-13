@@ -1387,13 +1387,13 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
                 plt_title = grp_name + '_Loops'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
+                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title)
+                             # save_path=plt_path)
                 plt_title = grp_name + '_Snaps'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title,
-                                save_path=plt_path)
+                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title)
+                                # save_path=plt_path)
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
