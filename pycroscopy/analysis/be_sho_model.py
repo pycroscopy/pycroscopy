@@ -13,10 +13,10 @@ from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxDat
 from ..io.microdata import MicroDataset, MicroDataGroup
 from .guess_methods import GuessMethods
 
-try:
-    import multiprocess as mp
-except ImportError:
-    raise ImportError()
+# try:
+#     import multiprocess as mp
+# except ImportError:
+#     raise ImportError()
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
                   ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
