@@ -13,10 +13,6 @@ from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from .optimize import Optimize
 import multiprocessing as mp
-# try:
-#     import multiprocess as mp
-# except ImportError:
-#     raise ImportError()
 
 
 class Model(object):
