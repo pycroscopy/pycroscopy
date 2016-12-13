@@ -344,12 +344,14 @@ class MovieTranslator(Translator):
         chan_grp = MicroDataGroup('Channel_000')
     # Get the Position and Spectroscopic Datasets
     #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets([num_images],
-                                                                     labels=['Time'],
-                                                                     units=['s'])
-        ds_pos_ind, ds_pos_val = self._buildpositiondatasets([usize, vsize],
-                                                             labels=['X', 'Y'],
-                                                             units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets([num_images],
+                                                              is_spectral=True,
+                                                              labels=['Time'],
+                                                              units=['s'])
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([usize, vsize],
+                                                           is_spectral=False,
+                                                           labels=['X', 'Y'],
+                                                           units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_pixels, num_images],
                                   data_type(0).itemsize,
