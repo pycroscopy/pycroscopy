@@ -11,19 +11,18 @@ from warnings import warn
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+import xlrd as xlreader
 
-from ..be_hdf_utils import getActiveUDVSsteps,maxReadPixels
+from ..be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ..io_utils import getAvailableMem
-from ..microdata import MicroDataset,MicroDataGroup
+from ..microdata import MicroDataset, MicroDataGroup
 from ...processing.proc_utils import buildHistogram
 from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
 
 
-#%%############################################################################
-
-def parmsToDict(filepath,parms_to_remove = []): 
+def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 
     Also indentifies whether this is a BEPS or BELine dataset.
@@ -31,7 +30,7 @@ def parmsToDict(filepath,parms_to_remove = []):
     Parameters
     -----------
     filepath : String / Unicode
-        Absolute path of the parameters text file.
+        Absolute path of the parameters text or spreadsheet file.
     parms_to_remove : List of string (Optional)
         keys that this function should attempt to remove from the dictionary
     
@@ -41,35 +40,58 @@ def parmsToDict(filepath,parms_to_remove = []):
         whether this dataset is BEPS or BE Line.
     parm_dict : Dictionary
         experimental parameters
-    """      
-    isBEPS = False;
-    f = open(filepath,'r')
-    parm_dict = {};
-    lines = f.readlines()
-    f.close()
-     
+    """
+    verbose = False
+
+    lines = list()
+
+    if filepath.lower().endswith('.txt'):
+        file_handle = open(filepath, 'r')
+        raw_lines = file_handle.readlines()
+        file_handle.close()
+        for line in raw_lines:
+            line = line.rstrip()
+            if len(line) > 0:
+                lines.append(line.split(" : "))
+
+    elif filepath.lower().endswith('.xls') or filepath.lower().endswith('.xlsx'):
+        workbook = xlreader.open_workbook(filepath)
+        worksheet = workbook.sheet_by_index(0)
+        for row in range(worksheet.nrows):
+            temp = list()
+            for col in range(worksheet.ncols):
+                try:
+                    val = str(worksheet.cell(row, col).value).strip()
+                    if len(val) > 0:
+                        temp.append(val)
+                except ValueError:
+                    pass
+                except:
+                    raise
+            lines.append(temp)
+    else:
+        warn('Parameter file not of expected format: text or spreadsheet')
+        return None
+
+    if verbose:
+        print("Finished reading the file")
+
+    is_beps = False
+    parm_dict = dict()
+
     prefix = 'File_'
-    for line in lines:
-        line = line.rstrip();
-        fields = line.split(" : ");
-     
+    for fields in lines:
         # Ignore the parameters describing the GUI choices
         if prefix == 'Multi_':
             continue
-     
-        """
-        Check if the line is a group header or parameter/value pair
-        """
+
+        # Check if the line is a group header or parameter/value pair
         if len(fields) == 2:
-            """
-            Get the current name/value pair, and clean up the name
-            """
-            name = fields[0].strip().replace('# ','num_').replace('#','num_').replace(' ','_')
-            value = fields[1] 
-            
-            """
-            Rename specific parameters
-            """
+            # Get the current name/value pair, and clean up the name
+            name = fields[0].strip().replace('# ', 'num_').replace('#', 'num_').replace(' ', '_')
+            value = fields[1]
+
+            # Rename specific parameters
             if name == '1_mode':
                 name = 'mode'
             if name == 'IO_rate':
@@ -100,16 +122,11 @@ def parmsToDict(filepath,parms_to_remove = []):
                 name = 'set_pulst_duration_[s]'
             if name == 'step_edge_smoothing[s]':
                 name = 'step_edge_smoothing_[s]'
-            
-                
-            """
-            Append the prefix to the name
-            """
+
+            # Append the prefix to the name
             name = prefix+name.lstrip(prefix)
-            
-            """
-            Write parameter to parm_dict    
-            """
+
+            # Write parameter to parm_dict
             try:
                 num = float(value)
                 parm_dict[name] = num
@@ -120,18 +137,14 @@ def parmsToDict(filepath,parms_to_remove = []):
             except:
                 raise
         elif len(fields) == 1:
-            """
-            Change the parameter prefix to the new one from the group header
-            """
+            # Change the parameter prefix to the new one from the group header
             prefix = fields[0].strip('<').strip('>')
             prefix = prefix.split()[0]+'_'
-        
-            """
-            Check if there are VS Parameters.  Set isBEPS to true if so.
-            """
-            isBEPS = isBEPS or prefix == 'VS_'
-    
-    if isBEPS:
+
+            # Check if there are VS Parameters.  Set isBEPS to true if so.
+            is_beps = is_beps or prefix == 'VS_'
+
+    if is_beps:
         useless_parms = \
             ['Multi_1_BE_response_spectra',
              'Multi_2_BE_amplitude_spectra',
@@ -143,7 +156,7 @@ def parmsToDict(filepath,parms_to_remove = []):
              'Multi_8_VS_amplitude_loops',
              'Multi_9_VS_phase_loops',
              'Multi_10_topography',
-             'Multi_11_mean_channel_2'];
+             'Multi_11_mean_channel_2']
     else:
         useless_parms = \
             ['Multi_1_BE_response_spectra',
@@ -158,29 +171,35 @@ def parmsToDict(filepath,parms_to_remove = []):
              'Multi_10_phase_map',
              'Multi_11_topography',
              'Multi_12_AI_time_domain',
-             'Multi_13_AI_Fourier_amplitude'];
-        
-    useless_parms.extend(parms_to_remove);
-    
+             'Multi_13_AI_Fourier_amplitude']
+
+    if verbose:
+        print("Finished parsing the text pairs. isBEPS = {}".format(is_beps))
+
+    useless_parms.extend(parms_to_remove)
+
     # Now remove the list of useless parameters:
     for uparm in useless_parms:
         try:
-            del parm_dict[uparm];
+            del parm_dict[uparm]
         except KeyError:
             #warn('Parameter to be deleted does not exist')
-            pass;
+            pass
         except:
             raise
-    del uparm, useless_parms;
-    
-    if isBEPS:
+    del uparm, useless_parms
+
+    if verbose:
+        print("Finished removing useless parameters")
+
+    if is_beps:
         # fix the DC type in the parms:
-        if parm_dict['VS_measure_in_field_loops'] == 'out-of-field only': 
+        if parm_dict['VS_measure_in_field_loops'] == 'out-of-field only':
             parm_dict['VS_measure_in_field_loops'] = 'out-of-field'
-        elif parm_dict['VS_measure_in_field_loops'] == 'in-field only': 
+        elif parm_dict['VS_measure_in_field_loops'] == 'in-field only':
             parm_dict['VS_measure_in_field_loops'] = 'in-field'
-        
-    return (isBEPS,parm_dict);
+
+    return is_beps, parm_dict
     
 ###############################################################################
     
@@ -214,7 +233,7 @@ def getSpectroscopicParmLabel(expt_type):
         label for the spectroscopic parameter axis in the plot
     """
     
-    if expt_type in ['DC modulation mode','current mode']:
+    if expt_type in ['DC modulation mode', 'current mode']:
         return 'DC Bias'
     elif expt_type == 'AC modulation mode with time reversal':
         return 'AC amplitude'
@@ -257,12 +276,11 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     spectrogram_mat = spectrogram_mat/(F_AO_spectrogram)
   
     return spectrogram_mat
-    
-###############################################################################
+
     
 def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[], 
                        max_mem_mb=1024, spec_label='None', ignore_plot_groups=[], 
-                        show_plots=True, save_plots=True, do_histogram=False):
+                       show_plots=True, save_plots=True, do_histogram=False):
     """
     Generates the spatially averaged datasets for the given raw dataset. 
     The averaged datasets are necessary for quick visualization of the quality of data. 
@@ -296,10 +314,6 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     do_histogram : Boolean (Optional. Default = False)
         Whether or not to generate hisograms. 
         Caution - Histograms can take a fair amount of time to compute.
-                
-    Returns: 
-    ---------
-    None
     """
 
     grp = h5_main.parent
@@ -319,7 +333,6 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         All plot group datasets will be written to the 
         Channel group
         """
-        
         return
     
     # Removing the standard columns
@@ -332,16 +345,15 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     for col_name in col_names:
         ref = UDVS.attrs[col_name]
 #         Make sure we're actually dealing with a reference of some type
-        if not isinstance(ref,h5py.RegionReference):
+        if not isinstance(ref, h5py.RegionReference):
             continue
-        #4. Access that column of the data through region reference
+        # 4. Access that column of the data through region reference
         steps = np.where(np.isfinite(UDVS[ref]))[0]
         step_inds = np.array([np.where(UDVS_inds.value == step)[0] for step in steps]).flatten()
         """selected_UDVS_steps = UDVS[ref]
         selected_UDVS_steps = selected_UDVS_steps[np.isfinite(selected_UDVS_steps)]"""
-        
-        
-        (step_averaged_vec, mean_spec) = reshapeMeanData(spec_inds, step_inds, mean_resp)
+
+        (step_averaged_vec, mean_spec) = reshape_mean_data(spec_inds, step_inds, mean_resp)
             
         """ 
         Need to account for cases with multiple excitation waveforms
@@ -351,16 +363,17 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         freq_slice = np.unique(freq_inds[step_inds])
         freq_vec = h5_freq.value[freq_slice]
         
-        num_bins = len(freq_slice) # int(len(freq_inds)/len(UDVS[ref]))
-        pg_data = np.repeat(UDVS[ref],num_bins) 
+        num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
+        pg_data = np.repeat(UDVS[ref], num_bins)
             
-        ds_mean_spec = MicroDataset('Mean_Spectrogram',mean_spec, dtype=np.complex64)
-        ds_step_avg = MicroDataset('Step_Averaged_Response',step_averaged_vec, dtype=np.complex64)
-        ds_spec_parm = MicroDataset('Spectroscopic_Parameter',np.squeeze(pg_data[step_inds]))# cannot assume that this is DC offset, could be AC amplitude....
+        ds_mean_spec = MicroDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
+        ds_step_avg = MicroDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
+        # cannot assume that this is DC offset, could be AC amplitude....
+        ds_spec_parm = MicroDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
         ds_spec_parm.attrs = {'name': spec_label}
-        ds_freq = MicroDataset('Bin_Frequencies',freq_vec)
+        ds_freq = MicroDataset('Bin_Frequencies', freq_vec)
         
-        plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'),grp.name[1:])
+        plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
         plot_grp.attrs['Name'] = col_name
         plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
         
@@ -379,11 +392,11 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         Create Region Reference for the plot group in the Raw_Data, Spectroscopic_Indices 
         and Spectroscopic_Values Datasets
         """
-        raw_ref = h5_main.regionref[:,step_inds]
-        spec_inds_ref = spec_inds.regionref[:,step_inds]
-        spec_vals_ref = spec_vals.regionref[:,step_inds]
+        raw_ref = h5_main.regionref[:, step_inds]
+        spec_inds_ref = spec_inds.regionref[:, step_inds]
+        spec_vals_ref = spec_vals.regionref[:, step_inds]
         
-        ref_name = col_name.replace(' ','_').replace('-','_')+'_Plot_Group'
+        ref_name = col_name.replace(' ', '_').replace('-', '_')+'_Plot_Group'
         h5_main.attrs[ref_name] = raw_ref
         spec_inds.attrs[ref_name] = spec_inds_ref
         spec_vals.attrs[ref_name] = spec_vals_ref
@@ -395,22 +408,25 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             Build the histograms for the current plot group
             """
             hist = BEHistogram()
-            hist_mat, hist_labels, hist_indices, hist_indices_labels = hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp, min_response=min_resp, max_mem_mb=max_mem_mb)
-            ds_hist = MicroDataset('Histograms',hist_mat, dtype=np.int32, chunking=(1,hist_mat.shape[1]),compression='gzip')
+            hist_mat, hist_labels, hist_indices, hist_indices_labels = \
+                hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
+                                        min_response=min_resp, max_mem_mb=max_mem_mb)
+            ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
+                                   chunking=(1, hist_mat.shape[1]),compression='gzip')
             hist_slice_dict = dict()
             for hist_ind, hist_dim in enumerate(hist_labels):
-                hist_slice_dict[hist_dim] = (slice(hist_ind,hist_ind+1), slice(None))
+                hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind+1), slice(None))
             ds_hist.attrs['labels'] = hist_slice_dict
-            ds_hist.attrs['units'] = ['V','','V','V']
-            ds_hist_indices = MicroDataset('Indices',hist_indices,dtype=np.uint)
-            ds_hist_values = MicroDataset('Values',hist_indices,dtype=np.float32)
+            ds_hist.attrs['units'] = ['V', '', 'V', 'V']
+            ds_hist_indices = MicroDataset('Indices', hist_indices, dtype=np.uint)
+            ds_hist_values = MicroDataset('Values', hist_indices, dtype=np.float32)
             hist_ind_dict = dict()
             for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
-                hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind+1),slice(None))
+                hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind+1), slice(None))
             ds_hist_indices.attrs['labels'] = hist_ind_dict
             ds_hist_values.attrs['labels'] = hist_ind_dict
 
-            hist_grp = MicroDataGroup('Histogram',h5_mean_spec.parent.name[1:])
+            hist_grp = MicroDataGroup('Histogram', h5_mean_spec.parent.name[1:])
 
             hist_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_values])
             
@@ -420,9 +436,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             h5_hist_inds = getH5DsetRefs(['Indices'], h5_hist_grp_refs)[0]
             h5_hist_vals = getH5DsetRefs(['Values'], h5_hist_grp_refs)[0]
             
-            linkRefs(h5_hist, 
-                         getH5DsetRefs(['Indices','Values'], 
-                                       h5_hist_grp_refs))
+            linkRefs(h5_hist, getH5DsetRefs(['Indices', 'Values'], h5_hist_grp_refs))
             
             h5_hist.attrs['Spectroscopic_Indices'] = h5_hist_inds.ref
             h5_hist.attrs['Spectroscopic_Values'] = h5_hist_vals.ref
@@ -441,9 +455,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             path_2d = None
             path_hist = None
             if save_plots:
-                path_1d = path.join(folder_path,basename + '_Step_Avg_' + fig_title + '.png')
-                path_2d = path.join(folder_path,basename + '_Mean_Spec_' + fig_title + '.png')
-                path_hist = path.join(folder_path,basename + '_Histograms_' + fig_title + '.png')
+                path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
+                path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
+                path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
             plot1DSpectrum(step_averaged_vec, freq_vec, fig_title, figure_path=path_1d)
             plot2DSpectrogram(mean_spec, freq_vec, fig_title, figure_path=path_2d)
             if do_histogram:
@@ -456,8 +470,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     print('Completed generating spatially averaged plot groups')
 
 ###############################################################################
-    
-def reshapeMeanData(spec_inds, step_inds, mean_resp):
+
+
+def reshape_mean_data(spec_inds, step_inds, mean_resp):
     """
     Takes in the mean data vector and rearranges that data according to 
     plot group as [step number,bins]
@@ -478,31 +493,28 @@ def reshapeMeanData(spec_inds, step_inds, mean_resp):
     mean_spectrogram : 2D complex numpy array
         Position averaged data arranged as [step number,bins]
     """
-    num_bins = len(np.unique(spec_inds[0,step_inds]))
+    num_bins = len(np.unique(spec_inds[0, step_inds]))
     # Stephen says that we can assume that the number of bins will NOT change in a plot group
-    mean_spectrogram = mean_resp[step_inds].reshape(-1,num_bins)
+    mean_spectrogram = mean_resp[step_inds].reshape(-1, num_bins)
         
-    step_averaged_vec = np.mean(mean_spectrogram,axis=0)
-    return (step_averaged_vec, mean_spectrogram)
+    step_averaged_vec = np.mean(mean_spectrogram, axis=0)
+    return step_averaged_vec, mean_spectrogram
     
 ###############################################################################
 
-def visualizePlotGroups(h5_filepath):
+
+def visualize_plot_groups(h5_filepath):
     """
     Visualizes the plot groups present in the provided BE data file
     
     Parameters
-    -------------
+    ----------
     h5_filepath : String / Uniciode
         Absolute path of the h5 file
-    
-    Outputs:
-    --------------
-    None
     """
-    with h5py.File(h5_filepath,mode='r') as h5f:
+    with h5py.File(h5_filepath, mode='r') as h5f:
         expt_type = h5f.attrs.get('data_type')
-        if expt_type not in ['BEPSData','BELineData']:
+        if expt_type not in ['BEPSData', 'BELineData']:
             warn('Invalid data format')
             return         
         for grp_name in h5f.keys():            
@@ -512,9 +524,9 @@ def visualizePlotGroups(h5_filepath):
                     plt_grp = grp[plt_grp_name]
                     if expt_type == 'BEPSData':
                         spect_data = plt_grp['Mean_Spectrogram'].value
-                        plot2DSpectrogram(spect_data,plt_grp['Bin_Frequencies'].value,plt_grp.attrs['Name'])
+                        plot2DSpectrogram(spect_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
                     step_avg_data = plt_grp['Step_Averaged_Response']
-                    plot1DSpectrum(step_avg_data,plt_grp['Bin_Frequencies'].value,plt_grp.attrs['Name'])
+                    plot1DSpectrum(step_avg_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
                     try:
                         hist_data = plt_grp['Histograms']
                         hist_bins = plt_grp['Histograms_Indicies']
@@ -526,6 +538,7 @@ def visualizePlotGroups(h5_filepath):
     plt.close('all')
     
 ###############################################################################
+
 
 def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
     """
@@ -553,11 +566,11 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
     """
     
     if len(target_col_names) == 0:
-        return (udvs_mat, udvs_labs, udvs_units)
+        return udvs_mat, udvs_labs, udvs_units
         
     if len(udvs_labs) != udvs_mat.shape[1]:
         warn('Error: Incompatible UDVS matrix and labels. Not truncating!')
-        return (udvs_mat, udvs_labs, udvs_units)
+        return udvs_mat, udvs_labs, udvs_units
     
     # First figure out the column indices
     col_inds = []
@@ -572,11 +585,11 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
     
     # Now remove from the labels and the matrix
     udvs_mat = np.delete(udvs_mat, col_inds, axis=1)
-#     col_inds.sort(reverse=True)
-    [udvs_units.pop(ind) for ind in xrange(len(col_inds),0,-1)]
+    # col_inds.sort(reverse=True)
+    [udvs_units.pop(ind) for ind in range(len(col_inds), 0, -1)]
     udvs_labs = [col for col in udvs_labs if col not in found_cols]
     
-    return (udvs_mat, udvs_labs, udvs_units)
+    return udvs_mat, udvs_labs, udvs_units
 
 ###############################################################################
 
@@ -635,10 +648,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         UDVS = np.copy(udvs_mat)
 
         if not usr_defined:
-            DC = UDVS[:,1]
-            for step in xrange(0,DC.size,2):
-                DC[step+1]=DC[step]
-            UDVS[:,1] = DC
+            DC = UDVS[:, 1]
+            for step in range(0, DC.size, 2):
+                DC[step+1] = DC[step]
+            UDVS[:, 1] = DC
         
         """
         icheck is an array containing all UDVS steps which should be checked.
@@ -648,14 +661,14 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         Keep only the UDVS values for steps which we care about and the 
         first 5 columns
         """
-        UDVS = UDVS[(icheck),:5]
+        UDVS = UDVS[icheck, :5]
 #         UDVS = np.array([UDVS[i] for i in icheck])
         
         """
         Transpose UDVS for ease of looping later on and store the number of steps
         as num_cols
         """
-        num_cols = np.size(UDVS,1)
+        num_cols = np.size(UDVS, 1)
         """
         Initialize the iSpec_var as an empty array.  It will store the index of the 
         UDVS label for any column which has more than one unique value
@@ -665,20 +678,20 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Loop over all columns in udvs_mat
         """
-        for i in xrange(1,num_cols):
+        for i in range(1, num_cols):
             """
             Find all unique values in the current column
             """
-            toosmall = np.where(abs(UDVS[:,i]) < 1E-5)[0]
-            UDVS[toosmall,i] = 0
-            uvals = np.unique(UDVS[:,i])
+            toosmall = np.where(abs(UDVS[:, i]) < 1E-5)[0]
+            UDVS[toosmall, i] = 0
+            uvals = np.unique(UDVS[:, i])
             """
             np.unique considers all NaNs to be unique values
             These two lines find the indices of all NaNs in the unique value array 
             and removes all but the first
             """
             nanvals = np.where(np.isnan(uvals))[0]
-            uvals = np.delete(uvals,nanvals[1:])
+            uvals = np.delete(uvals, nanvals[1:])
             """
             Check if more that one unique value
             Append column number to iSpec_var if true
@@ -686,8 +699,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if (uvals.size > 1): 
                 iSpec_var = np.append(iSpec_var, int(i))
         
-        iSpec_var = np.asarray(iSpec_var,np.int)
-        ds_spec_val_mat = UDVS[:,iSpec_var]
+        iSpec_var = np.asarray(iSpec_var, np.int)
+        ds_spec_val_mat = UDVS[:, iSpec_var]
         
         return iSpec_var, ds_spec_val_mat
                     
@@ -859,7 +872,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         FORC=-1
         cycle=-1
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
@@ -981,7 +994,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         FORC=-1
         cycle=-1
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
@@ -1073,7 +1086,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Main loop over all steps
         """
-        for step in xrange(numsteps):
+        for step in range(numsteps):
             """
             Get the wave form for each step from udvs_mat
             """
@@ -1108,7 +1121,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         Find how quickly the spectroscopic values are changing in each row 
         and the order of row from fastest changing to slowest.
         """
-        change_count = [len(np.where([row[i] != row[i-1] for i in xrange(len(row))])[0]) for row in ds_spec_val_mat]
+        change_count = [len(np.where([row[i] != row[i-1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
         change_sort = np.argsort(change_count)[::-1]
         
         """
@@ -1116,7 +1129,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         index table based on those changed
         """
         indices = np.zeros(ds_spec_val_mat.shape[0])
-        for jcol in xrange(1,ds_spec_val_mat.shape[1]):
+        for jcol in range(1,ds_spec_val_mat.shape[1]):
             this_col = ds_spec_val_mat[change_sort,jcol]
             last_col = ds_spec_val_mat[change_sort,jcol-1]
 
@@ -1459,8 +1472,8 @@ class BEHistogram():
 
         hist_index_labels = ['Frequency Bin','Spectroscopic Bin']
 
-        for isbin in xrange(hist_shape[1]):
-            for ifbin in xrange(hist_shape[2]):
+        for isbin in range(hist_shape[1]):
+            for ifbin in range(hist_shape[2]):
                 ihbin = ifbin+isbin*hist_shape[2]
                 hist_indices[0,ihbin] = ifbin
                 hist_indices[1,ihbin] = isbin
@@ -1506,15 +1519,15 @@ class BEHistogram():
         """
         loop over pixels
         """
-        for ichunk in xrange(len(pix_chunks)-1):
+        for ichunk in range(len(pix_chunks)-1):
             if debug: print 'pixel chunk',ichunk
 
-            chunk = xrange(pix_chunks[ichunk],pix_chunks[ichunk+1])
+            chunk = range(pix_chunks[ichunk],pix_chunks[ichunk+1])
 
             """
         Loop over active UDVS steps
             """
-            for iudvs in xrange(self.num_udvs_steps):
+            for iudvs in range(self.num_udvs_steps):
                 selected = (iudvs+chunk[0]*self.num_udvs_steps)%np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
                 if selected:
                     per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))

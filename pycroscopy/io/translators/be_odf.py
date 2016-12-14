@@ -5,24 +5,23 @@ Created on Tue Nov  3 15:24:12 2015
 @author: Suhas Somnath, Stephen Jesse
 """
 
-from __future__ import division; # int/int = float
+from __future__ import division  # int/int = float
 
-from os import path, listdir, remove # File Path formatting
+from os import path, listdir, remove
 from warnings import warn
-
-import numpy as np; # For array operations
-from scipy.io.matlab import loadmat; # To load parameters stored in Matlab .mat file
+import numpy as np
+from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals
-from .translator import Translator # Because this class extends the abstract Translator class
+from .translator import Translator
 from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
-from ..be_hdf_utils import maxReadPixels
-from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks, linkformain
-from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
+from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
+from ..io_hdf5 import ioHDF5
+from ..microdata import MicroDataGroup, MicroDataset
 
 nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
                  ('sub_band', np.float32)])
+
 
 class BEodfTranslator(Translator):
     """
@@ -59,7 +58,7 @@ class BEodfTranslator(Translator):
         (folder_path, basename) = path.split(file_path)
         (basename, path_dict) = self._parsefilepath(file_path)
             
-        h5_path = path.join(folder_path,basename+'.h5')
+        h5_path = path.join(folder_path, basename + '.h5')
         tot_bins_multiplier = 1
         udvs_denom = 2
         
@@ -67,7 +66,7 @@ class BEodfTranslator(Translator):
             (isBEPS,parm_dict) = parmsToDict(path_dict['parm_txt'])
         elif 'old_mat_parms' in path_dict.keys():
             isBEPS = True
-            parm_dict = self.__getParmsFromOldMat(path_dict['old_mat_parms'])
+            parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
         else:
             warn('No parameters file found! Cannot translate this dataset!')
             return
@@ -85,7 +84,7 @@ class BEodfTranslator(Translator):
             
             spec_label = getSpectroscopicParmLabel(parm_dict['VS_mode']) 
             
-            if parm_dict['VS_mode'] in ['DC modulation mode','current mode']:            
+            if parm_dict['VS_mode'] in ['DC modulation mode', 'current mode']:
                 if field_mode == 'in and out-of-field':
                     tot_bins_multiplier = 2
                     udvs_denom = 1
@@ -104,8 +103,8 @@ class BEodfTranslator(Translator):
             
         # Check file sizes:
         if 'read_real' in path_dict.keys():
-            real_size = path.getsize(path_dict['read_real']);
-            imag_size = path.getsize(path_dict['read_imag']);
+            real_size = path.getsize(path_dict['read_real'])
+            imag_size = path.getsize(path_dict['read_imag'])
         else:
             real_size = path.getsize(path_dict['write_real'])
             imag_size = path.getsize(path_dict['write_imag'])
@@ -114,16 +113,16 @@ class BEodfTranslator(Translator):
             raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
 
         add_pix = False         
-        num_rows = int(parm_dict['grid_num_rows']);
-        num_cols = int(parm_dict['grid_num_cols']);
-        num_pix = num_rows*num_cols;
-        tot_bins = real_size/(num_pix*4);
+        num_rows = int(parm_dict['grid_num_rows'])
+        num_cols = int(parm_dict['grid_num_cols'])
+        num_pix = num_rows*num_cols
+        tot_bins = real_size/(num_pix*4)
         # Check for case where only a single pixel is missing.
         check_bins = real_size/((num_pix-1)*4)
         
         if tot_bins % 1 and check_bins % 1: 
             warn('Aborting! Some parameter appears to have changed in-between')
-            return;
+            return
         elif not tot_bins % 1:
             # Everything's ok
             pass
@@ -135,9 +134,9 @@ class BEodfTranslator(Translator):
         tot_bins = int(tot_bins)*tot_bins_multiplier
         
         if 'parm_mat' in path_dict.keys():
-            (bin_inds, bin_freqs, bin_FFT,ex_wfm) = self.__readParmsMat(path_dict['parm_mat'],isBEPS)
+            (bin_inds, bin_freqs, bin_FFT, ex_wfm) = self.__read_parms_mat(path_dict['parm_mat'], isBEPS)
         elif 'old_mat_parms' in path_dict.keys():
-            (bin_inds, bin_freqs, bin_FFT,ex_wfm,dc_amp_vec) = self.__readOldMatBEvecs(path_dict['old_mat_parms'])
+            (bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec) = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'])
         else:
             band_width = parm_dict['BE_band_width_[Hz]']*(0.5 - parm_dict['BE_band_edge_trim'])
             st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
@@ -154,27 +153,23 @@ class BEodfTranslator(Translator):
         bin_freqs = np.float32(bin_freqs)
         bin_FFT = np.complex64(bin_FFT)
         ex_wfm = np.float32(ex_wfm)
-            
+
+        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
+
         self.FFT_BE_wave = bin_FFT
-        pos_mat = makePositionMat([num_cols, num_rows])
-        pos_slices = getPositionSlicing(['X','Y'], num_pix)
-        
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)     
-        ds_pos_ind = MicroDataset('Position_Indices', pos_mat, dtype=np.uint32)
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_ind.attrs['units'] = [ '' for _ in xrange(len(pos_slices))]
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
-        ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = [ '' for _ in xrange(len(pos_slices))]
-#         ds_pos_labs = MicroDataset('Position_Labels',np.array(pos_labs))
+        pos_mat = makePositionMat()
+        pos_slices = getPositionSlicing(['X', 'Y'], num_pix)
+
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
+                                                           labels=['X', 'Y'], units=['m', 'm'], verbose=False)
         
         if isBEPS:
-            (UDVS_labs, UDVS_units, UDVS_mat) = self.__buildUDVSTable(parm_dict)
+            (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
            
 #             Remove the unused plot group columns before proceeding:
             (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
            
-            spec_inds = np.zeros(shape=(2,tot_bins), dtype=np.uint)
+            spec_inds = np.zeros(shape=(2, tot_bins), dtype=np.uint)
                       
 #             Will assume that all excitation waveforms have same number of bins
             num_actual_udvs_steps = UDVS_mat.shape[0]/udvs_denom
@@ -182,29 +177,31 @@ class BEodfTranslator(Translator):
            
             if bins_per_step % 1:
                 warn('Non integer number of bins per step!')
-                print('UDVS mat shape: {}, total bins: {}, bins per step: {}'.format(UDVS_mat.shape, tot_bins, bins_per_step))
+                print('UDVS mat shape: {}, total bins: {}, bins per step: {}'.format(UDVS_mat.shape, tot_bins,
+                                                                                     bins_per_step))
                 return
             
             bins_per_step = int(bins_per_step)
             num_actual_udvs_steps = int(num_actual_udvs_steps)
                
             stind = 0           
-            for step_index in xrange(UDVS_mat.shape[0]):  
-                if UDVS_mat[step_index,2] < 1E-3: # invalid AC amplitude
-                    continue # skip
-                spec_inds[0,stind:stind+bins_per_step] = np.arange(bins_per_step,dtype=np.uint32) # Bin step    
-                spec_inds[1,stind:stind+bins_per_step] = step_index * np.ones(bins_per_step,dtype=np.uint32) # UDVS step
+            for step_index in range(UDVS_mat.shape[0]):  
+                if UDVS_mat[step_index, 2] < 1E-3: # invalid AC amplitude
+                    continue  # skip
+                spec_inds[0, stind:stind+bins_per_step] = np.arange(bins_per_step, dtype=np.uint32) # Bin step
+                spec_inds[1, stind:stind+bins_per_step] = step_index * np.ones(bins_per_step, dtype=np.uint32) # UDVS step
                 stind += bins_per_step
-            del stind,step_index
+            del stind, step_index
            
-        else: # BE Line
+        else:  # BE Line
             self.signal_type = 1
-            self.expt_type = 1 # Stephen has not used this index for some reason
+            self.expt_type = 1  # Stephen has not used this index for some reason
             num_actual_udvs_steps = 1
             bins_per_step = tot_bins
-            UDVS_labs = ['step_num','dc_offset','ac_amp','wave_type','wave_mod','be-line']
+            UDVS_labs = ['step_num', 'dc_offset', 'ac_amp', 'wave_type', 'wave_mod', 'be-line']
             UDVS_units = ['', 'V', 'A', '', '', '']
-            UDVS_mat = np.array([1,0,parm_dict['BE_amplitude_[V]'],1,1,1], dtype=np.float32).reshape(1,len(UDVS_labs))
+            UDVS_mat = np.array([1, 0, parm_dict['BE_amplitude_[V]'], 1, 1, 1],
+                                dtype=np.float32).reshape(1, len(UDVS_labs))
 
             spec_inds = np.vstack((np.arange(tot_bins, dtype=np.uint), np.zeros(tot_bins, dtype=np.uint32)))
         
@@ -213,9 +210,9 @@ class BEodfTranslator(Translator):
         parm_dict['num_pix'] = num_pix
         parm_dict['num_UDVS_steps'] = num_actual_udvs_steps 
         
-        udvs_slices = dict();
+        udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
-            udvs_slices[col_name] = (slice(None),slice(col_ind,col_ind+1));          
+            udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind+1))
         ds_UDVS = MicroDataset('UDVS', UDVS_mat)
         ds_UDVS.attrs['labels'] = udvs_slices
         ds_UDVS.attrs['units'] = UDVS_units
@@ -223,18 +220,18 @@ class BEodfTranslator(Translator):
         ds_UDVS_inds = MicroDataset('UDVS_Indices', spec_inds[1])        
         
 #         ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
-        ds_bin_steps = MicroDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32),dtype=np.uint32)
+        ds_bin_steps = MicroDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
         
         # Need to add the Bin Waveform type - infer from UDVS        
         exec_bin_vec = self.signal_type*np.ones(len(bin_inds), dtype=np.int32)
 
         if self.expt_type == 2:
             # Need to double the vectors:
-            exec_bin_vec = np.hstack((exec_bin_vec,-1*exec_bin_vec))            
-            bin_inds = np.hstack((bin_inds,bin_inds))
-            bin_freqs = np.hstack((bin_freqs,bin_freqs))
+            exec_bin_vec = np.hstack((exec_bin_vec, -1*exec_bin_vec))
+            bin_inds = np.hstack((bin_inds, bin_inds))
+            bin_freqs = np.hstack((bin_freqs, bin_freqs))
             # This is wrong but I don't know what else to do
-            bin_FFT = np.hstack((bin_FFT,bin_FFT))
+            bin_FFT = np.hstack((bin_FFT, bin_FFT))
         
         ds_bin_inds = MicroDataset('Bin_Indices', bin_inds, dtype=np.uint32)       
         ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)        
@@ -242,8 +239,13 @@ class BEodfTranslator(Translator):
         ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
         
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
-        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat, spec_inds, bin_freqs, exec_bin_vec,
-                                                                                                     parm_dict, UDVS_labs, UDVS_units)
+        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat,
+                                                                                                     spec_inds,
+                                                                                                     bin_freqs,
+                                                                                                     exec_bin_vec,
+                                                                                                     parm_dict,
+                                                                                                     UDVS_labs,
+                                                                                                     UDVS_units)
 
         spec_vals_slices = dict()
 #         if len(spec_vals_labs) == 1:
@@ -251,32 +253,27 @@ class BEodfTranslator(Translator):
 #         else:
 
         for row_ind, row_name in enumerate(spec_vals_labs):
-            spec_vals_slices[row_name]=(slice(row_ind,row_ind+1),slice(None))
+            spec_vals_slices[row_name] = (slice(row_ind, row_ind+1), slice(None))
 
         ds_spec_mat = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
         ds_spec_mat.attrs['labels'] = spec_vals_slices
         ds_spec_mat.attrs['units'] = spec_vals_units                   
-        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values',np.array(spec_vals,dtype=np.float32))
+        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:
             label = entry[0]+'_parameters'
             names = entry[1]
-            ds_spec_mat.attrs[label]= names
-            ds_spec_vals_mat.attrs[label]= names        
+            ds_spec_mat.attrs[label] = names
+            ds_spec_vals_mat.attrs[label] = names
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32), chunking=(1,num_actual_udvs_steps))
-        # noise_labs = ['']
-        # noise_slices = dict()
-        # for col_ind, col_name in enumerate(noise_labs):
-        #     noise_slices[col_name] = (slice(None))
-        # ds_noise_floor.attrs['labels'] = noise_slices
-        # ds_noise_floor.attrs['units'] = ['','','']
+        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
+                                      chunking=(1, num_actual_udvs_steps))
 
         """
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
-        of UDVS steps by pixels.  N is determined dinamically based on the dimensions of the
+        of UDVS steps by pixels.  N is determined dynamically based on the dimensions of the
         dataset.  Currently it is set such that individual chunks are less than 10kB in size.
         
         Chris Smith -- csmith55@utk.edu
@@ -304,17 +301,17 @@ class BEodfTranslator(Translator):
         
         spm_data = MicroDataGroup('')
         global_parms = generateDummyMainParms()
-        global_parms['grid_size_x'] = parm_dict['grid_num_cols'];
-        global_parms['grid_size_y'] = parm_dict['grid_num_rows'];
+        global_parms['grid_size_x'] = parm_dict['grid_num_cols']
+        global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         try:
             global_parms['experiment_date'] = parm_dict['File_date_and_time']
         except KeyError:
             global_parms['experiment_date'] = '1:1:1'
 
         # assuming that the experiment was completed:
-        global_parms['current_position_x'] = parm_dict['grid_num_cols']-1;
-        global_parms['current_position_y'] = parm_dict['grid_num_rows']-1;
-        global_parms['data_type'] = parm_dict['data_type'] #self.__class__.__name__
+        global_parms['current_position_x'] = parm_dict['grid_num_cols']-1
+        global_parms['current_position_y'] = parm_dict['grid_num_rows']-1
+        global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'ODF'
             
         spm_data.attrs = global_parms
@@ -330,17 +327,17 @@ class BEodfTranslator(Translator):
                     
         self.h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             
-        #Now doing linkrefs:
-        aux_ds_names = ['Excitation_Waveform', 'Position_Indices','Position_Values',
-                     'Spectroscopic_Indices','UDVS','Bin_Step', 'Bin_Indices', 'UDVS_Indices',
-                     'Bin_Frequencies','Bin_FFT','Bin_Wfm_Type','Noise_Floor', 'Spectroscopic_Values',]
+        # Now doing linkrefs:
+        aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
+                        'Spectroscopic_Indices', 'UDVS', 'Bin_Step', 'Bin_Indices', 'UDVS_Indices',
+                        'Bin_Frequencies', 'Bin_FFT', 'Bin_Wfm_Type', 'Noise_Floor', 'Spectroscopic_Values']
         linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
 
         self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix)
         
         generatePlotGroups(self.h5_raw, self.hdf, self.mean_resp, folder_path, basename,
                            self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
-                           spec_label = spec_label, show_plots = show_plots, save_plots=save_plots,
+                           spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram)
         
         self.hdf.close()
@@ -374,19 +371,19 @@ class BEodfTranslator(Translator):
         # Now read the raw data files:
         if not isBEPS:
             # Do this for all BE-Line (always small enough to read in one shot)
-            self.__quickReadData(path_dict['read_real'], path_dict['read_imag'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
-            self.__quickReadData(path_dict['read_real'], path_dict['read_imag'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
-            self.__quickReadData(path_dict['write_real'], path_dict['write_imag'])
+            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
-            self.__readBEPSData(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
+            self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
         self.hdf.file.flush()
 
-    def __readBEPSData(self, path_dict, udvs_steps, mode, add_pixel=False):
+    def __read_beps_data(self, path_dict, udvs_steps, mode, add_pixel=False):
         """
         Reads the imaginary and real data files pixelwise and writes to the H5 file 
         
@@ -412,9 +409,11 @@ class BEodfTranslator(Translator):
         step_size = self.h5_raw.shape[1]/udvs_steps          
         
         if mode == 'out-of-field':
-            parsers = [BEodfParser(path_dict['read_real'],path_dict['read_imag'], self.h5_raw.shape[0], bytes_per_pix)]
+            parsers = [BEodfParser(path_dict['read_real'], path_dict['read_imag'], 
+                                   self.h5_raw.shape[0], bytes_per_pix)]
         elif mode == 'in-field':
-            parsers = [BEodfParser(path_dict['write_real'],path_dict['write_imag'], self.h5_raw.shape[0], bytes_per_pix)]
+            parsers = [BEodfParser(path_dict['write_real'], path_dict['write_imag'], 
+                                   self.h5_raw.shape[0], bytes_per_pix)]
         elif mode == 'in and out-of-field':
             # each file will only have half the udvs steps:
             if 0.5*udvs_steps % 1:
@@ -422,8 +421,10 @@ class BEodfTranslator(Translator):
                 return
             udvs_steps = int(0.5*udvs_steps)
             # be careful - each pair contains only half the necessary bins - so read half
-            parsers = [BEodfParser(path_dict['write_real'],path_dict['write_imag'], self.h5_raw.shape[0], int(bytes_per_pix/2)),
-            BEodfParser(path_dict['read_real'],path_dict['read_imag'], self.h5_raw.shape[0], int(bytes_per_pix/2))]
+            parsers = [BEodfParser(path_dict['write_real'], path_dict['write_imag'], 
+                                   self.h5_raw.shape[0], int(bytes_per_pix / 2)),
+                       BEodfParser(path_dict['read_real'], path_dict['read_imag'], 
+                                   self.h5_raw.shape[0], int(bytes_per_pix/2))]
             
             if step_size % 1:
                 warn('weird number of bins per UDVS step. Exiting')
@@ -440,17 +441,17 @@ class BEodfTranslator(Translator):
         This will be handled after the loop. 
         """ 
         if add_pixel: 
-            numpix-= 1 
+            numpix -= 1 
         
-        for pix_indx in xrange(numpix):
+        for pix_indx in range(numpix):
             if self.h5_raw.shape[0] > 5:
                 if pix_indx % int(round(self.h5_raw.shape[0]/10)) == 0:
-                    print('Reading... {} complete'.format(round(100*pix_indx/self.h5_raw.shape[0])))
+                    print('Reading... {} complete'.format(round(100*pix_indx / self.h5_raw.shape[0])))
                     
             # get the raw stream from each parser
             pxl_data = list()
             for prsr in parsers:
-                pxl_data.append(prsr.readPixel())
+                pxl_data.append(prsr.read_pixel())
             
             # interleave if both in and out of field
             # we are ignoring user defined possibilities...
@@ -458,56 +459,50 @@ class BEodfTranslator(Translator):
                 in_fld = pxl_data[0]
                 out_fld = pxl_data[1]
                 
-                in_fld_2 = in_fld.reshape(udvs_steps,step_size)
-                out_fld_2 = out_fld.reshape(udvs_steps,step_size)
-                raw_mat = np.empty((udvs_steps*2,step_size), dtype=out_fld.dtype)
-                raw_mat[0::2,:] = in_fld_2
-                raw_mat[1::2,:] = out_fld_2
+                in_fld_2 = in_fld.reshape(udvs_steps, step_size)
+                out_fld_2 = out_fld.reshape(udvs_steps, step_size)
+                raw_mat = np.empty((udvs_steps*2, step_size), dtype=out_fld.dtype)
+                raw_mat[0::2, :] = in_fld_2
+                raw_mat[1::2, :] = out_fld_2
                 raw_vec = raw_mat.reshape(in_fld.size + out_fld.size).transpose()
             else:
-                raw_vec = pxl_data[0] # only one parser
+                raw_vec = pxl_data[0]  # only one parser
             self.max_resp[pix_indx] = np.max(np.abs(raw_vec))
             self.min_resp[pix_indx] = np.min(np.abs(raw_vec))
-            self.mean_resp = (1/(pix_indx+1))*(raw_vec + pix_indx*self.mean_resp)
+            self.mean_resp = (1/(pix_indx+1))*(raw_vec + pix_indx * self.mean_resp)
             
-            self.h5_raw[pix_indx,:] = raw_vec[:]
+            self.h5_raw[pix_indx, :] = raw_vec[:]
             self.hdf.file.flush()
             
         # Add zeros to main_data for the missing pixel. 
         if add_pixel: 
-            self.h5_raw[-1,:] = 0+0j             
+            self.h5_raw[-1, :] = 0+0j             
             
         print('---- Finished reading files -----')
     
-    
-    def __quickReadData(self,real_path, imag_path):
+    def __quick_read_data(self, real_path, imag_path):
         """
-    Returns information about the excitation BE waveform present in the .mat file
+        Returns information about the excitation BE waveform present in the .mat file
 
-    Inputs:
-        filepath -- Absolute filepath of the .mat parameter file
-
-    Outputs:
-        Tuple -- (bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full)\n
-        bin_inds -- Bin indices\n
-        bin_w -- Excitation bin Frequencies\n
-        bin_FFT -- FFT of the BE waveform for the excited bins\n
-        BE_wave -- Band Excitation waveform\n
-        dc_amp_vec_full -- spectroscopic waveform.
-        This information will be necessary for fixing the UDVS for AC modulation for example
+        Parameters
+        -----------
+        real_path : String / Unicode
+            Absolute file path of the real data file
+        imag_path : String / Unicode
+            Absolute file path of the real data file
         """
         print('---- reading all data at once ----------')  
 
         parser = BEodfParser(real_path, imag_path)
-        raw_vec = parser.readAllData()
+        raw_vec = parser.read_all_data()
                                       
-        raw_mat = raw_vec.reshape(self.h5_raw.shape[0],self.h5_raw.shape[1])
+        raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
                 
         # Write to the h5 dataset:
-        self.mean_resp = np.mean(raw_mat,axis=0)
-        self.max_resp = np.amax(np.abs(raw_mat),axis=0)
-        self.min_resp = np.amin(np.abs(raw_mat),axis=0)
-        self.h5_raw[:,:] = raw_mat
+        self.mean_resp = np.mean(raw_mat, axis=0)
+        self.max_resp = np.amax(np.abs(raw_mat), axis=0)
+        self.min_resp = np.amin(np.abs(raw_mat), axis=0)
+        self.h5_raw[:, :] = raw_mat
         self.hdf.file.flush()
 
         print('---- Finished reading files -----')       
@@ -520,7 +515,7 @@ class BEodfTranslator(Translator):
         Parameters 
         --------------------
         data_filepath: String / Unicode
-            Absolute path of the real / imaginary data file (.dat)
+            Absolute path of any file in the same directory as the .dat files
         
         Returns 
         --------------------
@@ -564,8 +559,9 @@ class BEodfTranslator(Translator):
                 path_dict[file_tag] = abs_path
 
         return basename, path_dict
-        
-    def __readOldMatBEvecs(self,file_path):
+
+    @staticmethod
+    def __read_old_mat_be_vecs(file_path):
         """
         Returns information about the excitation BE waveform present in the 
         more parms.mat file
@@ -591,14 +587,15 @@ class BEodfTranslator(Translator):
         """
         matread = loadmat(file_path, squeeze_me=True)    
         BE_wave = matread['BE_wave']
-        bin_inds = matread['bin_ind'] -1 # Python base 0
+        bin_inds = matread['bin_ind'] -1  # Python base 0
         bin_w = matread['bin_w']
         dc_amp_vec_full = matread['dc_amp_vec_full']
         FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
-        bin_FFT = np.conjugate(FFT_full[bin_inds]);
-        return (bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full)
+        bin_FFT = np.conjugate(FFT_full[bin_inds])
+        return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
         
-    def __getParmsFromOldMat(self,file_path):
+    @staticmethod
+    def __get_parms_from_old_mat(file_path):
         """
         Formats parameters found in the old parameters .mat file into a dictionary
         as though the dataset had a parms.txt describing it
@@ -626,7 +623,7 @@ class BEodfTranslator(Translator):
         
         if position_vec[0] != position_vec[1] or position_vec[2] != position_vec[3]:
             warn('WARNING: Incomplete dataset. Translation not guaranteed!')
-            parm_dict['grid_num_rows'] = position_vec[0] # set to number of present cols and rows
+            parm_dict['grid_num_rows'] = position_vec[0]  # set to number of present cols and rows
             parm_dict['grid_num_cols'] = position_vec[1]
     
         BE_parm_vec_1 = matread['BE_parm_vec_1']
@@ -638,8 +635,8 @@ class BEodfTranslator(Translator):
         parm_dict['BE_center_frequency_[Hz]'] = BE_parm_vec_1[1]
         parm_dict['BE_band_width_[Hz]'] = BE_parm_vec_1[2]
         parm_dict['BE_amplitude_[V]'] = BE_parm_vec_1[3]
-        parm_dict['BE_band_edge_smoothing_[s]'] = BE_parm_vec_1[4] # 150 most likely
-        parm_dict['BE_phase_variation'] = BE_parm_vec_1[5] # 0.01 most likely
+        parm_dict['BE_band_edge_smoothing_[s]'] = BE_parm_vec_1[4]  # 150 most likely
+        parm_dict['BE_phase_variation'] = BE_parm_vec_1[5]  # 0.01 most likely
         parm_dict['BE_window_adjustment'] = BE_parm_vec_1[6] 
         parm_dict['BE_points_per_step'] = 2**int(BE_parm_vec_1[7])
         parm_dict['BE_repeats'] = 2**int(BE_parm_vec_1[8])
@@ -663,8 +660,8 @@ class BEodfTranslator(Translator):
         else:
             parm_dict['IO_Analog_Input_2'] = '+/- 10V, FFT'
             
-        #num_driving_bands = assembly_parm_vec[0] # 0 = 1, 1 = 2 bands
-        #band_combination_order = assembly_parm_vec[1] # 0 parallel 1 series
+        # num_driving_bands = assembly_parm_vec[0]  # 0 = 1, 1 = 2 bands
+        # band_combination_order = assembly_parm_vec[1]  # 0 parallel 1 series
         
         VS_parms = matread['SS_parm_vec']
         dc_amp_vec_full = matread['dc_amp_vec_full']
@@ -672,54 +669,55 @@ class BEodfTranslator(Translator):
         VS_start_V = VS_parms[4] 
         VS_start_loop_amp = VS_parms[5] 
         VS_final_loop_amp = VS_parms[6] 
-        #VS_read_write_ratio = VS_parms[8] #1 <- SS_read_write_ratio
+        # VS_read_write_ratio = VS_parms[8]  # 1 <- SS_read_write_ratio
         
-        parm_dict['VS_set_pulse_amplitude_[V]'] = VS_parms[9] #0 <- SS_set_pulse_amp 
+        parm_dict['VS_set_pulse_amplitude_[V]'] = VS_parms[9]  # 0 <- SS_set_pulse_amp
         parm_dict['VS_read_voltage_[V]'] = VS_parms[3] 
         parm_dict['VS_steps_per_full_cycle'] = VS_parms[7]
         parm_dict['VS_cycle_fraction'] = 'full'
         parm_dict['VS_cycle_phase_shift'] = 0 
         parm_dict['VS_number_of_cycles'] = VS_parms[2]
-        parm_dict['FORC_num_of_FORC_cycles']=1
-        parm_dict['FORC_V_high1_[V]']=0
-        parm_dict['FORC_V_high2_[V]']=0
-        parm_dict['FORC_V_low1_[V]']=0
-        parm_dict['FORC_V_low2_[V]']=0
+        parm_dict['FORC_num_of_FORC_cycles'] = 1
+        parm_dict['FORC_V_high1_[V]'] = 0
+        parm_dict['FORC_V_high2_[V]'] = 0
+        parm_dict['FORC_V_low1_[V]'] = 0
+        parm_dict['FORC_V_low2_[V]'] = 0
         
         if VS_parms[0] == 0:
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))# VS_parms[1] # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))  # VS_parms[1] # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = max(dc_amp_vec_full) + min(dc_amp_vec_full)     
         elif VS_parms[0] == 1:
             # FORC
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 1 # VS_parms[1] # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = 0
             parm_dict['VS_number_of_cycles'] = 1                             
-            parm_dict['FORC_num_of_FORC_cycles']=VS_parms[2]     
-            parm_dict['FORC_V_high1_[V]']=VS_start_V
-            parm_dict['FORC_V_high2_[V]']=VS_start_V
-            parm_dict['FORC_V_low1_[V]']=VS_start_V - VS_start_loop_amp
-            parm_dict['FORC_V_low2_[V]']=VS_start_V - VS_final_loop_amp
+            parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2]
+            parm_dict['FORC_V_high1_[V]'] = VS_start_V
+            parm_dict['FORC_V_high2_[V]'] = VS_start_V
+            parm_dict['FORC_V_low1_[V]'] = VS_start_V - VS_start_loop_amp
+            parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
         elif VS_parms[0] == 2:
             # AC mode 
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
-            parm_dict['VS_amplitude_[V]'] = 0.5*(VS_final_loop_amp)
-            parm_dict['VS_offset_[V]'] = 0 # this is not correct. Fix manually when it comes to UDVS generation?                     
+            parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
+            parm_dict['VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
         else:
             parm_dict['VS_mode'] = 'Custom'
     
         return parm_dict
         
-    def __readParmsMat(self, filepath, isBEPS):
+    @staticmethod
+    def __read_parms_mat(file_path, is_beps):
         """
         Returns information about the excitation BE waveform present in the more parms.mat file
         
         Parameters 
         --------------------
-        filepath : String / Unicode
+        file_path : String / Unicode
             Absolute filepath of the .mat parameter file
-        isBEPS : Boolean
+        is_beps : Boolean
             Whether or not this is BEPS or BE-Line
         
         Returns 
@@ -733,29 +731,28 @@ class BEodfTranslator(Translator):
         ex_wfm : 1D numpy float array
             Band Excitation waveform
         """
-        if not path.exists(filepath):
+        if not path.exists(file_path):
             warn('BEodfTranslator - NO More parms file found')
             return None
-        if isBEPS:
+        if is_beps:
             fft_name = 'FFT_BE_wave'
         else:
             fft_name = 'FFT_BE_rev_wave'
-        matread = loadmat(filepath,variable_names=['BE_bin_ind','BE_bin_w',fft_name]);
-        BE_bin_ind = np.squeeze(matread['BE_bin_ind']) - 1; # From Matlab (base 1) to Python (base 0)
-        BE_bin_w = np.squeeze(matread['BE_bin_w']);
-        FFT_full = np.complex64(np.squeeze(matread[fft_name]));
+        matread = loadmat(file_path, variable_names=['BE_bin_ind', 'BE_bin_w', fft_name])
+        BE_bin_ind = np.squeeze(matread['BE_bin_ind']) - 1   # From Matlab (base 1) to Python (base 0)
+        BE_bin_w = np.squeeze(matread['BE_bin_w'])
+        FFT_full = np.complex64(np.squeeze(matread[fft_name]))
         # For whatever weird reason, the sign of the imaginary portion is flipped. Correct it:
-        #BE_bin_FFT = np.conjugate(FFT_full[BE_bin_ind]);
-        BE_bin_FFT = np.zeros(len(BE_bin_ind), dtype=np.complex64);
-        BE_bin_FFT.real = np.real(FFT_full[BE_bin_ind]);
-        BE_bin_FFT.imag = -1*np.imag(FFT_full[BE_bin_ind]);
+        #BE_bin_FFT = np.conjugate(FFT_full[BE_bin_ind])
+        BE_bin_FFT = np.zeros(len(BE_bin_ind), dtype=np.complex64)
+        BE_bin_FFT.real = np.real(FFT_full[BE_bin_ind])
+        BE_bin_FFT.imag = -1*np.imag(FFT_full[BE_bin_ind])
         
         ex_wfm = np.real(np.fft.ifft(np.fft.ifftshift(FFT_full)))
+
+        return BE_bin_ind, BE_bin_w, BE_bin_FFT, ex_wfm
         
-        # Technically can also send back the entire excitation waveform         
-        return (BE_bin_ind, BE_bin_w, BE_bin_FFT,ex_wfm);  
-        
-    def __buildUDVSTable(self,parm_dict):
+    def __build_udvs_table(self, parm_dict):
         """
         Generates the UDVS table using the parameters
         
@@ -774,20 +771,29 @@ class BEodfTranslator(Translator):
             UDVS data table
         """
     
-        def translateVal(target, strvals, numvals):
+        def translate_val(target, strvals, numvals):
             """
             Internal function - Interprets the provided value using the provided lookup table
+
+            Parameters
+            ----------
+            target : String
+                Item we are looking for in the strvals list
+            strvals : list of strings
+                List of source values
+            numvals : list of numbers
+                List of results
             """
         
             if len(strvals) is not len(numvals):
                 return None    
-            for strval, fltval in zip(strvals,numvals):
+            for strval, fltval in zip(strvals, numvals):
                 if target == strval:
                     return fltval
-            return None # not found in list
+            return None  # not found in list
             
         #% Extract values from parm text file    
-        BE_signal_type = translateVal(parm_dict['BE_phase_content'], ['chirp-sinc hybrid','1/2 harmonic excitation','1/3 harmonic excitation','pure sine'],[1,2,3,4])
+        BE_signal_type = translate_val(parm_dict['BE_phase_content'], ['chirp-sinc hybrid','1/2 harmonic excitation','1/3 harmonic excitation','pure sine'],[1,2,3,4])
         # This is necessary when normalzing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
@@ -800,12 +806,18 @@ class BEodfTranslator(Translator):
         #VS_read_voltage = parm_dict['VS_read_voltage_[V]']
         VS_steps = parm_dict['VS_steps_per_full_cycle']
         VS_cycles = parm_dict['VS_number_of_cycles']
-        VS_fraction = translateVal(parm_dict['VS_cycle_fraction'], ['full','1/2','1/4','3/4'], [1.,0.5,0.25,0.75])
+        VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
+                                    ['full', '1/2', '1/4', '3/4'],
+                                    [1., 0.5, 0.25, 0.75])
         VS_shift = parm_dict['VS_cycle_phase_shift']
         if VS_shift is not 0:
-            VS_shift = translateVal(VS_shift,['1/4','1/2','3/4'],[0.25,0.5,0.75])
-        VS_in_out_cond = translateVal(parm_dict['VS_measure_in_field_loops'], ['out-of-field','in-field','in and out-of-field'],[0,1,2])
-        VS_ACDC_cond = translateVal(parm_dict['VS_mode'], ['DC modulation mode','AC modulation mode with time reversal','load user defined VS Wave from file','current mode'],[0,2,3,4])
+            VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
+        VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
+                                       ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
+        VS_ACDC_cond = translate_val(parm_dict['VS_mode'],
+                                     ['DC modulation mode', 'AC modulation mode with time reversal',
+                                      'load user defined VS Wave from file', 'current mode'],
+                                     [0, 2, 3, 4])
         self.expt_type = VS_ACDC_cond
         FORC_cycles = parm_dict['FORC_num_of_FORC_cycles']
         FORC_A1 = parm_dict['FORC_V_high1_[V]']
@@ -816,77 +828,79 @@ class BEodfTranslator(Translator):
             
         #% build vector of voltage spectroscopy values
         
-        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4: #DC voltage spectroscopy or current mode 
-            VS_amp_vec_1 = np.arange(0,1+1/(VS_steps/4), 1/(VS_steps/4) )
+        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:  # DC voltage spectroscopy or current mode
+            VS_amp_vec_1 = np.arange(0, 1+1/(VS_steps/4), 1/(VS_steps/4))
             VS_amp_vec_2 = np.flipud(VS_amp_vec_1[:-1])
             VS_amp_vec_3 = -VS_amp_vec_1[1:]
             VS_amp_vec_4 =  VS_amp_vec_1[1:-1]-1
-            VS_amp_vec = VS_amp*(np.hstack((VS_amp_vec_1, VS_amp_vec_2,  VS_amp_vec_3, VS_amp_vec_4)))
-            VS_amp_vec = np.roll(VS_amp_vec,int(np.floor(VS_steps/VS_fraction*VS_shift)))#apply phase shift to VS wave
-            VS_amp_vec = VS_amp_vec[:int(np.floor(VS_steps*VS_fraction))] # cut VS waveform
-            VS_amp_vec = np.tile(VS_amp_vec,VS_cycles) # repeat VS waveform
-            VS_amp_vec = VS_amp_vec+VS_offset
+            vs_amp_vec = VS_amp*(np.hstack((VS_amp_vec_1, VS_amp_vec_2,  VS_amp_vec_3, VS_amp_vec_4)))
+            vs_amp_vec = np.roll(vs_amp_vec, int(np.floor(VS_steps/VS_fraction*VS_shift)))  # apply phase shift to VS wave
+            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps*VS_fraction))]  # cut VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles)  # repeat VS waveform
+            vs_amp_vec = vs_amp_vec+VS_offset
             
-        elif VS_ACDC_cond == 2: #AC voltage spectroscopy with time reversal
-            VS_amp_vec = VS_amp * np.arange(1/(VS_steps/2/VS_fraction), 1 + 1/(VS_steps/2/VS_fraction) , 1/(VS_steps/2/VS_fraction))
-            VS_amp_vec = np.roll(VS_amp_vec,int(np.floor(VS_steps/VS_fraction*VS_shift))) # apply phase shift to VS wave
-            VS_amp_vec = VS_amp_vec[:int(np.floor(VS_steps*VS_fraction/2))] # cut VS waveform
-            VS_amp_vec = np.tile(VS_amp_vec,VS_cycles*2) # repeat VS waveform
+        elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
+            vs_amp_vec = VS_amp * np.arange(1/(VS_steps/2/VS_fraction), 1 + 1/(VS_steps/2/VS_fraction),
+                                            1/(VS_steps/2/VS_fraction))
+            vs_amp_vec = np.roll(vs_amp_vec,
+                                 int(np.floor(VS_steps/VS_fraction*VS_shift)))  # apply phase shift to VS wave
+            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps*VS_fraction/2))]  # cut VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles * 2)  # repeat VS waveform
             
         if FORC_cycles > 1:
-            VS_amp_vec = VS_amp_vec/np.max(np.abs(VS_amp_vec))
+            vs_amp_vec = vs_amp_vec/np.max(np.abs(vs_amp_vec))
             FORC_cycle_vec = np.arange(0, FORC_cycles+1, FORC_cycles/(FORC_cycles-1))
             FORC_A_vec = FORC_cycle_vec*(FORC_A2-FORC_A1)/FORC_cycles + FORC_A1
             FORC_B_vec = FORC_cycle_vec*(FORC_B2-FORC_B1)/FORC_cycles + FORC_B1
             FORC_amp_vec = (FORC_A_vec-FORC_B_vec)/2
             FORC_off_vec = (FORC_A_vec+FORC_B_vec)/2
             
-            VS_amp_mat = np.tile(VS_amp_vec,[FORC_cycles,1])
-            FORC_amp_mat = np.tile(FORC_amp_vec,[len(VS_amp_vec),1]).transpose()
-            FORC_off_mat = np.tile(FORC_off_vec,[len(VS_amp_vec),1]).transpose()
+            VS_amp_mat = np.tile(vs_amp_vec, [FORC_cycles, 1])
+            FORC_amp_mat = np.tile(FORC_amp_vec, [len(vs_amp_vec), 1]).transpose()
+            FORC_off_mat = np.tile(FORC_off_vec, [len(vs_amp_vec), 1]).transpose()
             VS_amp_mat = VS_amp_mat*FORC_amp_mat + FORC_off_mat
-            VS_amp_vec = VS_amp_mat.reshape(int(FORC_cycles*VS_cycles*VS_fraction*VS_steps))
+            vs_amp_vec = VS_amp_mat.reshape(int(FORC_cycles*VS_cycles*VS_fraction*VS_steps))
             
-        #% Build UDVS table:        
-        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4: #DC voltage spectroscopy or current mode 
+        # Build UDVS table:
+        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:  # DC voltage spectroscopy or current mode
             
             if VS_ACDC_cond is 0:
-                UD_dc_vec = np.vstack((VS_amp_vec, np.zeros(len(VS_amp_vec)) ))
+                UD_dc_vec = np.vstack((vs_amp_vec, np.zeros(len(vs_amp_vec))))
             if VS_ACDC_cond is 4:
-                UD_dc_vec = np.vstack((VS_amp_vec, VS_amp_vec));
+                UD_dc_vec = np.vstack((vs_amp_vec, vs_amp_vec))
         
-            UD_dc_vec = UD_dc_vec.transpose().reshape(UD_dc_vec.size);
+            UD_dc_vec = UD_dc_vec.transpose().reshape(UD_dc_vec.size)
             num_VS_steps = UD_dc_vec.size
                         
-            UD_VS_table_label = ['step_num','dc_offset','ac_amp','wave_type','wave_mod','in-field','out-of-field']
+            UD_VS_table_label = ['step_num', 'dc_offset', 'ac_amp', 'wave_type', 'wave_mod', 'in-field', 'out-of-field']
             UD_VS_table_unit = ['', 'V', 'A', '', '', 'V', 'V']
-            UD_VS_table = np.zeros(shape=(num_VS_steps,7), dtype=np.float32)
+            udvs_table = np.zeros(shape=(num_VS_steps, 7), dtype=np.float32)
             
-            UD_VS_table[:,0] = np.arange(0, num_VS_steps) # Python base 0
-            UD_VS_table[:,1] = UD_dc_vec
+            udvs_table[:, 0] = np.arange(0, num_VS_steps)  # Python base 0
+            udvs_table[:, 1] = UD_dc_vec
             
-            BE_IF_switch = np.abs(np.imag(np.exp(1j*np.pi/2*np.arange(1,num_VS_steps+1))))
-            BE_OF_switch = np.abs(np.real(np.exp(1j*np.pi/2*np.arange(1,num_VS_steps+1))))
+            BE_IF_switch = np.abs(np.imag(np.exp(1j*np.pi/2*np.arange(1, num_VS_steps+1))))
+            BE_OF_switch = np.abs(np.real(np.exp(1j*np.pi/2*np.arange(1, num_VS_steps+1))))
             
-            if VS_in_out_cond is 0: # out of field only
-                UD_VS_table[:,2] = BE_amp * BE_OF_switch
-            elif VS_in_out_cond is 1: # in field only
-                UD_VS_table[:,2] = BE_amp * BE_IF_switch
-            elif VS_in_out_cond is 2: # both in and out of field
-                UD_VS_table[:,2] = BE_amp * np.ones(num_VS_steps)
+            if VS_in_out_cond is 0:  # out of field only
+                udvs_table[:, 2] = BE_amp * BE_OF_switch
+            elif VS_in_out_cond is 1:  # in field only
+                udvs_table[:, 2] = BE_amp * BE_IF_switch
+            elif VS_in_out_cond is 2:  # both in and out of field
+                udvs_table[:, 2] = BE_amp * np.ones(num_VS_steps)
             
-            UD_VS_table[:,3] = np.ones(num_VS_steps) # wave type
-            UD_VS_table[:,4] = np.ones(num_VS_steps) * BE_signal_type # wave mod
+            udvs_table[:, 3] = np.ones(num_VS_steps)  # wave type
+            udvs_table[:, 4] = np.ones(num_VS_steps) * BE_signal_type  # wave mod
             
-            UD_VS_table[:,5] = float('NaN')*np.ones(num_VS_steps)
-            UD_VS_table[:,6] = float('NaN')*np.ones(num_VS_steps)
+            udvs_table[:, 5] = float('NaN')*np.ones(num_VS_steps)
+            udvs_table[:, 6] = float('NaN')*np.ones(num_VS_steps)
                             
-            UD_VS_table[BE_IF_switch==1,5] = UD_VS_table[BE_IF_switch==1,1]            
-            UD_VS_table[BE_OF_switch==1,6] = UD_VS_table[BE_IF_switch==1,1]
+            udvs_table[BE_IF_switch == 1, 5] = udvs_table[BE_IF_switch == 1, 1]
+            udvs_table[BE_OF_switch == 1, 6] = udvs_table[BE_IF_switch == 1, 1]
             
-        elif VS_ACDC_cond is 2: # AC voltage spectroscopy
+        elif VS_ACDC_cond is 2:  # AC voltage spectroscopy
         
-            num_VS_steps = VS_amp_vec.size
+            num_VS_steps = vs_amp_vec.size
             half = int(0.5*num_VS_steps)
             
             if num_VS_steps is not half * 2:
@@ -894,22 +908,23 @@ class BEodfTranslator(Translator):
                 return
                 
             UD_dc_vec = VS_offset*np.ones(num_VS_steps)
-            UD_VS_table_label = ['step_num','dc_offset','ac_amp','wave_type','wave_mod','forward','reverse']
+            UD_VS_table_label = ['step_num', 'dc_offset', 'ac_amp', 'wave_type', 'wave_mod', 'forward', 'reverse']
             UD_VS_table_unit = ['', 'V', 'A', '', '', 'A', 'A']
-            UD_VS_table = np.zeros(shape=(num_VS_steps,7),dtype=np.float32)
-            UD_VS_table[:,0] = np.arange(1, num_VS_steps+1)
-            UD_VS_table[:,1] = UD_dc_vec
-            UD_VS_table[:,2] = VS_amp_vec
-            UD_VS_table[:,3] = np.ones(num_VS_steps)
-            UD_VS_table[:half,4] = BE_signal_type*np.ones(half)
-            UD_VS_table[half:,4] = -1*BE_signal_type*np.ones(half)
-            UD_VS_table[:,5] = float('NaN')*np.ones(num_VS_steps);
-            UD_VS_table[:,6] = float('NaN')*np.ones(num_VS_steps);
-            UD_VS_table[:half,5] = VS_amp_vec[:half];
-            UD_VS_table[half:,6] = VS_amp_vec[half:];
+            udvs_table = np.zeros(shape=(num_VS_steps, 7), dtype=np.float32)
+            udvs_table[:, 0] = np.arange(1, num_VS_steps+1)
+            udvs_table[:, 1] = UD_dc_vec
+            udvs_table[:, 2] = vs_amp_vec
+            udvs_table[:, 3] = np.ones(num_VS_steps)
+            udvs_table[:half, 4] = BE_signal_type*np.ones(half)
+            udvs_table[half:, 4] = -1*BE_signal_type*np.ones(half)
+            udvs_table[:, 5] = float('NaN')*np.ones(num_VS_steps)
+            udvs_table[:, 6] = float('NaN')*np.ones(num_VS_steps)
+            udvs_table[:half, 5] = vs_amp_vec[:half]
+            udvs_table[half:, 6] = vs_amp_vec[half:]
             
-        return (UD_VS_table_label, UD_VS_table_unit, UD_VS_table)
-        
+        return UD_VS_table_label, UD_VS_table_unit, udvs_table
+
+
 class BEodfParser(object):
     """
     Objects that help in reading raw .dat files either a pixel at a time or all at once.
@@ -938,14 +953,10 @@ class BEodfParser(object):
         self.__bytes_per_pix__ = bytes_per_pix
         self.__pix_indx__ = 0
             
-    def readPixel(self):
+    def read_pixel(self):
         """
         Returns the content of the next pixel
-        
-        Parameters 
-        -------------------- 
-        None
-        
+
         Returns 
         --------------------
         raw_vec : 1D numpy complex64 array
@@ -956,10 +967,10 @@ class BEodfParser(object):
             warn('BEodfParser - No more pixels to read!')
             return None
         
-        self.f_real.seek(self.__pix_indx__*self.__bytes_per_pix__,0)
+        self.f_real.seek(self.__pix_indx__*self.__bytes_per_pix__, 0)
         real_vec = np.fromstring(self.f_real.read(self.__bytes_per_pix__), dtype='f')
         
-        self.f_imag.seek(self.__pix_indx__*self.__bytes_per_pix__,0)
+        self.f_imag.seek(self.__pix_indx__*self.__bytes_per_pix__, 0)
         imag_vec = np.fromstring(self.f_imag.read(self.__bytes_per_pix__), dtype='f')
         
         raw_vec = np.zeros(len(real_vec), dtype=np.complex64)
@@ -974,24 +985,20 @@ class BEodfParser(object):
         
         return raw_vec
         
-    def readAllData(self):
+    def read_all_data(self):
         """
         Returns the complete contents of the file pair
-        
-        Parameters 
-        -------------------- 
-        None
-        
+
         Returns 
         --------------------
         raw_vec : 1D numpy complex64 array
             Entire content of the file pair
         """
-        self.f_real.seek(0,0)
-        self.f_imag.seek(0,0)    
+        self.f_real.seek(0, 0)
+        self.f_imag.seek(0, 0)
         
         d_real = np.fromstring(self.f_real.read(), dtype='f')
-        d_imag = np.fromstring( self.f_imag.read(), dtype='f') 
+        d_imag = np.fromstring(self.f_imag.read(), dtype='f')
         
         full_file = d_real + 1j*d_imag
         

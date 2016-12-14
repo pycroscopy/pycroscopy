@@ -89,7 +89,7 @@ class ioHDF5(object):
                                     stderr=subprocess.STDOUT,
                                     shell=True)
             # Check that the file is done being modified
-            sleep(0.1)
+            sleep(0.5)
             while time()-os.stat('"'+tmpfile+'"').st_mtime <= 1:
                 sleep(0.5)
         except subprocess.CalledProcessError as err:
