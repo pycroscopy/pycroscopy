@@ -572,6 +572,10 @@ class BEPSndfTranslator(Translator):
             if (filenames.endswith('.xlsx') or filenames.endswith('.xls')) and filenames.find('UD_VS') > 0:
                 udvs_filepath = path.join(self.folder_path, filenames)
                 break
+        if parm_filepath is None:
+            for filenames in listdir(self.folder_path):
+                if (filenames.endswith('.xls') or filenames.endswith('.xlsx')) and filenames.find('parm') > 0:
+                    parm_filepath = path.join(main_folder_path, filenames)
                 
         (tail, self.basename) = path.split(main_folder_path)
         
