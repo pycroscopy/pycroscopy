@@ -126,7 +126,7 @@ class ImageWindow(object):
             linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, image_refs))
 
         else:
-            self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
+            self.h5_raw = self.hdf.file['Measurement_000']['Channel_000']['Raw_Data']
 
         self.h5_file = self.hdf.file
         self.h5_file.flush()
@@ -901,7 +901,7 @@ class ImageWindow(object):
         if self.cores is None:
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
-            free_mem = self.max_memory*2-ds_V.size*ds_V.itemsize
+            free_mem = self.max_memory/2-ds_V.size*ds_V.itemsize
         batch_size = free_mem/mem_per_win
         if batch_size < 1:
             raise MemoryError('Not enough memory to perform Image Cleaning.')
@@ -1314,7 +1314,7 @@ class ImageWindow(object):
                 comp_slice = slice(int(components[0]), int(components[1]))
             else:
                 #Convert components to an unsigned integer array
-                comp_slice = np.uint(np.round(components))
+                comp_slice = np.uint(np.round(components)).tolist()
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components
