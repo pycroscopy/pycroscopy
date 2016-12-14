@@ -13,7 +13,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .be_utils import parmsToDict
 from .translator import Translator
-from .utils import interpretFreq, makePositionMat, getPositionSlicing, generateDummyMainParms
+from .utils import interpretFreq, generateDummyMainParms
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
@@ -197,7 +197,7 @@ class GLineTranslator(Translator):
                 
         # Read line by line and write to h5                 
         with open(filepath, 'rb') as file_handl:
-            for row_indx in xrange(self.num_rows):
+            for row_indx in range(self.num_rows):
                 
                 if row_indx % 10 == 0:
                     print('Reading line {} of {}'.format(row_indx, self.num_rows))
