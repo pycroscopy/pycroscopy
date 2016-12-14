@@ -102,9 +102,9 @@ class Translator(object):
             steps = np.ones_like(dimensions)
         elif len(steps) != len(dimensions):
             raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
-        if is_spectral:
-            steps = np.atleast_2d(steps).transpose()
+        steps = np.atleast_2d(steps)
         if verbose:
+            print('Steps')
             print(steps.shape)
             print(steps)
 
@@ -112,9 +112,10 @@ class Translator(object):
             initial_values = np.zeros_like(dimensions)
         elif len(initial_values) != len(dimensions):
             raise ValueError('The arrays for initial values and dimension sizes must be the same.')
-        if is_spectral:
-            initial_values = np.atleast_2d(initial_values).transpose()
+        initial_values = np.atleast_2d(initial_values)
+
         if verbose:
+            print('Initial Values')
             print(initial_values.shape)
             print(initial_values)
 
@@ -124,17 +125,20 @@ class Translator(object):
             raise ValueError('The arrays for labels and dimension sizes must be the same.')
 
         # Get the indices for all dimensions
-        indices = makePositionMat(dimensions).transpose()
+        indices = makePositionMat(dimensions)
         if verbose:
+            print('Indices')
             print(indices.shape)
             print(indices)
 
         # Convert the indices to values
-        spec_vals = initial_values + np.float32(indices)*steps
+        values = initial_values + np.float32(indices)*steps
 
         # Create the slices that will define the labels
         if is_spectral:
             mode = 'Spectroscopic'
+            indices = indices.transpose()
+            values = values.transpose()
             region_slices = getSpectralSlicing(labels)
         else:
             mode = 'Position'
@@ -144,7 +148,7 @@ class Translator(object):
         ds_indices = MicroDataset(mode + '_Indices', indices, dtype=np.uint32)
         ds_indices.attrs['labels'] = region_slices
 
-        ds_values = MicroDataset(mode + 'Values', spec_vals, dtype=np.float32)
+        ds_values = MicroDataset(mode + 'Values', values, dtype=np.float32)
         ds_values.attrs['labels'] = region_slices
 
         if units is None:
