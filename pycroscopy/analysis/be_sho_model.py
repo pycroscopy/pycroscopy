@@ -103,7 +103,7 @@ class BESHOmodel(Model):
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
-    def _createFitDataset(self):
+    def _createFitDatasets(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.
@@ -234,7 +234,7 @@ class BESHOmodel(Model):
         super(BESHOmodel, self)._setResults(is_guess)
 
     def doGuess(self, processors=4, strategy='wavelet_peaks',
-                     options={"peak_widths": np.array([10,200]),"peak_step":20}, **kwargs):
+                     options={"peak_widths": np.array([10,200]),"peak_step":20}):
         """
 
         Parameters
@@ -258,58 +258,18 @@ class BESHOmodel(Model):
         processors = min(processors, self._maxCpus)
         self._createGuessDatasets()
         self._start_pos = 0
-        super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, **options)
-
-        # processors = kwargs.get("processors", self._maxCpus)
-        # gm = GuessMethods()
-        # if strategy in gm.methods:
-        #     func = gm.__getattribute__(strategy)(frequencies=self.freq_vec, **options)
-        #     results = list()
-        #     if self._parallel:
-        #         # start pool of workers
-        #         print('Computing Guesses In parallel ... launching %i kernels...' % processors)
-        #         pool = mp.Pool(processors)
-        #         self._getDataChunk()
-        #         while self.data is not None:  # as long as we have not reached the end of this data set:
-        #             # apply guess to this data chunk:
-        #             tasks = [vector for vector in self.data]
-        #             chunk = int(self.data.shape[0] / processors)
-        #             jobs = pool.imap(func, tasks, chunksize=chunk)
-        #             # get Results from different processes
-        #             print('Extracting Guesses...')
-        #             temp = [j for j in jobs]
-        #             # Reformat the data to the appropriate type and or do additional computation now
-        #             results.append(self._reformatResults(temp, strategy))
-        #             # read the next chunk
-        #             self._getDataChunk()
-        #
-        #         # Finished reading the entire data set
-        #         print('closing %i kernels...' % processors)
-        #         pool.close()
-        #     else:
-        #         print("Computing Guesses In Serial ...")
-        #         self._getDataChunk()
-        #         while self.data is not None:  # as long as we have not reached the end of this data set:
-        #             temp = [func(vector) for vector in self.data]
-        #             results.append(self._reformatResults(temp, strategy))
-        #             # read the next chunk
-        #             self._getDataChunk()
-        #
-        #     # reorder to get one numpy array out
-        #     self.guess = np.hstack(tuple(results))
-        #     print('Completed computing guess. Writing to file.')
-        #
-        #     # Write to file
-        #     self._setResults(is_guess=True)
-        # else:
-        #     warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
+        super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
 
-    def computeFit(self, strategy='SHO', options={}, **kwargs):
+    def doFit(self, processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
+              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
 
         Parameters
         ----------
+        processors: int
+            Default is 1.
+            Number of processors to use.
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
@@ -317,50 +277,52 @@ class BESHOmodel(Model):
             Default {"peaks_widths": np.array([10,200])}}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
 
         Returns
         -------
 
         """
-
-        self._createFitDataset()
+        processors = min(processors, self._maxCpus)
+        self._createFitDatasets()
         self._start_pos = 0
-        parallel = ''
+        xvals = self.freq_vec
+        results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
+                          obj_func={'class':'Fit_Methods','obj_func':'SHO', 'xvals':xvals})
+        return results
+        # parallel = ''
+        #
+        # processors = kwargs.get("processors", self._maxCpus)
+        # if processors > 1:
+        #     parallel = 'parallel'
+        #
+        # w_vec = self.freq_vec
+        #
+        # def sho_fit(parm_vec, resp_vec):
+        #     from .utils.be_sho import SHOfunc
+        #     # from .guess_methods import r_square
+        #     # fit = r_square(resp_vec, SHOfunc, parm_vec, w_vec)
+        #     fit = self._r_square(resp_vec, SHOfunc, parm_vec, w_vec)
+        #
+        #     return fit
+        #
+        # '''
+        # Call _optimize to perform the actual fit
+        # '''
+        # self._getGuessChunk()
+        # self._getDataChunk()
+        # results = list()
+        # while self.data is not None:
+        #     data = np.array(self.data[()],copy=True)
+        #     guess = np.array(self.guess[()], copy=True)
+        #     temp = self._optimize(sho_fit, data, guess, solver='least_squares',
+        #                           processors=processors, parallel=parallel)
+        #     results.append(self._reformatResults(temp, 'complex_gaussian'))
+        #     self._getGuessChunk()
+        #     self._getDataChunk()
 
-        processors = kwargs.get("processors", self._maxCpus)
-        if processors > 1:
-            parallel = 'parallel'
+        # self.fit = np.hstack(tuple(results))
+        # self._setResults()
 
-        w_vec = self.freq_vec
-
-        def sho_fit(parm_vec, resp_vec):
-            from .utils.be_sho import SHOfunc
-            # from .guess_methods import r_square
-            # fit = r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-            fit = self._r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-
-            return fit
-
-        '''
-        Call _optimize to perform the actual fit
-        '''
-        self._getGuessChunk()
-        self._getDataChunk()
-        results = list()
-        while self.data is not None:
-            data = np.array(self.data[()],copy=True)
-            guess = np.array(self.guess[()], copy=True)
-            temp = self._optimize(sho_fit, data, guess, solver='least_squares',
-                                  processors=processors, parallel=parallel)
-            results.append(self._reformatResults(temp, 'complex_gaussian'))
-            self._getGuessChunk()
-            self._getDataChunk()
-
-        self.fit = np.hstack(tuple(results))
-        self._setResults()
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
         """

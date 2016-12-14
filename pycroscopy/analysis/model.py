@@ -9,6 +9,7 @@ import numpy as np
 import psutil
 import scipy
 from .guess_methods import GuessMethods
+from .fit_methods import Fit_Methods
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from .optimize import Optimize
@@ -228,7 +229,7 @@ class Model(object):
         pass
 
     def doGuess(self, processors=4, strategy='wavelet_peaks',
-                options={"peak_widths": np.array([10,200]), "peak_step":20}, **kwargs):
+                options={"peak_widths": np.array([10,200]), "peak_step":20}):
         """
 
         Parameters
@@ -241,16 +242,11 @@ class Model(object):
             Default, options for wavelet_peaks {"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
-
         Returns
         -------
 
         """
 
-        self._createGuessDatasets()
         self._start_pos = 0
         self._getDataChunk()
         processors = min(processors, self._maxCpus)
@@ -272,46 +268,6 @@ class Model(object):
             self._setResults(is_guess=True)
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
-
-        #     if self._parallel:
-        #         # start pool of workers
-        #         print('Computing Guesses In parallel ... launching %i kernels...' % processors)
-        #         pool = mp.Pool(processors)
-        #         self._getDataChunk()
-        #         while self.data is not None:  # as long as we have not reached the end of this data set:
-        #             opt = Optimize(data=self.data, parallel=self._)
-        #             # apply guess to this data chunk:
-        #             tasks = [vector for vector in self.data]
-        #             chunk = int(self.data.shape[0] / processors)
-        #             jobs = pool.imap(func, tasks, chunksize=chunk)
-        #             # get Results from different processes
-        #             print('Extracting Guesses...')
-        #             temp = [j for j in jobs]
-        #             # Reformat the data to the appropriate type and or do additional computation now
-        #             results.append(self._reformatResults(temp, strategy))
-        #             # read the next chunk
-        #             self._getDataChunk()
-        #
-        #         # Finished reading the entire data set
-        #         print('closing %i kernels...' % processors)
-        #         pool.close()
-        #     else:
-        #         print("Computing Guesses In Serial ...")
-        #         self._getDataChunk()
-        #         while self.data is not None:  # as long as we have not reached the end of this data set:
-        #             temp = [func(vector) for vector in self.data]
-        #             results.append(self._reformatResults(temp, strategy))
-        #             # read the next chunk
-        #             self._getDataChunk()
-        #
-        #     # reorder to get one numpy array out
-        #     self.guess = np.hstack(tuple(results))
-        #     print('Completed computing guess. Writing to file.')
-        #
-        #     # Write to file
-        #     self._setResults(is_guess=True)
-        # else:
-        #     warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
 
     def _reformatResults(self, results, strategy='wavelet_peaks'):
@@ -341,7 +297,8 @@ class Model(object):
         self.h5_fit = None  # replace with actual h5 dataset
         pass
 
-    def computeFit(self):
+    def doFit(self,processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
+              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
         Generates the fit for the given dataset and writes back to file
 
@@ -353,111 +310,139 @@ class Model(object):
         ----------
         None
         """
-        if not self.h5_guess is None:
-            print("You need to guess before fitting")
+        if self.h5_guess is None:
+            print("You need to guess before fitting\n")
             return None
-        self._createFitDatasets()
         self._start_pos = 0
-        """
-        read first data + guess chunks
-        while chunks are not empty:
-            call optimize on this data
-            write the fit to the H5 dataset
-            request for next chunk
-        """
-        pass
+        self._getGuessChunk()
+        self._getDataChunk()
+        results = list()
+        legit_solver = solver_type in scipy.optimize.__dict__.keys()
+        legit_obj_func = obj_func['obj_func'] in Fit_Methods().methods
+        if legit_solver and legit_obj_func:
+            print("Using solver %s and objective function %s to fit your data\n" %(solver_type, obj_func['obj_func']))
+            while self.data is not None:
+                opt = Optimize(data=self.data, guess=self.guess, parallel=self._parallel)
+                temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
+                                 obj_func=obj_func)
+                # TODO: need a different .reformatResults to process fitting results
+                results.append(temp)
+                # results.append(self._reformatResults(temp, strategy))
+                self._getDataChunk()
+                self._getGuessChunk()
+                results.append(self._reformatResults(temp, 'complex_gaussian'))
 
-    def _optimize(self, func, data, guess, solver, parallel='multiprocess',
-                  processors=max(1, abs(mp.cpu_count()-2)), **kwargs):
-        """
-        Parameters:
-        -----
-        func : callable
-            Function of the parameters.
-        data : nd array
-            Main data chunk
-        guess: nd array
-            Initial guess for this data chunk
-        solver : string
-            Optimization solver to use (minimize,least_sq, etc...). For additional info see scipy.optimize
-        parallel : string
-            Type of distributed computing to use. Currently, only 'multiprocess' (a variant of multiprocessing
-            uses dill instead of pickle) is implemented. But Spark and MPI will be implemented in the future.
-        processors : int, optional
-            Number of processors to use. Default is all of them - 2 .
-        **kwargs:
-            Additional keyword arguments that are passed on to the solver.
-
-        Returns:
-        -------
-        Results of the optimization.
-
-        """
-        try:
-            self.solver = scipy.optimize.__dict__[solver]
-        except KeyError:
-            warn('Solver %s does not exist!' %(solver))
-
-        def _callSolver(input):
-            data = input[0]
-            guess = input[1]
-            results = self.solver.__call__(func, guess, args=[data], **kwargs)
-            self.solver.__call__(func, guess, args=[data], **kwargs)
+            self.fit = np.hstack(tuple(results))
+            self._setResults()
             return results
+        elif legit_obj_func:
+            warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
+            return None
+        elif legit_solver:
+            warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
+                 (obj_func['obj_func']))
+            return None
 
-        if parallel=='multiprocess':
-            # start pool of workers
-            print('launching %i kernels...'%(processors))
-            pool = mp.Pool(processors)
-            # Divvy up the tasks and run them
-            tasks = [(data_vec, guess_vec) for (data_vec, guess_vec) in zip(data, guess)]
-            chunk = int(data.shape[0]/processors)
-            jobs = pool.imap(_callSolver, tasks, chunksize=chunk)
-            # Collect the results
-            results = list()
-            print('Extracting Peaks...')
-            try:
-                for j in jobs:
-                    results.append(j.x, j.fun)
-            except ValueError:
-                warn('It appears that one of the jobs failed.')
-            except:
-                raise
-            pool.close()
-        else:
-            results = list()
-            for (data_vec, guess_vec) in zip(data, guess):
-                tmp = _callSolver([data_vec, guess_vec])
-                results.append(np.append(tmp.x, tmp.fun))
+        # """
+        # read first data + guess chunks
+        # while chunks are not empty:
+        #     call optimize on this data
+        #     write the fit to the H5 dataset
+        #     request for next chunk
+        # """
+        # pass
 
-        return results
-
-    @staticmethod
-    def _r_square(data_vec, func, *args, **kwargs):
-        """
-        R-square for estimation of the fitting quality
-        Typical result is in the range (0,1), where 1 is the best fitting
-
-        Parameters
-        ----------
-        data_vec : array_like
-            Measured data points
-        func : callable function
-            Should return a numpy.ndarray of the same shape as data_vec
-        args :
-            Parameters to be pased to func
-        kwargs :
-            Keyword parameters to be pased to func
-
-        Returns
-        -------
-        r_squared : float
-            The R^2 value for the current data_vec and parameters
-        """
-        data_mean = np.mean(data_vec)
-        ss_tot = sum(abs(data_vec - data_mean) ** 2)
-        ss_res = sum(abs(data_vec - func(*args, **kwargs)) ** 2)
-
-        r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
-
-        return r_squared
+    # def _optimize(self, func, data, guess, solver, parallel='multiprocess',
+    #               processors=max(1, abs(mp.cpu_count()-2)), **kwargs):
+    #     """
+    #     Parameters:
+    #     -----
+    #     func : callable
+    #         Function of the parameters.
+    #     data : nd array
+    #         Main data chunk
+    #     guess: nd array
+    #         Initial guess for this data chunk
+    #     solver : string
+    #         Optimization solver to use (minimize,least_sq, etc...). For additional info see scipy.optimize
+    #     parallel : string
+    #         Type of distributed computing to use. Currently, only 'multiprocess' (a variant of multiprocessing
+    #         uses dill instead of pickle) is implemented. But Spark and MPI will be implemented in the future.
+    #     processors : int, optional
+    #         Number of processors to use. Default is all of them - 2 .
+    #     **kwargs:
+    #         Additional keyword arguments that are passed on to the solver.
+    #
+    #     Returns:
+    #     -------
+    #     Results of the optimization.
+    #
+    #     """
+    #     try:
+    #         self.solver = scipy.optimize.__dict__[solver]
+    #     except KeyError:
+    #         warn('Solver %s does not exist!' %(solver))
+    #
+    #     def _callSolver(input):
+    #         data = input[0]
+    #         guess = input[1]
+    #         results = self.solver.__call__(func, guess, args=[data], **kwargs)
+    #         self.solver.__call__(func, guess, args=[data], **kwargs)
+    #         return results
+    #
+    #     if parallel=='multiprocess':
+    #         # start pool of workers
+    #         print('launching %i kernels...'%(processors))
+    #         pool = mp.Pool(processors)
+    #         # Divvy up the tasks and run them
+    #         tasks = [(data_vec, guess_vec) for (data_vec, guess_vec) in zip(data, guess)]
+    #         chunk = int(data.shape[0]/processors)
+    #         jobs = pool.imap(_callSolver, tasks, chunksize=chunk)
+    #         # Collect the results
+    #         results = list()
+    #         print('Extracting Peaks...')
+    #         try:
+    #             for j in jobs:
+    #                 results.append(j.x, j.fun)
+    #         except ValueError:
+    #             warn('It appears that one of the jobs failed.')
+    #         except:
+    #             raise
+    #         pool.close()
+    #     else:
+    #         results = list()
+    #         for (data_vec, guess_vec) in zip(data, guess):
+    #             tmp = _callSolver([data_vec, guess_vec])
+    #             results.append(np.append(tmp.x, tmp.fun))
+    #
+    #     return results
+    #
+    # @staticmethod
+    # def _r_square(data_vec, func, *args, **kwargs):
+    #     """
+    #     R-square for estimation of the fitting quality
+    #     Typical result is in the range (0,1), where 1 is the best fitting
+    #
+    #     Parameters
+    #     ----------
+    #     data_vec : array_like
+    #         Measured data points
+    #     func : callable function
+    #         Should return a numpy.ndarray of the same shape as data_vec
+    #     args :
+    #         Parameters to be pased to func
+    #     kwargs :
+    #         Keyword parameters to be pased to func
+    #
+    #     Returns
+    #     -------
+    #     r_squared : float
+    #         The R^2 value for the current data_vec and parameters
+    #     """
+    #     data_mean = np.mean(data_vec)
+    #     ss_tot = sum(abs(data_vec - data_mean) ** 2)
+    #     ss_res = sum(abs(data_vec - func(*args, **kwargs)) ** 2)
+    #
+    #     r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+    #
+    #     return r_squared

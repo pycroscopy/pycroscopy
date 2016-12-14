@@ -7,5 +7,7 @@ from .guess_methods import GuessMethods
 from . import model
 from .model import Model
 from .optimize import Optimize
-__all__ = ['GuessMethods', 'Model', 'BESHOmodel', 'utils', 'Optimize']
+from . import fit_methods
+from .fit_methods import *
+__all__ = ['GuessMethods', 'Model', 'BESHOmodel', 'utils', 'Optimize','fit_methods']
 __all__ += utils.__all__
