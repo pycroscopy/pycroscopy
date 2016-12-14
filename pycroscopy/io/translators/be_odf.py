@@ -157,8 +157,6 @@ class BEodfTranslator(Translator):
         ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
 
         self.FFT_BE_wave = bin_FFT
-        pos_mat = makePositionMat()
-        pos_slices = getPositionSlicing(['X', 'Y'], num_pix)
 
         ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
                                                            labels=['X', 'Y'], units=['m', 'm'], verbose=False)
@@ -208,7 +206,7 @@ class BEodfTranslator(Translator):
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
-        parm_dict['num_UDVS_steps'] = num_actual_udvs_steps 
+        parm_dict['num_UDVS_steps'] = num_actual_udvs_steps
         
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
@@ -371,13 +369,13 @@ class BEodfTranslator(Translator):
         # Now read the raw data files:
         if not isBEPS:
             # Do this for all BE-Line (always small enough to read in one shot)
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_UDVS_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_UDVS_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
-            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'])
+            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_UDVS_steps'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
             self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
@@ -430,7 +428,9 @@ class BEodfTranslator(Translator):
                 warn('weird number of bins per UDVS step. Exiting')
                 return
             step_size = int(step_size)
-        
+
+        rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
+
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
         self.max_resp = np.zeros(shape=(self.h5_raw.shape[0]), dtype=np.float32)
         self.min_resp = np.zeros(shape=(self.h5_raw.shape[0]), dtype=np.float32)
@@ -479,8 +479,8 @@ class BEodfTranslator(Translator):
             self.h5_raw[-1, :] = 0+0j             
             
         print('---- Finished reading files -----')
-    
-    def __quick_read_data(self, real_path, imag_path):
+
+    def __quick_read_data(self, real_path, imag_path, udvs_steps):
         """
         Returns information about the excitation BE waveform present in the .mat file
 
@@ -490,10 +490,16 @@ class BEodfTranslator(Translator):
             Absolute file path of the real data file
         imag_path : String / Unicode
             Absolute file path of the real data file
+        udvs_steps : unsigned int
+            Number of UDVS steps
         """
         print('---- reading all data at once ----------')  
 
-        parser = BEodfParser(real_path, imag_path)
+        parser = BEodfParser(real_path, imag_path, self.h5_raw.shape[0], self.h5_raw.shape[1]*4)
+
+        step_size = self.h5_raw.shape[1] / udvs_steps
+        rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
+
         raw_vec = parser.read_all_data()
                                       
         raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
@@ -924,13 +930,62 @@ class BEodfTranslator(Translator):
             
         return UD_VS_table_label, UD_VS_table_unit, udvs_table
 
+    @staticmethod
+    def __get_random_spectra(parsers, num_pixels, num_udvs_steps, num_bins, num_spectra=100, verbose=False):
+        """
+        Parameters
+        ----------
+        parsers : list of BEodfParser objects
+            parsers to seek into files to grab spectra
+        num_pixels : unsigned int
+            Number of spatial positions in the image
+        num_udvs_steps : unsigned int
+            Number of UDVS steps
+        num_bins : unsigned int
+            Number of frequency bins in every UDVS step
+        num_spectra : unsigned int
+            Total number of spectra to be extracted
+        verbose : Boolean, optional
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        chosen_spectra : 2D complex numpy array
+            spectrogram or spectra arranged as [instance, spectrum]
+        """
+        num_pixels = int(num_pixels)
+        num_udvs_steps = int(num_udvs_steps)
+        num_bins = int(num_bins)
+
+        num_spectra = min(num_spectra, len(parsers) * num_pixels * num_udvs_steps)
+        selected_pixels = np.random.randint(0, num_pixels, size=num_spectra)
+        selected_steps = np.random.randint(0, num_udvs_steps, size=num_spectra)
+        selected_parsers = np.random.randint(0, len(parsers), size=num_spectra)
+
+        if verbose:
+            print('Selecting the following random pixels, UDVS steps, parsers')
+            print(np.vstack((selected_pixels, selected_steps, selected_parsers)))
+
+        chosen_spectra = np.zeros(shape=(num_spectra, num_bins), dtype=np.complex64)
+
+        for spectra_index in range(num_spectra):
+            prsr = parsers[selected_parsers[spectra_index]]
+            prsr.seek_to_pixel(selected_pixels[spectra_index])
+            raw_vec = prsr.read_pixel()
+            spectrogram = raw_vec.reshape(num_udvs_steps, -1)
+            chosen_spectra[spectra_index] = spectrogram[selected_steps[spectra_index]]
+
+        for prsr in parsers:
+            prsr.reset()
+
+        return chosen_spectra
 
 class BEodfParser(object):
     """
     Objects that help in reading raw .dat files either a pixel at a time or all at once.
     """
     
-    def __init__(self, real_path, imag_path, num_pix=None, bytes_per_pix=None):
+    def __init__(self, real_path, imag_path, num_pix, bytes_per_pix):
         """
         This object reads the two binary data files (real and imaginary data).
         Use separate parser instances for in-field and out-field data sets.
@@ -949,7 +1004,7 @@ class BEodfParser(object):
         self.f_real = open(real_path, "rb")
         self.f_imag = open(imag_path, "rb")               
         
-        self.__num_pix__ = num_pix 
+        self.__num_pix__ = num_pix
         self.__bytes_per_pix__ = bytes_per_pix
         self.__pix_indx__ = 0
             
@@ -962,10 +1017,10 @@ class BEodfParser(object):
         raw_vec : 1D numpy complex64 array
             Content of one pixel's data
         """
-        
-        if self.__pix_indx__ is self.__num_pix__:
-            warn('BEodfParser - No more pixels to read!')
-            return None
+        if self.__num_pix__ is not None:
+            if self.__pix_indx__ is self.__num_pix__:
+                warn('BEodfParser - No more pixels to read!')
+                return None
         
         self.f_real.seek(self.__pix_indx__*self.__bytes_per_pix__, 0)
         real_vec = np.fromstring(self.f_real.read(self.__bytes_per_pix__), dtype='f')
@@ -1006,3 +1061,13 @@ class BEodfParser(object):
         self.f_imag.close()
         
         return full_file
+
+    def seek_to_pixel(self, pixel_ind):
+        if self.__num_pix__ is not None:
+            pixel_ind = min(pixel_ind, self.__num_pix__ )
+        self.__pix_indx__ = pixel_ind
+
+    def reset(self):
+        self.f_real.seek(0, 0)
+        self.f_imag.seek(0, 0)
+        self.__pix_indx__ = 0
