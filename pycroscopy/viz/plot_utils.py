@@ -1470,5 +1470,3 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         plt.show()
 
     plt.close('all')
-
-    h5_file.close()
