@@ -475,7 +475,7 @@ class BEodfTranslator(Translator):
 
             if take_conjugate:
                 raw_vec = np.conjugate(raw_vec)
-            self.h5_raw[pix_indx, :] = raw_vec[:]
+            self.h5_raw[pix_indx, :] = np.complex64(raw_vec[:])
             self.hdf.file.flush()
             
         # Add zeros to main_data for the missing pixel. 
@@ -514,7 +514,7 @@ class BEodfTranslator(Translator):
         self.mean_resp = np.mean(raw_mat, axis=0)
         self.max_resp = np.amax(np.abs(raw_mat), axis=0)
         self.min_resp = np.amin(np.abs(raw_mat), axis=0)
-        self.h5_raw[:, :] = raw_mat
+        self.h5_raw[:, :] = np.complex64(raw_mat)
         self.hdf.file.flush()
 
         print('---- Finished reading files -----')       
