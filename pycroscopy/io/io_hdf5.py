@@ -20,7 +20,7 @@ from ..__version__ import version
 
 class ioHDF5(object):
 
-    def __init__(self, file_handle,cachemult=1):
+    def __init__(self, file_handle, cachemult=1):
         """
         Handles:
             + I/O operation from HDF5 file.
@@ -89,8 +89,8 @@ class ioHDF5(object):
                                     stderr=subprocess.STDOUT,
                                     shell=True)
             # Check that the file is done being modified
-            sleep(0.1)
-            while time()-os.stat('"'+tmpfile+'"').st_mtime <= 1:
+            sleep(0.5)
+            while time()-os.stat(tmpfile).st_mtime <= 1:
                 sleep(0.5)
         except subprocess.CalledProcessError as err:
             print('Could not repack hdf5 file')

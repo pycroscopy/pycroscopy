@@ -20,7 +20,9 @@ if __name__ == '__main__':
     '''
     Select the image file
     '''
-    imagepath = uiGetFile(filter='Image File (*.tiff *.tif *.jpeg *.jpg *.png);;DM3 File (*.dm3)',
+    imagepath = uiGetFile(filter='Image File (*.tiff *.tif *.jpeg *.jpg *.png);;' +
+                                 'DM3 or DM4 File (*.dm3 *.dm4);;' +
+                                 'Image Text File (*.txt)',
                           caption='Select Image File')
 
     '''
