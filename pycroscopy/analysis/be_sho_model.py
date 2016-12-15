@@ -61,22 +61,8 @@ class BESHOmodel(Model):
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
 
         not_freq = h5_spec_inds.attrs['labels'] != 'Frequency'
-        if h5_spec_inds.shape[0] > 1:
-            # More than just the frequency dimension, eg Vdc etc - makes it a BEPS dataset
 
-            ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
-
-        else:
-            '''
-            Special case for datasets that only vary by frequency. Example - BE-Line
-            '''
-            ds_sho_inds = MicroDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
-            ds_sho_vals = MicroDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
-
-            ds_sho_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
-            ds_sho_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
-            ds_sho_inds.attrs['units'] = ''
-            ds_sho_vals.attrs['units'] = ''
+        ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
         sho_grp = MicroDataGroup('-'.join([dset_name,
