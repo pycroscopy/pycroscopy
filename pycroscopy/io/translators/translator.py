@@ -136,16 +136,16 @@ class Translator(object):
 
         # Create the slices that will define the labels
         if is_spectral:
-            mode = 'Spectroscopic'
+            mode = 'Spectroscopic_'
             indices = indices.transpose()
             values = values.transpose()
             region_slices = getSpectralSlicing(labels)
         else:
-            mode = 'Position'
+            mode = 'Position_'
             region_slices = getPositionSlicing(labels)
 
         # Create the MicroDatasets for both Indices and Values
-        ds_indices = MicroDataset(mode + '_Indices', indices, dtype=np.uint32)
+        ds_indices = MicroDataset(mode + 'Indices', indices, dtype=np.uint32)
         ds_indices.attrs['labels'] = region_slices
 
         ds_values = MicroDataset(mode + 'Values', values, dtype=np.float32)

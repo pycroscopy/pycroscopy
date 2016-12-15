@@ -34,6 +34,7 @@ class BEodfTranslator(Translator):
 
         self.hdf = None
         self.h5_raw = None
+        self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
 
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False):
         """
@@ -430,7 +431,8 @@ class BEodfTranslator(Translator):
                 return
             step_size = int(step_size)
 
-        rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
+        rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
+                                                 num_spectra=self.num_rand_spectra)
         take_conjugate = requires_conjugate(rand_spectra)
 
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
@@ -502,10 +504,12 @@ class BEodfTranslator(Translator):
         parser = BEodfParser(real_path, imag_path, self.h5_raw.shape[0], self.h5_raw.shape[1]*4)
 
         step_size = self.h5_raw.shape[1] / udvs_steps
-        rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
+        rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
+                                                 num_spectra=self.num_rand_spectra)
         take_conjugate = requires_conjugate(rand_spectra)
         raw_vec = parser.read_all_data()
         if take_conjugate:
+            print('Taking conjugate to ensure positive Quality factors')
             raw_vec = np.conjugate(raw_vec)
                                       
         raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
