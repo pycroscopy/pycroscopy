@@ -199,7 +199,7 @@ class ImageWindow(object):
         window_size_extract
         '''
         if win_x is None or win_y is None:
-            win_size = self.window_size_extract(h5_main, *args, **kwargs)
+            win_size, _ = self.window_size_extract(h5_main, *args, **kwargs)
             if win_x is None:
                 win_x = win_size
             if win_y is None:
@@ -235,7 +235,8 @@ class ImageWindow(object):
         win_pix = win_x*win_y
         
         win_pos_mat = np.array([np.repeat(x_steps, ny),
-                                np.tile(y_steps, nx)]).T
+                                np.tile(y_steps, nx)],
+                                dtype=np.uint).T
         
         win_pix_mat = makePositionMat([win_x, win_y]).T
 
@@ -1033,7 +1034,7 @@ class ImageWindow(object):
         return clean_image
 
 
-    def window_size_extract(self, h5_main, num_peaks=2, do_fit=True, save_plots=True, show_plots=False):
+    def window_size_extract(self, h5_main, num_peaks=2, save_plots=True, show_plots=False):
         """
         Take the normalized image and extract from it an optimal window size
 
@@ -1044,11 +1045,6 @@ class ImageWindow(object):
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
-            do_fit : Boolean, optional
-                If True then when guessing the fit it will return the window
-                size as determined by a leastsquares fit.  If False, the value returned will
-                be determined by an analytic guess.
-                Default True
             save_plots : Boolean, optional
                 If True then a plot showing the quality of the fit will be
                 generated and saved to disk.  Ignored if do_fit is false.
@@ -1062,6 +1058,8 @@ class ImageWindow(object):
         -------
             window_size : int
                 Optimal window size in pixels
+            psf_width : int
+                Estimate atom spacing in pixels
         """
         
         print('Determining appropriate window size from image.')
@@ -1102,8 +1100,8 @@ class ImageWindow(object):
             Simple hamming filter
             """
             u, v = np.shape(data)
-            u_vec = np.arange(0, 1, 1.0/u)
-            v_vec = np.arange(0, 1, 1.0/v)
+            u_vec = np.linspace(0, 1, u)
+            v_vec = np.linspace(0, 1, v)
             u_mat, v_mat = np.meshgrid(u_vec, v_vec, indexing='ij')
             h_filter = np.multiply((1-np.cos(2*np.pi*u_mat)), (1-np.cos(2*np.pi*v_mat)))/4.0
             
@@ -1121,12 +1119,12 @@ class ImageWindow(object):
         r_n = int(im_shape/4)
         r_min = 0
         r_max = im_shape/2
-        r_vec = np.arange(r_min, r_max+1, (r_max-r_min)/r_n).transpose()
+        r_vec = np.linspace(r_min, r_max, r_n, dtype=np.float32).transpose()
         
         r_mat = np.abs(uu+1j*vv)
         
         fimabs = np.abs(fim)
-        fimabs_max = np.zeros(r_n)
+        fimabs_max = np.zeros(r_n-1)
         
         for k in xrange(r_n-1):
             r1 = r_vec[k]
@@ -1134,7 +1132,7 @@ class ImageWindow(object):
             r_ind = np.where((r_mat >= r1) & (r_mat <= r2) == True)
             fimabs_max[k] = np.max(fimabs[r_ind])
 
-        r_vec = r_vec[:-1] + (r_max-r_min)/(r_n-1)/2.0
+        r_vec = r_vec[:-1] + (r_max-r_min)/(r_n-1.0)/2.0
         
         '''
         Find local maxima
@@ -1172,53 +1170,51 @@ class ImageWindow(object):
         fimabs_sort = fimabs_sort[:num_peaks]
         r_sort = r_sort[:num_peaks]
         
-        if do_fit:
-            '''
+        '''
         Fit to a gaussian
-            '''
-            def gauss_fit(p, x):
-                """
-                simple gaussian fitting function
-                """
-                a = p[0]
-                s = p[1]
-                
-                g = a*np.exp(-(x/s)**2)
-                
-                return g
-            
-            def gauss_chi(p, x, y):
-                """
-                Simple chi-squared fit
-                """
-                gauss = gauss_fit(p, x)
-                
-                chi2 = ((y-gauss)/y)**2
-                
-                return chi2
-            
-            gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
-            
-            fit_vec, pcov, info, errmsg, success = leastsq(gauss_chi,
-                                                           gauss_guess,
-                                                           args=(r_sort, fimabs_sort),
-                                                           full_output=1,
-                                                           maxfev=250)
-            
-            window_size = im_shape/fit_vec[1]/np.pi
+        '''
+        def gauss_fit(p, x):
+            """
+            simple gaussian fitting function
+            """
+            a = p[0]
+            s = p[1]
 
-            if save_plots or show_plots:
-                guess_vec = gauss_fit(gauss_guess, r_vec)
-                fit_vec = gauss_fit(fit_vec, r_vec)
-                self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
-                                       guess_vec, fit_vec, save_plots, show_plots)
+            g = a*np.exp(-(x/s)**2)
 
-        else:
-            window_size = im_shape/(r_sort[0]+0.5)
+            return g
 
-        window_size = int(window_size / 2) * 2
+        def gauss_chi(p, x, y):
+            """
+            Simple chi-squared fit
+            """
+            gauss = gauss_fit(p, x)
 
-        return window_size
+            chi2 = ((y-gauss)/y)**2
+
+            return chi2
+
+        gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
+
+        fit_vec, pcov, info, errmsg, success = leastsq(gauss_chi,
+                                                       gauss_guess,
+                                                       args=(r_sort, fimabs_sort),
+                                                       full_output=1,
+                                                       maxfev=250)
+
+        psf_width = im_shape/fit_vec[1]/np.pi
+
+        if save_plots or show_plots:
+            guess_vec = gauss_fit(gauss_guess, r_vec)
+            fit_vec = gauss_fit(fit_vec, r_vec)
+            self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
+                                   guess_vec, fit_vec, save_plots, show_plots)
+
+        window_size = im_shape/(r_sort[0]+0.5)
+
+        window_size = np.int(np.round(window_size*2))
+
+        return window_size, psf_width
 
 
     def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit, save_plots=True, show_plots=False):
