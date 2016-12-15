@@ -2,7 +2,7 @@
 """
 Created on Tue Jan 05 07:55:56 2016
 
-@author: Suhas Somnath
+@author: Suhas Somnath, Chris Smith, Rama K. Vasudevan
 """
 
 from os import path
@@ -16,8 +16,9 @@ import xlrd as xlreader
 from ..be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
-from ..io_utils import getAvailableMem
+from ..io_utils import getAvailableMem, recommendCores
 from ..microdata import MicroDataset, MicroDataGroup
+from ...analysis.optimize import Optimize
 from ...processing.proc_utils import buildHistogram
 from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
 
@@ -202,20 +203,40 @@ def parmsToDict(filepath, parms_to_remove=[]):
     return is_beps, parm_dict
     
 ###############################################################################
-    
-def analyzePhaseCondition():
-    """
-    phase_cond = sign(sum(Amp(n)*gradient(unwrap(phase(n))))/N) 
 
-    where n is the bin index going from 1 to N for a single resonance curve.
-    You can probably determine whether to change the sign of the imaginary part based on the sign of phase_cond.
-    
-    I think that if phase_cond = -1 then don’t do anything, phase_cond = 1 then take the complex conjugate.
-    
-    You should be able to find a single value for the entire data set.
+
+def requires_conjugate(chosen_spectra, default_q=10):
     """
-    pass
-    
+    Determines whether or not the conjugate of the data needs to be taken based on the quality factor
+
+    Parameters
+    ----------
+    chosen_spectra : 2D complex numpy array
+        N random spectra arranged as [instance, frequency]
+    default_q : unsigned int, Optional
+        Default value of Q factor that the SHO guess function results in for poor guesses
+
+    Returns
+    -------
+    do_conjugate : Boolean
+        Whether or not to take the conjugate of the data
+    """
+    # Do the SHO Guess for each of these
+    opt = Optimize(data=chosen_spectra)
+
+    fitguess_results = opt.computeGuess(strategy='complex_gaussian',
+                                        processors=recommendCores(chosen_spectra.shape[0]),
+                                        options={'frequencies': np.arange(chosen_spectra.shape[1])})
+
+    q_results = np.array(fitguess_results)[:, 2]
+    good_q = q_results[np.where(q_results != default_q)]
+
+    if np.mean(good_q) < 0:
+        return True
+    else:
+        return False
+
+
 ###############################################################################
 
 def getSpectroscopicParmLabel(expt_type):
