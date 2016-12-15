@@ -12,9 +12,10 @@ from warnings import warn
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals
+from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
+    requires_conjugate
 from .translator import Translator
-from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
+from .utils import generateDummyMainParms
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
@@ -430,6 +431,7 @@ class BEodfTranslator(Translator):
             step_size = int(step_size)
 
         rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
+        take_conjugate = requires_conjugate(rand_spectra)
 
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
         self.max_resp = np.zeros(shape=(self.h5_raw.shape[0]), dtype=np.float32)
@@ -470,7 +472,9 @@ class BEodfTranslator(Translator):
             self.max_resp[pix_indx] = np.max(np.abs(raw_vec))
             self.min_resp[pix_indx] = np.min(np.abs(raw_vec))
             self.mean_resp = (1/(pix_indx+1))*(raw_vec + pix_indx * self.mean_resp)
-            
+
+            if take_conjugate:
+                raw_vec = np.conjugate(raw_vec)
             self.h5_raw[pix_indx, :] = raw_vec[:]
             self.hdf.file.flush()
             
@@ -499,8 +503,10 @@ class BEodfTranslator(Translator):
 
         step_size = self.h5_raw.shape[1] / udvs_steps
         rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size, num_spectra=100)
-
+        take_conjugate = requires_conjugate(rand_spectra)
         raw_vec = parser.read_all_data()
+        if take_conjugate:
+            raw_vec = np.conjugate(raw_vec)
                                       
         raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
                 
