@@ -97,7 +97,7 @@ class Optimize(object):
                 print('Computing Jobs In parallel ... launching %i kernels...' % processors)
                 pool = mp.Pool(processors)
                 # Vectorize tasks
-                tasks = [(vector,self) for vector in self.data]
+                tasks = [(vector, self) for vector in self.data]
                 chunk = int(self.data.shape[0] / processors)
                 # Map them across processors
                 jobs = pool.imap(targetFuncGuess, tasks, chunksize=chunk)
@@ -111,7 +111,7 @@ class Optimize(object):
 
             else:
                 print("Computing Guesses In Serial ...")
-                results = [self._guessFunc(vector) for vector in self.data]
+                results = [targetFuncGuess((vector, self)) for vector in self.data]
                 return results
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)

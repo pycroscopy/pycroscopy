@@ -297,7 +297,7 @@ class Model(object):
         self.h5_fit = None  # replace with actual h5 dataset
         pass
 
-    def doFit(self,processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
+    def doFit(self, processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
               obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
         Generates the fit for the given dataset and writes back to file
@@ -324,13 +324,11 @@ class Model(object):
             while self.data is not None:
                 opt = Optimize(data=self.data, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                                 obj_func=obj_func)
+                                      obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
-                results.append(temp)
-                # results.append(self._reformatResults(temp, strategy))
+                results.append(self._reformatResults(temp, obj_func['obj_func']))
                 self._getDataChunk()
                 self._getGuessChunk()
-                results.append(self._reformatResults(temp, 'complex_gaussian'))
 
             self.fit = np.hstack(tuple(results))
             self._setResults()

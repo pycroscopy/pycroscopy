@@ -11,8 +11,6 @@ from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             copyAttributes
 from ..io.microdata import MicroDataset, MicroDataGroup
-from .guess_methods import GuessMethods
-import multiprocessing as mp
 
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
@@ -25,10 +23,12 @@ class BESHOmodel(Model):
     Analysis of Band excitation spectra with harmonic oscillator responses.
     """
 
-    def __init__(self, h5_main, variables=['Frequency']):
-        super(BESHOmodel, self).__init__(h5_main, variables)
+    def __init__(self, h5_main, variables=['Frequency'], parallel=True):
+        super(BESHOmodel, self).__init__(h5_main, variables, parallel)
         self.step_start_inds = None
         self.is_reshapable = True
+        self.num_udvs_steps = None
+        self.freq_vec = None
 
     def _createGuessDatasets(self):
         """
@@ -122,6 +122,16 @@ class BESHOmodel(Model):
         if self.h5_guess is None:
             warn('Need to guess before fitting!')
             return
+
+        if self.step_start_inds is None:
+            h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+            self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+
+        if self.num_udvs_steps is None:
+            self.num_udvs_steps = len(self.step_start_inds)
+
+        if self.freq_vec is None:
+            self._getFrequencyVector()
 
         h5_sho_grp = self.h5_guess.parent
 
@@ -258,6 +268,9 @@ class BESHOmodel(Model):
         processors = min(processors, self._maxCpus)
         self._createGuessDatasets()
         self._start_pos = 0
+        if strategy == 'complex_gaussian':
+            freq_vec = self.freq_vec
+            options = {'frequencies': freq_vec}
         super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
 
@@ -332,7 +345,7 @@ class BESHOmodel(Model):
         """
         if verbose:
             print('Strategy to use: {}'.format(strategy))
-        # Create an empty dataset to store the guess parameters
+        # Create an empty array to store the guess parameters
         sho_vec = np.zeros(shape=(len(results)), dtype=sho32)
         if verbose:
             print('Raw results and compound SHO vector of shape {}'.format(len(results)))
@@ -370,6 +383,13 @@ class BESHOmodel(Model):
                 sho_vec['Quality Factor'][iresult] = result[2]
                 sho_vec['Phase [rad]'][iresult] = result[3]
                 sho_vec['R2 Criterion'][iresult] = result[4]
+        elif strategy in ['SHO']:
+            for iresult, result in enumerate(results):
+                sho_vec['Amplitude [V]'][iresult] = result.x[0]
+                sho_vec['Frequency [Hz]'][iresult] = result.x[1]
+                sho_vec['Quality Factor'][iresult] = result.x[2]
+                sho_vec['Phase [rad]'][iresult] = result.x[3]
+                sho_vec['R2 Criterion'][iresult] = result.fun
 
         return sho_vec
 
