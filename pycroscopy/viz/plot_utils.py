@@ -735,7 +735,7 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     p_cols = int(np.floor(num_comps / p_rows))
     if p_rows*p_cols < num_comps:
         p_cols += 1
-    fig202 = plt.figure(1, figsize=(p_cols * fig_w, p_rows * fig_h))
+    fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
     axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
                         cbar_mode=color_bar_mode,
                         cbar_pad='1%',
