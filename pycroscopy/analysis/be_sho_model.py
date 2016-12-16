@@ -243,7 +243,7 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def doGuess(self, processors=4, strategy='wavelet_peaks',
+    def doGuess(self, processors=None, strategy='wavelet_peaks',
                      options={"peak_widths": np.array([10,200]),"peak_step":20}):
         """
 
@@ -265,7 +265,11 @@ class BESHOmodel(Model):
         -------
 
         """
-        processors = min(processors, self._maxCpus)
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
+
         self._createGuessDatasets()
         self._start_pos = 0
         if strategy == 'complex_gaussian':
@@ -274,7 +278,7 @@ class BESHOmodel(Model):
         super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
 
-    def doFit(self, processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
+    def doFit(self, processors=None, solver_type='least_squares',solver_options={'jac':'2-point'},
               obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
 
@@ -295,7 +299,11 @@ class BESHOmodel(Model):
         -------
 
         """
-        processors = min(processors, self._maxCpus)
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
+
         self._createFitDatasets()
         self._start_pos = 0
         xvals = self.freq_vec
