@@ -1317,7 +1317,7 @@ def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path
 
 
 def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
-    '''
+    """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
 
@@ -1333,7 +1333,10 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
     Returns
     -------
     None
-    '''
+    """
+    plt_path = None
+
+    print('Creating plots of SHO Results from {}.'.format(h5_main.name))
 
     h5_file = h5_main.file
 
@@ -1360,8 +1363,8 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         num_rows = int(np.floor((np.sqrt(h5_main.shape[0]))))
         num_cols = int(np.reshape(h5_main, [num_rows, -1, h5_main.shape[1]]).shape[1])
     else:
-        num_rows = len(np.unique(h5_pos[:,0]))
-        num_cols = len(np.unique(h5_pos[:,1]))
+        num_rows = len(np.unique(h5_pos[:, 0]))
+        num_cols = len(np.unique(h5_pos[:, 1]))
 
     try:
         h5_spec_inds = h5_file[h5_main.attrs['Spectroscopic_Indices']]
@@ -1446,13 +1449,13 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
                 plt_title = grp_name + '_Loops'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title)
-                             # save_path=plt_path)
+                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
+                             save_path=plt_path)
                 plt_title = grp_name + '_Snaps'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title)
-                                # save_path=plt_path)
+                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title,
+                                save_path=plt_path)
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
