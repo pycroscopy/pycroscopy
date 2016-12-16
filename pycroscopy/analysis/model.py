@@ -13,7 +13,6 @@ from .fit_methods import Fit_Methods
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from .optimize import Optimize
-import multiprocessing as mp
 
 
 class Model(object):
