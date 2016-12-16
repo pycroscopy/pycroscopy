@@ -56,7 +56,7 @@ class Fit_Methods(object):
 
             r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-            return r_squared
+            return 1-r_squared
 
         return SHOFunc
 

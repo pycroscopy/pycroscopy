@@ -11,6 +11,8 @@ from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             copyAttributes
 from ..io.microdata import MicroDataset, MicroDataGroup
+from .guess_methods import r_square
+from .utils.be_sho import SHOfunc
 
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
@@ -278,7 +280,7 @@ class BESHOmodel(Model):
         super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
 
-    def doFit(self, processors=None, solver_type='least_squares',solver_options={'jac':'2-point'},
+    def doFit(self, processors=None, solver_type='least_squares',solver_options={'jac':'cs'},
               obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
 
@@ -383,7 +385,7 @@ class BESHOmodel(Model):
             sho_vec['Frequency [Hz]'] = self.freq_vec[peak_inds]  # Frequency
             sho_vec['Quality Factor'] = np.ones_like(comp_vals) * 10  # Quality factor
             # Add something here for the R^2
-            # sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms) for sho_parms in sho_vec])
+            sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms) for sho_parms in sho_vec])
         elif strategy in ['complex_gaussian']:
             for iresult, result in enumerate(results):
                 sho_vec['Amplitude [V]'][iresult] = result[0]
@@ -397,7 +399,7 @@ class BESHOmodel(Model):
                 sho_vec['Frequency [Hz]'][iresult] = result.x[1]
                 sho_vec['Quality Factor'][iresult] = result.x[2]
                 sho_vec['Phase [rad]'][iresult] = result.x[3]
-                sho_vec['R2 Criterion'][iresult] = result.fun
+                sho_vec['R2 Criterion'][iresult] = 1-result.fun
 
         return sho_vec
 

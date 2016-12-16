@@ -183,7 +183,7 @@ class Optimize(object):
             print('Computing Jobs In parallel ... launching %i kernels...' % processors)
             pool = mp.Pool(processors)
             # Vectorize tasks
-            tasks = [(vector,guess,self) for vector,guess in zip(self.data,self.guess)]
+            tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
             chunk = int(self.data.shape[0] / processors)
             # Map them across processors
             jobs = pool.imap(targetFuncFit, tasks, chunksize=chunk)
