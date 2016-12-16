@@ -1263,7 +1263,7 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
 
 
 def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=None):
-    '''
+    """
     Plots BE loops from up to 9 positions (evenly separated)
 
     Parameters
@@ -1285,7 +1285,7 @@ def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path
     Returns
     -----------
     None
-    '''
+    """
     num_pos = resp_mat.shape[0]
     if num_pos >= 9:
         tot_plots = 9
@@ -1422,6 +1422,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
 
                 in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
                 in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
+                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
                 plt_title = grp_name + '_In_Field_Loops'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
