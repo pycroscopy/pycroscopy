@@ -269,6 +269,7 @@ class Model(object):
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
+        return self.guess
 
     def _reformatResults(self, results, strategy='wavelet_peaks'):
         """
