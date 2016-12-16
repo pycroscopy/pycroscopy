@@ -49,7 +49,7 @@ class Fit_Methods(object):
             data_mean = np.mean(data_vec)
 
             Amp, w_0, Q, phi = guess[:4]
-            func = Amp * np.exp(1.j * phi) * w_0 ** 2 / (freq_vector ** 2 - 1j * freq_vector * w_0 / Q - Amp ** 2)
+            func = Amp * np.exp(1.j * phi) * w_0 ** 2 / (freq_vector ** 2 - 1j * freq_vector * w_0 / Q - w_0 ** 2)
 
             ss_tot = sum(abs(data_vec - data_mean) ** 2)
             ss_res = sum(abs(data_vec - func) ** 2)
