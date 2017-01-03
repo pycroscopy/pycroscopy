@@ -4,11 +4,6 @@ Created on Thu Aug 25 11:48:53 2016
 
 @author: Suhas Somnath
 
-Pending changes and bug fixes:
-1. Fit = guess. Not sure why.
-2. Parallel fitting
-3. Use SHO fit R2 to leave out points when doing guess
-4. Use SHO fit R2 for each point to weight each position when fitting - helps in ignoring bad fits
 """
 
 from __future__ import division
@@ -35,6 +30,7 @@ loop_fit32 = np.dtype([('a_0', np.float32),
                        ('b_1', np.float32),
                        ('b_2', np.float32),
                        ('b_3', np.float32)])
+
 
 class BELoopModel(Model):
     """
@@ -175,13 +171,6 @@ class BELoopModel(Model):
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
 
-        Parameters
-        --------
-        None
-
-        Returns
-        -------
-        None
         """
 
 
