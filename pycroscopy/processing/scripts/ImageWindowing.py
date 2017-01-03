@@ -11,6 +11,7 @@ import sys
 import cProfile
 import pstats
 sys.path.append('../../../')
+from pycroscopy import ImageTranslator
 from pycroscopy.processing.image_processing import ImageWindow
 from pycroscopy.processing.svd_utils import doSVD
 from pycroscopy.viz.plot_utils import plotScree, plot_map_stack, plotSpectrograms
@@ -43,35 +44,29 @@ if __name__ == '__main__':
     folder, filename = os.path.split(os.path.abspath(imagepath))
     basename, _ = os.path.splitext(filename)
 
-    h5_path = os.path.join(folder, basename+'.h5')
+    tl = ImageTranslator()
+    h5_raw = tl.translate(imagepath)
+    h5_file = h5_raw.file
 
     '''
     Initialize the windowing
     '''
-    iw = ImageWindow(imagepath, h5_path, reset=True, max_RAM_mb=max_mem)
-
-    h5_file = iw.h5_file
-    
-    h5_raw = iw.h5_raw
+    iw = ImageWindow(h5_raw, max_RAM_mb=max_mem)
 
     '''
     Extract an optimum window size from the image
     '''
-    win_size = iw.window_size_extract(h5_raw,
-                                      num_peaks,
-                                      save_plots=save_plots,
-                                      show_plots=show_plots)
+    win_size, psf_width = iw.window_size_extract(num_peaks,
+                                                 save_plots=save_plots,
+                                                 show_plots=show_plots)
 
-    # win_size = 16
+    win_size = 16
     '''
     Do the windowing
     '''
     t0 = time()
-    h5_wins = iw.do_windowing(h5_raw,
-                              win_x=win_size,
+    h5_wins = iw.do_windowing(win_x=win_size,
                               win_y=win_size,
-                              # win_step_x=3,
-                              # win_step_y=3,
                               save_plots=save_plots,
                               show_plots=show_plots)
     print 'Windowing took {} seconds.'.format(time()-t0)

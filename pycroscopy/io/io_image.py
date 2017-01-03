@@ -18,14 +18,14 @@ def read_image(image_path, *args, **kwargs):
     ----------
     image_path : str
         Path to the image file
-    greyscale : Boolean, optional
-        Should the image be converted to greyscale after reading.
-        Default True
 
     Returns
     -------
     image : numpy.ndarray
         Array containing the image from the file `image_path`
+    image_parms : dict
+        Dictionary containing image parameters.  If image type does not have
+        parameters then an empty dictionary is returned.
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.dm3':
@@ -35,6 +35,8 @@ def read_image(image_path, *args, **kwargs):
     elif ext == '.txt':
         return read_txt(image_path, *args, **kwargs), dict()
     else:
+        # Set the as_grey argument to True is not already provided.
+        kwargs['as_grey'] = (kwargs.pop('as_grey', True))
         return imread(image_path, *args, **kwargs), dict()
 
 
