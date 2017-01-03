@@ -24,16 +24,14 @@ class ImageWindow(object):
     windows to an HDF5 file.
     """
 
-    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True, **image_args):
+    def __init__(self, h5_main, max_RAM_mb=1024, cores=None, reset=True, **image_args):
         """
         Setup the image windowing
 
         Parameters
         ----------
-            image_path : str
-                File path to the input image file to be read and windowed.
-            h5_path : str
-                file path to the hdf5 file in which to store the image and it's windows
+            h5_main : h5py.Dataset
+                HDF5 Dataset containing the data to be windowed
             max_RAM_mb : int, optional
                 integer maximum amount of ram, in Mb, to use in windowing
                 Default 1024
@@ -44,12 +42,8 @@ class ImageWindow(object):
                 should all data in the hdf5 file be deleted
 
         """
-        if not os.path.exists(os.path.abspath(image_path)):
-            raise ValueError('Specified image does not exist.')
-        else:
-            self.image_path = os.path.abspath(image_path)
-        
-        self.hdf = ioHDF5(os.path.abspath(h5_path))
+        self.h5_file = h5_main.file
+        self.hdf = ioHDF5(h5_main.file)
         
         # Ensuring that at least one core is available for use / 2 cores are available for other use
         max_cores = max(1, cpu_count()-2)
@@ -63,77 +57,11 @@ class ImageWindow(object):
         self.max_memory = min(max_RAM_mb*1024**2, 0.75*getAvailableMem())
         if self.cores != 1:
             self.max_memory = int(self.max_memory/2)
-        
-        if reset:
-            if len(self.hdf.file.keys()) >= 1:
-                self.hdf.clear()
-
-            root_grp = MicroDataGroup('/')
-            root_grp.attrs['data_type'] = 'ImageData'
-
-            _, exten = os.path.splitext(self.image_path)
-            if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
-                image_args['as_grey'] = True
-
-            image, image_parms = read_image(self.image_path, **image_args)
-
-            if image.ndim == 3:
-                image = np.sum(image, axis=0)
-            root_grp.attrs.update(image_parms)
-
-            meas_grp = MicroDataGroup('Measurement_')
-            
-            chan_grp = MicroDataGroup('Channel_')
-            root_grp.addChildren([meas_grp])
-            meas_grp.addChildren([chan_grp])
-
-            ds_rawimage = MicroDataset('Raw_Data', np.reshape(image, (-1, 1)))
-
-            '''
-        Build Spectroscopic and Position datasets for the image
-            '''
-            pos_mat = makePositionMat(image.shape)
-            spec_mat = np.array([[0]], dtype=np.uint8)
-
-            ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
-            ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
-            spec_lab = getSpectralSlicing(['Image'])
-            ds_spec_inds.attrs['labels'] = spec_lab
-            ds_spec_inds.attrs['units'] = ''
-            ds_spec_vals.attrs['labels'] = spec_lab
-            ds_spec_vals.attrs['units'] = ''
-
-            ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
-            ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
-
-            pos_lab = getPositionSlicing(['X', 'Y'])
-            ds_pos_inds.attrs['labels'] = pos_lab
-            ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
-            ds_pos_vals.attrs['labels'] = pos_lab
-            ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-
-            chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
-                                  ds_pos_inds, ds_pos_vals])
-
-            image_refs = self.hdf.writeData(root_grp)
-            
-            self.h5_raw = getH5DsetRefs(['Raw_Data'], image_refs)[0]
-
-            '''
-            Link references to raw
-            '''
-            aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-            linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, image_refs))
-
-        else:
-            self.h5_raw = self.hdf.file['Measurement_000']['Channel_000']['Raw_Data']
-
-        self.h5_file = self.hdf.file
-        self.h5_file.flush()
 
         '''
         Initialize class variables to None
         '''
+        self.h5_raw = h5_main
         self.h5_norm = None
         self.h5_wins = None
         self.h5_clean = None
@@ -141,15 +69,13 @@ class ImageWindow(object):
         self.h5_fft_clean = None
         self.h5_fft_noise = None
 
-    def do_windowing(self, h5_main=None, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
+    def do_windowing(self, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
                      *args, **kwargs):
         """
         Extract the windows from the normalized image and write them to the file
 
         Parameters
         ----------
-            h5_main : HDF5 dataset, optional
-                image to be windowed
             win_x : int, optional
                 size of the window, in pixels, in the horizontal direction
                 Default None, a guess will be made based on the FFT of the image
@@ -168,8 +94,7 @@ class ImageWindow(object):
             h5_wins : HDF5 Dataset
                 Dataset containing the flattened windows
         """
-        if h5_main is None:
-            h5_main = self.h5_main
+        h5_main = self.h5_raw
 
         parent = h5_main.parent
 
@@ -1034,14 +959,12 @@ class ImageWindow(object):
         return clean_image
 
 
-    def window_size_extract(self, h5_main, num_peaks=2, save_plots=True, show_plots=False):
+    def window_size_extract(self, num_peaks=2, save_plots=True, show_plots=False):
         """
         Take the normalized image and extract from it an optimal window size
 
         Parameters
         ----------
-            h5_main : h5py.Dataset
-                HDF5 dataset holding the image
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
@@ -1061,7 +984,8 @@ class ImageWindow(object):
             psf_width : int
                 Estimate atom spacing in pixels
         """
-        
+        h5_main = self.h5_raw
+
         print('Determining appropriate window size from image.')
         '''
         Normalize the image
