@@ -649,13 +649,13 @@ def copyAttributes(source, dest, skip_refs=True):
                         else:
                             ref_slice.append(slice(start[i], end[i]))
                 except:
-                    print('Could not create new region reference for {} in {}.'.format(attr, source.name))
+                    warn('Could not create new region reference for {} in {}.'.format(attr, source.name))
                     continue
 
                 dest.attrs[attr] = dest.regionref[tuple(ref_slice)]
                 continue
             else:
-                dest.attrs[attr] = source.file[atval].name
+                dest.attrs[attr] = atval
                 continue
         dest.attrs[attr] = atval
 
