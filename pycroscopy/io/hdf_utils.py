@@ -570,7 +570,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     so that they are in the same order as in the index array
     """
     swap_axes = np.append(np.argsort(pos_sort),
-                          np.argsort(spec_sort)+len(pos_dims))
+                          spec_sort.size - spec_sort - 1 + len(pos_dims))
 
     ds_Nd = np.transpose(ds_Nd, swap_axes)
 
