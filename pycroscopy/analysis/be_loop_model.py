@@ -13,7 +13,8 @@ from warnings import warn
 import numpy as np
 
 from .model import Model
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs
+from .be_sho_model import sho32
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 crit32 = np.dtype([('AIC_loop', np.float32),
@@ -76,22 +77,39 @@ class BELoopModel(Model):
             warn('Provided dataset does not have full cycles')
             return False
 
-        if not super(BELoopModel, self)._isLegal(h5_main, variables):
+        if h5_main.dtype != sho32:
+            warn('Provided dataset is not a SHO results dataset.')
             return False
+
+        return super(BELoopModel, self)._isLegal(h5_main, variables)
 
     def __create_projection_datasets(self):
         # First grab the spectroscopic indices and values
         h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
-        # Calculate the number of loops per position
-        tot_cycles = 1
-        if h5_spec_inds.shape[0] > 1:
-            temp = np.max(h5_spec_inds, axis=1) + 1
-            tot_cycles = np.prod(temp[1:])
+        dc_ind = np.argwhere(h5_spec_vals.attrs['labels'] == 'DC_Offset').flatten()
+        not_dc_inds = np.delete(np.arange(h5_spec_vals.shape[0]), dc_ind)
 
-        # Number of spectroscopic dimensions - Vdc (will be lost) in the loop metrics
-        num_cyc_dims = len(h5_spec_vals.attrs['labels']) - 1
+        # Calculate the number of loops per position
+        cycle_start_inds = np.argwhere(h5_spec_inds[dc_ind, :] == 0)
+        tot_cycles = cycle_start_inds.size
+
+        if not_dc_inds.size == 0:
+            # default case - single cycle: simple 1D in spectroscopic
+            metrics_labels = ''
+            metrics_units = ''
+
+            met_spec_inds_mat = np.zeros([1, 1], dtype=np.uint8)
+            met_spec_vals_mat = np.zeros([1, 1], dtype=np.float32)
+        else:
+            # typical case - multiple spectroscopic indices
+            # Metrics lose the first dimension - Vdc:
+            metrics_labels = h5_spec_vals.attrs['labels'][not_dc_inds]
+            metrics_units = h5_spec_vals.attrs['units'][not_dc_inds]
+
+            met_spec_inds_mat = h5_spec_inds[not_dc_inds, :][:, cycle_start_inds].squeeze()
+            met_spec_vals_mat = h5_spec_vals[not_dc_inds, :][:, cycle_start_inds].squeeze()
 
         # Prepare containers for the dataets
         ds_projected_loops = MicroDataset('Projected_Loops', data=[], dtype=np.float32,
@@ -99,19 +117,8 @@ class BELoopModel(Model):
                                           compression='gzip')
         ds_loop_metrics = MicroDataset('Loop_Metrics', data=[], dtype=loop_fit32,
                                        maxshape=(self.h5_main.shape[0], tot_cycles))
-        ds_loop_met_spec_inds = MicroDataset('Loop_Metrics_Indices', data=[], dtype=np.uint32,
-                                             maxshape=(num_cyc_dims, tot_cycles))
-        ds_loop_met_spec_vals = MicroDataset('Loop_Metrics_Values', data=[], dtype=np.float32,
-                                             maxshape=(num_cyc_dims, tot_cycles))
-
-        # default case - single cycle: simple 1D in spectroscopic
-        metrics_labels = ''
-        metrics_units = ''
-        # typical case - multiple spectroscopic indices
-        if h5_spec_inds.shape[0] > 1:
-            # Metrics lose the first dimension - Vdc:
-            metrics_labels = h5_spec_vals.attrs['labels'][1:]
-            metrics_units = h5_spec_vals.attrs['units'][1:]
+        ds_loop_met_spec_inds = MicroDataset('Loop_Metrics_Indices', data=met_spec_inds_mat)
+        ds_loop_met_spec_vals = MicroDataset('Loop_Metrics_Values', data=met_spec_vals_mat)
 
         # prepare slices for the metrics. Order is preserved anyway
         metrics_slices = dict()
@@ -126,9 +133,11 @@ class BELoopModel(Model):
         # name of the dataset being projected.
         dset_name = self.h5_main.name.split('/')[-1]
 
-        proj_grp = MicroDataGroup('-'.join([dset_name, 'Loop_Projection_']), self.h5_main.parent.name[1:])
+        proj_grp = MicroDataGroup('-'.join([dset_name, 'Loop_Fit_']),
+                                  self.h5_main.parent.name[1:])
         proj_grp.attrs['projection_method'] = 'pycroscopy BE loop model'
-        proj_grp.addChildren([ds_projected_loops, ds_loop_metrics, ds_loop_met_spec_inds, ds_loop_met_spec_vals])
+        proj_grp.addChildren([ds_projected_loops, ds_loop_metrics,
+                              ds_loop_met_spec_inds, ds_loop_met_spec_vals])
 
         h5_proj_grp_refs = self.hdf.writeData(proj_grp)
 
@@ -141,27 +150,20 @@ class BELoopModel(Model):
                                                              'Position_Values'])
         # do linking here
         # first the positions
-        self.hdf.linkRefs(h5_projected_loops, h5_pos_dsets)
-        self.hdf.linkRefs(h5_projected_loops, [h5_loop_metrics])
-        self.hdf.linkRefs(h5_loop_metrics, h5_pos_dsets)
+        linkRefs(h5_projected_loops, h5_pos_dsets)
+        linkRefs(h5_projected_loops, [h5_loop_metrics])
+        linkRefs(h5_loop_metrics, h5_pos_dsets)
         # then the spectroscopic
-        self.hdf.linkRefs(h5_projected_loops, [h5_spec_inds, h5_spec_vals])
-        self. hdf.linkRefAsAlias(h5_loop_metrics, h5_loop_met_spec_inds, 'Spectroscopic_Indices')
-        self.hdf.linkRefAsAlias(h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
+        linkRefs(h5_projected_loops, [h5_spec_inds, h5_spec_vals])
+        linkRefAsAlias(h5_loop_metrics, h5_loop_met_spec_inds, 'Spectroscopic_Indices')
+        linkRefAsAlias(h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
 
         copyRegionRefs(self.h5_main, h5_projected_loops)
         copyRegionRefs(self.h5_main, h5_loop_metrics)
 
-        """
-        # Do the actual loop projection here
-        (waste, loop_met_spec_ind_mat, waste2) = __projectDset(h5_sho_fit, h5_spec_vals, h5_spec_ind,
-                                                               h5_projected_loops, h5_loop_metrics)
+        self.hdf.flush()
 
-        # populate the Loop metrics indices correctly now. They have already been linked
-        h5_loop_met_spec_inds[:, :] = np.uint32(loop_met_spec_ind_mat)
-        h5_loop_met_spec_vals[:, :] = np.float32(loop_met_spec_ind_mat)
-        hdf.flush()
-        """
+        return
 
     def __project_loops(self):
         pass
