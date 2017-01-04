@@ -501,6 +501,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Position Indices dataset was provided
         """
         ds_pos = h5_pos[()]
+    elif isinstance(h5_pos, np.ndarray):
+        ds_pos = h5_pos
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
 
@@ -529,6 +531,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Spectroscopic Indices dataset was provided
         """
         ds_spec = h5_spec[()]
+
+    elif isinstance(h5_spec, np.ndarray):
+        ds_spec = h5_spec
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
@@ -620,6 +625,9 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     Position Indices dataset was provided
         '''
         ds_pos = h5_pos[()]
+
+    elif isinstance(h5_pos, np.ndarray):
+        ds_pos = h5_pos
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
 
@@ -636,6 +644,9 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     Spectroscopic Indices dataset was provided
         '''
         ds_spec = h5_spec[()]
+
+    elif isinstance(h5_spec, np.ndarray):
+        ds_spec = h5_spec
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
