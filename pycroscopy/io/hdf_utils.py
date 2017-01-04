@@ -577,6 +577,97 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     return ds_Nd, True
 
 
+def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
+    """
+    Reshape the input 2D matrix to be N-dimensions based on the
+    position and spectroscopic datasets.
+
+    Parameters
+    ----------
+        ds_Nd : numpy.array
+            N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
+        h5_pos : HDF5 Dataset
+            Position indices corresponding to rows in the final 2d array
+        h5_spec : HDF5 Dataset
+            Spectroscopic indices corresponding to columns in the final 2d array
+
+    Returns
+    -------
+        ds_2d : numpy.array
+            2 dimensional numpy array arranged as [positions, spectroscopic]
+        success : boolean or string
+            True if full reshape was successful
+
+            "Positions" if it was only possible to reshape by
+            the position dimensions
+
+            False if no reshape was possible
+
+    Notes
+    -----
+    If either `h5_pos` or `h5_spec` are not provided, the function will
+    assume the first dimension is position and the remaining are spectroscopic already
+    in order from fastest to slowest.
+    """
+
+    if h5_pos is None:
+        '''
+    Get the Position datasets from the references if possible
+        '''
+        ds_pos = np.arange(ds_Nd.shape[0], dtype=np.uint8)
+    elif isinstance(h5_pos, h5py.Dataset):
+        '''
+    Position Indices dataset was provided
+        '''
+        ds_pos = h5_pos[()]
+    else:
+        raise TypeError('Position Indices must be either h5py.Dataset or None')
+
+    ##################################################
+
+    if h5_spec is None:
+        '''
+    Get the Spectroscopic datasets from the references if possible
+        '''
+        ds_spec = np.arange(ds_Nd.shape[1:], dtype=np.uint8)
+
+    elif isinstance(h5_spec, h5py.Dataset):
+        '''
+    Spectroscopic Indices dataset was provided
+        '''
+        ds_spec = h5_spec[()]
+    else:
+        raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
+
+    '''
+    Sort the indices from fastest to slowest
+    '''
+    pos_sort = get_sort_order(np.transpose(ds_pos))
+    spec_sort = get_sort_order(ds_spec)
+
+    '''
+    Now we transpose the axes associated with the spectroscopic dimensions
+    so that they are in the same order as in the index array
+    '''
+    swap_axes = np.append(np.argsort(pos_sort),
+                          spec_sort.size - spec_sort - 1 + len(pos_sort))
+
+    ds_Nd = np.transpose(ds_Nd, swap_axes)
+
+    '''
+    Now we reshape the dataset based on those dimensions
+    We must use the spectroscopic dimensions in reverse order
+    '''
+    try:
+        ds_2d = np.reshape(ds_Nd, [ds_pos.shape[0], ds_spec.shape[1]])
+    except ValueError:
+        warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
+        raise
+    except:
+        raise
+
+    return ds_2d, True
+
 def get_dimensionality(ds_index, index_sort=None):
     """
     Get the size of each index dimension in a specified sort order
@@ -631,7 +722,7 @@ def copyAttributes(source, dest, skip_refs=True):
         Don't copy references unless asked
         """
         if isinstance(atval, h5py.Reference):
-            if skip_refs:
+            if isinstance(atval, h5py.RegionReference) or skip_refs:
                 continue
             elif isinstance(atval, h5py.RegionReference):
                 """
@@ -658,6 +749,11 @@ def copyAttributes(source, dest, skip_refs=True):
                 dest.attrs[attr] = atval
                 continue
         dest.attrs[attr] = atval
+    if not skip_refs:
+        try:
+            copyRegionRefs(source, dest)
+        except:
+            print('Could not create new region reference for {} in {}.'.format(attr, source.name))
 
     return dest
 
