@@ -9,7 +9,7 @@ with open(path.join(here, 'README.rst')) as f:
 
 setup(
     name='pycroscopy',
-    version='0.0a18',
+    version='0.0a19',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description=long_description,
     classifiers=[
