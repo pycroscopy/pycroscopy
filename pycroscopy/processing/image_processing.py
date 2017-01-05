@@ -565,6 +565,11 @@ class ImageWindow(object):
 
         clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
 
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
+
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
@@ -711,13 +716,17 @@ class ImageWindow(object):
         Create datasets for results, link them properly, and write them to file
         '''
         clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
-        clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
         ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
         ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
         ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
         ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
 
         clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
+
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
@@ -870,6 +879,12 @@ class ImageWindow(object):
                                 compression='gzip')
 
         clean_grp.addChildren([ds_clean])
+
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start,
+                                                                comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
