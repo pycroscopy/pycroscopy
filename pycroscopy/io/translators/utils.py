@@ -6,9 +6,9 @@ Basic functions that can be used by any SPM translator class
 @author: Suhas Somnath
 """
 
-from __future__ import division; # int/int = float
-import numpy as np; # For array operations
-import time as tm; # for getting time stamps
+from __future__ import division  # int/int = float
+import numpy as np  # For array operations
+import time as tm  # for getting time stamps
 
 
 def interpretFreq(freq_str):
@@ -36,39 +36,36 @@ def interpretFreq(freq_str):
 def generateDummyMainParms():
     """
     Generates a (dummy) dictionary of parameters that will be used at the root level of the h5 file
-    
-    Parameters
-    ----------
-    None
-    
+
     Returns
     ----------
     main_parms : dictionary
         Dictionary containing basic descriptors that describe a dataset
     """        
-    main_parms = {};   
-    main_parms['translate_date'] = tm.strftime("%Y_%m_%d");
-    main_parms['instrument'] = 'cypher_west';
-    main_parms['xcams_id'] = 'abc';
-    main_parms['user_name'] = 'John Doe';
-    main_parms['sample_name'] = 'PZT';
-    main_parms['sample_description'] = 'Thin Film';
-    main_parms['project_name'] = 'Band Excitation';
-    main_parms['project_id'] = 'CNMS_2015B_X0000';
-    main_parms['comments'] = 'Band Excitation data';
-    main_parms['data_tool'] = 'be_analyzer';
+    main_parms = dict()
+    main_parms['translate_date'] = tm.strftime("%Y_%m_%d")
+    main_parms['instrument'] = 'cypher_west'
+    main_parms['xcams_id'] = 'abc'
+    main_parms['user_name'] = 'John Doe'
+    main_parms['sample_name'] = 'PZT'
+    main_parms['sample_description'] = 'Thin Film'
+    main_parms['project_name'] = 'Band Excitation'
+    main_parms['project_id'] = 'CNMS_2015B_X0000'
+    main_parms['comments'] = 'Band Excitation data'
+    main_parms['data_tool'] = 'be_analyzer'
     # This parameter actually need not be a dummy and can be extracted from the parms file
-    main_parms['experiment_date'] = '2015-10-05 14:55:05';
-    main_parms['experiment_unix_time'] = tm.time();         
+    main_parms['experiment_date'] = '2015-10-05 14:55:05'
+    main_parms['experiment_unix_time'] = tm.time()
     # Need to fill in the x and y grid size here
-    main_parms['grid_size_x'] = 1;
-    main_parms['grid_size_y'] = 1;        
+    main_parms['grid_size_x'] = 1
+    main_parms['grid_size_y'] = 1
     # Need to fill in the current X, Y, Z, Laser position here
-    main_parms['current_position_x'] = 1;
-    main_parms['current_position_y'] = 1;
+    main_parms['current_position_x'] = 1
+    main_parms['current_position_y'] = 1
     
-    return main_parms;
-    
+    return main_parms
+
+
 def makePositionMat(num_steps):
     """
     Sets the position index matrices and labels for each of the spatial dimensions.
@@ -77,8 +74,8 @@ def makePositionMat(num_steps):
     Parameters
     ------------
     num_steps : List / numpy array
-        Steps in each spatial direction
-    Note: that the axes must be ordered from fastest varying to slowest varying
+        Steps in each spatial direction.
+        Note that the axes must be ordered from fastest varying to slowest varying
 
     Returns
     --------------
@@ -86,11 +83,11 @@ def makePositionMat(num_steps):
         arranged as [steps, spatial dimension]  
     """
 
-    num_steps = np.array(num_steps); 
-    spat_dims = len(np.where(num_steps > 1)[0]);
+    num_steps = np.array(num_steps)
+    spat_dims = max(1, len(np.where(num_steps > 1)[0]))
     
-    pos_mat = np.zeros(shape=(np.prod(num_steps),spat_dims),dtype=np.uint32);
-    pos_ind = 0;
+    pos_mat = np.zeros(shape=(np.prod(num_steps), spat_dims), dtype=np.uint32)
+    pos_ind = 0
     
     for indx, curr_steps in enumerate(num_steps):
         if curr_steps > 1:
@@ -107,9 +104,9 @@ def makePositionMat(num_steps):
             else:
                 part3 = np.prod(num_steps[indx+1:])           
                                 
-            pos_mat[:,pos_ind] = np.tile(np.floor(np.arange(part1)/(part2)),part3)
-            pos_ind+= 1
-    
+            pos_mat[:, pos_ind] = np.tile(np.floor(np.arange(part1)/part2), part3)
+            pos_ind += 1
+
     return pos_mat
 
 
@@ -161,4 +158,3 @@ def getSpectralSlicing(spec_lab, curr_spec=None):
     for spat_ind, spat_dim in enumerate(spec_lab):
         slice_dict[spat_dim] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
     return slice_dict
-

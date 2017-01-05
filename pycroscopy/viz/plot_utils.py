@@ -11,10 +11,10 @@ import h5py
 import scipy
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
+from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 from ..analysis.utils.be_loop import loopFitFunction
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
-
 
 def set_tick_font_size(axes, font_size):
     """
@@ -258,16 +258,19 @@ def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
     """
     data_mean = np.mean(data)
     data_std = np.std(data)
-    if show_colorbar:
-        pcol0 = axis.pcolor(data,
-                            vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
-        axis.figure.colorbar(pcol0, ax=axis)
-        axis.axis('tight')
-    else:
-        axis.imshow(data, interpolation='none',
-                    vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
+    # if show_colorbar:
+    #     im = axis.pcolor(data,
+    #                         vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
+    #     axis.figure.colorbar(pcol0, ax=axis)
+    #     axis.axis('tight')
+    # else:
+    im = axis.imshow(data, interpolation='none',
+                     vmin=data_mean - stdevs * data_std,
+                     vmax=data_mean + stdevs * data_std,
+                     **kwargs)
     axis.set_aspect('auto')
 
+    return im
 
 ###############################################################################
 
@@ -662,9 +665,49 @@ def plotScree(S, title='Scree'):
     return fig203, axes203
 
 
-###############################################################################
+# ###############################################################################
+#
+# def plot_map_stack(map_stack, num_comps=4, stdevs=2, show_colorbar=False,
+#                    title='Component', heading='Map Stack', **kwargs):
+#     """
+#     Plots the provided stack of maps
+#
+#     Parameters:
+#     -------------
+#     map_stack : 3D real numpy array
+#         structured as [rows, cols, component]
+#     num_comps : int
+#         Number of components to plot
+#     stdevs : int
+#         Number of standard deviations to consider for plotting
+#     colormap : string or object from matplotlib.colors (Optional. Default = jet or rainbow)
+#         Colormap for the plots
+#     show_colorbar : Boolean (Optional. Default = True)
+#         Whether or not to show the color bar
+#
+#     Returns:
+#     ---------
+#     fig, axes
+#     """
+#     fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
+#     p_rows = int(np.ceil(np.sqrt(num_comps)))
+#     p_cols = int(np.floor(num_comps / p_rows))
+#     if p_rows*p_cols < num_comps:
+#         p_cols += 1
+#     fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
+#     fig202.subplots_adjust(hspace=0.4, wspace=0.4)
+#     fig202.canvas.set_window_title(heading)
+#     fig202.suptitle(heading, fontsize=16)
+#
+#     for index in xrange(num_comps):
+#         plot_map(axes202.flat[index], map_stack[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
+#         axes202.flat[index].set_title('{} {}'.format(title, index))
+#     fig202.tight_layout()
+#
+#     return fig202, axes202
 
-def plot_map_stack(map_stack, num_comps=4, stdevs=2, show_colorbar=True,
+
+def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
                    title='Component', heading='Map Stack', **kwargs):
     """
     Plots the provided stack of maps
@@ -679,25 +722,41 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, show_colorbar=True,
         Number of standard deviations to consider for plotting
     colormap : string or object from matplotlib.colors (Optional. Default = jet or rainbow)
         Colormap for the plots
-    show_colorbar : Boolean (Optional. Default = True)
-        Whether or not to show the color bar
+    color_bar_mode : String, Optional
+        Options are None, single or each.
+        Default None
 
     Returns:
     ---------
     fig, axes
     """
-    fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
+    fig_h, fig_w = (4, 4)
     p_rows = int(np.ceil(np.sqrt(num_comps)))
     p_cols = int(np.floor(num_comps / p_rows))
-    fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
-    fig202.subplots_adjust(hspace=0.4, wspace=0.4)
+    if p_rows*p_cols < num_comps:
+        p_cols += 1
+    fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
+    axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
+                        cbar_mode=color_bar_mode,
+                        cbar_pad='1%',
+                        cbar_size='5%',
+                        axes_pad=(0.1*fig_w, 0.07*fig_h))
+    # fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
+    # fig202.subplots_adjust(hspace=0.4, wspace=0.4)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
-    for index in xrange(num_comps):
-        plot_map(axes202.flat[index], map_stack[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
-        axes202.flat[index].set_title('{} {}'.format(title, index))
-    fig202.tight_layout()
+    for index in range(num_comps):
+        im = plot_map(axes202[index],
+                      map_stack[:, :, index],
+                      stdevs=stdevs,
+                      show_colorbar=False, **kwargs)
+        axes202[index].set_title('{} {}'.format(title, index))
+        if color_bar_mode is 'each':
+            axes202.cbar_axes[index].colorbar(im)
+
+    if color_bar_mode is 'single':
+        axes202.cbar_axes[0].colorbar(im)
 
     return fig202, axes202
 
@@ -1204,7 +1263,7 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
 
 
 def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=None):
-    '''
+    """
     Plots BE loops from up to 9 positions (evenly separated)
 
     Parameters
@@ -1226,7 +1285,7 @@ def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path
     Returns
     -----------
     None
-    '''
+    """
     num_pos = resp_mat.shape[0]
     if num_pos >= 9:
         tot_plots = 9
@@ -1258,7 +1317,7 @@ def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path
 
 
 def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
-    '''
+    """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
 
@@ -1274,7 +1333,10 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
     Returns
     -------
     None
-    '''
+    """
+    plt_path = None
+
+    print('Creating plots of SHO Results from {}.'.format(h5_main.name))
 
     h5_file = h5_main.file
 
@@ -1301,8 +1363,8 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         num_rows = int(np.floor((np.sqrt(h5_main.shape[0]))))
         num_cols = int(np.reshape(h5_main, [num_rows, -1, h5_main.shape[1]]).shape[1])
     else:
-        num_rows = len(np.unique(h5_pos[:,0]))
-        num_cols = len(np.unique(h5_pos[:,1]))
+        num_rows = len(np.unique(h5_pos[:, 0]))
+        num_cols = len(np.unique(h5_pos[:, 1]))
 
     try:
         h5_spec_inds = h5_file[h5_main.attrs['Spectroscopic_Indices']]
@@ -1360,6 +1422,7 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
 
                 in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
                 in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
+                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
                 plt_title = grp_name + '_In_Field_Loops'
                 if save_plots:
                     plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
@@ -1411,5 +1474,3 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         plt.show()
 
     plt.close('all')
-
-    h5_file.close()

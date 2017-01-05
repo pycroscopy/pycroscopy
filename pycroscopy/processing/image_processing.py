@@ -24,16 +24,14 @@ class ImageWindow(object):
     windows to an HDF5 file.
     """
 
-    def __init__(self, image_path, h5_path, max_RAM_mb=1024, cores=None, reset=True, **image_args):
+    def __init__(self, h5_main, max_RAM_mb=1024, cores=None, reset=True, **image_args):
         """
         Setup the image windowing
 
         Parameters
         ----------
-            image_path : str
-                File path to the input image file to be read and windowed.
-            h5_path : str
-                file path to the hdf5 file in which to store the image and it's windows
+            h5_main : h5py.Dataset
+                HDF5 Dataset containing the data to be windowed
             max_RAM_mb : int, optional
                 integer maximum amount of ram, in Mb, to use in windowing
                 Default 1024
@@ -44,12 +42,8 @@ class ImageWindow(object):
                 should all data in the hdf5 file be deleted
 
         """
-        if not os.path.exists(os.path.abspath(image_path)):
-            raise ValueError('Specified image does not exist.')
-        else:
-            self.image_path = os.path.abspath(image_path)
-        
-        self.hdf = ioHDF5(os.path.abspath(h5_path))
+        self.h5_file = h5_main.file
+        self.hdf = ioHDF5(h5_main.file)
         
         # Ensuring that at least one core is available for use / 2 cores are available for other use
         max_cores = max(1, cpu_count()-2)
@@ -63,77 +57,11 @@ class ImageWindow(object):
         self.max_memory = min(max_RAM_mb*1024**2, 0.75*getAvailableMem())
         if self.cores != 1:
             self.max_memory = int(self.max_memory/2)
-        
-        if reset:
-            if len(self.hdf.file.keys()) >= 1:
-                self.hdf.clear()
-
-            root_grp = MicroDataGroup('/')
-            root_grp.attrs['data_type'] = 'ImageData'
-
-            _, exten = os.path.splitext(self.image_path)
-            if exten in ['.tiff', '.tif', '.png', '.jpg', '.jpeg']:
-                image_args['as_grey'] = True
-
-            image, image_parms = read_image(self.image_path, **image_args)
-
-            if image.ndim == 3:
-                image = np.sum(image, axis=0)
-            root_grp.attrs.update(image_parms)
-
-            meas_grp = MicroDataGroup('Measurement_')
-            
-            chan_grp = MicroDataGroup('Channel_')
-            root_grp.addChildren([meas_grp])
-            meas_grp.addChildren([chan_grp])
-
-            ds_rawimage = MicroDataset('Raw_Data', np.reshape(image, (-1, 1)))
-
-            '''
-        Build Spectroscopic and Position datasets for the image
-            '''
-            pos_mat = makePositionMat(image.shape)
-            spec_mat = np.array([[0]], dtype=np.uint8)
-
-            ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
-            ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
-            spec_lab = getSpectralSlicing(['Image'])
-            ds_spec_inds.attrs['labels'] = spec_lab
-            ds_spec_inds.attrs['units'] = ''
-            ds_spec_vals.attrs['labels'] = spec_lab
-            ds_spec_vals.attrs['units'] = ''
-
-            ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
-            ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
-
-            pos_lab = getPositionSlicing(['X', 'Y'])
-            ds_pos_inds.attrs['labels'] = pos_lab
-            ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
-            ds_pos_vals.attrs['labels'] = pos_lab
-            ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-
-            chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
-                                  ds_pos_inds, ds_pos_vals])
-
-            image_refs = self.hdf.writeData(root_grp)
-            
-            self.h5_raw = getH5DsetRefs(['Raw_Data'], image_refs)[0]
-
-            '''
-            Link references to raw
-            '''
-            aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-            linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, image_refs))
-
-        else:
-            self.h5_raw = self.h5_file['Measurement_000']['Channel_000']['Raw_Data']
-
-        self.h5_file = self.hdf.file
-        self.h5_file.flush()
 
         '''
         Initialize class variables to None
         '''
+        self.h5_raw = h5_main
         self.h5_norm = None
         self.h5_wins = None
         self.h5_clean = None
@@ -141,15 +69,13 @@ class ImageWindow(object):
         self.h5_fft_clean = None
         self.h5_fft_noise = None
 
-    def do_windowing(self, h5_main=None, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
+    def do_windowing(self, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
                      *args, **kwargs):
         """
         Extract the windows from the normalized image and write them to the file
 
         Parameters
         ----------
-            h5_main : HDF5 dataset, optional
-                image to be windowed
             win_x : int, optional
                 size of the window, in pixels, in the horizontal direction
                 Default None, a guess will be made based on the FFT of the image
@@ -168,8 +94,7 @@ class ImageWindow(object):
             h5_wins : HDF5 Dataset
                 Dataset containing the flattened windows
         """
-        if h5_main is None:
-            h5_main = self.h5_main
+        h5_main = self.h5_raw
 
         parent = h5_main.parent
 
@@ -199,7 +124,7 @@ class ImageWindow(object):
         window_size_extract
         '''
         if win_x is None or win_y is None:
-            win_size = self.window_size_extract(h5_main, *args, **kwargs)
+            win_size, _ = self.window_size_extract(h5_main, *args, **kwargs)
             if win_x is None:
                 win_x = win_size
             if win_y is None:
@@ -235,7 +160,8 @@ class ImageWindow(object):
         win_pix = win_x*win_y
         
         win_pos_mat = np.array([np.repeat(x_steps, ny),
-                                np.tile(y_steps, nx)]).T
+                                np.tile(y_steps, nx)],
+                                dtype=np.uint).T
         
         win_pix_mat = makePositionMat([win_x, win_y]).T
 
@@ -639,6 +565,11 @@ class ImageWindow(object):
 
         clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
 
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
+
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
@@ -785,13 +716,17 @@ class ImageWindow(object):
         Create datasets for results, link them properly, and write them to file
         '''
         clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
-        clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
         ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
         ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
         ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
         ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
 
         clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
+
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
@@ -901,7 +836,7 @@ class ImageWindow(object):
         if self.cores is None:
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
-            free_mem = self.max_memory*2-ds_V.size*ds_V.itemsize
+            free_mem = self.max_memory/2-ds_V.size*ds_V.itemsize
         batch_size = free_mem/mem_per_win
         if batch_size < 1:
             raise MemoryError('Not enough memory to perform Image Cleaning.')
@@ -944,6 +879,12 @@ class ImageWindow(object):
                                 compression='gzip')
 
         clean_grp.addChildren([ds_clean])
+
+        if isinstance(comp_slice, slice):
+            clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start,
+                                                                comp_slice.stop)
+        else:
+            clean_grp.attrs['components_used'] = comp_slice
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
@@ -1033,22 +974,15 @@ class ImageWindow(object):
         return clean_image
 
 
-    def window_size_extract(self, h5_main, num_peaks=2, do_fit=True, save_plots=True, show_plots=False):
+    def window_size_extract(self, num_peaks=2, save_plots=True, show_plots=False):
         """
         Take the normalized image and extract from it an optimal window size
 
         Parameters
         ----------
-            h5_main : h5py.Dataset
-                HDF5 dataset holding the image
             num_peaks : int, optional
                 number of peaks to use during least squares fit
                 Default 2
-            do_fit : Boolean, optional
-                If True then when guessing the fit it will return the window
-                size as determined by a leastsquares fit.  If False, the value returned will
-                be determined by an analytic guess.
-                Default True
             save_plots : Boolean, optional
                 If True then a plot showing the quality of the fit will be
                 generated and saved to disk.  Ignored if do_fit is false.
@@ -1062,8 +996,11 @@ class ImageWindow(object):
         -------
             window_size : int
                 Optimal window size in pixels
+            psf_width : int
+                Estimate atom spacing in pixels
         """
-        
+        h5_main = self.h5_raw
+
         print('Determining appropriate window size from image.')
         '''
         Normalize the image
@@ -1102,8 +1039,8 @@ class ImageWindow(object):
             Simple hamming filter
             """
             u, v = np.shape(data)
-            u_vec = np.arange(0, 1, 1.0/u)
-            v_vec = np.arange(0, 1, 1.0/v)
+            u_vec = np.linspace(0, 1, u)
+            v_vec = np.linspace(0, 1, v)
             u_mat, v_mat = np.meshgrid(u_vec, v_vec, indexing='ij')
             h_filter = np.multiply((1-np.cos(2*np.pi*u_mat)), (1-np.cos(2*np.pi*v_mat)))/4.0
             
@@ -1121,12 +1058,12 @@ class ImageWindow(object):
         r_n = int(im_shape/4)
         r_min = 0
         r_max = im_shape/2
-        r_vec = np.arange(r_min, r_max+1, (r_max-r_min)/r_n).transpose()
+        r_vec = np.linspace(r_min, r_max, r_n, dtype=np.float32).transpose()
         
         r_mat = np.abs(uu+1j*vv)
         
         fimabs = np.abs(fim)
-        fimabs_max = np.zeros(r_n)
+        fimabs_max = np.zeros(r_n-1)
         
         for k in xrange(r_n-1):
             r1 = r_vec[k]
@@ -1134,7 +1071,7 @@ class ImageWindow(object):
             r_ind = np.where((r_mat >= r1) & (r_mat <= r2) == True)
             fimabs_max[k] = np.max(fimabs[r_ind])
 
-        r_vec = r_vec[:-1] + (r_max-r_min)/(r_n-1)/2.0
+        r_vec = r_vec[:-1] + (r_max-r_min)/(r_n-1.0)/2.0
         
         '''
         Find local maxima
@@ -1172,53 +1109,51 @@ class ImageWindow(object):
         fimabs_sort = fimabs_sort[:num_peaks]
         r_sort = r_sort[:num_peaks]
         
-        if do_fit:
-            '''
+        '''
         Fit to a gaussian
-            '''
-            def gauss_fit(p, x):
-                """
-                simple gaussian fitting function
-                """
-                a = p[0]
-                s = p[1]
-                
-                g = a*np.exp(-(x/s)**2)
-                
-                return g
-            
-            def gauss_chi(p, x, y):
-                """
-                Simple chi-squared fit
-                """
-                gauss = gauss_fit(p, x)
-                
-                chi2 = ((y-gauss)/y)**2
-                
-                return chi2
-            
-            gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
-            
-            fit_vec, pcov, info, errmsg, success = leastsq(gauss_chi,
-                                                           gauss_guess,
-                                                           args=(r_sort, fimabs_sort),
-                                                           full_output=1,
-                                                           maxfev=250)
-            
-            window_size = im_shape/fit_vec[1]/np.pi
+        '''
+        def gauss_fit(p, x):
+            """
+            simple gaussian fitting function
+            """
+            a = p[0]
+            s = p[1]
 
-            if save_plots or show_plots:
-                guess_vec = gauss_fit(gauss_guess, r_vec)
-                fit_vec = gauss_fit(fit_vec, r_vec)
-                self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
-                                       guess_vec, fit_vec, save_plots, show_plots)
+            g = a*np.exp(-(x/s)**2)
 
-        else:
-            window_size = im_shape/(r_sort[0]+0.5)
+            return g
 
-        window_size = int(window_size / 2) * 2
+        def gauss_chi(p, x, y):
+            """
+            Simple chi-squared fit
+            """
+            gauss = gauss_fit(p, x)
 
-        return window_size
+            chi2 = ((y-gauss)/y)**2
+
+            return chi2
+
+        gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
+
+        fit_vec, pcov, info, errmsg, success = leastsq(gauss_chi,
+                                                       gauss_guess,
+                                                       args=(r_sort, fimabs_sort),
+                                                       full_output=1,
+                                                       maxfev=250)
+
+        psf_width = im_shape/fit_vec[1]/np.pi
+
+        if save_plots or show_plots:
+            guess_vec = gauss_fit(gauss_guess, r_vec)
+            fit_vec = gauss_fit(fit_vec, r_vec)
+            self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
+                                   guess_vec, fit_vec, save_plots, show_plots)
+
+        window_size = im_shape/(r_sort[0]+0.5)
+
+        window_size = np.int(np.round(window_size*2))
+
+        return window_size, psf_width
 
 
     def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit, save_plots=True, show_plots=False):
@@ -1314,7 +1249,7 @@ class ImageWindow(object):
                 comp_slice = slice(int(components[0]), int(components[1]))
             else:
                 #Convert components to an unsigned integer array
-                comp_slice = np.uint(np.round(components))
+                comp_slice = np.uint(np.round(components)).tolist()
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components

@@ -11,12 +11,9 @@ from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             copyAttributes
 from ..io.microdata import MicroDataset, MicroDataGroup
-from .guess_methods import GuessMethods
+from .guess_methods import r_square
+from .utils.be_sho import SHOfunc
 
-# try:
-#     import multiprocess as mp
-# except ImportError:
-#     raise ImportError()
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
                   ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
@@ -28,10 +25,12 @@ class BESHOmodel(Model):
     Analysis of Band excitation spectra with harmonic oscillator responses.
     """
 
-    def __init__(self, h5_main, variables=['Frequency']):
-        super(BESHOmodel, self).__init__(h5_main, variables)
+    def __init__(self, h5_main, variables=['Frequency'], parallel=True):
+        super(BESHOmodel, self).__init__(h5_main, variables, parallel)
         self.step_start_inds = None
         self.is_reshapable = True
+        self.num_udvs_steps = None
+        self.freq_vec = None
 
     def _createGuessDatasets(self):
         """
@@ -64,22 +63,8 @@ class BESHOmodel(Model):
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
 
         not_freq = h5_spec_inds.attrs['labels'] != 'Frequency'
-        if h5_spec_inds.shape[0] > 1:
-            # More than just the frequency dimension, eg Vdc etc - makes it a BEPS dataset
 
-            ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
-
-        else:
-            '''
-            Special case for datasets that only vary by frequency. Example - BE-Line
-            '''
-            ds_sho_inds = MicroDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
-            ds_sho_vals = MicroDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
-
-            ds_sho_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
-            ds_sho_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
-            ds_sho_inds.attrs['units'] = ''
-            ds_sho_vals.attrs['units'] = ''
+        ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
         sho_grp = MicroDataGroup('-'.join([dset_name,
@@ -106,7 +91,7 @@ class BESHOmodel(Model):
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
-    def _createFitDataset(self):
+    def _createFitDatasets(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.
@@ -125,6 +110,16 @@ class BESHOmodel(Model):
         if self.h5_guess is None:
             warn('Need to guess before fitting!')
             return
+
+        if self.step_start_inds is None:
+            h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+            self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+
+        if self.num_udvs_steps is None:
+            self.num_udvs_steps = len(self.step_start_inds)
+
+        if self.freq_vec is None:
+            self._getFrequencyVector()
 
         h5_sho_grp = self.h5_guess.parent
 
@@ -171,13 +166,13 @@ class BESHOmodel(Model):
         --------
         None
         """
-        if self.__start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self.__start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self.__start_pos, self.__end_pos, self.h5_main.shape[0]))
+        if self._start_pos < self.h5_main.shape[0]:
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self.__start_pos = self.__end_pos
+            self._start_pos = self.__end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -200,10 +195,10 @@ class BESHOmodel(Model):
         None
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self.__start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
         else:
-            self.guess = self.h5_guess[self.__start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
@@ -236,7 +231,8 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def computeGuess(self, strategy='wavelet_peaks', options={"peak_widths": np.array([10,200])}, **kwargs):
+    def doGuess(self, processors=None, strategy='wavelet_peaks',
+                     options={"peak_widths": np.array([10,200]),"peak_step":20}):
         """
 
         Parameters
@@ -246,7 +242,7 @@ class BESHOmodel(Model):
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
         options: dict
-            Default {"peaks_widths": np.array([10,200])}}.
+            Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
         kwargs:
@@ -257,60 +253,28 @@ class BESHOmodel(Model):
         -------
 
         """
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
 
         self._createGuessDatasets()
-        self.__start_pos = 0
-
-        processors = kwargs.get("processors", self._maxCpus)
-        gm = GuessMethods()
-        if strategy in gm.methods:
-            func = gm.__getattribute__(strategy)(frequencies=self.freq_vec, **options)
-            results = list()
-            if self._parallel:
-                # start pool of workers
-                print('Computing Guesses In parallel ... launching %i kernels...' % processors)
-                pool = mp.Pool(processors)
-                self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    # apply guess to this data chunk:
-                    tasks = [vector for vector in self.data]
-                    chunk = int(self.data.shape[0] / processors)
-                    jobs = pool.imap(func, tasks, chunksize=chunk)
-                    # get Results from different processes
-                    print('Extracting Guesses...')
-                    temp = [j for j in jobs]
-                    # Reformat the data to the appropriate type and or do additional computation now
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
-
-                # Finished reading the entire data set
-                print('closing %i kernels...' % processors)
-                pool.close()
-            else:
-                print("Computing Guesses In Serial ...")
-                self._getDataChunk()
-                while self.data is not None:  # as long as we have not reached the end of this data set:
-                    temp = [func(vector) for vector in self.data]
-                    results.append(self._reformatResults(temp, strategy))
-                    # read the next chunk
-                    self._getDataChunk()
-
-            # reorder to get one numpy array out
-            self.guess = np.hstack(tuple(results))
-            print('Completed computing guess. Writing to file.')
-
-            # Write to file
-            self._setResults(is_guess=True)
-        else:
-            warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
+        self._start_pos = 0
+        if strategy == 'complex_gaussian':
+            freq_vec = self.freq_vec
+            options = {'frequencies': freq_vec}
+        super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
 
-    def computeFit(self, strategy='SHO', options={}, **kwargs):
+    def doFit(self, processors=None, solver_type='least_squares',solver_options={'jac':'cs'},
+              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
 
         Parameters
         ----------
+        processors: int
+            Default is 1.
+            Number of processors to use.
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
@@ -318,50 +282,56 @@ class BESHOmodel(Model):
             Default {"peaks_widths": np.array([10,200])}}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
 
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
 
         Returns
         -------
 
         """
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
 
-        self._createFitDataset()
-        self.__start_pos = 0
-        parallel = ''
+        self._createFitDatasets()
+        self._start_pos = 0
+        xvals = self.freq_vec
+        results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
+                          obj_func={'class':'Fit_Methods','obj_func':'SHO', 'xvals':xvals})
+        return results
+        # parallel = ''
+        #
+        # processors = kwargs.get("processors", self._maxCpus)
+        # if processors > 1:
+        #     parallel = 'parallel'
+        #
+        # w_vec = self.freq_vec
+        #
+        # def sho_fit(parm_vec, resp_vec):
+        #     from .utils.be_sho import SHOfunc
+        #     # from .guess_methods import r_square
+        #     # fit = r_square(resp_vec, SHOfunc, parm_vec, w_vec)
+        #     fit = self._r_square(resp_vec, SHOfunc, parm_vec, w_vec)
+        #
+        #     return fit
+        #
+        # '''
+        # Call _optimize to perform the actual fit
+        # '''
+        # self._getGuessChunk()
+        # self._getDataChunk()
+        # results = list()
+        # while self.data is not None:
+        #     data = np.array(self.data[()],copy=True)
+        #     guess = np.array(self.guess[()], copy=True)
+        #     temp = self._optimize(sho_fit, data, guess, solver='least_squares',
+        #                           processors=processors, parallel=parallel)
+        #     results.append(self._reformatResults(temp, 'complex_gaussian'))
+        #     self._getGuessChunk()
+        #     self._getDataChunk()
 
-        processors = kwargs.get("processors", self._maxCpus)
-        if processors > 1:
-            parallel = 'parallel'
+        # self.fit = np.hstack(tuple(results))
+        # self._setResults()
 
-        w_vec = self.freq_vec
-
-        def sho_fit(parm_vec, resp_vec):
-            from .utils.be_sho import SHOfunc
-            # from .guess_methods import r_square
-            # fit = r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-            fit = self._r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-
-            return fit
-
-        '''
-        Call _optimize to perform the actual fit
-        '''
-        self._getGuessChunk()
-        self._getDataChunk()
-        results = list()
-        while self.data is not None:
-            data = np.array(self.data[()],copy=True)
-            guess = np.array(self.guess[()], copy=True)
-            temp = self._optimize(sho_fit, data, guess, solver='least_squares',
-                                  processors=processors, parallel=parallel)
-            results.append(self._reformatResults(temp, 'complex_gaussian'))
-            self._getGuessChunk()
-            self._getDataChunk()
-
-        self.fit = np.hstack(tuple(results))
-        self._setResults()
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
         """
@@ -371,7 +341,7 @@ class BESHOmodel(Model):
         """
         if verbose:
             print('Strategy to use: {}'.format(strategy))
-        # Create an empty dataset to store the guess parameters
+        # Create an empty array to store the guess parameters
         sho_vec = np.zeros(shape=(len(results)), dtype=sho32)
         if verbose:
             print('Raw results and compound SHO vector of shape {}'.format(len(results)))
@@ -401,7 +371,7 @@ class BESHOmodel(Model):
             sho_vec['Frequency [Hz]'] = self.freq_vec[peak_inds]  # Frequency
             sho_vec['Quality Factor'] = np.ones_like(comp_vals) * 10  # Quality factor
             # Add something here for the R^2
-            # sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms) for sho_parms in sho_vec])
+            sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms) for sho_parms in sho_vec])
         elif strategy in ['complex_gaussian']:
             for iresult, result in enumerate(results):
                 sho_vec['Amplitude [V]'][iresult] = result[0]
@@ -409,6 +379,13 @@ class BESHOmodel(Model):
                 sho_vec['Quality Factor'][iresult] = result[2]
                 sho_vec['Phase [rad]'][iresult] = result[3]
                 sho_vec['R2 Criterion'][iresult] = result[4]
+        elif strategy in ['SHO']:
+            for iresult, result in enumerate(results):
+                sho_vec['Amplitude [V]'][iresult] = result.x[0]
+                sho_vec['Frequency [Hz]'][iresult] = result.x[1]
+                sho_vec['Quality Factor'][iresult] = result.x[2]
+                sho_vec['Phase [rad]'][iresult] = result.x[3]
+                sho_vec['R2 Criterion'][iresult] = 1-result.fun
 
         return sho_vec
 

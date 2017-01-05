@@ -22,11 +22,13 @@ from . import sporc
 from .sporc import SporcTranslator
 from . import time_series
 from .time_series import MovieTranslator
-from . import  oneview
+from . import oneview
 from .oneview import OneViewTranslator
 from .igor_ibw import IgorIBWTranslator
+from . import image
+from .image import ImageTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'FastIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
-           'OneViewTranslator']
+           'OneViewTranslator', 'ImageTranslator']

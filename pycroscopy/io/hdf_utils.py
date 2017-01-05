@@ -13,19 +13,19 @@ from .microdata import MicroDataset
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'getDataAttr', 'getH5GroupRef', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels']
+           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims']
 
 
-def getDataSet(h5Parent, dataName):
+def getDataSet(h5_parent, data_name):
     """
     Search for dataset objects in the hdf5 file with given name
     and returns a list of reference(s).
 
     Parameters
     ----------
-    h5Parent : h5py.File reference.
+    h5_parent : h5py.File reference.
         Reference to file, the file must be open and in read-mode.
-    dataName : string.
+    data_name : string.
         Name of Dataset object. If not unique, i.e. parent not specified,
         then references to all Dataset objects that contain this name are returned.
 
@@ -33,26 +33,26 @@ def getDataSet(h5Parent, dataName):
     -------
     list of h5py.Reference of the dataset.
     """
-    if isinstance(h5Parent, h5py.File) or isinstance(h5Parent, h5py.Group):
-        dataList = []
+    if isinstance(h5_parent, h5py.File) or isinstance(h5_parent, h5py.Group):
+        data_list = []
 
         def findData(name, obj):
-            if name.endswith(dataName) and isinstance(obj, h5py.Dataset):
-                dataList.append(obj)
+            if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
+                data_list.append(obj)
 
-        h5Parent.visititems(findData)
-        return dataList
+        h5_parent.visititems(findData)
+        return data_list
     else:
-        print('%s is not an hdf5 File or Group' % (h5Parent))
+        print('%s is not an hdf5 File or Group' % h5_parent)
 
 
-def getAuxData(parentData, **kwargs):
+def getAuxData(parent_data, **kwargs):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
     Parameters
     ----------
-    parentData : h5py.Dataset
+    parent_data : h5py.Dataset
         Dataset object reference.
     auxDataName : list of strings, optional, default = all (DataSet.attrs).
         Name of auxiliary Dataset object to return.
@@ -61,53 +61,55 @@ def getAuxData(parentData, **kwargs):
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
-    auxDataName = kwargs.get('auxDataName', parentData.attrs.iterkeys())
+    auxDataName = kwargs.get('auxDataName', parent_data.attrs.iterkeys())
 
     try:
-        dataList = []
-        f = parentData.file
+        data_list = []
+        file_ref = parent_data.file
         for auxName in auxDataName:
-            ref = parentData.attrs[auxName]
-            if isinstance(ref, h5py.Reference) and isinstance(f[ref], h5py.Dataset):
-                dataList.append(f[ref])
+            ref = parent_data.attrs[auxName]
+            if isinstance(ref, h5py.Reference) and isinstance(file_ref[ref], h5py.Dataset):
+                data_list.append(file_ref[ref])
     except KeyError:
         warn('%s is not an attribute of %s'
-             % (str(auxName), parentData.name))
+             % (str(auxName), parent_data.name))
     except:
         raise
 
-    return dataList
+    return data_list
 
 
-def getDataAttr(parentData, **kwargs):
+def getDataAttr(parent_data, **kwargs):
     """
     Returns attribute associated with some DataSet.
 
     Parameters
     ----------
-    parentData : h5py.Dataset
+    parent_data : h5py.Dataset
         Dataset object reference.
-    attrName : list of strings, optional, default = all (DataSet.attrs).
+
+    Expected attribute as keyword argument:
+    attr_name : list of strings, optional, default = all (DataSet.attrs).
         Name of attribute object to return.
 
     Returns
     -------
     tuple containing (name,value) pairs of attributes
     """
-    attrName = kwargs.get('attrName', parentData.attrs.iterkeys())
+    attr_name = kwargs.get('attr_name', parent_data.attrs.iterkeys())
 
     try:
-        dataList = []
-        for attr in attrName:
-            ref = parentData.attrs[attr]
-            dataList.append(ref)
+        data_list = []
+        for attr in attr_name:
+            ref = parent_data.attrs[attr]
+            data_list.append(ref)
     except KeyError:
         warn('%s is not an attribute of %s'
-             % (str(attr), parentData.name))
+             % (str(attr), parent_data.name))
     except:
         raise
 
-    return dataList
+    return data_list
 
 
 def getH5DsetRefs(ds_names, h5_refs):
@@ -212,7 +214,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
     """
 
     if return_method == 'points':
-        def __cornersToPointArray(start, stop):
+        def __corners_to_point_array(start, stop):
             """
             Convert a pair of tuples representing two opposite corners of an HDF5 region reference
             into a list of arrays for each dimension.
@@ -235,20 +237,20 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
                     ranges.append([stop[i]])
                 else:
                     ranges.append(np.arange(start[i], stop[i] + 1, dtype=np.uint))
-            grid = np.meshgrid(*(ranges), indexing='ij')
+            grid = np.meshgrid(*ranges, indexing='ij')
 
             ref_inds = np.asarray(zip(*(x.flat for x in grid)))
 
             return ref_inds
 
-        retfunc = __cornersToPointArray
+        return_func = __corners_to_point_array
     elif return_method == 'corners':
-        def __cornersToCorners(start, stop):
+        def __corners_to_corners(start, stop):
             return start, stop
 
-        retfunc = __cornersToCorners
+        return_func = __corners_to_corners
     elif return_method == 'slices':
-        def __cornersToSlices(start, stop):
+        def __corners_to_slices(start, stop):
             """
             Convert a pair of tuples representing two opposite corners of an HDF5 region reference
             into a pair of slices.
@@ -271,7 +273,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
 
             return slices
 
-        retfunc = __cornersToSlices
+        return_func = __corners_to_slices
 
     if isinstance(ref, h5py.RegionReference):
         region = h5py.h5r.get_region(ref, h5_main.id)
@@ -282,7 +284,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
             """
             ref_inds = []
             for start, end in region.get_select_hyper_blocklist():
-                ref_inds.append(retfunc(start, end))
+                ref_inds.append(return_func(start, end))
             ref_inds = np.array(ref_inds).reshape(-1, len(start))
 
         elif reg_type == 3:
@@ -291,7 +293,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
             """
             start, end = region.get_select_bounds()
 
-            ref_inds = retfunc(start, end)
+            ref_inds = return_func(start, end)
         else:
             warn('No method currently exists for converting this type of reference.')
     else:
@@ -337,7 +339,7 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     higher priority if both are present.
     """
 
-    def __checkAndLinkSingle(h5_ref, ref_name):
+    def __check_and_link_single(h5_ref, ref_name):
         if isinstance(h5_ref, h5py.Reference):
             h5_dset.attrs[ref_name] = h5_ref
         elif isinstance(h5_ref, h5py.Dataset):
@@ -355,23 +357,23 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
         anc_refs can be iterated over
         """
         for ref_name, h5_ref in zip(anc_names, anc_refs):
-            __checkAndLinkSingle(h5_ref, ref_name)
+            __check_and_link_single(h5_ref, ref_name)
     elif anc_refs is not None:
         """
         anc_refs is just a single value
         """
-        __checkAndLinkSingle(anc_refs, anc_names)
+        __check_and_link_single(anc_refs, anc_names)
     elif isinstance(anc_names, str) or isinstance(anc_names, unicode):
         """
         Single name provided
         """
-        __checkAndLinkSingle(None, anc_names)
+        __check_and_link_single(None, anc_names)
     else:
         """
         Iterable of names provided
         """
         for name in anc_names:
-            __checkAndLinkSingle(None, name)
+            __check_and_link_single(None, name)
 
     h5_dset.file.flush()
 
@@ -499,6 +501,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Position Indices dataset was provided
         """
         ds_pos = h5_pos[()]
+    elif isinstance(h5_pos, np.ndarray):
+        ds_pos = h5_pos
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
 
@@ -527,6 +531,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     Spectroscopic Indices dataset was provided
         """
         ds_spec = h5_spec[()]
+
+    elif isinstance(h5_spec, np.ndarray):
+        ds_spec = h5_spec
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
@@ -568,12 +575,109 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     so that they are in the same order as in the index array
     """
     swap_axes = np.append(np.argsort(pos_sort),
-                          np.argsort(spec_sort)+len(pos_dims))
+                          spec_sort.size - spec_sort - 1 + len(pos_dims))
 
     ds_Nd = np.transpose(ds_Nd, swap_axes)
 
     return ds_Nd, True
 
+
+def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
+    """
+    Reshape the input 2D matrix to be N-dimensions based on the
+    position and spectroscopic datasets.
+
+    Parameters
+    ----------
+        ds_Nd : numpy.array
+            N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
+        h5_pos : HDF5 Dataset
+            Position indices corresponding to rows in the final 2d array
+        h5_spec : HDF5 Dataset
+            Spectroscopic indices corresponding to columns in the final 2d array
+
+    Returns
+    -------
+        ds_2d : numpy.array
+            2 dimensional numpy array arranged as [positions, spectroscopic]
+        success : boolean or string
+            True if full reshape was successful
+
+            "Positions" if it was only possible to reshape by
+            the position dimensions
+
+            False if no reshape was possible
+
+    Notes
+    -----
+    If either `h5_pos` or `h5_spec` are not provided, the function will
+    assume the first dimension is position and the remaining are spectroscopic already
+    in order from fastest to slowest.
+    """
+
+    if h5_pos is None:
+        '''
+    Get the Position datasets from the references if possible
+        '''
+        ds_pos = np.arange(ds_Nd.shape[0], dtype=np.uint8)
+    elif isinstance(h5_pos, h5py.Dataset):
+        '''
+    Position Indices dataset was provided
+        '''
+        ds_pos = h5_pos[()]
+
+    elif isinstance(h5_pos, np.ndarray):
+        ds_pos = h5_pos
+    else:
+        raise TypeError('Position Indices must be either h5py.Dataset or None')
+
+    ##################################################
+
+    if h5_spec is None:
+        '''
+    Get the Spectroscopic datasets from the references if possible
+        '''
+        ds_spec = np.arange(ds_Nd.shape[1:], dtype=np.uint8)
+
+    elif isinstance(h5_spec, h5py.Dataset):
+        '''
+    Spectroscopic Indices dataset was provided
+        '''
+        ds_spec = h5_spec[()]
+
+    elif isinstance(h5_spec, np.ndarray):
+        ds_spec = h5_spec
+    else:
+        raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
+
+    '''
+    Sort the indices from fastest to slowest
+    '''
+    pos_sort = get_sort_order(np.transpose(ds_pos))
+    spec_sort = get_sort_order(ds_spec)
+
+    '''
+    Now we transpose the axes associated with the spectroscopic dimensions
+    so that they are in the same order as in the index array
+    '''
+    swap_axes = np.append(np.argsort(pos_sort),
+                          spec_sort.size - spec_sort - 1 + len(pos_sort))
+
+    ds_Nd = np.transpose(ds_Nd, swap_axes)
+
+    '''
+    Now we reshape the dataset based on those dimensions
+    We must use the spectroscopic dimensions in reverse order
+    '''
+    try:
+        ds_2d = np.reshape(ds_Nd, [ds_pos.shape[0], ds_spec.shape[1]])
+    except ValueError:
+        warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
+        raise
+    except:
+        raise
+
+    return ds_2d, True
 
 def get_dimensionality(ds_index, index_sort=None):
     """
@@ -629,7 +733,7 @@ def copyAttributes(source, dest, skip_refs=True):
         Don't copy references unless asked
         """
         if isinstance(atval, h5py.Reference):
-            if skip_refs:
+            if isinstance(atval, h5py.RegionReference) or skip_refs:
                 continue
             elif isinstance(atval, h5py.RegionReference):
                 """
@@ -647,15 +751,20 @@ def copyAttributes(source, dest, skip_refs=True):
                         else:
                             ref_slice.append(slice(start[i], end[i]))
                 except:
-                    print('Could not create new region reference for {} in {}.'.format(attr, source.name))
+                    warn('Could not create new region reference for {} in {}.'.format(attr, source.name))
                     continue
 
                 dest.attrs[attr] = dest.regionref[tuple(ref_slice)]
                 continue
             else:
-                dest.attrs[attr] = source.file[atval].name
+                dest.attrs[attr] = atval
                 continue
         dest.attrs[attr] = atval
+    if not skip_refs:
+        try:
+            copyRegionRefs(source, dest)
+        except:
+            print('Could not create new region reference for {} in {}.'.format(attr, source.name))
 
     return dest
 
@@ -929,29 +1038,39 @@ def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename
     ds_vals : MicroDataset
             Reduces Spectroscopic values dataset
     """
-    '''
-    Extract all rows that we want to keep from input indices and values
-    '''
-    ind_mat = h5_spec_inds[keep_dim, :][:, step_starts]
-    val_mat = h5_spec_vals[keep_dim, :][:, step_starts]
-    '''
-    Create new MicroDatasets to hold the data
-    Name them based on basename
-    '''
-    ds_inds = MicroDataset(basename+'_Indices', ind_mat, dtype=h5_spec_inds.dtype)
-    ds_vals = MicroDataset(basename+'_Values', val_mat, dtype=h5_spec_vals.dtype)
-    # Extracting the labels from the original spectroscopic data sets
-    sho_inds_labs = h5_spec_inds.attrs['labels'][keep_dim]
-    # Creating the dimension slices for the new spectroscopic data sets
-    inds_slices = dict()
-    for row_ind, row_name in enumerate(sho_inds_labs):
-        inds_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
+    if h5_spec_inds.shape[0] > 1:
+        '''
+        Extract all rows that we want to keep from input indices and values
+        '''
+        ind_mat = h5_spec_inds[keep_dim, :][:, step_starts]
+        val_mat = h5_spec_vals[keep_dim, :][:, step_starts]
+        '''
+        Create new MicroDatasets to hold the data
+        Name them based on basename
+        '''
+        ds_inds = MicroDataset(basename+'_Indices', ind_mat, dtype=h5_spec_inds.dtype)
+        ds_vals = MicroDataset(basename+'_Values', val_mat, dtype=h5_spec_vals.dtype)
+        # Extracting the labels from the original spectroscopic data sets
+        sho_inds_labs = h5_spec_inds.attrs['labels'][keep_dim]
+        # Creating the dimension slices for the new spectroscopic data sets
+        inds_slices = dict()
+        for row_ind, row_name in enumerate(sho_inds_labs):
+            inds_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
 
-    # Adding the labels and units to the new spectroscopic data sets
-    ds_inds.attrs['labels'] = inds_slices
-    ds_inds.attrs['units'] = h5_spec_inds.attrs['units'][keep_dim]
-    ds_vals.attrs['labels'] = inds_slices
-    ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
+        # Adding the labels and units to the new spectroscopic data sets
+        ds_inds.attrs['labels'] = inds_slices
+        ds_inds.attrs['units'] = h5_spec_inds.attrs['units'][keep_dim]
+        ds_vals.attrs['labels'] = inds_slices
+        ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
+
+    else:  # Single spectroscopic dimension:
+        ds_inds = MicroDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
+        ds_vals = MicroDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
+
+        ds_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
+        ds_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
+        ds_inds.attrs['units'] = ''
+        ds_vals.attrs['units'] = ''
 
     return ds_inds, ds_vals
 

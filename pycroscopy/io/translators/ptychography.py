@@ -166,30 +166,30 @@ class PtychographyTranslator(Translator):
         h5_ronch[:] = mean_ronch / num_files
         self.hdf.flush()
 
-    def downSampRoncVec(self, ronch_vec, binning_factor):
-        """
-        Downsample the image by taking the mean over nearby values
-
-        Parameters
-        ----------
-        ronch_vec : ndarray
-            Image data
-        binning_factor : int
-            factor to reduce the size of the image by
-
-        Returns
-        -------
-        ronc_mat3_mean : ndarray
-            Flattened downsampled image
-        """
-        ccd_pix = int(np.sqrt(ronch_vec.size))
-        ronc_mat = ronch_vec.reshape(ccd_pix, ccd_pix)
-        ronc_mat2 = ronc_mat.reshape(ccd_pix, ccd_pix / binning_factor, binning_factor)
-        ronc_mat2_mean = ronc_mat2.mean(2)  # take the mean along the 3rd dimension
-        ronc_mat3 = ronc_mat2_mean.reshape(ccd_pix / binning_factor, binning_factor, -1)
-        ronc_mat3_mean = ronc_mat3.mean(1)
-
-        return ronc_mat3_mean.reshape(-1)
+    # def downSampRoncVec(self, ronch_vec, binning_factor):
+    #     """
+    #     Downsample the image by taking the mean over nearby values
+    #
+    #     Parameters
+    #     ----------
+    #     ronch_vec : ndarray
+    #         Image data
+    #     binning_factor : int
+    #         factor to reduce the size of the image by
+    #
+    #     Returns
+    #     -------
+    #     ronc_mat3_mean : ndarray
+    #         Flattened downsampled image
+    #     """
+    #     ccd_pix = int(np.sqrt(ronch_vec.size))
+    #     ronc_mat = ronch_vec.reshape(ccd_pix, ccd_pix)
+    #     ronc_mat2 = ronc_mat.reshape(ccd_pix, ccd_pix / binning_factor, binning_factor)
+    #     ronc_mat2_mean = ronc_mat2.mean(2)  # take the mean along the 3rd dimension
+    #     ronc_mat3 = ronc_mat2_mean.reshape(ccd_pix / binning_factor, binning_factor, -1)
+    #     ronc_mat3_mean = ronc_mat3.mean(1)
+    #
+    #     return ronc_mat3_mean.reshape(-1)
 
     @staticmethod
     def _parsefilepath(path, ftype='all'):
@@ -305,12 +305,14 @@ class PtychographyTranslator(Translator):
         chan_grp = MicroDataGroup('Channel_000')
     # Get the Position and Spectroscopic Datasets
     #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets((usize, vsize),
-                                                                     labels=['U', 'V'],
-                                                                     units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = self._buildpositiondatasets([scan_size_x, scan_size_y],
-                                                             labels=['X', 'Y'],
-                                                             units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets((usize, vsize),
+                                                              is_spectral=True,
+                                                              labels=['U', 'V'],
+                                                              units=['pixel', 'pixel'])
+        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([scan_size_x, scan_size_y],
+                                                           is_spectral=False,
+                                                           labels=['X', 'Y'],
+                                                           units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
