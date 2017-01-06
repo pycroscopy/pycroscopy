@@ -83,7 +83,7 @@ class Node(object):
                     print('       Child node', str(child.name), 'has', str(child.num_nodes), 'children')
                 # primitive method of equal bias mean: resp.append(child.value)
                 # weighted mean:
-                resp.append(child.value * child.num_nodes / self.num_nodes)
+                resp.append(child.value * child.labels.size / self.labels.size)
                 # self.value = np.mean(np.array(resp), axis=0)
             self.value = np.sum(np.array(resp), axis=0)
 

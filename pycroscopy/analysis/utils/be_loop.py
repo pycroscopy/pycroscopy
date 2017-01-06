@@ -629,9 +629,10 @@ def fit_loop(vdc_shifted, pr_shifted, guess):
         return Jerr
 
     # We may need to think about these bounds further, but these will work for now.
-
-    lb = ([-1E3, -1E3, -1E3, -1E3, -10, -100, -100, -100, -100])  # Lower Bounds
-    ub = ([1E3, 1E3, 1E3, 1E3, 10, 100, 100, 100, 100])  # Upper Bounds
+    # lb = ([-1E3,-1E3,-1E3,-1E3,-1E-16,-100,-100,-100,-100]) #Lower Bounds
+    # ub = ([1E3,1E3,1E3,1E3, 1E-6,100,100,100,100]) #Upper Bounds
+    lb = ([-1E3, -1E3, -1E3, -1E3, -1E-16, 1E-3, 1E-3, 1E-3, 1E-3])  # Lower Bounds
+    ub = ([1E3, 1E3, 1E3, 1E3, 1E-6, 100, 100, 100, 100])  # Upper Bounds
 
     xdata = vdc_shifted.ravel()
     ydata = pr_shifted.ravel()
@@ -639,10 +640,12 @@ def fit_loop(vdc_shifted, pr_shifted, guess):
     '''Do the fitting. Least Squares fit. Using more accurate determination of
     Jacobian. This is slower, but will be necessary initially for generating the
     guesses (see below)'''
-    # plsq = least_squares(loopResiduals, guess.ravel(), args=(ydata, xdata), jac='3-point',
-    #                      max_nfev=1E4,bounds=((lb,ub)),loss='soft_l1')
-    plsq = least_squares(loopResiduals, guess.ravel(), args=(ydata, xdata), jac=loopJacResiduals,
-                         max_nfev=1E4, bounds=((lb, ub)), loss='soft_l1')
+    plsq = least_squares(loopResiduals, guess, args=(ydata, xdata), bounds=(lb, ub),
+                         jac='3-point', xtol=1E-15)
+    # plsq = least_squares(loopResiduals, guess, args=(ydata, xdata), jac='cs',
+    #                      max_nfev=500, bounds=((lb, ub)), loss='soft_l1', xtol=1E-15)
+    # plsq = least_squares(loopResiduals, guess.ravel(), args=(ydata, xdata), jac=loopJacResiduals,
+    #                      max_nfev=1E4, bounds=((lb, ub)), loss='soft_l1')
     pr_fit_vec = loop_fit_function(xdata, plsq.x)
 
     '''Here we compare the values of the information criterion, for the whole loop fit and a simple linear fit
