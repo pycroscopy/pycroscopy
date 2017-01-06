@@ -2,7 +2,7 @@
 """
 Created on Wed Jun 29 11:13:22 2016
 
-@author: Rama K. Vasudevan, Stephen Jesse, Suhas Somnath
+@author: Rama K. Vasudevan, Stephen Jesse, Suhas Somnath, Chris R. Smith
 
 Various helper functions for aiding loop fitting and projection
 """
@@ -379,7 +379,7 @@ def loop_fit_jacobian(vdc, coef_vec):
 ###############################################################################
 
 
-def getSwitchingCoefs(loop_centroid, loop_coef_vec):
+def get_switching_coefs(loop_centroid, loop_coef_vec):
     """
     Parameters
     -----------
@@ -554,28 +554,30 @@ def generate_guess(vdc, pr_vec, show_plots=False):
 
     """Find the coordinates of the points where the horizontal line through the
     centroid intersects with the convex hull"""
-    X_intersections = []
+    x_intersections = []
     for pair in xrange(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                 [hull.min_bound[0], geom_centroid[1]],
                                 [hull.max_bound[0], geom_centroid[1]])
         if type(x_pt) != type(None):
-            X_intersections.append(x_pt)
+            x_intersections.append(x_pt)
 
     min_y_intercept = min(y_intersections[0][1], y_intersections[1][1])
     max_y_intercept = max(y_intersections[0][1], y_intersections[1][1])
 
     # Only the first four parameters use the information from the intercepts
-    init_guess_coef_vec = np.zeros(shape=(9))
+    # a3, a4 are swapped in Stephen's figure. That was causing the branches to swap during fitting
+    # the a3, a4 are fixed now below:
+    init_guess_coef_vec = np.zeros(shape=9)
     init_guess_coef_vec[0] = min_y_intercept
     init_guess_coef_vec[1] = max_y_intercept - min_y_intercept
-    init_guess_coef_vec[2] = max(X_intersections[0][0], X_intersections[1][0])
-    init_guess_coef_vec[3] = min(X_intersections[0][0], X_intersections[1][0])
+    init_guess_coef_vec[2] = min(x_intersections[0][0], x_intersections[1][0])
+    init_guess_coef_vec[3] = max(x_intersections[0][0], x_intersections[1][0])
     init_guess_coef_vec[4] = 0
-    init_guess_coef_vec[5] = .5
-    init_guess_coef_vec[6] = .2
-    init_guess_coef_vec[7] = 1
-    init_guess_coef_vec[8] = .2
+    init_guess_coef_vec[5] = 2  # 0.5
+    init_guess_coef_vec[6] = 2  # 0.2
+    init_guess_coef_vec[7] = 2  # 1.0
+    init_guess_coef_vec[8] = 2  # 0.2
 
     if show_plots:
         fig, ax = plt.subplots()
@@ -585,8 +587,8 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         ax.plot([hull.min_bound[0], hull.max_bound[0]], [geom_centroid[1], geom_centroid[1]], 'g')
         for simplex in hull.simplices:
             ax.plot(points[simplex, 0], points[simplex, 1], 'k')
-        ax.plot(X_intersections[0][0], X_intersections[0][1], 'r*')
-        ax.plot(X_intersections[1][0], X_intersections[1][1], 'r*')
+        ax.plot(x_intersections[0][0], x_intersections[0][1], 'r*')
+        ax.plot(x_intersections[1][0], x_intersections[1][1], 'r*')
         ax.plot(y_intersections[0][0], y_intersections[0][1], 'r*')
         ax.plot(y_intersections[1][0], y_intersections[1][1], 'r*')
         ax.plot(vdc, loop_fit_function(vdc, init_guess_coef_vec))
@@ -620,55 +622,50 @@ def fit_loop(vdc_shifted, pr_shifted, guess):
         fit result values, ie. evaluation of f(V).
     """
 
-    def loopResiduals(p, y, x):
+    def loop_residuals(p, y, x):
         err = y - loop_fit_function(x, p)
         return err
 
-    def loopJacResiduals(p, y, x):
+    def loop_jacobian_residuals(p, y, x):
         Jerr = -loop_fit_jacobian(x, p)
         return Jerr
 
-    # We may need to think about these bounds further, but these will work for now.
-    # lb = ([-1E3,-1E3,-1E3,-1E3,-1E-16,-100,-100,-100,-100]) #Lower Bounds
-    # ub = ([1E3,1E3,1E3,1E3, 1E-6,100,100,100,100]) #Upper Bounds
-    lb = ([-1E3, -1E3, -1E3, -1E3, -1E-16, 1E-3, 1E-3, 1E-3, 1E-3])  # Lower Bounds
-    ub = ([1E3, 1E3, 1E3, 1E3, 1E-6, 100, 100, 100, 100])  # Upper Bounds
+    # do not change these:
+    lb = ([-1E3, -1E3, -1E3, -1E3, -1E-1, 1E-3, 1E-3, 1E-3, 1E-3])  # Lower Bounds
+    ub = ([1E3, 1E3, 1E3, 1E3, 1E-1, 100, 100, 100, 100])  # Upper Bounds
 
-    xdata = vdc_shifted.ravel()
-    ydata = pr_shifted.ravel()
+    x_data = vdc_shifted.ravel()
+    y_data = pr_shifted.ravel()
 
     '''Do the fitting. Least Squares fit. Using more accurate determination of
     Jacobian. This is slower, but will be necessary initially for generating the
     guesses (see below)'''
-    plsq = least_squares(loopResiduals, guess, args=(ydata, xdata), bounds=(lb, ub),
-                         jac='3-point', xtol=1E-15)
-    # plsq = least_squares(loopResiduals, guess, args=(ydata, xdata), jac='cs',
-    #                      max_nfev=500, bounds=((lb, ub)), loss='soft_l1', xtol=1E-15)
-    # plsq = least_squares(loopResiduals, guess.ravel(), args=(ydata, xdata), jac=loopJacResiduals,
-    #                      max_nfev=1E4, bounds=((lb, ub)), loss='soft_l1')
-    pr_fit_vec = loop_fit_function(xdata, plsq.x)
+    # do not change these:
+    plsq = least_squares(loop_residuals, guess, args=(y_data, x_data), bounds=(lb, ub),
+                         jac='3-point')
+    pr_fit_vec = loop_fit_function(x_data, plsq.x)
 
     '''Here we compare the values of the information criterion, for the whole loop fit and a simple linear fit
     We use both the AIC and BIC creterion metrics to compare which is better
     Lower values (even negative) are better than higher values).'''
 
-    N = len(xdata)
-    sd_loop = np.std((ydata - pr_fit_vec))
+    num_dc_steps = len(x_data)
+    sd_loop = np.std((y_data - pr_fit_vec))
     df_loop = 8  # degrees of freedom
     df_line = 1
 
-    LL = np.sum(stats.norm.logpdf(ydata, loc=pr_fit_vec, scale=sd_loop))  # log liklihood estimation
-    AIC_loop = 2.0 * df_loop - 2.0 * LL  # calculate AIC
-    BIC_loop = -2.0 * LL + df_loop * np.log(N)  # calculate BIC
+    l_l = np.sum(stats.norm.logpdf(y_data, loc=pr_fit_vec, scale=sd_loop))  # log likelihood estimation
+    aic_loop = 2.0 * df_loop - 2.0 * l_l  # calculate AIC
+    bic_loop = -2.0 * l_l + df_loop * np.log(num_dc_steps)  # calculate BIC
 
-    lin_fit = np.polyfit(xdata, ydata, 1)
+    lin_fit = np.polyfit(x_data, y_data, 1)
 
-    sd_line = np.std((ydata - np.polyval(lin_fit, xdata)))
-    L2 = np.sum(stats.norm.logpdf(ydata, loc=np.polyval(lin_fit, xdata), scale=sd_line))
+    sd_line = np.std((y_data - np.polyval(lin_fit, x_data)))
+    l2 = np.sum(stats.norm.logpdf(y_data, loc=np.polyval(lin_fit, x_data), scale=sd_line))
 
-    AIC_line = 2.0 * df_line - 2.0 * L2
-    BIC_line = -2.0 * L2 + df_line * np.log(N)
+    aic_line = 2.0 * df_line - 2.0 * l2
+    bic_line = -2.0 * l2 + df_line * np.log(num_dc_steps)
 
-    criterion_values = (AIC_loop, BIC_loop, AIC_line, BIC_line)
+    criterion_values = (aic_loop, bic_loop, aic_line, bic_line)
 
     return plsq, criterion_values, pr_fit_vec
