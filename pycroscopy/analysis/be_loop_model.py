@@ -15,8 +15,8 @@ import numpy as np
 from .model import Model
 from .utils.be_loop import projectLoop
 from .be_sho_model import sho32
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, copyRegionRefs, linkRefs, linkRefAsAlias, \
-    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
+    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 loop_metrics32 = np.dtype([('Area', np.float32),
@@ -48,14 +48,19 @@ class BELoopModel(Model):
 
     def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
         super(BELoopModel, self).__init__(h5_main, variables, parallel)
+        self._h5_group = None
         self._sho_spec_inds = None
-        self._sho_spec_vals = None
-        self.__h5_pos_inds = None
-        self.__current_pos_slice = None
-        self.__current_sho_spec_slice = None
-        self.__dc_offset_index = None
-        self.__all_but_forc_inds = None
-        self.__all_but_dc_forc_inds = None
+        self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
+        self._met_spec_inds = None
+        self._num_forcs = 0
+        self._h5_pos_inds = None
+        self._current_pos_slice = None
+        self._current_sho_spec_slice = None
+        self._current_met_spec_slice = None
+        self._dc_offset_index = 0
+        self._sho_all_but_forc_inds = None
+        self._sho_all_but_dc_forc_inds = None
+        self._met_all_but_forc_inds = None
         
 
     def _isLegal(self, h5_main, variables=['DC_Offset']):
@@ -100,16 +105,45 @@ class BELoopModel(Model):
 
         return super(BELoopModel, self)._isLegal(h5_main, variables)
 
-    def __create_projection_datasets(self):
-        # First grab the spectroscopic indices and values
-        h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-        h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+    def simulate_script(self):
 
-        dc_ind = np.argwhere(h5_spec_vals.attrs['labels'] == 'DC_Offset').flatten()
-        not_dc_inds = np.delete(np.arange(h5_spec_vals.shape[0]), dc_ind)
+        self._create_projection_datasets()
+        max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
+
+        # turn this into a loop
+        forc_chunk_index = 0
+        pos_chunk_index = 0
+
+        self._current_pos_slice = slice(pos_chunk_index * max_pos, (pos_chunk_index + 1) * max_pos)
+        self._current_sho_spec_slice = slice(sho_spec_inds_per_forc * forc_chunk_index,
+                                              sho_spec_inds_per_forc * (forc_chunk_index + 1))
+        self._current_met_spec_slice = slice(metrics_spec_inds_per_forc * forc_chunk_index,
+                                              metrics_spec_inds_per_forc * (forc_chunk_index + 1))
+
+        dc_vec = self._get_dc_offset(verbose=True)
+
+        # read the data here
+        raw_2d = self.h5_main[self._current_pos_slice, self._current_sho_spec_slice]
+        loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(raw_2d, verbose=True)
+
+        # step 8: perform loop unfolding
+        projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
+        print('Finished projecting all loops')
+        print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
+        print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
+
+        # test the reshapes back
+
+    def _create_projection_datasets(self):
+        # First grab the spectroscopic indices and values
+        self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+
+        dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').flatten()
+        not_dc_inds = np.delete(np.arange(self._sho_spec_vals.shape[0]), dc_ind)
 
         # Calculate the number of loops per position
-        cycle_start_inds = np.argwhere(h5_spec_inds[dc_ind, :] == 0)
+        cycle_start_inds = np.argwhere(self._sho_spec_inds[dc_ind, :] == 0)
         tot_cycles = cycle_start_inds.size
 
         if not_dc_inds.size == 0:
@@ -122,11 +156,11 @@ class BELoopModel(Model):
         else:
             # typical case - multiple spectroscopic indices
             # Metrics lose the first dimension - Vdc:
-            metrics_labels = h5_spec_vals.attrs['labels'][not_dc_inds]
-            metrics_units = h5_spec_vals.attrs['units'][not_dc_inds]
+            metrics_labels = self._sho_spec_vals.attrs['labels'][not_dc_inds]
+            metrics_units = self._sho_spec_vals.attrs['units'][not_dc_inds]
 
-            met_spec_inds_mat = h5_spec_inds[not_dc_inds, :][:, cycle_start_inds].squeeze()
-            met_spec_vals_mat = h5_spec_vals[not_dc_inds, :][:, cycle_start_inds].squeeze()
+            met_spec_inds_mat = self._sho_spec_inds[not_dc_inds, :][:, cycle_start_inds].squeeze()
+            met_spec_vals_mat = self._sho_spec_vals[not_dc_inds, :][:, cycle_start_inds].squeeze()
 
         # Prepare containers for the dataets
         ds_projected_loops = MicroDataset('Projected_Loops', data=[], dtype=np.float32,
@@ -157,22 +191,23 @@ class BELoopModel(Model):
                               ds_loop_met_spec_inds, ds_loop_met_spec_vals])
 
         h5_proj_grp_refs = self.hdf.writeData(proj_grp)
-
         self.h5_projected_loops = getH5DsetRefs(['Projected_Loops'], h5_proj_grp_refs)[0]
         self.h5_loop_metrics = getH5DsetRefs(['Loop_Metrics'], h5_proj_grp_refs)[0]
-        h5_loop_met_spec_inds = getH5DsetRefs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]
+        self._met_spec_inds = getH5DsetRefs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]
         h5_loop_met_spec_vals = getH5DsetRefs(['Loop_Metrics_Values'], h5_proj_grp_refs)[0]
+        self._h5_group = h5_loop_met_spec_vals.parent
 
         h5_pos_dsets = getAuxData(self.h5_main, auxDataName=['Position_Indices',
                                                              'Position_Values'])
+        self._h5_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
         # do linking here
         # first the positions
         linkRefs(self.h5_projected_loops, h5_pos_dsets)
         linkRefs(self.h5_projected_loops, [self.h5_loop_metrics])
         linkRefs(self.h5_loop_metrics, h5_pos_dsets)
         # then the spectroscopic
-        linkRefs(self.h5_projected_loops, [h5_spec_inds, h5_spec_vals])
-        linkRefAsAlias(self.h5_loop_metrics, h5_loop_met_spec_inds, 'Spectroscopic_Indices')
+        linkRefs(self.h5_projected_loops, [self._sho_spec_inds, self._sho_spec_vals])
+        linkRefAsAlias(self.h5_loop_metrics, self._met_spec_inds, 'Spectroscopic_Indices')
         linkRefAsAlias(self.h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
 
         copyRegionRefs(self.h5_main, self.h5_projected_loops)
@@ -182,13 +217,56 @@ class BELoopModel(Model):
 
         return
     
-    def __reshape_sho_matrix(self, raw_2d, verbose=False):
+    def _get_sho_chunk_sizes(self, max_mem_MB, verbose=False):
+        # Step 1: Find number of FORC cycles (if any), DC steps, and number of loops
+        dc_offset_index = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'DC_Offset')[0][0]
+        num_dc_steps = np.unique(self._sho_spec_inds[dc_offset_index]).size
+        all_spec_dims = range(self._sho_spec_inds.shape[0])
+        all_spec_dims.remove(dc_offset_index)
+        self._num_forcs = 1
+        if 'FORC' in self._sho_spec_inds.attrs['labels']:
+            forc_pos = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'FORC')[0][0]
+            self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
+            all_spec_dims.remove(forc_pos)
+        # calculate number of loops:
+        loop_dims = get_dimensionality(np.transpose(self._h5_pos_inds), all_spec_dims)
+        loops_per_forc = np.product(loop_dims)
+
+        # Step 2: Calculate the largest number of FORCS and positions that can be read given memory limits:
+        size_per_forc = num_dc_steps * loops_per_forc * len(self.h5_main.dtype) * self.h5_main.dtype[0].itemsize
+        """
+        How we arrive at the number for the overhead (how many times the size of the data-chunk we will use in memory)
+        1 for the original data, 1 for data copied to all children processes, 1 for results, 0.5 for fit, guess, misc
+        """
+        mem_overhead = 3.5  
+        max_pos = int(max_mem_MB * 1024 ** 2 / (size_per_forc * mem_overhead))
+        if verbose:
+            print('Can read {} of {} pixels given a {} MB memory limit'.format(max_pos, 
+                                                                               self._h5_pos_inds.shape[0], max_mem_MB))
+        max_pos = int(min(self._h5_pos_inds.shape[0], max_pos))
+        sho_spec_inds_per_forc = int(self._sho_spec_inds.shape[1] / self._num_forcs)
+        metrics_spec_inds_per_forc = int(self._met_spec_inds.shape[1] / self._num_forcs)
+
+        # Step 3: Read allowed chunk
+
+        self._sho_all_but_forc_inds = range(self._sho_spec_inds.shape[0])
+        self._met_all_but_forc_inds = range(self._met_spec_inds.shape[0])
+        if self._num_forcs > 1:
+            self._sho_all_but_forc_inds.remove(forc_pos)
+            met_forc_pos = np.argwhere(self._met_spec_inds.attrs['labels'] == 'FORC')[0][0]
+            self._met_all_but_forc_inds.remove(met_forc_pos)
+
+        return max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc
         
-        fit_nd, success = reshape_to_Ndims(raw_2d, h5_pos=self.__h5_pos_inds[self.__current_pos_slice],
-                                           h5_spec=self._sho_spec_inds[self.__all_but_forc_inds,
-                                                                       self.__current_sho_spec_slice])
-        dim_names_orig = np.hstack((self.__h5_pos_inds.attrs['labels'],
-                                    self._sho_spec_inds.attrs['labels'][self.__all_but_forc_inds]))
+    
+    def _reshape_sho_matrix(self, raw_2d, verbose=False):
+        # step 4: reshape to N dimensions
+        fit_nd, success = reshape_to_Ndims(raw_2d,
+                                           h5_pos=self._h5_pos_inds[self._current_pos_slice],
+                                           h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                                       self._current_sho_spec_slice])
+        dim_names_orig = np.hstack((self._h5_pos_inds.attrs['labels'],
+                                    self._sho_spec_inds.attrs['labels'][self._sho_all_but_forc_inds]))
         
         if not success:
             warn('Error - could not reshape provided raw data chunk...')
@@ -197,71 +275,71 @@ class BELoopModel(Model):
             print 'Shape of N dimensional dataset:', fit_nd.shape
             print 'Dimensions of order:', dim_names_orig
 
-        # step 4: Move the voltage dimension to the first dim
-        self.__dc_offset_index += len(self.__h5_pos_inds.attrs['labels'])
-        order_dc_outside_nd = [self.__dc_offset_index] + range(self.__dc_offset_index) + range(self.__dc_offset_index + 1, len(fit_nd.shape))
-        order_dc_offset_reverse = range(1, self.__dc_offset_index + 1) + [0] + range(self.__dc_offset_index + 1, len(fit_nd.shape))
+        # step 5: Move the voltage dimension to the first dim
+        self._dc_offset_index += len(self._h5_pos_inds.attrs['labels'])
+        order_dc_outside_nd = [self._dc_offset_index] + range(self._dc_offset_index) + \
+                                                         range(self._dc_offset_index + 1, len(fit_nd.shape))
+        order_dc_offset_reverse = range(1, self._dc_offset_index + 1) + [0] + range(self._dc_offset_index + 1,
+                                                                                            len(fit_nd.shape))
         fit_Nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
             print 'originally:', fit_nd.shape, ', after moving DC offset outside:', fit_Nd2.shape
             print 'new dim names:', dim_names_dc_out
 
-        # step 5: reshape the ND data to 2D arrays
+        # step 6: reshape the ND data to 2D arrays
         loops_2d = np.reshape(fit_Nd2, (fit_Nd2.shape[0], -1))
         if verbose:
             print 'Loops ready to be projected of shape (Vdc, all other dims besides FORC):', loops_2d.shape
 
-        return loops_2d
+        return loops_2d, order_dc_offset_reverse, fit_Nd2.shape
 
-    def __reshape_projected_loops_for_h5(self, projected_loops_2d, verbose=False):
-
+    def _reshape_projected_loops_for_h5(self, projected_loops_2d, order_dc_offset_reverse,
+                                         nd_mat_shape_dc_first, verbose=False):
         if verbose:
-            print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', fit_Nd2.shape
-
+            print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
         # Step 9: Reshape back to same shape as fit_Nd2:
-        projected_loops_nd = np.reshape(projected_loops_2d, fit_Nd2.shape)
+        projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first)
         if verbose:
             print 'Projected loops reshaped to N dimensions :', projected_loops_nd.shape
-            print 'Loop metrics reshaped to N dimensions :', loop_metrics_nd.shape
-
         # Step 10: Move Vdc back inwards. Only for projected loop
         projected_loops_nd_2 = np.transpose(projected_loops_nd, order_dc_offset_reverse)
         if verbose:
-            print 'Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape, ', should match with:', fit_Nd.shape
-
+            print 'Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape
         # step 11: reshape back to 2D
-        proj_loops_2d, success = reshape_from_Ndims(projected_loops_nd_2, h5_pos=ds_pos_inds,
-                                                                 h5_spec=ds_spec_inds)
+        proj_loops_2d, success = reshape_from_Ndims(projected_loops_nd_2,
+                                                    h5_pos=self._h5_pos_inds[self._current_pos_slice],
+                                                    h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                                                self._current_sho_spec_slice])
         if not success:
             warn('unable to reshape projected loops')
             return None
-
         if verbose:
-            print 'loops shape after collapsing dimensions:', proj_loops_2d.shape, ', should match with:', h5_fit[
-                                                                                                           pos_start:pos_end,
-                                                                                                           spec_start: spec_end].shape
+            print 'loops shape after collapsing dimensions:', proj_loops_2d.shape
 
         return proj_loops_2d
 
-
-    def __reshape_results_for_h5(self, raw_results, verbose=False):
+    def _reshape_results_for_h5(self, raw_results, nd_mat_shape_dc_first, verbose=False):
 
         if verbose:
             print 'Loop metrics of shape:', raw_results.shape
-
         # Step 9: Reshape back to same shape as fit_Nd2:
-        loop_metrics_nd = np.reshape(raw_results, fit_Nd2.shape[1:])
+        loop_metrics_nd = np.reshape(raw_results, nd_mat_shape_dc_first[1:])
         if verbose:
             print 'Loop metrics reshaped to N dimensions :', loop_metrics_nd.shape
-
         # step 11: reshape back to 2D
-        metrics_2d, success = px.hdf_utils.reshape_from_Ndims(loop_metrics_nd, h5_pos=ds_pos_inds,
-                                                              h5_spec=h5_spec_inds_for_metrics)
+        metrics_2d, success = reshape_from_Ndims(loop_metrics_nd,
+                                                 h5_pos=self._h5_pos_inds[self._current_pos_slice],
+                                                 h5_spec=self._met_spec_inds)
+        if not success:
+            warn('unable to reshape ND results back to 2D')
+            return None
         if verbose:
             print 'metrics shape after collapsing dimensions:', metrics_2d.shape
 
-    def __get_dc_offset(self, verbose=False):
+        return metrics_2d
+
+    def _get_dc_offset(self, verbose=False):
         """
         Gets the DC offset for the current FORC step
 
@@ -275,13 +353,13 @@ class BELoopModel(Model):
         dc_vec : 1D float numpy array
             DC offsets for the current FORC step
         """
-        spec_sort = get_sort_order(self._sho_spec_inds[self.__all_but_forc_inds, self.__current_sho_spec_slice])
+        spec_sort = get_sort_order(self._sho_spec_inds[self._sho_all_but_forc_inds, self._current_sho_spec_slice])
         # get the size for each of these dimensions
-        spec_dims = get_dimensionality(self._sho_spec_inds[self.__all_but_forc_inds, self.__current_sho_spec_slice],
-                                       spec_sort)
+        spec_dims = get_dimensionality(self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                            self._current_sho_spec_slice], spec_sort)
         # apply this knowledge to reshape the spectroscopic values
         # remember to reshape such that the dimensions are arranged in reverse order (slow to fast)
-        spec_vals_nd = np.reshape(self._sho_spec_vals[self.__all_but_forc_inds, self.__current_sho_spec_slice],
+        spec_vals_nd = np.reshape(self._sho_spec_vals[self._sho_all_but_forc_inds, self._current_sho_spec_slice],
                                   [-1] + spec_dims[::-1])
         # This should result in a N+1 dimensional matrix where the first index contains the actual data
         # the other dimensions are present to easily slice the data
@@ -342,7 +420,7 @@ class BELoopModel(Model):
         """
         num_pixels = int(sho_mat.shape[0])
         projected_loop_mat = np.zeros(shape=sho_mat.shape, dtype=np.float32)
-        ancillary_mat = np.zeros(shape=num_pixels, dtype=loop_fit32)
+        ancillary_mat = np.zeros(shape=num_pixels, dtype=loop_metrics32)
 
         for pixel in range(num_pixels):
             if pixel % 50 == 0:
@@ -361,37 +439,15 @@ class BELoopModel(Model):
 
         return projected_loop_mat, ancillary_mat
 
-    def __project_loops(self):
+    def _project_loops(self):
         pass
-
-    def __create_guess_fit_datasets(self, is_fit, group_attrs=None):
-
-        dset_name = 'Guess'
-        if is_fit:
-            dset_name = 'Fit'
-        ds_guess = MicroDataset(dset_name, data=[], dtype=loop_fit32, maxshape=self.h5_loop_metrics.shape)
-        h5_group = self.h5_loop_metrics.parent
-        loop_fit_grp = MicroDataGroup(self.h5_main.name.split('/')[-1], h5_group.parent.name[1:])
-        loop_fit_grp.addChildren([ds_guess])
-        if group_attrs is not None:
-            loop_fit_grp.attrs = group_attrs
-
-        h5_proj_grp_refs = self.hdf.writeData(loop_fit_grp)
-
-        h5_dset = getH5DsetRefs([dset_name], h5_proj_grp_refs)[0]
-        # This should link the ancillary datasets correctly
-        h5_dset = copyAttributes(self.h5_loop_metrics, h5_dset)
-
-        if is_fit:
-            self.h5_fit = h5_dset
-        else:
-            self.h5_guess = h5_dset
 
     def _createGuessDatasets(self):
         """
         Creates the HDF5 Guess dataset and links the it to the ancillary datasets.
         """
-        self.__create_guess_fit_datasets(self, False, group_attrs={'guess method': 'pycroscopy statistical'})
+        self.h5_guess = create_empty_dataset(self.h5_loop_metrics, loop_fit32, 'Guess')
+        self._h5_group.attrs['guess method'] = 'pycroscopy statistical'
 
     def _createFitDataset(self):
         """
@@ -402,4 +458,5 @@ class BELoopModel(Model):
             warn('Need to guess before fitting!')
             return
 
-        self.__create_guess_fit_datasets(self, True, group_attrs={'fit method': 'pycroscopy functional'})
+        self.h5_fit = create_empty_dataset(self.h5_guess, loop_fit32, 'Fit')
+        self._h5_group.attrs['fit method'] = 'pycroscopy functional'
