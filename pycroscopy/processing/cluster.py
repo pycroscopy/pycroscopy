@@ -52,11 +52,10 @@ class Cluster(object):
         self.estimator = cls.__dict__[method_name].__call__(*args, **kwargs)
         self.method_name = method_name
 
-        if num_comps is None:
-            self.num_comps = self.h5_main.shape[1]
-        else:
-            self.num_comps = np.min([num_comps, self.h5_main.shape[1]])
-        self.data_slice = (slice(None), slice(0, num_comps))
+        comp_slice, num_comps = self._get_component_slice(num_comps)
+
+        self.num_comps = num_comps
+        self.data_slice = (slice(None), comp_slice)
 
         # figure out the operation that needs need to be performed to convert to real scalar
         retval = check_dtype(h5_main)
@@ -118,12 +117,58 @@ class Cluster(object):
             # get all pixels with this label
             targ_pos = np.where(labels == clust_ind)[0]
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[targ_pos, self.data_slice[1]])
+            data_chunk = np.atleast_2d(self.h5_main[targ_pos, :][:, self.data_slice[1]])
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
             mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
         return mean_resp
+
+    def _get_component_slice(self, components):
+        """
+        Check the components object to determine how to use it to slice the dataset
+
+        Parameters
+        ----------
+        components : {int, iterable of ints, slice, or None}
+            Input Options
+            integer: Components less than the input will be kept
+            length 2 iterable of integers: Integers define start and stop of component slice to retain
+            other iterable of integers or slice: Selection of component indices to retain
+            None: All components will be used
+        Returns
+        -------
+        comp_slice : slice or numpy array of uints
+            Slice or array specifying which components should be kept
+        """
+
+        comp_slice = slice(None)
+
+        if components is None:
+            num_comps = self.h5_main.shape[1]
+            comp_slice = slice(0, num_comps)
+        elif isinstance(components, int):
+            # Component is integer
+            num_comps = int(np.min([components, self.h5_main.shape[1]]))
+            comp_slice = slice(0, num_comps)
+        elif hasattr(components, '__iter__') and not isinstance(components, dict):
+            # Component is array, list, or tuple
+            if len(components) == 2:
+                # If only 2 numbers are given, use them as the start and stop of a slice
+                comp_slice = slice(int(components[0]), int(components[1]))
+                num_comps = abs(comp_slice.stop-comp_slice.start)
+            else:
+                #Convert components to an unsigned integer array
+                comp_slice = np.uint(components)
+                num_comps = len(comp_slice)
+        elif isinstance(components, slice):
+            # Components is already a slice
+            comp_slice = components
+            num_comps = abs(comp_slice.stop-comp_slice.start)
+        elif components is not None:
+            raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
+
+        return comp_slice, num_comps
 
     def _write_to_hdf5(self, labels, mean_response):
         """
@@ -166,8 +211,16 @@ class Cluster(object):
         cluster_grp.attrs['num_clusters'] = num_clusters
         cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
         cluster_grp.attrs['cluster_algorithm'] = self.method_name
-        if self.num_comps is not None:
-            cluster_grp.attrs['components_used'] = self.num_comps
+
+        if isinstance(self.data_slice[1], np.ndarray):
+            h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
+            h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
+            ds_centroid_indices = MicroDataset('Mean_Response_Indices', np.arange(self.num_comps, dtype=np.uint32))
+            centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
+            ds_centroid_values = MicroDataset('Mean_Response_Values',
+                                              centroid_vals_mat)
+            cluster_grp.attrs['components_used'] = self.data_slice[1].tolist()
+            cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
 
         '''
         Get the parameters of the estimator used and write them
@@ -186,10 +239,17 @@ class Cluster(object):
         h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
         h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
 
-        h5_label_inds.attrs['labels'] = ''
-        h5_label_inds.attrs['units'] = ''
-        h5_label_vals.attrs['labels'] = ''
-        h5_label_vals.attrs['units'] = ''
+        if isinstance(self.data_slice[1], np.ndarray):
+            h5_mean_resp_inds = getH5DsetRefs(['Mean_Response_Indices'], h5_clust_refs)[0]
+            h5_mean_resp_vals = getH5DsetRefs(['Mean_Response_Values'], h5_clust_refs)[0]
+        else:
+            h5_mean_resp_inds = h5_spec_inds
+            h5_mean_resp_vals = h5_spec_vals
+
+        # h5_label_inds.attrs['labels'] = ''
+        # h5_label_inds.attrs['units'] = ''
+        # h5_label_vals.attrs['labels'] = ''
+        # h5_label_vals.attrs['units'] = ''
 
         checkAndLinkAncillary(h5_labels,
                               ['Position_Indices', 'Position_Values'],
@@ -200,7 +260,7 @@ class Cluster(object):
 
         checkAndLinkAncillary(h5_centroids,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              h5_main=self.h5_main)
+                              anc_refs=[h5_mean_resp_inds, h5_mean_resp_vals])
 
         checkAndLinkAncillary(h5_centroids,
                               ['Position_Indices', 'Position_Values'],
