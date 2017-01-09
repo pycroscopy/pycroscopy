@@ -10,13 +10,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
-from ..io.io_image import read_image, read_dm3
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
 
+windata = np.dtype([('Image Data', np.float32)])
+winabsfft = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
+winrifft = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
 
 class ImageWindow(object):
     """
@@ -70,7 +72,7 @@ class ImageWindow(object):
         self.h5_fft_noise = None
 
     def do_windowing(self, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
-                     *args, **kwargs):
+                     win_fft=None, *args, **kwargs):
         """
         Extract the windows from the normalized image and write them to the file
 
@@ -88,6 +90,12 @@ class ImageWindow(object):
             win_step_y : int, optional
                 step size, in pixels, to take between windows in the vertical direction
                 Default 1
+            win_typ : str, optional
+                What kind of fft should be stored with the windows.  Options are
+                None - Only the window
+                'abs' - The window and magnitude of the fft
+                'complex' - The window and the complex fft
+                Default None
 
         Returns
         -------
@@ -97,6 +105,16 @@ class ImageWindow(object):
         h5_main = self.h5_raw
 
         parent = h5_main.parent
+
+        if win_fft is None:
+            win_type = windata
+            win_func = lambda tmp_win: tmp_win
+        elif win_fft is 'abs':
+            win_type = winabsfft
+            win_func = self.win_abs_fft_func
+        elif win_fft is 'complex':
+            win_type = winrifft
+            win_func = self.win_comp_fft_func
 
         '''
         Get the position indices of h5_main and reshape the flattened image back
@@ -188,11 +206,11 @@ class ImageWindow(object):
         '''
         Calculate the chunk size
         '''
-        win_chunks = calc_chunks([n_wins, win_pix], h5_main.dtype.itemsize, unit_chunks=[1, win_pix])
+        win_chunks = calc_chunks([n_wins, win_pix], win_type.itemsize, unit_chunks=[1, win_pix])
         ds_windows = MicroDataset('Image_Windows',
                                   data=[],
                                   maxshape=[n_wins, win_pix],
-                                  dtype=h5_main.dtype,
+                                  dtype=win_type,
                                   chunking=win_chunks,
                                   compression='gzip')
         
@@ -241,7 +259,7 @@ class ImageWindow(object):
         batch_slices = gen_batches(n_wins, batch_size)
 
         for ibatch, batch in enumerate(batch_slices):
-            batch_wins = np.zeros([batch.stop-batch.start, win_pix], dtype=np.float32)
+            batch_wins = np.zeros([batch.stop-batch.start, win_pix], dtype=win_type)
             '''
             Read each slice and write it to the dataset
             '''
@@ -258,7 +276,7 @@ class ImageWindow(object):
                                                                                     this_slice[1].stop),
                                                                                    islice))
 
-                batch_wins[islice] = image[this_slice].flatten()
+                batch_wins[islice] = win_func(image[this_slice].astype(win_type)).flatten()
 
             h5_wins[batch] = batch_wins
             self.hdf.flush()
@@ -266,6 +284,230 @@ class ImageWindow(object):
         self.h5_wins = h5_wins
         
         return h5_wins
+
+    def win_abs_fft_func(self, windows):
+        """
+        Take the 2d FFT of each window in `windows` and return in the proper form.
+
+        :param windows:
+        :return:
+        """
+        windows['FFT Magnitude'] = np.abs(np.fft.fftshift(np.fft.fft2(windows['Image Data'])))
+
+        return windows
+
+    def win_comp_fft_func(self, windows):
+        """
+        Take the 2d FFT of each window in `windows` and return in the proper form.
+
+        :param windows:
+        :return:
+        """
+        win_fft = np.fft.fftshift(np.fft.fft2(windows['Image Data']))
+        windows['FFT Real'] = win_fft.real
+        windows['FFT Imag'] = win_fft.imag
+
+        return windows
+
+    # def do_windowing_with_fft(self, win_x=None, win_y=None, win_step_x=1, win_step_y=1,
+    #                  *args, **kwargs):
+    #     """
+    #     Extract the windows from the normalized image and write them to the file
+    #
+    #     Parameters
+    #     ----------
+    #         win_x : int, optional
+    #             size of the window, in pixels, in the horizontal direction
+    #             Default None, a guess will be made based on the FFT of the image
+    #         win_y : int, optional
+    #             size of the window, in pixels, in the vertical direction
+    #             Default None, a guess will be made based on the FFT of the image
+    #         win_step_x : int, optional
+    #             step size, in pixels, to take between windows in the horizontal direction
+    #             Default 1
+    #         win_step_y : int, optional
+    #             step size, in pixels, to take between windows in the vertical direction
+    #             Default 1
+    #
+    #     Returns
+    #     -------
+    #         h5_wins : HDF5 Dataset
+    #             Dataset containing the flattened windows
+    #     """
+    #     h5_main = self.h5_raw
+    #
+    #     parent = h5_main.parent
+    #
+    #     '''
+    #     Get the position indices of h5_main and reshape the flattened image back
+    #     '''
+    #     try:
+    #         h5_pos = h5_main.file[h5_main.attrs['Position_Indices']][()]
+    #         x_pix = len(np.unique(h5_pos[:, 0]))
+    #         y_pix = len(np.unique(h5_pos[:, 1]))
+    #
+    #     except KeyError:
+    #         '''
+    #         Position Indices dataset does not exist
+    #         Assume square image
+    #         '''
+    #         x_pix = np.int(np.sqrt(h5_main.size))
+    #         y_pix = x_pix
+    #
+    #     except:
+    #         raise
+    #
+    #     image = h5_main[()].reshape(x_pix, y_pix)
+    #
+    #     '''
+    #     If a window size has not been specified, obtain a guess value from
+    #     window_size_extract
+    #     '''
+    #     if win_x is None or win_y is None:
+    #         win_size, _ = self.window_size_extract(h5_main, *args, **kwargs)
+    #         if win_x is None:
+    #             win_x = win_size
+    #         if win_y is None:
+    #             win_y = win_size
+    #
+    #     '''
+    #     Step size must be less than 1/4th the image size
+    #     '''
+    #     win_step_x = min(x_pix / 4, win_step_x)
+    #     win_step_y = min(y_pix / 4, win_step_y)
+    #
+    #     '''
+    #     Prevent windows from being less that twice the step size and more than half the image size
+    #     '''
+    #     win_x = max(2 * win_step_x, min(x_pix, win_x))
+    #     win_y = max(2 * win_step_y, min(y_pix, win_y))
+    #
+    #     print('Optimal window size determined to be {wx}x{wy} pixels.'.format(wx=win_x, wy=win_y))
+    #
+    #     '''
+    #     Build the Spectroscopic and Position Datasets
+    #     '''
+    #     im_x, im_y = image.shape
+    #
+    #     x_steps = np.arange(0, im_x - win_x + 1, win_step_x, dtype=np.uint32)
+    #     y_steps = np.arange(0, im_y - win_y + 1, win_step_y, dtype=np.uint32)
+    #
+    #     nx = len(x_steps)
+    #     ny = len(y_steps)
+    #
+    #     n_wins = nx * ny
+    #
+    #     win_pix = win_x * win_y
+    #
+    #     win_pos_mat = np.array([np.repeat(x_steps, ny),
+    #                             np.tile(y_steps, nx)],
+    #                             dtype=np.uint).T
+    #
+    #     win_pix_mat = makePositionMat([win_x, win_y]).T
+    #     win_pix_mat = np.hstack([win_pix_mat, win_pix_mat])
+    #
+    #     '''
+    #     Set up the HDF5 Group and Datasets for the windowed data
+    #     '''
+    #     ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
+    #     ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
+    #     ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
+    #     ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+    #
+    #     pos_labels = getPositionSlicing(['Window Origin X', 'Window Origin Y'])
+    #     ds_pos_inds.attrs['labels'] = pos_labels
+    #     ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
+    #     ds_pos_vals.attrs['labels'] = pos_labels
+    #     ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
+    #
+    #     pix_labels = getSpectralSlicing(['U', 'V'])
+    #     ds_pix_inds.attrs['labels'] = pix_labels
+    #     ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
+    #     ds_pix_vals.attrs['labels'] = pix_labels
+    #     ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
+    #
+    #     '''
+    #     Calculate the chunk size
+    #     '''
+    #     win_chunks = calc_chunks([n_wins, win_pix], h5_main.dtype.itemsize, unit_chunks=[1, win_pix])
+    #     ds_windows = MicroDataset('Image_Windows',
+    #                               data=[],
+    #                               maxshape=[n_wins, win_pix],
+    #                               dtype=winabsfft,
+    #                               chunking=win_chunks,
+    #                               compression='gzip')
+    #
+    #     basename = h5_main.name.split('/')[-1]
+    #     ds_group = MicroDataGroup(basename + '-Windowing_', parent.name[1:])
+    #
+    #     ds_group.addChildren([ds_windows, ds_pos_inds, ds_pix_inds,
+    #                           ds_pos_vals, ds_pix_vals])
+    #
+    #     ds_group.attrs['win_x'] = win_x
+    #     ds_group.attrs['win_y'] = win_y
+    #     ds_group.attrs['win_step_x'] = win_step_x
+    #     ds_group.attrs['win_step_y'] = win_step_y
+    #     ds_group.attrs['image_x'] = im_x
+    #     ds_group.attrs['image_y'] = im_y
+    #
+    #     image_refs = self.hdf.writeData(ds_group)
+    #
+    #     '''
+    #     Get the hdf5 objects for the windows and ancillary datasets
+    #     '''
+    #     h5_wins = getH5DsetRefs(['Image_Windows'], image_refs)[0]
+    #
+    #     '''
+    #     Link references to windowed dataset
+    #     '''
+    #     aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
+    #     linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
+    #
+    #     self.hdf.flush()
+    #
+    #     '''
+    #     Create slice object from the positions
+    #     '''
+    #     win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in win_pos_mat]
+    #
+    #     '''
+    #     Calculate the size of a given batch that will fit in the available memory
+    #     '''
+    #     mem_per_win = win_x * win_y * h5_wins.dtype.itemsize
+    #     if self.cores is None:
+    #         free_mem = self.max_memory - image.size * image.itemsize
+    #     else:
+    #         free_mem = self.max_memory * 2 - image.size * image.itemsize
+    #     batch_size = free_mem / mem_per_win
+    #     batch_slices = gen_batches(n_wins, batch_size)
+    #
+    #     for ibatch, batch in enumerate(batch_slices):
+    #         batch_wins = np.zeros([batch.stop - batch.start, win_pix], dtype=winabsfft)
+    #         '''
+    #         Read each slice and write it to the dataset
+    #         '''
+    #         for islice, this_slice in enumerate(win_slices[batch]):
+    #             iwin = ibatch * batch_size + islice
+    #             selected = iwin % np.rint(n_wins / 10) == 0
+    #
+    #             if selected:
+    #                 per_done = np.rint(100 * iwin / n_wins)
+    #                 print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
+    #                                                                                (this_slice[0].start,
+    #                                                                                 this_slice[1].start),
+    #                                                                                (this_slice[0].stop,
+    #                                                                                 this_slice[1].stop),
+    #                                                                                islice))
+    #             image[this_slice].astype(win_type)
+    #             batch_wins['Image Data'][islice] = image[this_slice].flatten()
+    #             batch_wins['FFT Magnitude'][islice] = np.abs(win_fft.flatten())
+    #
+    #         h5_wins[batch] = batch_wins
+    #         self.hdf.flush()
+    #
+    #     self.h5_wins = h5_wins
+    #
+    #     return h5_wins
 
     def clean_windows(self, h5_win=None, n_comp=None):
         """
@@ -530,7 +772,7 @@ class ImageWindow(object):
         add current window to total.
         '''
         ones = np.ones([win_x, win_y], dtype=counts.dtype)
-        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
+        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V['Image_Data'][comp_slice, :])
 
         for islice, this_slice in enumerate(win_slices):
             if islice % np.rint(n_wins / 10) == 0:
@@ -668,7 +910,7 @@ class ImageWindow(object):
         h5_V is usually small so go ahead and take S.V
         '''
         ones = np.ones([win_x, win_y], dtype=counts.dtype)
-        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
+        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V['Image Data'][comp_slice, :])
 
         '''
         Calculate the size of a given batch that will fit in the available memory
@@ -849,7 +1091,7 @@ class ImageWindow(object):
         '''
         for ibatch, batch in enumerate(batch_slices):
             ds_U = h5_U[batch, comp_slice]
-            batch_wins = ds_U[:, None, :]*ds_V[None, :, :]
+            batch_wins = ds_U[:, None, :]*ds_V['Image_Data'][None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch * batch_size + islice
                 if iwin % np.rint(n_wins / 10) == 0:
@@ -960,7 +1202,7 @@ class ImageWindow(object):
 
         if save_plots:
             if image_path is None:
-                image_dir, basename = os.path.split(self.image_path)
+                image_dir, basename = os.path.split(self.h5_file.filename)
                 basename, _ = os.path.splitext(basename)
                 basename = basename+'_clean.'+image_type
                 image_path = os.path.join(image_dir, basename)
