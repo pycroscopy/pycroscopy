@@ -2,7 +2,7 @@
 """
 Created on Thu Aug 25 11:48:53 2016
 
-@author: Suhas Somnath
+@author: Suhas Somnath, Chris R. Smith, Rama K. Vasudevan
 
 """
 
@@ -11,10 +11,14 @@ from __future__ import division
 from warnings import warn
 
 import numpy as np
-
+from sklearn.cluster import KMeans
+from scipy.cluster.hierarchy import linkage
+from scipy.spatial.distance import pdist
 from .model import Model
-from .utils.be_loop import projectLoop
+from .utils.be_loop import projectLoop, fit_loop, generate_guess
+from .utils.tree import ClusterTree
 from .be_sho_model import sho32
+from ..io.io_utils import realToCompound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -218,6 +222,25 @@ class BELoopModel(Model):
         return
     
     def _get_sho_chunk_sizes(self, max_mem_MB, verbose=False):
+        """
+        Calculates the largest number of positions that can be read into memory for a single FORC cycle
+
+        Parameters
+        ----------
+        max_mem_MB : unsigned int
+            Maximum allowable memory in megabytes
+        verbose : Boolean (Optional. Default is False)
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        max_pos : unsigned int
+            largest number of positions that can be read into memory for a single FORC cycle
+        sho_spec_inds_per_forc : unsigned int
+            Number of indices in the SHO spectroscopic table that will be used per read
+        metrics_spec_inds_per_forc : unsigned int
+            Number of indices in the Loop metrics spectroscopic table that will be used per read
+        """
         # Step 1: Find number of FORC cycles (if any), DC steps, and number of loops
         dc_offset_index = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'DC_Offset')[0][0]
         num_dc_steps = np.unique(self._sho_spec_inds[dc_offset_index]).size
@@ -257,9 +280,30 @@ class BELoopModel(Model):
             self._met_all_but_forc_inds.remove(met_forc_pos)
 
         return max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc
-        
-    
+
     def _reshape_sho_matrix(self, raw_2d, verbose=False):
+        """
+        Reshapes the raw 2D SHO matrix (as read from the file) to 2D array
+        arranged as [instance x points for a single loop]
+
+        Parameters
+        ----------
+        raw_2d : 2D compound numpy array
+            Raw SHO fitted data arranged as [position, data for a single FORC cycle]
+        verbose : Boolean (Optional. Default is False)
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        loops_2d : 2D numpy compound array
+            SHO fitted data arranged as [instance or position x dc voltage steps]
+        order_dc_offset_reverse : tuple
+            Order in which the N dimensional data should be transposed to return it to the same format
+            as the input data of this function
+        nd_mat_shape_dc_first : 1D numpy unsigned int array
+            Shape of the N dimensional array that the loops_2d can be turned into.
+            Use the order_dc_offset_reverse after this reshape
+        """
         # step 4: reshape to N dimensions
         fit_nd, success = reshape_to_Ndims(raw_2d,
                                            h5_pos=self._h5_pos_inds[self._current_pos_slice],
@@ -281,21 +325,42 @@ class BELoopModel(Model):
                                                          range(self._dc_offset_index + 1, len(fit_nd.shape))
         order_dc_offset_reverse = range(1, self._dc_offset_index + 1) + [0] + range(self._dc_offset_index + 1,
                                                                                             len(fit_nd.shape))
-        fit_Nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
+        fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
-            print 'originally:', fit_nd.shape, ', after moving DC offset outside:', fit_Nd2.shape
+            print 'originally:', fit_nd.shape, ', after moving DC offset outside:', fit_nd2.shape
             print 'new dim names:', dim_names_dc_out
 
         # step 6: reshape the ND data to 2D arrays
-        loops_2d = np.reshape(fit_Nd2, (fit_Nd2.shape[0], -1))
+        loops_2d = np.reshape(fit_nd2, (fit_nd2.shape[0], -1))
         if verbose:
             print 'Loops ready to be projected of shape (Vdc, all other dims besides FORC):', loops_2d.shape
 
-        return loops_2d, order_dc_offset_reverse, fit_Nd2.shape
+        return loops_2d, order_dc_offset_reverse, fit_nd2.shape
 
     def _reshape_projected_loops_for_h5(self, projected_loops_2d, order_dc_offset_reverse,
-                                         nd_mat_shape_dc_first, verbose=False):
+                                        nd_mat_shape_dc_first, verbose=False):
+        """
+        Reshapes the 2D projected loops to the format such that they can be written to the h5 file
+
+        Parameters
+        ----------
+
+        projected_loops_2d : 2D numpy float array
+            Projected loops arranged as [instance or position x dc voltage steps]
+        order_dc_offset_reverse : tuple of unsigned ints
+            Order in which the N dimensional data should be transposed to return it to the format used in h5 files
+        nd_mat_shape_dc_first : 1D numpy unsigned int array
+            Shape of the N dimensional array that the loops_2d can be turned into.
+            We use the order_dc_offset_reverse after this reshape
+        verbose : Boolean (Optional. Default is False)
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        proj_loops_2d : 2D numpy float array
+            Projected loops reshaped to the original chronological order in which the data was acquired
+        """
         if verbose:
             print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
         # Step 9: Reshape back to same shape as fit_Nd2:
@@ -320,7 +385,30 @@ class BELoopModel(Model):
         return proj_loops_2d
 
     def _reshape_results_for_h5(self, raw_results, nd_mat_shape_dc_first, verbose=False):
+        """
 
+        :param raw_results:
+        :param nd_mat_shape_dc_first:
+        :param verbose:
+        :return:
+        Reshapes the 1D loop metrics to the format such that they can be written to the h5 file
+
+        Parameters
+        ----------
+
+        raw_results : 2D numpy float array
+            loop metrics arranged as [instance or position x metrics]
+        nd_mat_shape_dc_first : 1D numpy unsigned int array
+            Shape of the N dimensional array that the raw_results can be turned into.
+            We use the order_dc_offset_reverse after this reshape
+        verbose : Boolean (Optional. Default is False)
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        metrics_2d : 2D numpy float array
+            Loop metrics reshaped to the original chronological order in which the data was acquired
+        """
         if verbose:
             print 'Loop metrics of shape:', raw_results.shape
         # Step 9: Reshape back to same shape as fit_Nd2:
@@ -448,6 +536,104 @@ class BELoopModel(Model):
         """
         self.h5_guess = create_empty_dataset(self.h5_loop_metrics, loop_fit32, 'Guess')
         self._h5_group.attrs['guess method'] = 'pycroscopy statistical'
+
+    @staticmethod
+    def _guess_loops(vdc_vec, projected_loops_2d):
+        """
+        Provides loop parameter guesses for a given set of loops
+
+        Parameters
+        ----------
+        vdc_vec : 1D numpy float numpy array
+            DC voltage offsets for the loops
+        projected_loops_2d : 2D numpy float array
+            Projected loops arranged as [instance or position x dc voltage steps]
+
+        Returns
+        -------
+        guess_parms : 1D compound numpy array
+            Loop parameter guesses for the provided projected loops
+        """
+
+        def _loop_fit_tree(tree, guess_mat, fit_results, vdc_shifted, shift_ind):
+            """
+            Recursive function that fits a tree object describing the cluster results
+
+            Parameters
+            ----------
+            tree : ClusterTree object
+                Tree describing the clustering results
+            guess_mat : 1D numpy float array
+                Loop parameters that serve as guesses for the loops in the tree
+            fit_results : 1D numpy float array
+                Loop parameters that serve as fits for the loops in the tree
+            vdc_shifted : 1D numpy float array
+                DC voltages shifted be 1/4 cycle
+            shift_ind : unsigned int
+                Number of units to shift loops by
+
+            Returns
+            -------
+            guess_mat : 1D numpy float array
+                Loop parameters that serve as guesses for the loops in the tree
+            fit_results : 1D numpy float array
+                Loop parameters that serve as fits for the loops in the tree
+            """
+            print('Now fitting cluster #{}'.format(tree.name))
+            # I already have a guess. Now fit myself
+            curr_fit_results = fit_loop(vdc_shifted, np.roll(tree.value, shift_ind), guess_mat[tree.name])
+            # keep all the fit results
+            fit_results[tree.name] = curr_fit_results
+            for child in tree.children:
+                # Use my fit as a guess for the lower layers:
+                guess_mat[child.name] = curr_fit_results[0].x
+                # Fit this child:
+                guess_mat, fit_mat = _loop_fit_tree(child, guess_mat, fit_results, vdc_shifted, shift_ind)
+            return guess_mat, fit_results
+
+        num_clusters = max(2, int(projected_loops_2d.shape[0] ** 0.5))  # change this to 0.6 if necessary
+        estimators = KMeans(num_clusters)
+        results = estimators.fit(projected_loops_2d)
+        centroids = results.cluster_centers_
+        labels = results.labels_
+
+        # Get the distance between cluster means
+        distance_mat = pdist(centroids)
+        # get hierarchical pairings of clusters
+        linkage_pairing = linkage(distance_mat, 'weighted')
+        # Normalize the pairwise distance with the maximum distance
+        linkage_pairing[:, 2] = linkage_pairing[:, 2] / max(linkage_pairing[:, 2])
+
+        # Now use the tree class:
+        cluster_tree = ClusterTree(linkage_pairing[:, :2], labels,
+                                   distances=linkage_pairing[:, 2],
+                                   centroids=centroids)
+        num_nodes = len(cluster_tree.nodes)
+
+        # prepare the guess and fit matrices
+        loop_guess_mat = np.zeros(shape=(num_nodes, 9), dtype=np.float32)
+        # loop_fit_mat = np.zeros(shape=loop_guess_mat.shape, dtype=loop_guess_mat.dtype)
+        loop_fit_results = list(np.arange(num_nodes, dtype=np.uint16))  # temporary placeholder
+
+        shift_ind = int(-1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
+        vdc_shifted = np.roll(vdc_vec, shift_ind)
+
+        # guess the top (or last) node
+        loop_guess_mat[-1] = generate_guess(vdc_vec, cluster_tree.tree.value)
+
+        # Now guess the rest of the tree
+        loop_guess_mat, loop_fit_results = _loop_fit_tree(cluster_tree.tree, loop_guess_mat, loop_fit_results,
+                                                          vdc_shifted, shift_ind)
+
+        # Prepare guesses for each pixel using the fit of the cluster it belongs to:
+        guess_parms = np.zeros(shape=projected_loops_2d.shape[0], dtype=loop_fit32)
+        for clust_id in range(num_clusters):
+            pix_inds = np.where(labels == clust_id)[0]
+            temp = loop_fit_results[clust_id][0].x
+            # convert to the appropriate dtype as well:
+            guess_parms[pix_inds] = realToCompound(temp, loop_fit32)
+
+        return guess_parms
 
     def _createFitDataset(self):
         """
