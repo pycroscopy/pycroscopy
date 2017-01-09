@@ -212,9 +212,9 @@ class Cluster(object):
         cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
         cluster_grp.attrs['cluster_algorithm'] = self.method_name
 
+        h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
+        h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
         if isinstance(self.data_slice[1], np.ndarray):
-            h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
-            h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
             ds_centroid_indices = MicroDataset('Mean_Response_Indices', np.arange(self.num_comps, dtype=np.uint32))
             centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
             ds_centroid_values = MicroDataset('Mean_Response_Values',
