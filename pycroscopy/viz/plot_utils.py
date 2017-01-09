@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
-from ..analysis.utils.be_loop import loopFitFunction
+from ..analysis.utils.be_loop import loop_fit_function
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
 def set_tick_font_size(axes, font_size):
@@ -155,8 +155,8 @@ def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
     for ax, pos in zip(axes.flat, positions):
         ax.plot(Vdc, ds_proj_loops[pos, :], 'k', label='Raw')
-        ax.plot(Vdc_shifted, loopFitFunction(Vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
-        ax.plot(Vdc_shifted, loopFitFunction(Vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
+        ax.plot(Vdc_shifted, loop_fit_function(Vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
+        ax.plot(Vdc_shifted, loop_fit_function(Vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
         ax.set_xlabel('V_DC (V)')
         ax.set_ylabel('PR (a.u.)')
         ax.set_title('Loop ' + str(pos))
