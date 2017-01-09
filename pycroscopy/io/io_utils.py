@@ -186,7 +186,7 @@ def check_dtype(ds_main):
         type_mult = new_dtype.itemsize * 2
         func = complex_to_float
         n_features *= 2
-    elif len(ds_main.dtype) > 1:
+    elif len(ds_main.dtype) > 0:
         """
         Some form of compound datatype is in use
         We only support real scalars for the component types at the current time
@@ -279,7 +279,7 @@ def transformToTargetType(ds_real, new_dtype):
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
         return realToComplex(ds_real)
-    elif len(new_dtype) > 1:
+    elif len(new_dtype) > 0:
         return realToCompound(ds_real, new_dtype)
     else:
         return new_dtype.type(ds_real)
@@ -305,7 +305,7 @@ def transformToReal(ds_main):
     """
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         return complex_to_float(ds_main)
-    elif len(ds_main.dtype) > 1:
+    elif len(ds_main.dtype) > 0:
         return compound_to_scalar(ds_main)
     else:
         return ds_main
