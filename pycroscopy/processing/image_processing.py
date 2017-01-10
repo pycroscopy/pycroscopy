@@ -15,6 +15,7 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
+from scipy.signal import blackman
 
 windata = np.dtype([('Image Data', np.float32)])
 winabsfft = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
@@ -793,6 +794,7 @@ class ImageWindow(object):
         Calculate the removed noise and FFTs
         '''
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
+
         fft_clean = np.fft.fft2(clean_image)
         fft_noise = np.fft.fft2(removed_noise)
 
@@ -951,7 +953,9 @@ class ImageWindow(object):
         Calculate the removed noise and FFTs
         '''
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
-        fft_clean = np.fft.fft2(clean_image)
+        blackman_window_rows = blackman(clean_image.shape[0])
+        blackman_window_cols = blackman(clean_image.shape[1])
+        fft_clean = np.fft.fft2(blackman_window_rows[:,np.newaxis]*clean_image*blackman_window_cols[np.newaxis,:])
         fft_noise = np.fft.fft2(removed_noise)
 
         '''
