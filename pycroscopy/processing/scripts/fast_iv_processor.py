@@ -24,7 +24,7 @@ from pycroscopy.io.hdf_utils import getH5DsetRefs, findH5group
 from pycroscopy.io.translators.utils import makePositionMat, getPositionSlicing
 from pycroscopy.io.microdata import MicroDataGroup, MicroDataset
 from pycroscopy.processing.gmode_utils import testFilter, fftFilterRawData
-from pycroscopy.viz.plot_utils import plotLoops
+from pycroscopy.viz.plot_utils import plot_loops
 
 #%% Load data
 #h5_path = uiGetFile('.h5')
@@ -210,9 +210,9 @@ loadings = np.reshape(h5_pca_norm_grp['U'].value,(num_lines,int(h5_pca_norm_grp[
 fig_U,ax_U = plotLoadingMaps(loadings, num_comps=16)
 fig_U.savefig(path.join(folder_path,'PCA_U.png'), format='png', dpi=100) 
 
-fig_loops, ax_loops = plotLoops(single_AO, h5_pca_norm_grp['V'], evenly_spaced=False, 
-            plots_on_side=4, rainbow_plot=True, 
-          x_label='Bias (V)', y_label='Current (a.u.)', title='Eigenvectors')
+fig_loops, ax_loops = plot_loops(single_AO, h5_pca_norm_grp['V'], evenly_spaced=False,
+                                 plots_on_side=4, rainbow_plot=True,
+                                 x_label='Bias (V)', y_label='Current (a.u.)', title='Eigenvectors')
 fig_loops.tight_layout()
 fig_loops.savefig(path.join(folder_path,'PCA_V.png'), format='png', dpi=300)
 
