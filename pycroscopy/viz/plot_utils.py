@@ -350,31 +350,6 @@ def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
     return fig, axes
 
 
-def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
-    """
-    Plots the spatial distribution of the response at evenly spaced UDVS steps
-    
-    Parameters
-    -------------
-    resp_mat : 3D numpy array
-        SHO responses arranged as [rows, cols, udvs_step]
-    title : (Optional) String
-        Super title for the plots - Preferably the group name
-    stdevs : (Optional) string
-        Number of standard deviations from the mean to be used to clip the color axis
-    save_path : (Optional) String
-        Absolute path to write the figure to
-        
-    Returns
-    ----------
-    None
-    """
-    fig, axes = plot_map_stack(resp_mat, stdevs=stdevs, color_bar_mode="each", evenly_spaced=True,
-                               title='UDVS Step #', heading=title, cmap=cmap_jet_white_center())
-    if save_path:
-        fig.savefig(save_path, format='png', dpi=300)
-
-
 def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='Step', stdevs=2,
                      show_colorbar=True):
     # TODO: use plot_map_stack instead of plotSpectrograms
@@ -511,7 +486,6 @@ def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
 
     for index in range(num_comps):
         cur_map = eigenvectors[index, :]
-        #         axes = [axes201.flat[index], axes201.flat[index+num_comps], axes201.flat[index+2*num_comps], axes201.flat[index+3*num_comps]]
         axes = [axes201.flat[index], axes201.flat[index + num_comps]]
         for func, lab, ax in zip(funcs, labels, axes):
             ax.plot(func(cur_map))
@@ -568,14 +542,14 @@ def plotBELoops(xaxis, xlabel, amp_mat, phase_mat, num_comps, title=None):
 
 ###############################################################################
 
-def plotScree(S, title='Scree'):
+def plotScree(scree, title='Scree'):
     """
-    Plots the S or scree
+    Plots the scree or scree
 
     Parameters:
     -------------
-    S : 1D real numpy array
-        The S vector from SVD
+    scree : 1D real numpy array
+        The scree vector from SVD
 
     Returns:
     ---------
@@ -583,12 +557,12 @@ def plotScree(S, title='Scree'):
     """
     fig203 = plt.figure(figsize=(6.5, 6))
     axes203 = fig203.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
-    axes203.loglog(np.arange(len(S)) + 1, S, 'b', marker='*')
+    axes203.loglog(np.arange(len(scree)) + 1, scree, 'b', marker='*')
     axes203.set_xlabel('Principal Component')
     axes203.set_ylabel('Variance')
     axes203.set_title(title)
-    axes203.set_xlim(left=1, right=len(S))
-    axes203.set_ylim(bottom=np.min(S), top=np.max(S))
+    axes203.set_xlim(left=1, right=len(scree))
+    axes203.set_ylim(bottom=np.min(scree), top=np.max(scree))
     fig203.canvas.set_window_title("Scree")
 
     return fig203, axes203
@@ -1173,37 +1147,6 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
     return fig
 
 
-def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=None):
-    """
-    Plots BE loops from up to 9 positions (evenly separated)
-
-    Parameters
-    -----------
-    dc_vec : 1D numpy array
-        X axis - DC offset / AC amplitude
-    resp_mat : real 2D numpy array
-        containing quantity such as amplitude or phase organized as
-        [position, spectroscopic index]
-    x_label : (optional) String
-        X Label for all plots
-    y_label : (optional) String
-        Y label for all plots
-    title : (optional) String
-        Main plot title
-    save_path : (Optional) String
-        Absolute path to write the figure to
-
-    Returns
-    -----------
-    None
-    """
-
-    fig, ax = plot_loops(dc_vec, resp_mat, evenly_spaced=True, plots_on_side=5, rainbow_plot=False,
-                         x_label=x_label, y_label=y_label, subtitles='Loop', title=title)
-    if save_path:
-        fig.savefig(save_path, format='png', dpi=300)
-
-
 def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
@@ -1222,6 +1165,22 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
     -------
     None
     """
+
+    def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
+                          folder_path, basename, num_rows, num_cols):
+        plt_title = grp_name + '_' + win_title + '_Loops'
+        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, rainbow_plot=False,
+                             x_label=spec_var_title, y_label=meas_var_title, subtitles='Loop', title=plt_title)
+        if save_plots:
+            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
+
+        plt_title = grp_name + '_' + win_title + '_Snaps'
+        fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
+                                   color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
+                                   heading=plt_title, cmap=cmap_jet_white_center())
+        if save_plots:
+            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
+
     plt_path = None
 
     print('Creating plots of SHO Results from {}.'.format(h5_main.name))
@@ -1255,7 +1214,6 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         num_cols = len(np.unique(h5_pos[:, 1]))
 
     try:
-        h5_spec_inds = h5_file[h5_main.attrs['Spectroscopic_Indices']]
         h5_spec_vals = h5_file[h5_main.attrs['Spectroscopic_Values']]
     # except KeyError:
     #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
@@ -1283,68 +1241,31 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
             ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center])
+
             forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
-            plt_title = grp_name + '_Forward_Loops'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotSHOLoops(ac_vec, forw_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
-            plt_title = grp_name + '_Reverse_Loops'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotSHOLoops(ac_vec, rev_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
-            plt_title = grp_name + '_Forward_Snaps'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotVSsnapshots(forw_resp.reshape(num_rows, num_cols, forw_resp.shape[1]), title=plt_title,
-                            save_path=plt_path)
-            plt_title = grp_name + '_Reverse_Snaps'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotVSsnapshots(rev_resp.reshape(num_rows, num_cols, rev_resp.shape[1]), title=plt_title,
-                            save_path=plt_path)
+
+            for win_title, resp_mat in zip(['Forward', 'Reverse'], [forw_resp, rev_resp]):
+                __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude', save_plots,
+                                  folder_path, basename, num_rows, num_cols)
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
             if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
 
+                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
+
                 in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
                 in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
-                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
-                plt_title = grp_name + '_In_Field_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, in_phase * in_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
                 out_phase = np.squeeze(phase_mat[:, slice(1, None, 2)])
                 out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
-                plt_title = grp_name + '_Out_of_Field_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, out_phase * out_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
-                # print 'trying to reshape', in_phase.shape, 'into', in_phase.shape[0],',',num_rows,',',num_cols
-                plt_title = grp_name + '_In_Field_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(in_phase.reshape(num_rows, num_cols, in_phase.shape[1]), title=plt_title,
-                                save_path=plt_path)
-                plt_title = grp_name + '_Out_of_Field_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(out_phase.reshape(num_rows, num_cols, out_phase.shape[1]), title=plt_title,
-                                save_path=plt_path)
+
+                for win_title, resp_mat in zip(['In_Field', 'Out_of_Field'], [in_phase * in_amp, out_phase * out_amp]):
+                    __plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias', 'Piezoresponse (a.u.)',
+                                      save_plots, folder_path, basename, num_rows, num_cols)
             else:
-                plt_title = grp_name + '_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
-                plt_title = grp_name + '_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title,
-                                save_path=plt_path)
+                __plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias', 'Piezoresponse (a.u.)',
+                                  save_plots, folder_path, basename, num_rows, num_cols)
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
