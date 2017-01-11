@@ -201,13 +201,14 @@ def rainbowPlot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
     fig.colorbar(CS3)"""
 
 
-def plot_line_family(ax, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.jet, **kwargs):
+def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.jet,
+                     **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
     Parameters
     ----------
-    ax : axis handle
+    axis : axis handle
         Axis to plot the curve
     x_axis : array-like
         Values to plot against
@@ -232,9 +233,9 @@ def plot_line_family(ax, x_axis, line_family, line_names=None, label_prefix='Lin
             line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
 
     for line_ind in range(num_lines):
-        ax.plot(x_axis, line_family[line_ind],
-                label=line_names[line_ind],
-                color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
+        axis.plot(x_axis, line_family[line_ind],
+                  label=line_names[line_ind],
+                  color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
 
@@ -268,9 +269,9 @@ def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
 ###############################################################################
 
 
-def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
-              evenly_spaced=True, plots_on_side=5, rainbow_plot=True,
-              x_label='', y_label='', subtitles='Eigenvector', title=None):
+def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
+               evenly_spaced=True, plots_on_side=5, rainbow_plot=True,
+               x_label='', y_label='', subtitles='Loop', title=None):
     """
     Plots loops from up to 25 evenly spaced positions
 
@@ -356,7 +357,7 @@ def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
     Parameters
     -------------
     resp_mat : 3D numpy array
-        SHO responses arranged as [udvs_step, rows, cols]
+        SHO responses arranged as [rows, cols, udvs_step]
     title : (Optional) String
         Super title for the plots - Preferably the group name
     stdevs : (Optional) string
@@ -368,46 +369,15 @@ def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
     ----------
     None
     """
-    
-    num_udvs = resp_mat.shape[2]
-    if num_udvs >= 9:
-        tot_plots = 9
-    elif num_udvs >= 4:
-        tot_plots = 4
-    else:
-        tot_plots = 1
-    delta_pos = int(np.ceil(num_udvs/tot_plots)) 
-    
-    fig, axes = plt.subplots(nrows=int(tot_plots**0.5),ncols=int(tot_plots**0.5),
-                             sharex=True, sharey=True, figsize=(12, 12)) 
-    if tot_plots > 1:    
-        axes_lin = axes.reshape(tot_plots)
-    else:
-        axes_lin = axes
-    
-    for count, posn in enumerate(range(0,num_udvs, delta_pos)):
-        
-        snapshot = np.squeeze(resp_mat[:,:,posn])
-        amp_mean = np.mean(snapshot) 
-        amp_std = np.std(snapshot)
-        ndims = len(snapshot.shape)
-        if ndims == 2:
-            axes_lin[count].imshow(snapshot, vmin=amp_mean-stdevs*amp_std, vmax=amp_mean+stdevs*amp_std)
-        elif ndims == 1:
-            np.clip(snapshot,amp_mean-stdevs*amp_std,amp_mean+stdevs*amp_std,snapshot)
-            axes_lin[count].plot(snapshot)
-        axes_lin[count].axis('tight')
-        axes_lin[count].set_aspect('auto')
-        axes_lin[count].set_title('UDVS Step #' + str(posn))
-    
-    fig.suptitle(title)
-    plt.tight_layout()
+    fig, axes = plot_map_stack(resp_mat, stdevs=stdevs, color_bar_mode="each", evenly_spaced=True,
+                               title='UDVS Step #', heading=title, cmap=cmap_jet_white_center())
     if save_path:
         fig.savefig(save_path, format='png', dpi=300)
 
 
 def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='Step', stdevs=2,
                      show_colorbar=True):
+    # TODO: use plot_map_stack instead of plotSpectrograms
     """
     Plots the provided spectrograms from SVD V vector
 
@@ -627,7 +597,7 @@ def plotScree(S, title='Scree'):
 # ###############################################################################
 
 
-def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
+def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
                    title='Component', heading='Map Stack', **kwargs):
     """
     Plots the provided stack of maps
@@ -651,6 +621,15 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     ---------
     fig, axes
     """
+    num_comps = abs(num_comps)
+    num_comps = min(num_comps, map_stack.shape[-1])
+
+
+    if evenly_spaced:
+        chosen_pos = np.linspace(0, map_stack.shape[-1] - 1, num_comps, dtype=int)
+    else:
+        chosen_pos = np.arange(num_comps, dtype=int)
+
     if isinstance(title, list):
         if len(title) > num_comps:
             # remove additional titles
@@ -661,7 +640,7 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     else:
         if not isinstance(title, str):
             title = 'Component'
-        title = [title + ' ' + str(x) for x in range(num_comps)]
+        title = [title + ' ' + str(x) for x in chosen_pos]
 
     fig_h, fig_w = (4, 4)
     p_rows = int(np.floor(np.sqrt(num_comps)))
@@ -679,14 +658,13 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
-    for index, subtitle in enumerate(title):
-        im = plot_map(axes202[index],
+    for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
+        im = plot_map(axes202[count],
                       map_stack[:, :, index],
-                      stdevs=stdevs,
-                      show_colorbar=False, **kwargs)
-        axes202[index].set_title(subtitle)
+                      stdevs=stdevs, **kwargs)
+        axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
-            axes202.cbar_axes[index].colorbar(im)
+            axes202.cbar_axes[count].colorbar(im)
 
     if color_bar_mode is 'single':
         axes202.cbar_axes[0].colorbar(im)
@@ -1219,32 +1197,9 @@ def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path
     -----------
     None
     """
-    num_pos = resp_mat.shape[0]
-    if num_pos >= 9:
-        tot_plots = 9
-    elif num_pos >= 4:
-        tot_plots = 4
-    else:
-        tot_plots = 1
-    delta_pos = int(np.ceil(num_pos / tot_plots))
 
-    fig, axes = plt.subplots(nrows=int(tot_plots ** 0.5), ncols=int(tot_plots ** 0.5),
-                             figsize=(12, 12))
-    if tot_plots > 1:
-        axes_lin = axes.reshape(tot_plots)
-    else:
-        axes_lin = axes
-
-    for count, posn in enumerate(range(0, num_pos, delta_pos)):
-        axes_lin[count].plot(dc_vec, np.squeeze(resp_mat[posn, :]))
-        axes_lin[count].set_title('Pixel #' + str(posn))
-        axes_lin[count].set_xlabel(x_label)
-        axes_lin[count].set_ylabel(y_label)
-        axes_lin[count].axis('tight')
-        axes_lin[count].set_aspect('auto')
-
-    fig.suptitle(title)
-    fig.tight_layout()
+    fig, ax = plot_loops(dc_vec, resp_mat, evenly_spaced=True, plots_on_side=5, rainbow_plot=False,
+                         x_label=x_label, y_label=y_label, subtitles='Loop', title=title)
     if save_path:
         fig.savefig(save_path, format='png', dpi=300)
 
