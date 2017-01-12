@@ -545,10 +545,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
     return fig202, axes202
 
-# TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
 
-
-def plot_cluster_results(h5_group, y_spec_label):
+def plot_cluster_h5_group(h5_group, y_spec_label):
+    # TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -583,16 +582,16 @@ def plot_cluster_results(h5_group, y_spec_label):
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
 
-    plotClusterResults(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
-                       spec_label=x_spec_label, resp_label=y_spec_label,
-                       pos_labels=pos_labels, pos_ticks=pos_ticks)
+    plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
+                                  spec_label=x_spec_label, resp_label=y_spec_label,
+                                  pos_labels=pos_labels, pos_ticks=pos_ticks)
 
 ###############################################################################
 
 
-def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
-                       spec_label='Spectroscopic Value', resp_label='Response',
-                       pos_labels=('X', 'Y'), pos_ticks=None):
+def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
+                                  spec_label='Spectroscopic Value', resp_label='Response',
+                                  pos_labels=('X', 'Y'), pos_ticks=None):
     """
     Plot the cluster labels and mean response for each cluster in separate plots
 
@@ -600,10 +599,10 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
     ----------
     label_mat : 2D ndarray or h5py.Dataset of ints
         Spatial map of cluster labels structured as [rows, cols]
-    mean_response : 2D ndarray or h5py.Dataset
+    mean_response : 2D array or h5py.Dataset
         Mean value of each cluster over all samples 
         arranged as [cluster number, features]
-    spec_val :  1D ndarray or h5py.Dataset of floats, optional
+    spec_val :  1D array or h5py.Dataset of floats, optional
         X axis to plot the centroids against
         If no value is specified, the data is plotted against the index
     cmap : plt.cm object or str, optional
@@ -629,7 +628,7 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         Axes of the individual plots within `fig`
     """
 
-    def __plotCentroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
+    def __plot_centroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
         plot_line_family(ax, spec_val, centroids, label_prefix='Cluster', cmap=cmap)
         ax.set_ylabel(y_label)
         # ax.legend(loc='best')
@@ -647,9 +646,9 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ax_phase = plt.subplot2grid((2, 12), (1, 6), colspan=4)
         axes = [ax_map, ax_amp, ax_phase]
 
-        __plotCentroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
+        __plot_centroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
                         resp_label + ' - Amplitude', cmap, 'Mean Response')
-        __plotCentroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
+        __plot_centroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
                         resp_label + ' - Phase', cmap)
         plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
@@ -658,7 +657,7 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ax_map = plt.subplot2grid((1, 12), (0, 0), colspan=6)
         ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
         axes = [ax_map, ax_resp]
-        __plotCentroids(mean_response, ax_resp, spec_val, spec_label,
+        __plot_centroids(mean_response, ax_resp, spec_val, spec_label,
                         resp_label, cmap, 'Mean Response')
         plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
 
@@ -706,8 +705,8 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
 ###############################################################################
 
 
-def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
-                       spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
+def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
+                                  spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
     """
     Plots the provided labels mat and centroids from clustering
 
@@ -795,8 +794,8 @@ def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
 
 ###############################################################################
 
-def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
-                           sort_type='distance', sort_mode=True):
+def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
+                            sort_type='distance', sort_mode=True):
     """
     Creates and plots the dendrograms for the given label_mat and
     eigenvalues
@@ -807,7 +806,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
         structured as [rows, cols], from KMeans clustering
     e_vals: 3D real numpy array of eigenvalues
         structured as [component, rows, cols]
-    num_comps : int
+    num_comp : int
         Number of components used to make eigenvalues
     num_cluster : int
         Number of cluster used to make the label_mat
@@ -846,7 +845,6 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     elif mode == 'Truncated':
         print 'Creating truncated dendrogram from clusters.  Will stop at {}.'.format(last)
         mode = 'lastp'
-        show_contracted = True
     else:
         raise ValueError('Error: Unknown mode requested for plotting dendrograms. mode={}'.format(mode))
 
@@ -868,8 +866,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
 
         centroid_mat[k1, :] = np.mean(u_stack, 0)
 
-
-        # Get the distrance between cluster means
+    # Get the distrance between cluster means
     distance_mat = scipy.spatial.distance.pdist(centroid_mat)
 
     # get hierachical pairings of clusters
@@ -888,7 +885,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     return fig
 
 
-def plot1DSpectrum(data_vec, freq, title, figure_path=None):
+def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
     """
     Plots the Step averaged BE response
 
@@ -911,26 +908,25 @@ def plot1DSpectrum(data_vec, freq, title, figure_path=None):
         Axis handle
     """
     if len(data_vec) != len(freq):
-        #         print '1D:',data_vec.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
+        warn('plot_1d_spectrum: Incompatible data sizes!!!!')
+        print('1D:', data_vec.shape, freq.shape)
         return
-    freq = freq * 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
+    freq *= 1E-3  # to kHz
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     ax[0].plot(freq, np.abs(data_vec) * 1E+3)
     ax[0].set_title('Amplitude (mV)')
-    # ax[0].set_xlabel('Frequency (kHz)')
     ax[1].plot(freq, np.angle(data_vec) * 180 / np.pi)
     ax[1].set_title('Phase (deg)')
     ax[1].set_xlabel('Frequency (kHz)')
     fig.suptitle(title + ': mean UDVS, mean spatial response')
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return (fig, ax)
+    return fig, ax
 
 
 ###############################################################################
 
-def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
+def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None):
     """
     Plots the position averaged spectrogram
 
@@ -953,11 +949,11 @@ def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
         Axis handle
     """
     if mean_spectrogram.shape[1] != len(freq):
-        #  print '2D:',mean_spectrogram.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
+        warn('plot_2d_spectrogram: Incompatible data sizes!!!!')
+        print('2D:', mean_spectrogram.shape, freq.shape)
         return
-    freq = freq * 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
+    freq *= 1E-3  # to kHz
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     # print mean_spectrogram.shape
     # print freq.shape
     ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
@@ -975,12 +971,12 @@ def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
     fig.suptitle(title)
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return (fig, ax)
-
+    return fig, ax
 
 ###############################################################################
 
-def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
+
+def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
     """
     Plots the position averaged spectrogram
 
@@ -1047,7 +1043,7 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
     return fig
 
 
-def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
+def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
