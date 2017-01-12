@@ -17,10 +17,11 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
+from ..viz.plot_utils import rainbow_plot
 
 
 ###############################################################################
-def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=True,
+def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_plots=True,
                 excit_wfm=None, central_resp_size=None):
     """
     Filters the provided response with the provided filters. Use this only to test filters.
@@ -36,7 +37,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot
         Sampling rate in Hertz
     show_plots : (Optional) Boolean
         Whether or not to plot FFTs before and after filtering
-    rainbow_plot : (Optional) Boolean
+    use_rainbow_plots : (Optional) Boolean
         Whether or not to plot loops whose color varied as a function of time
     excit_wfm : (Optional) 1D numpy float array
         Excitation waveform in the time domain. This waveform is necessary for plotting loops. 
@@ -108,6 +109,9 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot
         ax_raw = plt.subplot2grid((2, 4), (0, 0), colspan=lhs_colspan)
         ax_filt = plt.subplot2grid((2, 4), (1, 0), colspan=lhs_colspan)
         axes = [ax_raw, ax_filt]
+    else:
+        fig = None
+        axes = None
                 
     noise_floor = getNoiseFloor(F_pix_data, filter_parms['noise_threshold'])[0]
     if show_plots:
@@ -117,14 +121,14 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot
         ax_raw.plot(w_vec[l_ind:r_ind], np.log(np.ones(r_ind-l_ind)*noise_floor))
         ax_raw.set_title('Raw Signal')
     F_pix_data *= composite_filter
-    F_pix_data[np.abs(F_pix_data) < noise_floor] = 0
+    F_pix_data[np.abs(F_pix_data) < noise_floor] = 1E-16  # do NOT use 0 here! log will complain
     if show_plots:
         ax_filt.plot(w_vec[l_ind:r_ind], np.log(np.abs(F_pix_data[l_ind:r_ind])))
         ax_filt.set_title('Filtered Signal')
         ax_filt.set_xlabel('Frequency(kHz)')
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(F_pix_data)))
     if show_loops:
-        if rainbow_plot:
+        if use_rainbow_plots:
             rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
         else:
             ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind]*1E+3)              
@@ -138,7 +142,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot
 # ##############################################################################
 
 
-def fft_filter_raw_data(h5_main, filter_parms, write_filtered=True, write_condensed=False, num_cores=None):
+def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condensed=False, num_cores=None):
     """
     Filters G-mode data using specified filter parameters and writes results to file.
         
@@ -501,7 +505,7 @@ def unit_filter(single_parm):
     f_data = np.fft.fftshift(np.fft.fft(t_raw))
     noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
     f_data = f_data * composite_filter
-    f_data[np.abs(f_data) < noise_floor] = 0
+    f_data[np.abs(f_data) < noise_floor] = 1E-16  # log(0) throws a runtime error that crashes the kernel
     cond_data = None
     filt_data = None
     if hot_inds is not None:
