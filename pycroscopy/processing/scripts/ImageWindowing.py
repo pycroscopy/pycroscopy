@@ -129,10 +129,8 @@ if __name__ == '__main__':
     print 'Plotting Eigenvectors'
     num_x = int(np.sqrt(h5_V.shape[1]))
     for field in h5_V.dtype.names:
-        fig201, axes201 = plotSpectrograms(np.reshape(h5_V[:plot_comps, :][field],
-                                                      [-1, num_x, num_x]),
-                                           num_comps=plot_comps,
-                                           title='Eigenvectors')
+        fig201, axes201 = plot_map_stack(np.reshape(h5_V[:plot_comps, :][field], [-1, num_x, num_x]),
+                                         num_comps=plot_comps, heading='Eigenvectors')
         fig201.savefig(os.path.join(folder, svd_name+'_'+field+'_PCA_Eigenvectors.png'), format='png', dpi=300)
         plt.close('all')
         del fig201, axes201

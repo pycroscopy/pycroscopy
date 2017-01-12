@@ -18,7 +18,7 @@ from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..viz.plot_utils import rainbowPlot
+from ..viz.plot_utils import rainbow_plot
 
 
 ###############################################################################
@@ -125,7 +125,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(F_pix_data)))
     if show_loops:
         if rainbow_plot:
-            rainbowPlot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind]*1E+3)
+            rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
         else:
             ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind]*1E+3)              
         ax_loops.set_title('AI vs AO') 
