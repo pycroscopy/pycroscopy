@@ -176,13 +176,13 @@ class ioHDF5(object):
                     # assuming that the last element of previous contains the highest index
                     last = f[data.parent].keys()[previous[-1]]
                     index = int(last.split('_')[-1])+1
-                data.name+='{:03d}'.format(index)
+                data.name += '{:03d}'.format(index)
             try:
                 g = f[data.parent].create_group(data.name)
                 if print_log: print('Created group {}'.format(g.name))
             except ValueError:
                 g = f[data.parent][data.name]
-                print('Group already exists: {}'.format(g.name))
+                if print_log: print('Group already exists: {}'.format(g.name))
             except:
                 f.flush()
                 f.close()
@@ -283,7 +283,7 @@ class ioHDF5(object):
                     if key is 'labels':
                         # print('Found some region references')
                         labels = child.attrs[key]# labels here is a dictionary
-                        self.regionRefs(itm, labels, print_log=print_log)
+                        self.write_region_references(itm, labels, print_log=print_log)
                         '''
                         Now make an attribute called 'labels' that is a list of strings 
                         First ascertain the dimension of the slicing:
@@ -321,9 +321,8 @@ class ioHDF5(object):
                   'Make sure you do some reference linking to take advantage of the full power of HDF5.')
         return refList
 
-
-
-    def regionRefs(self, dataset, slices, print_log=False):
+    @staticmethod
+    def write_region_references(dataset, slices, print_log=False):
         '''
         Creates attributes of a h5.Dataset that refer to regions in the arrays
         
@@ -334,8 +333,16 @@ class ioHDF5(object):
         slices : dictionary
             The slicing information must be formatted using tuples of slice objects. 
             For example {'region_1':(slice(None, None), slice (0,1))}
+        print_log : Boolean (Optional. Default = False)
+            Whether or not to print status messages
         '''
+        if print_log: print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
         for sl in slices.iterkeys():
-            if print_log: print('Wrote Region Reference:%s to Dataset %s' %(sl, dataset.name))
-            dataset.attrs[sl] = dataset.regionref[slices[sl]]
-
+            if print_log: print('About to write region reference:', sl, ':', slices[sl])
+            if len(slices[sl]) == len(dataset.shape):
+                dataset.attrs[sl] = dataset.regionref[slices[sl]]
+                if print_log: print('Wrote Region Reference:%s' % sl)
+            else:
+                warn('Region reference %s could not be written since the object size was not equal to the dimensions of'
+                     ' the dataset' % sl)
+                raise ValueError
