@@ -10,20 +10,18 @@ Created on Thu May 05 13:29:12 2016
 import itertools
 from multiprocessing import Pool, cpu_count
 from warnings import warn
-
 import matplotlib.pyplot as plt
 import numpy as np
-
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
+from ..io.io_hdf5 import ioHDF5
 from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..viz.plot_utils import rainbow_plot
 
 
 ###############################################################################
-def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=True,
-               excit_wfm=None, central_resp_size=None):
+def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=True,
+                excit_wfm=None, central_resp_size=None):
     """
     Filters the provided response with the provided filters. Use this only to test filters.
     This function does not care about the file structure etc.
@@ -38,9 +36,11 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         Sampling rate in Hertz
     show_plots : (Optional) Boolean
         Whether or not to plot FFTs before and after filtering
+    rainbow_plot : (Optional) Boolean
+        Whether or not to plot loops whose color varied as a function of time
     excit_wfm : (Optional) 1D numpy float array
         Excitation waveform in the time domain. This waveform is necessary for plotting loops. 
-    central_resp_size (Optional) : unsigned int
+    central_resp_size : (Optional) unsigned int
         Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC 
     
     Filter Parameters
@@ -83,7 +83,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
     if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
         harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, filter_parms['comb_[Hz]'][0],
                                               filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
-    composite_filter =  noise_band_filter * low_pass_filter * harmonic_filter
+    composite_filter = noise_band_filter * low_pass_filter * harmonic_filter
         
     F_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
     
@@ -116,7 +116,7 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         ax_raw.plot(w_vec[l_ind:r_ind], np.log((composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp))))
         ax_raw.plot(w_vec[l_ind:r_ind], np.log(np.ones(r_ind-l_ind)*noise_floor))
         ax_raw.set_title('Raw Signal')
-    F_pix_data = F_pix_data * composite_filter
+    F_pix_data *= composite_filter
     F_pix_data[np.abs(F_pix_data) < noise_floor] = 0
     if show_plots:
         ax_filt.plot(w_vec[l_ind:r_ind], np.log(np.abs(F_pix_data[l_ind:r_ind])))
@@ -134,26 +134,23 @@ def testFilter(resp_wfm, filter_parms, samp_rate, show_plots=True, rainbow_plot=
         axes.append(ax_loops)
         fig.tight_layout()
     return filt_data, fig, axes
-        
-  
-###############################################################################        
 
-def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True, 
-                     write_condensed=False, num_cores=None):
+# ##############################################################################
+
+
+def fft_filter_raw_data(h5_main, filter_parms, write_filtered=True, write_condensed=False, num_cores=None):
     """
     Filters G-mode data using specified filter parameters and writes results to file.
         
     Parameters
     ----------
-    hdf : Active ioHDF object
-        Object that will be used for writing back to the data file
     h5_main : HDF5 dataset object
         Dataset containing the raw data
     filter_parms : dictionary
         Dictionary that contains all the filtering parameters
-    write_filtered (optional) : Boolean - default True
+    write_filtered : (optional) Boolean - default True
         Whether or not to write filtered data to file
-    write_condensed (optional) : Boolean - default False
+    write_condensed : (optional) Boolean - default False
         Whether or not to write condensed filtered data to file
     num_cores : unsigned int
         Number of cores to use for processing data in parallel
@@ -240,9 +237,9 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
             print('Not enough jobs per core. Reducing cores to', recom_cores)
 
         if recom_cores > 1:
-            return filterChunkParallel(raw_mat, parm_dict, recom_cores)
+            return filter_chunk_parallel(raw_mat, parm_dict, recom_cores)
         else:
-            return filterChunkSerial(raw_mat, parm_dict)
+            return filter_chunk_serial(raw_mat, parm_dict)
 
     max_cores = max(1, cpu_count() - 2)
     if not num_cores:
@@ -292,6 +289,7 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         grp_filt.addChildren([ds_cond_bins, ds_cond_data])
                 
     # grp_filt.showTree()
+    hdf = ioHDF5(h5_main.file)
     h5_filt_refs = hdf.writeData(grp_filt)
     
     h5_filtr_grp = getH5GroupRef(grp_name, h5_filt_refs)
@@ -317,7 +315,7 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
 
     max_pix = __max_pixel_read(h5_main, 10, store_filt=write_filtered, hot_bins=hot_inds, bytes_per_bin=2, max_RAM_gb=16)
     # Ensure that whole sets of pixels can be read.
-    max_pix = np.uint(filter_parms['num_pix']*np.floor(max_pix/filter_parms['num_pix']))
+    max_pix = np.uint(filter_parms['num_pix']*np.floor(max_pix / filter_parms['num_pix']))
     
     parm_dict = {'filter_parms': filter_parms, 'composite_filter': composite_filter,
                  'rot_pts': rot_pts, 'hot_inds': hot_inds}
@@ -339,20 +337,20 @@ def fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True,
         # print 'Noise floors of shape:', nse_flrs.shape
         h5_noise_floors[line_count: line_count + num_lines] = nse_flrs
         if write_condensed:
-            #print 'Condensed data of shape:', cond_data.shape
+            # print('Condensed data of shape:', cond_data.shape)
             h5_cond_data[line_count: line_count + num_lines, :] = cond_data
         if write_filtered:
-            #print 'Filtered data of shape:', filt_data.shape
+            # print('Filtered data of shape:', filt_data.shape)
             h5_filt_data[st_pix:en_pix, :] = filt_data
         hdf.flush()
         st_pix = en_pix
     
     return h5_filtr_grp
               
-###############################################################################  
+# #############################################################################
 
 
-def filterChunkParallel(raw_data, parm_dict, num_cores):
+def filter_chunk_parallel(raw_data, parm_dict, num_cores):
     """
     Filters the provided dataset in parallel
     
@@ -398,7 +396,7 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     
     # Start parallel processing:
     num_chunks = int(np.ceil(raw_data.shape[0]/num_cores))
-    parallel_results = pool.imap(unitFilter, sing_parm, chunksize=num_chunks)
+    parallel_results = pool.imap(unit_filter, sing_parm, chunksize=num_chunks)
     pool.close()
     pool.join()
     
@@ -419,7 +417,7 @@ def filterChunkParallel(raw_data, parm_dict, num_cores):
     return noise_floors, filt_data, cond_data
  
 
-def filterChunkSerial(raw_data, parm_dict):        
+def filter_chunk_serial(raw_data, parm_dict):
     """
     Filters the provided dataset serially
     
@@ -446,22 +444,22 @@ def filterChunkSerial(raw_data, parm_dict):
     num_sets = raw_data.shape[0]
     pts_per_set = raw_data.shape[1]
     # print ('sending unit filter data of size', pts_per_set)
-    noise_floors = np.zeros(shape=(num_sets), dtype=np.float32)
+    noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
     filt_data = None
     if parm_dict['rot_pts'] is not None:
-        filt_data = np.zeros(shape=(num_sets*pix_per_set,pts_per_set/pix_per_set), dtype=raw_data.dtype)
+        filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
     cond_data = None
     if parm_dict['hot_inds'] is not None:
-        cond_data = np.zeros(shape=(num_sets,parm_dict['hot_inds'].size), dtype=np.complex64)
+        cond_data = np.zeros(shape=(num_sets, parm_dict['hot_inds'].size), dtype=np.complex64)
     
     # Filter each line
-    print_set = np.linspace(0,num_sets-1,10, dtype=int) 
+    print_set = np.linspace(0, num_sets-1, 10, dtype=int)
     for set_ind in range(num_sets):
         if set_ind in print_set:
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
 
         # parm_dict['t_raw'] = raw_data[set_ind,:]
-        (noise_floors[set_ind], filt_data_set, cond_data_set) = unitFilter((raw_data[set_ind, :], parm_dict))
+        (noise_floors[set_ind], filt_data_set, cond_data_set) = unit_filter((raw_data[set_ind, :], parm_dict))
         if parm_dict['hot_inds'] is not None:
             cond_data[set_ind, :] = cond_data_set
         if parm_dict['rot_pts'] is not None:
@@ -470,7 +468,7 @@ def filterChunkSerial(raw_data, parm_dict):
     return noise_floors, filt_data, cond_data
 
      
-def unitFilter(single_parm):
+def unit_filter(single_parm):
     """
     Filters a single instance of a signal. 
     This is the function that is called in parallel
@@ -500,16 +498,16 @@ def unitFilter(single_parm):
     hot_inds = parm_dict['hot_inds']
 
     t_raw = t_raw.reshape(-1)
-    F_data = np.fft.fftshift(np.fft.fft(t_raw))
-    noise_floor = getNoiseFloor(F_data, filter_parms['noise_threshold'])[0]
-    F_data = F_data * composite_filter
-    F_data[np.abs(F_data) < noise_floor] = 0
+    f_data = np.fft.fftshift(np.fft.fft(t_raw))
+    noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
+    f_data = f_data * composite_filter
+    f_data[np.abs(f_data) < noise_floor] = 0
     cond_data = None
     filt_data = None
     if hot_inds is not None:
-        cond_data = F_data[hot_inds]
+        cond_data = f_data[hot_inds]
     if rot_pts is not None:
-        t_clean = np.real(np.fft.ifft(np.fft.ifftshift(F_data)))
+        t_clean = np.real(np.fft.ifft(np.fft.ifftshift(f_data)))
         filt_mat = t_clean.reshape(filter_parms['num_pix'], -1)
         if rot_pts > 0:
             filt_data = np.roll(filt_mat, rot_pts, axis=1)
@@ -521,13 +519,13 @@ def unitFilter(single_parm):
 ###############################################################################
 
 
-def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
+def decompress_response(f_condensed_mat, num_pts, hot_inds):
     """
     Returns the time domain representation of waveform(s) that are compressed in the frequency space
     
     Parameters
     ----------
-    F_condensed_mat : 1D or 2D complex numpy arrays
+    f_condensed_mat : 1D or 2D complex numpy arrays
         Frequency domain signals arranged as [position, frequency]. 
         Only the positive frequncy bins must be in the compressed dataset. 
         The dataset is assumed to have been FFT shifted (such that 0 Hz is at the center).
@@ -548,14 +546,14 @@ def deCompressResponse(F_condensed_mat, num_pts, hot_inds):
     Memory is given higher priority here, so this function loops over the position
     instead of doing the inverse FFT on the complete data.
     """
-    F_condensed_mat = np.atleast_2d(F_condensed_mat)
+    f_condensed_mat = np.atleast_2d(f_condensed_mat)
     hot_inds_mirror = np.flipud(num_pts - hot_inds)
-    time_resp = np.zeros(shape=(F_condensed_mat.shape[0], num_pts), dtype=np.float32)
-    for pos in range(F_condensed_mat.shape[0]):
-        F_complete = np.zeros(shape=num_pts, dtype=np.complex)
-        F_complete[hot_inds] = F_condensed_mat[pos, :]
+    time_resp = np.zeros(shape=(f_condensed_mat.shape[0], num_pts), dtype=np.float32)
+    for pos in range(f_condensed_mat.shape[0]):
+        f_complete = np.zeros(shape=num_pts, dtype=np.complex)
+        f_complete[hot_inds] = f_condensed_mat[pos, :]
         # Now add the mirror (FFT in negative X axis that was removed)
-        F_complete[hot_inds_mirror] = np.flipud(F_condensed_mat[pos, :])
-        time_resp[pos, :] = np.real(np.fft.ifft(np.fft.ifftshift(F_complete)))
+        f_complete[hot_inds_mirror] = np.flipud(f_condensed_mat[pos, :])
+        time_resp[pos, :] = np.real(np.fft.ifft(np.fft.ifftshift(f_complete)))
     
     return np.squeeze(time_resp)

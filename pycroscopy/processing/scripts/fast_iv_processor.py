@@ -23,7 +23,7 @@ from pycroscopy.io.io_hdf5 import ioHDF5
 from pycroscopy.io.hdf_utils import getH5DsetRefs, findH5group
 from pycroscopy.io.translators.utils import makePositionMat, getPositionSlicing
 from pycroscopy.io.microdata import MicroDataGroup, MicroDataset
-from pycroscopy.processing.gmode_utils import testFilter, fftFilterRawData
+from pycroscopy.processing.gmode_utils import test_filter, fft_filter_raw_data
 from pycroscopy.viz.plot_utils import plot_loops
 
 #%% Load data
@@ -72,7 +72,7 @@ filter_parms['num_pix'] = 1
 #%% Test filter on a single line:
 
 row_ind = 50
-filt_line, fig_filt, axes_filt = testFilter(h5_main[row_ind], filter_parms, samp_rate, show_plots=True)
+filt_line, fig_filt, axes_filt = test_filter(h5_main[row_ind], filter_parms, samp_rate, show_plots=True)
 fig_filt.savefig(path.join(folder_path,'FFT_filter.png'), format='png', dpi=300)
 
 raw_row = np.reshape(h5_main[row_ind], (-1,pts_per_cycle))
@@ -92,7 +92,7 @@ fig.savefig(path.join(folder_path,'FFT_filtering_examples.png'), format='png', d
 hdf = ioHDF5(h5_f)
 
 '''if __name__=='__main__':
-    h5_filt_grp = fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True)'''
+    h5_filt_grp = fft_filter_raw_data(hdf, h5_main, filter_parms, write_filtered=True)'''
 
 #%% Now break up the filtered data into individual loops
 
