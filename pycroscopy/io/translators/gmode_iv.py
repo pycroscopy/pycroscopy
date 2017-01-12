@@ -205,8 +205,8 @@ class GIVTranslator(Translator):
             excit_wfm = excit_wfm[pulse_points:]
         parm_dict['excitation_length'] = len(excit_wfm)
 
-        parm_dict['grid_num_rows'] = np.int32(h5_f['num_lines'][0][0])
-        parm_dict['grid_num_cols'] = np.int32(h5_f['num_pixels'][0][0])
+        parm_dict['grid_num_rows'] = np.uint32(h5_f['num_lines'][0][0])
+        parm_dict['grid_num_cols'] = np.uint32(np.floor(len(excit_wfm) / pts_per_cycle))
         
         parm_dict['grid_scan_height_[m]'] = np.float32(h5_f['scan_height'][0][0])
         parm_dict['grid_scan_width_[m]'] = np.float32(h5_f['scan_width'][0][0])
