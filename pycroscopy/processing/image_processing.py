@@ -10,11 +10,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import leastsq
 from sklearn.utils import gen_batches
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, linkformain
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..io.translators.utils import getPositionSlicing, makePositionMat, getSpectralSlicing
+from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
 from scipy.signal import blackman
 
 windata32 = np.dtype([('Image Data', np.float32)])
@@ -187,7 +187,7 @@ class ImageWindow(object):
                                 np.tile(y_steps, nx)],
                                 dtype=np.uint).T
         
-        win_pix_mat = makePositionMat([win_x, win_y]).T
+        win_pix_mat = make_position_mat([win_x, win_y]).T
 
         '''
         Set up the HDF5 Group and Datasets for the windowed data
@@ -197,13 +197,13 @@ class ImageWindow(object):
         ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
         ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
 
-        pos_labels = getPositionSlicing(['Window Origin X', 'Window Origin Y'])
+        pos_labels = get_position_slicing(['Window Origin X', 'Window Origin Y'])
         ds_pos_inds.attrs['labels'] = pos_labels
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pos_vals.attrs['labels'] = pos_labels
         ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
 
-        pix_labels = getSpectralSlicing(['U', 'V'])
+        pix_labels = get_spectral_slicing(['U', 'V'])
         ds_pix_inds.attrs['labels'] = pix_labels
         ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pix_vals.attrs['labels'] = pix_labels
@@ -972,7 +972,7 @@ class ImageWindow(object):
         h5_spec_inds = self.h5_file[self.h5_raw.attrs['Spectroscopic_Indices']]
         h5_spec_vals = self.h5_file[self.h5_raw.attrs['Spectroscopic_Values']]
 
-        linkformain(h5_clean, h5_comp_inds, h5_S, h5_spec_inds, h5_spec_vals)
+        link_as_main(h5_clean, h5_comp_inds, h5_S, h5_spec_inds, h5_spec_vals)
 
         self.h5_clean = h5_clean
 

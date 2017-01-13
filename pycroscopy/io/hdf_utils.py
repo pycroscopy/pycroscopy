@@ -1179,7 +1179,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     return chunking
 
 
-def linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
+def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
     """
     Links the object references to the four position and spectrosocpic datasets as
     attributes of `h5_main`

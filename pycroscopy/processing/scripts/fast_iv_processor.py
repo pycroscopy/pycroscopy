@@ -21,7 +21,7 @@ import numpy as np
 from pycroscopy.analysis.PCAutils import doKMeans, doPCA, plotScree, plotLoadingMaps, fastSVD, plotKMeansResults
 from pycroscopy.io.io_hdf5 import ioHDF5
 from pycroscopy.io.hdf_utils import getH5DsetRefs, findH5group
-from pycroscopy.io.translators.utils import makePositionMat, getPositionSlicing
+from pycroscopy.io.translators.utils import make_position_mat, get_position_slicing
 from pycroscopy.io.microdata import MicroDataGroup, MicroDataset
 from pycroscopy.processing.gmode_utils import test_filter, fft_filter_dataset
 from pycroscopy.viz.plot_utils import plot_loops
@@ -103,9 +103,9 @@ AI_mat_2d = np.reshape(h5_filt.value,(-1,pts_per_cycle))
 AI_mat_3d = np.reshape(AI_mat_2d,(num_lines,-1,pts_per_cycle))
 num_cols = AI_mat_3d.shape[1]
 
-pos_ind_mat = makePositionMat([num_cols, num_lines])
+pos_ind_mat = make_position_mat([num_cols, num_lines])
 pos_labs = ['X','Y']
-pos_slices = getPositionSlicing(pos_labs, AI_mat_2d.shape[0])
+pos_slices = get_position_slicing(pos_labs, AI_mat_2d.shape[0])
 
 scan_width_nm = np.round(100*h5_grp.attrs['grid_scan_width_[m]']*1E+9)/100
 scan_height_nm = np.round(100*h5_grp.attrs['grid_scan_height_[m]']*1E+9)/100
