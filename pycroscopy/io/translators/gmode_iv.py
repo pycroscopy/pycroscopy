@@ -14,7 +14,7 @@ import h5py
 import numpy as np  # For array operations
 
 from .translator import Translator
-from .utils import generateDummyMainParms
+from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 from ..microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
@@ -25,7 +25,7 @@ class GIVTranslator(Translator):
     Translates G-mode Fast IV datasets from .mat files to .h5
     """
 
-    def _parsefilepath(self, input_path):
+    def _parse_file_path(self, input_path):
         pass
 
     def translate(self, parm_path):
@@ -51,16 +51,14 @@ class GIVTranslator(Translator):
             remove(h5_path)
 
         # Now start creating datasets and populating:
-        ds_spec_inds, ds_spec_vals = self._build_ind_val_dsets([excit_wfm.size], is_spectral=True,
-                                                               labels=['Bias'], units=['V'], verbose=False)
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([excit_wfm.size], is_spectral=True,
+                                                         labels=['Bias'], units=['V'], verbose=False)
         ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
 
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([parm_dict['grid_num_rows']], is_spectral=False,
-                                                           steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
-                                                                  parm_dict['grid_num_rows']],
-                                                           labels=['Y'], units=['m'])
-                
-        ds_ex_efm = MicroDataset('Excitation_Waveform', excit_wfm)
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([parm_dict['grid_num_rows']], is_spectral=False,
+                                                     steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
+                                                            parm_dict['grid_num_rows']],
+                                                     labels=['Y'], units=['m'])
         
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
@@ -71,7 +69,7 @@ class GIVTranslator(Translator):
         ds_raw_data.attrs['quantity'] = ['Current']
         ds_raw_data.attrs['units'] = ['1E-{} A'.format(parm_dict['IO_amplifier_gain'])]
         
-        aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
+        aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
         
         # Until a better method is provided....        
@@ -81,7 +79,7 @@ class GIVTranslator(Translator):
                 
         # technically should change the date, etc.              
         spm_data = MicroDataGroup('')
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'fastIV'
         global_parms['translator'] = 'fastIV'
         spm_data.attrs = global_parms
@@ -99,7 +97,7 @@ class GIVTranslator(Translator):
             chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs = parm_dict
             chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                                  ds_ex_efm, ds_raw_data])
+                                  ds_raw_data])
             h5_refs = hdf.writeData(chan_grp, print_log=False)
             h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))

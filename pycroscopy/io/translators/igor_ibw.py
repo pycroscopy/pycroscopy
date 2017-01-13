@@ -12,7 +12,7 @@ import numpy as np  # For array operations
 from igor import binarywave as bw
 
 from .translator import Translator  # Because this class extends the abstract Translator class
-from .utils import generateDummyMainParms
+from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 from ..microdata import MicroDataGroup, \
@@ -64,13 +64,13 @@ class IgorIBWTranslator(Translator):
             images = images.transpose(2, 0, 1)  # now ordered as [chan, Y, X] image
             images = np.reshape(images, (images.shape[0], -1, 1))  # 3D [chan, Y*X points,1]
 
-            ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
-                                                               steps=[1.0 * parm_dict['SlowScanSize'] / num_rows,
-                                                                      1.0 * parm_dict['FastScanSize'] / num_cols],
-                                                               labels=['Y', 'X'], units=['m', 'm'], verbose=verbose)
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
+                                                         steps=[1.0 * parm_dict['SlowScanSize'] / num_rows,
+                                                                1.0 * parm_dict['FastScanSize'] / num_cols],
+                                                         labels=['Y', 'X'], units=['m', 'm'], verbose=verbose)
 
-            ds_spec_inds, ds_spec_vals = self._build_ind_val_dsets([1], is_spectral=True, steps=[1],
-                                                                   labels=['arb'], units=['a.u.'], verbose=verbose)
+            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([1], is_spectral=True, steps=[1],
+                                                             labels=['arb'], units=['a.u.'], verbose=verbose)
 
         else:  # single force curve
             if verbose:
@@ -80,11 +80,11 @@ class IgorIBWTranslator(Translator):
             images = np.atleast_3d(images)  # now [Z, chan, 1]
             images = images.transpose((1, 2, 0))  # [chan ,1, Z] force curve
 
-            ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([1], is_spectral=False, steps=[25E-9],
-                                                               labels=['X'], units=['m'], verbose=verbose)
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets([1], is_spectral=False, steps=[25E-9],
+                                                         labels=['X'], units=['m'], verbose=verbose)
 
-            ds_spec_inds, ds_spec_vals = self._build_ind_val_dsets([images.shape[2]], is_spectral=True, labels=['Z'],
-                                                                   units=['m'], verbose=verbose)
+            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([images.shape[2]], is_spectral=True, labels=['Z'],
+                                                             units=['m'], verbose=verbose)
             # The data generated above varies linearly. Override.
             # For now, we'll shove the Z sensor data into the spectroscopic values.
 
@@ -113,7 +113,7 @@ class IgorIBWTranslator(Translator):
         # Prepare the tree structure
         # technically should change the date, etc.
         spm_data = MicroDataGroup('')
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'IgorIBW_' + type_suffix
         global_parms['translator'] = 'IgorIBW'
         spm_data.attrs = global_parms
@@ -241,7 +241,7 @@ class IgorIBWTranslator(Translator):
 
         return labels, default_units
 
-    def _parsefilepath(self, input_path):
+    def _parse_file_path(self, input_path):
         pass
 
     def _read_data(self):

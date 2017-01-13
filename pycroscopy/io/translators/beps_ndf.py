@@ -12,7 +12,7 @@ from os import path, listdir, remove
 from warnings import warn
 import xlrd as xlreader  # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
-from .utils import makePositionMat, generateDummyMainParms
+from .utils import make_position_mat, generate_dummy_main_parms
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
     createSpecVals
 from ..microdata import MicroDataGroup, MicroDataset
@@ -57,7 +57,7 @@ class BEPSndfTranslator(Translator):
         if debug:
             print('BEndfTranslator: Getting file paths')
 
-        parm_filepath, udvs_filepath, parms_mat_path = self._parsefilepath(data_filepath)
+        parm_filepath, udvs_filepath, parms_mat_path = self._parse_file_path(data_filepath)
         if debug:
             print('BEndfTranslator: Reading Parms text file')
 
@@ -120,12 +120,12 @@ class BEPSndfTranslator(Translator):
         s_pixels = np.array(parsers[0].getSpatialPixels())
         self.pos_labels = ['Laser Spot', 'Z', 'X', 'Y']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
-        self.pos_mat = makePositionMat(s_pixels)
+        self.pos_mat = make_position_mat(s_pixels)
         self.pos_units = ['' for _ in range(len(self.pos_labels))]     
 #         self.pos_mat = np.int32(self.pos_mat)
         
         # Helping Eric out a bit. Remove this section at a later time:
-        main_parms = generateDummyMainParms()
+        main_parms = generate_dummy_main_parms()
         main_parms['grid_size_x'] = self.parm_dict['grid_num_cols']
         main_parms['grid_size_y'] = self.parm_dict['grid_num_rows']
         main_parms['experiment_date'] = self.parm_dict['File_date_and_time']        
@@ -530,7 +530,7 @@ class BEPSndfTranslator(Translator):
                
     ###################################################################################################
     
-    def _parsefilepath(self, file_path):
+    def _parse_file_path(self, file_path):
         """
         Returns the file paths to the parms text file and UDVS spreadsheet.\n
         Note: This function also initializes the basename and the folder_path for this instance

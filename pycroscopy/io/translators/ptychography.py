@@ -13,8 +13,8 @@ from skimage.data import imread
 from skimage.measure import block_reduce
 from ..io_image import read_image, read_dm3
 from .translator import Translator
-from .utils import generateDummyMainParms
-from ..hdf_utils import getH5DsetRefs, calc_chunks, linkformain
+from .utils import generate_dummy_main_parms, build_ind_val_dsets
+from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -87,7 +87,7 @@ class PtychographyTranslator(Translator):
             vsize = image_parms['SuperScan_Width']
             data_type = images.dtype
         else:
-            file_list = self._parsefilepath(image_path, image_type)
+            file_list = self._parse_file_path(image_path, image_type)
 
             # Set up the basic parameters associated with this set of images
             (usize, vsize), data_type = self._getimagesize(os.path.join(image_path, file_list[0]))
@@ -192,7 +192,7 @@ class PtychographyTranslator(Translator):
     #     return ronc_mat3_mean.reshape(-1)
 
     @staticmethod
-    def _parsefilepath(path, ftype='all'):
+    def _parse_file_path(path, ftype='all'):
         """
         Returns a list of all files in the directory given by path
         
@@ -287,7 +287,7 @@ class PtychographyTranslator(Translator):
         num_pixels = usize*vsize
         num_files = scan_size_x*scan_size_y
 
-        root_parms = generateDummyMainParms()
+        root_parms = generate_dummy_main_parms()
         root_parms['data_type'] = 'PtychographyData'
 
         main_parms = {'num_images': num_files,
@@ -305,14 +305,14 @@ class PtychographyTranslator(Translator):
         chan_grp = MicroDataGroup('Channel_000')
     # Get the Position and Spectroscopic Datasets
     #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets((usize, vsize),
-                                                              is_spectral=True,
-                                                              labels=['U', 'V'],
-                                                              units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([scan_size_x, scan_size_y],
-                                                           is_spectral=False,
-                                                           labels=['X', 'Y'],
-                                                           units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize),
+                                                        is_spectral=True,
+                                                        labels=['U', 'V'],
+                                                        units=['pixel', 'pixel'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y],
+                                                     is_spectral=False,
+                                                     labels=['X', 'Y'],
+                                                     units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
@@ -345,7 +345,7 @@ class PtychographyTranslator(Translator):
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
         
