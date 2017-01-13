@@ -167,12 +167,12 @@ class BESHOmodel(Model):
         None
         """
         if self._start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self._end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self._start_pos = self.__end_pos
+            self._start_pos = self._end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -195,10 +195,10 @@ class BESHOmodel(Model):
         None
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         else:
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.

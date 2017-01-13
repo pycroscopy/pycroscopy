@@ -105,8 +105,8 @@ class OneViewTranslator(Translator):
 
         self.image_list_tag = image_parms.pop('Image_Tag', None)
 
+        tmp, _ = read_image(file_list[0])
         if crop_ammount is not None:
-            tmp, _ = read_image(file_list[0])
             tmp = self.crop_ronc(tmp)
             usize, vsize = tmp.shape
 
