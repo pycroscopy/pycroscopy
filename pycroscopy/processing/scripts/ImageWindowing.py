@@ -15,7 +15,7 @@ from pycroscopy import ImageTranslator
 from pycroscopy.processing.image_processing import ImageWindow
 from pycroscopy.processing.svd_utils import doSVD
 from pycroscopy import Cluster
-from pycroscopy.viz.plot_utils import plotScree, plot_map_stack, plotSpectrograms, plotClusterResults
+from pycroscopy.viz.plot_utils import plotScree, plot_map_stack, plotSpectrograms, plot_cluster_results_together
 from pycroscopy.io.io_utils import uiGetFile
 
 if __name__ == '__main__':
@@ -129,10 +129,8 @@ if __name__ == '__main__':
     print 'Plotting Eigenvectors'
     num_x = int(np.sqrt(h5_V.shape[1]))
     for field in h5_V.dtype.names:
-        fig201, axes201 = plotSpectrograms(np.reshape(h5_V[:plot_comps, :][field],
-                                                      [-1, num_x, num_x]),
-                                           num_comps=plot_comps,
-                                           title='Eigenvectors')
+        fig201, axes201 = plot_map_stack(np.reshape(h5_V[:plot_comps, :][field], [-1, num_x, num_x]),
+                                         num_comps=plot_comps, heading='Eigenvectors')
         fig201.savefig(os.path.join(folder, svd_name+'_'+field+'_PCA_Eigenvectors.png'), format='png', dpi=300)
         plt.close('all')
         del fig201, axes201
@@ -207,7 +205,7 @@ if __name__ == '__main__':
         h5_centroids_raw = h5_kmeans_raw['Mean_Response']
         h5_km_spec_raw = h5_file[h5_centroids_raw.attrs['Spectroscopic_Values']][1]
 
-        fig601, ax601 = plotClusterResults(h5_labels_raw, h5_centroids_raw, spec_val=h5_km_spec_raw)
+        fig601, ax601 = plot_cluster_results_together(h5_labels_raw, h5_centroids_raw, spec_val=h5_km_spec_raw)
         fig601.savefig(os.path.join(folder, km_name + '_KMeans.png'), format='png', dpi=300)
 
         plt.close('all')
@@ -233,7 +231,7 @@ if __name__ == '__main__':
         h5_centroids_U = h5_kmeans_U['Mean_Response']
         h5_km_spec_U = h5_file[h5_centroids_U.attrs['Spectroscopic_Values']]
 
-        fig601, ax601 = plotClusterResults(h5_labels_U, h5_centroids_U, spec_val=h5_km_spec_U)
+        fig601, ax601 = plot_cluster_results_together(h5_labels_U, h5_centroids_U, spec_val=h5_km_spec_U)
         fig601.savefig(os.path.join(folder, km_name + '_KMeans.png'), format='png', dpi=300)
         del fig601, ax601
         plt.close('all')
