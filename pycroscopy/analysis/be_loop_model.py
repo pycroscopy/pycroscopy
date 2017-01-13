@@ -331,7 +331,7 @@ class BELoopModel(Model):
             self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
             all_spec_dims.remove(forc_pos)
         # calculate number of loops:
-        loop_dims = get_dimensionality(np.transpose(self._h5_pos_inds), all_spec_dims)
+        loop_dims = get_dimensionality(self._sho_spec_inds, all_spec_dims)
         loops_per_forc = np.product(loop_dims)
 
         # Step 2: Calculate the largest number of FORCS and positions that can be read given memory limits:
