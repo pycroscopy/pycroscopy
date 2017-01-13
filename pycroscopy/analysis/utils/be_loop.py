@@ -265,10 +265,9 @@ def loop_fit_function(vdc, coef_vec):
     loop_eval = np.hstack((f1, f2))
     return loop_eval
 
-###############################################################################
-
 
 def loop_fit_jacobian(vdc, coef_vec):
+    # TODO: Jacobian function gives different results from the analytic Jacobian
     """
     Jacobian of 9 parameter fit function
 
@@ -530,7 +529,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
             else:
                 return None
 
-        if (ccw(A, C, D) != ccw(B, C, D) and ccw(A, B, C) != ccw(A, B, D)) == False:
+        if ((ccw(A, C, D) is not ccw(B, C, D)) and (ccw(A, B, C) is not ccw(A, B, D))) is False:
             return None
         else:
             return intersection(line(A, B), line(C, D))
@@ -552,8 +551,10 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         if type(x_pt) != type(None):
             y_intersections.append(x_pt)
 
-    """Find the coordinates of the points where the horizontal line through the
-    centroid intersects with the convex hull"""
+    '''
+    Find the coordinates of the points where the horizontal line through the
+    centroid intersects with the convex hull
+    '''
     x_intersections = []
     for pair in xrange(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
@@ -562,8 +563,22 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         if type(x_pt) != type(None):
             x_intersections.append(x_pt)
 
-    min_y_intercept = min(y_intersections[0][1], y_intersections[1][1])
-    max_y_intercept = max(y_intersections[0][1], y_intersections[1][1])
+    '''
+    Default values if not intersections can be found.
+    '''
+    if len(y_intersections) == 0:
+        min_y_intercept = min(pr_vec)
+        max_y_intercept = max(pr_vec)
+    else:
+        min_y_intercept = min(y_intersections[0][1], y_intersections[1][1])
+        max_y_intercept = max(y_intersections[0][1], y_intersections[1][1])
+
+    if len(x_intersections) == 0:
+        min_x_intercept = min(vdc)/2.0
+        max_x_intercept = max(vdc)/2.0
+    else:
+        min_x_intercept = min(x_intersections[0][0], x_intersections[1][0])
+        max_x_intercept = max(x_intersections[0][0], x_intersections[1][0])
 
     # Only the first four parameters use the information from the intercepts
     # a3, a4 are swapped in Stephen's figure. That was causing the branches to swap during fitting
@@ -571,8 +586,8 @@ def generate_guess(vdc, pr_vec, show_plots=False):
     init_guess_coef_vec = np.zeros(shape=9)
     init_guess_coef_vec[0] = min_y_intercept
     init_guess_coef_vec[1] = max_y_intercept - min_y_intercept
-    init_guess_coef_vec[2] = min(x_intersections[0][0], x_intersections[1][0])
-    init_guess_coef_vec[3] = max(x_intersections[0][0], x_intersections[1][0])
+    init_guess_coef_vec[2] = min_x_intercept
+    init_guess_coef_vec[3] = max_x_intercept
     init_guess_coef_vec[4] = 0
     init_guess_coef_vec[5] = 2  # 0.5
     init_guess_coef_vec[6] = 2  # 0.2

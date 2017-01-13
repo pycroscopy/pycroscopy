@@ -19,7 +19,7 @@ class Node(object):
                  verbose=False):
         """
         Parameters
-        -----------
+        ----------
         name : (Optional) unsigned int
             ID of this node
         value : (Optional) 1D numpy array
