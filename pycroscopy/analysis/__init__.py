@@ -2,6 +2,7 @@ from . import utils
 from .utils import *
 from . import be_sho_model
 from .be_sho_model import BESHOmodel
+from . import be_loop_model
 from .be_loop_model import BELoopModel
 from . import guess_methods
 from .guess_methods import GuessMethods
