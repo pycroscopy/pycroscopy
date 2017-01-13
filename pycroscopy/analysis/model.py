@@ -74,7 +74,7 @@ class Model(object):
             self._maxCpus = psutil.cpu_count() - 2
         else:
             self._maxCpus = 1
-        self._maxMemoryMB = psutil.virtual_memory().available / 1e6 # in MB
+        self._maxMemoryMB = psutil.virtual_memory().available / 1e6  # in MB
 
         self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
