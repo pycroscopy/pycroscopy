@@ -133,20 +133,26 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-
-    def doGuess(self, processors=4, strategy='wavelet_peaks',
-                options={"peak_widths": np.array([10,200]), "peak_step":20}):
+    def doGuess(self, processors=4, max_mem=None):
         """
 
-        :param processors:
-        :param strategy:
-        :param options:
-        :return:
+        Parameters
+        ----------
+        processors : uint, optional
+        max_mem : uint, optional
+        strategy : str, optional
+        options :
+
+        Returns
+        -------
+
         """
 
         # Before doing the Guess, we must first project the loops
         self._create_projection_datasets()
-        self._get_sho_chunk_sizes(10, verbose=True)
+        if max_mem is None:
+            max_mem = self._maxDataChunk
+        self._get_sho_chunk_sizes(max_mem, verbose=True)
         self._createGuessDatasets()
 
         '''
