@@ -14,10 +14,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
-from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs
+from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs, getAuxData, link_as_main
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
+from ..io.translators.utils import build_ind_val_dsets
 
 
 ###############################################################################
@@ -292,33 +293,55 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
                                     dtype=np.float32, chunking=h5_main.chunks, compression='gzip')
         grp_filt.addChildren([ds_filt_data])
     
-    hot_inds = None        
+    hot_inds = None
+
+    h5_pos_inds = getAuxData(h5_main, auxDataName=['Position_Indices'])[0]
+    h5_pos_vals = getAuxData(h5_main, auxDataName=['Position_Values'])[0]
+
     if write_condensed:
         hot_inds = np.where(composite_filter > 0)[0]
         hot_inds = np.uint(hot_inds[int(0.5*len(hot_inds)):])  # only need to keep half the data
-        ds_cond_bins = MicroDataset('Condensed_Bins', hot_inds)
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([int(0.5*len(hot_inds))], is_spectral=True,
+                                                         labels=['hot_frequencies'], units=[''], verbose=False)
+        ds_spec_vals.data = np.atleast_2d(hot_inds)  # The data generated above varies linearly. Override.
         ds_cond_data = MicroDataset('Condensed_Data', data=[], maxshape=(num_effective_pix, len(hot_inds)),
                                     dtype=np.complex, chunking=(1, len(hot_inds)), compression='gzip')
-        grp_filt.addChildren([ds_cond_bins, ds_cond_data])
-                
-    # grp_filt.showTree()
+        grp_filt.addChildren([ds_spec_inds, ds_spec_vals, ds_cond_data])
+        if filter_parms['num_pix'] > 1:
+            # need to make new position datasets by taking every n'th index / value:
+            new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, filter_parms['num_pix']), :])
+            ds_pos_inds, ds_pos_vals = build_ind_val_dsets([int(np.unique(h5_pos_inds[:, dim_ind]).size /
+                                                                filter_parms['num_pix'])
+                                                            for dim_ind in range(h5_pos_inds.shape[1])],
+                                                           is_spectral=False,
+                                                           labels=h5_pos_inds.attrs['labels'],
+                                                           units=h5_pos_inds.attrs['units'], verbose=False)
+            h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
+            grp_filt.addChildren([ds_pos_inds, ds_pos_vals])
+
     hdf = ioHDF5(h5_main.file)
     h5_filt_refs = hdf.writeData(grp_filt)
-    
-    h5_filtr_grp = getH5GroupRef(grp_name, h5_filt_refs)
-    
+
     h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
     h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
     
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
-        linkRefs(h5_filt_data, [h5_comp_filt, h5_main, h5_noise_floors])
+        linkRefs(h5_filt_data, [h5_comp_filt, h5_noise_floors])
+        link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])
       
     if write_condensed:
-        h5_cond_bins = getH5DsetRefs(['Condensed_Bins'], h5_filt_refs)[0]
         h5_cond_data = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
-        linkRefs(h5_cond_data, [h5_cond_bins, h5_comp_filt, h5_main, h5_noise_floors])
+        linkRefs(h5_cond_data, [h5_comp_filt, h5_noise_floors])
+        if filter_parms['num_pix'] > 1:
+            h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_filt_refs)[0]
+            h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_filt_refs)[0]
+        link_as_main(h5_cond_data, h5_pos_inds, h5_pos_vals,
+                     getH5DsetRefs(['Spectroscopic_Indices'], h5_filt_refs)[0],
+                     getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
         
     rot_pts = 0
     if 'phase_rot_[pts]' in filter_parms.keys():
@@ -358,7 +381,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
         hdf.flush()
         st_pix = en_pix
     
-    return h5_filtr_grp
+    return h5_comp_filt.parent
               
 # #############################################################################
 
@@ -570,3 +593,43 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
         time_resp[pos, :] = np.real(np.fft.ifft(np.fft.ifftshift(f_complete)))
     
     return np.squeeze(time_resp)
+
+
+def reshape_from_lines_to_pixels(h5_filt, pts_per_cycle, scan_step_x_m):
+
+    if h5_filt.shape[1] % pts_per_cycle != 0:
+        warn('Error in reshaping the provided dataset to pixels. Check points per pixel')
+        raise ValueError
+        return
+    num_cols = int(h5_filt.shape[1] / pts_per_cycle)
+
+    h5_spec_vals = getAuxData(h5_filt, auxDataName=['Spectroscopic_Values'])[0]
+    h5_pos_vals = getAuxData(h5_filt, auxDataName=['Position_Values'])[0]
+    single_AO = h5_spec_vals[:, pts_per_cycle]
+
+    ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
+                                                     labels=h5_spec_vals.attrs['labels'],
+                                                     units=h5_spec_vals.attrs['units'], verbose=False)
+    ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
+
+    ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_filt.shape[0]], is_spectral=False,
+                                                   steps=[scan_step_x_m, h5_pos_vals[1, 0]],
+                                                   labels=['X', 'Y'], units=['m', 'm'], verbose=False)
+
+    ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_filt.value, (-1, pts_per_cycle)),
+                                    compression='gzip', chunking=(10, pts_per_cycle))
+
+    # write this to H5 as some form of filtered data.
+    resh_grp = MicroDataGroup(h5_filt.name.split('/')[-1] + '-Reshape_', parent=h5_filt.parent.name)
+    resh_grp.addChildren([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
+
+    hdf = ioHDF5(h5_filt.file)
+    h5_refs = hdf.writeData(resh_grp)
+
+    h5_resh = getH5DsetRefs(['Reshaped_Data'], h5_refs)[0]
+    # Link everything:
+    linkRefs(h5_resh,
+             getH5DsetRefs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
+                           h5_refs))
+    print('Finished reshaping G-mode line data to rows and columns')
+    return h5_resh
