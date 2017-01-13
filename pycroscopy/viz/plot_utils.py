@@ -309,7 +309,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
         # can be numpy array or h5py.dataset
         num_pos = datasets.shape[0]
         num_points = datasets.shape[1]
-        datasets = list(datasets)
+        datasets = [datasets]
         line_colors = ['b']
         dataset_names = ['Default']
     else:
