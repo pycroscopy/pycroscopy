@@ -305,7 +305,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     ---------
     fig, axes
     """
-    if type(datasets) is not list:
+    if type(datasets) in [h5py.Dataset, np.ndarray]:
         # can be numpy array or h5py.dataset
         num_pos = datasets.shape[0]
         num_points = datasets.shape[1]
@@ -357,7 +357,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
         chosen_pos = np.arange(sq_num_plots ** 2, dtype=int)
 
     fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, figsize=(12, 12))
-    axes_lin = axes.flat
+    axes_lin = axes.flatten()
 
     cent_ind = int(0.5 * excit_wfm.size)
     if central_resp_size:
