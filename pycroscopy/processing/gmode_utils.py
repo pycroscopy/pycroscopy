@@ -112,26 +112,31 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     else:
         fig = None
         axes = None
-                
-    noise_floor = getNoiseFloor(F_pix_data, filter_parms['noise_threshold'])[0]
+
+    if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+        noise_floor = getNoiseFloor(F_pix_data, filter_parms['noise_threshold'])[0]
     if show_plots:
         amp = np.abs(F_pix_data)
-        ax_raw.plot(w_vec[l_ind:r_ind], np.log(amp[l_ind:r_ind]))
-        ax_raw.plot(w_vec[l_ind:r_ind], np.log((composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp))))
-        ax_raw.plot(w_vec[l_ind:r_ind], np.log(np.ones(r_ind-l_ind)*noise_floor))
+        ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind])
+        ax_raw.semilogy(w_vec[l_ind:r_ind], (composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp)))
+        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+            ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind-l_ind)*noise_floor)
         ax_raw.set_title('Raw Signal')
     F_pix_data *= composite_filter
-    F_pix_data[np.abs(F_pix_data) < noise_floor] = 1E-16  # do NOT use 0 here! log will complain
+    F_pix_data[np.abs(F_pix_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
     if show_plots:
-        ax_filt.plot(w_vec[l_ind:r_ind], np.log(np.abs(F_pix_data[l_ind:r_ind])))
+        ax_filt.semilogy(w_vec[l_ind:r_ind], np.abs(F_pix_data[l_ind:r_ind]))
         ax_filt.set_title('Filtered Signal')
         ax_filt.set_xlabel('Frequency(kHz)')
+        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+            orig_lims = ax_raw.get_ylim()
+            ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(F_pix_data)))
     if show_loops:
         if use_rainbow_plots:
             rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
         else:
-            ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind]*1E+3)              
+            ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind]*1E+3)
         ax_loops.set_title('AI vs AO') 
         ax_loops.set_xlabel('Input Bias (V)')
         ax_loops.set_ylabel('Deflection (mV)')
@@ -505,7 +510,7 @@ def unit_filter(single_parm):
     f_data = np.fft.fftshift(np.fft.fft(t_raw))
     noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
     f_data = f_data * composite_filter
-    f_data[np.abs(f_data) < noise_floor] = 1E-16  # log(0) throws a runtime error that crashes the kernel
+    f_data[np.abs(f_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
     cond_data = None
     filt_data = None
     if hot_inds is not None:
