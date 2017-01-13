@@ -33,7 +33,7 @@ if __name__ == '__main__':
     save_plots      = True
     show_plots      = False
     profiling       = False
-    win_fft         = 'abs'     # Options are None, 'abs', or 'complex'
+    win_fft         = 'abs'     # Options are None, 'abs', 'data+abs', or 'complex'
     num_peaks       = 2         # Number of Peaks to use in window size fitting
     max_mem         = 1024*2    # Maximum memory to use in calculations, in Mb
     num_comp        = 128       # Number of Components to generate
@@ -79,13 +79,13 @@ if __name__ == '__main__':
                               win_y=win_size,
                               save_plots=save_plots,
                               show_plots=show_plots,
-                              win_fft='complex')
+                              win_fft=win_fft)
     print 'Windowing took {} seconds.'.format(time()-t0)
 
     if profiling:
         prof_file = os.path.join(folder, 'window_profile.txt')
         run_string = 'h5_wins = iw.do_windowing(win_x=win_size, win_y=win_size, save_plots=save_plots,'+ \
-                     ' show_plots=show_plots, win_fft=\'complex\')'
+                     ' show_plots=show_plots, win_fft=win_fft)'
         cProfile.run(run_string, filename=prof_file)
         cistats = pstats.Stats(prof_file)
         print 'Window Creation Image Profiling -- Sorted by total time'
