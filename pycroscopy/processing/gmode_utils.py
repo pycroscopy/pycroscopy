@@ -265,9 +265,13 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     num_effective_pix = int(num_effective_pix)
         
     num_pts = h5_main.shape[1]*filter_parms['num_pix']
-    band_filt = filter_parms['band_filt_[Hz]']
-    noise_band_filter = noiseBandFilter(num_pts, filter_parms['samp_rate_[Hz]'], band_filt[0], band_filt[1])
-    low_pass_filter = makeLPF(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['LPF_cutOff_[Hz]'])
+    noise_band_filter = 1
+    low_pass_filter = 1
+    if filter_parms['band_filt_[Hz]'] is not None:
+        band_filt = filter_parms['band_filt_[Hz]']
+        noise_band_filter = noiseBandFilter(num_pts, filter_parms['samp_rate_[Hz]'], band_filt[0], band_filt[1])
+    if filter_parms['LPF_cutOff_[Hz]'] > 0:
+        low_pass_filter = makeLPF(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['LPF_cutOff_[Hz]'])
     composite_filter = noise_band_filter * low_pass_filter    
     
     # ioHDF now handles automatic indexing
