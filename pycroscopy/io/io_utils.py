@@ -6,6 +6,7 @@ Created on Tue Nov  3 21:14:25 2015
 """
 from multiprocessing import cpu_count
 from time import strftime
+from psutil import virtual_memory as vm
 
 import h5py
 import numpy as np
@@ -71,7 +72,6 @@ def getAvailableMem():
     mem : unsigned int
         Memory in bytes
     """
-    from psutil import virtual_memory as vm
     mem = vm()
     return getattr(mem, 'available')
 
