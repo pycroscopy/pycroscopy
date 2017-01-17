@@ -58,7 +58,7 @@ class Fit_Methods(object):
         return SHOFunc
 
 
-class BE_FIT_Methods(Fit_Methods):
+class BE_Fit_Methods(object):
 
     def __init__(self):
         self.methods = ['BE_LOOP']
@@ -81,7 +81,7 @@ class BE_FIT_Methods(Fit_Methods):
 
             return 1 - r_squared
 
-        return loop_func()
+        return loop_func
 
 class forcIV_Fit_Methods(Fit_Methods):
     pass
