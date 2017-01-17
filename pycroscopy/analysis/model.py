@@ -327,8 +327,8 @@ class Model(object):
                                       obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
                 results.append(self._reformatResults(temp, obj_func['obj_func']))
-                self._getDataChunk()
                 self._getGuessChunk()
+                self._getDataChunk()
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
