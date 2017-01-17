@@ -4,6 +4,13 @@ Created on Thu Jan 12 15:31:55 2017
 
 @author: Kody Law, Rama K. Vasudevan
 """
+from ..io.io_hdf5 import ioHDF5
+from ..io.io_utils import recommendCores
+from ..io.microdata import MicroDataGroup, MicroDataset
+from ..io.hdf_utils import getH5DsetRefs, getAuxData
+from multiprocessing import Pool
+from _warnings import warn
+
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import sqrtm
@@ -74,6 +81,8 @@ def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10
     A = np.zeros(shape=(num_volt_points, num_x_steps + 1))
     for j in range(num_volt_points):
         ix = int(round(np.floor((V[j] + max_volts) / dx) + 1))
+        ix = min(ix, len(x)-1)
+        ix = max(ix, 1)
         A[j, ix] = V[j] * (V[j] - x[ix - 1]) / (x[ix] - x[ix - 1])
         A[j, ix - 1] = V[j] * (1. - (V[j] - x[ix - 1]) / (x[ix] - x[ix - 1]))
 

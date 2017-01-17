@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
-from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs, getAuxData, link_as_main
+from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
