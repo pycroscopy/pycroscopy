@@ -77,6 +77,9 @@ class MicroDataGroup(MicroData):
                 self.children.append(child)
             else:
                 warn('Children must be of type MicroData.')
+
+    def __str__(self):
+        self.showTree()
             
     def showTree(self):
         """
@@ -155,12 +158,19 @@ class MicroDataset(MicroData):
         
         >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), chunking=(1,16384), resizable=True,compression='gzip')
         """
+
+        def _make_iterable(item):
+            if item is not None:
+                if type(item) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
+                    item = tuple([item])
+            return item
+
         super(MicroDataset, self).__init__(name, parent)
         self.data = data
         self.dtype = dtype
         self.compression = compression
-        self.chunking = chunking
+        self.chunking = _make_iterable(chunking)
         self.resizable = resizable
-        self.maxshape = maxshape
+        self.maxshape = _make_iterable(maxshape)
         if resizable is True:
             self.maxshape = None  # Overridden
