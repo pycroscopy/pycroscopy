@@ -149,6 +149,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
 
 
 def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condensed=False, num_cores=None):
+    # TODO: Can simplify this function substantially. Collapse / absorb the serial and parallel functions...
     """
     Filters G-mode data using specified filter parameters and writes results to file.
         
@@ -596,6 +597,7 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
 
 
 def reshape_from_lines_to_pixels(h5_filt, pts_per_cycle, scan_step_x_m):
+    # TODO: Spectroscopic indices and values datasets not being generated correctly
 
     if h5_filt.shape[1] % pts_per_cycle != 0:
         warn('Error in reshaping the provided dataset to pixels. Check points per pixel')

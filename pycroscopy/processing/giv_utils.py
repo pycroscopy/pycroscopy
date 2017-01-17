@@ -164,3 +164,80 @@ def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10
         print("The value of the capacitance is ", str(round(m[-1] * 1E3, 2)) + "pF")
 
     return results_dict
+
+
+def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.03, e=10.0, sigma=10., sigmaC=1., num_samples=1E4):
+
+    if h5_main.file.mode != 'r+':
+        warn('Need to ensure that the file is in r+ mode to write results back to the file')
+        raise TypeError
+        return None
+
+    # configure the bayesian function:
+    h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
+    single_AO = np.squeeze(h5_spec_vals[()])
+
+    def preconfigured_bayesian_inference(iv_point):
+        return do_bayesian_inference(single_AO, iv_point, ex_freq, dx=dx, gam=gam, e=e, sigma=sigma, sigmaC=sigmaC,
+                                     num_samples=num_samples, show_plots=False)
+    num_pos = h5_main.shape[0]
+    recom_cores = recommendCores(num_pos)
+    if num_cores == None:
+        num_cores = recom_cores
+    pool = Pool(processes=num_cores, maxtasksperchild=None)
+
+    # Start parallel processing:
+    num_chunks = int(np.ceil(h5_main.shape[0] / num_cores))
+    bayes_results = pool.imap(preconfigured_bayesian_inference, h5_main, chunksize=num_chunks)
+    pool.close()
+    pool.join()
+
+    print('Done parallel computing. Now extracting data and populating matrices')
+
+    # create all h5 datasets here:
+    num_x_points = int(round(2 * round(np.max(single_AO) / dx, 1) + 1, 0))
+    ds_x = MicroDataset('x', data=[], maxshape=num_x_points, dtype=np.float32, compression='gzip')
+    ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, compression='gzip')
+
+    ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_points, num_x_points), dtype=np.float32, compression='gzip')
+    ds_m2r = MicroDataset('m2r', data=[], maxshape=ds_vr.maxshape, dtype=np.float32, compression='gzip')
+    ds_sigma = MicroDataset('sigma', data=[], maxshape=(num_pos, num_x_points+1, num_x_points+1), dtype=np.float32,
+                            compression='gzip')
+    ds_si = MicroDataset('si', data=[], maxshape=(num_pos, num_x_points, num_samples), dtype=np.float32,
+                         compression='gzip')
+
+    ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_x_points), dtype=np.float32, compression='gzip')
+    ds_m = MicroDataset('m', data=[], maxshape=(num_pos, num_x_points + 1), dtype=np.float32, compression='gzip')
+    ds_irec = MicroDataset('irec', data=[], maxshape=(num_pos, single_AO.size), dtype=np.float32, compression='gzip')
+
+    bayes_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Bayesian_Inference_', parent=h5_main.parent.name)
+    bayes_grp.addChildren([ds_x, ds_cap, ds_vr, ds_m2r, ds_sigma, ds_si, ds_mr, ds_m, ds_irec])
+
+    hdf = ioHDF5(h5_main.file)
+    h5_refs = hdf.writeData(bayes_grp)
+    h5_x = getH5DsetRefs(['x'], h5_refs)[0]
+    h5_cap = getH5DsetRefs(['capacitance'], h5_refs)[0]
+    h5_vr = getH5DsetRefs(['vr'], h5_refs)[0]
+    h5_m2r = getH5DsetRefs(['m2r'], h5_refs)[0]
+    h5_sigma = getH5DsetRefs(['sigma'], h5_refs)[0]
+    h5_si = getH5DsetRefs(['si'], h5_refs)[0]
+    h5_mr = getH5DsetRefs(['mr'], h5_refs)[0]
+    h5_m = getH5DsetRefs(['m'], h5_refs)[0]
+    h5_irec = getH5DsetRefs(['irec'], h5_refs)[0]
+
+    # Extract data for each pixel...
+    for pix_ind in range(num_pos):
+        pix_results = bayes_results.next()
+        h5_cap[pix_ind] = pix_results['cValue']
+        h5_vr[pix_ind] = pix_results['vR']
+        h5_m2r[pix_ind] = pix_results['m2R']
+        h5_mr[pix_ind] = pix_results['mR']
+        h5_m[pix_ind] = pix_results['m']
+        h5_irec[pix_ind] = pix_results['Irec']
+        h5_sigma[pix_ind] = pix_results['Sigma']
+        h5_si[pix_ind] = pix_results['SI']
+    h5_x[:] = pix_results['x']
+
+    hdf.flush()
+
+    return h5_cap.parent
