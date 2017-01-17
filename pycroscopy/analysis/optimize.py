@@ -29,7 +29,7 @@ def targetFuncFit(args, **kwargs):
     :param kwargs:
     :return:
     """
-    solver, solver_options,func = Optimize._initiateSolverAndObjFunc(args[-1])
+    solver, solver_options, func = Optimize._initiateSolverAndObjFunc(args[-1])
     results = solver(func, args[1], args=[args[0]])
     return results
 
@@ -122,21 +122,7 @@ class Optimize(object):
         if self.obj_func is None:
             fm = Fit_Methods()
             func = fm.__getattribute__(self.obj_func_name)(self.obj_func_xvals)
-        return solver,self.solver_options, func
-
-            # if self.obj_func_class is 'Fit_Methods':
-            #     fm = fit_methods.
-
-
-    # def _fitFunc(self):
-    #
-    #
-    #     def _callSolver(input):
-    #         data = input[0]
-    #         guess = input[1]
-    #         results = self.solver.__call__(func, guess, args=[data], **kwargs)
-    #         self.solver.__call__(func, guess, args=[data], **kwargs)
-    #         return results
+        return solver, self.solver_options, func
 
     def computeFit(self, processors = 1, solver_type='least_squares', solver_options={},
                    obj_func={'class':'Fit_Methods','obj_func':'SHO','xvals':np.array([])}):
@@ -170,13 +156,6 @@ class Optimize(object):
             self.obj_func = None
             self.obj_func_name = obj_func['obj_func']
             self.obj_func_class = obj_func['class']
-
-        # def _callSolver(input):
-        #     data = input[0]
-        #     guess = input[1]
-        #     results = self.solver.__call__(func, guess, args=[data], **kwargs)
-        #     self.solver.__call__(func, guess, args=[data], **kwargs)
-        #     return results
 
         if self._parallel:
             # start pool of workers
