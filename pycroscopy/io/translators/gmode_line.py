@@ -10,10 +10,9 @@ from os import path, listdir, remove
 from warnings import warn
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
-
 from .be_utils import parmsToDict
 from .translator import Translator
-from .utils import interpretFreq, generateDummyMainParms
+from .utils import interpret_frequency, generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
@@ -32,7 +31,7 @@ class GLineTranslator(Translator):
             data_filepath: Absolute path of the data file (.dat) in
         """
         # Figure out the basename of the data:
-        (basename, parm_paths, data_paths) = self._parsefilepath(file_path)
+        (basename, parm_paths, data_paths) = self._parse_file_path(file_path)
         
         (folder_path, unused) = path.split(file_path)
         h5_path = path.join(folder_path, basename+'.h5')
@@ -54,7 +53,7 @@ class GLineTranslator(Translator):
         isBEPS, parm_dict = parmsToDict(parm_paths['parm_txt'])
         
         # IO rate is the same for the entire board / any channel
-        IO_rate = interpretFreq(parm_dict['IO rate'])
+        IO_rate = interpret_frequency(parm_dict['IO rate'])
         
         # Get file byte size:
         # For now, assume that bigtime_00 always exists and is the main file
@@ -84,7 +83,7 @@ class GLineTranslator(Translator):
 
         # First finish writing all global parameters, create the file too:
         spm_data = MicroDataGroup('')
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'GLine'
         global_parms['translator'] = 'GLine'
         spm_data.attrs = global_parms
@@ -105,10 +104,10 @@ class GLineTranslator(Translator):
                                     maxshape=(num_pix, self.num_points),
                                     chunking=(1, self.num_points), dtype=np.float16)
 
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([self.num_cols, self.num_rows], is_spectral=False,
-                                                           labels=['X', 'Y'], units=['m', 'm'])
-        ds_spec_inds, ds_spec_vals = self._build_ind_val_dsets([self.num_points], is_spectral=True,
-                                                               labels=['Excitation'], units=['V'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([self.num_cols, self.num_rows], is_spectral=False,
+                                                     labels=['X', 'Y'], units=['m', 'm'])
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([self.num_points], is_spectral=True,
+                                                         labels=['Excitation'], units=['V'])
         ds_spec_vals.data = np.atleast_2d(np.float32(BE_wave))  # Override the default waveform
         
         aux_ds_names = ['Position_Indices', 'Position_Values',
@@ -135,7 +134,7 @@ class GLineTranslator(Translator):
         hdf.close()
 
     @staticmethod
-    def _parsefilepath(data_filepath):
+    def _parse_file_path(data_filepath):
         """
         Goes through the file directory and figures out the basename and the 
         parameter (text and .mat), data file paths (for each analog input channel)

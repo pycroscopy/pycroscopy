@@ -239,8 +239,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
-
-def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
+def plot_map(axis, data, stdevs=2, **kwargs):
     """
     Plots a 2d map with a tight z axis, with or without color bars.
     Note that the direction of the y axis is flipped if the color bar is required
@@ -267,21 +266,22 @@ def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
 
     return im
 
-###############################################################################
 
-
-def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
-               evenly_spaced=True, plots_on_side=5, rainbow_plot=True,
-               x_label='', y_label='', subtitles='Loop', title=None):
+def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True, plots_on_side=5, x_label='',
+               y_label='', subtitles='Position', title='', central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
     """
-    Plots loops from up to 25 evenly spaced positions
+    Plots loops from multiple datasets from up to 25 evenly spaced positions
 
     Parameters
     -----------
     excit_wfm : 1D numpy float array
         Excitation waveform in the time domain
-    h5_loops : float HDF5 dataset reference or 2D numpy array
-        Dataset containing data arranged as (pixel, time)
+    datasets : list of 2D numpy arrays or 2D hyp5.Dataset objects
+        Datasets containing data arranged as (pixel, time)
+    line_colors : list of strings
+        Colors to be used for each of the datasets
+    dataset_names : (Optional) list of strings
+        Names of the different datasets to be compared
     h5_pos : HDF5 dataset reference or 2D numpy array
         Dataset containing position indices
     central_resp_size : (optional) unsigned integer
@@ -290,7 +290,7 @@ def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         Evenly spaced positions or first N positions
     plots_on_side : unsigned int
         Number of plots on each side
-    rainbow_plot : (optional) Boolean
+    use_rainbow_plots : (optional) Boolean
         Plot the lines as a function of spectral index (eg. time)
     x_label : (optional) String
         X Label for all plots
@@ -305,9 +305,51 @@ def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
     ---------
     fig, axes
     """
+    if type(datasets) in [h5py.Dataset, np.ndarray]:
+        # can be numpy array or h5py.dataset
+        num_pos = datasets.shape[0]
+        num_points = datasets.shape[1]
+        datasets = [datasets]
+        line_colors = ['b']
+        dataset_names = ['Default']
+    else:
+        # First check if the datasets are correctly shaped:
+        num_pos_es = list()
+        num_points_es = list()
+        for dataset in datasets:
+            num_pos_es.append(dataset.shape[0])
+            num_points_es.append(dataset.shape[1])
+        num_pos_es = np.array(num_pos_es)
+        num_points_es = np.array(num_points_es)
+        if np.unique(num_pos_es).size > 1 or np.unique(num_points_es).size > 1:
+            warn('Datasets of incompatible sizes')
+            return
+        num_pos = np.unique(num_pos_es)[0]
+        num_points = np.unique(num_points_es)[0]
+
+        # Next the identification of datasets:
+        if len(dataset_names) > len(datasets):
+            # remove additional titles
+            dataset_names = dataset_names[:len(datasets)]
+        elif len(dataset_names) < len(datasets):
+            # add titles
+            dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
+        if len(line_colors) != len(datasets):
+            color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
+            if len(datasets) < len(color_list):
+                remaining_colors = [x for x in color_list if x not in line_colors]
+                line_colors += remaining_colors[:len(datasets) - len(color_list)]
+            else:
+                warn('Insufficient number of line colors provided')
+                return
+
+
+    if excit_wfm.size != num_points:
+        warn('Length of excitation waveform not compatible with second axis of datasets')
+        return
 
     plots_on_side = min(abs(plots_on_side), 5)
-    num_pos = h5_loops.shape[0]
+
     sq_num_plots = min(plots_on_side, int(round(num_pos ** 0.5)))
     if evenly_spaced:
         chosen_pos = np.linspace(0, num_pos - 1, sq_num_plots ** 2, dtype=int)
@@ -315,24 +357,24 @@ def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         chosen_pos = np.arange(sq_num_plots ** 2, dtype=int)
 
     fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, figsize=(12, 12))
-    axes_lin = axes.flat
+    axes_lin = axes.flatten()
 
-    cent_ind = int(0.5 * h5_loops.shape[1])
+    cent_ind = int(0.5 * excit_wfm.size)
     if central_resp_size:
         sz = int(0.5 * central_resp_size)
         l_resp_ind = cent_ind - sz
         r_resp_ind = cent_ind + sz
     else:
         l_resp_ind = 0
-        r_resp_ind = h5_loops.shape[1]
+        r_resp_ind = excit_wfm.size
 
     for count, posn in enumerate(chosen_pos):
-        if rainbow_plot:
-            rainbow_plot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], h5_loops[posn, l_resp_ind:r_resp_ind])
+        if use_rainbow_plots and len(datasets) == 1:
+            rainbow_plot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], datasets[0][posn, l_resp_ind:r_resp_ind])
         else:
-            axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], h5_loops[posn, l_resp_ind:r_resp_ind])
-
-        if type(h5_pos) != type(None):
+            for dataset, col_val in zip(datasets, line_colors):
+                axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind], color=col_val)
+        if h5_pos is not None:
             # print 'Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0])
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)
         else:
@@ -345,6 +387,8 @@ def plot_loops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         axes_lin[count].axis('tight')
         axes_lin[count].set_aspect('auto')
         axes_lin[count].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    if len(datasets) > 1:
+        axes_lin[count].legend(dataset_names, loc='best')
     if title:
         fig.suptitle(title, fontsize=14)
     plt.tight_layout()
@@ -783,7 +827,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
         elif cluster_centroids.ndim == 3:
-            plot_map(ax, cluster_centroids[index], show_colorbar=True)
+            plot_map(ax, cluster_centroids[index])
         ax.set_title('Centroid: %d' % index)
 
     fig501.subplots_adjust(hspace=0.60, wspace=0.60)
@@ -1065,7 +1109,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
         plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, rainbow_plot=False,
+        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, use_rainbow_plots=False,
                              x_label=spec_var_title, y_label=meas_var_title, subtitles='Loop', title=plt_title)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)

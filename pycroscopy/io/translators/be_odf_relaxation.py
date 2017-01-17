@@ -11,7 +11,7 @@ from warnings import warn
 from os import path, remove # File Path formatting
 from scipy.io.matlab import loadmat; # To load parameters stored in Matlab .mat file
 from .translator import Translator # Because this class extends the abstract Translator class
-from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
+from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
@@ -114,8 +114,8 @@ class BEodfRelaxationTranslator(Translator):
         ex_wfm = np.float32(ex_wfm)
             
         self.FFT_BE_wave = bin_FFT
-        pos_mat = makePositionMat([num_cols, num_rows])
-        pos_slices = getPositionSlicing(['X','Y'], num_pix)
+        pos_mat = make_position_mat([num_cols, num_rows])
+        pos_slices = get_position_slicing(['X', 'Y'], num_pix)
         
         ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)     
         ds_pos_ind = MicroDataset('Position_Indices', pos_mat, dtype=np.uint32)
@@ -231,7 +231,7 @@ class BEodfRelaxationTranslator(Translator):
         meas_grp.addChildren([chan_grp])
         
         spm_data = MicroDataGroup('')
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols'];
         global_parms['grid_size_y'] = parm_dict['grid_num_rows'];
         global_parms['experiment_date'] = parm_dict['File_date_and_time']

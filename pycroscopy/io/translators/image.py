@@ -6,12 +6,11 @@ Created on Feb 9, 2016
 
 import os
 import numpy as np
-from skimage.data import imread
 from skimage.measure import block_reduce
-from ..io_image import read_image, read_dm3
+from ..io_image import read_image
 from .translator import Translator
-from .utils import generateDummyMainParms
-from ..hdf_utils import getH5DsetRefs, calc_chunks, linkformain
+from .utils import generate_dummy_main_parms, build_ind_val_dsets
+from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -60,7 +59,7 @@ class ImageTranslator(Translator):
             HDF5 Dataset object that contains the flattened images
 
         """
-        image_path, h5_path = self._parsefilepath(image_path)
+        image_path, h5_path = self._parse_file_path(image_path)
 
         image, image_parms = read_image(image_path, **image_args)
         usize, vsize = image.shape[:2]
@@ -87,13 +86,13 @@ class ImageTranslator(Translator):
 
         image = self.binning_func(image, self.bin_factor, self.bin_func)
 
-        h5_main = self._setupH5(usize, vsize, image.dtype.type, image_parms)
+        h5_main = self._setup_h5(usize, vsize, image.dtype.type, image_parms)
 
         h5_main = self._read_data(image, h5_main)
 
         return h5_main
 
-    def _setupH5(self, usize, vsize, data_type, image_parms):
+    def _setup_h5(self, usize, vsize, data_type, image_parms):
         """
         Setup the HDF5 file in which to store the data including creating
         the Position and Spectroscopic datasets
@@ -117,7 +116,7 @@ class ImageTranslator(Translator):
         """
         num_pixels = usize * vsize
 
-        root_parms = generateDummyMainParms()
+        root_parms = generate_dummy_main_parms()
         root_parms['data_type'] = 'ImageData'
 
         root_parms.update(image_parms)
@@ -135,13 +134,13 @@ class ImageTranslator(Translator):
         chan_grp = MicroDataGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
         #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets([1],
-                                                              is_spectral=True,
-                                                              labels=['Image'])
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets((usize, vsize),
-                                                           is_spectral=False,
-                                                           labels=['X', 'Y'],
-                                                           units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets([1],
+                                                        is_spectral=True,
+                                                        labels=['Image'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets((usize, vsize),
+                                                     is_spectral=False,
+                                                     labels=['X', 'Y'],
+                                                     units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_pixels, 1],
                                   data_type(0).itemsize,
@@ -175,14 +174,14 @@ class ImageTranslator(Translator):
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
 
         return h5_main
 
     @staticmethod
-    def _parsefilepath(image_path):
+    def _parse_file_path(image_path):
         """
         Returns a list of all files in the directory given by path
 

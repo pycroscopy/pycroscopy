@@ -15,7 +15,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
     requires_conjugate
 from .translator import Translator
-from .utils import generateDummyMainParms
+from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
@@ -58,7 +58,7 @@ class BEodfTranslator(Translator):
             Absolute path of the resultant .h5 file
         """
         (folder_path, basename) = path.split(file_path)
-        (basename, path_dict) = self._parsefilepath(file_path)
+        (basename, path_dict) = self._parse_file_path(file_path)
             
         h5_path = path.join(folder_path, basename + '.h5')
         tot_bins_multiplier = 1
@@ -160,8 +160,8 @@ class BEodfTranslator(Translator):
 
         self.FFT_BE_wave = bin_FFT
 
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
-                                                           labels=['X', 'Y'], units=['m', 'm'], verbose=False)
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
+                                                     labels=['X', 'Y'], units=['m', 'm'], verbose=False)
         
         if isBEPS:
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
@@ -300,7 +300,7 @@ class BEodfTranslator(Translator):
         meas_grp.addChildren([chan_grp])
         
         spm_data = MicroDataGroup('')
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         try:
@@ -523,7 +523,7 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')       
         
-    def _parsefilepath(self, data_filepath):
+    def _parse_file_path(self, data_filepath):
         """
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary

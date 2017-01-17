@@ -9,9 +9,10 @@ Basic functions that can be used by any SPM translator class
 from __future__ import division  # int/int = float
 import numpy as np  # For array operations
 import time as tm  # for getting time stamps
+from ..microdata import MicroDataset
 
 
-def interpretFreq(freq_str):
+def interpret_frequency(freq_str):
     """
     Interprets a string denoting frequency into its numerical equivalent.
     For example "4 MHz" is translated to 4E+6
@@ -33,7 +34,7 @@ def interpretFreq(freq_str):
         return int(components[0])*1.0E+3
 
 
-def generateDummyMainParms():
+def generate_dummy_main_parms():
     """
     Generates a (dummy) dictionary of parameters that will be used at the root level of the h5 file
 
@@ -66,7 +67,7 @@ def generateDummyMainParms():
     return main_parms
 
 
-def makePositionMat(num_steps):
+def make_position_mat(num_steps):
     """
     Sets the position index matrices and labels for each of the spatial dimensions.
     It is intentionally generic so that it works for any SPM dataset.
@@ -110,7 +111,7 @@ def makePositionMat(num_steps):
     return pos_mat
 
 
-def getPositionSlicing(pos_lab, curr_pix=None):
+def get_position_slicing(pos_lab, curr_pix=None):
     """
     Returns a dictionary of slice objects to help in creating region references 
     to the position indices and values H5 datasets 
@@ -135,7 +136,7 @@ def getPositionSlicing(pos_lab, curr_pix=None):
     return slice_dict
 
 
-def getSpectralSlicing(spec_lab, curr_spec=None):
+def get_spectral_slicing(spec_lab, curr_spec=None):
     """
     Returns a dictionary of slice objects to help in creating region references
     to the spectroscopic indices and values H5 datasets
@@ -158,3 +159,109 @@ def getSpectralSlicing(spec_lab, curr_spec=None):
     for spat_ind, spat_dim in enumerate(spec_lab):
         slice_dict[spat_dim] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
     return slice_dict
+
+
+def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
+                        units=None, verbose=False):
+    """
+    Builds the MicroDatasets for the position OR spectroscopic indices and values
+    of the data
+
+    Parameters
+    ----------
+    is_spectral : Boolean
+        Spectroscopic (True) or Position (False)
+    dimensions : array_like of numpy.uint
+        Integer values for the length of each dimension
+    steps : array_like of float, optional
+        Floating point values for the step-size in each dimension.  One
+        if not specified.
+    initial_values : array_like of float, optional
+        Floating point for the zeroth value in each dimension.  Zero if
+        not specified.
+    labels : array_like of str, optional
+        The names of each dimension.  Empty strings will be used if not
+        specified.
+    units : array_like of str, optional
+        The units of each dimension.  Empty strings will be used if not
+        specified.
+    verbose : Boolean, optional
+        Whether or not to print statements for debugging purposes
+
+    Returns
+    -------
+    ds_spec_inds : Microdataset of numpy.uint
+        Dataset containing the position indices
+    ds_spec_vals : Microdataset of float
+        Dataset containing the value at each position
+
+    Notes
+    -----
+    `steps`, `initial_values`, `labels`, and 'units' must be the same length as
+    `dimensions` when they are specified.
+
+    Dimensions should be in the order from fastest varying to slowest.
+    """
+
+    if steps is None:
+        steps = np.ones_like(dimensions)
+    elif len(steps) != len(dimensions):
+        raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
+    steps = np.atleast_2d(steps)
+    if verbose:
+        print('Steps')
+        print(steps.shape)
+        print(steps)
+
+    if initial_values is None:
+        initial_values = np.zeros_like(dimensions)
+    elif len(initial_values) != len(dimensions):
+        raise ValueError('The arrays for initial values and dimension sizes must be the same.')
+    initial_values = np.atleast_2d(initial_values)
+
+    if verbose:
+        print('Initial Values')
+        print(initial_values.shape)
+        print(initial_values)
+
+    if labels is None:
+        labels = ['' for _ in len(dimensions)]
+    elif len(labels) != len(dimensions):
+        raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
+    # Get the indices for all dimensions
+    indices = make_position_mat(dimensions)
+    if verbose:
+        print('Indices')
+        print(indices.shape)
+        print(indices)
+
+    # Convert the indices to values
+    values = initial_values + np.float32(indices)*steps
+
+    # Create the slices that will define the labels
+    if is_spectral:
+        mode = 'Spectroscopic_'
+        indices = indices.transpose()
+        values = values.transpose()
+        region_slices = get_spectral_slicing(labels)
+    else:
+        mode = 'Position_'
+        region_slices = get_position_slicing(labels)
+
+    # Create the MicroDatasets for both Indices and Values
+    ds_indices = MicroDataset(mode + 'Indices', indices, dtype=np.uint32)
+    ds_indices.attrs['labels'] = region_slices
+
+    ds_values = MicroDataset(mode + 'Values', values, dtype=np.float32)
+    ds_values.attrs['labels'] = region_slices
+
+    if units is None:
+        pass
+    elif len(units) != len(dimensions):
+        raise ValueError('The arrays for labels and dimension sizes must be the same.')
+    else:
+        ds_indices.attrs['units'] = units
+        ds_values.attrs['units'] = units
+
+    return ds_indices, ds_values
