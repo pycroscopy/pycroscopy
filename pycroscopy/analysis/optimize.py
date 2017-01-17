@@ -18,7 +18,8 @@ def targetFuncGuess(args, **kwargs):
     :param kwargs:
     :return:
     """
-    func = Optimize._guessFunc(args[-1])
+    opt = args[-1]
+    func = opt._guessFunc()
     results = func(args[0])
     return results
 
@@ -29,7 +30,8 @@ def targetFuncFit(args, **kwargs):
     :param kwargs:
     :return:
     """
-    solver, solver_options, func = Optimize._initiateSolverAndObjFunc(args[-1])
+    opt = args[-1]
+    solver, solver_options, func = opt._initiateSolverAndObjFunc()
     results = solver(func, args[1], args=[args[0]])
     return results
 
@@ -175,6 +177,8 @@ class Optimize(object):
 
         else:
             print("Computing Fits In Serial ...")
-            solver, solver_options, func = self._initiateSolverAndObjFunc()
-            results = [solver(func, guess, args=[vector]) for vector, guess in zip(self.data, self.guess)]
+            tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
+            temp = [targetFuncFit(task) for task in tasks]
+            # solver, solver_options, func = self._initiateSolverAndObjFunc()
+            # results = [solver(func, guess, args=[vector]) for vector, guess in zip(self.data, self.guess)]
             return results
