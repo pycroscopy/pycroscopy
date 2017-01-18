@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
-from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main
+from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
@@ -329,10 +329,11 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
+        copyAttributes(h5_main, h5_filt_data)
         linkRefs(h5_filt_data, [h5_comp_filt, h5_noise_floors])
-        link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
+        """link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
                      getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
-                     getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
       
     if write_condensed:
         h5_cond_data = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
@@ -648,6 +649,12 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m):
     linkRefs(h5_resh,
              getH5DsetRefs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
                            h5_refs))
+
+    # Copy the two attributes that are really important but ignored:
+    for at_name in ['quantity', 'units']:
+        if at_name in h5_main.attrs:
+            h5_resh.attrs[at_name] = h5_main.attrs[at_name]
+            
     print('Finished reshaping G-mode line data to rows and columns')
 
     return h5_resh
