@@ -191,7 +191,7 @@ def bayesian_inference_unit(single_parm):
     See the econ results of the original Bayesian Inference function
     """
     iv_point = single_parm[0]
-    parm_dict = single_parm[1]
+    parm_dict = dict(single_parm[1])
     # parm_dict = {'dx': dx, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC, 'num_samples': num_samples}
     return do_bayesian_inference(parm_dict['volt_vec'], iv_point, parm_dict['freq'], show_plots=False, econ=True)
 
@@ -233,29 +233,28 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
     if h5_main.file.mode != 'r+':
         warn('Need to ensure that the file is in r+ mode to write results back to the file')
         raise TypeError
-        return None
 
     h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-    single_AO = np.squeeze(h5_spec_vals[()])
+    single_ao = np.squeeze(h5_spec_vals[()])
 
     num_pos = h5_main.shape[0]
 
     # create all h5 datasets here:
     bayes_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Bayesian_Inference_', parent=h5_main.parent.name)
-    num_x_points = int(round(2 * round(np.max(single_AO) / dx, 1) + 1, 0))
+    num_x_points = int(round(2 * round(np.max(single_ao) / dx, 1) + 1, 0))
     if verbose:
         print('Now creating the datasets')
-    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=[], maxshape=num_x_points, dtype=np.float32,
+    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=[], maxshape=(1, num_x_points), dtype=np.float32,
                                 chunking=num_x_points, compression='gzip')
-    ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.arange(num_x_points, dtype=np.uint32))
+    ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.atleast_2d(np.arange(num_x_points, dtype=np.uint32)))
     ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, chunking=num_pos,
                           compression='gzip')
     ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_points), dtype=np.float32,
                          chunking=(1, num_x_points), compression='gzip')
     ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_x_points), dtype=np.float32,
                          chunking=(1, num_x_points), compression='gzip')
-    ds_irec = MicroDataset('irec', data=[], maxshape=(num_pos, single_AO.size), dtype=np.float32,
-                           chunking=(1, single_AO.size), compression='gzip')
+    ds_irec = MicroDataset('irec', data=[], maxshape=(num_pos, single_ao.size), dtype=np.float32,
+                           chunking=(1, single_ao.size), compression='gzip')
     """
     # The following datasets will NOT be written because the data size becomes simply too big
     ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_points, num_x_points), dtype=np.float32,
@@ -317,7 +316,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         print('Finished linking all datasets!')
 
     # setting up parameters for parallel function:
-    parm_dict = {'volt_vec': single_AO, 'freq': ex_freq, 'dx': dx, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
+    parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'dx': dx, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
                  'num_samples': num_samples}
 
     max_pos_per_chunk = 500  # Need a better way of figuring out a more appropriate estimate
@@ -351,7 +350,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         cap_vec = np.zeros(chunk_pos, dtype=np.float32)
         vr_mat = np.zeros(shape=(chunk_pos, num_x_points), dtype=np.float32)
         mr_mat = np.zeros(shape=(chunk_pos, num_x_points), dtype=np.float32)
-        irec_mat = np.zeros(shape=(chunk_pos, single_AO.size), dtype=np.float32)
+        irec_mat = np.zeros(shape=(chunk_pos, single_ao.size), dtype=np.float32)
 
         """
         m2r_mat = np.zeros(shape=vr_mat.shape, dtype=np.float32)
@@ -396,7 +395,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
 
         start_pix = last_pix
 
-    h5_new_spec_vals[:] = x_vec  # Technically this needs to only be done once
+    h5_new_spec_vals[1, :] = x_vec  # Technically this needs to only be done once
 
     if verbose:
         print('Finished processing the dataset completely')
