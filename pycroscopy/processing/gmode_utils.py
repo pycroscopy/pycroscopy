@@ -329,7 +329,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
-        copyAttributes(h5_main, h5_filt_data)
+        copyAttributes(h5_main, h5_filt_data, skip_refs=False)
         linkRefs(h5_filt_data, [h5_comp_filt, h5_noise_floors])
         """link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
                      getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
@@ -654,7 +654,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m):
     for at_name in ['quantity', 'units']:
         if at_name in h5_main.attrs:
             h5_resh.attrs[at_name] = h5_main.attrs[at_name]
-            
+
     print('Finished reshaping G-mode line data to rows and columns')
 
     return h5_resh
