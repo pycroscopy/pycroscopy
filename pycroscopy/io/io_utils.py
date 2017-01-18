@@ -76,7 +76,7 @@ def getAvailableMem():
     return getattr(mem, 'available')
 
 
-def recommendCores(num_jobs, requested_cores=None):
+def recommendCores(num_jobs, requested_cores=None, lengthy_computation=False):
     """
     Decides the number of cores to use for parallel computing
 
@@ -86,6 +86,11 @@ def recommendCores(num_jobs, requested_cores=None):
         Number of times a parallel operation needs to be performed
     requested_cores : unsigned int (Optional. Default = None)
         Number of logical cores to use for computation
+    lengthy_computation : Boolean (Optional. Default = False)
+        Whether or not each computation takes a long time. If each computation is quick, it may not make sense to take
+        a hit in terms of starting and using a larger number of cores, so use fewer cores instead.
+        Eg- BE SHO fitting is fast (<1 sec) so set this value to False,
+        Eg- Bayesian Inference is very slow (~ 10-20 sec)so set this to True
 
     Returns
     -------
@@ -95,7 +100,7 @@ def recommendCores(num_jobs, requested_cores=None):
 
     max_cores = max(1, cpu_count() - 2)
 
-    if requested_cores == None:
+    if requested_cores is None:
         # conservative allocation
         requested_cores = max_cores
     else:
@@ -104,13 +109,15 @@ def recommendCores(num_jobs, requested_cores=None):
 
     recom_chunks = int(num_jobs / requested_cores)
 
-    if requested_cores > 1 and recom_chunks < 10:
-        recom_chunks = 20
-        # intelligently set the cores now.
-        requested_cores = min(requested_cores, int(num_jobs / recom_chunks))
-        # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
+    if not lengthy_computation:
+        if requested_cores > 1 and recom_chunks < 10:
+            recom_chunks = 20
+            # intelligently set the cores now.
+            requested_cores = min(requested_cores, int(num_jobs / recom_chunks))
+            # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
     return requested_cores
+
 
 def complex_to_float(ds_main):
     """
@@ -126,6 +133,7 @@ def complex_to_float(ds_main):
     retval : ND real numpy array
     """
     return np.hstack([np.real(ds_main), np.imag(ds_main)])
+
 
 def compound_to_scalar(ds_main):
     """
