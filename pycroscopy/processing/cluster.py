@@ -188,7 +188,7 @@ class Cluster(object):
         """
         print('Writing clustering results to file.')
         num_clusters = mean_response.shape[0]
-        ds_label_mat = MicroDataset('Labels', np.float32(np.atleast_2d(labels)), dtype=np.float32)
+        ds_label_mat = MicroDataset('Labels', np.float32(labels.reshape([-1, 1])), dtype=np.float32)
         clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
 
         ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))
