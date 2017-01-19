@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
-from ..io.hdf_utils import getH5DsetRefs, getH5GroupRef, linkRefs, getAuxData, link_as_main
+from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
@@ -149,6 +149,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
 
 
 def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condensed=False, num_cores=None):
+    # TODO: Can simplify this function substantially. Collapse / absorb the serial and parallel functions...
     """
     Filters G-mode data using specified filter parameters and writes results to file.
         
@@ -328,10 +329,11 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
+        copyAttributes(h5_main, h5_filt_data, skip_refs=False)
         linkRefs(h5_filt_data, [h5_comp_filt, h5_noise_floors])
-        link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
+        """link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
                      getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
-                     getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
       
     if write_condensed:
         h5_cond_data = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
@@ -595,35 +597,51 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
     return np.squeeze(time_resp)
 
 
-def reshape_from_lines_to_pixels(h5_filt, pts_per_cycle, scan_step_x_m):
+def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m):
+    """
+    Breaks up the provided raw G-mode dataset into lines and pixels (from just lines)
 
-    if h5_filt.shape[1] % pts_per_cycle != 0:
+    Parameters
+    ----------
+    h5_main : h5py.Dataset object
+        Reference to the main dataset that contains the raw data that is only broken up by lines
+    pts_per_cycle : unsigned int
+        Number of points in a single pixel
+    scan_step_x_m : float
+        Step in meters for pixels
+
+    Returns
+    -------
+    h5_resh : h5py.Dataset object
+        Reference to the main dataset that contains the reshaped data
+    """
+    if h5_main.shape[1] % pts_per_cycle != 0:
         warn('Error in reshaping the provided dataset to pixels. Check points per pixel')
         raise ValueError
         return
-    num_cols = int(h5_filt.shape[1] / pts_per_cycle)
+    num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
-    h5_spec_vals = getAuxData(h5_filt, auxDataName=['Spectroscopic_Values'])[0]
-    h5_pos_vals = getAuxData(h5_filt, auxDataName=['Position_Values'])[0]
-    single_AO = h5_spec_vals[:, pts_per_cycle]
+    h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
+    h5_pos_vals = getAuxData(h5_main, auxDataName=['Position_Values'])[0]
+    single_AO = h5_spec_vals[:, :pts_per_cycle]
 
     ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
                                                      labels=h5_spec_vals.attrs['labels'],
                                                      units=h5_spec_vals.attrs['units'], verbose=False)
     ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
 
-    ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_filt.shape[0]], is_spectral=False,
+    ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_main.shape[0]], is_spectral=False,
                                                    steps=[scan_step_x_m, h5_pos_vals[1, 0]],
                                                    labels=['X', 'Y'], units=['m', 'm'], verbose=False)
 
-    ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_filt.value, (-1, pts_per_cycle)),
+    ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
                                     compression='gzip', chunking=(10, pts_per_cycle))
 
     # write this to H5 as some form of filtered data.
-    resh_grp = MicroDataGroup(h5_filt.name.split('/')[-1] + '-Reshape_', parent=h5_filt.parent.name)
+    resh_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
     resh_grp.addChildren([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
 
-    hdf = ioHDF5(h5_filt.file)
+    hdf = ioHDF5(h5_main.file)
     h5_refs = hdf.writeData(resh_grp)
 
     h5_resh = getH5DsetRefs(['Reshaped_Data'], h5_refs)[0]
@@ -631,5 +649,12 @@ def reshape_from_lines_to_pixels(h5_filt, pts_per_cycle, scan_step_x_m):
     linkRefs(h5_resh,
              getH5DsetRefs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
                            h5_refs))
+
+    # Copy the two attributes that are really important but ignored:
+    for at_name in ['quantity', 'units']:
+        if at_name in h5_main.attrs:
+            h5_resh.attrs[at_name] = h5_main.attrs[at_name]
+
     print('Finished reshaping G-mode line data to rows and columns')
+
     return h5_resh
