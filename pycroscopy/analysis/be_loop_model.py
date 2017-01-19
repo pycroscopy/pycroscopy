@@ -11,6 +11,7 @@ from __future__ import division
 from warnings import warn
 
 import numpy as np
+import scipy
 from sklearn.cluster import KMeans
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
@@ -18,7 +19,9 @@ from .model import Model
 from .utils.be_loop import projectLoop, fit_loop, generate_guess
 from .utils.tree import ClusterTree
 from .be_sho_model import sho32
-from ..io.io_utils import realToCompound
+from .fit_methods import BE_Fit_Methods
+from .optimize import Optimize
+from ..io.io_utils import realToCompound, compound_to_scalar
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -42,7 +45,8 @@ loop_fit32 = np.dtype([('a_0', np.float32),
                        ('b_0', np.float32),
                        ('b_1', np.float32),
                        ('b_2', np.float32),
-                       ('b_3', np.float32)])
+                       ('b_3', np.float32),
+                       ('R2 Criterion', np.float32)])
 
 
 class BELoopModel(Model):
@@ -133,20 +137,26 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-
-    def doGuess(self, processors=4, strategy='wavelet_peaks',
-                options={"peak_widths": np.array([10,200]), "peak_step":20}):
+    def doGuess(self, processors=4, max_mem=None):
         """
 
-        :param processors:
-        :param strategy:
-        :param options:
-        :return:
+        Parameters
+        ----------
+        processors : uint, optional
+        max_mem : uint, optional
+        strategy : str, optional
+        options :
+
+        Returns
+        -------
+
         """
 
         # Before doing the Guess, we must first project the loops
         self._create_projection_datasets()
-        self._get_sho_chunk_sizes(10, verbose=True)
+        if max_mem is None:
+            max_mem = self._maxDataChunk
+        self._get_sho_chunk_sizes(max_mem, verbose=True)
         self._createGuessDatasets()
 
         '''
@@ -198,8 +208,8 @@ class BELoopModel(Model):
 
         return self.h5_guess
 
-    def doFit(self, processors=4, solver_type='least_squares',solver_options={'jac':'2-point'},
-              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
+    def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
+              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])}):
         """
 
         :param processors:
@@ -208,24 +218,68 @@ class BELoopModel(Model):
         :param obj_func:
         :return:
         """
+        if self.h5_guess is None:
+            print("You need to guess before fitting\n")
+            return None
+
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
+
+        if max_mem is None:
+            max_mem = self._maxDataChunk
 
         self._createFitDataset()
-        self._get_sho_chunk_sizes(10, verbose=True)
+        self._get_sho_chunk_sizes(max_mem, verbose=True)
 
-        for forc_chunk_index in range(self._num_forcs):
+        self._start_pos = 0
+        self._current_forc = 0
 
-            self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
-                                                 self.sho_spec_inds_per_forc * (self._current_forc + 1))
-            self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
-                                                 self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-            dc_vec = self._get_dc_offset(verbose=True)
+        self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
+                                             self.sho_spec_inds_per_forc * (self._current_forc + 1))
+        self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
+                                             self.metrics_spec_inds_per_forc * (self._current_forc + 1))
+        self._get_dc_offset(verbose=True)
 
-            '''
-            Loop over positions
-            '''
-            self._getGuessChunk()
-            self._getDataChunk()
+        self._getGuessChunk()
 
+        if len(self._sho_all_but_forc_inds) == 1:
+            loops_2d = np.transpose(self.data)
+            order_dc_offset_reverse = np.array([1, 0], dtype=np.uint8)
+            nd_mat_shape_dc_first = loops_2d.shape
+        else:
+            loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
+                                                                                                verbose=True)
+
+        results = list()
+        legit_solver = solver_type in scipy.optimize.__dict__.keys()
+        legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
+        if legit_solver and legit_obj_func:
+            print("Using solver %s and objective function %s to fit your data\n" %(solver_type, obj_func['obj_func']))
+            while self.data is not None:
+                opt = LoopOptimize(data=loops_2d.T, guess=self.guess, parallel=self._parallel)
+                temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
+                                      obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': self.dc_vec})
+                # TODO: need a different .reformatResults to process fitting results
+                temp = self._reformatResults(temp, obj_func['obj_func'])
+                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
+
+                results.append(temp)
+
+                self._start_pos = self._end_pos
+                self._getGuessChunk()
+
+            self.fit = np.hstack(tuple(results))
+            self._setResults()
+            return results
+        elif legit_obj_func:
+            warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
+            return None
+        elif legit_solver:
+            warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
+                 (obj_func['obj_func']))
+            return None
 
         return
 
@@ -325,7 +379,7 @@ class BELoopModel(Model):
             self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
             all_spec_dims.remove(forc_pos)
         # calculate number of loops:
-        loop_dims = get_dimensionality(np.transpose(self._h5_pos_inds), all_spec_dims)
+        loop_dims = get_dimensionality(self._sho_spec_inds, all_spec_dims)
         loops_per_forc = np.product(loop_dims)
 
         # Step 2: Calculate the largest number of FORCS and positions that can be read given memory limits:
@@ -659,6 +713,8 @@ class BELoopModel(Model):
         :return:
         """
         if self._start_pos < self.max_pos:
+            self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
+                                                 self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self.max_pos))
             self.data = self.h5_main[self._start_pos:self._end_pos, self._current_sho_spec_slice]
         elif self._current_forc < self._num_forcs-1:
@@ -685,7 +741,33 @@ class BELoopModel(Model):
 
         :return:
         """
-        self.guess = self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice]
+        if self._start_pos < self.max_pos:
+            self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
+                                                 self.sho_spec_inds_per_forc * (self._current_forc + 1))
+            self._end_pos = int(min(self.h5_projected_loops.shape[0], self._start_pos + self.max_pos))
+            self.data = self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice]
+        elif self._current_forc < self._num_forcs-1:
+            # Resest for next FORC
+            self._current_forc += 1
+
+            self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
+                                                 self.sho_spec_inds_per_forc * (self._current_forc + 1))
+            self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
+                                                 self.metrics_spec_inds_per_forc * (self._current_forc + 1))
+            self._get_dc_offset(verbose=True)
+
+            self._start_pos = 0
+            self._end_pos = int(min(self.h5_projected_loops.shape[0], self._start_pos + self.max_pos))
+            self.data = self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice]
+
+        else:
+            self.data = None
+
+        guess = self.h5_guess[self._start_pos:self._end_pos,
+                              self._current_met_spec_slice].reshape([-1, 1])
+        self.guess = compound_to_scalar(guess)[:, :-1]
+
+
 
     def _createGuessDatasets(self):
         """
@@ -790,7 +872,8 @@ class BELoopModel(Model):
             pix_inds = np.where(labels == clust_id)[0]
             temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
             # convert to the appropriate dtype as well:
-            guess_parms[pix_inds] = realToCompound(temp, loop_fit32)
+            r2 = 1-np.sum(np.abs(loop_fit_results[clust_id][0].fun**2))
+            guess_parms[pix_inds] = realToCompound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
 
         return guess_parms
 
@@ -805,3 +888,31 @@ class BELoopModel(Model):
 
         self.h5_fit = create_empty_dataset(self.h5_guess, loop_fit32, 'Fit')
         self._h5_group.attrs['fit method'] = 'pycroscopy functional'
+
+    def _reformatResults(self, results, strategy='BE_LOOP', verbose=False):
+        """
+
+        :param results:
+        :param strategy:
+        :param verbose:
+        :return:
+        """
+        if verbose:
+            print('Strategy to use: {}'.format(strategy))
+        # Create an empty array to store the guess parameters
+        if verbose:
+            print('Raw results and compound Loop vector of shape {}'.format(len(results)))
+
+        if strategy in ['BE_LOOP']:
+            temp = np.array([np.hstack([result.x, result.fun]) for result in results])
+            temp = realToCompound(temp, loop_fit32)
+        return temp
+
+class LoopOptimize(Optimize):
+    def _initiateSolverAndObjFunc(self):
+        if self.solver_type in scipy.optimize.__dict__.keys():
+            solver = scipy.optimize.__dict__[self.solver_type]
+        if self.obj_func is None:
+            fm = BE_Fit_Methods()
+            func = fm.__getattribute__(self.obj_func_name)(self.obj_func_xvals)
+        return solver, self.solver_options, func

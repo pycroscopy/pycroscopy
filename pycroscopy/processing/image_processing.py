@@ -112,13 +112,13 @@ class ImageWindow(object):
         if win_fft is None:
             win_type = windata32
             win_func = lambda tmp_win: tmp_win
-        if win_fft is 'abs':
+        if win_fft=='abs':
             win_type = absfft32
             win_func = self.abs_fft_func
-        elif win_fft is 'data+abs':
+        elif win_fft=='data+abs':
             win_type = winabsfft32
             win_func = self.win_abs_fft_func
-        elif win_fft is 'complex':
+        elif win_fft=='complex':
             win_type = wincompfft32
             win_func = self.win_comp_fft_func
 

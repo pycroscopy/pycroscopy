@@ -5,10 +5,7 @@ Created on 12/15/16 3:44 PM
 
 from warnings import warn
 import numpy as np
-import sys
-from scipy.signal import find_peaks_cwt
-from .utils.be_sho import SHOestimateGuess, SHOfunc
-
+from .utils.be_loop import loop_fit_function
 
 class Fit_Methods(object):
     """
@@ -61,8 +58,30 @@ class Fit_Methods(object):
         return SHOFunc
 
 
-class BE_FIT_Methods(Fit_Methods):
-    pass
+class BE_Fit_Methods(object):
+
+    def __init__(self):
+        self.methods = ['BE_LOOP']
+
+    @staticmethod
+    def BE_LOOP(dc_vec, *args):
+
+        def loop_func(coef_vec, data_vec):
+            if coef_vec.size < 9:
+                raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
+
+            data_mean = np.mean(data_vec)
+
+            func = loop_fit_function(dc_vec, coef_vec)
+
+            ss_tot = sum(abs(data_vec - data_mean) ** 2)
+            ss_res = sum(abs(data_vec - func) ** 2)
+
+            r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+
+            return 1 - r_squared
+
+        return loop_func
 
 class forcIV_Fit_Methods(Fit_Methods):
     pass

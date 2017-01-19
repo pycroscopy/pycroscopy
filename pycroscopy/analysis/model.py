@@ -74,7 +74,7 @@ class Model(object):
             self._maxCpus = psutil.cpu_count() - 2
         else:
             self._maxCpus = 1
-        self._maxMemoryMB = psutil.virtual_memory().available / 1e6 # in MB
+        self._maxMemoryMB = psutil.virtual_memory().available / 1e6  # in MB
 
         self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
@@ -327,8 +327,8 @@ class Model(object):
                                       obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
                 results.append(self._reformatResults(temp, obj_func['obj_func']))
-                self._getDataChunk()
                 self._getGuessChunk()
+                self._getDataChunk()
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
