@@ -46,7 +46,7 @@ def getDataSet(h5_parent, data_name):
         print('%s is not an hdf5 File or Group' % h5_parent)
 
 
-def getAuxData(parent_data, **kwargs):
+def getAuxData(parent_data, auxDataName=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
@@ -61,8 +61,10 @@ def getAuxData(parent_data, **kwargs):
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
-    auxDataName = kwargs.get('auxDataName', parent_data.attrs.iterkeys())
-
+    if auxDataName is None:
+        auxDataName = parent_data.attrs.iterkeys()
+    elif type(auxDataName) not in [list, tuple, set]:
+        auxDataName = [auxDataName]  # typically a single string
     try:
         data_list = []
         file_ref = parent_data.file
