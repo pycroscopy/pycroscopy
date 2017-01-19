@@ -244,8 +244,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
     num_x_points = int(round(2 * round(np.max(single_ao) / dx, 1) + 1, 0))
     if verbose:
         print('Now creating the datasets')
-    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=[], maxshape=(1, num_x_points), dtype=np.float32,
-                                chunking=num_x_points, compression='gzip')
+    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=np.atleast_2d(np.arange(num_x_points, dtype=np.float32)))
     ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.atleast_2d(np.arange(num_x_points, dtype=np.uint32)))
     ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, chunking=num_pos,
                           compression='gzip')
@@ -395,7 +394,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
 
         start_pix = last_pix
 
-    h5_new_spec_vals[1, :] = x_vec  # Technically this needs to only be done once
+    h5_new_spec_vals[0, :] = x_vec  # Technically this needs to only be done once
 
     if verbose:
         print('Finished processing the dataset completely')
