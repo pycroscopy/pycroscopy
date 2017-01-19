@@ -123,16 +123,17 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
     cmap_name = base.name + str(num_bins)
     return base.from_list(cmap_name, color_list, num_bins)
 
-def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
-    '''
+
+def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
+    """
     Plots the loop guess, fit, source projected loops for a single cycle
 
     Parameters
     ----------
-    Vdc - 1D float numpy array
+    vdc - 1D float numpy array
         DC offset vector (unshifted)
     ds_proj_loops - 2D numpy array
-        Projected loops arranged as [position, Vdc]
+        Projected loops arranged as [position, vdc]
     ds_guess - 1D compound numpy array
         Loop guesses arranged as [position]
     ds_fit - 1D compound numpy array
@@ -146,17 +147,17 @@ def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
         Figure handle
     axes - 2D array of matplotlib.pyplot.axis handles
         handles to axes in the 2d figure
-    '''
-    shift_ind = int(-1 * len(Vdc) / 4)
-    Vdc_shifted = np.roll(Vdc, shift_ind)
+    """
+    shift_ind = int(-1 * len(vdc) / 4)
+    vdc_shifted = np.roll(vdc, shift_ind)
 
     num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
     fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
     positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
     for ax, pos in zip(axes.flat, positions):
-        ax.plot(Vdc, ds_proj_loops[pos, :], 'k', label='Raw')
-        ax.plot(Vdc_shifted, loop_fit_function(Vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
-        ax.plot(Vdc_shifted, loop_fit_function(Vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
+        ax.plot(vdc, ds_proj_loops[pos, :], 'k', label='Raw')
+        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
+        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
         ax.set_xlabel('V_DC (V)')
         ax.set_ylabel('PR (a.u.)')
         ax.set_title('Loop ' + str(pos))
@@ -169,7 +170,7 @@ def plotLoopFitNGuess(Vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
 ###############################################################################
 
 
-def rainbowPlot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
+def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
     """
     Plots the input against the output waveform (typically loops).
     The color of the curve changes as a function of time using the jet colorscheme
@@ -188,7 +189,7 @@ def rainbowPlot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
         Colormap to be used
     """
     pts_per_step = int(len(ai_vec) / num_steps)
-    for step in xrange(num_steps - 1):
+    for step in range(num_steps - 1):
         ax.plot(ao_vec[step * pts_per_step:(step + 1) * pts_per_step],
                 ai_vec[step * pts_per_step:(step + 1) * pts_per_step],
                 color=cmap(255 * step / num_steps), **kwargs)
@@ -201,13 +202,14 @@ def rainbowPlot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
     fig.colorbar(CS3)"""
 
 
-def plot_line_family(ax, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.jet, **kwargs):
+def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.jet,
+                     **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
     Parameters
     ----------
-    ax : axis handle
+    axis : axis handle
         Axis to plot the curve
     x_axis : array-like
         Values to plot against
@@ -231,14 +233,13 @@ def plot_line_family(ax, x_axis, line_family, line_names=None, label_prefix='Lin
             warn('Line names of different length compared to provided dataset')
             line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
 
-    for line_ind in xrange(num_lines):
-        ax.plot(x_axis, line_family[line_ind],
-                label=line_names[line_ind],
-                color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
+    for line_ind in range(num_lines):
+        axis.plot(x_axis, line_family[line_ind],
+                  label=line_names[line_ind],
+                  color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
-
-def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
+def plot_map(axis, data, stdevs=2, **kwargs):
     """
     Plots a 2d map with a tight z axis, with or without color bars.
     Note that the direction of the y axis is flipped if the color bar is required
@@ -251,19 +252,12 @@ def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
         Data to be plotted
     stdevs : unsigned int (Optional. Default = 2)
         Number of standard deviations to consider for plotting
-    show_colorbar : Boolean (Optional. Default = True)
-        Whether or not to show the color bar
+
     Returns
     -------
     """
     data_mean = np.mean(data)
     data_std = np.std(data)
-    # if show_colorbar:
-    #     im = axis.pcolor(data,
-    #                         vmin=data_mean - stdevs * data_std, vmax=data_mean + stdevs * data_std, **kwargs)
-    #     axis.figure.colorbar(pcol0, ax=axis)
-    #     axis.axis('tight')
-    # else:
     im = axis.imshow(data, interpolation='none',
                      vmin=data_mean - stdevs * data_std,
                      vmax=data_mean + stdevs * data_std,
@@ -272,20 +266,22 @@ def plot_map(axis, data, stdevs=2, show_colorbar=False, **kwargs):
 
     return im
 
-###############################################################################
 
-def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
-              evenly_spaced=True, plots_on_side=5, rainbow_plot=True,
-              x_label='', y_label='', subtitles='Eigenvector', title=None):
+def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True, plots_on_side=5, x_label='',
+               y_label='', subtitles='Position', title='', central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
     """
-    Plots loops from up to 25 evenly spaced positions
+    Plots loops from multiple datasets from up to 25 evenly spaced positions
 
     Parameters
     -----------
     excit_wfm : 1D numpy float array
         Excitation waveform in the time domain
-    h5_loops : float HDF5 dataset reference or 2D numpy array
-        Dataset containing data arranged as (pixel, time)
+    datasets : list of 2D numpy arrays or 2D hyp5.Dataset objects
+        Datasets containing data arranged as (pixel, time)
+    line_colors : list of strings
+        Colors to be used for each of the datasets
+    dataset_names : (Optional) list of strings
+        Names of the different datasets to be compared
     h5_pos : HDF5 dataset reference or 2D numpy array
         Dataset containing position indices
     central_resp_size : (optional) unsigned integer
@@ -294,7 +290,7 @@ def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         Evenly spaced positions or first N positions
     plots_on_side : unsigned int
         Number of plots on each side
-    rainbow_plot : (optional) Boolean
+    use_rainbow_plots : (optional) Boolean
         Plot the lines as a function of spectral index (eg. time)
     x_label : (optional) String
         X Label for all plots
@@ -309,9 +305,51 @@ def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
     ---------
     fig, axes
     """
+    if type(datasets) in [h5py.Dataset, np.ndarray]:
+        # can be numpy array or h5py.dataset
+        num_pos = datasets.shape[0]
+        num_points = datasets.shape[1]
+        datasets = [datasets]
+        line_colors = ['b']
+        dataset_names = ['Default']
+    else:
+        # First check if the datasets are correctly shaped:
+        num_pos_es = list()
+        num_points_es = list()
+        for dataset in datasets:
+            num_pos_es.append(dataset.shape[0])
+            num_points_es.append(dataset.shape[1])
+        num_pos_es = np.array(num_pos_es)
+        num_points_es = np.array(num_points_es)
+        if np.unique(num_pos_es).size > 1 or np.unique(num_points_es).size > 1:
+            warn('Datasets of incompatible sizes')
+            return
+        num_pos = np.unique(num_pos_es)[0]
+        num_points = np.unique(num_points_es)[0]
+
+        # Next the identification of datasets:
+        if len(dataset_names) > len(datasets):
+            # remove additional titles
+            dataset_names = dataset_names[:len(datasets)]
+        elif len(dataset_names) < len(datasets):
+            # add titles
+            dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
+        if len(line_colors) != len(datasets):
+            color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
+            if len(datasets) < len(color_list):
+                remaining_colors = [x for x in color_list if x not in line_colors]
+                line_colors += remaining_colors[:len(datasets) - len(color_list)]
+            else:
+                warn('Insufficient number of line colors provided')
+                return
+
+
+    if excit_wfm.size != num_points:
+        warn('Length of excitation waveform not compatible with second axis of datasets')
+        return
 
     plots_on_side = min(abs(plots_on_side), 5)
-    num_pos = h5_loops.shape[0]
+
     sq_num_plots = min(plots_on_side, int(round(num_pos ** 0.5)))
     if evenly_spaced:
         chosen_pos = np.linspace(0, num_pos - 1, sq_num_plots ** 2, dtype=int)
@@ -319,24 +357,24 @@ def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         chosen_pos = np.arange(sq_num_plots ** 2, dtype=int)
 
     fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, figsize=(12, 12))
-    axes_lin = axes.flat
+    axes_lin = axes.flatten()
 
-    cent_ind = int(0.5 * h5_loops.shape[1])
+    cent_ind = int(0.5 * excit_wfm.size)
     if central_resp_size:
         sz = int(0.5 * central_resp_size)
         l_resp_ind = cent_ind - sz
         r_resp_ind = cent_ind + sz
     else:
         l_resp_ind = 0
-        r_resp_ind = h5_loops.shape[1]
+        r_resp_ind = excit_wfm.size
 
     for count, posn in enumerate(chosen_pos):
-        if rainbow_plot:
-            rainbowPlot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], h5_loops[posn, l_resp_ind:r_resp_ind])
+        if use_rainbow_plots and len(datasets) == 1:
+            rainbow_plot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], datasets[0][posn, l_resp_ind:r_resp_ind])
         else:
-            axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], h5_loops[posn, l_resp_ind:r_resp_ind])
-
-        if type(h5_pos) != type(None):
+            for dataset, col_val in zip(datasets, line_colors):
+                axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind], color=col_val)
+        if h5_pos is not None:
             # print 'Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0])
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)
         else:
@@ -349,168 +387,24 @@ def plotLoops(excit_wfm, h5_loops, h5_pos=None, central_resp_size=None,
         axes_lin[count].axis('tight')
         axes_lin[count].set_aspect('auto')
         axes_lin[count].ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    if len(datasets) > 1:
+        axes_lin[count].legend(dataset_names, loc='best')
     if title:
         fig.suptitle(title, fontsize=14)
     plt.tight_layout()
     return fig, axes
 
-
-def plotSHOMaps(sho_maps, map_names, stdevs=2, title='', save_path=None): 
-    """
-    Plots the SHO quantity maps for a single UDVS step
-    
-    Parameters
-    ------------
-    sho_maps : List of 2D numpy arrays
-        Each SHO map is structured as [row, col]
-    map_names: List of strings
-        Titles for each of the SHO maps
-    stdevs : (Optional) Unsigned int
-        Number of standard deviations from the mean to be used to clip the color axis
-    title : (Optional) String
-        Title for the entire figure. Group name is most appropriate here
-    save_path : (Optional) String
-        Absolute path to write the figure to
-        
-    Returns
-    ----------
-    None
-    """
-    fig, axes = plt.subplots(ncols=3, nrows=2, sharex=True, figsize=(15, 10))
-    
-    for index, ax_hand, data_mat, qty_name in zip(range(len(map_names)), axes.flat, sho_maps, map_names):
-        plot_map(ax_hand, data_mat, stdevs=stdevs)
-        ax_hand.set_title(qty_name) 
-         
-    plt.setp([ax.get_xticklabels() for ax in axes[0, :]], visible=True)
-    axes[1, 2].axis('off')
-    
-    plt.tight_layout()   
-    if save_path:
-        fig.savefig(save_path, format='png', dpi=300)
-
-
-def plotVSsnapshots(resp_mat, title='', stdevs=2, save_path=None):
-    """
-    Plots the spatial distribution of the response at evenly spaced UDVS steps
-    
-    Parameters
-    -------------
-    resp_mat : 3D numpy array
-        SHO responses arranged as [udvs_step, rows, cols]
-    title : (Optional) String
-        Super title for the plots - Preferably the group name
-    stdevs : (Optional) string
-        Number of standard deviations from the mean to be used to clip the color axis
-    save_path : (Optional) String
-        Absolute path to write the figure to
-        
-    Returns
-    ----------
-    None
-    """
-    
-    num_udvs = resp_mat.shape[2]
-    if num_udvs >= 9:
-        tot_plots = 9
-    elif num_udvs >= 4:
-        tot_plots = 4
-    else:
-        tot_plots = 1
-    delta_pos = int(np.ceil(num_udvs/tot_plots)) 
-    
-    fig, axes = plt.subplots(nrows=int(tot_plots**0.5),ncols=int(tot_plots**0.5),
-                             sharex=True, sharey=True, figsize=(12, 12)) 
-    if tot_plots > 1:    
-        axes_lin = axes.reshape(tot_plots)
-    else:
-        axes_lin = axes
-    
-    for count, posn in enumerate(xrange(0,num_udvs, delta_pos)):
-        
-        snapshot = np.squeeze(resp_mat[:,:,posn])
-        amp_mean = np.mean(snapshot) 
-        amp_std = np.std(snapshot)
-        ndims = len(snapshot.shape)
-        if ndims == 2:
-            axes_lin[count].imshow(snapshot, vmin=amp_mean-stdevs*amp_std, vmax=amp_mean+stdevs*amp_std)
-        elif ndims == 1:
-            np.clip(snapshot,amp_mean-stdevs*amp_std,amp_mean+stdevs*amp_std,snapshot)
-            axes_lin[count].plot(snapshot)
-        axes_lin[count].axis('tight')
-        axes_lin[count].set_aspect('auto')
-        axes_lin[count].set_title('UDVS Step #' + str(posn))
-    
-    fig.suptitle(title)
-    plt.tight_layout()
-    if save_path:
-        fig.savefig(save_path, format='png', dpi=300)
-
-
-def plotSpectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='Step', stdevs=2,
-                     show_colorbar=True):
-    """
-    Plots the provided spectrograms from SVD V vector
-
-    Parameters:
-    -------------
-    eigenvectors : 3D numpy complex matrices
-        Eigenvectors rearranged as - [row, col, component]
-
-
-    xaxis : 1D real numpy array
-        The vector to plot against
-    num_comps : int
-        Number of components to plot
-    title : String
-        Title to plot above everything else
-    xlabel : String
-        Label for x axis
-    stdevs : int
-        Number of standard deviations to consider for plotting
-
-    Returns:
-    ---------
-    fig, axes
-    """
-    import matplotlib.pyplot as plt
-    fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
-    p_rows = int(np.ceil(np.sqrt(num_comps)))
-    p_cols = int(np.floor(num_comps / p_rows))
-    fig201, axes201 = plt.subplots(p_rows, p_cols, figsize=(p_cols * fig_w, p_rows * fig_h))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(title)
-
-    for index in xrange(num_comps):
-        cur_map = np.transpose(eigenvectors[index, :, :])
-        ax = axes201.flat[index]
-        mean = np.mean(cur_map)
-        std = np.std(cur_map)
-        ax.imshow(cur_map, cmap='jet',
-                  vmin=mean - stdevs * std,
-                  vmax=mean + stdevs * std)
-        ax.set_title('Eigenvector: %d' % (index + 1))
-        ax.set_aspect('auto')
-        ax.set_xlabel(xlabel)
-        ax.axis('tight')
-
-    return fig201, axes201
-
-
 ###############################################################################
 
-def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2):
+
+def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters:
     -------------
-    eigenvectors : 3D numpy complex matrices
+    map_stack : 3D numpy complex matrices
         Eigenvectors rearranged as - [row, col, component]
-
-
-    xaxis : 1D real numpy array
-        The vector to plot against
     num_comps : int
         Number of components to plot
     title : String
@@ -528,8 +422,8 @@ def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='
     fig201.subplots_adjust(hspace=0.4, wspace=0.4)
     fig201.canvas.set_window_title(title)
 
-    for index in xrange(num_comps):
-        cur_map = np.transpose(eigenvectors[index, :, :])
+    for index in range(num_comps):
+        cur_map = np.transpose(map_stack[index, :, :])
         axes = [axes201.flat[index], axes201.flat[index + num_comps]]
         funcs = [np.abs, np.angle]
         labels = ['Amplitude', 'Phase']
@@ -548,23 +442,21 @@ def plotBEspectrograms(eigenvectors, num_comps=4, title='Eigenvectors', xlabel='
 
 ###############################################################################
 
-def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
+def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Eigenvector', num_comps=4, x_label=''):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters:
     -------------
-    eigenvectors : 3D numpy complex matrices
-        Eigenvectors rearranged as - [row, col, component]
-
-
-    xaxis : 1D real numpy array
+    loop_stack : 3D numpy complex matrices
+        Loops rearranged as - [component, points]
+    x_axis : 1D real numpy array
         The vector to plot against
     num_comps : int
         Number of components to plot
     title : String
         Title to plot above everything else
-    xlabel : String
+    x_label : String
         Label for x axis
     stdevs : int
         Number of standard deviations to consider for plotting
@@ -578,75 +470,30 @@ def plotBEeigenvectors(eigenvectors, num_comps=4, xlabel=''):
 
     fig201, axes201 = plt.subplots(len(funcs), num_comps, figsize=(num_comps * 4, 4 * len(funcs)))
     fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title("Eigenvectors")
+    fig201.canvas.set_window_title(heading)
 
-    for index in xrange(num_comps):
-        cur_map = eigenvectors[index, :]
-        #         axes = [axes201.flat[index], axes201.flat[index+num_comps], axes201.flat[index+2*num_comps], axes201.flat[index+3*num_comps]]
+    for index in range(num_comps):
+        cur_map = loop_stack[index, :]
         axes = [axes201.flat[index], axes201.flat[index + num_comps]]
         for func, lab, ax in zip(funcs, labels, axes):
-            ax.plot(func(cur_map))
-            ax.set_title('Eigenvector: %d - %s' % (index + 1, lab))
-        ax.set_xlabel(xlabel)
+            ax.plot(x_axis, func(cur_map))
+            ax.set_title('%s: %d - %s' % (subtitle, index + 1, lab))
+        ax.set_xlabel(x_label)
     fig201.tight_layout()
 
     return fig201, axes201
 
-
 ###############################################################################
 
-def plotBELoops(xaxis, xlabel, amp_mat, phase_mat, num_comps, title=None):
+
+def plotScree(scree, title='Scree'):
     """
-    Plots the provided loops from the SHO. Replace / merge with function in BESHOUtils
+    Plots the scree or scree
 
     Parameters:
     -------------
-    xaxis : 1D real numpy array
-        The vector to plot against
-    xlabel : string
-        Label for x axis
-    amp_mat : 2D real numpy array
-        Amplitude matrix arranged as [points, component]
-    phase_mat : 2D real numpy array
-        Phase matrix arranged as [points, component]
-    num_comps : int
-        Number of components to plot
-    title : String
-        Title to plot above everything else
-
-    Returns:
-    ---------
-    fig, axes
-    """
-    fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 6))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(title)
-
-    for index in xrange(num_comps):
-        axes = [axes201.flat[index], axes201.flat[index + num_comps]]
-        resp_vecs = [amp_mat[index, :], phase_mat[index, :]]
-        resp_titles = ['Amplitude', 'Phase']
-
-        for ax, resp, titl in zip(axes, resp_vecs, resp_titles):
-            ax.plot(xaxis, resp)
-            ax.set_title('%s %d' % (titl, index + 1))
-            ax.set_aspect('auto')
-            ax.set_xlabel(xlabel)
-
-    fig201.tight_layout()
-    return fig201, axes201
-
-
-###############################################################################
-
-def plotScree(S, title='Scree'):
-    """
-    Plots the S or scree
-
-    Parameters:
-    -------------
-    S : 1D real numpy array
-        The S vector from SVD
+    scree : 1D real numpy array
+        The scree vector from SVD
 
     Returns:
     ---------
@@ -654,60 +501,21 @@ def plotScree(S, title='Scree'):
     """
     fig203 = plt.figure(figsize=(6.5, 6))
     axes203 = fig203.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
-    axes203.loglog(np.arange(len(S)) + 1, S, 'b', marker='*')
+    axes203.loglog(np.arange(len(scree)) + 1, scree, 'b', marker='*')
     axes203.set_xlabel('Principal Component')
     axes203.set_ylabel('Variance')
     axes203.set_title(title)
-    axes203.set_xlim(left=1, right=len(S))
-    axes203.set_ylim(bottom=np.min(S), top=np.max(S))
+    axes203.set_xlim(left=1, right=len(scree))
+    axes203.set_ylim(bottom=np.min(scree), top=np.max(scree))
     fig203.canvas.set_window_title("Scree")
 
     return fig203, axes203
 
 
 # ###############################################################################
-#
-# def plot_map_stack(map_stack, num_comps=4, stdevs=2, show_colorbar=False,
-#                    title='Component', heading='Map Stack', **kwargs):
-#     """
-#     Plots the provided stack of maps
-#
-#     Parameters:
-#     -------------
-#     map_stack : 3D real numpy array
-#         structured as [rows, cols, component]
-#     num_comps : int
-#         Number of components to plot
-#     stdevs : int
-#         Number of standard deviations to consider for plotting
-#     colormap : string or object from matplotlib.colors (Optional. Default = jet or rainbow)
-#         Colormap for the plots
-#     show_colorbar : Boolean (Optional. Default = True)
-#         Whether or not to show the color bar
-#
-#     Returns:
-#     ---------
-#     fig, axes
-#     """
-#     fig_h, fig_w = (4, 4 + show_colorbar * 1.00)
-#     p_rows = int(np.ceil(np.sqrt(num_comps)))
-#     p_cols = int(np.floor(num_comps / p_rows))
-#     if p_rows*p_cols < num_comps:
-#         p_cols += 1
-#     fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
-#     fig202.subplots_adjust(hspace=0.4, wspace=0.4)
-#     fig202.canvas.set_window_title(heading)
-#     fig202.suptitle(heading, fontsize=16)
-#
-#     for index in xrange(num_comps):
-#         plot_map(axes202.flat[index], map_stack[:, :, index], stdevs=stdevs, show_colorbar=show_colorbar, **kwargs)
-#         axes202.flat[index].set_title('{} {}'.format(title, index))
-#     fig202.tight_layout()
-#
-#     return fig202, axes202
 
 
-def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
+def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
                    title='Component', heading='Map Stack', **kwargs):
     """
     Plots the provided stack of maps
@@ -716,23 +524,45 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     -------------
     map_stack : 3D real numpy array
         structured as [rows, cols, component]
-    num_comps : int
+    num_comps : unsigned int
         Number of components to plot
     stdevs : int
         Number of standard deviations to consider for plotting
-    colormap : string or object from matplotlib.colors (Optional. Default = jet or rainbow)
-        Colormap for the plots
     color_bar_mode : String, Optional
-        Options are None, single or each.
-        Default None
+        Options are None, single or each. Default None
+    title : String or list of strings
+        The titles for each of the plots.
+        If a single string is provided, the plot titles become ['title 01', title 02', ...].
+        if a list of strings (equal to the number of components) are provided, these are used instead.
 
     Returns:
     ---------
     fig, axes
     """
+    num_comps = abs(num_comps)
+    num_comps = min(num_comps, map_stack.shape[-1])
+
+
+    if evenly_spaced:
+        chosen_pos = np.linspace(0, map_stack.shape[-1] - 1, num_comps, dtype=int)
+    else:
+        chosen_pos = np.arange(num_comps, dtype=int)
+
+    if isinstance(title, list):
+        if len(title) > num_comps:
+            # remove additional titles
+            title = title[:num_comps]
+        elif len(title) < num_comps:
+            # add titles
+            title = title + ['Component' + ' ' + str(x) for x in range(len(title), num_comps)]
+    else:
+        if not isinstance(title, str):
+            title = 'Component'
+        title = [title + ' ' + str(x) for x in chosen_pos]
+
     fig_h, fig_w = (4, 4)
-    p_rows = int(np.ceil(np.sqrt(num_comps)))
-    p_cols = int(np.floor(num_comps / p_rows))
+    p_rows = int(np.floor(np.sqrt(num_comps)))
+    p_cols = int(np.ceil(num_comps / p_rows))
     if p_rows*p_cols < num_comps:
         p_cols += 1
     fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
@@ -746,24 +576,22 @@ def plot_map_stack(map_stack, num_comps=4, stdevs=2, color_bar_mode=None,
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
-    for index in range(num_comps):
-        im = plot_map(axes202[index],
+    for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
+        im = plot_map(axes202[count],
                       map_stack[:, :, index],
-                      stdevs=stdevs,
-                      show_colorbar=False, **kwargs)
-        axes202[index].set_title('{} {}'.format(title, index))
+                      stdevs=stdevs, **kwargs)
+        axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
-            axes202.cbar_axes[index].colorbar(im)
+            axes202.cbar_axes[count].colorbar(im)
 
     if color_bar_mode is 'single':
         axes202.cbar_axes[0].colorbar(im)
 
     return fig202, axes202
 
-# TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
 
-
-def plot_cluster_results(h5_group, y_spec_label):
+def plot_cluster_h5_group(h5_group, y_spec_label):
+    # TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -798,27 +626,27 @@ def plot_cluster_results(h5_group, y_spec_label):
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
 
-    plotClusterResults(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
-                       spec_label=x_spec_label, resp_label=y_spec_label,
-                       pos_labels=pos_labels, pos_ticks=pos_ticks)
+    plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
+                                  spec_label=x_spec_label, resp_label=y_spec_label,
+                                  pos_labels=pos_labels, pos_ticks=pos_ticks)
 
 ###############################################################################
 
 
-def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
-                       spec_label='Spectroscopic Value', resp_label='Response',
-                       pos_labels=('X', 'Y'), pos_ticks=None):
+def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
+                                  spec_label='Spectroscopic Value', resp_label='Response',
+                                  pos_labels=('X', 'Y'), pos_ticks=None):
     """
-    Plot the cluster labels and mean response for each cluster
+    Plot the cluster labels and mean response for each cluster in separate plots
 
     Parameters
     ----------
     label_mat : 2D ndarray or h5py.Dataset of ints
         Spatial map of cluster labels structured as [rows, cols]
-    mean_response : 2D ndarray or h5py.Dataset
+    mean_response : 2D array or h5py.Dataset
         Mean value of each cluster over all samples 
         arranged as [cluster number, features]
-    spec_val :  1D ndarray or h5py.Dataset of floats, optional
+    spec_val :  1D array or h5py.Dataset of floats, optional
         X axis to plot the centroids against
         If no value is specified, the data is plotted against the index
     cmap : plt.cm object or str, optional
@@ -844,7 +672,7 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         Axes of the individual plots within `fig`
     """
 
-    def __plotCentroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
+    def __plot_centroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
         plot_line_family(ax, spec_val, centroids, label_prefix='Cluster', cmap=cmap)
         ax.set_ylabel(y_label)
         # ax.legend(loc='best')
@@ -862,9 +690,9 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ax_phase = plt.subplot2grid((2, 12), (1, 6), colspan=4)
         axes = [ax_map, ax_amp, ax_phase]
 
-        __plotCentroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
+        __plot_centroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
                         resp_label + ' - Amplitude', cmap, 'Mean Response')
-        __plotCentroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
+        __plot_centroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
                         resp_label + ' - Phase', cmap)
         plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
@@ -873,7 +701,7 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
         ax_map = plt.subplot2grid((1, 12), (0, 0), colspan=6)
         ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
         axes = [ax_map, ax_resp]
-        __plotCentroids(mean_response, ax_resp, spec_val, spec_label,
+        __plot_centroids(mean_response, ax_resp, spec_val, spec_label,
                         resp_label, cmap, 'Mean Response')
         plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
 
@@ -921,8 +749,8 @@ def plotClusterResults(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
 ###############################################################################
 
 
-def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
-                       spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
+def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
+                                  spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
     """
     Plots the provided labels mat and centroids from clustering
 
@@ -999,7 +827,7 @@ def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
         elif cluster_centroids.ndim == 3:
-            plot_map(ax, cluster_centroids[index], show_colorbar=True)
+            plot_map(ax, cluster_centroids[index])
         ax.set_title('Centroid: %d' % index)
 
     fig501.subplots_adjust(hspace=0.60, wspace=0.60)
@@ -1010,8 +838,8 @@ def plotKMeansClusters(label_mat, cluster_centroids, max_centroids=4,
 
 ###############################################################################
 
-def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
-                           sort_type='distance', sort_mode=True):
+def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
+                            sort_type='distance', sort_mode=True):
     """
     Creates and plots the dendrograms for the given label_mat and
     eigenvalues
@@ -1022,7 +850,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
         structured as [rows, cols], from KMeans clustering
     e_vals: 3D real numpy array of eigenvalues
         structured as [component, rows, cols]
-    num_comps : int
+    num_comp : int
         Number of components used to make eigenvalues
     num_cluster : int
         Number of cluster used to make the label_mat
@@ -1061,7 +889,6 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     elif mode == 'Truncated':
         print 'Creating truncated dendrogram from clusters.  Will stop at {}.'.format(last)
         mode = 'lastp'
-        show_contracted = True
     else:
         raise ValueError('Error: Unknown mode requested for plotting dendrograms. mode={}'.format(mode))
 
@@ -1075,16 +902,15 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
         d_sort = sort_mode
 
     centroid_mat = np.zeros([num_cluster, num_comp])
-    for k1 in xrange(num_cluster):
+    for k1 in range(num_cluster):
         [i_x, i_y] = np.where(label_mat == k1)
         u_stack = np.zeros([len(i_x), num_comp])
-        for k2 in xrange(len(i_x)):
+        for k2 in range(len(i_x)):
             u_stack[k2, :] = np.abs(e_vals[i_x[k2], i_y[k2], :num_comp])
 
         centroid_mat[k1, :] = np.mean(u_stack, 0)
 
-
-        # Get the distrance between cluster means
+    # Get the distrance between cluster means
     distance_mat = scipy.spatial.distance.pdist(centroid_mat)
 
     # get hierachical pairings of clusters
@@ -1103,7 +929,7 @@ def plotClusterDendrograms(label_mat, e_vals, num_comp, num_cluster, mode='Full'
     return fig
 
 
-def plot1DSpectrum(data_vec, freq, title, figure_path=None):
+def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
     """
     Plots the Step averaged BE response
 
@@ -1126,26 +952,25 @@ def plot1DSpectrum(data_vec, freq, title, figure_path=None):
         Axis handle
     """
     if len(data_vec) != len(freq):
-        #         print '1D:',data_vec.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
+        warn('plot_1d_spectrum: Incompatible data sizes!!!!')
+        print('1D:', data_vec.shape, freq.shape)
         return
-    freq = freq * 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
+    freq *= 1E-3  # to kHz
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     ax[0].plot(freq, np.abs(data_vec) * 1E+3)
     ax[0].set_title('Amplitude (mV)')
-    # ax[0].set_xlabel('Frequency (kHz)')
     ax[1].plot(freq, np.angle(data_vec) * 180 / np.pi)
     ax[1].set_title('Phase (deg)')
     ax[1].set_xlabel('Frequency (kHz)')
     fig.suptitle(title + ': mean UDVS, mean spatial response')
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return (fig, ax)
+    return fig, ax
 
 
 ###############################################################################
 
-def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
+def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None):
     """
     Plots the position averaged spectrogram
 
@@ -1168,11 +993,11 @@ def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
         Axis handle
     """
     if mean_spectrogram.shape[1] != len(freq):
-        #  print '2D:',mean_spectrogram.shape, freq.shape
-        warn('plot2DSpectrogram: Incompatible data sizes!!!!')
+        warn('plot_2d_spectrogram: Incompatible data sizes!!!!')
+        print('2D:', mean_spectrogram.shape, freq.shape)
         return
-    freq = freq * 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True);
+    freq *= 1E-3  # to kHz
+    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     # print mean_spectrogram.shape
     # print freq.shape
     ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
@@ -1190,12 +1015,12 @@ def plot2DSpectrogram(mean_spectrogram, freq, title, figure_path=None):
     fig.suptitle(title)
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return (fig, ax)
-
+    return fig, ax
 
 ###############################################################################
 
-def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
+
+def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
     """
     Plots the position averaged spectrogram
 
@@ -1262,61 +1087,7 @@ def plotHistgrams(p_hist, p_hbins, title, figure_path=None):
     return fig
 
 
-def plotSHOLoops(dc_vec, resp_mat, x_label='', y_label='', title=None, save_path=None):
-    """
-    Plots BE loops from up to 9 positions (evenly separated)
-
-    Parameters
-    -----------
-    dc_vec : 1D numpy array
-        X axis - DC offset / AC amplitude
-    resp_mat : real 2D numpy array
-        containing quantity such as amplitude or phase organized as
-        [position, spectroscopic index]
-    x_label : (optional) String
-        X Label for all plots
-    y_label : (optional) String
-        Y label for all plots
-    title : (optional) String
-        Main plot title
-    save_path : (Optional) String
-        Absolute path to write the figure to
-
-    Returns
-    -----------
-    None
-    """
-    num_pos = resp_mat.shape[0]
-    if num_pos >= 9:
-        tot_plots = 9
-    elif num_pos >= 4:
-        tot_plots = 4
-    else:
-        tot_plots = 1
-    delta_pos = int(np.ceil(num_pos / tot_plots))
-
-    fig, axes = plt.subplots(nrows=int(tot_plots ** 0.5), ncols=int(tot_plots ** 0.5),
-                             figsize=(12, 12))
-    if tot_plots > 1:
-        axes_lin = axes.reshape(tot_plots)
-    else:
-        axes_lin = axes
-
-    for count, posn in enumerate(xrange(0, num_pos, delta_pos)):
-        axes_lin[count].plot(dc_vec, np.squeeze(resp_mat[posn, :]))
-        axes_lin[count].set_title('Pixel #' + str(posn))
-        axes_lin[count].set_xlabel(x_label)
-        axes_lin[count].set_ylabel(y_label)
-        axes_lin[count].axis('tight')
-        axes_lin[count].set_aspect('auto')
-
-    fig.suptitle(title)
-    fig.tight_layout()
-    if save_path:
-        fig.savefig(save_path, format='png', dpi=300)
-
-
-def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
+def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
@@ -1334,6 +1105,22 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
     -------
     None
     """
+
+    def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
+                          folder_path, basename, num_rows, num_cols):
+        plt_title = grp_name + '_' + win_title + '_Loops'
+        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, use_rainbow_plots=False,
+                             x_label=spec_var_title, y_label=meas_var_title, subtitles='Loop', title=plt_title)
+        if save_plots:
+            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
+
+        plt_title = grp_name + '_' + win_title + '_Snaps'
+        fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
+                                   color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
+                                   heading=plt_title, cmap=cmap_jet_white_center())
+        if save_plots:
+            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
+
     plt_path = None
 
     print('Creating plots of SHO Results from {}.'.format(h5_main.name))
@@ -1367,7 +1154,6 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         num_cols = len(np.unique(h5_pos[:, 1]))
 
     try:
-        h5_spec_inds = h5_file[h5_main.attrs['Spectroscopic_Indices']]
         h5_spec_vals = h5_file[h5_main.attrs['Spectroscopic_Values']]
     # except KeyError:
     #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
@@ -1395,68 +1181,31 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
             ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center])
+
             forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
-            plt_title = grp_name + '_Forward_Loops'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotSHOLoops(ac_vec, forw_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
-            plt_title = grp_name + '_Reverse_Loops'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotSHOLoops(ac_vec, rev_resp, 'AC Amplitude', 'Amplitude', title=plt_title, save_path=plt_path)
-            plt_title = grp_name + '_Forward_Snaps'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotVSsnapshots(forw_resp.reshape(num_rows, num_cols, forw_resp.shape[1]), title=plt_title,
-                            save_path=plt_path)
-            plt_title = grp_name + '_Reverse_Snaps'
-            if save_plots:
-                plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-            plotVSsnapshots(rev_resp.reshape(num_rows, num_cols, rev_resp.shape[1]), title=plt_title,
-                            save_path=plt_path)
+
+            for win_title, resp_mat in zip(['Forward', 'Reverse'], [forw_resp, rev_resp]):
+                __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude', save_plots,
+                                  folder_path, basename, num_rows, num_cols)
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
             if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
 
+                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
+
                 in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
                 in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
-                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
-                plt_title = grp_name + '_In_Field_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, in_phase * in_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
                 out_phase = np.squeeze(phase_mat[:, slice(1, None, 2)])
                 out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
-                plt_title = grp_name + '_Out_of_Field_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, out_phase * out_amp, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
-                # print 'trying to reshape', in_phase.shape, 'into', in_phase.shape[0],',',num_rows,',',num_cols
-                plt_title = grp_name + '_In_Field_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(in_phase.reshape(num_rows, num_cols, in_phase.shape[1]), title=plt_title,
-                                save_path=plt_path)
-                plt_title = grp_name + '_Out_of_Field_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(out_phase.reshape(num_rows, num_cols, out_phase.shape[1]), title=plt_title,
-                                save_path=plt_path)
+
+                for win_title, resp_mat in zip(['In_Field', 'Out_of_Field'], [in_phase * in_amp, out_phase * out_amp]):
+                    __plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias', 'Piezoresponse (a.u.)',
+                                      save_plots, folder_path, basename, num_rows, num_cols)
             else:
-                plt_title = grp_name + '_Loops'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotSHOLoops(dc_vec, phase_mat * amp_mat, 'DC Bias', 'Piezoresponse (a.u.)', title=plt_title,
-                             save_path=plt_path)
-                plt_title = grp_name + '_Snaps'
-                if save_plots:
-                    plt_path = os.path.join(folder_path, basename + '_' + plt_title + '.png')
-                plotVSsnapshots(phase_mat.reshape(num_rows, num_cols, phase_mat.shape[1]), title=plt_title,
-                                save_path=plt_path)
+                __plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias', 'Piezoresponse (a.u.)',
+                                  save_plots, folder_path, basename, num_rows, num_cols)
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
@@ -1466,9 +1215,12 @@ def visualizeSHOResults(h5_main, save_plots=True, show_plots=True):
         rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
-        plotSHOMaps([amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat],
-                    ['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor',
-                     'Phase (deg)', 'R^2 Criterion'], title=grp_name, save_path=plt_path)
+
+        fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)),
+                                       num_comps=5, color_bar_mode='each', heading=grp_name,
+                                       title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
+                                              'R^2 Criterion'], cmap=cmap_jet_white_center())
+        fig_ms.savefig(plt_path, format='png', dpi=300)
 
     if show_plots:
         plt.show()

@@ -20,7 +20,7 @@ from ..io_utils import getAvailableMem, recommendCores
 from ..microdata import MicroDataset, MicroDataGroup
 from ...analysis.optimize import Optimize
 from ...processing.proc_utils import buildHistogram
-from ...viz.plot_utils import plot1DSpectrum, plot2DSpectrogram, plotHistgrams
+from ...viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
 
 
 def parmsToDict(filepath, parms_to_remove=[]):
@@ -479,10 +479,10 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
                 path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
                 path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
-            plot1DSpectrum(step_averaged_vec, freq_vec, fig_title, figure_path=path_1d)
-            plot2DSpectrogram(mean_spec, freq_vec, fig_title, figure_path=path_2d)
+            plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title, figure_path=path_1d)
+            plot_2d_spectrogram(mean_spec, freq_vec, fig_title, figure_path=path_2d)
             if do_histogram:
-                plotHistgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
+                plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
             
             if show_plots:
                 plt.show()
@@ -545,13 +545,13 @@ def visualize_plot_groups(h5_filepath):
                     plt_grp = grp[plt_grp_name]
                     if expt_type == 'BEPSData':
                         spect_data = plt_grp['Mean_Spectrogram'].value
-                        plot2DSpectrogram(spect_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
+                        plot_2d_spectrogram(spect_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
                     step_avg_data = plt_grp['Step_Averaged_Response']
-                    plot1DSpectrum(step_avg_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
+                    plot_1d_spectrum(step_avg_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
                     try:
                         hist_data = plt_grp['Histograms']
                         hist_bins = plt_grp['Histograms_Indicies']
-                        plotHistgrams(hist_data, hist_bins, plt_grp.attrs['Name'])
+                        plot_histgrams(hist_data, hist_bins, plt_grp.attrs['Name'])
                     except:
                         pass
                     
@@ -1302,7 +1302,7 @@ class BEHistogram():
                     if save_plot:
                         basename,junk = path.splitext(h5_path)
                         plotfile = '{}_MG{}_PG{}_Histograms.png'.format(basename,im,ip)
-                    plotHistgrams(hist_mat, hist_indices, p_group, plotfile)
+                    plot_histgrams(hist_mat, hist_indices, p_group, plotfile)
                     if show_plot:
                         plt.show()
 

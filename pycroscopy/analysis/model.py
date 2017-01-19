@@ -52,7 +52,7 @@ class Model(object):
         self._setMemoryAndCPUs()
 
         self._start_pos = 0
-        self.__end_pos = self.h5_main.shape[0]
+        self._end_pos = self.h5_main.shape[0]
         self.h5_guess = None
         self.h5_fit = None
 
@@ -74,7 +74,7 @@ class Model(object):
             self._maxCpus = psutil.cpu_count() - 2
         else:
             self._maxCpus = 1
-        self._maxMemoryMB = psutil.virtual_memory().available / 1e6 # in MB
+        self._maxMemoryMB = psutil.virtual_memory().available / 1e6  # in MB
 
         self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
@@ -130,12 +130,12 @@ class Model(object):
         --------
         """
         if self._start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self._end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self._start_pos = self.__end_pos
+            self._start_pos = self._end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -145,7 +145,7 @@ class Model(object):
         """
         Returns a chunk of guess dataset corresponding to the main dataset.
         Should be called BEFORE _getDataChunk since it relies upon current values of
-        self.__start_pos, self.__end_pos
+        self.__start_pos, self._end_pos
 
         Parameters:
         -----
@@ -155,10 +155,10 @@ class Model(object):
         --------
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         else:
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
 
     def _setResults(self, is_guess=False):
         """
@@ -177,8 +177,8 @@ class Model(object):
             targ_dset = self.h5_fit
             source_dset = self.fit
 
-        """print('Writing data to positions: {} to {}'.format(self.__start_pos, self.__end_pos))
-        targ_dset[self.__start_pos:self.__end_pos, :] = source_dset"""
+        """print('Writing data to positions: {} to {}'.format(self.__start_pos, self._end_pos))
+        targ_dset[self.__start_pos:self._end_pos, :] = source_dset"""
         targ_dset[:, :] = source_dset
 
         # flush the file
@@ -327,8 +327,8 @@ class Model(object):
                                       obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
                 results.append(self._reformatResults(temp, obj_func['obj_func']))
-                self._getDataChunk()
                 self._getGuessChunk()
+                self._getDataChunk()
 
             self.fit = np.hstack(tuple(results))
             self._setResults()

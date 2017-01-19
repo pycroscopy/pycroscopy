@@ -8,9 +8,9 @@ Created on Sun May 29 19:09:34 2016
 #%% Translate data first 
 
 from pycroscopy.io.io_utils import uiGetFile
-from pycroscopy.io.translators.fast_iv import FastIVTranslator
+from pycroscopy.io.translators.gmode_iv import GIVTranslator
 parm_path = uiGetFile('parms.mat')
-translator = FastIVTranslator()
+translator = GIVTranslator()
 h5_path = translator.translate(parm_path)
 
 #%% Begin processing a translated (.h5) file
@@ -21,10 +21,10 @@ import numpy as np
 from pycroscopy.analysis.PCAutils import doKMeans, doPCA, plotScree, plotLoadingMaps, fastSVD, plotKMeansResults
 from pycroscopy.io.io_hdf5 import ioHDF5
 from pycroscopy.io.hdf_utils import getH5DsetRefs, findH5group
-from pycroscopy.io.translators.utils import makePositionMat, getPositionSlicing
+from pycroscopy.io.translators.utils import make_position_mat, get_position_slicing
 from pycroscopy.io.microdata import MicroDataGroup, MicroDataset
-from pycroscopy.processing.gmode_utils import testFilter, fftFilterRawData
-from pycroscopy.viz.plot_utils import plotLoops
+from pycroscopy.processing.gmode_utils import test_filter, fft_filter_dataset
+from pycroscopy.viz.plot_utils import plot_loops
 
 #%% Load data
 #h5_path = uiGetFile('.h5')
@@ -72,7 +72,7 @@ filter_parms['num_pix'] = 1
 #%% Test filter on a single line:
 
 row_ind = 50
-filt_line, fig_filt, axes_filt = testFilter(h5_main[row_ind], filter_parms, samp_rate, show_plots=True)
+filt_line, fig_filt, axes_filt = test_filter(h5_main[row_ind], filter_parms, samp_rate, show_plots=True)
 fig_filt.savefig(path.join(folder_path,'FFT_filter.png'), format='png', dpi=300)
 
 raw_row = np.reshape(h5_main[row_ind], (-1,pts_per_cycle))
@@ -92,7 +92,7 @@ fig.savefig(path.join(folder_path,'FFT_filtering_examples.png'), format='png', d
 hdf = ioHDF5(h5_f)
 
 '''if __name__=='__main__':
-    h5_filt_grp = fftFilterRawData(hdf, h5_main, filter_parms, write_filtered=True)'''
+    h5_filt_grp = fft_filter_dataset(hdf, h5_main, filter_parms, write_filtered=True)'''
 
 #%% Now break up the filtered data into individual loops
 
@@ -103,9 +103,9 @@ AI_mat_2d = np.reshape(h5_filt.value,(-1,pts_per_cycle))
 AI_mat_3d = np.reshape(AI_mat_2d,(num_lines,-1,pts_per_cycle))
 num_cols = AI_mat_3d.shape[1]
 
-pos_ind_mat = makePositionMat([num_cols, num_lines])
+pos_ind_mat = make_position_mat([num_cols, num_lines])
 pos_labs = ['X','Y']
-pos_slices = getPositionSlicing(pos_labs, AI_mat_2d.shape[0])
+pos_slices = get_position_slicing(pos_labs, AI_mat_2d.shape[0])
 
 scan_width_nm = np.round(100*h5_grp.attrs['grid_scan_width_[m]']*1E+9)/100
 scan_height_nm = np.round(100*h5_grp.attrs['grid_scan_height_[m]']*1E+9)/100
@@ -210,9 +210,9 @@ loadings = np.reshape(h5_pca_norm_grp['U'].value,(num_lines,int(h5_pca_norm_grp[
 fig_U,ax_U = plotLoadingMaps(loadings, num_comps=16)
 fig_U.savefig(path.join(folder_path,'PCA_U.png'), format='png', dpi=100) 
 
-fig_loops, ax_loops = plotLoops(single_AO, h5_pca_norm_grp['V'], evenly_spaced=False, 
-            plots_on_side=4, rainbow_plot=True, 
-          x_label='Bias (V)', y_label='Current (a.u.)', title='Eigenvectors')
+fig_loops, ax_loops = plot_loops(single_AO, h5_pca_norm_grp['V'], evenly_spaced=False,
+                                 plots_on_side=4, rainbow_plot=True,
+                                 x_label='Bias (V)', y_label='Current (a.u.)', title='Eigenvectors')
 fig_loops.tight_layout()
 fig_loops.savefig(path.join(folder_path,'PCA_V.png'), format='png', dpi=300)
 

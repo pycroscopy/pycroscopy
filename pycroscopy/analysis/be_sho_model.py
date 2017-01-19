@@ -167,12 +167,12 @@ class BESHOmodel(Model):
         None
         """
         if self._start_pos < self.h5_main.shape[0]:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self._start_pos:self.__end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self.__end_pos, self.h5_main.shape[0]))
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.data = self.h5_main[self._start_pos:self._end_pos, :]
+            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
-            self._start_pos = self.__end_pos
+            self._start_pos = self._end_pos
         else:
             print('Finished reading all data!')
             self.data = None
@@ -195,10 +195,10 @@ class BESHOmodel(Model):
         None
         """
         if self.data is None:
-            self.__end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         else:
-            self.guess = self.h5_guess[self._start_pos:self.__end_pos, :]
+            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
@@ -298,40 +298,6 @@ class BESHOmodel(Model):
         results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
                           obj_func={'class':'Fit_Methods','obj_func':'SHO', 'xvals':xvals})
         return results
-        # parallel = ''
-        #
-        # processors = kwargs.get("processors", self._maxCpus)
-        # if processors > 1:
-        #     parallel = 'parallel'
-        #
-        # w_vec = self.freq_vec
-        #
-        # def sho_fit(parm_vec, resp_vec):
-        #     from .utils.be_sho import SHOfunc
-        #     # from .guess_methods import r_square
-        #     # fit = r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-        #     fit = self._r_square(resp_vec, SHOfunc, parm_vec, w_vec)
-        #
-        #     return fit
-        #
-        # '''
-        # Call _optimize to perform the actual fit
-        # '''
-        # self._getGuessChunk()
-        # self._getDataChunk()
-        # results = list()
-        # while self.data is not None:
-        #     data = np.array(self.data[()],copy=True)
-        #     guess = np.array(self.guess[()], copy=True)
-        #     temp = self._optimize(sho_fit, data, guess, solver='least_squares',
-        #                           processors=processors, parallel=parallel)
-        #     results.append(self._reformatResults(temp, 'complex_gaussian'))
-        #     self._getGuessChunk()
-        #     self._getDataChunk()
-
-        # self.fit = np.hstack(tuple(results))
-        # self._setResults()
-
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
         """

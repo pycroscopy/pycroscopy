@@ -14,7 +14,7 @@ import numpy as np; # For array operations
 from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
 
 from .translator import Translator # Because this class extends the abstract Translator class
-from .utils import makePositionMat, getPositionSlicing, generateDummyMainParms
+from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5 # Now the translator is responsible for writing the data.
 from ..microdata import MicroDataGroup, MicroDataset # The building blocks for defining heirarchical storage in the H5 file
@@ -53,8 +53,8 @@ class SporcTranslator(Translator):
         num_cols = parm_dict['grid_num_cols'] 
         num_pix = num_rows*num_cols        
         
-        pos_mat = makePositionMat([num_cols, num_rows])        
-        pos_slices = getPositionSlicing(['X','Y'], num_pix)
+        pos_mat = make_position_mat([num_cols, num_rows])
+        pos_slices = get_position_slicing(['X', 'Y'], num_pix)
         
         # new data format
         spec_ind_mat = np.transpose(np.float32(spec_ind_mat))
@@ -90,7 +90,7 @@ class SporcTranslator(Translator):
         chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                               ds_excit_wfm, ds_raw_data])
                 
-        global_parms = generateDummyMainParms()
+        global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols'];
         global_parms['grid_size_y'] = parm_dict['grid_num_rows'];
         # assuming that the experiment was completed:        

@@ -12,9 +12,9 @@ from .io_utils import getTimeStamp
 
 
 class MicroData(object):
-    '''
+    """
     Generic class that is extended by the MicroDataGroup and MicroDataset objects
-    '''
+    """
     
     def __init__(self, name, parent):
         '''
@@ -32,13 +32,13 @@ class MicroData(object):
         self.indexed = False
 
 class MicroDataGroup(MicroData):
-    '''
+    """
     Holds data that will be converted to a h5.Group by io.ioHDF5
     Note that it can also hold information (e.g. attributes) of an h5.File.
     This is consistent with class hierarchy of HDF5, i.e. h5.File extends h5.Group.
-    '''
-    def __init__(self, name, parent = '/'):
-        '''
+    """
+    def __init__(self, name, parent='/'):
+        """
         Parameters
         ----------
         name : String
@@ -47,14 +47,14 @@ class MicroDataGroup(MicroData):
             HDF5 path to the parent of this object. Typically used when
             appending to an existing HDF5 file
             Default value assumes that this group sits at the root of the file
-        '''
-        super(MicroDataGroup,self).__init__(name, parent)
+        """
+        super(MicroDataGroup, self).__init__(name, parent)
         self.children = list()
         self.attrs['machine_id'] = socket.getfqdn()
         self.attrs['timestamp'] = getTimeStamp()
 
         if name != '':
-            self.indexed = self.name[-1]=='_'
+            self.indexed = self.name[-1] == '_'
         
         pass
     
@@ -77,9 +77,12 @@ class MicroDataGroup(MicroData):
                 self.children.append(child)
             else:
                 warn('Children must be of type MicroData.')
+
+    def __str__(self):
+        self.showTree()
             
     def showTree(self):
-        ''' 
+        """
         Return the tree structure given by MicroDataGroup.
         
         Parameters
@@ -89,7 +92,7 @@ class MicroDataGroup(MicroData):
         Returns
         -------
         None
-        '''        
+        """
         def __tree(child, parent):
             print(parent+'/'+child.name)
             if isinstance(child, MicroDataGroup):
@@ -102,15 +105,16 @@ class MicroDataGroup(MicroData):
                     
     
 class MicroDataset(MicroData):
-    '''
+    """
     Holds data (i.e. numpy.ndarray) as well as instructions on writing, attributes, etc...
     This gets converted to a h5.Dataset by io.ioHDF5.\n    
 
     Region references need to be specified using the 'labels' attribute. See example below    
-    '''
+    """
     
-    def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent = None, resizable=False, maxshape=None):
-        '''
+    def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, resizable=False,
+                 maxshape=None):
+        """
         Parameters
         ----------
         name : String
@@ -153,13 +157,20 @@ class MicroDataset(MicroData):
         4. Intializing large datasets whose size is unknown in one or more dimensions:
         
         >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), chunking=(1,16384), resizable=True,compression='gzip')
-        '''
-        super(MicroDataset,self).__init__(name, parent)
+        """
+
+        def _make_iterable(item):
+            if item is not None:
+                if type(item) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
+                    item = tuple([item])
+            return item
+
+        super(MicroDataset, self).__init__(name, parent)
         self.data = data
         self.dtype = dtype
         self.compression = compression
-        self.chunking = chunking
+        self.chunking = _make_iterable(chunking)
         self.resizable = resizable
-        self.maxshape = maxshape
+        self.maxshape = _make_iterable(maxshape)
         if resizable is True:
-            self.maxshape = None # Overriden
+            self.maxshape = None  # Overridden

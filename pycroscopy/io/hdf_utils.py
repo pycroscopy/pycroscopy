@@ -495,7 +495,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             except:
                 raise
         else:
-            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8)
+            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
     elif isinstance(h5_pos, h5py.Dataset):
         """
     Position Indices dataset was provided
@@ -619,7 +619,7 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
         '''
     Get the Position datasets from the references if possible
         '''
-        ds_pos = np.arange(ds_Nd.shape[0], dtype=np.uint8)
+        ds_pos = np.arange(ds_Nd.shape[0], dtype=np.uint8).reshape(-1, 1)
     elif isinstance(h5_pos, h5py.Dataset):
         '''
     Position Indices dataset was provided
@@ -637,7 +637,7 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
         '''
     Get the Spectroscopic datasets from the references if possible
         '''
-        ds_spec = np.arange(ds_Nd.shape[1:], dtype=np.uint8)
+        ds_spec = np.atleast_2d(np.arange(ds_Nd.shape[1], dtype=np.uint8))
 
     elif isinstance(h5_spec, h5py.Dataset):
         '''
@@ -1179,7 +1179,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     return chunking
 
 
-def linkformain(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
+def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
     """
     Links the object references to the four position and spectrosocpic datasets as
     attributes of `h5_main`

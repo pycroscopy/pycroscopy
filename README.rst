@@ -23,18 +23,20 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
 ---------------
 Pycroscopy requires the installation of a development environment such as Spyder from Continuum or PyCharm. 
 
-   1. Install Anaconda 2.5.0 Python 2.7 64-bit:
-      
-      a. Mac users: <https://repo.continuum.io/archive/Anaconda2-2.5.0-MacOSX-x86_64.pkg>
-      
-      b. Windows users: <https://repo.continuum.io/archive/Anaconda2-2.5.0-Windows-x86_64.exe>
+   1. Uninstall existing Python 2.7 distribution(s) if installed.  Restart computer afterwards.
 
-      c. Linux users: <https://repo.continuum.io/archive/Anaconda2-2.5.0-Linux-x86_64.sh>
-               
-   2. Install pycroscopy:
+   2. Install Anaconda 4.2.13 Python 2.7 64-bit:
+      
+      a. Mac users: <https://repo.continuum.io/archive/Anaconda2-4.2.0-MacOSX-x86_64.pkg>
+      
+      b. Windows users: <https://repo.continuum.io/archive/Anaconda2-4.2.0-Windows-x86_64.exe>
+
+      c. Linux users: <https://repo.continuum.io/archive/Anaconda2-4.2.0-Linux-x86_64.sh>
+	  
+   3. Install pycroscopy:
    
       Open a terminal (mac / linux) or command prompt (windows, if possible with administrator priveleges) and type:
       
          pip install pycroscopy
          
-   3. Enjoy pycroscopy!
+   4. Enjoy pycroscopy!

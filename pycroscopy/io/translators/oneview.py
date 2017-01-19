@@ -11,9 +11,9 @@ from skimage.measure import block_reduce
 from skimage.util import crop
 from ..io_image import read_image, read_dm3, parse_dm4_parms
 from .translator import Translator
-from .utils import generateDummyMainParms, makePositionMat, getSpectralSlicing, \
-    getPositionSlicing
-from ..hdf_utils import getH5DsetRefs, calc_chunks, linkformain
+from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
+    get_position_slicing, build_ind_val_dsets
+from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 from .. import dm4reader
@@ -98,15 +98,15 @@ class OneViewTranslator(Translator):
         Get the list of all files with the .tif extension and
         the number of files in the list
         '''
-        root_file_list, file_list = self._parsefilepath(image_path)
+        root_file_list, file_list = self._parse_file_path(image_path)
 
         size, image_parms = self._getimageparms(file_list[0])
         usize, vsize = size
 
         self.image_list_tag = image_parms.pop('Image_Tag', None)
 
+        tmp, _ = read_image(file_list[0])
         if crop_ammount is not None:
-            tmp, _ = read_image(file_list[0])
             tmp = self.crop_ronc(tmp)
             usize, vsize = tmp.shape
 
@@ -197,12 +197,12 @@ class OneViewTranslator(Translator):
         '''
         Build Spectroscopic and Position datasets for the image
         '''
-        pos_mat = makePositionMat(image.shape)
+        pos_mat = make_position_mat(image.shape)
         spec_mat = np.array([[0]], dtype=np.uint8)
 
         ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
         ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
-        spec_lab = getSpectralSlicing(['Image'])
+        spec_lab = get_spectral_slicing(['Image'])
         ds_spec_inds.attrs['labels'] = spec_lab
         ds_spec_inds.attrs['units'] = ''
         ds_spec_vals.attrs['labels'] = spec_lab
@@ -211,7 +211,7 @@ class OneViewTranslator(Translator):
         ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
         ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
 
-        pos_lab = getPositionSlicing(['X', 'Y'])
+        pos_lab = get_position_slicing(['X', 'Y'])
         ds_pos_inds.attrs['labels'] = pos_lab
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pos_vals.attrs['labels'] = pos_lab
@@ -231,7 +231,7 @@ class OneViewTranslator(Translator):
         Link references to raw
         '''
         aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        linkformain(h5_image, *getH5DsetRefs(aux_ds_names, image_refs))
+        link_as_main(h5_image, *getH5DsetRefs(aux_ds_names, image_refs))
 
         self.root_image_list.append(h5_image)
 
@@ -351,7 +351,7 @@ class OneViewTranslator(Translator):
         return ronc_mat3_mean.reshape(-1)
 
     @staticmethod
-    def _parsefilepath(image_folder):
+    def _parse_file_path(image_folder):
         """
         Returns a list of all files in the directory given by path
 
@@ -441,7 +441,7 @@ class OneViewTranslator(Translator):
         num_pixels = usize * vsize
         num_files = scan_size_x * scan_size_y
 
-        root_parms = generateDummyMainParms()
+        root_parms = generate_dummy_main_parms()
         root_parms['data_type'] = 'PtychographyData'
 
         main_parms = {'num_images': num_files,
@@ -460,10 +460,10 @@ class OneViewTranslator(Translator):
         meas_grp.attrs = main_parms
         chan_grp = MicroDataGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
-        ds_spec_ind, ds_spec_vals = self._build_ind_val_dsets((usize, vsize), is_spectral=True,
-                                                              labels=['U', 'V'], units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = self._build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
-                                                           labels=['X', 'Y'], units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
+                                                        labels=['U', 'V'], units=['pixel', 'pixel'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
+                                                     labels=['X', 'Y'], units=['pixel', 'pixel'])
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
@@ -496,7 +496,7 @@ class OneViewTranslator(Translator):
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        linkformain(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
 

@@ -10,8 +10,8 @@ from . import be_odf_relaxation
 from .be_odf_relaxation import BEodfRelaxationTranslator
 from . import beps_ndf
 from .beps_ndf import BEPSndfTranslator
-from . import fast_iv
-from .fast_iv import FastIVTranslator
+from . import gmode_iv
+from .gmode_iv import GIVTranslator
 from . import general_dynamic_mode
 from .general_dynamic_mode import GDMTranslator
 from . import gmode_line
@@ -29,6 +29,6 @@ from . import image
 from .image import ImageTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
-           'FastIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
+           'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
            'OneViewTranslator', 'ImageTranslator']
