@@ -495,7 +495,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             except:
                 raise
         else:
-            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
+            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
     elif isinstance(h5_pos, h5py.Dataset):
         """
     Position Indices dataset was provided
