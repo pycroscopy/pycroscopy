@@ -327,7 +327,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
     parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
                  'num_samples': num_samples}
 
-    max_pos_per_chunk = 500  # Need a better way of figuring out a more appropriate estimate
+    max_pos_per_chunk = 1000  # Need a better way of figuring out a more appropriate estimate
 
     start_pix = 0
 
@@ -340,8 +340,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
         sing_parm = itertools.izip(h5_main[start_pix:last_pix], itertools.repeat(parm_dict))
         current_num_cores = recommendCores(last_pix-start_pix, requested_cores=num_cores, lengthy_computation=True)
         # Start parallel processing:
-        if verbose:
-            print('Starting a pool of {} cores'.format(current_num_cores))
+        print('Starting a pool of {} cores'.format(current_num_cores))
         pool = Pool(processes=current_num_cores)
         jobs = pool.imap(bayesian_inference_unit, sing_parm)  # , chunksize=num_chunks)
         bayes_results = [j for j in jobs]
@@ -350,6 +349,11 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
 
         if verbose:
             print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time, tot_time/max_pos_per_chunk))
+
+        if start_pix == 0:
+            time_per_pix = tot_time/max_pos_per_chunk
+        else:
+            print('Time remaining: {} hours'.format((num_pos - last_pix) * time_per_pix))
 
         if verbose:
             print('Started accumulating all results')
