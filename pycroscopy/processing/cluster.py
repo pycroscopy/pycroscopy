@@ -115,9 +115,9 @@ class Cluster(object):
         mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
         for clust_ind in range(num_clusts):
             # get all pixels with this label
-            targ_pos = np.where(labels == clust_ind)[0]
+            targ_pos = np.argwhere(labels == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[targ_pos, :][:, self.data_slice[1]])
+            data_chunk = np.atleast_2d(self.h5_main[targ_pos, :])[:, self.data_slice[1]]
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
@@ -188,7 +188,7 @@ class Cluster(object):
         """
         print('Writing clustering results to file.')
         num_clusters = mean_response.shape[0]
-        ds_label_mat = MicroDataset('Labels', np.float32(np.atleast_2d(labels)), dtype=np.float32)
+        ds_label_mat = MicroDataset('Labels', np.uint32(labels.reshape([-1, 1])), dtype=np.uint32)
         clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
 
         ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))

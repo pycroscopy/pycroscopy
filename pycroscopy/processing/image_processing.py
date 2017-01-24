@@ -112,13 +112,13 @@ class ImageWindow(object):
         if win_fft is None:
             win_type = windata32
             win_func = lambda tmp_win: tmp_win
-        if win_fft=='abs':
+        if win_fft == 'abs':
             win_type = absfft32
             win_func = self.abs_fft_func
-        elif win_fft=='data+abs':
+        elif win_fft == 'data+abs':
             win_type = winabsfft32
             win_func = self.win_abs_fft_func
-        elif win_fft=='complex':
+        elif win_fft == 'complex':
             win_type = wincompfft32
             win_func = self.win_comp_fft_func
 
@@ -147,12 +147,11 @@ class ImageWindow(object):
         If a window size has not been specified, obtain a guess value from 
         window_size_extract
         '''
-        if win_x is None or win_y is None:
-            win_size, _ = self.window_size_extract(h5_main, *args, **kwargs)
-            if win_x is None:
-                win_x = win_size
-            if win_y is None:
-                win_y = win_size
+        win_test, psf_width = self.window_size_extract(*args, **kwargs)
+        if win_x is None:
+            win_x = win_test
+        if win_y is None:
+            win_y = win_test
 
         '''
         Step size must be less than 1/4th the image size
@@ -232,6 +231,7 @@ class ImageWindow(object):
         ds_group.attrs['win_step_y'] = win_step_y
         ds_group.attrs['image_x'] = im_x
         ds_group.attrs['image_y'] = im_y
+        ds_group.attrs['psf_width'] = psf_width
         
         image_refs = self.hdf.writeData(ds_group)
         
@@ -777,6 +777,11 @@ class ImageWindow(object):
         clean_image = np.divide(accum, counts)
 
         clean_image[np.isnan(clean_image)] = 0
+        '''
+        Renormalize the cleaned image
+        '''
+        clean_image -= np.min(clean_image)
+        clean_image = clean_image/np.max(clean_image)
 
         '''
         Calculate the removed noise and FFTs
