@@ -15,8 +15,26 @@ from _warnings import warn
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
+# from ..io.io_utils import recommendCores
+
 
 def multi_gauss_surface_fit(coef_mat, s_mat):
+    """
+    Evaluates the provided coefficients for N gaussian peaks to generate a 2D matrix
+
+    Parameters
+    ----------
+    coef_mat : 2D numpy array
+        Coefficients arranged as [atom, parameter] where the parameters are:
+            height, row, column, sigma (width of the gaussian)
+    s_mat : 3D numpy array
+        Stack of the mesh grid
+
+    Returns
+    -------
+    multi_gauss : 2D numpy array
+        2D matrix with the N gaussian peaks whose properties are specified in the coefficients matrix
+    """
     x = s_mat[:, :, 0]
     y = s_mat[:, :, 1]
     num_peaks = coef_mat.shape[0]
@@ -33,15 +51,27 @@ def multi_gauss_surface_fit(coef_mat, s_mat):
     return multi_gauss
 
 
-def gauss_2d_residuals_new(parms_vec, orig_data_mat, x_data_mat):
-    # Only need to reshape the parms from 1D to 2D
-    parms_mat = np.reshape(parms_vec, (-1, 4))
-
-    err = orig_data_mat - multi_gauss_surface_fit(parms_mat, x_data_mat)
-    return err.ravel()
-
-
 def fit_atom_pos(single_parm):
+    """
+    Fits the position of a single atom.
+
+    Parameters
+    ----------
+    single_parm : tuple
+        atom_ind : unsigned integer
+            Index of the atom being fitted
+        parm_dict : dictionary
+            Dictionary containing all the guess values, table of nearest neighbors for each atom, and the original image
+        fitting_parms : dictionary
+            Dictionary of the many fitting parameters
+
+    Returns
+    -------
+    fit_pos : 1D numpy array
+        row and column positions of the atom
+
+    This function also returns all intermediate results for debugging purposes if parm_dict['verbose']=True
+    """
     atom_ind = single_parm[0]
     parm_dict = single_parm[1]
     fitting_parms = single_parm[2]
@@ -124,9 +154,33 @@ def fit_atom_pos(single_parm):
 
     if will_fail:
         coef_fit_mat = coef_guess_mat
+        plsq = None
     else:
         # Now refine the positions!
-        plsq = least_squares(gauss_2d_residuals_new,
+
+        def gauss_2d_residuals(parms_vec, orig_data_mat, x_data_mat):
+            """
+            Calculates the residual
+            Parameters
+            ----------
+            parms_vec : 1D numpy array
+                Raveled version of the parameters matrix
+            orig_data_mat : 2D numpy array
+                Section of the image being fitted
+            x_data_mat : 3D numpy array
+
+            Returns
+            -------
+            err_vec : 1D numpy array
+                Difference between the original data and the matrix obtained by evaluating parms_vec with x_data_mat
+            """
+            # Only need to reshape the parms from 1D to 2D
+            parms_mat = np.reshape(parms_vec, (-1, 4))
+
+            err = orig_data_mat - multi_gauss_surface_fit(parms_mat, x_data_mat)
+            return err.ravel()
+
+        plsq = least_squares(gauss_2d_residuals,
                              coef_guess_mat.ravel(),
                              args=(fit_region, s_mat),
                              bounds=(lb_mat.ravel(), ub_mat.ravel()),
@@ -134,17 +188,35 @@ def fit_atom_pos(single_parm):
         coef_fit_mat = np.reshape(plsq.x, (-1, 4))
 
     if verbose:
-        return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat
+        return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq
     else:
         # only return position of central atom
         return coef_fit_mat[0, 1: 3]
 
 
 def fit_atom_positions_parallel(num_cores, parm_dict, fitting_parms):
+    """
+    Fits the positions of N atoms in parallel
+
+    Parameters
+    ----------
+    num_cores : unsigned int
+        Number of cores to compute with
+    parm_dict : dictionary
+        Dictionary containing the guess positions, nearest neighbors and original image
+    fitting_parms : dictionary
+        Parameters used for atom position fitting
+
+    Returns
+    -------
+    atom_fit_pos : 2D numpy array
+        Atom positions arranged as [atom index, row(0) and column(1)]
+    """
     parm_dict['verbose'] = False
     all_atom_guesses = parm_dict['atom_pos_guess']
     parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
     t_start = tm.time()
+    # num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
     pool = mp.Pool(processes=num_cores)
     jobs = pool.imap(fit_atom_pos, parm_list)
     results = [j for j in jobs]
@@ -155,12 +227,41 @@ def fit_atom_positions_parallel(num_cores, parm_dict, fitting_parms):
 
 
 def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parms, cropped_clean_image):
+    """
+    Computes the fit for a given atom and plots the results
+    
+    Parameters
+    ----------
+    atom_rough_pos : tuple
+        row, column position of the atom from the guess
+    all_atom_guesses : 2D numpy array
+        Guesses of atom positions arranged as [atom index, row(0) and column(1)]
+    parm_dict : dictionary
+        Dictionary containing the guess positions, nearest neighbors and original image
+    fitting_parms : dictionary
+        Parameters used for atom position fitting
+    cropped_clean_image : 2D numpy array
+        original image to fit to
+
+    Returns
+    -------
+    coef_guess_mat :
+    lb_mat  :
+    ub_mat :
+    coef_fit_mat :
+    fit_region :
+    s_mat :
+    plsq :
+    fig_01 :
+    fig_02 :
+    """
     temp_dist = np.abs(
         all_atom_guesses[:, 0] + 1j * all_atom_guesses[:, 1] - (atom_rough_pos[0] + 1j * atom_rough_pos[1]))
     atom_ind = np.argsort(temp_dist)[0]
 
     parm_dict['verbose'] = True
-    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat = fit_atom_pos((atom_ind, parm_dict, fitting_parms))
+    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind, parm_dict, fitting_parms))
+
     print('\tAmplitude\t\tx position\ty position\tsigma')
     print('-------------------GUESS---------------------')
     print(coef_guess_mat)
@@ -170,6 +271,10 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     print(ub_mat)
     print('--------------------FIT----------------------')
     print(coef_fit_mat)
+    print('-------------- LEAST SQUARES ----------------')
+    print(plsq.message)
+    print('Function evaluations: {}\nJacobian evaluations: '.format(plsq.nfev, plsq.jfev))
+
     gauss_2d_guess = multi_gauss_surface_fit(coef_guess_mat, s_mat)
     gauss_2d_fit = multi_gauss_surface_fit(coef_fit_mat, s_mat)
 
@@ -206,4 +311,4 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
         axis.scatter(centered_pos_mat[0, 1], centered_pos_mat[0, 0], color='red')
     fig_02.tight_layout()
 
-    return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, fig_01, fig_02
+    return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq, fig_01, fig_02
