@@ -86,6 +86,12 @@ class ImageTranslator(Translator):
 
         image = self.binning_func(image, self.bin_factor, self.bin_func)
 
+        '''
+        Normalize Raw Image
+        '''
+        image -= np.min(image)
+        image = image/np.max(image)
+
         h5_main = self._setup_h5(usize, vsize, image.dtype.type, image_parms)
 
         h5_main = self._read_data(image, h5_main)

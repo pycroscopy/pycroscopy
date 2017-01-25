@@ -18,8 +18,8 @@ import matplotlib.pyplot as plt
 from scipy.linalg import sqrtm
 
 
-def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
-                          num_samples=1E4, show_plots=False, econ=False):
+def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
+                          num_samples=2E3, show_plots=False, econ=False):
     """
     this function accepts a Voltage vector and current vector
     and returns a Bayesian inferred result for R(V) and capacitance
@@ -34,8 +34,8 @@ def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10
         current values, should be in nA
     freq : float
         frequency of applied waveform
-    dx : float (Optional, Default = 0.01)
-        step in x vector (interpolating V)
+    num_x_steps : unsigned int (Optional, Default = 251)
+        Number of steps in x vector (interpolating V)
     gam : float (Optional, Default = 0.03)
         gamma value for reconstruction
     e : float (Optional, Default = 10.0)
@@ -70,6 +70,9 @@ def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10
         'SI' : Ask Kody
     """
     num_samples = int(num_samples)
+    num_x_steps = int(num_x_steps)
+    if num_x_steps % 2 == 0:
+        num_x_steps += 1  # Always keep it odd
 
     # Organize, set up the problem
     t_max = 1. / freq
@@ -78,8 +81,9 @@ def do_bayesian_inference(V, IV_point, freq, dx=0.01, gam=0.03, e=10.0, sigma=10
     dv = np.diff(V) / dt
     dv = np.append(dv, dv[-1])
     max_volts = max(V)
-    num_x_steps = int(round(2 * round(max_volts / dx, 1) + 1, 0))
+    # num_x_steps = int(round(2 * round(max_volts / dx, 1) + 1, 0))
     x = np.linspace(-max_volts, max_volts, num_x_steps)
+    dx = x[1] - x[0]
     # M = len(x)
     num_volt_points = len(V)
 
@@ -192,12 +196,14 @@ def bayesian_inference_unit(single_parm):
     """
     iv_point = single_parm[0]
     parm_dict = dict(single_parm[1])
-    # parm_dict = {'dx': dx, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC, 'num_samples': num_samples}
-    return do_bayesian_inference(parm_dict['volt_vec'], iv_point, parm_dict['freq'], show_plots=False, econ=True)
+    return do_bayesian_inference(parm_dict['volt_vec'], iv_point, parm_dict['freq'],
+                                 num_x_steps=parm_dict['num_x_steps'], gam=parm_dict['gam'], e=parm_dict['e'],
+                                 sigma=parm_dict['sigma'], sigmaC=parm_dict['sigmaC'],
+                                 num_samples=parm_dict['num_samples'], show_plots=False, econ=True)
 
 
-def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
-                               num_samples=1E4, verbose=False):
+def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251, gam=0.03, e=10.0, sigma=10.,
+                               sigmaC=1., num_samples=2E3, verbose=False):
     """
     Parameters
     ----------
@@ -205,10 +211,10 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         Reference to the dataset containing the IV spectroscopy data
     ex_freq : float
         frequency of applied waveform
-    num_cores : unsigned int (Optiona. Default = None)
+    num_cores : unsigned int (Optional. Default = None)
         Number of cores to use for computation. Leave as None for adaptive decision.
-    dx : float (Optional, Default = 0.01)
-        step in x vector (interpolating V)
+    num_x_steps : unsigned int (Optional, Default = 1E+3)
+        Number of steps in x vector (interpolating V)
     gam : float (Optional, Default = 0.03)
         gamma value for reconstruction
     e : float (Optional, Default = 10.0)
@@ -219,7 +225,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         Ask Kody
     num_samples : unsigned int (Optional, Default = 1E4)
         Number of samples. 1E+4 is more than sufficient
-    verbose : Boolean (Optioanl, Default = False)
+    verbose : Boolean (Optional, Default = False)
         Whether or not to print the status messages for debugging purposes
 
     Returns
@@ -229,6 +235,9 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
     """
 
     num_samples = int(num_samples)
+    num_x_steps = int(num_x_steps)
+    if num_x_steps % 2 == 0:
+        num_x_steps += 1
 
     if h5_main.file.mode != 'r+':
         warn('Need to ensure that the file is in r+ mode to write results back to the file')
@@ -241,17 +250,17 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
 
     # create all h5 datasets here:
     bayes_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Bayesian_Inference_', parent=h5_main.parent.name)
-    num_x_points = int(round(2 * round(np.max(single_ao) / dx, 1) + 1, 0))
+    # num_x_steps = int(round(2 * round(np.max(single_ao) / dx, 1) + 1, 0))
     if verbose:
         print('Now creating the datasets')
-    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=np.atleast_2d(np.arange(num_x_points, dtype=np.float32)))
-    ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.atleast_2d(np.arange(num_x_points, dtype=np.uint32)))
+    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=np.atleast_2d(np.arange(num_x_steps, dtype=np.float32)))
+    ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.atleast_2d(np.arange(num_x_steps, dtype=np.uint32)))
     ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, chunking=num_pos,
                           compression='gzip')
-    ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_points), dtype=np.float32,
-                         chunking=(1, num_x_points), compression='gzip')
-    ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_x_points), dtype=np.float32,
-                         chunking=(1, num_x_points), compression='gzip')
+    ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_steps), dtype=np.float32,
+                         chunking=(1, num_x_steps), compression='gzip')
+    ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_x_steps), dtype=np.float32,
+                         chunking=(1, num_x_steps), compression='gzip')
     ds_irec = MicroDataset('irec', data=[], maxshape=(num_pos, single_ao.size), dtype=np.float32,
                            chunking=(1, single_ao.size), compression='gzip')
     """
@@ -315,10 +324,10 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         print('Finished linking all datasets!')
 
     # setting up parameters for parallel function:
-    parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'dx': dx, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
+    parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
                  'num_samples': num_samples}
 
-    max_pos_per_chunk = 500  # Need a better way of figuring out a more appropriate estimate
+    max_pos_per_chunk = 1000  # Need a better way of figuring out a more appropriate estimate
 
     start_pix = 0
 
@@ -331,8 +340,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         sing_parm = itertools.izip(h5_main[start_pix:last_pix], itertools.repeat(parm_dict))
         current_num_cores = recommendCores(last_pix-start_pix, requested_cores=num_cores, lengthy_computation=True)
         # Start parallel processing:
-        if verbose:
-            print('Starting a pool of {} cores'.format(current_num_cores))
+        print('Starting a pool of {} cores'.format(current_num_cores))
         pool = Pool(processes=current_num_cores)
         jobs = pool.imap(bayesian_inference_unit, sing_parm)  # , chunksize=num_chunks)
         bayes_results = [j for j in jobs]
@@ -342,13 +350,18 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, dx=0.01, gam=0.
         if verbose:
             print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time, tot_time/max_pos_per_chunk))
 
+        if start_pix == 0:
+            time_per_pix = tot_time/max_pos_per_chunk
+        else:
+            print('Time remaining: {} hours'.format((num_pos - last_pix) * time_per_pix))
+
         if verbose:
             print('Started accumulating all results')
 
         chunk_pos = len(bayes_results)
         cap_vec = np.zeros(chunk_pos, dtype=np.float32)
-        vr_mat = np.zeros(shape=(chunk_pos, num_x_points), dtype=np.float32)
-        mr_mat = np.zeros(shape=(chunk_pos, num_x_points), dtype=np.float32)
+        vr_mat = np.zeros(shape=(chunk_pos, num_x_steps), dtype=np.float32)
+        mr_mat = np.zeros(shape=(chunk_pos, num_x_steps), dtype=np.float32)
         irec_mat = np.zeros(shape=(chunk_pos, single_ao.size), dtype=np.float32)
 
         """

@@ -46,7 +46,7 @@ def getDataSet(h5_parent, data_name):
         print('%s is not an hdf5 File or Group' % h5_parent)
 
 
-def getAuxData(parent_data, **kwargs):
+def getAuxData(parent_data, auxDataName=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
@@ -61,8 +61,10 @@ def getAuxData(parent_data, **kwargs):
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
-    auxDataName = kwargs.get('auxDataName', parent_data.attrs.iterkeys())
-
+    if auxDataName is None:
+        auxDataName = parent_data.attrs.iterkeys()
+    elif type(auxDataName) not in [list, tuple, set]:
+        auxDataName = [auxDataName]  # typically a single string
     try:
         data_list = []
         file_ref = parent_data.file
@@ -495,7 +497,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             except:
                 raise
         else:
-            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
+            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
     elif isinstance(h5_pos, h5py.Dataset):
         """
     Position Indices dataset was provided
@@ -724,7 +726,7 @@ def get_sort_order(ds_spec):
     return change_sort
 
 
-def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict()):
+def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict(), skip_refs=False):
     """
     Creates an empty dataset in the h5 file based in the same group as the provided dataset
 
@@ -738,6 +740,9 @@ def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict()):
         Name of the dataset
     ds_attrs : dictionary (Optional)
         Any new attributes that need to be written to the dataset
+    skip_refs : boolean, optional
+        Should ObjectReferences and RegionReferences be skipped when copying attributes from the
+        `source_dset`
 
     Returns
     -------
@@ -747,7 +752,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict()):
     h5_group = source_dset.parent
     h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype)
     # This should link the ancillary datasets correctly
-    h5_new_dset = copyAttributes(source_dset, h5_new_dset)
+    h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(ds_attrs)
 
     return h5_new_dset
