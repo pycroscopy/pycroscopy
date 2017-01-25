@@ -351,9 +351,9 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
             print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time, tot_time/max_pos_per_chunk))
 
         if start_pix == 0:
-            time_per_pix = tot_time/max_pos_per_chunk
+            time_per_pix = tot_time/last_pix  # in seconds
         else:
-            print('Time remaining: {} hours'.format((num_pos - last_pix) * time_per_pix))
+            print('Time remaining: {} hours'.format(np.round((num_pos - last_pix) * time_per_pix / 3600, 2)))
 
         if verbose:
             print('Started accumulating all results')
