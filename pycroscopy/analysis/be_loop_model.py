@@ -190,7 +190,7 @@ class BELoopModel(Model):
 
             # Reshape back
             if len(self._sho_all_but_forc_inds) != 1:
-                projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
+                projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                           order_dc_offset_reverse,
                                                                           nd_mat_shape_dc_first)
 
@@ -489,7 +489,7 @@ class BELoopModel(Model):
         if verbose:
             print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
         # Step 9: Reshape back to same shape as fit_Nd2:
-        projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first[::-1])
+        projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first)
         if verbose:
             print 'Projected loops reshaped to N dimensions :', projected_loops_nd.shape
         # Step 10: Move Vdc back inwards. Only for projected loop
