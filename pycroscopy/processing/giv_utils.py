@@ -396,13 +396,13 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
         parm_dict_rev = parm_dict.copy()
         parm_dict_rev['volt_vec'] = rolled_bias[half_v_steps:]
 
-    max_pos_per_chunk = 100  # Need a better way of figuring out a more appropriate estimate
+    max_pos_per_chunk = 1000  # Need a better way of figuring out a more appropriate estimate
 
     start_pix = 0
     time_per_pix = 0
     x_vec = None
 
-    while start_pix < 200:
+    while start_pix < num_pos:
 
         last_pix = min(start_pix + max_pos_per_chunk, num_pos)
         print('Working on pixels {} to {} of {}'.format(start_pix, last_pix, num_pos))
