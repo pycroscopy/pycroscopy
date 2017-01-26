@@ -291,6 +291,11 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
 
     if verbose:
         print('Now creating the datasets')
+
+    roll_cyc_fract = -0.25
+    if split_directions:
+        rolled_bias = np.roll(single_ao, int(single_ao.size * roll_cyc_fract))
+        ds_rolled_bias = MicroDataset('Rolled_Bias', data=rolled_bias, dtype=np.float32)
     ds_spec_vals = MicroDataset('Spectroscopic_Values',
                                 data=np.atleast_2d(np.arange(num_actual_x_steps, dtype=np.float32)))
     ds_spec_inds = MicroDataset('Spectroscopic_Indices',
@@ -323,8 +328,13 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
                         chunking=(1, num_x_points + 1), compression='gzip')
     bayes_grp.addChildren([ds_x, ds_cap, ds_vr, ds_m2r, ds_sigma, ds_si, ds_mr, ds_m, ds_irec])
     """
-
+    if split_directions:
+        bayes_grp.addChildren([ds_rolled_bias])
     bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_vr, ds_mr, ds_irec])
+
+    bayes_grp.attrs = {'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma,
+                       'sigmaC': sigmaC, 'num_samples': num_samples, 'split_directions': split_directions,
+                       'algorithm_author': 'Kody J. Law'}
 
     if verbose:
         bayes_grp.showTree()
@@ -356,8 +366,16 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
     linkRefAsAlias(h5_cap, h5_pos_inds, 'Position_Indices')
     linkRefAsAlias(h5_cap, h5_pos_vals, 'Position_Values')
 
-    # this dataset is the same as the main dataset in every way
-    h5_irec = copyAttributes(h5_main, h5_irec, skip_refs=False)
+    # this dataset is the same as the main dataset in every way if not split
+    if split_directions:
+        h5_rolled_bias = getH5DsetRefs(['Rolled_Bias'], h5_refs)[0]
+        link_as_main(h5_irec, h5_pos_inds, h5_pos_vals,
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0], h5_rolled_bias)
+    else:
+        h5_irec = copyAttributes(h5_main, h5_irec, skip_refs=False)
+    # Resetting any attributes manually that may be incorrectly set
+    h5_irec.attrs['quantity'] = 'Current'
+    h5_irec.attrs['units'] = 'nA'
 
     # These datasets get new spec datasets but reuse the old pos datasets:
     for new_dset in [h5_mr, h5_vr]:
@@ -371,9 +389,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
                  'sigmaC': sigmaC, 'num_samples': num_samples}
     parm_dict_forw = None
     parm_dict_rev = None
-    roll_cyc_fract = -0.25
     if split_directions:
-        rolled_bias = np.roll(single_ao, int(single_ao.size * roll_cyc_fract))
         half_v_steps = int(0.5 * single_ao.size)
         parm_dict_forw = parm_dict.copy()
         parm_dict_forw['volt_vec'] = rolled_bias[:half_v_steps]
