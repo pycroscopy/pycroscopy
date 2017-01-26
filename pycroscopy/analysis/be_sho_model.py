@@ -231,7 +231,7 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def doGuess(self, processors=None, strategy='wavelet_peaks',
+    def doGuess(self, processors=None, strategy='complex_gaussian',
                      options={"peak_widths": np.array([10,200]),"peak_step":20}):
         """
 
