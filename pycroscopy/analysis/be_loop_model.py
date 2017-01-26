@@ -252,6 +252,9 @@ class BELoopModel(Model):
             loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
                                                                                                 verbose=True)
 
+        shift_ind = int(-1 * len(self.dc_vec) / 4)  # should NOT be hardcoded like this!
+        vdc_shifted = np.roll(self.dc_vec, shift_ind)
+
         results = list()
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
@@ -260,7 +263,7 @@ class BELoopModel(Model):
             while self.data is not None:
                 opt = LoopOptimize(data=loops_2d.T, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                                      obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': self.dc_vec})
+                                      obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformatResults(temp, obj_func['obj_func'])
                 temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
