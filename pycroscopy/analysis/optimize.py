@@ -178,7 +178,5 @@ class Optimize(object):
         else:
             print("Computing Fits In Serial ...")
             tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
-            temp = [targetFuncFit(task) for task in tasks]
-            # solver, solver_options, func = self._initiateSolverAndObjFunc()
-            # results = [solver(func, guess, args=[vector]) for vector, guess in zip(self.data, self.guess)]
+            results = [targetFuncFit(task) for task in tasks]
             return results
