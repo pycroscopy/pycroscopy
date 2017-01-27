@@ -590,7 +590,26 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     return fig202, axes202
 
 
-def plot_cluster_h5_group(h5_group, y_spec_label):
+def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
+    """
+        Plots the cluster labels and mean response for each cluster
+
+        Parameters
+        ----------
+        h5_group : h5py.Datagroup object
+            H5 group containing the labels and mean response
+        y_spec_label : str
+            Label to use for Y axis on cluster centroid plot
+        centroids_together : Boolean, optional - default = True
+            Whether or nor to plot all centroids together on the same plot
+
+        Returns
+        -------
+        fig : Figure
+            Figure containing the plots
+        axes : 1D array_like of axes objects
+            Axes of the individual plots within `fig`
+        """
     # TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
     h5_labels = h5_group['Labels']
     try:
@@ -626,9 +645,13 @@ def plot_cluster_h5_group(h5_group, y_spec_label):
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
 
-    plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
-                                  spec_label=x_spec_label, resp_label=y_spec_label,
-                                  pos_labels=pos_labels, pos_ticks=pos_ticks)
+    if centroids_together:
+        return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
+                                             spec_label=x_spec_label, resp_label=y_spec_label,
+                                             pos_labels=pos_labels, pos_ticks=pos_ticks)
+    else:
+        return plot_cluster_results_separate(label_mat, mean_response, max_centroids=4, x_label=x_spec_label,
+                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label)
 
 ###############################################################################
 

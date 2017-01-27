@@ -9,8 +9,7 @@ import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 
-from ..io.hdf_utils import checkIfMain
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
+from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes, checkIfMain
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType
 from ..io.microdata import MicroDataGroup, MicroDataset
@@ -238,6 +237,8 @@ class Cluster(object):
         h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
         h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
         h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
+
+        copy_main_attributes(self.h5_main, h5_centroids)
 
         if isinstance(self.data_slice[1], np.ndarray):
             h5_mean_resp_inds = getH5DsetRefs(['Mean_Response_Indices'], h5_clust_refs)[0]

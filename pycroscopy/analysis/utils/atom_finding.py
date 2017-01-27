@@ -245,15 +245,26 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
 
     Returns
     -------
-    coef_guess_mat :
-    lb_mat  :
-    ub_mat :
-    coef_fit_mat :
-    fit_region :
-    s_mat :
-    plsq :
-    fig_01 :
-    fig_02 :
+    coef_guess_mat : 2D numpy array
+        Coefficients arranged as [atom, parameter] where the parameters are:
+            height, row, column, sigma (width of the gaussian)
+    lb_mat  : 2D numpy array
+        Lower bounds for the fits
+    ub_mat : 2D numpy array
+        Upper bounds for the fits
+    coef_fit_mat : 2D numpy array
+        Coefficients arranged as [atom, parameter] where the parameters are:
+            height, row, column, sigma (width of the gaussian)
+    fit_region : 2D numpy array
+        Section of the image being fitted
+    s_mat : 3D numpy array
+        Stack of the mesh grid
+    plsq : Least squares fit object
+        Use this to find if the fitting went well
+    fig_01 : matplotlib.pyplot.figure handle
+        Handle to figure 1
+    fig_02 : matplotlib.pyplot.figure handle
+        Handle to figure 2
     """
     temp_dist = np.abs(
         all_atom_guesses[:, 0] + 1j * all_atom_guesses[:, 1] - (atom_rough_pos[0] + 1j * atom_rough_pos[1]))

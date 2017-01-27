@@ -180,6 +180,141 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     return results_dict
 
 
+def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
+    """
+    Plots the basic Bayesian Inference results for a specific pixel
+    
+    Parameters
+    ----------
+    h5_bayesian_grp : h5py.Datagroup reference
+        Group containing the Bayesian Inference results
+    h5_resh : h5py.Dataset reference
+        Dataset containing the raw / filtered measured current split by pixel
+    pix_ind : unsigned int
+        Integer index of the desired pixel
+
+    Returns
+    -------
+    fig : matplotlib.pyplot figure handle
+        Handle to figure
+    """
+    bias_interp = np.squeeze(h5_bayesian_grp['Spectroscopic_Values'][()])
+    h5_mr = h5_bayesian_grp['mr']
+    h5_vr = h5_bayesian_grp['vr']
+    h5_irec = h5_bayesian_grp['irec']
+    h5_cap = h5_bayesian_grp['capacitance']
+    possibly_rolled_bias = getAuxData(h5_irec, auxDataName=['Spectroscopic_Values'])[0]
+    split_directions = h5_bayesian_grp.attrs['split_directions']
+
+    i_meas = np.squeeze(h5_resh[pix_ind])
+    orig_bias = np.squeeze(getAuxData(h5_resh, auxDataName=['Spectroscopic_Values'])[0])
+    h5_pos = getAuxData(h5_resh, auxDataName=['Position_Indices'])[0]
+
+    mr_vec = h5_mr[pix_ind]
+    i_recon = h5_irec[pix_ind]
+    vr_vec = h5_vr[pix_ind]
+    cap_val = h5_cap[pix_ind]
+
+    return plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
+                                 split_directions, cap_val, pix_pos=h5_pos[pix_ind])
+
+
+def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
+                          split_directions, cap_val, pix_pos=[0, 0]):
+    """
+    Plots the basic Bayesian Inference results for a specific pixel
+
+    Parameters
+    ----------
+    orig_bias : 1D float numpy array
+        Original bias vector used for experiment
+    possibly_rolled_bias : 1D float numpy array
+        Bias vector used for Bayesian inference
+    i_meas : 1D float numpy array
+        Current measured from experiment
+    bias_interp : 1D float numpy array
+        Interpolated bias
+    mr_vec : 1D float numpy array
+        Inferred resistance
+    i_recon : 1D float numpy array
+        Reconstructed current
+    vr_vec : 1D float numpy array
+        Variance of the resistance
+    split_directions : Boolean
+        Whether or not to compute the forward and reverse portions of the loop separately
+    cap_val : float
+        Calculated capacitance
+    pix_pos : list of two numbers
+        Pixel row and column positions or values
+
+    Returns
+    -------
+    fig : matplotlib.pyplot figure handle
+        Handle to figure
+    """
+
+    half_x_ind = int(0.5 * bias_interp.size)
+
+    ex_amp = np.max(bias_interp)
+
+    colors = [['b', 'r', 'g'], ['violet', 'r', 'g']]
+    syms = [['-', '--', '--'], ['-', ':', ':']]
+    names = ['Forw', 'Rev']
+    if not split_directions:
+        colors = colors[0]
+        syms = syms[0]
+        names = ['']
+
+    st_dev = np.sqrt(vr_vec)
+    good_pts = np.where(st_dev < 10)[0]
+    good_forw = good_pts[np.where(good_pts < half_x_ind)[0]]
+    good_rev = good_pts[np.where(good_pts >= half_x_ind)[0]]
+    pos_limits = mr_vec + st_dev
+    neg_limits = mr_vec - st_dev
+
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+
+    axes[0].set_xlabel('Voltage (V)')
+    axes[0].set_ylabel('Resistance (GOhm)')
+    axes[0].set_title('R(V), C = ' + str(round(cap_val * 1E3, 2)) + 'pF, ' + 'at row ' +
+                      str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+
+    if split_directions:
+        pts_to_plot = [good_forw, good_rev]
+    else:
+        pts_to_plot = [good_pts]
+
+    for type_ind, pts_list, cols_set, sym_set, set_name in zip(range(len(names)), pts_to_plot, colors, syms, names):
+        axes[0].plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0], linestyle=sym_set[0], linewidth=2,
+                     label='R(V) {}'.format(set_name))
+        axes[0].plot(bias_interp[pts_list], pos_limits[pts_list], cols_set[1], linestyle=sym_set[1],
+                     label='R(V)+$\sigma$ {}'.format(set_name))
+        axes[0].plot(bias_interp[pts_list], neg_limits[pts_list], cols_set[2], linestyle=sym_set[2],
+                     label='R(V)-$\sigma$ {}'.format(set_name))
+
+    axes[0].legend(loc='best')
+    axes[0].set_ylim((0, 20))
+    axes[0].set_xlim((-ex_amp, ex_amp))
+
+    axes[1].plot(orig_bias, i_meas, 'b', label='I$_{meas}$')
+    axes[1].plot(possibly_rolled_bias, i_recon, 'cyan', linestyle='--', label='I$_{rec}$')
+
+    if split_directions:
+        axes[1].plot(bias_interp[:half_x_ind], (bias_interp / mr_vec)[:half_x_ind], 'r', label='I$_{Bayes} Forw$')
+        axes[1].plot(bias_interp[half_x_ind:], (bias_interp / mr_vec)[half_x_ind:], 'orange', label='I$_{Bayes} Rev$')
+    else:
+        axes[1].plot(bias_interp, bias_interp / mr_vec, 'g', label='I$_{Bayes}$')
+
+    axes[1].legend(loc='best')
+    axes[1].set_xlabel('Voltage(V)')
+    axes[1].set_title('Bayesian Inference at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+
+    axes[1].set_ylabel('Current (nA)')
+    fig.tight_layout()
+
+    return fig
+
+
 def bayesian_inference_unit(single_parm):
     """
     Wrapper around the original Bayesian inference function for parallel computing purposes
@@ -202,8 +337,8 @@ def bayesian_inference_unit(single_parm):
                                  num_samples=parm_dict['num_samples'], show_plots=False, econ=True)
 
 
-def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251, gam=0.03, e=10.0, sigma=10.,
-                               sigmaC=1., num_samples=2E3, verbose=False):
+def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, num_cores=None, num_x_steps=251,
+                               gam=0.03, e=10.0, sigma=10., sigmaC=1., num_samples=2E3, verbose=False):
     """
     Parameters
     ----------
@@ -211,6 +346,10 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
         Reference to the dataset containing the IV spectroscopy data
     ex_freq : float
         frequency of applied waveform
+    gain : unsigned int
+        Amplifier gain such as 8 or 9, not 10^8 or 10^9
+    split_directions : Boolean (Optional. Default = False)
+        Whether or not to compute the forward and reverse portions of the loop separately
     num_cores : unsigned int (Optional. Default = None)
         Number of cores to use for computation. Leave as None for adaptive decision.
     num_x_steps : unsigned int (Optional, Default = 1E+3)
@@ -234,10 +373,44 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
         Reference to the group containing all the results of the Bayesian Inference
     """
 
+    def __process_chunk(data, parms_chunk, num_cores_chunk, amp_gain):
+        """
+        Processes the provided chunk of data using the parameters in parallel
+
+        Parameters
+        ----------
+        data : 2D numpy array
+            data to be processed arranged as [instances, features]
+        parms_chunk : dictionary
+            Dictionary of parameters to be passed to the processing function
+        num_cores_chunk : unsigned int
+            Number of cores to use for parallel computation
+        amp_gain : unsigned int
+            Amplifier gain such as 8 or 9, not 10^8 or 10^9
+
+        Returns
+        -------
+        results : list
+            List of dictionaries containing results from the bayesian inference
+        """
+        mult_to_nA = 10**(9-amp_gain)
+        sing_parm = itertools.izip(data*mult_to_nA, itertools.repeat(parms_chunk))
+        # Start parallel processing:
+        print('Starting a pool of {} cores'.format(num_cores_chunk))
+        pool = Pool(processes=current_num_cores)
+        jobs = pool.imap(bayesian_inference_unit, sing_parm)  # , chunksize=num_chunks)
+        results = [j for j in jobs]
+        pool.close()
+        return results
+
     num_samples = int(num_samples)
     num_x_steps = int(num_x_steps)
     if num_x_steps % 2 == 0:
         num_x_steps += 1
+
+    num_actual_x_steps = num_x_steps
+    if split_directions:
+        num_actual_x_steps = 2 * num_x_steps
 
     if h5_main.file.mode != 'r+':
         warn('Need to ensure that the file is in r+ mode to write results back to the file')
@@ -250,17 +423,27 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
 
     # create all h5 datasets here:
     bayes_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Bayesian_Inference_', parent=h5_main.parent.name)
-    # num_x_steps = int(round(2 * round(np.max(single_ao) / dx, 1) + 1, 0))
+
     if verbose:
         print('Now creating the datasets')
-    ds_spec_vals = MicroDataset('Spectroscopic_Values', data=np.atleast_2d(np.arange(num_x_steps, dtype=np.float32)))
-    ds_spec_inds = MicroDataset('Spectroscopic_Indices', data=np.atleast_2d(np.arange(num_x_steps, dtype=np.uint32)))
+
+    roll_cyc_fract = -0.25
+    if split_directions:
+        rolled_bias = np.roll(single_ao, int(single_ao.size * roll_cyc_fract))
+        ds_rolled_bias = MicroDataset('Rolled_Bias', data=rolled_bias, dtype=np.float32)
+    ds_spec_vals = MicroDataset('Spectroscopic_Values',
+                                data=np.atleast_2d(np.arange(num_actual_x_steps, dtype=np.float32)))
+    ds_spec_inds = MicroDataset('Spectroscopic_Indices',
+                                data=np.atleast_2d(np.arange(num_actual_x_steps, dtype=np.uint32)))
     ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, chunking=num_pos,
                           compression='gzip')
-    ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_x_steps), dtype=np.float32,
-                         chunking=(1, num_x_steps), compression='gzip')
-    ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_x_steps), dtype=np.float32,
-                         chunking=(1, num_x_steps), compression='gzip')
+    ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'nF'}
+    ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_actual_x_steps), dtype=np.float32,
+                         chunking=(1, num_actual_x_steps), compression='gzip')
+    ds_vr.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
+    ds_mr = MicroDataset('mr', data=[], maxshape=(num_pos, num_actual_x_steps), dtype=np.float32,
+                         chunking=(1, num_actual_x_steps), compression='gzip')
+    ds_mr.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
     ds_irec = MicroDataset('irec', data=[], maxshape=(num_pos, single_ao.size), dtype=np.float32,
                            chunking=(1, single_ao.size), compression='gzip')
     """
@@ -280,8 +463,13 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
                         chunking=(1, num_x_points + 1), compression='gzip')
     bayes_grp.addChildren([ds_x, ds_cap, ds_vr, ds_m2r, ds_sigma, ds_si, ds_mr, ds_m, ds_irec])
     """
-
+    if split_directions:
+        bayes_grp.addChildren([ds_rolled_bias])
     bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_vr, ds_mr, ds_irec])
+
+    bayes_grp.attrs = {'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma,
+                       'sigmaC': sigmaC, 'num_samples': num_samples, 'split_directions': split_directions,
+                       'algorithm_author': 'Kody J. Law'}
 
     if verbose:
         bayes_grp.showTree()
@@ -313,8 +501,16 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
     linkRefAsAlias(h5_cap, h5_pos_inds, 'Position_Indices')
     linkRefAsAlias(h5_cap, h5_pos_vals, 'Position_Values')
 
-    # this dataset is the same as the main dataset in every way
-    h5_irec = copyAttributes(h5_main, h5_irec, skip_refs=False)
+    # this dataset is the same as the main dataset in every way if not split
+    if split_directions:
+        h5_rolled_bias = getH5DsetRefs(['Rolled_Bias'], h5_refs)[0]
+        link_as_main(h5_irec, h5_pos_inds, h5_pos_vals,
+                     getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0], h5_rolled_bias)
+    else:
+        h5_irec = copyAttributes(h5_main, h5_irec, skip_refs=False)
+    # Resetting any attributes manually that may be incorrectly set
+    h5_irec.attrs['quantity'] = 'Current'
+    h5_irec.attrs['units'] = 'nA'
 
     # These datasets get new spec datasets but reuse the old pos datasets:
     for new_dset in [h5_mr, h5_vr]:
@@ -324,64 +520,80 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
         print('Finished linking all datasets!')
 
     # setting up parameters for parallel function:
-    parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma, 'sigmaC': sigmaC,
-                 'num_samples': num_samples}
+    parm_dict = {'volt_vec': single_ao, 'freq': ex_freq, 'num_x_steps': num_x_steps, 'gam': gam, 'e': e, 'sigma': sigma,
+                 'sigmaC': sigmaC, 'num_samples': num_samples}
+    parm_dict_forw = None
+    parm_dict_rev = None
+    if split_directions:
+        half_v_steps = int(0.5 * single_ao.size)
+        parm_dict_forw = parm_dict.copy()
+        parm_dict_forw['volt_vec'] = rolled_bias[:half_v_steps]
+        parm_dict_rev = parm_dict.copy()
+        parm_dict_rev['volt_vec'] = rolled_bias[half_v_steps:]
 
     max_pos_per_chunk = 1000  # Need a better way of figuring out a more appropriate estimate
 
     start_pix = 0
+    time_per_pix = 0
+    x_vec = None
 
     while start_pix < num_pos:
 
         last_pix = min(start_pix + max_pos_per_chunk, num_pos)
         print('Working on pixels {} to {} of {}'.format(start_pix, last_pix, num_pos))
 
+        current_num_cores = recommendCores(last_pix - start_pix, requested_cores=num_cores, lengthy_computation=True)
+
         t_start = tm.time()
-        sing_parm = itertools.izip(h5_main[start_pix:last_pix], itertools.repeat(parm_dict))
-        current_num_cores = recommendCores(last_pix-start_pix, requested_cores=num_cores, lengthy_computation=True)
-        # Start parallel processing:
-        print('Starting a pool of {} cores'.format(current_num_cores))
-        pool = Pool(processes=current_num_cores)
-        jobs = pool.imap(bayesian_inference_unit, sing_parm)  # , chunksize=num_chunks)
-        bayes_results = [j for j in jobs]
-        pool.close()
+        if split_directions:
+            # first load the results to memory and then roll them
+            rolled_raw_data = np.roll(h5_main[start_pix: last_pix], int(single_ao.size * roll_cyc_fract), axis=1)
+
+            forward_results = __process_chunk(rolled_raw_data[:, :half_v_steps], parm_dict_forw, current_num_cores,
+                                              gain)
+            if verbose:
+                print('Finished processing forward loops')
+            reverse_results = __process_chunk(rolled_raw_data[:, half_v_steps:], parm_dict_rev, current_num_cores, gain)
+            if verbose:
+                print('Finished processing reverse loops')
+        else:
+            bayes_results = __process_chunk(h5_main[start_pix:last_pix], parm_dict, current_num_cores, gain)
+
         tot_time = np.round(tm.time() - t_start)
 
         if verbose:
             print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time, tot_time/max_pos_per_chunk))
 
         if start_pix == 0:
-            time_per_pix = tot_time/max_pos_per_chunk
+            time_per_pix = tot_time/last_pix  # in seconds
         else:
-            print('Time remaining: {} hours'.format((num_pos - last_pix) * time_per_pix))
+            print('Time remaining: {} hours'.format(np.round((num_pos - last_pix) * time_per_pix / 3600, 2)))
 
         if verbose:
             print('Started accumulating all results')
 
-        chunk_pos = len(bayes_results)
+        chunk_pos = last_pix - start_pix
         cap_vec = np.zeros(chunk_pos, dtype=np.float32)
-        vr_mat = np.zeros(shape=(chunk_pos, num_x_steps), dtype=np.float32)
-        mr_mat = np.zeros(shape=(chunk_pos, num_x_steps), dtype=np.float32)
+        vr_mat = np.zeros(shape=(chunk_pos, num_actual_x_steps), dtype=np.float32)
+        mr_mat = np.zeros(shape=(chunk_pos, num_actual_x_steps), dtype=np.float32)
         irec_mat = np.zeros(shape=(chunk_pos, single_ao.size), dtype=np.float32)
 
-        """
-        m2r_mat = np.zeros(shape=vr_mat.shape, dtype=np.float32)
-        sigma_mat = np.zeros(shape=(max_pos_per_chunk, num_x_points + 1, num_x_points + 1), dtype=np.float32)
-        si_mat = np.zeros(shape=(max_pos_per_chunk, num_x_points, num_samples), dtype=np.float32)
-        m_mat = np.zeros(shape=(max_pos_per_chunk, num_x_points + 1), dtype=np.float32)
-        """
-
         # filling in all the results:
-        x_vec = bayes_results[0]['x']
-        for pix_ind, pix_results in enumerate(bayes_results):
-            cap_vec[pix_ind] = pix_results['cValue']
-            vr_mat[pix_ind] = pix_results['vR']
-            mr_mat[pix_ind] = pix_results['mR']
-            irec_mat[pix_ind] = pix_results['Irec']
-            """m2r_mat[pix_ind] = pix_results['m2R']
-            m_mat[pix_ind] = pix_results['m']
-            sigma_mat[pix_ind] = pix_results['Sigma']
-            si_mat[pix_ind] = pix_results['SI']"""
+        if split_directions:
+            x_vec = np.hstack((forward_results[0]['x'], reverse_results[0]['x']))
+            for pix_ind, forw_results, rev_results in zip(range(chunk_pos), forward_results, reverse_results):
+                vr_mat[pix_ind] = np.hstack((forw_results['vR'], rev_results['vR']))
+                mr_mat[pix_ind] = np.hstack((forw_results['mR'], rev_results['mR']))
+                irec_mat[pix_ind] = np.hstack((forw_results['Irec'], rev_results['Irec']))
+                # don't have a better way for now
+                cap_vec[pix_ind] = 0.5 * (forw_results['cValue'] + rev_results['cValue'])
+        else:
+            x_vec = bayes_results[0]['x']
+            for pix_ind, pix_results in enumerate(bayes_results):
+                cap_vec[pix_ind] = pix_results['cValue']
+                vr_mat[pix_ind] = pix_results['vR']
+                mr_mat[pix_ind] = pix_results['mR']
+                irec_mat[pix_ind] = pix_results['Irec']
 
         t_accum_end = tm.time()
 
@@ -393,12 +605,6 @@ def bayesian_inference_dataset(h5_main, ex_freq, num_cores=None, num_x_steps=251
         h5_vr[start_pix: last_pix] = vr_mat
         h5_mr[start_pix: last_pix] = mr_mat
         h5_irec[start_pix: last_pix] = irec_mat
-        """
-        h5_m2r[start_pix: last_pix] = m2r_mat
-        h5_m[start_pix: last_pix] = m_mat
-        h5_sigma[start_pix: last_pix] = sigma_mat
-        h5_si[start_pix: last_pix] = si_mat
-        """
 
         if verbose:
             print('Finished writing to file in {} sec'.format(np.round(tm.time() - t_accum_end)))

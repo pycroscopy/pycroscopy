@@ -12,9 +12,9 @@ import numpy as np
 from sklearn.utils.extmath import randomized_svd
 
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, \
-    getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks
+    getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType, transformToReal
+from ..io.io_utils import check_dtype, transformToTargetType
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 
@@ -137,6 +137,10 @@ def doSVD(h5_main, num_comps=None):
     h5_V = getH5DsetRefs(['V'], h5_svd_refs)[0]
     h5_svd_inds = getH5DsetRefs(['Component_Indices'], h5_svd_refs)[0]
     h5_svd_grp = h5_S.parent
+
+    # copy attributes
+    copy_main_attributes(h5_main, h5_V)
+    h5_V.attrs['units'] = ['a. u.']
 
     del ds_S, ds_V, ds_U, svd_grp
 
