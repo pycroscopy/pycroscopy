@@ -30,7 +30,7 @@ setup(
     packages=find_packages(exclude='tests'),
     url='http://github.com/pycroscopy/pyCroscopy',
     license='MIT',
-    author='S. Somnath, C. Ryan, N. Laanait',
+    author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
 
     # I don't remember how to do this correctly!!!. NL

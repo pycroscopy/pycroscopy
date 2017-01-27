@@ -1192,17 +1192,17 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     Parameters
     ----------
     h5_main : h5py.Dataset
-    2D Dataset which will have the references added as attributes
+        2D Dataset which will have the references added as attributes
     h5_pos_inds : h5py.Dataset
-    Dataset that will be linked with the name 'Position_Indices'
+        Dataset that will be linked with the name 'Position_Indices'
     h5_pos_vals : h5py.Dataset
-    Dataset that will be linked with the name 'Position_Values'
+        Dataset that will be linked with the name 'Position_Values'
     h5_spec_inds : h5py.Dataset
-    Dataset that will be linked with the name 'Spectroscopic_Indices'
+        Dataset that will be linked with the name 'Spectroscopic_Indices'
     h5_spec_vals : h5py.Dataset
-    Dataset that will be linked with the name 'Spectroscopic_Values'
+        Dataset that will be linked with the name 'Spectroscopic_Values'
     anc_dsets : (Optional) list of h5py.Dataset objects
-    Datasets that will be linked with their own names
+        Datasets that will be linked with their own names
     """
     linkRefAsAlias(h5_main, h5_pos_inds, 'Position_Indices')
     linkRefAsAlias(h5_main, h5_pos_vals, 'Position_Values')
@@ -1210,3 +1210,21 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     linkRefAsAlias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
     for dset in anc_dsets:
         linkRefs(h5_main, dset)
+
+
+def copy_main_attributes(h5_main, h5_new):
+    """
+    Copies the units and quantity name from one dataset to another
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset
+        Dataset containing the target attributes
+    h5_new : h5py.Dataset
+        Dataset to which the target attributes are to be copied
+    """
+    for att_name, default_val in zip(['quantity', 'units'], ['Unknown', '']):
+        val = default_val
+        if att_name in h5_main.attrs:
+            val = h5_main.attrs[att_name]
+        h5_new.attrs[att_name] = val
