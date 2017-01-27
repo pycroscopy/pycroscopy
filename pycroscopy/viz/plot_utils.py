@@ -269,6 +269,7 @@ def plot_map(axis, data, stdevs=2, **kwargs):
 
 def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True, plots_on_side=5, x_label='',
                y_label='', subtitles='Position', title='', central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
+    # TODO: Allow multiple excitation waveforms
     """
     Plots loops from multiple datasets from up to 25 evenly spaced positions
 
@@ -610,7 +611,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
         axes : 1D array_like of axes objects
             Axes of the individual plots within `fig`
         """
-    # TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
+    # TODO: The quantity and units for the main dataset itself are missing in most cases!
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -644,6 +645,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
+    # TODO: cleaner x and y axes labels instead of 0.0000125 etc.
 
     if centroids_together:
         return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
