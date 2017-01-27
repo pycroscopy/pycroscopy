@@ -180,6 +180,141 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     return results_dict
 
 
+def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
+    """
+    Plots the basic Bayesian Inference results for a specific pixel
+    
+    Parameters
+    ----------
+    h5_bayesian_grp : h5py.Datagroup reference
+        Group containing the Bayesian Inference results
+    h5_resh : h5py.Dataset reference
+        Dataset containing the raw / filtered measured current split by pixel
+    pix_ind : unsigned int
+        Integer index of the desired pixel
+
+    Returns
+    -------
+    fig : matplotlib.pyplot figure handle
+        Handle to figure
+    """
+    bias_interp = np.squeeze(h5_bayesian_grp['Spectroscopic_Values'][()])
+    h5_mr = h5_bayesian_grp['mr']
+    h5_vr = h5_bayesian_grp['vr']
+    h5_irec = h5_bayesian_grp['irec']
+    h5_cap = h5_bayesian_grp['capacitance']
+    possibly_rolled_bias = getAuxData(h5_irec, auxDataName=['Spectroscopic_Values'])[0]
+    split_directions = h5_bayesian_grp.attrs['split_directions']
+
+    i_meas = np.squeeze(h5_resh[pix_ind])
+    orig_bias = np.squeeze(getAuxData(h5_resh, auxDataName=['Spectroscopic_Values'])[0])
+    h5_pos = getAuxData(h5_resh, auxDataName=['Position_Indices'])[0]
+
+    mr_vec = h5_mr[pix_ind]
+    i_recon = h5_irec[pix_ind]
+    vr_vec = h5_vr[pix_ind]
+    cap_val = h5_cap[pix_ind]
+
+    return plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
+                                 split_directions, cap_val, pix_pos=h5_pos[pix_ind])
+
+
+def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
+                          split_directions, cap_val, pix_pos=[0, 0]):
+    """
+    Plots the basic Bayesian Inference results for a specific pixel
+
+    Parameters
+    ----------
+    orig_bias : 1D float numpy array
+        Original bias vector used for experiment
+    possibly_rolled_bias : 1D float numpy array
+        Bias vector used for Bayesian inference
+    i_meas : 1D float numpy array
+        Current measured from experiment
+    bias_interp : 1D float numpy array
+        Interpolated bias
+    mr_vec : 1D float numpy array
+        Inferred resistance
+    i_recon : 1D float numpy array
+        Reconstructed current
+    vr_vec : 1D float numpy array
+        Variance of the resistance
+    split_directions : Boolean
+        Whether or not to compute the forward and reverse portions of the loop separately
+    cap_val : float
+        Calculated capacitance
+    pix_pos : list of two numbers
+        Pixel row and column positions or values
+
+    Returns
+    -------
+    fig : matplotlib.pyplot figure handle
+        Handle to figure
+    """
+
+    half_x_ind = int(0.5 * bias_interp.size)
+
+    ex_amp = np.max(bias_interp)
+
+    colors = [['b', 'r', 'g'], ['violet', 'r', 'g']]
+    syms = [['-', '--', '--'], ['-', ':', ':']]
+    names = ['Forw', 'Rev']
+    if not split_directions:
+        colors = colors[0]
+        syms = syms[0]
+        names = ['']
+
+    st_dev = np.sqrt(vr_vec)
+    good_pts = np.where(st_dev < 10)[0]
+    good_forw = good_pts[np.where(good_pts < half_x_ind)[0]]
+    good_rev = good_pts[np.where(good_pts >= half_x_ind)[0]]
+    pos_limits = mr_vec + st_dev
+    neg_limits = mr_vec - st_dev
+
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+
+    axes[0].set_xlabel('Voltage (V)')
+    axes[0].set_ylabel('Resistance (GOhm)')
+    axes[0].set_title('R(V), C = ' + str(round(cap_val * 1E3, 2)) + 'pF, ' + 'at row ' +
+                      str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+
+    if split_directions:
+        pts_to_plot = [good_forw, good_rev]
+    else:
+        pts_to_plot = [good_pts]
+
+    for type_ind, pts_list, cols_set, sym_set, set_name in zip(range(len(names)), pts_to_plot, colors, syms, names):
+        axes[0].plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0], linestyle=sym_set[0], linewidth=2,
+                     label='R(V) {}'.format(set_name))
+        axes[0].plot(bias_interp[pts_list], pos_limits[pts_list], cols_set[1], linestyle=sym_set[1],
+                     label='R(V)+$\sigma$ {}'.format(set_name))
+        axes[0].plot(bias_interp[pts_list], neg_limits[pts_list], cols_set[2], linestyle=sym_set[2],
+                     label='R(V)-$\sigma$ {}'.format(set_name))
+
+    axes[0].legend(loc='best')
+    axes[0].set_ylim((0, 20))
+    axes[0].set_xlim((-ex_amp, ex_amp))
+
+    axes[1].plot(orig_bias, i_meas, 'b', label='I$_{meas}$')
+    axes[1].plot(possibly_rolled_bias, i_recon, 'cyan', linestyle='--', label='I$_{rec}$')
+
+    if split_directions:
+        axes[1].plot(bias_interp[:half_x_ind], (bias_interp / mr_vec)[:half_x_ind], 'r', label='I$_{Bayes} Forw$')
+        axes[1].plot(bias_interp[half_x_ind:], (bias_interp / mr_vec)[half_x_ind:], 'orange', label='I$_{Bayes} Rev$')
+    else:
+        axes[1].plot(bias_interp, bias_interp / mr_vec, 'g', label='I$_{Bayes}$')
+
+    axes[1].legend(loc='best')
+    axes[1].set_xlabel('Voltage(V)')
+    axes[1].set_title('Bayesian Inference at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+
+    axes[1].set_ylabel('Current (nA)')
+    fig.tight_layout()
+
+    return fig
+
+
 def bayesian_inference_unit(single_parm):
     """
     Wrapper around the original Bayesian inference function for parallel computing purposes
