@@ -579,9 +579,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     swap_axes = np.append(np.argsort(pos_sort),
                           spec_sort.size - spec_sort - 1 + len(pos_dims))
 
-    ds_Nd = np.transpose(ds_Nd, swap_axes)
+    ds_Nd2 = np.transpose(ds_Nd, swap_axes)
 
-    return ds_Nd, True
+    return ds_Nd2, True
 
 
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):

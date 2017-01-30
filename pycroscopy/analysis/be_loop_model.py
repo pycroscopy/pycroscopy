@@ -190,17 +190,17 @@ class BELoopModel(Model):
 
             # Reshape back
             if len(self._sho_all_but_forc_inds) != 1:
-                projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
+                projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                           order_dc_offset_reverse,
                                                                           nd_mat_shape_dc_first)
 
             metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
-            guessed_loops = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
+            guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
 
             # Store results
             self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice] = projected_loops_2d
             self.h5_loop_metrics[self._start_pos:self._end_pos, self._current_met_spec_slice] = metrics_2d
-            self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice] = guessed_loops
+            self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice] = guessed_loops_2
 
             self._start_pos = self._end_pos
 
@@ -252,17 +252,24 @@ class BELoopModel(Model):
             loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
                                                                                                 verbose=True)
 
+        shift_ind = int(-1 * len(self.dc_vec) / 4)  # should NOT be hardcoded like this!
+        vdc_shifted = np.roll(self.dc_vec, shift_ind)
+        # vdc_shifted = self.dc_vec
+        # loops_2d = loops_2d.T
+        loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=0).T
+
         results = list()
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
         if legit_solver and legit_obj_func:
             print("Using solver %s and objective function %s to fit your data\n" %(solver_type, obj_func['obj_func']))
             while self.data is not None:
-                opt = LoopOptimize(data=loops_2d.T, guess=self.guess, parallel=self._parallel)
+                opt = LoopOptimize(data=loops_2d_shifted, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                                      obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': self.dc_vec})
+                                      obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformatResults(temp, obj_func['obj_func'])
+                # temp = temp.reshape(nd_mat_shape_dc_first[-1:0:-1])
                 temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
 
                 results.append(temp)
@@ -445,9 +452,12 @@ class BELoopModel(Model):
             print 'Shape of N dimensional dataset:', fit_nd.shape
             print 'Dimensions of order:', dim_names_orig
 
+        # order_dc_outside_nd = np.roll(range(fit_nd.ndim), -self._dc_offset_index)
+        # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
+
         # step 5: Move the voltage dimension to the first dim
         order_dc_outside_nd = [self._dc_offset_index] + range(self._dc_offset_index) + \
-                              range(self._dc_offset_index + 1, len(fit_nd.shape))
+                               range(self._dc_offset_index + 1, len(fit_nd.shape))
         order_dc_offset_reverse = range(1, self._dc_offset_index + 1) + [0] + range(self._dc_offset_index + 1,
                                                                                     len(fit_nd.shape))
         fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
@@ -489,7 +499,7 @@ class BELoopModel(Model):
         if verbose:
             print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
         # Step 9: Reshape back to same shape as fit_Nd2:
-        projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first[::-1])
+        projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first)
         if verbose:
             print 'Projected loops reshaped to N dimensions :', projected_loops_nd.shape
         # Step 10: Move Vdc back inwards. Only for projected loop
