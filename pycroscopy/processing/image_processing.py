@@ -789,8 +789,8 @@ class ImageWindow(object):
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
         blackman_window_rows = blackman(clean_image.shape[0])
         blackman_window_cols = blackman(clean_image.shape[1])
-        fft_clean = np.fft.fft2(blackman_window_rows[:,np.newaxis]*clean_image*blackman_window_cols[np.newaxis,:])
-        fft_noise = np.fft.fft2(removed_noise)
+        fft_clean = np.fft.fft2(blackman_window_rows[:, np.newaxis]*clean_image*blackman_window_cols[np.newaxis, :])
+        fft_noise = np.fft.fft2(blackman_window_rows[:, np.newaxis]*removed_noise*blackman_window_cols[np.newaxis, :])
 
         '''
         Create datasets for results, link them properly, and write them to file
