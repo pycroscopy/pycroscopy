@@ -4,6 +4,8 @@ Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath
 """
+# TODO: All general plotting functions should support data with 1 or 2 spatial dimensions.
+
 from __future__ import division # int/int = float
 from warnings import warn
 import os
