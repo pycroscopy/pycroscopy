@@ -15,7 +15,7 @@ from _warnings import warn
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# from ..io.io_utils import recommendCores
+from ...io.io_utils import recommendCores
 
 
 def multi_gauss_surface_fit(coef_mat, s_mat):
@@ -216,7 +216,7 @@ def fit_atom_positions_parallel(num_cores, parm_dict, fitting_parms):
     all_atom_guesses = parm_dict['atom_pos_guess']
     parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
     t_start = tm.time()
-    # num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
+    num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
     pool = mp.Pool(processes=num_cores)
     jobs = pool.imap(fit_atom_pos, parm_list)
     results = [j for j in jobs]
@@ -273,7 +273,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     parm_dict['verbose'] = True
     coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind, parm_dict, fitting_parms))
 
-    print('\tAmplitude\t\tx position\ty position\tsigma')
+    print('\tAmplitude\tx position\ty position\tsigma')
     print('-------------------GUESS---------------------')
     print(coef_guess_mat)
     print('-------------------LOWER---------------------')
@@ -284,7 +284,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     print(coef_fit_mat)
     print('-------------- LEAST SQUARES ----------------')
     print(plsq.message)
-    print('Function evaluations: {}\nJacobian evaluations: '.format(plsq.nfev, plsq.jfev))
+    print('Function evaluations: {}\nJacobian evaluations: '.format(plsq.nfev, plsq.njev))
 
     gauss_2d_guess = multi_gauss_surface_fit(coef_guess_mat, s_mat)
     gauss_2d_fit = multi_gauss_surface_fit(coef_fit_mat, s_mat)
