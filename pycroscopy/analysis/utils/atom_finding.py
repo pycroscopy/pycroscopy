@@ -15,7 +15,18 @@ from _warnings import warn
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from ...io.io_utils import recommendCores
+from ...io.io_utils import recommendCores, realToCompound
+from ...io.microdata import MicroDataset, MicroDataGroup
+from ...io.io_hdf5 import ioHDF5
+
+atom_dtype = np.dtype([('x', np.float32),
+                       ('y', np.float32),
+                       ('type', np.uint32)])
+
+atom_coeff_dtype = np.dtype([('Amplitude', np.float32),
+                             ('x', np.float32),
+                             ('y', np.float32),
+                             ('Sigma', np.float32)])
 
 
 def multi_gauss_surface_fit(coef_mat, s_mat):
@@ -67,8 +78,10 @@ def fit_atom_pos(single_parm):
 
     Returns
     -------
-    fit_pos : 1D numpy array
-        row and column positions of the atom
+    coef_guess_mat : 2D numpy array
+        guess coefficients for the set of N atoms
+    coef_fit_mat : 2D numpy array
+        Fit coefficients for the set of N atoms
 
     This function also returns all intermediate results for debugging purposes if parm_dict['verbose']=True
     """
@@ -190,27 +203,26 @@ def fit_atom_pos(single_parm):
     if verbose:
         return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq
     else:
-        # only return position of central atom
-        return coef_fit_mat[0, 1: 3]
+        return coef_guess_mat, coef_fit_mat
 
 
-def fit_atom_positions_parallel(num_cores, parm_dict, fitting_parms):
+def fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=None):
     """
     Fits the positions of N atoms in parallel
 
     Parameters
     ----------
-    num_cores : unsigned int
-        Number of cores to compute with
     parm_dict : dictionary
         Dictionary containing the guess positions, nearest neighbors and original image
     fitting_parms : dictionary
         Parameters used for atom position fitting
+    num_cores : unsigned int (Optional. Default = available logical cores - 2)
+        Number of cores to compute with
 
     Returns
     -------
-    atom_fit_pos : 2D numpy array
-        Atom positions arranged as [atom index, row(0) and column(1)]
+    results : list of tuples
+        Guess and fit coefficients
     """
     parm_dict['verbose'] = False
     all_atom_guesses = parm_dict['atom_pos_guess']
@@ -223,7 +235,93 @@ def fit_atom_positions_parallel(num_cores, parm_dict, fitting_parms):
     pool.close()
     tot_time = np.round(tm.time() - t_start)
     print('Took {} sec to find {} atoms with {} cores'.format(tot_time, len(results), num_cores))
-    return np.array(results)
+    return results
+
+
+def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
+    """
+    A temporary substitute for a full-fledged process class.
+    Computes the guess and fit coefficients for the provided atom guess positions and writes these results to the
+    given h5 group
+
+    Parameters
+    ----------
+
+    h5_grp : h5py.Group reference
+        Group containing the atom guess positions, cropped clean image and some necessary parameters
+    fitting_parms : dictionary
+        Parameters used for atom position fitting
+    num_cores : unsigned int (Optional. Default = available logical cores - 2)
+        Number of cores to compute with
+
+    Returns
+    -------
+    h5_grp : h5py.Group reference
+        Same group as the parameter but now with the 'Guess' and 'Fit' datasets
+    """
+
+    cropped_clean_image = h5_grp['Cropped_Clean_Image'][()]
+    h5_guess = h5_grp['Guess_Positions']
+    all_atom_guesses = np.transpose(np.vstack((h5_guess['x'], h5_guess['y'])))  # leave out the atom type for now
+    win_size = h5_grp.attrs['motif_win_size']
+    psf_width = h5_grp.attrs['psf_width']
+
+    num_atoms = all_atom_guesses.shape[0]  # number of atoms
+
+    # build distance matrix
+    pos_vec = all_atom_guesses[:, 0] + 1j * all_atom_guesses[:, 1]
+
+    pos_mat1 = np.tile(np.transpose(np.atleast_2d(pos_vec)), [1, num_atoms])
+    pos_mat2 = np.transpose(pos_mat1)
+    d_mat = np.abs(pos_mat2 - pos_mat1)  # matrix of distances between all atoms
+    # sort the distance matrix and keep only the atoms within the nearest neighbor limit
+    neighbor_dist_order = np.argsort(d_mat)
+
+    if fitting_parms is None:
+        num_nearest_neighbors = 6  # to consider when fitting
+        fitting_parms = {'fit_region_size': win_size * 0.80,  # region to consider when fitting
+                         'gauss_width_guess': psf_width * 2,
+                         'num_nearest_neighbors': num_nearest_neighbors,
+                         'min_amplitude': 0,  # min amplitude limit for gauss fit
+                         'max_amplitude': 2,  # max amplitude limit for gauss fit
+                         'position_range': win_size / 2,
+                         # range that the fitted position can go from initial guess position[pixels]
+                         'max_function_evals': 100,
+                         'min_gauss_width_ratio': 0.5,  # min width of gauss fit ratio,
+                         'max_gauss_width_ratio': 2,  # max width of gauss fit ratio
+                         'fitting_tolerance': 1E-4}
+
+    num_nearest_neighbors = fitting_parms['num_nearest_neighbors']
+
+    # neighbor dist order has the (indices of the) neighbors for each atom sorted by distance
+    closest_neighbors_mat = neighbor_dist_order[:, 1:num_nearest_neighbors + 1]
+
+    parm_dict = {'atom_pos_guess': all_atom_guesses,
+                 'nearest_neighbors': closest_neighbors_mat,
+                 'cropped_cleaned_image': cropped_clean_image}
+
+    # do the parallel fitting
+    fitting_results = fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=num_cores)
+
+    # Make datasets to write back to file:
+    guess_parms = np.zeros(shape=(num_atoms, num_nearest_neighbors+1), dtype=atom_coeff_dtype)
+    fit_parms = np.zeros(shape=guess_parms.shape, dtype=guess_parms.dtype)
+
+    for atom_ind, single_atom_results in enumerate(fitting_results):
+        guess_coeff, fit_coeff = single_atom_results
+        num_neighbors_used = guess_coeff.shape[0]
+        guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(realToCompound(guess_coeff, guess_parms.dtype))
+        fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(realToCompound(fit_coeff, guess_parms.dtype))
+
+    ds_atom_guesses = MicroDataset('Guess', data=guess_parms)
+    ds_atom_fits = MicroDataset('Fit', data=fit_parms)
+    dgrp_atom_finding = MicroDataGroup(h5_grp.name.split('/')[-1], parent=h5_grp.parent.name)
+    dgrp_atom_finding.attrs = fitting_parms
+    dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits])
+
+    hdf = ioHDF5(h5_grp.file)
+    h5_atom_refs = hdf.writeData(dgrp_atom_finding)
+    return h5_grp
 
 
 def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parms, cropped_clean_image):
@@ -284,7 +382,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     print(coef_fit_mat)
     print('-------------- LEAST SQUARES ----------------')
     print(plsq.message)
-    print('Function evaluations: {}\nJacobian evaluations: '.format(plsq.nfev, plsq.njev))
+    print('Function evaluations: {}\nJacobian evaluations: {}'.format(plsq.nfev, plsq.njev))
 
     gauss_2d_guess = multi_gauss_surface_fit(coef_guess_mat, s_mat)
     gauss_2d_fit = multi_gauss_surface_fit(coef_fit_mat, s_mat)
