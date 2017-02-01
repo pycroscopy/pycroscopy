@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
-from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes
+from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes, copy_main_attributes
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
@@ -651,9 +651,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m):
                            h5_refs))
 
     # Copy the two attributes that are really important but ignored:
-    for at_name in ['quantity', 'units']:
-        if at_name in h5_main.attrs:
-            h5_resh.attrs[at_name] = h5_main.attrs[at_name]
+    copy_main_attributes(h5_main, h5_resh)
 
     print('Finished reshaping G-mode line data to rows and columns')
 

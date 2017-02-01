@@ -4,6 +4,8 @@ Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath
 """
+# TODO: All general plotting functions should support data with 1 or 2 spatial dimensions.
+
 from __future__ import division # int/int = float
 from warnings import warn
 import os
@@ -150,17 +152,18 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     """
     shift_ind = int(-1 * len(vdc) / 4)
     vdc_shifted = np.roll(vdc, shift_ind)
+    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
 
     num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
     fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
     positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
     for ax, pos in zip(axes.flat, positions):
-        ax.plot(vdc, ds_proj_loops[pos, :], 'k', label='Raw')
+        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
         ax.set_xlabel('V_DC (V)')
         ax.set_ylabel('PR (a.u.)')
-        ax.set_title('Loop ' + str(pos))
+        ax.set_title('Position ' + str(pos))
     ax.legend()
     fig.suptitle(title)
     fig.tight_layout()
@@ -258,9 +261,11 @@ def plot_map(axis, data, stdevs=2, **kwargs):
     """
     data_mean = np.mean(data)
     data_std = np.std(data)
+    origin = kwargs.pop('origin', 'lower')
     im = axis.imshow(data, interpolation='none',
                      vmin=data_mean - stdevs * data_std,
                      vmax=data_mean + stdevs * data_std,
+                     origin=origin,
                      **kwargs)
     axis.set_aspect('auto')
 
@@ -269,6 +274,7 @@ def plot_map(axis, data, stdevs=2, **kwargs):
 
 def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True, plots_on_side=5, x_label='',
                y_label='', subtitles='Position', title='', central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
+    # TODO: Allow multiple excitation waveforms
     """
     Plots loops from multiple datasets from up to 25 evenly spaced positions
 
@@ -610,7 +616,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
         axes : 1D array_like of axes objects
             Axes of the individual plots within `fig`
         """
-    # TODO: The label and units for the main dataset itself are missing in most cases! - ie. I don't know that the data is 'Current' and 'nA'
+    # TODO: The quantity and units for the main dataset itself are missing in most cases!
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -644,6 +650,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
+    # TODO: cleaner x and y axes labels instead of 0.0000125 etc.
 
     if centroids_together:
         return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),

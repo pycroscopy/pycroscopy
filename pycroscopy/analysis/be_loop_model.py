@@ -657,8 +657,8 @@ class BELoopModel(Model):
         ancillary_mat = np.zeros(shape=num_pixels, dtype=loop_metrics32)
 
         for pixel in range(num_pixels):
-            if pixel % 50 == 0:
-                print("Projecting Loop {} of {}".format(pixel, num_pixels))
+            """if pixel % 50 == 0:
+                print("Projecting Loop {} of {}".format(pixel, num_pixels))"""
 
             pix_dict = projectLoop(np.squeeze(dc_offset),
                                    sho_mat[pixel]['Amplitude [V]'],

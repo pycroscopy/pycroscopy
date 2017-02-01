@@ -789,8 +789,8 @@ class ImageWindow(object):
         removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
         blackman_window_rows = blackman(clean_image.shape[0])
         blackman_window_cols = blackman(clean_image.shape[1])
-        fft_clean = np.fft.fft2(blackman_window_rows[:,np.newaxis]*clean_image*blackman_window_cols[np.newaxis,:])
-        fft_noise = np.fft.fft2(removed_noise)
+        fft_clean = np.fft.fft2(blackman_window_rows[:, np.newaxis]*clean_image*blackman_window_cols[np.newaxis, :])
+        fft_noise = np.fft.fft2(blackman_window_rows[:, np.newaxis]*removed_noise*blackman_window_cols[np.newaxis, :])
 
         '''
         Create datasets for results, link them properly, and write them to file
@@ -902,7 +902,7 @@ class ImageWindow(object):
         Go ahead and take the dot product of S and V.  Get the number of components
         from the length of S
         '''
-        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :]).T
+        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V['Image Data'][comp_slice, :]).T
         num_comps = ds_V.shape[1]
 
         '''
