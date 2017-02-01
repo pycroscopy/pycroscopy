@@ -243,9 +243,7 @@ def realToCompound(ds_real, compound_type):
     Parameters
     ------------
     ds_real : 2D real numpy array or HDF5 dataset
-        Data arranged as [instance, 2 x features]
-        where the first half of the features are the real component and the
-        second half contains the imaginary components
+        Data arranged as [instance, features]
     compound_type : dtype
         Target complex datatype
 
@@ -265,7 +263,8 @@ def realToCompound(ds_real, compound_type):
         iend = (iname + 1) * ds_compound.shape[1]
         ds_compound[name] = ds_real[:, istart:iend]
 
-    return ds_compound
+    return np.squeeze(ds_compound)
+
 
 def transformToTargetType(ds_real, new_dtype):
     """
@@ -273,16 +272,14 @@ def transformToTargetType(ds_real, new_dtype):
 
     Parameters
     ----------
-    ds_real : 2D real numpy array or HDF5 dataset
-        Data arranged as [instance, 2 x features]
-        where the first half of the features are the real component and the
-        second half contains the imaginary components
+    ds_real : nD real numpy array or HDF5 dataset
+        Source dataset
     new_dtype : dtype
-        Target datatype
+        Target data type
 
     Returns
     ----------
-    retval : 2D numpy array
+    ret_val : nD numpy array
         Data of the target data type
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
@@ -299,17 +296,13 @@ def transformToReal(ds_main):
 
     Parameters
     ----------
-    ds_real : 2D real numpy array or HDF5 dataset
-        Data arranged as [instance, 2 x features]
-        where the first half of the features are the real component and the
-        second half contains the imaginary components
-    new_dtype : dtype
-        Target datatype
+    ds_main : nD compound, complex or real numpy array or HDF5 dataset
+        Data that could be compound, complex or real
 
     Returns
     ----------
-    retval : 2D numpy array
-        Data of the target data type
+    ds_main : nD numpy array
+        Data raveled to a float data type
     """
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         return complex_to_float(ds_main)
