@@ -902,7 +902,7 @@ class ImageWindow(object):
         Go ahead and take the dot product of S and V.  Get the number of components
         from the length of S
         '''
-        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :]).T
+        ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V['Image Data'][comp_slice, :]).T
         num_comps = ds_V.shape[1]
 
         '''
