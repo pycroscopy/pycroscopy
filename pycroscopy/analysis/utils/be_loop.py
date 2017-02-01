@@ -250,8 +250,8 @@ def loop_fit_function(vdc, coef_vec):
     b = coef_vec[5:]
     d = 1000
     
-    v1 = vdc[:int(len(vdc) / 2)]
-    v2 = vdc[int(len(vdc) / 2):]
+    v1 = np.asarray(vdc[:int(len(vdc) / 2)])
+    v2 = np.asarray(vdc[int(len(vdc) / 2):])
     
     g1 = (b[1]-b[0])/2*(erf((v1-a[2])*d)+1)+b[0]
     g2 = (b[3]-b[2])/2*(erf((v2-a[3])*d)+1)+b[2]
