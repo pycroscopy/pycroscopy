@@ -276,7 +276,7 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
 
     axes[0].set_xlabel('Voltage (V)')
     axes[0].set_ylabel('Resistance (GOhm)')
-    axes[0].set_title('R(V), C = ' + str(round(cap_val * 1E3, 2)) + 'pF, ' + 'at row ' +
+    axes[0].set_title('R(V), mean C = ' + str(round(np.mean(cap_val) * 1E3, 2)) + 'pF, ' + 'at row ' +
                       str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
 
     if split_directions:
@@ -435,7 +435,11 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
                                 data=np.atleast_2d(np.arange(num_actual_x_steps, dtype=np.float32)))
     ds_spec_inds = MicroDataset('Spectroscopic_Indices',
                                 data=np.atleast_2d(np.arange(num_actual_x_steps, dtype=np.uint32)))
-    ds_cap = MicroDataset('capacitance', data=[], maxshape=num_pos, dtype=np.float32, chunking=num_pos,
+    if split_directions:
+        cap_shape = (num_pos, 2)
+    else:
+        cap_shape = (num_pos, 1)
+    ds_cap = MicroDataset('capacitance', data=[], maxshape=cap_shape, dtype=np.float32, chunking=cap_shape,
                           compression='gzip')
     ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'nF'}
     ds_vr = MicroDataset('vr', data=[], maxshape=(num_pos, num_actual_x_steps), dtype=np.float32,
@@ -573,7 +577,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
             print('Started accumulating all results')
 
         chunk_pos = last_pix - start_pix
-        cap_vec = np.zeros(chunk_pos, dtype=np.float32)
+        cap_vec = np.zeros(shape=(chunk_pos, 2), dtype=np.float32)
         vr_mat = np.zeros(shape=(chunk_pos, num_actual_x_steps), dtype=np.float32)
         mr_mat = np.zeros(shape=(chunk_pos, num_actual_x_steps), dtype=np.float32)
         irec_mat = np.zeros(shape=(chunk_pos, single_ao.size), dtype=np.float32)
@@ -585,8 +589,7 @@ def bayesian_inference_dataset(h5_main, ex_freq, gain, split_directions=False, n
                 vr_mat[pix_ind] = np.hstack((forw_results['vR'], rev_results['vR']))
                 mr_mat[pix_ind] = np.hstack((forw_results['mR'], rev_results['mR']))
                 irec_mat[pix_ind] = np.hstack((forw_results['Irec'], rev_results['Irec']))
-                # don't have a better way for now
-                cap_vec[pix_ind] = 0.5 * (forw_results['cValue'] + rev_results['cValue'])
+                cap_vec[pix_ind] = np.hstack((forw_results['cValue'], rev_results['cValue']))
         else:
             x_vec = bayes_results[0]['x']
             for pix_ind, pix_results in enumerate(bayes_results):

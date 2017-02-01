@@ -80,8 +80,8 @@ class GIVTranslator(Translator):
         # technically should change the date, etc.              
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
-        global_parms['data_type'] = 'fastIV'
-        global_parms['translator'] = 'fastIV'
+        global_parms['data_type'] = 'gIV'
+        global_parms['translator'] = 'gIV'
         spm_data.attrs = global_parms
         meas_grp = MicroDataGroup('Measurement_000') 
         spm_data.addChildren([meas_grp])

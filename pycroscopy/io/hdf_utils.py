@@ -803,7 +803,7 @@ def copyAttributes(source, dest, skip_refs=True):
     return dest
 
 
-def checkIfMain(h5_main):
+def checkIfMain(h5_main, verbose=False):
     """
     Checks the input dataset to see if it has all the neccessary
     features to be considered a Main dataset.  This means it is
@@ -816,6 +816,9 @@ def checkIfMain(h5_main):
     Parameters
     ----------
     h5_main : HDF5 Dataset
+        Dataset of interest
+    verbose : Boolean (Optional. Default = False)
+        Whether or not to print statements
 
     Returns
     -------
@@ -826,7 +829,8 @@ def checkIfMain(h5_main):
     success = isinstance(h5_main, h5py.Dataset)
 
     if not success:
-        print('{} is not an HDF5 Dataset object.'.format(h5_main))
+        if verbose:
+            print('{} is not an HDF5 Dataset object.'.format(h5_main))
         return success
 
     h5_name = h5_main.name.split('/')[-1]
@@ -835,7 +839,8 @@ def checkIfMain(h5_main):
     success = np.all([success, len(h5_main.shape) == 2])
 
     if not success:
-        print('{} is not 2D.'.format(h5_name))
+        if verbose:
+            print('{} is not 2D.'.format(h5_name))
         return success
 
     # Check for Datasets
@@ -847,7 +852,8 @@ def checkIfMain(h5_main):
             ds = h5_main.file[h5_main.attrs[name]]
             success = np.all([success, isinstance(ds, h5py.Dataset)])
         except:
-            print('{} not found as an attribute of {}.'.format(name, h5_name))
+            if verbose:
+                print('{} not found as an attribute of {}.'.format(name, h5_name))
             success = False
             break
 
