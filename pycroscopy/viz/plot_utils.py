@@ -152,17 +152,18 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     """
     shift_ind = int(-1 * len(vdc) / 4)
     vdc_shifted = np.roll(vdc, shift_ind)
+    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
 
     num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
     fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
     positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
     for ax, pos in zip(axes.flat, positions):
-        ax.plot(vdc, ds_proj_loops[pos, :], 'k', label='Raw')
+        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
         ax.set_xlabel('V_DC (V)')
         ax.set_ylabel('PR (a.u.)')
-        ax.set_title('Loop ' + str(pos))
+        ax.set_title('Position ' + str(pos))
     ax.legend()
     fig.suptitle(title)
     fig.tight_layout()
