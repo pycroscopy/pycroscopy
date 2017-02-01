@@ -260,9 +260,11 @@ def plot_map(axis, data, stdevs=2, **kwargs):
     """
     data_mean = np.mean(data)
     data_std = np.std(data)
+    origin = kwargs.pop('origin', 'lower')
     im = axis.imshow(data, interpolation='none',
                      vmin=data_mean - stdevs * data_std,
                      vmax=data_mean + stdevs * data_std,
+                     origin=origin,
                      **kwargs)
     axis.set_aspect('auto')
 
