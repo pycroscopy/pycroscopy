@@ -36,7 +36,7 @@ for mod_name in MOCK_MODULES:
 
 import os
 import sphinx_rtd_theme
-sys.path.append(os.path.abspath('../'))
+# sys.path.append(os.path.abspath('../'))
 
 # -- General configuration ------------------------------------------------
 
