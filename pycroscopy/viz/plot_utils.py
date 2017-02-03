@@ -522,7 +522,7 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
-                   title='Component', heading='Map Stack', **kwargs):
+                   title='Component', heading='Map Stack', fig_mult=(4, 4), **kwargs):
     """
     Plots the provided stack of maps
 
@@ -540,6 +540,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         The titles for each of the plots.
         If a single string is provided, the plot titles become ['title 01', title 02', ...].
         if a list of strings (equal to the number of components) are provided, these are used instead.
+    heading : String
+        ###Insert description here### Default 'Map Stack'
+    fig_mult : length 2 array_like of uints
+        Size multipliers for the figure.  Figure size is calculated as (num_rows*`fig_mult[0]`, num_cols*`fig_mult[1]`).
+        Default (4, 4)
 
     Returns:
     ---------
@@ -566,7 +571,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
             title = 'Component'
         title = [title + ' ' + str(x) for x in chosen_pos]
 
-    fig_h, fig_w = (4, 4)
+    fig_h, fig_w = fig_mult
     p_rows = int(np.floor(np.sqrt(num_comps)))
     p_cols = int(np.ceil(num_comps / p_rows))
     if p_rows*p_cols < num_comps:
@@ -577,8 +582,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         cbar_pad='1%',
                         cbar_size='5%',
                         axes_pad=(0.1*fig_w, 0.07*fig_h))
-    # fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
-    # fig202.subplots_adjust(hspace=0.4, wspace=0.4)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 

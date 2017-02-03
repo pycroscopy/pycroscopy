@@ -932,7 +932,7 @@ class ImageWindow(object):
         '''
         for ibatch, batch in enumerate(batch_slices):
             ds_U = h5_U[batch, comp_slice]
-            batch_wins = ds_U[:, None, :]*ds_V['Image_Data'][None, :, :]
+            batch_wins = ds_U[:, None, :]*ds_V[None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch * batch_size + islice
                 if iwin % np.rint(n_wins / 10) == 0:
