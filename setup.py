@@ -34,10 +34,11 @@ setup(
     author_email='pycroscopy@gmail.com',
 
     # I don't remember how to do this correctly!!!. NL
-    install_requires=['numpy_groupies<=0.9.3', 'pyqtgraph>=0.10', 'numpy>=1.11.0',
-                      'h5py>=2.6.0', 'scipy>=0.17.1', 'matplotlib',
+    install_requires=['numpy_groupies<=0.9.3', 'pyqtgraph>=0.10',
+                      'h5py>=2.6.0', 'igor',  'matplotlib',
                       'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
-                      'psutil', 'scikit-image>=0.12.3', 'igor'],
+                      'psutil', 'scikit-image>=0.12.3', 'scipy>=0.17.1',
+                      'numpy>=1.11.0'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',
