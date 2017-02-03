@@ -413,7 +413,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
         # TODO: This is not necessarily correct, especially when the window extends beyond the image
         centered_pos_mat[:, 0] -= pos_mat[atom_ind, 0] - (0.5 * fit_region.shape[0])
         centered_pos_mat[:, 1] -= pos_mat[atom_ind, 1] - (0.5 * fit_region.shape[1])
-
+        axis.hold(True)  # Without this, plots do not show up on the notebooks
         axis.imshow(img_mat, cmap="gray")
         axis.set_title(img_title)
         axis.scatter(centered_pos_mat[1:, 1], centered_pos_mat[1:, 0], color='orange')
