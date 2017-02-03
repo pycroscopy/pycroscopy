@@ -49,7 +49,7 @@ import sphinx_rtd_theme
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-    # 'sphinx.ext.intersphinx',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
@@ -385,6 +385,8 @@ epub_exclude_files = ['search.html']
 # If false, no index is generated.
 #epub_use_index = True
 
-
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {'https://docs.python.org/': None}
+
+#
+numpydoc_show_class_members = False

@@ -1,6 +1,11 @@
 pycroscopy.analysis.utils package
 =================================
 
+.. automodule:: pycroscopy.analysis.utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -37,10 +42,3 @@ pycroscopy.analysis.utils.tree module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.analysis.utils
-    :members:
-    :undoc-members:
-    :show-inheritance:

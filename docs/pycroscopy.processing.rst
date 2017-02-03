@@ -1,6 +1,11 @@
 pycroscopy.processing package
 =============================
 
+.. automodule:: pycroscopy.processing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -108,10 +113,3 @@ pycroscopy.processing.svd_utils module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.processing
-    :members:
-    :undoc-members:
-    :show-inheritance:

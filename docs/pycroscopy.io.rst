@@ -1,6 +1,11 @@
 pycroscopy.io package
 =====================
 
+.. automodule:: pycroscopy.io
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -78,10 +83,3 @@ pycroscopy.io.parse_dm3 module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.io
-    :members:
-    :undoc-members:
-    :show-inheritance:

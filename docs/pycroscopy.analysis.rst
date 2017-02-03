@@ -1,6 +1,11 @@
 pycroscopy.analysis package
 ===========================
 
+.. automodule:: pycroscopy.analysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -61,10 +66,3 @@ pycroscopy.analysis.optimize module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.analysis
-    :members:
-    :undoc-members:
-    :show-inheritance:

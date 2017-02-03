@@ -1,6 +1,11 @@
 pycroscopy.io.translators package
 =================================
 
+.. automodule:: pycroscopy.io.translators
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
 
@@ -141,10 +146,3 @@ pycroscopy.io.translators.utils module
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.io.translators
-    :members:
-    :undoc-members:
-    :show-inheritance:
