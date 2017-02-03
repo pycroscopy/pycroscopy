@@ -1,11 +1,22 @@
 from codecs import open
-from os import path
+import os
+
+on_rtd = os.environ.get('READTHEDOCS') == 'True'
 
 from setuptools import setup, find_packages
 
-here = path.abspath(path.dirname(__file__))
-with open(path.join(here, 'README.rst')) as f:
+here = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
+
+if on_rtd:
+    requirements = ['psutil', 'xlrd>=1.0.0']
+else:
+    requirements =['numpy_groupies<=0.9.3', 'pyqtgraph>=0.10',
+                   'h5py>=2.6.0', 'igor', 'matplotlib',
+                   'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
+                   'psutil', 'scikit-image>=0.12.3', 'scipy>=0.17.1',
+                   'numpy>=1.11.0']
 
 setup(
     name='pycroscopy',
@@ -34,11 +45,7 @@ setup(
     author_email='pycroscopy@gmail.com',
 
     # I don't remember how to do this correctly!!!. NL
-    install_requires=['numpy_groupies<=0.9.3', 'pyqtgraph>=0.10',
-                      'h5py>=2.6.0', 'igor',  'matplotlib',
-                      'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
-                      'psutil', 'scikit-image>=0.12.3', 'scipy>=0.17.1',
-                      'numpy>=1.11.0'],
+    install_requires=requirements,
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',

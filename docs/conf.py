@@ -20,7 +20,7 @@ import sys
 import mock
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
-                'scipy.misc', 'scipy.special', 'PyQt5', 'h5py','mpl_toolkits',
+                'scipy.misc', 'scipy.special', 'PyQt5', 'h5py', 'mpl_toolkits',
                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
                 'scipy.spatial', 'scipy.signal', 'scipy.cluster',
                 'scipy.cluster.hierarchy', 'scipy.spatial.distance',
