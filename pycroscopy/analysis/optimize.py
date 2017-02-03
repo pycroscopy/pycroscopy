@@ -89,7 +89,6 @@ class Optimize(object):
         """
         self.strategy = strategy
         self.options = options
-        processors = processors
         gm = GuessMethods()
         if strategy in gm.methods:
             # func = gm.__getattribute__(strategy)(**options)
