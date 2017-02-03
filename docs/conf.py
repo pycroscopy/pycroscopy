@@ -20,7 +20,7 @@ import sys
 import mock
 
 MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
-                'scipy.misc', 'scipy.special', 'PyQt5', 'h5py',
+                'scipy.misc', 'scipy.special', 'PyQt5', 'h5py','mpl_toolkits',
                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
                 'scipy.spatial', 'scipy.signal', 'scipy.cluster',
                 'scipy.cluster.hierarchy', 'scipy.spatial.distance',
@@ -29,7 +29,7 @@ MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
                 'sklearn.utils.extmath', 'skimage', 'skimage.feature',
                 'skimage.measure', 'skimage.transform', 'matplotlib.patches',
                 'matplotlib.colors', 'numpy_groupies', 'scipy.linalg',
-                'skimage.data', 'skimage.io', 'skimage.util', 'igor',]
+                'skimage.data', 'skimage.io', 'skimage.util', 'igor']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()
 
