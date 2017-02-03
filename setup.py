@@ -33,10 +33,10 @@ setup(
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
 
-    setup_requires=['numpy>=1.11.0'],
+    setup_requires=['numpy>=1.11.0', 'scipy>=0.17.1'],
     # I don't remember how to do this correctly!!!. NL
     install_requires=['numpy_groupies<=0.9.3', 'pyqtgraph>=0.10',
-                      'h5py>=2.6.0', 'scipy>=0.17.1', 'matplotlib',
+                      'h5py>=2.6.0', 'matplotlib',
                       'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
                       'psutil', 'scikit-image>=0.12.3', 'igor'],
     # package_data={'sample':['dataset_1.dat']}
