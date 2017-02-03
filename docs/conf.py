@@ -49,11 +49,11 @@ import sphinx_rtd_theme
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.doctest',
-    'sphinx.ext.intersphinx',
+    # 'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    # 'sphinx.ext.autosummary',
+    'sphinx.ext.autosummary',
     'numpydoc',
     # 'sphinx.ext.githubpages',
 ]
