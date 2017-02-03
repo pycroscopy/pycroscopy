@@ -4,7 +4,7 @@ Created on Mar 1, 2016
 @author: Chris Smith -- cmsith55@utk.edu
 '''
 import numpy as np
-import numpy_groupies as npg
+from numpy_groupies import aggregate_np
 def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None, debug=False, *args, **kwargs):
         '''
         Creates histogram for a single block of pixels
@@ -76,7 +76,7 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
             print N_x_bins,N_y_bins
             
         try:
-            pixel_hist = npg.aggregate_np(group_idx, weighting_vec, func='sum', size = (N_x_bins,N_y_bins), dtype = np.int32)
+            pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size = (N_x_bins,N_y_bins), dtype = np.int32)
         except:
             raise
 
