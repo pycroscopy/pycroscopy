@@ -197,7 +197,7 @@ def fit_atom_pos(single_parm):
                              coef_guess_mat.ravel(),
                              args=(fit_region, s_mat),
                              bounds=(lb_mat.ravel(), ub_mat.ravel()),
-                             jac='3-point', max_nfev=max_function_evals)
+                             jac='2-point', max_nfev=max_function_evals)
         coef_fit_mat = np.reshape(plsq.x, (-1, 4))
 
     if verbose:
@@ -226,15 +226,22 @@ def fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=None):
     """
     parm_dict['verbose'] = False
     all_atom_guesses = parm_dict['atom_pos_guess']
-    parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
     t_start = tm.time()
     num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
-    pool = mp.Pool(processes=num_cores)
-    jobs = pool.imap(fit_atom_pos, parm_list)
-    results = [j for j in jobs]
-    pool.close()
+    if num_cores>1:
+        pool = mp.Pool(processes=num_cores)
+        parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
+        chunk = int(all_atom_guesses.shape[0] / num_cores)
+        jobs = pool.imap(fit_atom_pos, parm_list, chunksize=chunk)
+        results = [j for j in jobs]
+        pool.close()
+    else:
+        parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
+        results = [fit_atom_pos(parm) for parm in parm_list]
+
     tot_time = np.round(tm.time() - t_start)
     print('Took {} sec to find {} atoms with {} cores'.format(tot_time, len(results), num_cores))
+
     return results
 
 

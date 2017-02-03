@@ -4,6 +4,8 @@ Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath
 """
+# TODO: All general plotting functions should support data with 1 or 2 spatial dimensions.
+
 from __future__ import division # int/int = float
 from warnings import warn
 import os
@@ -150,17 +152,18 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     """
     shift_ind = int(-1 * len(vdc) / 4)
     vdc_shifted = np.roll(vdc, shift_ind)
+    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
 
     num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
     fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
     positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
     for ax, pos in zip(axes.flat, positions):
-        ax.plot(vdc, ds_proj_loops[pos, :], 'k', label='Raw')
+        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
         ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
         ax.set_xlabel('V_DC (V)')
         ax.set_ylabel('PR (a.u.)')
-        ax.set_title('Loop ' + str(pos))
+        ax.set_title('Position ' + str(pos))
     ax.legend()
     fig.suptitle(title)
     fig.tight_layout()
@@ -258,9 +261,11 @@ def plot_map(axis, data, stdevs=2, **kwargs):
     """
     data_mean = np.mean(data)
     data_std = np.std(data)
+    origin = kwargs.pop('origin', 'lower')
     im = axis.imshow(data, interpolation='none',
                      vmin=data_mean - stdevs * data_std,
                      vmax=data_mean + stdevs * data_std,
+                     origin=origin,
                      **kwargs)
     axis.set_aspect('auto')
 
@@ -517,7 +522,7 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
-                   title='Component', heading='Map Stack', **kwargs):
+                   title='Component', heading='Map Stack', fig_mult=(4, 4), **kwargs):
     """
     Plots the provided stack of maps
 
@@ -535,6 +540,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         The titles for each of the plots.
         If a single string is provided, the plot titles become ['title 01', title 02', ...].
         if a list of strings (equal to the number of components) are provided, these are used instead.
+    heading : String
+        ###Insert description here### Default 'Map Stack'
+    fig_mult : length 2 array_like of uints
+        Size multipliers for the figure.  Figure size is calculated as (num_rows*`fig_mult[0]`, num_cols*`fig_mult[1]`).
+        Default (4, 4)
 
     Returns:
     ---------
@@ -561,7 +571,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
             title = 'Component'
         title = [title + ' ' + str(x) for x in chosen_pos]
 
-    fig_h, fig_w = (4, 4)
+    fig_h, fig_w = fig_mult
     p_rows = int(np.floor(np.sqrt(num_comps)))
     p_cols = int(np.ceil(num_comps / p_rows))
     if p_rows*p_cols < num_comps:
@@ -572,8 +582,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         cbar_pad='1%',
                         cbar_size='5%',
                         axes_pad=(0.1*fig_w, 0.07*fig_h))
-    # fig202, axes202 = plt.subplots(p_cols, p_rows, figsize=(p_cols * fig_w, p_rows * fig_h))
-    # fig202.subplots_adjust(hspace=0.4, wspace=0.4)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 

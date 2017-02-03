@@ -90,7 +90,7 @@ class ImageTranslator(Translator):
         Normalize Raw Image
         '''
         image -= np.min(image)
-        image = image/np.max(image)
+        image = image/np.float32(np.max(image))
 
         h5_main = self._setup_h5(usize, vsize, image.dtype.type, image_parms)
 

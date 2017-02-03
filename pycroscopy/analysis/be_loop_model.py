@@ -61,7 +61,7 @@ class BELoopModel(Model):
         self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
         self._met_spec_inds = None
         self._num_forcs = 0
-        self._h5_pos_inds = None
+        self._sho_pos_inds = None
         self._current_pos_slice = slice(None)
         self._current_sho_spec_slice = slice(None)
         self._current_met_spec_slice = slice(None)
@@ -252,8 +252,8 @@ class BELoopModel(Model):
             loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
                                                                                                 verbose=True)
 
-        shift_ind = int(-1 * len(self.dc_vec) / 4)  # should NOT be hardcoded like this!
-        vdc_shifted = np.roll(self.dc_vec, shift_ind)
+        shift_ind, vdc_shifted = self.shift_vdc(self.dc_vec)
+
         # vdc_shifted = self.dc_vec
         # loops_2d = loops_2d.T
         loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=0).T
@@ -288,18 +288,13 @@ class BELoopModel(Model):
                  (obj_func['obj_func']))
             return None
 
-        return
-
     def _create_projection_datasets(self):
         # First grab the spectroscopic indices and values and position indices
         self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        self._h5_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
+        self._sho_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
 
         dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').squeeze()
-        # not_dc_inds = np.delete(np.arange(self._sho_spec_vals.shape[0]), dc_ind)
-
-        # is_dc = self._sho_spec_vals.attrs['labels'] == 'DC_Offset'
         not_dc = self._sho_spec_vals.attrs['labels'] != 'DC_Offset'
 
         self._dc_spec_index = dc_ind
@@ -399,8 +394,8 @@ class BELoopModel(Model):
         max_pos = int(max_mem_MB * 1024 ** 2 / (size_per_forc * mem_overhead))
         if verbose:
             print('Can read {} of {} pixels given a {} MB memory limit'.format(max_pos,
-                                                                               self._h5_pos_inds.shape[0], max_mem_MB))
-        self.max_pos = int(min(self._h5_pos_inds.shape[0], max_pos))
+                                                                               self._sho_pos_inds.shape[0], max_mem_MB))
+        self.max_pos = int(min(self._sho_pos_inds.shape[0], max_pos))
         self.sho_spec_inds_per_forc = int(self._sho_spec_inds.shape[1] / self._num_forcs)
         self.metrics_spec_inds_per_forc = int(self._met_spec_inds.shape[1] / self._num_forcs)
 
@@ -866,8 +861,7 @@ class BELoopModel(Model):
         # loop_fit_mat = np.zeros(shape=loop_guess_mat.shape, dtype=loop_guess_mat.dtype)
         loop_fit_results = list(np.arange(num_nodes, dtype=np.uint16))  # temporary placeholder
 
-        shift_ind = int(-1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
-        vdc_shifted = np.roll(vdc_vec, shift_ind)
+        shift_ind, vdc_shifted = BELoopModel.shift_vdc(vdc_vec)
 
         # guess the top (or last) node
         loop_guess_mat[-1] = generate_guess(vdc_vec, cluster_tree.tree.value)
@@ -886,6 +880,17 @@ class BELoopModel(Model):
             guess_parms[pix_inds] = realToCompound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
 
         return guess_parms
+
+    @staticmethod
+    def shift_vdc(vdc_vec):
+        '''
+        Shift the vdc vector
+        :param vdc_vec:
+        :return:
+        '''
+        shift_ind = int(-1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
+        vdc_shifted = np.roll(vdc_vec, shift_ind)
+        return shift_ind, vdc_shifted
 
     def _createFitDataset(self):
         """
