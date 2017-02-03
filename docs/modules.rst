@@ -2,7 +2,7 @@ pycroscopy
 ==========
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    pycroscopy
    setup

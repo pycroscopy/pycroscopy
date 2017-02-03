@@ -15,6 +15,9 @@ Subpackages
 Submodules
 ----------
 
+pycroscopy.versioner module
+---------------------------
+
 .. automodule:: pycroscopy.versioner
     :members:
     :undoc-members:

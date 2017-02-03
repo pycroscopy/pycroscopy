@@ -53,7 +53,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
-    'sphinx.ext.autosummary',
+    # 'sphinx.ext.autosummary',
     'numpydoc',
     # 'sphinx.ext.githubpages',
 ]

@@ -11,6 +11,9 @@ Subpackages
 Submodules
 ----------
 
+pycroscopy.viz.plot_utils module
+--------------------------------
+
 .. automodule:: pycroscopy.viz.plot_utils
     :members:
     :undoc-members:

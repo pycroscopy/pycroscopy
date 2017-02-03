@@ -4,6 +4,9 @@ pycroscopy.tests package
 Submodules
 ----------
 
+pycroscopy.tests.test_123 module
+--------------------------------
+
 .. automodule:: pycroscopy.tests.test_123
     :members:
     :undoc-members:
