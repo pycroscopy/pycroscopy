@@ -432,7 +432,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
 
 
 def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distance_multiplier=1.5,
-                            show_culprit_plot=False):
+                            num_neighbors=6, show_culprit_plot=False):
     """
     Removes incorrect labels for atoms having multiple labels
      
@@ -446,6 +446,8 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
         Image that goes along with the provided coordinates
     distance_multiplier : float (Optional. Default = 1.5)
         (Upto) how many times the PSF width is considered too close to an existing label
+    num_neighbors : unsigned int
+        Number of neighbors for the K Nearest Neighbors classifier
     show_culprit_plot : Boolean (Optional. Default = False)
         Whether or not to show the two intermediate plots
 
@@ -468,12 +470,17 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
     pos_mat2 = np.transpose(pos_mat1)
     d_mat = np.abs(pos_mat2 - pos_mat1)  # matrix of distances between all atoms
 
-    # replace the diagonal by some large number:
+    # replace the diagonal with zeros and then by some large number:
     d_mat = np.tril(d_mat, -1)
     d_mat[d_mat == 0] = 100 * psf_width
 
     # Now find the atoms which are too close to each other:
     culprits = np.vstack(np.where(d_mat <= distance_multiplier * psf_width)).T
+    # the culprits should be arranged as pairs in a N,2 matrix
+
+    if culprits.size == 0:
+        # nothing to remove
+        return atom_labels
 
     if np.unique(culprits).size != culprits.size:
         print('Warning: Three atoms found to be close to each other!')
@@ -491,7 +498,7 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
         axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan');
 
     # Now classify the culprit pairs into the correct family
-    classifier = KNeighborsClassifier(n_neighbors=7)
+    classifier = KNeighborsClassifier(n_neighbors=num_neighbors)
     new_culprit_families = list()
     for culprit_pair in culprits:
         fam_1 = atom_families[culprit_pair[0]]
