@@ -33,9 +33,11 @@ class Model(object):
             indices and values, and position indices and values datasets.
         variables : list(string), Default ['Frequency']
             Lists of attributes that h5_main should possess so that it may be analyzed by Model.
+
         Returns:
         -------
         None
+
         """
         # Checking if dataset is "Main"
         if self._isLegal(h5_main, variables):
@@ -68,6 +70,7 @@ class Model(object):
         Returns
         -------
         None
+
         """
 
         if self._parallel:
@@ -97,10 +100,12 @@ class Model(object):
 
         variables : list(string)
             The dimensions needed to be present in the attributes of h5_main to analyze the data with Model.
+
         Returns:
         -------
         legal : Boolean
             Whether or not this dataset satisfies the necessary conditions for analysis
+
         """
 
         # Check if h5_main is a "Main" dataset
@@ -128,6 +133,7 @@ class Model(object):
 
         Returns:
         --------
+
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -153,6 +159,7 @@ class Model(object):
 
         Returns:
         --------
+
         """
         if self.data is None:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -169,6 +176,7 @@ class Model(object):
         ---------
         is_guess : Boolean
             Flag that differentiates the guess from the fit
+
         """
         if is_guess:
             targ_dset = self.h5_guess
@@ -201,6 +209,7 @@ class Model(object):
         Returns
         -------
         None
+
         """
         warn('Please override the _createGuessDatasets specific to your model')
         self.guess = None # replace with actual h5 dataset
@@ -222,6 +231,7 @@ class Model(object):
         Returns
         -------
         None
+
         """
         warn('Please override the _createFitDatasets specific to your model')
         self.fit = None # replace with actual h5 dataset
@@ -233,7 +243,6 @@ class Model(object):
 
         Parameters
         ----------
-        data
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
@@ -273,8 +282,17 @@ class Model(object):
     def _reformatResults(self, results, strategy='wavelet_peaks'):
         """
         Model specific restructuring / reformatting of the parallel compute results
-        :param results:
-        :return:
+
+        Parameters
+        ----------
+        results :
+        strategy : str
+            Default 'wavelet_peaks'
+
+        Returns
+        -------
+        results
+
         """
         return np.array(results)
 
@@ -292,6 +310,7 @@ class Model(object):
         Returns
         -------
         None
+
         """
         warn('Please override the _createFitDataset specific to your model')
         self.h5_fit = None  # replace with actual h5 dataset
@@ -303,12 +322,13 @@ class Model(object):
         Generates the fit for the given dataset and writes back to file
 
         Parameters
-        ---------
-        None
+        ----------
+        processors : int
 
         Returns
-        ----------
+        -------
         None
+
         """
         if self.h5_guess is None:
             print("You need to guess before fitting\n")
@@ -332,14 +352,16 @@ class Model(object):
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
-            return results
+
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
-            return None
+            results = None
         elif legit_solver:
             warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
                  (obj_func['obj_func']))
-            return None
+            results = None
+
+        return results
 
         # """
         # read first data + guess chunks

@@ -1026,17 +1026,18 @@ class BEPSndfPixel(object):
         -----
         *Typical things that change during BEPS*
         1. BE parameters:
-            a. Center Frequency, Band Width - changes in the BE_bin_w
-            b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly - FFT should show changes
-            c. BE repeats, desired duration - changes in the spectrogram length?
+        a. Center Frequency, Band Width - changes in the BE_bin_w
+        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly - FFT should show changes
+        c. BE repeats, desired duration - changes in the spectrogram length?
         2. VS Parameters:
-            a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
-            b. Offset, Read voltage - Shows up in the DC offset
-            c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
-            d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
-            e. FORC - should all show up in DC / AC amplitude
+        a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
+        b. Offset, Read voltage - Shows up in the DC offset
+        c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
+        d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
+        e. FORC - should all show up in DC / AC amplitude
         3. IO parameters : don't change really
-        4. grid parameters : cannot do anything about this. 
+        4. grid parameters : cannot do anything about this.
+
         """
         disp_on = True        
         
