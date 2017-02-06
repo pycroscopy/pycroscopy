@@ -54,20 +54,17 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     Returns
     -------
     results_dict : Dictionary
-        'x' : 1D float array
-            Voltage vector interpolated with num_samples number of points
+        Dictionary iterms are
+        'x' : 1D float array.  Voltage vector interpolated with num_samples number of points
         'm' : Ask Kody
-        'mR' : 1D float array
-            Bayesian inference of the resistance. This is the one you want
-        'vR' : 2D float array
-            varaiance ? of inferred resistance
-        'Irec' : 1D array or float
-            Reconstructed current without capacitance
+        'mR' : 1D float array.  Bayesian inference of the resistance. This is the one you want
+        'vR' : 2D float array.  varaiance ? of inferred resistance
+        'Irec' : 1D array or float.  Reconstructed current without capacitance
         'Sigma' : Ask Kody
-        'cValue' : float
-            Capacitance value
+        'cValue' : float.  Capacitance value
         'm2R' : Ask Kody
         'SI' : Ask Kody
+
     """
     num_samples = int(num_samples)
     num_x_steps = int(num_x_steps)
