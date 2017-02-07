@@ -398,6 +398,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     fit_region_size = fitting_parms['fit_region_size']
 
     fig_01, axis = plt.subplots(figsize=(8, 8))
+    axis.hold(True)  # Without this, plots do not show up on the notebooks
     axis.imshow(cropped_clean_image, interpolation='none', cmap="gray")
     axis.add_patch(patches.Rectangle((all_atom_guesses[atom_ind, 1] - fit_region_size,
                                       all_atom_guesses[atom_ind, 0] - fit_region_size),
@@ -408,7 +409,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     axis.scatter(coef_guess_mat[1:, 2], coef_guess_mat[1:, 1], color='green')
     fig_01.tight_layout()
 
-    fig_02, axes = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
+    fig_02, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
     for axis, img_mat, coeff_mat, pos_mat, img_title in zip(axes.flat,
                                                             [fit_region, fit_region, gauss_2d_guess, gauss_2d_fit],
                                                             [coef_guess_mat, coef_fit_mat, coef_guess_mat,
