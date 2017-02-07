@@ -1,8 +1,16 @@
 pycroscopy.tests package
 ========================
 
+.. automodule:: pycroscopy.tests
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 ----------
+
+pycroscopy.tests.test_123 module
+--------------------------------
 
 .. automodule:: pycroscopy.tests.test_123
     :members:
@@ -10,10 +18,3 @@ Submodules
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy.tests
-    :members:
-    :undoc-members:
-    :show-inheritance:

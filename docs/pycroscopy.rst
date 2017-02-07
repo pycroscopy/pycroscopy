@@ -1,6 +1,11 @@
 pycroscopy package
 ==================
 
+.. automodule:: pycroscopy
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Subpackages
 -----------
 
@@ -15,16 +20,12 @@ Subpackages
 Submodules
 ----------
 
+pycroscopy.versioner module
+---------------------------
+
 .. automodule:: pycroscopy.versioner
     :members:
     :undoc-members:
     :show-inheritance:
 
 
-Module contents
----------------
-
-.. automodule:: pycroscopy
-    :members:
-    :undoc-members:
-    :show-inheritance:

@@ -333,89 +333,90 @@ class ImageWindow(object):
 
         return windows
 
-    def clean_windows(self, h5_win=None, n_comp=None):
-        """
-        Rebuild the Image from the SVD results on the windows.
-        Optionally, only use components less than n_comp.
-
-        Parameters
-        ----------
-        h5_win : hdf5 Dataset, optional
-                windowed image which SVD was performed on
-                will try to use self.h5_wins if no dataset is provided
-        n_comp : int, optional
-            components above this number will be discarded
-
-        Returns
-        -------
-        clean_wins : HDF5 Dataset
-            Dataset containing the cleaned windows
-        """
-        if h5_win is None:
-            if self.h5_wins is None:
-                warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
-                return
-            h5_win = self.h5_wins
-        
-        print('Cleaning the image by removing components past {}.'.format(n_comp))
-        
-        '''
-        Read the 1st n_comp componets from the SVD results
-        on h5_win
-        '''
-        comp_slice = slice(0,n_comp)
-        win_name = h5_win.name.split('/')[-1]
-        
-        try:
-            svd_name = win_name+'-SVD_000'
-            win_svd = h5_win.parent[svd_name]
-        
-            S = win_svd['S'][comp_slice]
-            U = win_svd['U'][:,comp_slice]
-            V = win_svd['V'][comp_slice,:]
-        
-        except KeyError:
-            warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
-            warn(warnstring)
-            return
-        except:
-            raise
-        
-        '''
-        Creat the new Group to how the cleaned windows
-        '''
-        grp_name = win_name+'-Cleaned_Windows_'
-        clean_grp = MicroDataGroup(grp_name, win_svd.name[1:])     
-        
-        ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
-                               chunking=h5_win.chunks, maxshape=h5_win.shape)
-        for key, val in h5_win.attrs.iteritems():
-            ds_wins.attrs[key] = val
-        
-        clean_grp.addChildren([ds_wins])
-        for key, val in h5_win.parent.attrs.iteritems():
-            clean_grp.attrs[key] = val
-
-        clean_grp.attrs['retained_comps'] = n_comp
-        clean_ref = self.hdf.writeData(clean_grp)
-        new_wins = getH5DsetRefs(['Cleaned_Windows'], clean_ref)[0]
-        
-        '''
-        Generate a cleaned set of windows
-        '''
-        if win_svd.attrs['svd_method'] == 'sklearn-incremental':
-            batch_size = win_svd.attrs['batch_size']
-            V = np.dot(np.diag(S), V)
-            batches = gen_batches(U.shape[0], batch_size)
-            for batch in batches:
-                new_wins[batch, :] = np.dot(U[batch, :], V)
-        else:
-            new_wins[:, :] = np.dot(U, np.dot(np.diag(S), V))
-        del U, S, V
-        
-        self.clean_wins = new_wins
-        
-        return new_wins  
+    # def clean_windows(self, h5_win=None, n_comp=None):
+    #     """
+    #     Rebuild the Image from the SVD results on the windows.
+    #     Optionally, only use components less than n_comp.
+    #
+    #     Parameters
+    #     ----------
+    #     h5_win : hdf5 Dataset, optional
+    #             windowed image which SVD was performed on
+    #             will try to use self.h5_wins if no dataset is provided
+    #     n_comp : int, optional
+    #         components above this number will be discarded
+    #
+    #     Returns
+    #     -------
+    #     clean_wins : HDF5 Dataset
+    #         Dataset containing the cleaned windows
+    #
+    #     """
+    #     if h5_win is None:
+    #         if self.h5_wins is None:
+    #             warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
+    #             return
+    #         h5_win = self.h5_wins
+    #
+    #     print('Cleaning the image by removing components past {}.'.format(n_comp))
+    #
+    #     '''
+    #     Read the 1st n_comp componets from the SVD results
+    #     on h5_win
+    #     '''
+    #     comp_slice = slice(0,n_comp)
+    #     win_name = h5_win.name.split('/')[-1]
+    #
+    #     try:
+    #         svd_name = win_name+'-SVD_000'
+    #         win_svd = h5_win.parent[svd_name]
+    #
+    #         S = win_svd['S'][comp_slice]
+    #         U = win_svd['U'][:,comp_slice]
+    #         V = win_svd['V'][comp_slice,:]
+    #
+    #     except KeyError:
+    #         warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
+    #         warn(warnstring)
+    #         return
+    #     except:
+    #         raise
+    #
+    #     '''
+    #     Creat the new Group to how the cleaned windows
+    #     '''
+    #     grp_name = win_name+'-Cleaned_Windows_'
+    #     clean_grp = MicroDataGroup(grp_name, win_svd.name[1:])
+    #
+    #     ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
+    #                            chunking=h5_win.chunks, maxshape=h5_win.shape)
+    #     for key, val in h5_win.attrs.iteritems():
+    #         ds_wins.attrs[key] = val
+    #
+    #     clean_grp.addChildren([ds_wins])
+    #     for key, val in h5_win.parent.attrs.iteritems():
+    #         clean_grp.attrs[key] = val
+    #
+    #     clean_grp.attrs['retained_comps'] = n_comp
+    #     clean_ref = self.hdf.writeData(clean_grp)
+    #     new_wins = getH5DsetRefs(['Cleaned_Windows'], clean_ref)[0]
+    #
+    #     '''
+    #     Generate a cleaned set of windows
+    #     '''
+    #     if win_svd.attrs['svd_method'] == 'sklearn-incremental':
+    #         batch_size = win_svd.attrs['batch_size']
+    #         V = np.dot(np.diag(S), V)
+    #         batches = gen_batches(U.shape[0], batch_size)
+    #         for batch in batches:
+    #             new_wins[batch, :] = np.dot(U[batch, :], V)
+    #     else:
+    #         new_wins[:, :] = np.dot(U, np.dot(np.diag(S), V))
+    #     del U, S, V
+    #
+    #     self.clean_wins = new_wins
+    #
+    #     return new_wins
         
 
     def build_clean_image(self, h5_win=None):
@@ -521,11 +522,11 @@ class ImageWindow(object):
             length 2 iterable of integers : Integers define start and stop of component slice to retain
             other iterable of integers or slice : Selection of component indices to retain
 
-
         Returns
         -------
         clean_wins : HDF5 Dataset
             the cleaned windows
+
         """
 
         if h5_win is None:
@@ -680,6 +681,7 @@ class ImageWindow(object):
         -------
         clean_wins : HDF5 Dataset
             the cleaned windows
+
         """
 
         if h5_win is None:
@@ -848,6 +850,7 @@ class ImageWindow(object):
         -------
         clean_wins : HDF5 Dataset
             the cleaned windows
+
         """
 
         if h5_win is None:
@@ -1013,6 +1016,7 @@ class ImageWindow(object):
         -------
         clean_image : Axis_Image
             object holding the plot of the cleaned image
+
         """
         if h5_clean is None:
             if self.h5_clean is None:
@@ -1081,6 +1085,7 @@ class ImageWindow(object):
                 Optimal window size in pixels
             psf_width : int
                 Estimate atom spacing in pixels
+
         """
         h5_main = self.h5_raw
 
@@ -1269,6 +1274,7 @@ class ImageWindow(object):
         Returns
         -------
             None
+
         """
         
         fig = plt.figure(figsize=[8, 8], tight_layout=True)
@@ -1318,6 +1324,7 @@ class ImageWindow(object):
         -------
         comp_slice : slice or numpy array of uints
             Slice or array specifying which components should be kept
+
         """
 
         comp_slice = slice(None)
@@ -1365,6 +1372,7 @@ def radially_average_correlation(data_mat, num_r_bin):
         Minimum value of the correlation as a function of feature size
     a_rad_std_vec : 1D real numpy array
         Standard deviation of the correlation as a function of feature size
+
     """
     x_size = data_mat.shape[0]
     y_size = data_mat.shape[1]
