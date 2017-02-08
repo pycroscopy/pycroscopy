@@ -281,6 +281,8 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     except:
         raise
 
+    func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_V)
+
     '''
     Calculate the size of a single batch that will fit in the available memory
     '''
@@ -302,10 +304,12 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     '''
     Loop over all batches.
     '''
-    ds_V = np.dot(np.diag(h5_S[comp_slice]), h5_V[comp_slice, :])
-    rebuild = np.zeros_like(h5_main)
+    ds_V = np.dot(np.diag(h5_S[comp_slice]), func(h5_V[comp_slice, :]))
+    rebuild = np.zeros((h5_main.shape[0], ds_V.shape[1]))
     for ibatch, batch in enumerate(batch_slices):
         rebuild[batch, :] += np.dot(h5_U[batch, comp_slice], ds_V)
+
+    rebuild = transformToTargetType(rebuild, h5_V.dtype)
 
     '''
     Create the Group and dataset to hold the rebuild data
