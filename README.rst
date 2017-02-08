@@ -1,7 +1,8 @@
 pycroscopy
 ==========
 
-See <https://pycroscopy.github.io/pycroscopy/> for more info.
+See our homepage <https://pycroscopy.github.io/pycroscopy/> for more info.
+Our api documentation can be found at <http://pycroscopy.readthedocs.io/>.
 
 0. Description
 --------------
