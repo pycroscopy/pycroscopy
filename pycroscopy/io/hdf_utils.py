@@ -750,7 +750,21 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
         Newly created dataset
     """
     h5_group = source_dset.parent
-    h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype)
+    try:
+        # Check if the dataset already exists
+        h5_new_dset = h5_group[dset_name]
+        # Make sure it has the correct shape and dtype
+        if any((source_dset.shape!=h5_new_dset.shape,source_dset.dtype!=h5_new_dset.dtype)):
+            del h5_new_dset, h5_group[dset_name]
+            h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
+                                                  compression=source_dset.compression, chunking=source_dset.chunks)
+
+    except ValueError:
+        h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
+                                              compression=source_dset.compression, chunking=source_dset.chunks)
+
+    except:
+        raise
     # This should link the ancillary datasets correctly
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
