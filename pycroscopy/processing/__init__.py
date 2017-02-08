@@ -3,7 +3,7 @@ from . import fft
 from . import gmode_utils
 from . import proc_utils
 from . import svd_utils
-from .svd_utils import doSVD
+from .svd_utils import doSVD, rebuild_svd
 from . import decomposition
 from .decomposition import Decomposition
 from . import cluster
@@ -32,4 +32,4 @@ else:
     geoTransformer = geoTransformerParallel
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
-           'giv_utils']
+           'giv_utils', 'rebuild_svd']
