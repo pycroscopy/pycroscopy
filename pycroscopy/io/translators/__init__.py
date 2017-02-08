@@ -27,8 +27,9 @@ from .oneview import OneViewTranslator
 from .igor_ibw import IgorIBWTranslator
 from . import image
 from .image import ImageTranslator
+from .numpy_translator import NumpyTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
-           'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
+           'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator']
