@@ -6,7 +6,7 @@ Created on Thu May 05 13:29:12 2016
 """
 # TODO: All general plotting functions should support data with 1 or 2 spatial dimensions.
 
-from __future__ import division # int/int = float
+from __future__ import division  # int/int = float
 from warnings import warn
 import os
 import h5py
@@ -17,6 +17,7 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import numpy as np
 from ..analysis.utils.be_loop import loop_fit_function
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
+
 
 def set_tick_font_size(axes, font_size):
     """
@@ -50,6 +51,7 @@ def set_tick_font_size(axes, font_size):
     else:
         __set_axis_tick(axes)
 
+
 def cmap_jet_white_center():
     """
     Generates the jet colormap with a white center
@@ -80,22 +82,89 @@ def cmap_jet_white_center():
              }
     return LinearSegmentedColormap('white_jet', cdict)
 
+
+def cmap_from_rgba(name, interp_vals, normalization_val):
+    """
+    Generates a colormap given a matlab-style interpolation table
+
+    Parameters
+    ----------
+    name : String / Unicode
+        Name of the desired colormap
+    interp_vals : List of tuples
+        Interpolation table that describes the desired color map. Each entry in the table should be described as:
+        (position in the colorbar, (red, green, blue, alpha))
+        The position in the color bar, red, green, blue, and alpha vary from 0 to the normalization value
+    normalization_val : number
+        The common maximum value for the position in the color bar, red, green, blue, and alpha
+
+    Returns
+    -------
+    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+        desired color map
+    """
+
+    normalization_val = np.round(1.0 * normalization_val)
+
+    cdict = {'red': tuple([(dist / normalization_val, colors[0] / normalization_val, colors[0] / normalization_val)
+                           for (dist, colors) in interp_vals][::-1]),
+             'green': tuple([(dist / normalization_val, colors[1] / normalization_val, colors[1] / normalization_val)
+                             for (dist, colors) in interp_vals][::-1]),
+             'blue': tuple([(dist / normalization_val, colors[2] / normalization_val, colors[2] / normalization_val)
+                            for (dist, colors) in interp_vals][::-1]),
+             'alpha': tuple([(dist / normalization_val, colors[3] / normalization_val, colors[3] / normalization_val)
+                            for (dist, colors) in interp_vals][::-1])}
+
+    return LinearSegmentedColormap(name, cdict)
+
+
+def make_linear_alpha_cmap(name, solid_color, normalization_val, min_alpha=0, max_alpha=1):
+    """
+    Generates a transparent to opaque color map based on a single solid color
+
+    Parameters
+    ----------
+    name : String / Unicode
+        Name of the desired colormap
+    solid_color : List of numbers
+        red, green, blue, and alpha values for a specific color
+    normalization_val : number
+        The common maximum value for the red, green, blue, and alpha values. This is 1 in matplotlib
+    min_alpha : float (optional. Default = 0 : ie- transparent)
+        Lowest alpha value for the bottom of the color bar
+    max_alpha : float (optional. Default = 1 : ie- opaque)
+        Highest alpha value for the top of the color bar
+
+    Returns
+    -------
+    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+        transparent to opaque color map based on the provided color
+    """
+    solid_color = np.array(solid_color) / normalization_val * 1.0
+    interp_table = [(1.0, (solid_color[0], solid_color[1], solid_color[2], max_alpha)),
+                    (0, (solid_color[0], solid_color[1], solid_color[2], min_alpha))]
+    return cmap_from_rgba(name, interp_table, 1)
+
+
 def cmap_hot_desaturated():
-    hot_desaturated = [(1, (255, 76, 76, 255)),
-                       (0.857, (107, 0, 0, 255)),
-                       (0.714, (255, 96, 0, 255)),
-                       (0.571, (255, 255, 0, 255)),
-                       (0.429, (0, 127, 0, 255)),
-                       (0.285, (0, 255, 255, 255)),
-                       (0.143, (0, 0, 91, 255)),
+    """
+    Returns a desaturated color map based on the hot colormap
+
+    Returns
+    -------
+    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+        Desaturated version of the hot color map
+    """
+    hot_desaturated = [(255.0, (255, 76, 76, 255)),
+                       (218.5, (107, 0, 0, 255)),
+                       (182.1, (255, 96, 0, 255)),
+                       (145.6, (255, 255, 0, 255)),
+                       (109.4, (0, 127, 0, 255)),
+                       (72.675, (0, 255, 255, 255)),
+                       (36.5, (0, 0, 91, 255)),
                        (0, (71, 71, 219, 255))]
 
-    cdict = {'red': tuple([(dist, colors[0]/255.0, colors[0]/255.0) for (dist, colors) in hot_desaturated][::-1]),
-             'green': tuple([(dist, colors[1]/255.0, colors[1]/255.0) for (dist, colors) in hot_desaturated][::-1]),
-             'blue': tuple([(dist, colors[2]/255.0, colors[2]/255.0) for (dist, colors) in hot_desaturated][::-1])}
-
-    return LinearSegmentedColormap('hot_desaturated', cdict)
-
+    return cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
 
 
 def discrete_cmap(num_bins, base_cmap=plt.cm.jet):

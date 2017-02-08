@@ -9,6 +9,10 @@ from __future__ import division
 
 import abc
 from ..io_utils import getAvailableMem
+from ..microdata import MicroDataGroup, MicroDataset
+from .utils import generate_dummy_main_parms
+from ..hdf_utils import getH5DsetRefs, linkRefs
+from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 
 
 class Translator(object):
@@ -56,3 +60,53 @@ class Translator(object):
         Abstract method
         Reads the data into the hdf5 datasets.
         """
+
+    @staticmethod
+    def simple_write(h5_path, data_name, ds_main, aux_dset_list, parm_dict=None):
+        """
+        Writes the provided datasets and parameters to an h5 file
+        
+        Parmeters
+        ---------
+        h5_path : String / Unicode
+            Absolute path of the h5 file to be written
+        data_name : String / Unicode
+            Name of the data type
+        ds_main : MicroDataset object
+            Main dataset
+        aux_dset_list : list of MicroDataset objects
+            auxillary datasets to be written to the file
+        parm_dict : dictionary (Optional)
+            Dictionary of parameters
+
+        Returns
+        -------
+        h5_path : String / unicode
+            Absolute path of the written h5 file
+        """
+        if parm_dict is None:
+            parm_dict = {}
+        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp.addChildren([ds_main])
+        chan_grp.addChildren(aux_dset_list)
+        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp.attrs = parm_dict
+        meas_grp.addChildren([chan_grp])
+        spm_data = MicroDataGroup('')
+        global_parms = generate_dummy_main_parms()
+        global_parms['data_type'] = data_name
+        global_parms['translator'] = data_name
+        spm_data.attrs = global_parms
+        spm_data.addChildren([meas_grp])
+
+        aux_dset_names = list()
+        for dset in aux_dset_list:
+            if isinstance(dset, MicroDataset):
+                aux_dset_names.append(dset.name)
+
+        hdf = ioHDF5(h5_path)
+        h5_refs = hdf.writeData(spm_data, print_log=False)
+        h5_raw = getH5DsetRefs([ds_main.name], h5_refs)[0]
+        linkRefs(h5_raw, getH5DsetRefs(aux_dset_names, h5_refs))
+        hdf.close()
+        return h5_path
