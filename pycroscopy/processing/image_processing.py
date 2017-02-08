@@ -9,13 +9,14 @@ from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import leastsq
+from scipy.signal import blackman
 from sklearn.utils import gen_batches
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
-from scipy.signal import blackman
+from .svd_utils import _get_component_slice
 
 windata32 = np.dtype([('Image Data', np.float32)])
 absfft32 = np.dtype([('FFT Magnitude', np.float32)])
@@ -540,7 +541,7 @@ class ImageWindow(object):
 
         print('Cleaning the image by removing unwanted components.')
 
-        comp_slice = self.__get_component_slice(components)
+        comp_slice = _get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results
@@ -695,7 +696,7 @@ class ImageWindow(object):
 
         print('Cleaning the image by removing unwanted components.')
 
-        comp_slice = self.__get_component_slice(components)
+        comp_slice = _get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results
@@ -863,7 +864,7 @@ class ImageWindow(object):
             return
 
         print('Cleaning the image by removing unwanted components.')
-        comp_slice = self.__get_component_slice(components)
+        comp_slice = _get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results
@@ -1307,46 +1308,46 @@ class ImageWindow(object):
         plt.close(fig)
 
 
-    @staticmethod
-    def __get_component_slice(components):
-        """
-        Check the components object to determine how to use it to slice the dataset
-
-        Parameters
-        ----------
-        components : {int, iterable of ints, slice, or None}
-            Input Options
-            integer: Components less than the input will be kept
-            length 2 iterable of integers: Integers define start and stop of component slice to retain
-            other iterable of integers or slice: Selection of component indices to retain
-            None: All components will be used
-        Returns
-        -------
-        comp_slice : slice or numpy array of uints
-            Slice or array specifying which components should be kept
-
-        """
-
-        comp_slice = slice(None)
-
-        if isinstance(components, int):
-            # Component is integer
-            comp_slice = slice(0, components)
-        elif hasattr(components, '__iter__') and not isinstance(components, dict):
-            # Component is array, list, or tuple
-            if len(components) == 2:
-                # If only 2 numbers are given, use them as the start and stop of a slice
-                comp_slice = slice(int(components[0]), int(components[1]))
-            else:
-                #Convert components to an unsigned integer array
-                comp_slice = np.uint(np.round(components)).tolist()
-        elif isinstance(components, slice):
-            # Components is already a slice
-            comp_slice = components
-        elif components is not None:
-            raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
-
-        return comp_slice
+    # @staticmethod
+    # def __get_component_slice(components):
+    #     """
+    #     Check the components object to determine how to use it to slice the dataset
+    #
+    #     Parameters
+    #     ----------
+    #     components : {int, iterable of ints, slice, or None}
+    #         Input Options
+    #         integer: Components less than the input will be kept
+    #         length 2 iterable of integers: Integers define start and stop of component slice to retain
+    #         other iterable of integers or slice: Selection of component indices to retain
+    #         None: All components will be used
+    #     Returns
+    #     -------
+    #     comp_slice : slice or numpy array of uints
+    #         Slice or array specifying which components should be kept
+    #
+    #     """
+    #
+    #     comp_slice = slice(None)
+    #
+    #     if isinstance(components, int):
+    #         # Component is integer
+    #         comp_slice = slice(0, components)
+    #     elif hasattr(components, '__iter__') and not isinstance(components, dict):
+    #         # Component is array, list, or tuple
+    #         if len(components) == 2:
+    #             # If only 2 numbers are given, use them as the start and stop of a slice
+    #             comp_slice = slice(int(components[0]), int(components[1]))
+    #         else:
+    #             #Convert components to an unsigned integer array
+    #             comp_slice = np.uint(np.round(components)).tolist()
+    #     elif isinstance(components, slice):
+    #         # Components is already a slice
+    #         comp_slice = components
+    #     elif components is not None:
+    #         raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
+    #
+    #     return comp_slice
 
 
 def radially_average_correlation(data_mat, num_r_bin):
