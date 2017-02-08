@@ -11,6 +11,7 @@ import itertools as itt
 import multiprocessing as mp
 import time as tm
 from _warnings import warn
+from sklearn.neighbors import KNeighborsClassifier
 
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -397,6 +398,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     fit_region_size = fitting_parms['fit_region_size']
 
     fig_01, axis = plt.subplots(figsize=(8, 8))
+    axis.hold(True)  # Without this, plots do not show up on the notebooks
     axis.imshow(cropped_clean_image, interpolation='none', cmap="gray")
     axis.add_patch(patches.Rectangle((all_atom_guesses[atom_ind, 1] - fit_region_size,
                                       all_atom_guesses[atom_ind, 0] - fit_region_size),
@@ -407,7 +409,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     axis.scatter(coef_guess_mat[1:, 2], coef_guess_mat[1:, 1], color='green')
     fig_01.tight_layout()
 
-    fig_02, axes = plt.subplots(ncols=2, nrows=2, figsize=(8, 8))
+    fig_02, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
     for axis, img_mat, coeff_mat, pos_mat, img_title in zip(axes.flat,
                                                             [fit_region, fit_region, gauss_2d_guess, gauss_2d_fit],
                                                             [coef_guess_mat, coef_fit_mat, coef_guess_mat,
@@ -420,7 +422,7 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
         # TODO: This is not necessarily correct, especially when the window extends beyond the image
         centered_pos_mat[:, 0] -= pos_mat[atom_ind, 0] - (0.5 * fit_region.shape[0])
         centered_pos_mat[:, 1] -= pos_mat[atom_ind, 1] - (0.5 * fit_region.shape[1])
-
+        axis.hold(True)  # Without this, plots do not show up on the notebooks
         axis.imshow(img_mat, cmap="gray")
         axis.set_title(img_title)
         axis.scatter(centered_pos_mat[1:, 1], centered_pos_mat[1:, 0], color='orange')
@@ -428,3 +430,141 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     fig_02.tight_layout()
 
     return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq, fig_01, fig_02
+
+
+def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distance_multiplier=1.5,
+                            num_neighbors=6, show_culprit_plot=False):
+    """
+    Removes incorrect labels for atoms having multiple labels
+     
+    Parameters
+    ----------
+    atom_labels : list of 2D numpy arrays
+        List of coordinates (row, col) for the different atom families
+    psf_width : float
+        PSF width
+    double_cropped_image : 2D numpy array
+        Image that goes along with the provided coordinates
+    distance_multiplier : float (Optional. Default = 1.5)
+        (Upto) how many times the PSF width is considered too close to an existing label
+    num_neighbors : unsigned int
+        Number of neighbors for the K Nearest Neighbors classifier
+    show_culprit_plot : Boolean (Optional. Default = False)
+        Whether or not to show the two intermediate plots
+
+    Returns
+    -------
+    new_atom_labels : list of 2D numpy arrays
+        List of coordinates (row, col) for the different atom families with duplicates removed
+    """
+    # In certain cases, the same atom is identified by two or more different classes:
+    all_atom_pos = np.vstack(atom_labels)
+    atom_families = list()
+    for family_ind, family in enumerate(atom_labels):
+        atom_families.append(np.ones(shape=family.shape[0], dtype=np.uint32) * family_ind)
+    atom_families = np.hstack(atom_families)
+
+    # build distance matrix
+    pos_vec = all_atom_pos[:, 0] + 1j * all_atom_pos[:, 1]
+
+    pos_mat1 = np.tile(np.transpose(np.atleast_2d(pos_vec)), [1, all_atom_pos.shape[0]])
+    pos_mat2 = np.transpose(pos_mat1)
+    d_mat = np.abs(pos_mat2 - pos_mat1)  # matrix of distances between all atoms
+
+    # replace the diagonal with zeros and then by some large number:
+    d_mat = np.tril(d_mat, -1)
+    d_mat[d_mat == 0] = 100 * psf_width
+
+    # Now find the atoms which are too close to each other:
+    culprits = np.vstack(np.where(d_mat <= distance_multiplier * psf_width)).T
+    # the culprits should be arranged as pairs in a N,2 matrix
+
+    if culprits.size == 0:
+        # nothing to remove
+        return atom_labels
+
+    if np.unique(culprits).size != culprits.size:
+        print('Warning: Three atoms found to be close to each other!')
+
+    good_atom_inds = np.ones(all_atom_pos.shape[0], dtype=bool)
+    good_atom_inds[culprits.flat] = False
+
+    # overlay atom pair, positions on original image
+    if show_culprit_plot:
+        fig, axis = plt.subplots(figsize=(14, 14))
+        axis.hold(True)
+        axis.imshow(double_cropped_image, interpolation='none', cmap="gray")
+        axis.scatter(all_atom_pos[culprits[:, 0], 1], all_atom_pos[culprits[:, 0], 0], color='yellow')
+        axis.scatter(all_atom_pos[culprits[:, 1], 1], all_atom_pos[culprits[:, 1], 0], color='red')
+        axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan');
+
+    # Now classify the culprit pairs into the correct family
+    classifier = KNeighborsClassifier(n_neighbors=num_neighbors)
+    new_culprit_families = list()
+    for culprit_pair in culprits:
+        fam_1 = atom_families[culprit_pair[0]]
+        fam_2 = atom_families[culprit_pair[1]]
+        good_fam_1_atoms = np.logical_and(good_atom_inds, atom_families == fam_1)
+        good_fam_2_atoms = np.logical_and(good_atom_inds, atom_families == fam_2)
+        good_atom_2_fams = np.logical_or(good_fam_1_atoms, good_fam_2_atoms)
+        classifier.fit(all_atom_pos[good_atom_2_fams], atom_families[good_atom_2_fams])
+        answers = classifier.predict(all_atom_pos[culprit_pair])
+        final_family = np.unique(answers)
+        if final_family.size > 1:
+            print('Classifier unsucessful:', culprit_pair, final_family)
+        new_culprit_families.append(final_family[0])
+        # print 'Originally classified as: ', fam_1, ', ', fam_2, ', Classified later as:', new_culprit_families[-1]
+
+    # Figure out which of the culprits to keep - the one closer to the center of the atom center - higher amplitude
+    # For some reason this is not working as expected
+    neighbor_size = 1
+    culprits_to_keep = list()
+    culprits_to_discard = list()
+    for culprit_pair in culprits:
+        amplitude_pair = list()
+        # print culprit_pair
+        for atom_ind in culprit_pair:
+            row_ind = int(np.round(all_atom_pos[atom_ind, 0]))
+            col_ind = int(np.round(all_atom_pos[atom_ind, 1]))
+            img_section = double_cropped_image[max(0, row_ind - neighbor_size):
+            min(double_cropped_image.shape[0], row_ind + neighbor_size),
+                          max(0, col_ind - neighbor_size):
+                          min(double_cropped_image.shape[1], col_ind + neighbor_size)]
+            amplitude_pair.append(np.max(img_section))
+        # print amplitude_pair
+        if amplitude_pair[0] > amplitude_pair[1]:
+            culprits_to_keep.append(culprit_pair[0])
+            culprits_to_discard.append(culprit_pair[1])
+        else:
+            culprits_to_keep.append(culprit_pair[1])
+            culprits_to_discard.append(culprit_pair[0])
+
+    if show_culprit_plot:
+        fig, axis = plt.subplots(figsize=(14, 14))
+        axis.hold(True)
+        col_map = plt.cm.jet
+        axis.imshow(double_cropped_image, interpolation='none', cmap="gray")
+        axis.scatter(all_atom_pos[culprits.flat, 1], all_atom_pos[culprits.flat, 0], color='yellow')
+        axis.scatter(all_atom_pos[culprits_to_discard, 1], all_atom_pos[culprits_to_discard, 0], color='red')
+        axis.scatter(all_atom_pos[culprits_to_keep, 1], all_atom_pos[culprits_to_keep, 0], color='cyan')
+
+    # Update the correct family from the classifier
+    new_atom_families = np.copy(atom_families)
+    for culprit_pair, new_family in zip(culprits, new_culprit_families):
+        new_atom_families[culprit_pair] = new_family  # <- This is fine
+
+    # make a list of atoms without the bad culprits
+    new_good_atoms = np.ones(all_atom_pos.shape[0], dtype=bool)
+    new_good_atoms[culprits_to_discard] = False  # <----- problem here
+    # new_good_atoms[culprits_to_keep] = True
+
+    # make cropped versions of the positions and labels using this mask:
+    new_atom_pos = all_atom_pos[new_good_atoms]
+    new_atom_families = new_atom_families[new_good_atoms]
+
+    # Now reconstruct the list of arrays we started with:
+    new_atom_labels = list()
+    for atom_ind in range(len(all_atom_pos)):
+        new_atom_labels.append(new_atom_pos[new_atom_families == atom_ind])
+
+    return new_atom_labels
