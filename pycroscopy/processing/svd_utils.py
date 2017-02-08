@@ -16,7 +16,6 @@ from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, cr
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType, getAvailableMem
 from ..io.microdata import MicroDataset, MicroDataGroup
-from memory_profiler import profile
 
 def doSVD(h5_main, num_comps=None):
     """
@@ -213,7 +212,6 @@ def simplifiedKPCA(kpca, source_data):
     scree = kpca.lambdas_
     return eigenvalues, scree, eigenvectors
 
-@profile
 def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     """
     Rebuild the Image from the SVD results on the windows
@@ -245,9 +243,6 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
 
     """
 
-    '''
-
-    '''
     hdf = ioHDF5(h5_main.file)
     comp_slice = _get_component_slice(components)
     dset_name = h5_main.name.split('/')[-1]
