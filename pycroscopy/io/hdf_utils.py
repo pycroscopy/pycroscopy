@@ -726,7 +726,7 @@ def get_sort_order(ds_spec):
     return change_sort
 
 
-def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict(), skip_refs=False):
+def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_refs=False):
     """
     Creates an empty dataset in the h5 file based in the same group as the provided dataset
 
@@ -738,7 +738,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict(), skip_re
         Data type of the fit / guess datasets
     dset_name : String / Unicode
         Name of the dataset
-    ds_attrs : dictionary (Optional)
+    new_attrs : dictionary (Optional)
         Any new attributes that need to be written to the dataset
     skip_refs : boolean, optional
         Should ObjectReferences and RegionReferences be skipped when copying attributes from the
@@ -750,10 +750,24 @@ def create_empty_dataset(source_dset, dtype, dset_name, ds_attrs=dict(), skip_re
         Newly created dataset
     """
     h5_group = source_dset.parent
-    h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype)
+    try:
+        # Check if the dataset already exists
+        h5_new_dset = h5_group[dset_name]
+        # Make sure it has the correct shape and dtype
+        if any((source_dset.shape!=h5_new_dset.shape,source_dset.dtype!=h5_new_dset.dtype)):
+            del h5_new_dset, h5_group[dset_name]
+            h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
+                                                  compression=source_dset.compression, chunking=source_dset.chunks)
+
+    except ValueError:
+        h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
+                                              compression=source_dset.compression, chunking=source_dset.chunks)
+
+    except:
+        raise
     # This should link the ancillary datasets correctly
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
-    h5_new_dset.attrs.update(ds_attrs)
+    h5_new_dset.attrs.update(new_attrs)
 
     return h5_new_dset
 
