@@ -306,6 +306,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
 
     rebuild = transformToTargetType(rebuild, h5_V.dtype)
 
+    print('Completed reconstruction of data from SVD results.  Writing to file.')
     '''
     Create the Group and dataset to hold the rebuild data
     '''
@@ -327,6 +328,8 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     copyAttributes(h5_main, h5_rebuilt, skip_refs=False)
 
     hdf.flush()
+
+    print('Done writing reconstructed data to file.')
 
     return h5_rebuilt
 
