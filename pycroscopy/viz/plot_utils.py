@@ -1239,7 +1239,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     basename, _ = os.path.splitext(basename)
 
     sho_grp = h5_main.parent
-    chan_grp = sho_grp.parent
+
+    chan_grp = h5_file['/'.join(sho_grp.name[1:].split('/')[:2])]
 
     grp_name = '_'.join(chan_grp.name[1:].split('/'))
     grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
