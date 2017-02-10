@@ -48,7 +48,7 @@ class Model(object):
             warn('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
             return
         # Checking if parallel processing will be used
-        self._parallel=parallel
+        self._parallel = parallel
 
         # Determining the max size of the data that can be put into memory
         self._setMemoryAndCPUs()

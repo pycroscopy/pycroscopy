@@ -1072,7 +1072,7 @@ def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
 
 ###############################################################################
 
-def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None):
+def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=None, **kwargs):
     """
     Plots the position averaged spectrogram
 
@@ -1084,6 +1084,8 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None):
         BE frequency that serves as the X axis of the plot
     title : String
         Plot group name
+    cmap : matplotlib.colors.LinearSegmentedColormap object
+        color map. Default = plt.cm.jet
     figure_path : String / Unicode
         Absolute path of the file to write the figure to
 
@@ -1098,18 +1100,24 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None):
         warn('plot_2d_spectrogram: Incompatible data sizes!!!!')
         print('2D:', mean_spectrogram.shape, freq.shape)
         return
+
+    """cmap = kwargs.get('cmap')
+    kwargs.pop('cmap')"""
+    if cmap is None:  # unpack from kwargs instead
+        col_map = plt.cm.jet  # overriding default
+
     freq *= 1E-3  # to kHz
     fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     # print mean_spectrogram.shape
     # print freq.shape
-    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0])
+    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest', cmap=col_map,
+                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
     ax[0].set_title('Amplitude')
     # ax[0].set_xticks(freq)
     # ax[0].set_ylabel('UDVS Step')
     ax[0].axis('tight')
-    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0])
+    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest', cmap=col_map,
+                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
     ax[1].set_title('Phase')
     ax[1].set_xlabel('Frequency (kHz)')
     # ax[0].set_ylabel('UDVS Step')

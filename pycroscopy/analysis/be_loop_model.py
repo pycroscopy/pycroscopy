@@ -137,26 +137,29 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-    def doGuess(self, processors=4, max_mem=None):
+    def doGuess(self, max_mem=None, processors=None, verbose=False):
         """
 
         Parameters
         ----------
         processors : uint, optional
+            Number of processors to use for computing. Currently this is a serial operation
         max_mem : uint, optional
-        strategy : str, optional
-        options :
+            Memory in MB to use for computation
+        verbose : bool, optional
+            Whether or not to print debug statements
 
         Returns
         -------
-
+        h5_guess : h5py.Dataset object
+            h5py dataset containing the guess parameters
         """
 
         # Before doing the Guess, we must first project the loops
         self._create_projection_datasets()
         if max_mem is None:
             max_mem = self._maxDataChunk
-        self._get_sho_chunk_sizes(max_mem, verbose=True)
+        self._get_sho_chunk_sizes(max_mem, verbose=verbose)
         self._createGuessDatasets()
 
         '''
