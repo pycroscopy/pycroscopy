@@ -17,6 +17,17 @@ from scipy.optimize import leastsq
 from scipy.spatial import ConvexHull
 from scipy.special import erf, erfinv
 
+switching32 = np.dtype([('V+', np.float32),
+                        ('V-', np.float32),
+                        ('Imprint', np.float32),
+                        ('R+', np.float32),
+                        ('R-', np.float32),
+                        ('Switchable Polarization', np.float32),
+                        ('Work of Switching', np.float32),
+                        ('Nucleation Bias 1', np.float32),
+                        ('Nucleation Bias 2', np.float32)])
+
+
 ###############################################################################
 
 
@@ -452,6 +463,52 @@ def get_switching_coefs(loop_centroid, loop_coef_vec):
     return switching_labels_dict
 
 ##############################################################################
+
+
+def calc_switching_coef_vec(loop_coef_vec, nuc_threshold):
+    """
+    Calculates the physical loop parameters from the array of loop parameters.
+
+    Parameters
+    ----------
+    loop_coef_vec : numpy.ndarray
+        Array of loop coeffiecients
+    nuc_threshold : float
+        Nucleation threshold
+
+    Returns
+    -------
+    switching_coef_vec : numpy.ndarray
+        Array of loop parameters
+    """
+    switching_coef_vec = np.zeros(shape=loop_coef_vec.shape[0], dtype=switching32)
+
+    anv = loop_coef_vec[:, :5].T
+    bnv = loop_coef_vec[:, 5:].T
+
+    nuc_v01a = bnv[2] * erfinv((nuc_threshold * bnv[2] + nuc_threshold * bnv[3] - bnv[2]) / bnv[2]) + anv[3]
+    nuc_v01b = bnv[3] * erfinv((nuc_threshold * bnv[2] + nuc_threshold * bnv[3] - bnv[2]) / bnv[3]) + anv[3]
+
+    nuc_v01 = np.where(np.isfinite(nuc_v01a), nuc_v01a,
+                       np.where(np.isfinite(nuc_v01b), nuc_v01b, -1E-10))
+
+    nuc_v02a = bnv[0] * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / bnv[0]) + anv[2]
+    nuc_v02b = bnv[1] * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / bnv[1]) + anv[2]
+
+    nuc_v02 = np.where(np.isfinite(nuc_v02a),nuc_v02a,
+                       np.where(np.isfinite(nuc_v02b), nuc_v02b, -1E-10))
+
+    switching_coef_vec['V+'] = loop_coef_vec[:, 3]
+    switching_coef_vec['V-'] = loop_coef_vec[:, 2]
+    switching_coef_vec['Imprint'] = (loop_coef_vec[:, 2] + loop_coef_vec[:, 3]) / 2
+    switching_coef_vec['R+'] = loop_coef_vec[:, 0] + loop_coef_vec[:, 1]
+    switching_coef_vec['R-'] = loop_coef_vec[:, 0]
+    switching_coef_vec['Switchable Polarization'] = loop_coef_vec[:, 1]
+    switching_coef_vec['Work of Switching'] = np.abs(loop_coef_vec[:, 3] - loop_coef_vec[:, 2]) * np.abs(loop_coef_vec[:, 1])
+    switching_coef_vec['Nucleation Bias 1'] = nuc_v01
+    switching_coef_vec['Nucleation Bias 2'] = nuc_v02
+
+    return switching_coef_vec.reshape([-1, 1])
 
 
 def generate_guess(vdc, pr_vec, show_plots=False):
