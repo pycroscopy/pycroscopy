@@ -759,7 +759,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
             h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                                   compression=source_dset.compression, chunking=source_dset.chunks)
 
-    except ValueError:
+    except KeyError:
         h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                               compression=source_dset.compression, chunking=source_dset.chunks)
 
