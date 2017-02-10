@@ -307,8 +307,9 @@ class BELoopModel(Model):
         h5_loop_parm : h5py.Dataset
             Dataset of physical parameters
         """
+        dset_name = h5_loop_fit.name+'_Loop_Parameters'
         h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
-                                                  dset_name='Loop_Fit_Parameters',
+                                                  dset_name=dset_name,
                                                   new_attrs={'nuc_threshold':nuc_threshold})
 
         loop_coef_vec = compound_to_scalar(np.reshape(h5_loop_fit, [-1, 1]))
