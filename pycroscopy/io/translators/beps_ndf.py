@@ -89,12 +89,12 @@ class BEPSndfTranslator(Translator):
         
         if debug:
             print('BEndfTranslator: Preparing to read parms.mat file')
-        self.BE_wave = self.__getExWfm(parms_mat_path)
+        self.BE_wave = self.__get_excit_wfm(parms_mat_path)
         
         if debug:
             print('BEndfTranslator: About to read UDVS file')
         
-        self.udvs_labs, self.udvs_units, self.udvs_mat = self.__readUDVStable(udvs_filepath)
+        self.udvs_labs, self.udvs_units, self.udvs_mat = self.__read_udvs_table(udvs_filepath)
         # Remove the unused plot group columns before proceeding:
         self.udvs_mat, self.udvs_labs, self.udvs_units = trimUDVS(self.udvs_mat, self.udvs_labs, self.udvs_units,
                                                                   ignored_plt_grps)
@@ -105,7 +105,7 @@ class BEPSndfTranslator(Translator):
         self.excit_type_vec = (self.udvs_mat[:, 4]).astype(int)
         
         # First figure out how many waveforms are present in the data from the UDVS
-        unique_waves = self.__getUniqueWaveTypes(self.excit_type_vec) 
+        unique_waves = self.__get_unique_wave_types(self.excit_type_vec) 
         self.__unique_waves__ = unique_waves
         self.__num_wave_types__ = len(unique_waves)
         # print self.__num_wave_types__, 'different excitation waveforms in this experiment'
@@ -113,15 +113,15 @@ class BEPSndfTranslator(Translator):
         if debug: print('BEndfTranslator: Preparing to set up parsers')
 
         # Preparing objects to parse the file(s)
-        parsers = self.__assembleParsers()        
+        parsers = self.__assemble_parsers()        
         
         # Gathering some basic details before parsing the files:
-        self.max_pixels = parsers[0].getNumPixels()
-        s_pixels = np.array(parsers[0].getSpatialPixels())
+        self.max_pixels = parsers[0].get_num_pixels()
+        s_pixels = np.array(parsers[0].get_spatial_pixels())
         self.pos_labels = ['Laser Spot', 'Z', 'X', 'Y']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
         self.pos_mat = make_position_mat(s_pixels)
-        self.pos_units = ['' for _ in range(len(self.pos_labels))]     
+        self.pos_units = ['um' for _ in range(len(self.pos_labels))]
 #         self.pos_mat = np.int32(self.pos_mat)
         
         # Helping Eric out a bit. Remove this section at a later time:
@@ -187,27 +187,27 @@ class BEPSndfTranslator(Translator):
             # First read the next pixel from all parsers:
             current_pixels = {}
             for prsr in parsers:
-                current_pixels[prsr.getWaveType()] = prsr.readPixel()
+                current_pixels[prsr.get_wave_type()] = prsr.read_pixel()
 
             if pixel_ind == 0:
-                h5_refs = self.__initializeDataSet(self.max_pixels, current_pixels)
+                h5_refs = self.__initialize_meas_group(self.max_pixels, current_pixels)
                 prev_pixels = current_pixels  # This is here only to avoid annoying warnings.
             else:
                 if current_pixels[unique_waves[0]].is_different_from(prev_pixels[unique_waves[0]]):
                     # Some parameter has changed. Write current group and make new group
-                    self.__closeDataset(h5_refs, show_plots, save_plots, do_histogram)
+                    self.__close_meas_group(h5_refs, show_plots, save_plots, do_histogram)
                     self.ds_pixel_start_indx = pixel_ind
-                    h5_refs = self.__initializeDataSet(self.max_pixels - pixel_ind, current_pixels)
+                    h5_refs = self.__initialize_meas_group(self.max_pixels - pixel_ind, current_pixels)
 
             # print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
-            self.__appendPixelData(current_pixels)
+            self.__append_pixel_data(current_pixels)
 
             prev_pixels = current_pixels
-        self.__closeDataset(h5_refs, show_plots, save_plots, do_histogram)
+        self.__close_meas_group(h5_refs, show_plots, save_plots, do_histogram)
 
     ###################################################################################################
         
-    def __closeDataset(self, h5_refs, show_plots, save_plots, do_histogram):
+    def __close_meas_group(self, h5_refs, show_plots, save_plots, do_histogram):
         """
         Performs following operations : 
             * Updates the number of pixels attribute in the measurement group
@@ -235,13 +235,6 @@ class BEPSndfTranslator(Translator):
         meas_grp = self.ds_main.parent
         meas_grp.attrs['num_pix'] = self.ds_pixel_index
         
-        # Add region references to the now-completed Noise floor dataset
-        # noise_slices = dict();
-        # noise_slices['super_band'] = (slice(None), slice(0,1), slice(None));
-        # noise_slices['inter_bin_band'] = (slice(None), slice(1,2), slice(None));
-        # noise_slices['sub_band'] = (slice(None), slice(2,3), slice(None));
-        # self.hdf.regionRefs(self.ds_noise, noise_slices)
-        
         # Write position specific datasets now that the dataset is complete
         pos_slice_dict = dict()
         for spat_ind, spat_dim in enumerate(self.pos_labels):
@@ -250,11 +243,38 @@ class BEPSndfTranslator(Translator):
                                   self.ds_pixel_start_indx + self.ds_pixel_index, :], dtype=np.uint)
         ds_pos_ind.attrs['labels'] = pos_slice_dict
         ds_pos_ind.attrs['units'] = self.pos_units
-        ds_pos_val = MicroDataset('Position_Values', np.float32(self.pos_mat[self.ds_pixel_start_indx:
-                                  self.ds_pixel_start_indx + self.ds_pixel_index, :]))
+
+        self.pos_vals_list = np.array(self.pos_vals_list)
+        # Ensuring that the X and Y values vary from 0 to N instead of -0.5 N to + 0.5 N
+        for col_ind in range(2):
+            min_val = np.min(self.pos_vals_list[:, col_ind])
+            self.pos_vals_list[:, col_ind] -= min_val
+            self.pos_vals_list[:, col_ind] *= 1E+6  # convert to microns
+
+        if np.max(self.pos_vals_list[:, 2]) > 1E-3:
+            # Setpoint spectroscopy
+            if 'Z' in self.pos_labels:
+                dim_ind = self.pos_labels.index('Z')
+                # TODO: Find a way to correct the labels
+                # self.pos_labels[dim_ind] = 'Setpoint'
+                self.pos_units[dim_ind] = 'defl V'
+        else:
+            # Z spectroscopy
+            self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
+
+        pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:
+                                              self.ds_pixel_start_indx + self.ds_pixel_index, :])
+
+        for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
+            if targ_dim_name in self.pos_labels:
+                dim_ind = self.pos_labels.index(targ_dim_name)
+                # Replace indices with the x, y, z values from the pixels
+                pos_val_mat[:, dim_ind] = self.pos_vals_list[:, col_ind]
+
+        ds_pos_val = MicroDataset('Position_Values', pos_val_mat)
         ds_pos_val.attrs['labels'] = pos_slice_dict
         ds_pos_val.attrs['units'] = self.pos_units
-#         ds_pos_labs = MicroDataset('Position_Labels',np.array(self.pos_labels))          
+
         meas_grp = MicroDataGroup(meas_grp.name, '/')
         meas_grp.addChildren([ds_pos_ind, ds_pos_val])
         
@@ -278,9 +298,9 @@ class BEPSndfTranslator(Translator):
         # Now that everything about this dataset is complete:
         self.dset_index += 1
         
-    ###################################################################################################
+    # ##################################################################################################
             
-    def __initializeDataSet(self, num_pix, current_pixels):
+    def __initialize_meas_group(self, num_pix, current_pixels):
         """
         Creates and initializes the primary (and auxillary) datasets and datagroups
         to hold the raw data for the current set of experimental parameters.
@@ -344,7 +364,7 @@ class BEPSndfTranslator(Translator):
         ds_ex_wfm = MicroDataset('Excitation_Waveform', self.BE_wave)
         ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
         ds_bin_inds = MicroDataset('Bin_Indices', bin_inds - 1, dtype=np.uint32)  # From Matlab to Python (base 0)
-        ds_bin_FFT = MicroDataset('Bin_FFT', bin_FFT)
+        ds_bin_fft = MicroDataset('Bin_FFT', bin_FFT)
         ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
         ds_bin_steps = MicroDataset('Bin_Step', np.arange(tot_bins, dtype=np.uint32)) 
         
@@ -362,24 +382,26 @@ class BEPSndfTranslator(Translator):
         chan_grp.attrs['Channel_Input'] = curr_parm_dict['IO_Analog_Input_1']
         meas_grp.addChildren([chan_grp])
         
-        udvs_slices = dict();
+        udvs_slices = dict()
         for col_ind, col_name in enumerate(self.udvs_labs):
-            udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind+1));
-            #print('UDVS column index {} = {}'.format(col_ind,col_name))
-        ds_UDVS = MicroDataset('UDVS', self.udvs_mat)
-        ds_UDVS.attrs['labels'] = udvs_slices
-        ds_UDVS.attrs['units'] = self.udvs_units
+            udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind+1))
+            # print('UDVS column index {} = {}'.format(col_ind,col_name))
+        ds_udvs_mat = MicroDataset('UDVS', self.udvs_mat)
+        ds_udvs_mat.attrs['labels'] = udvs_slices
+        ds_udvs_mat.attrs['units'] = self.udvs_units
         
         actual_udvs_steps = self.num_udvs_steps
         if self.halve_udvs_steps:
-            actual_udvs_steps = actual_udvs_steps/2
+            actual_udvs_steps /= 2
+        if actual_udvs_steps % 1:
+            raise ValueError('Actual number of UDVS steps should be an integer')
+        actual_udvs_steps = int(actual_udvs_steps)
         
         curr_parm_dict['num_udvs_steps'] = actual_udvs_steps        
         
-        ds_UDVS_inds = MicroDataset('UDVS_Indices', self.spec_inds[1])
-#         ds_UDVS_inds.attrs['labels'] = {'UDVS_step':(slice(None),)}
-        
-        
+        ds_udvs_inds = MicroDataset('UDVS_Indices', self.spec_inds[1])
+        # ds_udvs_inds.attrs['labels'] = {'UDVS_step':(slice(None),)}
+
         """
         Create the Spectroscopic Values tables
         """
@@ -410,10 +432,12 @@ class BEPSndfTranslator(Translator):
         Chris Smith -- csmith55@utk.edu
         """
         max_bins_per_pixel = np.max(pixel_bins.values())
+        """
         pixel_chunking = maxReadPixels(10240, num_pix, max_bins_per_pixel, np.dtype('complex64').itemsize)
         chunking = np.floor(np.sqrt(pixel_chunking))
         chunking = max(1, chunking)
         chunking = min(actual_udvs_steps, num_pix, chunking)
+        """
         beps_chunks = calc_chunks([num_pix, tot_pts],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, max_bins_per_pixel))
@@ -430,30 +454,31 @@ class BEPSndfTranslator(Translator):
         # Positions CANNOT be written at this time since we don't know if the parameter changed
         
         chan_grp.addChildren([ds_main_data, ds_noise, ds_ex_wfm, ds_spec_mat, ds_wfm_typ,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT, ds_UDVS, 
-                              ds_spec_vals_mat, ds_UDVS_inds])
+                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_fft, ds_udvs_mat,
+                              ds_spec_vals_mat, ds_udvs_inds])
                               
         # meas_grp.showTree()
         h5_refs = self.hdf.writeData(meas_grp)
         
         self.ds_noise = getH5DsetRefs(['Noise_Floor'], h5_refs)[0] 
         self.ds_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        self.pos_vals_list = list()
                 
         # self.dset_index += 1 #  raise dset index after closing only
         self.ds_pixel_index = 0
         
         # Use this for plot groups:
-        self.mean_resp = np.zeros(shape=(tot_pts), dtype=np.complex64)
+        self.mean_resp = np.zeros(shape=tot_pts, dtype=np.complex64)
         
         # Used for Histograms
-        self.max_resp = np.zeros(shape=(num_pix), dtype = np.float32)
-        self.min_resp = np.zeros(shape=(num_pix), dtype = np.float32)
+        self.max_resp = np.zeros(shape=num_pix, dtype=np.float32)
+        self.min_resp = np.zeros(shape=num_pix, dtype=np.float32)
         
         return h5_refs
         
-    ###################################################################################################        
+    # ##################################################################################################
         
-    def __appendPixelData(self, pixel_data):
+    def __append_pixel_data(self, pixel_data):
         """
         Goes through the list of pixel objects and populates the raw dataset 
         and noise dataset for this spatial pixel.
@@ -474,6 +499,10 @@ class BEPSndfTranslator(Translator):
             
             data_vec = pixel_data[self.__unique_waves__[0]].spectrogram_vec
             noise_mat = np.float32(pixel_data[self.__unique_waves__[0]].noise_floor_mat)
+
+            # Storing a list of lists since we don't know how many pixels we will find in this measurement group
+            self.pos_vals_list.append([pixel_data[0].x_value, pixel_data[0].y_value,
+                                       pixel_data[0].z_value])
             
         else:
 
@@ -506,6 +535,10 @@ class BEPSndfTranslator(Translator):
                 stind = enind
                 internal_step_index[wave_type] += 1
                 step_counter += 1
+
+            # Storing a list of lists since we don't know how many pixels we will find in this measurement group
+            self.pos_vals_list.append([pixel_data[wave_type].x_value, pixel_data[wave_type].y_value,
+                                       pixel_data[wave_type].z_value])
             
             del internal_step_index, stind, enind, step_index, wave_type, step_counter
         
@@ -549,6 +582,7 @@ class BEPSndfTranslator(Translator):
         parms_mat_path : String / unicode
             absolute filepath of the .mat parms file
         """
+        udvs_filepath = None
         folder_path, tail = path.split(file_path)
         main_folder_path = None
         for item in listdir(folder_path):
@@ -583,13 +617,9 @@ class BEPSndfTranslator(Translator):
         
     ###################################################################################################
 
-    def __assembleParsers(self):
+    def __assemble_parsers(self):
         """
-        Returns a list of BEPSndfParser objects per excitation wavetype.
-        
-        Parameters
-        ----------
-        None
+        Returns a list of BEPSndfParser objects per excitation wave type
         
         Returns
         ---------
@@ -604,15 +634,16 @@ class BEPSndfTranslator(Translator):
             else:
                 filename = self.basename + '_1_r' + str(abs(wave_type)) + '.dat'
             datapath = path.join(self.folder_path, filename)
-            if path.isfile(datapath) == False:
-                warn('Error!!: {}expected but not found!'.format(filename))
-                #return
+            if not path.isfile(datapath):
+                raise LookupError('Error!!: {}expected but not found!'.format(filename))
+                # return
             parsers.append(BEPSndfParser(datapath, wave_type))
         return parsers
         
-    ###################################################################################################
+    # ##################################################################################################
         
-    def __getExWfm(self, filepath):
+    @staticmethod
+    def __get_excit_wfm(filepath):
         """
         Returns the excitation BE waveform present in the more parms.mat file
         
@@ -630,13 +661,14 @@ class BEPSndfTranslator(Translator):
             warn('BEPSndfTranslator - NO more_parms.mat file found')
             return np.zeros(1000, dtype=np.float32)
             
-        matread = loadmat(filepath, variable_names=['FFT_BE_wave']);
-        FFT_full = np.complex64(np.squeeze(matread['FFT_BE_wave']));
-        return np.float32(np.real(np.fft.ifft(np.fft.ifftshift(FFT_full))))
+        matread = loadmat(filepath, variable_names=['FFT_BE_wave'])
+        fft_full = np.complex64(np.squeeze(matread['FFT_BE_wave']))
+        return np.float32(np.real(np.fft.ifft(np.fft.ifftshift(fft_full))))
         
-    ###################################################################################################
+    # ##################################################################################################
         
-    def __readUDVStable(self, udvs_filepath):
+    @staticmethod
+    def __read_udvs_table(udvs_filepath):
         """
         Reads the UDVS spreadsheet in either .xls or .xlsx format!
         
@@ -658,7 +690,7 @@ class BEPSndfTranslator(Translator):
         worksheet = workbook.sheet_by_index(0)
         udvs_labs = list()
         for col in range(worksheet.ncols):
-            udvs_labs.append(str(worksheet.cell(0,col).value))
+            udvs_labs.append(str(worksheet.cell(0, col).value))
         # sometimes, the first few columns are named incorrectly. FORCE them to be named correclty:
         udvs_units = list(['' for _ in range(len(udvs_labs))])
         udvs_labs[0:5] = ['step_num', 'dc_offset', 'ac_amp', 'wave_type', 'wave_mod']
@@ -678,10 +710,9 @@ class BEPSndfTranslator(Translator):
         udvs_mat[:, 0] -= 1
         
         return udvs_labs, udvs_units, udvs_mat
-        
 
-        
-    def __getUniqueWaveTypes(self,vec):
+    @staticmethod
+    def __get_unique_wave_types(vec):
         """
         Returns a numpy array containing the different waveforms in a 
         BEPS experiment in the format: [1,-1,2,-2.....]
@@ -766,13 +797,9 @@ class BEPSndfParser(object):
         if scout:
             self.__scout()
         
-    def getWaveType(self):
+    def get_wave_type(self):
         """
         Returns the excitation wave type as an integer
-        
-        Parameters
-        ----------
-        None
         
         Returns
         -------
@@ -781,13 +808,9 @@ class BEPSndfParser(object):
         """
         return self.__wave_type__
         
-    def getNumPixels(self):
+    def get_num_pixels(self):
         """
         Returns the total number of spatial pixels. This includes X, Y, Z, Laser positions
-        
-        Parameters
-        ----------
-        None 
         
         Returns
         -------
@@ -796,19 +819,23 @@ class BEPSndfParser(object):
         """
         return self.__num_pixels__
         
-    def getSpatialPixels(self):
+    def get_spatial_pixels(self):
         """
         Returns the number of steps in each spatial dimension 
         organized from fastest to slowest varying dimension
         
-        Parameters
-        ----------
-        
         Returns
         -------
-        Laser steps, Z steps, Y steps, X steps : unsigned ints
+        __num_laser_steps__ : unsigned int
+            Number of laser steps
+        __num_z_steps__ : unsigned int
+            Number of height steps
+        __num_x_steps__ : unsigned int
+            Number of columns
+        __num_y_steps__ : unsigned int
+            Number of rows
         """
-        return self.__num_laser_steps__,self.__num_z_steps__,self.__num_x_steps__,self.__num_y_steps__
+        return self.__num_laser_steps__, self.__num_z_steps__, self.__num_x_steps__, self.__num_y_steps__
     
     # Don't use this to figure out if something changes. You need pixel to previous pixel comparison    
     def __scout(self):
@@ -830,7 +857,7 @@ class BEPSndfParser(object):
             if count == 0:
                 self.__file_handle__.seek(self.__start_point__*4, 0)
                 data_vec = np.fromstring(self.__file_handle__.read(spectrogram_length*4), dtype='f')
-                pix = BEPSndfPixel(data_vec,self.__wave_type__)
+                pix = BEPSndfPixel(data_vec, self.__wave_type__)
                 self.__num_x_steps__ = pix.num_x_steps
                 self.__num_y_steps__ = pix.num_y_steps
                 self.__num_z_steps__ = pix.num_z_steps
@@ -874,9 +901,8 @@ class BEPSndfParser(object):
             spat_dim += 1
         # print('Total of {} spatial dimensions'.format(spat_dim))
         self.__spat_dim__ = spat_dim
-            
-        
-    def readPixel(self):
+             
+    def read_pixel(self):
         """
         Returns a BEpixel object containing the parsed information within a pixel.
         Moves pixel index up by one.
@@ -892,9 +918,9 @@ class BEPSndfParser(object):
             print('BEPS NDF Parser - No more pixels left!')
             return -1
         
-        self.__file_handle__.seek(self.__start_point__*4,0)
+        self.__file_handle__.seek(self.__start_point__ * 4, 0)
         spectrogram_length = int(np.fromstring(self.__file_handle__.read(4), dtype='f')[0])  # length of spectrogram
-        self.__file_handle__.seek(self.__start_point__*4,0)
+        self.__file_handle__.seek(self.__start_point__ * 4, 0)
         data_vec = np.fromstring(self.__file_handle__.read(spectrogram_length*4), dtype='f')
        
         self.__start_point__ += spectrogram_length
@@ -911,8 +937,8 @@ class BEPSndfParser(object):
 class BEPSndfPixel(object):
     """
     Stands for BEPS (new data format) Pixel. 
-    This class parses (and keeps) the stream of data contained in a single cell of a BEPS data set of the new data format.
-    Access desired parameter directly without get methods.
+    This class parses (and keeps) the stream of data contained in a single cell of a BEPS data set of the new data 
+    format. Access desired parameter directly without get methods.
     """
     
     def __init__(self, data_vec, harm=1):
@@ -949,41 +975,48 @@ class BEPSndfPixel(object):
         s4 = int(s2-self.num_steps)  # col index of beginning of spectrogram set
             
         self.wave_label = data_mat1[2, 0]  # This is useless
-        self.wave_modulation_type = data_mat1[2, 1]  #  this is the one with useful information
-        # print 'Pixel #',self.spatial_index,' Wave label: ', self.wave_label, ', Wave Type: ', self.wave_modulation_type
+        self.wave_modulation_type = data_mat1[2, 1]  # this is the one with useful information
+        # print 'Pixel #',self.spatial_index,' Wave label: ',self.wave_label, ', Wave Type: ', self.wave_modulation_type
         
         # First get the information from the columns:   
-        FFT_BE_wave_real = data_mat1[s3:s3-0+self.num_bins, 1]  # real part of excitation waveform  
-        FFT_BE_wave_imag = data_mat1[s3+self.num_bins:s3-0+spect_size1, 1]  # imaginary part of excitation waveform  
+        fft_be_wave_real = data_mat1[s3:s3-0+self.num_bins, 1]  # real part of excitation waveform  
+        fft_be_wave_imag = data_mat1[s3+self.num_bins:s3-0+spect_size1, 1]  # imaginary part of excitation waveform  
         
         """ Though typecasting the combination of the real and imaginary data looks fine in HDFviewer and Spyder, 
         Labview sees such data as an array of clusters having 'r' and 'i' elements """
-        # self.FFT_BE_wave = np.complex64(FFT_BE_wave_real + 1j*FFT_BE_wave_imag) 
+        # self.FFT_BE_wave = np.complex64(fft_be_wave_real + 1j*fft_be_wave_imag) 
         
         # complex excitation waveform! due to a problem in the acquisition software, this may not be normalized properly
         self.FFT_BE_wave = np.zeros(self.num_bins, dtype=np.complex64)
-        self.FFT_BE_wave.real = FFT_BE_wave_real
-        self.FFT_BE_wave.imag = FFT_BE_wave_imag
+        self.FFT_BE_wave.real = fft_be_wave_real
+        self.FFT_BE_wave.imag = fft_be_wave_imag
         
-        del FFT_BE_wave_real, FFT_BE_wave_imag            
+        del fft_be_wave_real, fft_be_wave_imag            
         
         self.BE_bin_w = data_mat1[s3:s3-0+self.num_bins, 2]  # vector of band frequencies
-        self.BE_bin_ind = data_mat1[s3+self.num_bins:s3-0+spect_size1, 2]  # vector of band indices (out of all accesible frequencies below Nyquist frequency)
+        # vector of band indices (out of all accessible frequencies below Nyquist frequency)
+        self.BE_bin_ind = data_mat1[s3+self.num_bins:s3-0+spect_size1, 2] 
      
         # Now look at the top few rows to get more information: 
-        self.DAQ_channel = data_mat1[2, 2]
+        self.daq_channel = data_mat1[2, 2]
         self.num_x_steps = int(data_mat1[3, 0])
         self.num_y_steps = int(data_mat1[4, 0])
         self.num_z_steps = int(data_mat1[5, 0])
         self.z_index = int(data_mat1[5, 1] - 1)        
         self.y_index = int(data_mat1[4, 1] - 1)
         self.x_index = int(data_mat1[3, 1] - 1)
+        self.z_value = data_mat1[5, 2]
+        self.y_value = data_mat1[4, 2]
+        self.x_value = data_mat1[3, 2]
      
         self.step_ind_vec = data_mat1[0, s4:]  # vector of step indices   
         self.DC_off_vec = data_mat1[1, s4:]  # vector of dc offsets  voltages
         self.AC_amp_vec = data_mat1[2, s4:]  # vector of ac amplitude voltages 
-        self.noise_floor_mat = data_mat1[3:6, s4:]  # matrix of noise floor data. Use this information to exclude bins during fitting         
-        # plot_group_list_mat = data_mat1[6:s3-2, s4:]  # matrix of plot groups
+
+        # matrix of noise floor data. Use this information to exclude bins during fitting
+        self.noise_floor_mat = data_mat1[3:6, s4:]
+        
+        # self.plot_group_list_mat = data_mat1[6:s3-2, s4:]  # matrix of plot groups
         
         # Here come the optional parameter rows:
         self.deflVolt_vec = data_mat1[s3-2, s4:]  # vector of dc cantilever deflection
@@ -1027,7 +1060,8 @@ class BEPSndfPixel(object):
         *Typical things that change during BEPS*
         1. BE parameters:
         a. Center Frequency, Band Width - changes in the BE_bin_w
-        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly - FFT should show changes
+        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly
+         - FFT should show changes
         c. BE repeats, desired duration - changes in the spectrogram length?
         2. VS Parameters:
         a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
