@@ -239,8 +239,33 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
 
     return fig, axes
 
-###############################################################################
 
+def _add_loop_parameters(axes, switching_coef_vec):
+    """
+    Add the loop parameters for the given loop to a list of axes
+
+    Parameters
+    ----------
+    axes : list of matplotlib.pyplo.axes
+        Plot axes to add the coeffients to
+    switching_coef_vec : 1D numpy.ndarray
+        Array of loop parameters arranged by position
+
+    Returns
+    -------
+    axes : list of matplotlib.pyplo.axes
+    """
+    positions = np.linspace(0, switching_coef_vec.shape[0] - 1, len(axes.flat), dtype=np.int)
+
+    for ax, pos in zip(axes.flat, positions):
+        ax.axvline(switching_coef_vec[pos]['V+'], c='k', label='V+')
+        ax.axvline(switching_coef_vec[pos]['V-'], c='r', label='V-')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 1'], c='k', ls=':', label='Nucleation Bias 1')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 2'], c='r', ls=':', label='Nucleation Bias 2')
+        ax.axhline(switching_coef_vec[pos]['R+'], c='k', ls='-.', label='R+')
+        ax.axhline(switching_coef_vec[pos]['R-'], c='r', ls='-.', label='R-')
+
+    return axes
 
 def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
     """
@@ -1247,7 +1272,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     basename, _ = os.path.splitext(basename)
 
     sho_grp = h5_main.parent
-    chan_grp = sho_grp.parent
+
+    chan_grp = h5_file['/'.join(sho_grp.name[1:].split('/')[:2])]
 
     grp_name = '_'.join(chan_grp.name[1:].split('/'))
     grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])

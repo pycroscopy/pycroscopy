@@ -16,7 +16,7 @@ from sklearn.cluster import KMeans
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .model import Model
-from .utils.be_loop import projectLoop, fit_loop, generate_guess
+from .utils.be_loop import projectLoop, fit_loop, generate_guess, calc_switching_coef_vec, switching32
 from .utils.tree import ClusterTree
 from .be_sho_model import sho32
 from .fit_methods import BE_Fit_Methods
@@ -290,6 +290,34 @@ class BELoopModel(Model):
             warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
                  (obj_func['obj_func']))
             return None
+
+    def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
+        """
+        Method to extract a set of physical loop parameters from a dataset of fit parameters
+
+        Parameters
+        ----------
+        h5_loop_fit : h5py.Dataset
+            Dataset of loop fit parameters
+        nuc_threshold : float
+            Nucleation threshold to use in calculation physical parameters
+
+        Returns
+        -------
+        h5_loop_parm : h5py.Dataset
+            Dataset of physical parameters
+        """
+        dset_name = h5_loop_fit.name+'_Loop_Parameters'
+        h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
+                                                  dset_name=dset_name,
+                                                  new_attrs={'nuc_threshold':nuc_threshold})
+
+        loop_coef_vec = compound_to_scalar(np.reshape(h5_loop_fit, [-1, 1]))
+        switching_coef_vec = calc_switching_coef_vec(loop_coef_vec, nuc_threshold)
+
+        h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
+
+        return h5_loop_parameters
 
     def _create_projection_datasets(self):
         # First grab the spectroscopic indices and values and position indices
@@ -828,7 +856,7 @@ class BELoopModel(Model):
             fit_results : 1D numpy float array
                 Loop parameters that serve as fits for the loops in the tree
             """
-            print('Now fitting cluster #{}'.format(tree.name))
+            # print('Now fitting cluster #{}'.format(tree.name))
             # I already have a guess. Now fit myself
             curr_fit_results = fit_loop(vdc_shifted, np.roll(tree.value, shift_ind), guess_mat[tree.name])
             # keep all the fit results
