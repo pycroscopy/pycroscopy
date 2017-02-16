@@ -29,6 +29,7 @@ class BEPSndfTranslator(Translator):
     """
     Translates Band Excitation Polarization Switching (BEPS) datasets from .dat
     files to .h5
+    
     """       
         
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
@@ -52,6 +53,7 @@ class BEPSndfTranslator(Translator):
         --------------
         h5_path : String / unicode
             Absolute path of the generated .h5 file
+
         """
         ## Read the parameter files
         if debug:
@@ -175,6 +177,7 @@ class BEPSndfTranslator(Translator):
         Returns
         -------
         None
+
         """
         print('Reading data file(s)')
         self.dset_index = 0
@@ -230,6 +233,7 @@ class BEPSndfTranslator(Translator):
         Returns
         -------
         None
+
         """
         # Update the number of pixels in the attributes
         meas_grp = self.ds_main.parent
@@ -316,6 +320,7 @@ class BEPSndfTranslator(Translator):
         ---------
         h5_refs : list of HDF5group and HDF5Dataset references 
             references of the written H5 datasets
+
         """
 
         tot_bins = 0
@@ -402,9 +407,9 @@ class BEPSndfTranslator(Translator):
         ds_udvs_inds = MicroDataset('UDVS_Indices', self.spec_inds[1])
         # ds_udvs_inds.attrs['labels'] = {'UDVS_step':(slice(None),)}
 
-        """
+        '''
         Create the Spectroscopic Values tables
-        """
+        '''
         spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = \
             createSpecVals(self.udvs_mat, spec_inds, bin_freqs, exec_bin_vec,
                            curr_parm_dict, np.array(self.udvs_labs), self.udvs_units)
@@ -424,20 +429,15 @@ class BEPSndfTranslator(Translator):
             ds_spec_mat.attrs[label] = names
             ds_spec_vals_mat.attrs[label] = names
 
-        """
+        '''
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares of UDVS steps by pixels.
         N is determined dinamically based on the dimensions of the dataset.  Currently it is set such that individual
         chunks are less than 10kB in size.
         
         Chris Smith -- csmith55@utk.edu
-        """
+        '''
         max_bins_per_pixel = np.max(pixel_bins.values())
-        """
-        pixel_chunking = maxReadPixels(10240, num_pix, max_bins_per_pixel, np.dtype('complex64').itemsize)
-        chunking = np.floor(np.sqrt(pixel_chunking))
-        chunking = max(1, chunking)
-        chunking = min(actual_udvs_steps, num_pix, chunking)
-        """
+
         beps_chunks = calc_chunks([num_pix, tot_pts],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, max_bins_per_pixel))
@@ -491,6 +491,7 @@ class BEPSndfTranslator(Translator):
         Returns
         ---------
         None
+
         """
         
         if self.__num_wave_types__ == 1 and not self.halve_udvs_steps:
@@ -581,6 +582,7 @@ class BEPSndfTranslator(Translator):
             absolute file path of the UDVS spreadsheet
         parms_mat_path : String / unicode
             absolute filepath of the .mat parms file
+
         """
         udvs_filepath = None
         folder_path, tail = path.split(file_path)
@@ -656,6 +658,7 @@ class BEPSndfTranslator(Translator):
         -----------
         ex_wfm : 1D numpy float array
             Band Excitation waveform
+
         """
         if not path.exists(filepath):
             warn('BEPSndfTranslator - NO more_parms.mat file found')
@@ -685,6 +688,7 @@ class BEPSndfTranslator(Translator):
             units for columns in the UDVS table
         UDVS_mat : 2D numpy float array
             Contents of the UDVS table
+
         """
         workbook = xlreader.open_workbook(udvs_filepath)
         worksheet = workbook.sheet_by_index(0)
@@ -726,6 +730,7 @@ class BEPSndfTranslator(Translator):
         ----------
         uniq : 1D numpy array
             Unique waveform types in format listed above
+
         """
         sorted_all = np.unique(vec)
         pos_vals = sorted_all[sorted_all >= 0]
@@ -786,6 +791,7 @@ class BEPSndfParser(object):
         scout : Boolean (optional. Default = true) 
             whether or not the parser should figure out basic details such as 
             the number of pixels, and the spatial dimensionality
+
         """
         self.__file_handle__ = open(file_path, "rb")
         self.__EOF__ = False
@@ -805,6 +811,7 @@ class BEPSndfParser(object):
         -------
         wave_type : int
             Wave type. Positive number means chirp up, negative number is chirp down.
+
         """
         return self.__wave_type__
         
@@ -816,6 +823,7 @@ class BEPSndfParser(object):
         -------
         num_pix : unsigned int
             Number of pixels in this file
+
         """
         return self.__num_pixels__
         
@@ -846,6 +854,7 @@ class BEPSndfParser(object):
         For phase checking, it is recommended that this function be modified to 
         also keep track of the byte positions of the pixels so that pixels can be 
         directly accessed if need be.
+
         """
         count = 0
         self.__num_pixels__ = 0
@@ -1057,20 +1066,20 @@ class BEPSndfPixel(object):
 
         Notes
         -----
-        *Typical things that change during BEPS*
-        1. BE parameters:
-        a. Center Frequency, Band Width - changes in the BE_bin_w
-        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly
-         - FFT should show changes
-        c. BE repeats, desired duration - changes in the spectrogram length?
-        2. VS Parameters:
-        a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
-        b. Offset, Read voltage - Shows up in the DC offset
-        c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
-        d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
-        e. FORC - should all show up in DC / AC amplitude
-        3. IO parameters : don't change really
-        4. grid parameters : cannot do anything about this.
+            *Typical things that change during BEPS*
+            1. BE parameters:
+            a. Center Frequency, Band Width - changes in the BE_bin_w
+            b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly
+             - FFT should show changes
+            c. BE repeats, desired duration - changes in the spectrogram length?
+            2. VS Parameters:
+            a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
+            b. Offset, Read voltage - Shows up in the DC offset
+            c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
+            d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
+            e. FORC - should all show up in DC / AC amplitude
+            3. IO parameters : don't change really
+            4. grid parameters : cannot do anything about this.
 
         """
         disp_on = True        
