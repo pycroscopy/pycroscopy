@@ -57,6 +57,8 @@ class BELoopModel(Model):
     def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
         super(BELoopModel, self).__init__(h5_main, variables, parallel)
         self._h5_group = None
+        self.h5_guess_parameters = None
+        self.h5_fit_parameters = None
         self._sho_spec_inds = None
         self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
         self._met_spec_inds = None
@@ -137,17 +139,23 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-    def doGuess(self, max_mem=None, processors=None, verbose=False):
+    def doGuess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
         """
 
         Parameters
         ----------
         processors : uint, optional
             Number of processors to use for computing. Currently this is a serial operation
+            Default None, output of psutil.cpu_count - 2 is used
         max_mem : uint, optional
             Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
         verbose : bool, optional
             Whether or not to print debug statements
+            Default False
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
 
         Returns
         -------
@@ -209,17 +217,39 @@ class BELoopModel(Model):
 
             self._getDataChunk()
 
+        if get_loop_parameters:
+            self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
+
         return self.h5_guess
 
     def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
-              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])}):
+              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
+              get_loop_parameters=True):
         """
+        Fit the loops
 
-        :param processors:
-        :param solver_type:
-        :param solver_options:
-        :param obj_func:
-        :return:
+        Parameters
+        ----------
+        processors : uint, optional
+            Number of processors to use for computing. Currently this is a serial operation
+            Default None, output of psutil.cpu_count - 2 is used
+        max_mem : uint, optional
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
+        solver_type : str
+            Which solver from scipy.optimize should be used to fit the loops
+        solver_options : dict of str
+            Parameters to be passed to the solver defined by `solver_type`
+        obj_func : dict of str
+            Dictionary defining the class and method for the loop residual function as well
+            as the parameters to be passed
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
+
+        Returns
+        -------
+
         """
         if self.h5_guess is None:
             print("You need to guess before fitting\n")
@@ -282,7 +312,7 @@ class BELoopModel(Model):
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
-            return results
+
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
             return None
@@ -290,6 +320,11 @@ class BELoopModel(Model):
             warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
                  (obj_func['obj_func']))
             return None
+
+        if get_loop_parameters:
+            self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
+
+        return results
 
     def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
         """
