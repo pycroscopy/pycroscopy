@@ -109,6 +109,12 @@ class PtychographyTranslator(Translator):
             self.binning_func = block_reduce
             self.bin_func = bin_func
 
+        if scan_size_x is None:
+            scan_size_x = int(np.floor(np.sqrt(len(file_list))))
+            scan_size_y = scan_size_x
+        if scan_size_y is None:
+            scan_size_y = int(np.floor(len(file_list) / scan_size_x))
+
         num_files = scan_size_x*scan_size_y
 
         h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32, scan_size_x, scan_size_y)

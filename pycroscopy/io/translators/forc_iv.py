@@ -42,6 +42,11 @@ class ForcIVTranslator(Translator):
             Absolute path of the translated h5 file
         """
         folder_path, file_name = path.split(raw_data_path)
+
+        h5_path = path.join(folder_path, file_name[:-4] + '.h5')
+        if path.exists(h5_path):
+            remove(h5_path)
+
         self.h5_read = True
         try:
             h5_f = h5py.File(raw_data_path, 'r')
@@ -84,30 +89,10 @@ class ForcIVTranslator(Translator):
                                                          labels=['DC Bias'], units=['V'], verbose=False)
         ds_spec_vals.data = np.atleast_2d(excitation_vec)
 
-        # technically should change the date, etc.
-        chan_grp = MicroDataGroup('Channel_000')
-        chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, ds_main])
-        meas_grp = MicroDataGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
-        meas_grp.addChildren([chan_grp])
-        spm_data = MicroDataGroup('')
-        global_parms = generate_dummy_main_parms()
-        global_parms['data_type'] = 'FORC_IV'
-        global_parms['translator'] = 'FORC_IV'
-        spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        return super(ForcIVTranslator, self).simple_write(h5_path, 'FORC_IV', ds_main,
+                                                          [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
+                                                          parm_dict)
 
-        h5_path = path.join(folder_path, file_name[:-4] + '.h5')
-        if path.exists(h5_path):
-            remove(h5_path)
-
-        hdf = ioHDF5(h5_path)
-        h5_refs = hdf.writeData(spm_data, print_log=False)
-        h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-        linkRefs(h5_raw, getH5DsetRefs(['Position_Indices', 'Position_Values',
-                                        'Spectroscopic_Indices', 'Spectroscopic_Values'], h5_refs))
-        hdf.close()
-        return h5_path
 
     def _read_parms(self, raw_data_file_handle):
         """

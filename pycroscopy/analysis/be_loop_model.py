@@ -16,7 +16,7 @@ from sklearn.cluster import KMeans
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .model import Model
-from .utils.be_loop import projectLoop, fit_loop, generate_guess
+from .utils.be_loop import projectLoop, fit_loop, generate_guess, calc_switching_coef_vec, switching32
 from .utils.tree import ClusterTree
 from .be_sho_model import sho32
 from .fit_methods import BE_Fit_Methods
@@ -57,6 +57,8 @@ class BELoopModel(Model):
     def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
         super(BELoopModel, self).__init__(h5_main, variables, parallel)
         self._h5_group = None
+        self.h5_guess_parameters = None
+        self.h5_fit_parameters = None
         self._sho_spec_inds = None
         self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
         self._met_spec_inds = None
@@ -137,26 +139,35 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-    def doGuess(self, processors=4, max_mem=None):
+    def doGuess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
         """
 
         Parameters
         ----------
         processors : uint, optional
+            Number of processors to use for computing. Currently this is a serial operation
+            Default None, output of psutil.cpu_count - 2 is used
         max_mem : uint, optional
-        strategy : str, optional
-        options :
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
+        verbose : bool, optional
+            Whether or not to print debug statements
+            Default False
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
 
         Returns
         -------
-
+        h5_guess : h5py.Dataset object
+            h5py dataset containing the guess parameters
         """
 
         # Before doing the Guess, we must first project the loops
         self._create_projection_datasets()
         if max_mem is None:
             max_mem = self._maxDataChunk
-        self._get_sho_chunk_sizes(max_mem, verbose=True)
+        self._get_sho_chunk_sizes(max_mem, verbose=verbose)
         self._createGuessDatasets()
 
         '''
@@ -206,17 +217,39 @@ class BELoopModel(Model):
 
             self._getDataChunk()
 
+        if get_loop_parameters:
+            self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
+
         return self.h5_guess
 
     def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
-              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])}):
+              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
+              get_loop_parameters=True):
         """
+        Fit the loops
 
-        :param processors:
-        :param solver_type:
-        :param solver_options:
-        :param obj_func:
-        :return:
+        Parameters
+        ----------
+        processors : uint, optional
+            Number of processors to use for computing. Currently this is a serial operation
+            Default None, output of psutil.cpu_count - 2 is used
+        max_mem : uint, optional
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
+        solver_type : str
+            Which solver from scipy.optimize should be used to fit the loops
+        solver_options : dict of str
+            Parameters to be passed to the solver defined by `solver_type`
+        obj_func : dict of str
+            Dictionary defining the class and method for the loop residual function as well
+            as the parameters to be passed
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
+
+        Returns
+        -------
+
         """
         if self.h5_guess is None:
             print("You need to guess before fitting\n")
@@ -279,7 +312,7 @@ class BELoopModel(Model):
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
-            return results
+
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
             return None
@@ -287,6 +320,39 @@ class BELoopModel(Model):
             warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
                  (obj_func['obj_func']))
             return None
+
+        if get_loop_parameters:
+            self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
+
+        return results
+
+    def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
+        """
+        Method to extract a set of physical loop parameters from a dataset of fit parameters
+
+        Parameters
+        ----------
+        h5_loop_fit : h5py.Dataset
+            Dataset of loop fit parameters
+        nuc_threshold : float
+            Nucleation threshold to use in calculation physical parameters
+
+        Returns
+        -------
+        h5_loop_parm : h5py.Dataset
+            Dataset of physical parameters
+        """
+        dset_name = h5_loop_fit.name+'_Loop_Parameters'
+        h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
+                                                  dset_name=dset_name,
+                                                  new_attrs={'nuc_threshold':nuc_threshold})
+
+        loop_coef_vec = compound_to_scalar(np.reshape(h5_loop_fit, [-1, 1]))
+        switching_coef_vec = calc_switching_coef_vec(loop_coef_vec, nuc_threshold)
+
+        h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
+
+        return h5_loop_parameters
 
     def _create_projection_datasets(self):
         # First grab the spectroscopic indices and values and position indices
@@ -825,7 +891,7 @@ class BELoopModel(Model):
             fit_results : 1D numpy float array
                 Loop parameters that serve as fits for the loops in the tree
             """
-            print('Now fitting cluster #{}'.format(tree.name))
+            # print('Now fitting cluster #{}'.format(tree.name))
             # I already have a guess. Now fit myself
             curr_fit_results = fit_loop(vdc_shifted, np.roll(tree.value, shift_ind), guess_mat[tree.name])
             # keep all the fit results
