@@ -309,8 +309,17 @@ class ImageWindow(object):
         """
         Take the 2d FFT of each window in `windows` and return in the proper form.
 
-        :param windows:
-        :return:
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array of windows and the Magnitude of the FFT of each window for the input
+            `image`
+
         """
         windows = np.empty_like(image, dtype=winabsfft32)
         windows['Image Data'] = image
@@ -841,7 +850,7 @@ class ImageWindow(object):
         components : {int, iterable of int, slice} optional
             Defines which components to keep
             Default - None, all components kept
-
+            \n
             Input Types
             integer : Components less than the input will be kept
             length 2 iterable of integers : Integers define start and stop of component slice to retain
