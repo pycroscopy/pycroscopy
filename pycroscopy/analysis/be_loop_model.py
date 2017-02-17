@@ -139,13 +139,49 @@ class BELoopModel(Model):
                                                                   nd_mat_shape_dc_first)
         metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
+    def _set_guess(self, h5_guess):
+        """
+        Setup to run the fit on an existing guess dataset.  Sets the attributes
+        normally defined during doGuess.
+
+        Parameters
+        ----------
+        h5_guess : h5py.Dataset
+            Dataset object containing the guesses
+
+        """
+        '''
+        Get the Spectroscopic and Position datasets from `self.h5_main`
+        '''
+        self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        self._sho_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
+
+        '''
+        Find the Spectroscopic index for the DC_Offset
+        '''
+        dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').squeeze()
+        self._dc_spec_index = dc_ind
+        self._dc_offset_index = 1 + dc_ind
+
+        '''
+        Get the group and projection datasets
+        '''
+        self._h5_group = h5_guess.parent
+        self.h5_projected_loops = self._h5_group['Projected_Loops']
+        self.h5_loop_metrics = self._h5_group['Loop_Metrics']
+        self._met_spec_inds = self._h5_group['Loop_Metrics_Indices']
+
+        self.h5_guess = h5_guess
+
     def doGuess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
         """
 
         Parameters
         ----------
         processors : uint, optional
-            Number of processors to use for computing. Currently this is a serial operation
+            Number of processors to use for computing. Currently this is a serial operation and this attribute is
+            ignored.
             Default None, output of psutil.cpu_count - 2 is used
         max_mem : uint, optional
             Memory in MB to use for computation
@@ -224,7 +260,7 @@ class BELoopModel(Model):
 
     def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
               obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
-              get_loop_parameters=True):
+              get_loop_parameters=True, h5_guess=None):
         """
         Fit the loops
 
@@ -246,15 +282,15 @@ class BELoopModel(Model):
         get_loop_parameters : bool, optional
             Should the physical loop parameters be calculated after the guess is done
             Default True
+        h5_guess : h5py.Dataset
+            Existing guess to use as input to fit.
+            Default None
 
         Returns
         -------
-
+        results: list
+            List of the results returned by the solver
         """
-        if self.h5_guess is None:
-            print("You need to guess before fitting\n")
-            return None
-
         if processors is None:
             processors = self._maxCpus
         else:
@@ -262,6 +298,12 @@ class BELoopModel(Model):
 
         if max_mem is None:
             max_mem = self._maxDataChunk
+
+        if h5_guess is not None:
+            self._set_guess(h5_guess)
+        elif self.h5_guess is None:
+            print("You need to guess before fitting\n")
+            return None
 
         self._createFitDataset()
         self._get_sho_chunk_sizes(max_mem, verbose=True)
