@@ -29,7 +29,7 @@ class BEPSndfTranslator(Translator):
     """
     Translates Band Excitation Polarization Switching (BEPS) datasets from .dat
     files to .h5
-    
+
     """       
         
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
@@ -959,7 +959,8 @@ class BEPSndfPixel(object):
         data_vec : 1D float numpy array
             Data contained within each pixel
         harm: unsigned int
-            Harmonic of the BE waveform. absolute value of the wave type used to normalize the response waveform.        
+            Harmonic of the BE waveform. absolute value of the wave type used to normalize the response waveform.
+
         """
         
         harm = abs(harm)
@@ -1066,20 +1067,20 @@ class BEPSndfPixel(object):
 
         Notes
         -----
-            *Typical things that change during BEPS*
-            1. BE parameters:
-            a. Center Frequency, Band Width - changes in the BE_bin_w
-            b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly
-             - FFT should show changes
-            c. BE repeats, desired duration - changes in the spectrogram length?
-            2. VS Parameters:
-            a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
-            b. Offset, Read voltage - Shows up in the DC offset
-            c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
-            d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
-            e. FORC - should all show up in DC / AC amplitude
-            3. IO parameters : don't change really
-            4. grid parameters : cannot do anything about this.
+        *Typical things that change during BEPS*
+        1. BE parameters:
+        a. Center Frequency, Band Width - changes in the BE_bin_w
+        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened
+        exactly - FFT should show changes
+        c. BE repeats, desired duration - changes in the spectrogram length?
+        2. VS Parameters:
+        a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
+        b. Offset, Read voltage - Shows up in the DC offset
+        c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
+        d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
+        e. FORC - should all show up in DC / AC amplitude
+        3. IO parameters : don't change really
+        4. grid parameters : cannot do anything about this.
 
         """
         disp_on = True        
