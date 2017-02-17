@@ -230,17 +230,16 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
-    def setGuess(self, h5_guess, strategy='complex_gaussian'):
+    def _set_guess(self, h5_guess):
         """
-        Setup to run the fit on an existing guess dataset
+        Setup to run the fit on an existing guess dataset.  Sets the attributes
+        normally defined during doGuess.
 
         Parameters
         ----------
         h5_guess : h5py.Dataset
             Dataset object containing the guesses
-        strategy : string
 
-        :return:
         """
         h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
 
@@ -254,24 +253,21 @@ class BESHOmodel(Model):
 
         self.h5_guess = h5_guess
 
-
     def doGuess(self, processors=None, strategy='complex_gaussian',
-                     options={"peak_widths": np.array([10,200]),"peak_step":20}):
+                     options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
 
         Parameters
         ----------
-        data
+        processors: int
+            Number of processors to use during parallel guess
+            Default None, output of psutil.cpu_count - 2 is used
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
         options: dict
             Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
-
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
 
         Returns
         -------
@@ -297,8 +293,8 @@ class BESHOmodel(Model):
         Parameters
         ----------
         processors : int
-            Default is 1.
             Number of processors to use.
+            Default None, output of psutil.cpu_count - 2 is used
         strategy : string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
@@ -319,7 +315,7 @@ class BESHOmodel(Model):
             processors = min(processors, self._maxCpus)
 
         if h5_guess is not None:
-            self.setGuess(h5_guess)
+            self._set_guess(h5_guess)
 
         self._createFitDatasets()
         self._start_pos = 0
