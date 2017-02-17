@@ -115,29 +115,29 @@ class BELoopModel(Model):
 
         return super(BELoopModel, self)._isLegal(h5_main, variables)
 
-    def simulate_script(self):
-
-        self._create_projection_datasets()
-        max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
-
-        # turn this into a loop
-        forc_chunk_index = 0
-        pos_chunk_index = 0
-
-        dc_vec, loops_2d, nd_mat_shape_dc_first, order_dc_offset_reverse = self._get_projection_data(
-            forc_chunk_index, max_pos, metrics_spec_inds_per_forc, pos_chunk_index, sho_spec_inds_per_forc)
-
-        # step 8: perform loop unfolding
-        projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
-        print('Finished projecting all loops')
-        print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
-        print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
-
-        # test the reshapes back
-        projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
-                                                                  order_dc_offset_reverse,
-                                                                  nd_mat_shape_dc_first)
-        metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
+    # def simulate_script(self):
+    #
+    #     self._create_projection_datasets()
+    #     max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
+    #
+    #     # turn this into a loop
+    #     forc_chunk_index = 0
+    #     pos_chunk_index = 0
+    #
+    #     dc_vec, loops_2d, nd_mat_shape_dc_first, order_dc_offset_reverse = self._get_projection_data(
+    #         forc_chunk_index, max_pos, metrics_spec_inds_per_forc, pos_chunk_index, sho_spec_inds_per_forc)
+    #
+    #     # step 8: perform loop unfolding
+    #     projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
+    #     print('Finished projecting all loops')
+    #     print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
+    #     print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
+    #
+    #     # test the reshapes back
+    #     projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
+    #                                                               order_dc_offset_reverse,
+    #                                                               nd_mat_shape_dc_first)
+    #     metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
     def _set_guess(self, h5_guess):
         """
