@@ -202,7 +202,7 @@ class BEPSndfTranslator(Translator):
                     self.ds_pixel_start_indx = pixel_ind
                     h5_refs = self.__initialize_meas_group(self.max_pixels - pixel_ind, current_pixels)
 
-            # print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
+            print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
             self.__append_pixel_data(current_pixels)
 
             prev_pixels = current_pixels
@@ -497,13 +497,15 @@ class BEPSndfTranslator(Translator):
         if self.__num_wave_types__ == 1 and not self.halve_udvs_steps:
             """Technically, this will be taken care of in the later (general) part but 
             since this condition is more common it is worth writing for specifically"""
-            
-            data_vec = pixel_data[self.__unique_waves__[0]].spectrogram_vec
-            noise_mat = np.float32(pixel_data[self.__unique_waves__[0]].noise_floor_mat)
+
+            zero_pix = self.__unique_waves__[0]
+
+            data_vec = pixel_data[zero_pix].spectrogram_vec
+            noise_mat = np.float32(pixel_data[zero_pix].noise_floor_mat)
 
             # Storing a list of lists since we don't know how many pixels we will find in this measurement group
-            self.pos_vals_list.append([pixel_data[0].x_value, pixel_data[0].y_value,
-                                       pixel_data[0].z_value])
+            self.pos_vals_list.append([pixel_data[zero_pix].x_value, pixel_data[zero_pix].y_value,
+                                       pixel_data[zero_pix].z_value])
             
         else:
 
