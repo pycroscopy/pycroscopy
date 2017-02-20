@@ -29,7 +29,7 @@ class BEPSndfTranslator(Translator):
     """
     Translates Band Excitation Polarization Switching (BEPS) datasets from .dat
     files to .h5
-    
+
     """       
         
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
@@ -202,7 +202,7 @@ class BEPSndfTranslator(Translator):
                     self.ds_pixel_start_indx = pixel_ind
                     h5_refs = self.__initialize_meas_group(self.max_pixels - pixel_ind, current_pixels)
 
-            # print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
+            print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
             self.__append_pixel_data(current_pixels)
 
             prev_pixels = current_pixels
@@ -497,13 +497,15 @@ class BEPSndfTranslator(Translator):
         if self.__num_wave_types__ == 1 and not self.halve_udvs_steps:
             """Technically, this will be taken care of in the later (general) part but 
             since this condition is more common it is worth writing for specifically"""
-            
-            data_vec = pixel_data[self.__unique_waves__[0]].spectrogram_vec
-            noise_mat = np.float32(pixel_data[self.__unique_waves__[0]].noise_floor_mat)
+
+            zero_pix = self.__unique_waves__[0]
+
+            data_vec = pixel_data[zero_pix].spectrogram_vec
+            noise_mat = np.float32(pixel_data[zero_pix].noise_floor_mat)
 
             # Storing a list of lists since we don't know how many pixels we will find in this measurement group
-            self.pos_vals_list.append([pixel_data[0].x_value, pixel_data[0].y_value,
-                                       pixel_data[0].z_value])
+            self.pos_vals_list.append([pixel_data[zero_pix].x_value, pixel_data[zero_pix].y_value,
+                                       pixel_data[zero_pix].z_value])
             
         else:
 
@@ -959,7 +961,8 @@ class BEPSndfPixel(object):
         data_vec : 1D float numpy array
             Data contained within each pixel
         harm: unsigned int
-            Harmonic of the BE waveform. absolute value of the wave type used to normalize the response waveform.        
+            Harmonic of the BE waveform. absolute value of the wave type used to normalize the response waveform.
+
         """
         
         harm = abs(harm)
@@ -1066,20 +1069,20 @@ class BEPSndfPixel(object):
 
         Notes
         -----
-            *Typical things that change during BEPS*
-            1. BE parameters:
-            a. Center Frequency, Band Width - changes in the BE_bin_w
-            b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened exactly
-             - FFT should show changes
-            c. BE repeats, desired duration - changes in the spectrogram length?
-            2. VS Parameters:
-            a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
-            b. Offset, Read voltage - Shows up in the DC offset
-            c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
-            d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
-            e. FORC - should all show up in DC / AC amplitude
-            3. IO parameters : don't change really
-            4. grid parameters : cannot do anything about this.
+        *Typical things that change during BEPS*
+        1. BE parameters:
+        a. Center Frequency, Band Width - changes in the BE_bin_w
+        b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened
+        exactly - FFT should show changes
+        c. BE repeats, desired duration - changes in the spectrogram length?
+        2. VS Parameters:
+        a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
+        b. Offset, Read voltage - Shows up in the DC offset
+        c. Steps per full Cycle - Changes in DC offset / AC amplitude ....
+        d. Number of cycles, Cycle fraction, In and out of field - changes in the length of DC offset etc.
+        e. FORC - should all show up in DC / AC amplitude
+        3. IO parameters : don't change really
+        4. grid parameters : cannot do anything about this.
 
         """
         disp_on = True        
