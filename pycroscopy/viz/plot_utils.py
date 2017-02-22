@@ -353,14 +353,16 @@ def plot_map(axis, data, stdevs=2, **kwargs):
     Returns
     -------
     """
-    data_mean = np.mean(data)
-    data_std = np.std(data)
     origin = kwargs.pop('origin', 'lower')
-    im = axis.imshow(data, interpolation='none',
-                     vmin=data_mean - stdevs * data_std,
-                     vmax=data_mean + stdevs * data_std,
-                     origin=origin,
-                     **kwargs)
+    if stdevs is not None:
+        data_mean = np.mean(data)
+        data_std = np.std(data)
+        im = axis.imshow(data, interpolation='none',
+                         vmin=data_mean - stdevs * data_std,
+                         vmax=data_mean + stdevs * data_std,
+                         origin=origin, **kwargs)
+    else:
+        im = axis.imshow(data, interpolation='none', origin=origin, **kwargs)
     axis.set_aspect('auto')
 
     return im
