@@ -138,7 +138,7 @@ class OneViewTranslator(Translator):
 
         num_files = scan_size_x * scan_size_y
 
-        h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, tmp.dtype.type,
+        h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32,
                                                         scan_size_x, scan_size_y,
                                                         image_parms)
 

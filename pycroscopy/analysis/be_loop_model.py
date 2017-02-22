@@ -57,6 +57,8 @@ class BELoopModel(Model):
     def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
         super(BELoopModel, self).__init__(h5_main, variables, parallel)
         self._h5_group = None
+        self.h5_guess_parameters = None
+        self.h5_fit_parameters = None
         self._sho_spec_inds = None
         self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
         self._met_spec_inds = None
@@ -113,41 +115,83 @@ class BELoopModel(Model):
 
         return super(BELoopModel, self)._isLegal(h5_main, variables)
 
-    def simulate_script(self):
+    # def simulate_script(self):
+    #
+    #     self._create_projection_datasets()
+    #     max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
+    #
+    #     # turn this into a loop
+    #     forc_chunk_index = 0
+    #     pos_chunk_index = 0
+    #
+    #     dc_vec, loops_2d, nd_mat_shape_dc_first, order_dc_offset_reverse = self._get_projection_data(
+    #         forc_chunk_index, max_pos, metrics_spec_inds_per_forc, pos_chunk_index, sho_spec_inds_per_forc)
+    #
+    #     # step 8: perform loop unfolding
+    #     projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
+    #     print('Finished projecting all loops')
+    #     print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
+    #     print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
+    #
+    #     # test the reshapes back
+    #     projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
+    #                                                               order_dc_offset_reverse,
+    #                                                               nd_mat_shape_dc_first)
+    #     metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
 
-        self._create_projection_datasets()
-        max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
+    def _set_guess(self, h5_guess):
+        """
+        Setup to run the fit on an existing guess dataset.  Sets the attributes
+        normally defined during doGuess.
 
-        # turn this into a loop
-        forc_chunk_index = 0
-        pos_chunk_index = 0
+        Parameters
+        ----------
+        h5_guess : h5py.Dataset
+            Dataset object containing the guesses
 
-        dc_vec, loops_2d, nd_mat_shape_dc_first, order_dc_offset_reverse = self._get_projection_data(
-            forc_chunk_index, max_pos, metrics_spec_inds_per_forc, pos_chunk_index, sho_spec_inds_per_forc)
+        """
+        '''
+        Get the Spectroscopic and Position datasets from `self.h5_main`
+        '''
+        self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        self._sho_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
 
-        # step 8: perform loop unfolding
-        projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
-        print('Finished projecting all loops')
-        print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
-        print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
+        '''
+        Find the Spectroscopic index for the DC_Offset
+        '''
+        dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').squeeze()
+        self._dc_spec_index = dc_ind
+        self._dc_offset_index = 1 + dc_ind
 
-        # test the reshapes back
-        projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
-                                                                  order_dc_offset_reverse,
-                                                                  nd_mat_shape_dc_first)
-        metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
+        '''
+        Get the group and projection datasets
+        '''
+        self._h5_group = h5_guess.parent
+        self.h5_projected_loops = self._h5_group['Projected_Loops']
+        self.h5_loop_metrics = self._h5_group['Loop_Metrics']
+        self._met_spec_inds = self._h5_group['Loop_Metrics_Indices']
 
-    def doGuess(self, max_mem=None, processors=None, verbose=False):
+        self.h5_guess = h5_guess
+
+    def doGuess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
         """
 
         Parameters
         ----------
         processors : uint, optional
-            Number of processors to use for computing. Currently this is a serial operation
+            Number of processors to use for computing. Currently this is a serial operation and this attribute is
+            ignored.
+            Default None, output of psutil.cpu_count - 2 is used
         max_mem : uint, optional
             Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
         verbose : bool, optional
             Whether or not to print debug statements
+            Default False
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
 
         Returns
         -------
@@ -209,22 +253,44 @@ class BELoopModel(Model):
 
             self._getDataChunk()
 
+        if get_loop_parameters:
+            self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
+
         return self.h5_guess
 
     def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
-              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])}):
+              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
+              get_loop_parameters=True, h5_guess=None):
         """
+        Fit the loops
 
-        :param processors:
-        :param solver_type:
-        :param solver_options:
-        :param obj_func:
-        :return:
+        Parameters
+        ----------
+        processors : uint, optional
+            Number of processors to use for computing. Currently this is a serial operation
+            Default None, output of psutil.cpu_count - 2 is used
+        max_mem : uint, optional
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
+        solver_type : str
+            Which solver from scipy.optimize should be used to fit the loops
+        solver_options : dict of str
+            Parameters to be passed to the solver defined by `solver_type`
+        obj_func : dict of str
+            Dictionary defining the class and method for the loop residual function as well
+            as the parameters to be passed
+        get_loop_parameters : bool, optional
+            Should the physical loop parameters be calculated after the guess is done
+            Default True
+        h5_guess : h5py.Dataset
+            Existing guess to use as input to fit.
+            Default None
+
+        Returns
+        -------
+        results: list
+            List of the results returned by the solver
         """
-        if self.h5_guess is None:
-            print("You need to guess before fitting\n")
-            return None
-
         if processors is None:
             processors = self._maxCpus
         else:
@@ -232,6 +298,12 @@ class BELoopModel(Model):
 
         if max_mem is None:
             max_mem = self._maxDataChunk
+
+        if h5_guess is not None:
+            self._set_guess(h5_guess)
+        elif self.h5_guess is None:
+            print("You need to guess before fitting\n")
+            return None
 
         self._createFitDataset()
         self._get_sho_chunk_sizes(max_mem, verbose=True)
@@ -282,7 +354,7 @@ class BELoopModel(Model):
 
             self.fit = np.hstack(tuple(results))
             self._setResults()
-            return results
+
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
             return None
@@ -290,6 +362,11 @@ class BELoopModel(Model):
             warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
                  (obj_func['obj_func']))
             return None
+
+        if get_loop_parameters:
+            self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
+
+        return results
 
     def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
         """

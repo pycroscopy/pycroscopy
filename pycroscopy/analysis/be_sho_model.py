@@ -141,7 +141,6 @@ class BESHOmodel(Model):
         '''
         copyAttributes(self.h5_guess, self.h5_fit, skip_refs=False)
 
-
     def _getFrequencyVector(self):
         """
         Assumes that the data is reshape-able
@@ -231,23 +230,44 @@ class BESHOmodel(Model):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOmodel, self)._setResults(is_guess)
 
+    def _set_guess(self, h5_guess):
+        """
+        Setup to run the fit on an existing guess dataset.  Sets the attributes
+        normally defined during doGuess.
+
+        Parameters
+        ----------
+        h5_guess : h5py.Dataset
+            Dataset object containing the guesses
+
+        """
+        h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+
+        self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+        self.num_udvs_steps = len(self.step_start_inds)
+
+        # find the frequency vector and hold in memory
+        self._getFrequencyVector()
+
+        self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
+
+        self.h5_guess = h5_guess
+
     def doGuess(self, processors=None, strategy='complex_gaussian',
-                     options={"peak_widths": np.array([10,200]),"peak_step":20}):
+                     options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
 
         Parameters
         ----------
-        data
+        processors: int
+            Number of processors to use during parallel guess
+            Default None, output of psutil.cpu_count - 2 is used
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
         options: dict
             Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
-
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
 
         Returns
         -------
@@ -265,23 +285,25 @@ class BESHOmodel(Model):
             options = {'frequencies': freq_vec}
         super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
 
-
-    def doFit(self, processors=None, solver_type='least_squares',solver_options={'jac':'cs'},
-              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
+    def doFit(self, processors=None, solver_type='least_squares', solver_options={'jac':'cs'},
+              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])},
+              h5_guess=None):
         """
 
         Parameters
         ----------
-        processors: int
-            Default is 1.
+        processors : int
             Number of processors to use.
-        strategy: string
+            Default None, output of psutil.cpu_count - 2 is used
+        strategy : string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
-        options: dict
+        options : dict
             Default {"peaks_widths": np.array([10,200])}}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
-
+        h5_guess : h5py.Dataset
+            Existing guess to use as input to fit.
+            Default None
 
         Returns
         -------
@@ -292,11 +314,15 @@ class BESHOmodel(Model):
         else:
             processors = min(processors, self._maxCpus)
 
+        if h5_guess is not None:
+            self._set_guess(h5_guess)
+
         self._createFitDatasets()
         self._start_pos = 0
         xvals = self.freq_vec
-        results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                          obj_func={'class':'Fit_Methods','obj_func':'SHO', 'xvals':xvals})
+        results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type,
+                                                solver_options=solver_options,
+                                                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': xvals})
         return results
 
     def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):

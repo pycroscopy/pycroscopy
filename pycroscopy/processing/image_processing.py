@@ -295,9 +295,18 @@ class ImageWindow(object):
     @staticmethod
     def abs_fft_func(image):
         """
+        Take the 2d FFT of each window in `windows` and return in the proper form.
 
-        :param image:
-        :return:
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array of the Magnitude of the FFT of each window for the input
+            `image`
         """
         windows = np.empty_like(image, dtype=absfft32)
         windows['FFT Magnitude'] = np.abs(np.fft.fftshift(np.fft.fft2(image)))
@@ -309,8 +318,17 @@ class ImageWindow(object):
         """
         Take the 2d FFT of each window in `windows` and return in the proper form.
 
-        :param windows:
-        :return:
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array of windows and the Magnitude of the FFT of each window for the input
+            `image`
+
         """
         windows = np.empty_like(image, dtype=winabsfft32)
         windows['Image Data'] = image
@@ -323,8 +341,16 @@ class ImageWindow(object):
         """
         Take the 2d FFT of each window in `windows` and return in the proper form.
 
-        :param image:
-        :return:
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array of windows and the FFT of each window for the input `image`
+
         """
         windows = np.empty_like(image, dtype=wincompfft32)
         windows['Image Data'] = image
@@ -333,92 +359,6 @@ class ImageWindow(object):
         windows['FFT Imag'] = win_fft.imag
 
         return windows
-
-    # def clean_windows(self, h5_win=None, n_comp=None):
-    #     """
-    #     Rebuild the Image from the SVD results on the windows.
-    #     Optionally, only use components less than n_comp.
-    #
-    #     Parameters
-    #     ----------
-    #     h5_win : hdf5 Dataset, optional
-    #             windowed image which SVD was performed on
-    #             will try to use self.h5_wins if no dataset is provided
-    #     n_comp : int, optional
-    #         components above this number will be discarded
-    #
-    #     Returns
-    #     -------
-    #     clean_wins : HDF5 Dataset
-    #         Dataset containing the cleaned windows
-    #
-    #     """
-    #     if h5_win is None:
-    #         if self.h5_wins is None:
-    #             warn('You must perform windowing on an image followed by SVD on the window before you can clean it.')
-    #             return
-    #         h5_win = self.h5_wins
-    #
-    #     print('Cleaning the image by removing components past {}.'.format(n_comp))
-    #
-    #     '''
-    #     Read the 1st n_comp componets from the SVD results
-    #     on h5_win
-    #     '''
-    #     comp_slice = slice(0,n_comp)
-    #     win_name = h5_win.name.split('/')[-1]
-    #
-    #     try:
-    #         svd_name = win_name+'-SVD_000'
-    #         win_svd = h5_win.parent[svd_name]
-    #
-    #         S = win_svd['S'][comp_slice]
-    #         U = win_svd['U'][:,comp_slice]
-    #         V = win_svd['V'][comp_slice,:]
-    #
-    #     except KeyError:
-    #         warnstring = 'SVD Results for {dset} were not found in {file}.'.format(dset=win_name, file=self.image_path)
-    #         warn(warnstring)
-    #         return
-    #     except:
-    #         raise
-    #
-    #     '''
-    #     Creat the new Group to how the cleaned windows
-    #     '''
-    #     grp_name = win_name+'-Cleaned_Windows_'
-    #     clean_grp = MicroDataGroup(grp_name, win_svd.name[1:])
-    #
-    #     ds_wins = MicroDataset('Cleaned_Windows', data=[], dtype=h5_win.dtype,
-    #                            chunking=h5_win.chunks, maxshape=h5_win.shape)
-    #     for key, val in h5_win.attrs.iteritems():
-    #         ds_wins.attrs[key] = val
-    #
-    #     clean_grp.addChildren([ds_wins])
-    #     for key, val in h5_win.parent.attrs.iteritems():
-    #         clean_grp.attrs[key] = val
-    #
-    #     clean_grp.attrs['retained_comps'] = n_comp
-    #     clean_ref = self.hdf.writeData(clean_grp)
-    #     new_wins = getH5DsetRefs(['Cleaned_Windows'], clean_ref)[0]
-    #
-    #     '''
-    #     Generate a cleaned set of windows
-    #     '''
-    #     if win_svd.attrs['svd_method'] == 'sklearn-incremental':
-    #         batch_size = win_svd.attrs['batch_size']
-    #         V = np.dot(np.diag(S), V)
-    #         batches = gen_batches(U.shape[0], batch_size)
-    #         for batch in batches:
-    #             new_wins[batch, :] = np.dot(U[batch, :], V)
-    #     else:
-    #         new_wins[:, :] = np.dot(U, np.dot(np.diag(S), V))
-    #     del U, S, V
-    #
-    #     self.clean_wins = new_wins
-    #
-    #     return new_wins
-        
 
     def build_clean_image(self, h5_win=None):
         """
@@ -433,6 +373,7 @@ class ImageWindow(object):
         -------
         h5_clean : HDF5 dataset
             The cleaned image
+
         """
         if h5_win is None:
             if self.clean_wins is None:
@@ -841,7 +782,7 @@ class ImageWindow(object):
         components : {int, iterable of int, slice} optional
             Defines which components to keep
             Default - None, all components kept
-
+            \n
             Input Types
             integer : Components less than the input will be kept
             length 2 iterable of integers : Integers define start and stop of component slice to retain
@@ -1244,37 +1185,36 @@ class ImageWindow(object):
 
         return window_size, psf_width
 
-
     def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit, save_plots=True, show_plots=False):
         """
         Generate a plot showing the quality of the least-squares fit to the peaks of the FFT of the image
 
         Parameters
         ----------
-            r_vec : numpy array
-                1D array of unsorted radii in pixels
-            r_sort : numpy array
-                1D array of the sorted radii
-            fft_absimage : numpy array
-                1D array of the absolute value of the FFT of the normalized image
-            fft_abssort : numpy array
-                1D array of FFT_absimage after being sorted to match r_sort
-            guess :  numpy array
-                1D array of the gaussian guess
-            fit : numpy array
-                1D array of the fitted gaussian
-            save_plots : Boolean, optional
-                If True then a plot showing the quality of the fit will be
-                generated and saved to disk.
-                Default True
-            show_plots : Boolean, optional
-                If True then a plot showing the quality of the fit will be
-                generated and shown on screen.
-                Default False
+        r_vec : numpy array
+            1D array of unsorted radii in pixels
+        r_sort : numpy array
+            1D array of the sorted radii
+        fft_absimage : numpy array
+            1D array of the absolute value of the FFT of the normalized image
+        fft_abssort : numpy array
+            1D array of FFT_absimage after being sorted to match r_sort
+        guess :  numpy array
+            1D array of the gaussian guess
+        fit : numpy array
+            1D array of the fitted gaussian
+        save_plots : Boolean, optional
+            If True then a plot showing the quality of the fit will be
+            generated and saved to disk.
+            Default True
+        show_plots : Boolean, optional
+            If True then a plot showing the quality of the fit will be
+            generated and shown on screen.
+            Default False
 
         Returns
         -------
-            None
+        None
 
         """
         
@@ -1306,49 +1246,6 @@ class ImageWindow(object):
             plt.show(fig)
             
         plt.close(fig)
-
-
-    # @staticmethod
-    # def __get_component_slice(components):
-    #     """
-    #     Check the components object to determine how to use it to slice the dataset
-    #
-    #     Parameters
-    #     ----------
-    #     components : {int, iterable of ints, slice, or None}
-    #         Input Options
-    #         integer: Components less than the input will be kept
-    #         length 2 iterable of integers: Integers define start and stop of component slice to retain
-    #         other iterable of integers or slice: Selection of component indices to retain
-    #         None: All components will be used
-    #     Returns
-    #     -------
-    #     comp_slice : slice or numpy array of uints
-    #         Slice or array specifying which components should be kept
-    #
-    #     """
-    #
-    #     comp_slice = slice(None)
-    #
-    #     if isinstance(components, int):
-    #         # Component is integer
-    #         comp_slice = slice(0, components)
-    #     elif hasattr(components, '__iter__') and not isinstance(components, dict):
-    #         # Component is array, list, or tuple
-    #         if len(components) == 2:
-    #             # If only 2 numbers are given, use them as the start and stop of a slice
-    #             comp_slice = slice(int(components[0]), int(components[1]))
-    #         else:
-    #             #Convert components to an unsigned integer array
-    #             comp_slice = np.uint(np.round(components)).tolist()
-    #     elif isinstance(components, slice):
-    #         # Components is already a slice
-    #         comp_slice = components
-    #     elif components is not None:
-    #         raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
-    #
-    #     return comp_slice
-
 
 def radially_average_correlation(data_mat, num_r_bin):
     """
