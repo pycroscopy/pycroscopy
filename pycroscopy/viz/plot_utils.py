@@ -1342,17 +1342,17 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
 
     if isBEPS:
         meas_type = chan_grp.parent.attrs['VS_mode']
-        # basically 3 kinds for now - DC/current, AC, UD - lets ignore this
+        # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
         if meas_type == 'load user defined VS Wave from file':
             warn('Not handling custom experiments for now')
-            h5_file.close()
+            # h5_file.close()
             return
 
         # Plot amplitude and phase maps at one or more UDVS steps
 
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
-            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center])
+            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][:, 0:center])
 
             forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
