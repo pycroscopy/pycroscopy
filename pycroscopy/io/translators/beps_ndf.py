@@ -202,7 +202,7 @@ class BEPSndfTranslator(Translator):
                     self.ds_pixel_start_indx = pixel_ind
                     h5_refs = self.__initialize_meas_group(self.max_pixels - pixel_ind, current_pixels)
 
-            print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
+            # print('reading Pixel {} of {}'.format(pixel_ind,self.max_pixels))
             self.__append_pixel_data(current_pixels)
 
             prev_pixels = current_pixels
