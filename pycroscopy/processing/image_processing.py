@@ -183,9 +183,7 @@ class ImageWindow(object):
         
         win_pix = win_x*win_y
         
-        win_pos_mat = np.array([np.repeat(x_steps, ny),
-                                np.tile(y_steps, nx)],
-                                dtype=np.uint).T
+        win_pos_mat = np.array([np.repeat(x_steps, ny), np.tile(y_steps, nx)], dtype=np.uint32).T
         
         win_pix_mat = make_position_mat([win_x, win_y]).T
 
