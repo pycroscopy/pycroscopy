@@ -7,6 +7,7 @@ Created on Feb 9, 2016
 import os
 
 import numpy as np
+from warnings import warn
 from skimage.measure import block_reduce
 from skimage.util import crop
 from ..io_image import read_image, read_dm3, parse_dm4_parms
@@ -265,7 +266,7 @@ class OneViewTranslator(Translator):
 
         for ifile, thisfile in enumerate(file_list):
 
-            selected = (ifile + 1) % round(num_files / 16) == 0
+            selected = (ifile + 1) % int(round(num_files / 16)) == 0
             if selected:
                 print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
 
@@ -322,6 +323,10 @@ class OneViewTranslator(Translator):
             raise ValueError('Allowed values of crop_method are percent and absolute.')
 
         cropped_ronc = crop(ronc, crop_ammount)
+
+        if any([dim == 0 for dim in cropped_ronc.shape]):
+            warn("Requested crop ammount is greater than the image size.  No cropping will be done.")
+            return ronc
 
         return cropped_ronc
 
