@@ -158,8 +158,8 @@ class ioHDF5(object):
         # Figuring out if the first item in AFMData tree is file or group
         if data.name is '' and data.parent is '/':
             # For file we just write the attributes
-            for key in data.attrs.iterkeys():
-                f.attrs[key] = data.attrs[key]
+            for key, val in data.attrs.iteritems():
+                f.attrs[key] = val
             if print_log: print('Wrote attributes of file {} \n'.format(f.name))
             root = f.name
         else:
@@ -187,10 +187,10 @@ class ioHDF5(object):
                 f.flush()
                 f.close()
                 raise
-            for key in data.attrs.iterkeys():
-                if data.attrs[key] is None:
+            for key, val in data.attrs.iteritems():
+                if val is None:
                     continue
-                g.attrs[key] = data.attrs[key]
+                g.attrs[key] = val
             if print_log: print('Wrote attributes to group: {} \n'.format(data.name))
             root = g.name
 
@@ -218,8 +218,11 @@ class ioHDF5(object):
                     f.flush()
                     f.close()
                     raise
-                for key in child.attrs.iterkeys():
-                    itm.attrs[key] = child.attrs[key]
+                for key, val in child.attrs.iteritems():
+                    print key, val
+                    if val is None:
+                        continue
+                    itm.attrs[key] = val
                 if print_log: print('Wrote attributes to group {}\n'.format(itm.name))
                 # here we do the recursive function call
                 for ch in child.children:
