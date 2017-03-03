@@ -266,6 +266,15 @@ class NDataTranslator(Translator):
             num_images = scan_size_x*scan_size_y
             num_pixels = usize*vsize
 
+            '''
+            Write these attributes to the Measurement group
+            '''
+            new_attrs = {'image_size_u': usize,
+                         'image_size_v': vsize,
+                         'scan_size_x': scan_size_x,
+                         'scan_size_y': scan_size_y}
+            this_channel.parent.attrs.update(new_attrs)
+
             # Get the Position and Spectroscopic Datasets
             ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
                                                             labels=['U', 'V'], units=['pixel', 'pixel'])
