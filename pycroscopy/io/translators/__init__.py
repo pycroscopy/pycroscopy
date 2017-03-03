@@ -28,8 +28,10 @@ from .igor_ibw import IgorIBWTranslator
 from . import image
 from .image import ImageTranslator
 from .numpy_translator import NumpyTranslator
+from . import ndata_translator
+from .ndata_translator import NDataTranslator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
-           'OneViewTranslator', 'ImageTranslator']
+           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator']
