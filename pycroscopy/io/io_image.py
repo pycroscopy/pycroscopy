@@ -123,7 +123,7 @@ def read_dm4(file_path, *args, **kwargs):
         x_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[0])
         y_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[1])
 
-        image_array = np.array(dm4_file.read_tag_data(image_tag), dtype=np.uint16)
+        image_array = np.array(dm4_file.read_tag_data(image_tag), dtype=np.float32)
         image_array = np.reshape(image_array, (y_dim, x_dim))
 
     if get_parms:
