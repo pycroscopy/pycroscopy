@@ -45,20 +45,20 @@ def SHOestimateGuess(w_vec, resp_vec, num_points=5):
     
     ii = np.argsort(abs(resp_vec))[::-1]
     
-    a_mat=np.array([])
-    e_vec=np.array([])
+    a_mat = np.array([])
+    e_vec = np.array([])
 
     for c1 in range(num_points):
         for c2 in range(c1+1,num_points):
-            w1=w_vec[ii[c1]]
-            w2=w_vec[ii[c2]]
-            X1=real(resp_vec[ii[c1]])
-            X2=real(resp_vec[ii[c2]])
-            Y1=imag(resp_vec[ii[c1]])
-            Y2=imag(resp_vec[ii[c2]])
+            w1 = w_vec[ii[c1]]
+            w2 = w_vec[ii[c2]]
+            X1 = real(resp_vec[ii[c1]])
+            X2 = real(resp_vec[ii[c2]])
+            Y1 = imag(resp_vec[ii[c1]])
+            Y2 = imag(resp_vec[ii[c2]])
             
             denom = (w1*(X1**2 - X1*X2 + Y1*(Y1 - Y2)) + w2*(-X1*X2 + X2**2 - Y1*Y2 + Y2**2))
-            if denom>0:
+            if denom > 0:
                 a = ((w1**2 - w2**2)*(w1*X2*(X1**2 + Y1**2) - w2*X1*(X2**2 + Y2**2)))/denom
                 b = ((w1**2 - w2**2)*(w1*Y2*(X1**2 + Y1**2) - w2*Y1*(X2**2 + Y2**2)))/denom
                 c = ((w1**2 - w2**2)*(X2*Y1 - X1*Y2))/denom
@@ -103,7 +103,7 @@ def SHOestimateGuess(w_vec, resp_vec, num_points=5):
     return p0
 
 
-def SHOfastGuess(w_vec, resp_vec, qual_factor=10):
+def SHOfastGuess(w_vec, resp_vec, qual_factor=200):
     """
     Default SHO guess from the maximum value of the response
 
