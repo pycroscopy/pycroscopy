@@ -99,7 +99,7 @@ class MicroDataGroup(MicroData):
                 for ch in child.children:
                     __tree(ch, parent+'/'+child.name)
         
-        print(self.parent+self.name)            
+        # print(self.parent+self.name)
         for child in self.children:
             __tree(child, self.parent+self.name)
                     

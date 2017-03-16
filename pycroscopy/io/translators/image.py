@@ -31,7 +31,7 @@ class ImageTranslator(Translator):
         self.image_path = None
         self.h5_path = None
 
-    def translate(self, image_path, h5_path=None, bin_factor=None, bin_func=np.mean, **image_args):
+    def translate(self, image_path, h5_path=None, bin_factor=None, bin_func=np.mean, normalize=False, **image_args):
         """
         Basic method that adds Ptychography data to existing hdf5 thisfile
         You must have already done the basic translation with BEodfTranslator
@@ -50,6 +50,9 @@ class ImageTranslator(Translator):
             of each block.  Function must implement an axis parameter,
             i.e. numpy.mean.  Ignored if bin_factor is None.  Default is
             numpy.mean.
+        normalize : boolean, optional
+            Should the raw image be normalized when read in
+            Default False
         image_args : dict
             Arguments to be passed to read_image.  Arguments depend on the type of image.
 
@@ -86,11 +89,16 @@ class ImageTranslator(Translator):
 
         image = self.binning_func(image, self.bin_factor, self.bin_func)
 
+        image_parms['normalized'] = normalize
+        image_parms['image_min'] = np.min(image)
+        image_parms['image_max'] = np.max(image)
         '''
         Normalize Raw Image
         '''
-        image -= np.min(image)
-        image = image/np.float32(np.max(image))
+        if normalize:
+            image -= np.min(image)
+            image = image/np.float32(np.max(image))
+
 
         h5_main = self._setup_h5(usize, vsize, image.dtype.type, image_parms)
 

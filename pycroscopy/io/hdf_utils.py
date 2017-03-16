@@ -11,7 +11,7 @@ import numpy as np
 from .microdata import MicroDataset
 
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'getDataAttr', 'getH5GroupRef', 'checkIfMain', 'checkAndLinkAncillary',
+           'getAuxData', 'getDataAttr', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims']
 
@@ -139,7 +139,7 @@ def getH5DsetRefs(ds_names, h5_refs):
     return aux_dset
 
 
-def getH5GroupRef(group_name, h5_refs):
+def getH5GroupRefs(group_name, h5_refs):
     """
     Given a list of H5 references and a group name,
     this method returns H5 Datagroup object corresponding to the names.
@@ -157,11 +157,11 @@ def getH5GroupRef(group_name, h5_refs):
     h5_grp : HDF5 Object Reference
         reference to group that matches the `group_name`
     """
-    for dset in h5_refs:
-        if dset.name.split('/')[-1].startswith(group_name):
-            # assuming that this name will show up only once in the list
-            return dset
-    return None
+    group_list = list()
+    for item in h5_refs:
+        if item.name.split('/')[-1].startswith(group_name):
+            group_list.append(item)
+    return group_list
 
 
 def findH5group(h5_main, tool_name):
@@ -754,7 +754,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
         # Check if the dataset already exists
         h5_new_dset = h5_group[dset_name]
         # Make sure it has the correct shape and dtype
-        if any((source_dset.shape!=h5_new_dset.shape,source_dset.dtype!=h5_new_dset.dtype)):
+        if any((source_dset.shape != h5_new_dset.shape, source_dset.dtype != h5_new_dset.dtype)):
             del h5_new_dset, h5_group[dset_name]
             h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                                   compression=source_dset.compression, chunks=source_dset.chunks)

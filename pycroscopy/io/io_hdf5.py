@@ -117,34 +117,40 @@ class ioHDF5(object):
         self.file = h5py.File(self.path, mode = 'r+')
 
     def close(self):
-        '''Close h5.file'''
+        """
+        Close h5.file
+        """
         self.file.close()
 
     def delete(self):
-        ''' Delete h5.file'''
+        """
+        Delete h5.file
+        """
         self.close()
         os.remove(self.path)
 
     def flush(self):
-        '''Flush data from memory and commit to file. 
-        Use this after manually inserting data into the hdf dataset'''
+        """
+        Flush data from memory and commit to file.
+        Use this after manually inserting data into the hdf dataset
+        """
         self.file.flush()
 
     def writeData(self, data, print_log=False):
-        '''
+        """
         Writes data into the hdf5 file and assigns data attributes such as region references.
         The tree structure is inferred from the AFMData Object.
-        
+
         Parameters
         ----------
         data : Instance of MicroData
             Tree structure describing the organization of the data
-            
+
         Returns
         -------
         refList : List of HDF5dataset or HDF5Datagroup references
             References to the objects written
-        '''
+        """
 
         f = self.file
 
@@ -158,9 +164,10 @@ class ioHDF5(object):
         # Figuring out if the first item in AFMData tree is file or group
         if data.name is '' and data.parent is '/':
             # For file we just write the attributes
-            for key in data.attrs.iterkeys():
-                f.attrs[key] = data.attrs[key]
-            if print_log: print('Wrote attributes of file {} \n'.format(f.name))
+            for key, val in data.attrs.iteritems():
+                f.attrs[key] = val
+            if print_log:
+                print('Wrote attributes of file {} \n'.format(f.name))
             root = f.name
         else:
             # For a group we write it and its attributes
@@ -170,7 +177,7 @@ class ioHDF5(object):
                 ensure that the chosen index is new.
                 '''
                 previous = np.where([data.name in key for key in f[data.parent].keys()])[0]
-                if len(previous)==0:
+                if len(previous) == 0:
                     index = 0
                 else:
                     # assuming that the last element of previous contains the highest index
@@ -187,10 +194,10 @@ class ioHDF5(object):
                 f.flush()
                 f.close()
                 raise
-            for key in data.attrs.iterkeys():
-                if data.attrs[key] is None:
+            for key, val in data.attrs.iteritems():
+                if val is None:
                     continue
-                g.attrs[key] = data.attrs[key]
+                g.attrs[key] = val
             if print_log: print('Wrote attributes to group: {} \n'.format(data.name))
             root = g.name
 
@@ -218,8 +225,10 @@ class ioHDF5(object):
                     f.flush()
                     f.close()
                     raise
-                for key in child.attrs.iterkeys():
-                    itm.attrs[key] = child.attrs[key]
+                for key, val in child.attrs.iteritems():
+                    if val is None:
+                        continue
+                    itm.attrs[key] = val
                 if print_log: print('Wrote attributes to group {}\n'.format(itm.name))
                 # here we do the recursive function call
                 for ch in child.children:
@@ -323,25 +332,27 @@ class ioHDF5(object):
 
     @staticmethod
     def write_region_references(dataset, slices, print_log=False):
-        '''
+        """
         Creates attributes of a h5.Dataset that refer to regions in the arrays
-        
+
         Parameters
         ----------
         dataset : h5.Dataset instance
             Dataset to which region references will be added as attributes
         slices : dictionary
-            The slicing information must be formatted using tuples of slice objects. 
+            The slicing information must be formatted using tuples of slice objects.
             For example {'region_1':(slice(None, None), slice (0,1))}
         print_log : Boolean (Optional. Default = False)
             Whether or not to print status messages
-        '''
+        """
         if print_log: print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
         for sl in slices.iterkeys():
-            if print_log: print('About to write region reference:', sl, ':', slices[sl])
+            if print_log:
+                print('About to write region reference:', sl, ':', slices[sl])
             if len(slices[sl]) == len(dataset.shape):
                 dataset.attrs[sl] = dataset.regionref[slices[sl]]
-                if print_log: print('Wrote Region Reference:%s' % sl)
+                if print_log:
+                    print('Wrote Region Reference:%s' % sl)
             else:
                 warn('Region reference %s could not be written since the object size was not equal to the dimensions of'
                      ' the dataset' % sl)

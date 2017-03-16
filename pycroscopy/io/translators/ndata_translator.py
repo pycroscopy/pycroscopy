@@ -5,31 +5,31 @@ Created on Feb 9, 2016
 """
 
 import os
-
+import json
+import zipfile
 import numpy as np
 from warnings import warn
 from skimage.measure import block_reduce
 from skimage.util import crop
-from ..io_image import read_image, read_dm3, parse_dm4_parms
 from .translator import Translator
 from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
     get_position_slicing, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
+from ..hdf_utils import getH5DsetRefs, getH5GroupRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
+from ..io_image import unnest_parm_dicts
 from ..microdata import MicroDataGroup, MicroDataset
-from .. import dm4reader
 
 
-class OneViewTranslator(Translator):
+class NDataTranslator(Translator):
     """
     Translate Pytchography data from a set of images to an HDF5 file
     """
 
     def __init__(self, *args, **kwargs):
-        super(OneViewTranslator, self).__init__(*args, **kwargs)
+        super(NDataTranslator, self).__init__(*args, **kwargs)
 
         self.rebin = False
-        self.bin_factor = 1
+        self.bin_factor = (1,1,1,1)
         self.hdf = None
         self.binning_func = self.__no_bin
         self.bin_func = None
@@ -99,26 +99,14 @@ class OneViewTranslator(Translator):
         Get the list of all files with the .tif extension and
         the number of files in the list
         '''
-        root_file_list, file_list = self._parse_file_path(image_path)
+        file_list = self._parse_file_path(image_path)
 
-        size, image_parms = self._getimageparms(file_list[0])
-        usize, vsize = size
+        '''
+        Get zipfile handles for all the ndata1 files that were found in the image_path
+        '''
+        ziplist = [zipfile.ZipFile(zip_path, 'r') for zip_path in file_list]
 
-        self.image_list_tag = image_parms.pop('Image_Tag', None)
-
-        tmp, _ = read_image(file_list[0])
-        if crop_ammount is not None:
-            tmp = self.crop_ronc(tmp)
-            usize, vsize = tmp.shape
-
-        num_files = len(file_list)
-        if scan_size_x is None and scan_size_y is None:
-            scan_size_x = int(np.sqrt(num_files))
-            scan_size_y = int(num_files/scan_size_x)
-        elif scan_size_x is None:
-            scan_size_x = int(num_files/scan_size_y)
-        elif scan_size_y is None:
-            scan_size_y = int(num_files/scan_size_x)
+        image_parm_list = self._getimageparms(file_list)
 
         '''
         Check if a bin_factor is given.  Set up binning objects if it is.
@@ -126,29 +114,19 @@ class OneViewTranslator(Translator):
         if bin_factor is not None:
             self.rebin = True
             if isinstance(bin_factor, int):
-                self.bin_factor = (bin_factor, bin_factor)
+                self.bin_factor = (1, 1, bin_factor, bin_factor)
             elif len(bin_factor) == 2:
-                self.bin_factor = tuple(bin_factor)
+                self.bin_factor = (1, 1) + bin_factor
             else:
                 raise ValueError('Input parameter `bin_factor` must be a length 2 array_like or an integer.\n' +
                                  '{} was given.'.format(bin_factor))
-            usize = int(usize / self.bin_factor[0])
-            vsize = int(vsize / self.bin_factor[1])
+
             self.binning_func = block_reduce
             self.bin_func = bin_func
 
-        num_files = scan_size_x * scan_size_y
+        h5_channels = self._setupH5(image_parm_list)
 
-        h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32,
-                                                        scan_size_x, scan_size_y,
-                                                        image_parms)
-
-        for root_file in root_file_list:
-            print('Saving the root image located at {}.'.format(root_file))
-            self._create_root_image(root_file)
-
-        self._read_data(file_list[start_image:start_image + num_files],
-                        h5_main, h5_mean_spec, h5_ronch, image_path)
+        self._read_data(ziplist, h5_channels)
 
         self.hdf.close()
 
@@ -236,7 +214,7 @@ class OneViewTranslator(Translator):
 
         self.root_image_list.append(h5_image)
 
-    def _read_data(self, file_list, h5_main, h5_mean_spec, h5_ronch, image_path):
+    def _read_data(self, zip_list, h5_channels):
         """
         Iterates over the images in `file_list`, reading each image and downsampling if
         reqeusted, and writes the flattened image to file.  Also builds the Mean_Ronchigram
@@ -244,7 +222,7 @@ class OneViewTranslator(Translator):
 
         Parameters
         ----------
-        file_list : list of str
+        zip_list : list of str
             List of all files in `image_path` that will be read
         h5_main : h5py.Dataset
             Dataset which will hold the Ronchigrams
@@ -259,31 +237,95 @@ class OneViewTranslator(Translator):
         -------
         None
         """
+        h5_main_list = list()
+        '''
+        For each file, we must read the data then create the neccessary datasets, add them to the channel, and
+        write it all to file
+        '''
+        for ifile, (this_file, this_channel) in enumerate(zip(zip_list, h5_channels)):
+            '''
+            Extract the data file from the zip archive and read it into an array
+            '''
+            tmp_path = this_file.extract('data.npy')
+            this_data = np.load(tmp_path)
+            os.remove(tmp_path)
 
-        mean_ronch = np.zeros(h5_ronch.shape, dtype=np.float32)
+            '''
+            Find the shape of the data, then calculate the final dimensions based on the crop and
+            downsampling parameters
+            '''
+            while this_data.ndim < 4:
+                this_data = np.expand_dims(this_data, 0)
 
-        num_files = len(file_list)
+            this_data = self.crop_ronc(this_data)
+            scan_size_x, scan_size_y, usize, vsize = this_data.shape
 
-        for ifile, thisfile in enumerate(file_list):
+            usize = int(round(1.0*usize / self.bin_factor[-2]))
+            vsize = int(round(1.0*vsize / self.bin_factor[-1]))
 
-            selected = (ifile + 1) % int(round(num_files / 16)) == 0
-            if selected:
-                print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
+            num_images = scan_size_x*scan_size_y
+            num_pixels = usize*vsize
 
-            image, _ = read_image(os.path.join(image_path, thisfile), get_parms=False, header=self.image_list_tag)
-            # image, _ = read_image(os.path.join(image_path, thisfile), get_parms=False)
-            image = self.crop_ronc(image)
-            image = self.binning_func(image, self.bin_factor, self.bin_func)
-            image = image.flatten()
-            h5_main[ifile, :] = image
+            '''
+            Write these attributes to the Measurement group
+            '''
+            new_attrs = {'image_size_u': usize,
+                         'image_size_v': vsize,
+                         'scan_size_x': scan_size_x,
+                         'scan_size_y': scan_size_y}
+            this_channel.parent.attrs.update(new_attrs)
 
-            h5_mean_spec[ifile] = np.mean(image)
+            # Get the Position and Spectroscopic Datasets
+            ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
+                                                            labels=['U', 'V'], units=['pixel', 'pixel'])
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
+                                                         labels=['X', 'Y'], units=['pixel', 'pixel'])
 
-            mean_ronch += image
+            ds_chunking = calc_chunks([num_images, num_pixels],
+                                      np.float32(0).itemsize,
+                                      unit_chunks=(1, num_pixels))
+
+            # Allocate space for Main_Data and Pixel averaged Data
+            ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_images, num_pixels),
+                                        chunking=ds_chunking, dtype=np.float32, compression='gzip')
+            ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
+                                              data=np.zeros(num_pixels, dtype=np.float32),
+                                              dtype=np.float32)
+            ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
+                                             data=np.zeros(num_images, dtype=np.float32),
+                                             dtype=np.float32)
+
+            # Add datasets as children of Measurement_000 data group
+            ds_channel = MicroDataGroup(this_channel.name)
+            ds_channel.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                                    ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+
+            h5_refs = self.hdf.writeData(ds_channel)
+            h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+            h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
+            h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
+
+            aux_ds_names = ['Position_Indices',
+                            'Position_Values',
+                            'Spectroscopic_Indices',
+                            'Spectroscopic_Values']
+
+            link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+
+            mean_ronch = np.zeros(h5_ronch.shape, dtype=np.float32)
+
+            this_data = self.binning_func(this_data, self.bin_factor, self.bin_func).reshape(h5_main.shape)
+
+            h5_main[:, :] = this_data
+
+            h5_mean_spec[:] = np.mean(this_data, axis=1)
+
+            h5_ronch[:] = np.mean(this_data, axis=0)
 
             self.hdf.flush()
 
-        h5_ronch[:] = mean_ronch / num_files
+            h5_main_list.append(h5_main)
+
         self.hdf.flush()
 
     def crop_ronc(self, ronc):
@@ -312,7 +354,7 @@ class OneViewTranslator(Translator):
             crop_ammount = tuple([tuple(row) for row in crop_ammount.astype(np.uint32)])
         elif crop_method == 'absolute':
             if isinstance(crop_ammount, int):
-                pass
+                crop_ammount = ((crop_ammount,), (crop_ammount,))
             elif len(crop_ammount) == 2:
                 crop_ammount = ((crop_ammount[0],), (crop_ammount[1],))
             elif len(crop_ammount) == 4:
@@ -322,12 +364,13 @@ class OneViewTranslator(Translator):
         else:
             raise ValueError('Allowed values of crop_method are percent and absolute.')
 
+        crop_ammount = ((0,), (0,))+crop_ammount
+
         cropped_ronc = crop(ronc, crop_ammount)
 
         if any([dim == 0 for dim in cropped_ronc.shape]):
             warn("Requested crop ammount is greater than the image size.  No cropping will be done.")
             return ronc
-
         return cropped_ronc
 
     def downSampRoncVec(self, ronch_vec, binning_factor):
@@ -371,64 +414,52 @@ class OneViewTranslator(Translator):
             names of all files in directory located at path
         """
         file_list = list()
-        root_file_list = list()
-        allowed_image_types = ['.dm3', '.dm4', '.jpg', '.png', '.tif',
-                               '.tiff', '.jpeg', '.bmp']
+        allowed_image_types = ['.ndata1']
         for root, dirs, files in os.walk(image_folder):
             for thisfile in files:
                 _, ext = os.path.splitext(thisfile)
                 if ext not in allowed_image_types:
                     continue
-                if root == image_folder:
-                    root_file_list.append(os.path.join(image_folder, thisfile))
                 else:
                     file_list.append(os.path.join(root, thisfile))
-        return root_file_list, file_list
+        return file_list
 
     @staticmethod
-    def _getimageparms(image):
+    def _getimageparms(file_list):
         """
-        Returns the x and y size of the image in pixels
+        Returns the image parameters for each file in the `file_list`
 
         Parameters
         ------------
-        image : string / unicode
-            absolute path to the dm4 file
+        file_list : list of zipfile.ZipFile
+            List of zipfile objects
 
         Returns
         -----------
-        size : unsigned integer
-            x and y dimenstions of image
-        parms : dict
-            Image parameters from the dm4 file
+        parm_list : list of dict
+            List of image parameters from the files in `file_list`
         """
-        dm4_file = dm4reader.DM4File.open(image)
-        tags = dm4_file.read_directory()
-        parms = parse_dm4_parms(dm4_file, tags, '')
+        parm_list = list()
 
-        u_size = parms['Root_ImageList_SubDir_000_ImageData_Dimensions_Tag_000']
-        v_size = parms['Root_ImageList_SubDir_000_ImageData_Dimensions_Tag_001']
-        size = u_size, v_size
+        for zpath in file_list:
+            zfile = zipfile.ZipFile(zpath, 'r')
+            tmp_path = zfile.extract('metadata.json')
+            metafile = open(tmp_path, 'r')
+            metastring = metafile.read()
+            parm_list.append(unnest_parm_dicts(json.loads(metastring)))
+            metafile.close()
 
-        return size, parms
+            os.remove(tmp_path)
 
-    def _setupH5(self, usize, vsize, data_type, scan_size_x, scan_size_y, image_parms):
+        return parm_list
+
+    def _setupH5(self, image_parms):
         """
-        Setup the HDF5 file in which to store the data including creating
-        the Position and Spectroscopic datasets
+        Setup the HDF5 file in which to store the data
+        Due to the structure of the ndata format, we can only create the Measurement and Channel groups here
 
         Parameters
         ----------
-        usize : int
-            Number of pixel columns in the images
-        vsize : int
-            Number of pixel rows in the images
-        data_type : type
-            Data type to save image as
-        scan_size_x : int
-            Number of images in the x dimension
-        scan_size_y : int
-            Number of images in the y dimension
         image_parms : dict
             Dictionary of parameters
 
@@ -443,69 +474,35 @@ class OneViewTranslator(Translator):
             HDF5 Dateset that the mean over all Spectroscopic steps will be
             written into
         """
-        num_pixels = usize * vsize
-        num_files = scan_size_x * scan_size_y
-
         root_parms = generate_dummy_main_parms()
         root_parms['data_type'] = 'PtychographyData'
-
-        main_parms = {'num_images': num_files,
-                      'image_size_u': usize,
-                      'image_size_v': vsize,
-                      'num_pixels': num_pixels,
-                      'translator': 'Ptychography',
-                      'scan_size_x': scan_size_x,
-                      'scan_size_y': scan_size_y}
-        main_parms.update(image_parms)
 
         # Create the hdf5 data Group
         root_grp = MicroDataGroup('/')
         root_grp.attrs = root_parms
-        meas_grp = MicroDataGroup('Measurement_000')
-        meas_grp.attrs = main_parms
-        chan_grp = MicroDataGroup('Channel_000')
-        # Get the Position and Spectroscopic Datasets
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
-                                                        labels=['U', 'V'], units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
-                                                     labels=['X', 'Y'], units=['pixel', 'pixel'])
 
-        ds_chunking = calc_chunks([num_files, num_pixels],
-                                  data_type(0).itemsize,
-                                  unit_chunks=(1, num_pixels))
+        dg_channels = list()
+        for meas_parms in image_parms:
+            # Create new measurement group for each set of parameters
+            meas_grp = MicroDataGroup('Measurement_')
+            # Write the parameters as attributes of the group
+            for key, val in meas_parms.iteritems():
+                meas_grp.attrs[key] = val
+            chan_grp = MicroDataGroup('Channel_000')
 
-        # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
-                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
-        ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
-                                          data=np.zeros(num_pixels, dtype=np.float32),
-                                          dtype=np.float32)
-        ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
-                                         data=np.zeros(num_files, dtype=np.float32),
-                                         dtype=np.float32)
-        # Add datasets as children of Measurement_000 data group
-        chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                              ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
-        meas_grp.addChildren([chan_grp])
+            meas_grp.addChildren([chan_grp])
+            root_grp.addChildren([meas_grp])
 
-        root_grp.addChildren([meas_grp])
-        # print('Writing following tree to this file:')
-        # root_grp.showTree()
 
+
+        # Write the groups to file
         h5_refs = self.hdf.writeData(root_grp)
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-        h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
-        h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
-        aux_ds_names = ['Position_Indices',
-                        'Position_Values',
-                        'Spectroscopic_Indices',
-                        'Spectroscopic_Values']
 
-        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        h5_channels = getH5GroupRefs('Channel_000', h5_refs)
 
         self.hdf.flush()
 
-        return h5_main, h5_mean_spec, h5_ronch
+        return h5_channels
 
     @staticmethod
     def __no_bin(image, *args, **kwargs):

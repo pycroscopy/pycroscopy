@@ -183,9 +183,7 @@ class ImageWindow(object):
         
         win_pix = win_x*win_y
         
-        win_pos_mat = np.array([np.repeat(x_steps, ny),
-                                np.tile(y_steps, nx)],
-                                dtype=np.uint).T
+        win_pos_mat = np.array([np.repeat(x_steps, ny), np.tile(y_steps, nx)], dtype=np.uint32).T
         
         win_pix_mat = make_position_mat([win_x, win_y]).T
 
@@ -721,11 +719,14 @@ class ImageWindow(object):
         clean_image = np.divide(accum, counts)
 
         clean_image[np.isnan(clean_image)] = 0
-        '''
-        Renormalize the cleaned image
-        '''
-        clean_image -= np.min(clean_image)
-        clean_image = clean_image/np.max(clean_image)
+
+        if h5_win.file.attrs['normalized']:
+            '''
+            Renormalize the cleaned image
+            '''
+            clean_image -= np.min(clean_image)
+            clean_image = clean_image/np.max(clean_image)
+        
 
         '''
         Calculate the removed noise and FFTs

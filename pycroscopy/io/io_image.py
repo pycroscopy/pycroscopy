@@ -62,13 +62,13 @@ def read_dm3(image_path, get_parms=True):
     image_parms = dmtag['ImageList'][img_index]['ImageTags']
 
     if get_parms:
-        image_parms = _parse_dm3_parms(image_parms)
+        image_parms = unnest_parm_dicts(image_parms)
     else:
         image_parms = dict()
 
     return image, image_parms
 
-def _parse_dm3_parms(image_parms, prefix=''):
+def unnest_parm_dicts(image_parms, prefix=''):
     """
     Parses the nested image parameter dictionary and converts it to a single
     level dictionary, prepending the name of inner dictionaries to their
@@ -87,10 +87,10 @@ def _parse_dm3_parms(image_parms, prefix=''):
         # print 'name',name,'val',val
         name = '-'.join([prefix]+name.split()).strip('-')
         if isinstance(val, dict):
-            new_parms.update(_parse_dm3_parms(val, name))
+            new_parms.update(unnest_parm_dicts(val, name))
         elif isinstance(val, list) and isinstance(val[0], dict):
             for thing in val:
-                new_parms.update(_parse_dm3_parms(thing, name))
+                new_parms.update(unnest_parm_dicts(thing, name))
         else:
             new_parms[name] = try_tag_to_string(val)
 
@@ -123,7 +123,7 @@ def read_dm4(file_path, *args, **kwargs):
         x_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[0])
         y_dim = dm4_file.read_tag_data(image_data_tag.named_subdirs['Dimensions'].unnamed_tags[1])
 
-        image_array = np.array(dm4_file.read_tag_data(image_tag), dtype=np.uint16)
+        image_array = np.array(dm4_file.read_tag_data(image_tag), dtype=np.float32)
         image_array = np.reshape(image_array, (y_dim, x_dim))
 
     if get_parms:

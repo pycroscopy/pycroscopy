@@ -4,13 +4,14 @@ Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath
 """
-# TODO: All general plotting functions should support data with 1 or 2 spatial dimensions.
+# TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
 from __future__ import division  # int/int = float
 from warnings import warn
 import os
 import h5py
 import scipy
+import inspect
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
@@ -336,7 +337,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
-def plot_map(axis, data, stdevs=2, **kwargs):
+def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
     """
     Plots a 2d map with a tight z axis, with or without color bars.
     Note that the direction of the y axis is flipped if the color bar is required
@@ -349,20 +350,21 @@ def plot_map(axis, data, stdevs=2, **kwargs):
         Data to be plotted
     stdevs : unsigned int (Optional. Default = 2)
         Number of standard deviations to consider for plotting
+    origin : str
+        Where should the origin of the image data be located.  'lower' sets the origin to the
+        bottom left, 'upper' sets it to the upper left.
+        Default 'lower'
 
     Returns
     -------
     """
-    origin = kwargs.pop('origin', 'lower')
-    if stdevs is not None:
-        data_mean = np.mean(data)
-        data_std = np.std(data)
-        im = axis.imshow(data, interpolation='none',
-                         vmin=data_mean - stdevs * data_std,
-                         vmax=data_mean + stdevs * data_std,
-                         origin=origin, **kwargs)
-    else:
-        im = axis.imshow(data, interpolation='none', origin=origin, **kwargs)
+    data_mean = np.mean(data)
+    data_std = np.std(data)
+    im = axis.imshow(data, interpolation='none',
+                     vmin=data_mean - stdevs * data_std,
+                     vmax=data_mean + stdevs * data_std,
+                     origin=origin,
+                     **kwargs)
     axis.set_aspect('auto')
 
     return im
@@ -618,7 +620,7 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
-                   title='Component', heading='Map Stack', fig_mult=(4, 4), **kwargs):
+                   title='Component', heading='Map Stack', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
     """
     Plots the provided stack of maps
 
@@ -641,6 +643,13 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     fig_mult : length 2 array_like of uints
         Size multipliers for the figure.  Figure size is calculated as (num_rows*`fig_mult[0]`, num_cols*`fig_mult[1]`).
         Default (4, 4)
+    pad_mult : length 2 array_like of floats
+        Multipliers for the axis padding between plots in the stack.  Padding is calculated as
+        (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
+        Default (0.1, 0.07)
+    kwargs : dictionary
+        Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
+        pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
 
     Returns:
     ---------
@@ -648,7 +657,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     """
     num_comps = abs(num_comps)
     num_comps = min(num_comps, map_stack.shape[-1])
-
 
     if evenly_spaced:
         chosen_pos = np.linspace(0, map_stack.shape[-1] - 1, num_comps, dtype=int)
@@ -672,12 +680,38 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     p_cols = int(np.ceil(num_comps / p_rows))
     if p_rows*p_cols < num_comps:
         p_cols += 1
-    fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
+
+    pad_w, pad_h = pad_mult
+
+    '''
+    Set defaults for kwargs to the figure creation and extract any non-default values from current kwargs
+    '''
+    figkwargs = dict()
+    for key in inspect.getargspec(plt.figure).args:
+        if key in kwargs:
+            figkwargs.update({key: kwargs.pop(key)})
+
+    fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h), **figkwargs)
+
+    '''
+    Set defaults for kwargs to the ImageGrid and extract any non-default values from current kwargs
+    '''
+    igkwargs = {'cbar_pad': '1%',
+                'cbar_size': '5%',
+                'cbar_location': 'right',
+                'direction': 'row',
+                'add_all': True,
+                'share_all': False,
+                'aspect': True,
+                'label_mode': 'L'}
+    for key in igkwargs.iterkeys():
+        if key in kwargs:
+            igkwargs.update({key: kwargs.pop(key)})
+
     axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
                         cbar_mode=color_bar_mode,
-                        cbar_pad='1%',
-                        cbar_size='5%',
-                        axes_pad=(0.1*fig_w, 0.07*fig_h))
+                        axes_pad=(pad_w*fig_w, pad_h*fig_h),
+                        **igkwargs)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
@@ -697,24 +731,24 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
 def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
     """
-        Plots the cluster labels and mean response for each cluster
+    Plots the cluster labels and mean response for each cluster
 
-        Parameters
-        ----------
-        h5_group : h5py.Datagroup object
-            H5 group containing the labels and mean response
-        y_spec_label : str
-            Label to use for Y axis on cluster centroid plot
-        centroids_together : Boolean, optional - default = True
-            Whether or nor to plot all centroids together on the same plot
+    Parameters
+    ----------
+    h5_group : h5py.Datagroup object
+        H5 group containing the labels and mean response
+    y_spec_label : str
+        Label to use for Y axis on cluster centroid plot
+    centroids_together : Boolean, optional - default = True
+        Whether or nor to plot all centroids together on the same plot
 
-        Returns
-        -------
-        fig : Figure
-            Figure containing the plots
-        axes : 1D array_like of axes objects
-            Axes of the individual plots within `fig`
-        """
+    Returns
+    -------
+    fig : Figure
+        Figure containing the plots
+    axes : 1D array_like of axes objects
+        Axes of the individual plots within `fig`
+    """
     # TODO: The quantity and units for the main dataset itself are missing in most cases!
     h5_labels = h5_group['Labels']
     try:
@@ -1308,17 +1342,17 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
 
     if isBEPS:
         meas_type = chan_grp.parent.attrs['VS_mode']
-        # basically 3 kinds for now - DC/current, AC, UD - lets ignore this
+        # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
         if meas_type == 'load user defined VS Wave from file':
             warn('Not handling custom experiments for now')
-            h5_file.close()
+            # h5_file.close()
             return
 
         # Plot amplitude and phase maps at one or more UDVS steps
 
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
-            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][0:center])
+            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][:, 0:center])
 
             forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
