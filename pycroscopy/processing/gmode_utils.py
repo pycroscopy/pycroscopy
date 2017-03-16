@@ -20,8 +20,11 @@ from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot
 from ..io.translators.utils import build_ind_val_dsets
 
+# TODO: Use filter_parms as a kwargs instead of a required input
 
 ###############################################################################
+
+
 def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_plots=True,
                 excit_wfm=None, central_resp_size=None):
     """
@@ -71,23 +74,28 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     num_pts = len(resp_wfm)
     
     show_loops = excit_wfm is not None
-    show_plots = show_plots or show_loops
     
     noise_band_filter = 1
     low_pass_filter = 1
     harmonic_filter = 1
-    
-    if type(filter_parms['band_filt_[Hz]']) in [list, np.ndarray]:
-        noise_band_filter = noiseBandFilter(num_pts, samp_rate, filter_parms['band_filt_[Hz]'][0],
-                                            filter_parms['band_filt_[Hz]'][1])
-    if filter_parms['LPF_cutOff_[Hz]'] > 0:
-        low_pass_filter = makeLPF(num_pts, samp_rate, filter_parms['LPF_cutOff_[Hz]'])
-    if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
-        harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, filter_parms['comb_[Hz]'][0],
-                                              filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
+    noise_floor = None
+
+    if 'band_filt_[Hz]' in filter_parms:
+        if type(filter_parms['band_filt_[Hz]']) in [list, np.ndarray]:
+            noise_band_filter = noiseBandFilter(num_pts, samp_rate, filter_parms['band_filt_[Hz]'][0],
+                                                filter_parms['band_filt_[Hz]'][1])
+    if 'LPF_cutOff_[Hz]' in filter_parms:
+        if filter_parms['LPF_cutOff_[Hz]'] > 0:
+            low_pass_filter = makeLPF(num_pts, samp_rate, filter_parms['LPF_cutOff_[Hz]'])
+
+    if 'comb_[Hz]' in filter_parms:
+        if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
+            harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, filter_parms['comb_[Hz]'][0],
+                                                  filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
+
     composite_filter = noise_band_filter * low_pass_filter * harmonic_filter
         
-    F_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
+    fft_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
     
     if show_plots:       
         l_ind = int(0.5*num_pts)
@@ -114,25 +122,33 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
         fig = None
         axes = None
 
-    if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
-        noise_floor = getNoiseFloor(F_pix_data, filter_parms['noise_threshold'])[0]
+    if 'noise_threshold' in filter_parms:
+        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+            noise_floor = getNoiseFloor(fft_pix_data, filter_parms['noise_threshold'])[0]
+
     if show_plots:
-        amp = np.abs(F_pix_data)
+        amp = np.abs(fft_pix_data)
         ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind])
         ax_raw.semilogy(w_vec[l_ind:r_ind], (composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp)))
-        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+        if noise_floor is not None:
             ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind-l_ind)*noise_floor)
         ax_raw.set_title('Raw Signal')
-    F_pix_data *= composite_filter
-    F_pix_data[np.abs(F_pix_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
+
+    fft_pix_data *= composite_filter
+
+    if noise_floor is not None:
+        fft_pix_data[np.abs(fft_pix_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
+
     if show_plots:
-        ax_filt.semilogy(w_vec[l_ind:r_ind], np.abs(F_pix_data[l_ind:r_ind]))
+        ax_filt.semilogy(w_vec[l_ind:r_ind], np.abs(fft_pix_data[l_ind:r_ind]))
         ax_filt.set_title('Filtered Signal')
         ax_filt.set_xlabel('Frequency(kHz)')
-        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+        if noise_floor is not None:
             orig_lims = ax_raw.get_ylim()
             ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
-    filt_data = np.real(np.fft.ifft(np.fft.ifftshift(F_pix_data)))
+
+    filt_data = np.real(np.fft.ifft(np.fft.ifftshift(fft_pix_data)))
+
     if show_loops:
         if use_rainbow_plots:
             rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)

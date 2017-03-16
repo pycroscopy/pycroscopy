@@ -122,8 +122,8 @@ def SHOfastGuess(w_vec, resp_vec, qual_factor=200):
         SHO fit parameters arranged as [amplitude, frequency, quality factor, phase]
     """
     amp_vec = abs(resp_vec)
-    i_max = np.argmax(amp_vec)
-    return np.array([np.max(amp_vec) / qual_factor, w_vec[i_max], qual_factor, np.angle(resp_vec[i_max])])
+    i_max = len(resp_vec)/2
+    return np.array([np.mean(amp_vec) / qual_factor, w_vec[i_max], qual_factor, np.angle(resp_vec[i_max])])
 
 def SHOlowerBound(w_vec):
     """

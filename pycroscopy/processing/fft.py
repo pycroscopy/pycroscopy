@@ -12,7 +12,7 @@ from scipy.special import erf
 from warnings import warn
 
 
-def getNoiseFloor(fft_data,tolerance):
+def getNoiseFloor(fft_data, tolerance):
     """
     Paramters
     ---------
@@ -32,23 +32,23 @@ def getNoiseFloor(fft_data,tolerance):
     
     noise_floor = np.zeros(fft_data.shape[0])
 
-    for chan in xrange(fft_data.shape[0]):
+    for chan in range(fft_data.shape[0]):
 
-        amp=np.abs(fft_data[chan,:])
+        amp = np.abs(fft_data[chan, :])
         num_pts = amp.size
-        temp=np.sqrt(np.sum(amp**2)/(2*num_pts))
-        threshold=np.sqrt((2*temp**2)*(-np.log(tolerance)))
+        temp = np.sqrt(np.sum(amp**2)/(2*num_pts))
+        threshold = np.sqrt((2*temp**2)*(-np.log(tolerance)))
         
-        bdiff=1        
-        B = list()
-        B.append(temp)
+        bdiff = 1
+        b_vec = list()
+        b_vec.append(temp)
                 
-        while (bdiff>10**-2) and len(B)<50:
-            amp[amp>threshold]=0
-            temp=np.sqrt(sum(amp**2)/(2*num_pts)) 
-            B.append(temp)
-            bdiff=abs(B[-1]-B[-2])    
-            threshold=np.sqrt((2*temp**2)*(-np.log(tolerance)))    
+        while (bdiff > 10**-2) and len(b_vec) < 50:
+            amp[amp > threshold] = 0
+            temp = np.sqrt(sum(amp**2)/(2*num_pts))
+            b_vec.append(temp)
+            bdiff = abs(b_vec[-1]-b_vec[-2])
+            threshold = np.sqrt((2*temp**2)*(-np.log(tolerance)))
 
         noise_floor[chan] = threshold
         
@@ -56,37 +56,38 @@ def getNoiseFloor(fft_data,tolerance):
 
 ###############################################################################
 
-def downSample(F_vec, freq_ratio):
+
+def downSample(fft_vec, freq_ratio):
     """
     Downsamples the provided data vector
     
     Parameters:
     -----------
-    F_vec : 1D complex numpy array
+    fft_vec : 1D complex numpy array
         Waveform that is already FFT shifted
     freq_ratio : float
         new sampling rate / old sampling rate (less than 1)
     
     Returns:
     --------
-    F_vec : 1D numpy array 
+    fft_vec : 1D numpy array
         downsampled waveform
     """
     if freq_ratio >= 1:
         print('Error at downSample: New sampling rate > old sampling rate')
-        return F_vec
+        return fft_vec
         
-    vec_len = len(F_vec)
+    vec_len = len(fft_vec)
     ind = np.round(float(vec_len)*(0.5*float(freq_ratio)))
-    F_vec = F_vec[max(0.5*vec_len-ind,0):min(0.5*vec_len+ind,vec_len)]
-    F_vec = F_vec * freq_ratio * 2;
+    fft_vec = fft_vec[max(0.5 * vec_len - ind, 0):min(0.5 * vec_len + ind, vec_len)]
+    fft_vec = fft_vec * freq_ratio * 2
     
-    return np.fft.ifft(np.fft.ifftshift(F_vec))
-
+    return np.fft.ifft(np.fft.ifftshift(fft_vec))
 
 ############################################################################### 
 
-def noiseBandFilter(num_pts,samp_rate,freqs,freq_widths, show_plots=False):
+
+def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
     """
     Builds a filter that removes specified noise frequencies
     
@@ -109,40 +110,42 @@ def noiseBandFilter(num_pts,samp_rate,freqs,freq_widths, show_plots=False):
         Array of ones set to 0 at noise bands
     """
     num_pts = abs(int(num_pts))
+
+    w_vec = 1
        
     # Making code a little more robust with handling different inputs:
-    samp_rate = float(samp_rate);
-    freqs = np.array(freqs);
-    freq_widths = np.array(freq_widths);
+    samp_rate = float(samp_rate)
+    freqs = np.array(freqs)
+    freq_widths = np.array(freq_widths)
     if freqs.ndim != freq_widths.ndim:
-        warn('Error in noiseBandFilter: dimensionality of frequencies and frequency widths do not match!');
-        return None
+        warn('Error in noiseBandFilter: dimensionality of frequencies and frequency widths do not match!')
+        return 1
     if freqs.shape != freq_widths.shape:
-        warn('Error in noiseBandFilter: shape of frequencies and frequency widths do not match!');
-        return None
+        warn('Error in noiseBandFilter: shape of frequencies and frequency widths do not match!')
+        return 1
         
     cent = int(round(0.5*num_pts))
     
-    noise_filter = np.ones(num_pts,dtype=np.int16)
+    noise_filter = np.ones(num_pts, dtype=np.int16)
     
     if show_plots:
-        w_vec = np.arange(-0.5*samp_rate, 0.5*samp_rate, samp_rate/num_pts);
-        fig, ax = plt.subplots(2,1)
-        ax[0].plot(w_vec,noise_filter)
+        w_vec = np.arange(-0.5*samp_rate, 0.5*samp_rate, samp_rate/num_pts)
+        fig, ax = plt.subplots(2, 1)
+        ax[0].plot(w_vec, noise_filter)
         ax[0].set_yscale('log') 
-        ax[0].axis('tight');
+        ax[0].axis('tight')
         ax[0].set_xlabel('Freq')
         ax[0].set_title('Before clean up')
 
     # Setting noise freq bands to 0
-    for cur_freq, d_freq in zip(freqs,freq_widths): 
+    for cur_freq, d_freq in zip(freqs, freq_widths):
         ind = int(round(num_pts*(cur_freq/samp_rate)))
         sz = int(round(cent*d_freq/samp_rate))
         noise_filter[cent-ind-sz:cent-ind+sz+1] = 0
         noise_filter[cent+ind-sz:cent+ind+sz+1] = 0
 
     if show_plots:
-        ax[1].plot(w_vec,noise_filter)
+        ax[1].plot(w_vec, noise_filter)
         ax[1].set_yscale('log')
         ax[1].axis('tight')
         ax[1].set_xlabel('Freq')
@@ -152,8 +155,9 @@ def noiseBandFilter(num_pts,samp_rate,freqs,freq_widths, show_plots=False):
     return noise_filter
     
 ###############################################################################
-    
-def makeLPF(num_pts,samp_rate, f_cutoff, roll_off=0.05):
+
+
+def makeLPF(num_pts, samp_rate, f_cutoff, roll_off=0.05):
     """
     Builds a low pass filter
     
@@ -179,30 +183,31 @@ def makeLPF(num_pts,samp_rate, f_cutoff, roll_off=0.05):
     cent = int(round(0.5*num_pts))
     
     if f_cutoff >= 0.5 * samp_rate:
-        print('Error in LPFClip --> LPF too high! Skipping');
+        print('Error in LPFClip --> LPF too high! Skipping')
         return
 
-    #BW = 0.1; %MHz - Nothing beyond BW.
-    roll_off *= f_cutoff  #MHz
+    # BW = 0.1; %MHz - Nothing beyond BW.
+    roll_off *= f_cutoff  # MHz
 
     sz = int(np.round(num_pts*(roll_off/samp_rate)))
     ind = int(np.round(num_pts*(f_cutoff/samp_rate)))
 
-    LPF = np.zeros(num_pts, dtype=np.float32)
+    lpf = np.zeros(num_pts, dtype=np.float32)
     
-    extent=5
-    t2 = np.linspace(-extent/2,extent/2,num=sz)
+    extent = 5.0
+    t2 = np.linspace(-extent/2, extent/2, num=sz)
     smoothing = 0.5*(1+erf(t2))
     
-    LPF[cent-ind:cent-ind+sz] = smoothing
-    LPF[cent-ind+sz:cent+ind-sz+1] = 1
-    LPF[cent+ind-sz+1:cent+ind+1] = 1-smoothing
+    lpf[cent-ind:cent-ind+sz] = smoothing
+    lpf[cent-ind+sz:cent+ind-sz+1] = 1
+    lpf[cent+ind-sz+1:cent+ind+1] = 1-smoothing
         
-    return LPF # return the filter itself so that it may be repeatedly used outside
+    return lpf  # return the filter itself so that it may be repeatedly used outside
     
 ###############################################################################
-    
-def harmonicsPassFilter(num_pts,samp_rate,first_freq,band_width,num_harm, doPlots=False):
+
+
+def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, doPlots=False):
     """
     Builds a filter that only keeps N harmonics
     
@@ -235,11 +240,15 @@ def harmonicsPassFilter(num_pts,samp_rate,first_freq,band_width,num_harm, doPlot
     harm_filter = np.ones(num_pts, dtype=np.int16)
     
     cent = int(round(0.5*num_pts))
+
+    w_vec = 1
         
     if doPlots:    
         print('OnlyKeepHarmonics: samp_rate = %2.1e Hz, first harmonic = %3.2f Hz, %d harmonics w/- %3.2f Hz bands\n' %(samp_rate,first_freq,num_harm,band_width))     
-        w_vec = np.arange(-samp_rate/2,samp_rate/2,samp_rate/num_pts)
-        fig, ax = plt.subplots(figsize=(5,5)); ax.plot(w_vec,harm_filter); ax.set_title('Raw')
+        w_vec = np.arange(-samp_rate/2.0, samp_rate/2.0, samp_rate/num_pts)
+        fig, ax = plt.subplots(figsize=(5, 5))
+        ax.plot(w_vec, harm_filter)
+        ax.set_title('Raw')
 
     sz = int(round(cent*band_width/samp_rate))
 
@@ -248,10 +257,12 @@ def harmonicsPassFilter(num_pts,samp_rate,first_freq,band_width,num_harm, doPlot
     if ind >= num_pts:
         return None
 
-    harm_filter[max(cent-ind+sz+1,0):min(num_pts,cent+ind-sz)] = 0
+    harm_filter[max(cent-ind+sz+1, 0):min(num_pts, cent+ind-sz)] = 0
     
     if doPlots:
-        fig2, ax2 = plt.subplots(figsize=(5,5)); ax2.plot(w_vec,harm_filter); ax2.set_title('Step 1')
+        fig2, ax2 = plt.subplots(figsize=(5, 5))
+        ax2.plot(w_vec, harm_filter)
+        ax2.set_title('Step 1')
 
     # Last harmonic
     ind = int(round(num_pts*(num_harm*first_freq/samp_rate)))
@@ -259,18 +270,22 @@ def harmonicsPassFilter(num_pts,samp_rate,first_freq,band_width,num_harm, doPlot
     harm_filter[cent+ind+sz+1:] = 0
     
     if doPlots:
-    	fig3, ax3 = plt.subplots(figsize=(5,5)); ax3.plot(w_vec,harm_filter); ax3.set_title('Step 2')
+        fig3, ax3 = plt.subplots(figsize=(5, 5))
+        ax3.plot(w_vec, harm_filter)
+        ax3.set_title('Step 2')
 
     if num_harm == 1:
         return harm_filter
 
-    for harm_ind in xrange(1,num_harm):
+    for harm_ind in range(1, num_harm):
         ind = int(round(num_pts*(harm_ind*first_freq/samp_rate)))
         ind2 = int(round(num_pts*((harm_ind+1)*first_freq/samp_rate)))
         harm_filter[cent-ind2+sz+1:cent-ind-sz] = 0
         harm_filter[cent+ind+sz+1:cent+ind2-sz] = 0
         if doPlots:
-            fig4, ax4 = plt.subplots(figsize=(5,5)); ax4.plot(w_vec,harm_filter); ax4.set_title('Step %d' %(harm_ind+2))
+            fig4, ax4 = plt.subplots(figsize=(5, 5))
+            ax4.plot(w_vec, harm_filter)
+            ax4.set_title('Step %d' % (harm_ind + 2))
     
     return harm_filter
     

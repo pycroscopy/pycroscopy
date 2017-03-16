@@ -719,11 +719,14 @@ class ImageWindow(object):
         clean_image = np.divide(accum, counts)
 
         clean_image[np.isnan(clean_image)] = 0
-        '''
-        Renormalize the cleaned image
-        '''
-        clean_image -= np.min(clean_image)
-        clean_image = clean_image/np.max(clean_image)
+
+        if h5_win.file.attrs['normalized']:
+            '''
+            Renormalize the cleaned image
+            '''
+            clean_image -= np.min(clean_image)
+            clean_image = clean_image/np.max(clean_image)
+        
 
         '''
         Calculate the removed noise and FFTs
