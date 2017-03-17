@@ -91,7 +91,7 @@ class BEPSndfTranslator(Translator):
         
         if debug:
             print('BEndfTranslator: Preparing to read parms.mat file')
-        self.BE_wave = self.__get_excit_wfm(parms_mat_path)
+        self.BE_wave, self.BE_wave_rev, self.BE_bin_inds = self.__get_excit_wfm(parms_mat_path)
         
         if debug:
             print('BEndfTranslator: About to read UDVS file')
@@ -190,7 +190,17 @@ class BEPSndfTranslator(Translator):
             # First read the next pixel from all parsers:
             current_pixels = {}
             for prsr in parsers:
-                current_pixels[prsr.get_wave_type()] = prsr.read_pixel()
+                wave_type = prsr.get_wave_type()
+                if self.parm_dict['VS_mode'] == 'AC modulation mode with time reversal' and \
+                                self.BE_bin_inds is not None:
+                    if np.sign(wave_type) == -1:
+                        bin_fft = self.BE_wave[self.BE_bin_inds]
+                    elif np.sign(wave_type) == 1:
+                        bin_fft = self.BE_wave_rev[self.BE_bin_inds]
+                else:
+                    bin_fft = None
+
+                current_pixels[wave_type] = prsr.read_pixel(bin_fft)
 
             if pixel_ind == 0:
                 h5_refs = self.__initialize_meas_group(self.max_pixels, current_pixels)
@@ -365,8 +375,9 @@ class BEPSndfTranslator(Translator):
         del stind, wave_type, step_index
         
         self.spec_inds = spec_inds  # will need this for plot group generation
-                        
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', self.BE_wave)
+
+        ds_ex_wfm = MicroDataset('Excitation_Waveform',
+                                 np.float32(np.real(np.fft.ifft(np.fft.ifftshift(self.BE_wave)))))
         ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
         ds_bin_inds = MicroDataset('Bin_Indices', bin_inds - 1, dtype=np.uint32)  # From Matlab to Python (base 0)
         ds_bin_fft = MicroDataset('Bin_FFT', bin_FFT)
@@ -604,7 +615,9 @@ class BEPSndfTranslator(Translator):
         for filenames in listdir(main_folder_path):
             if filenames.endswith('.txt') and filenames.find('parm') > 0:
                 parm_filepath = path.join(main_folder_path, filenames)
-            elif filenames.endswith('more_parms.mat'):
+            elif filenames.endswith('all.mat'):
+                parms_mat_path = path.join(main_folder_path, filenames)
+            elif filenames.endswith('more_parms.mat') and parms_mat_path is None:
                 parms_mat_path = path.join(main_folder_path, filenames)
         for filenames in listdir(self.folder_path):
             if (filenames.endswith('.xlsx') or filenames.endswith('.xls')) and filenames.find('UD_VS') > 0:
@@ -665,11 +678,20 @@ class BEPSndfTranslator(Translator):
         if not path.exists(filepath):
             warn('BEPSndfTranslator - NO more_parms.mat file found')
             return np.zeros(1000, dtype=np.float32)
-            
-        matread = loadmat(filepath, variable_names=['FFT_BE_wave'])
-        fft_full = np.complex64(np.squeeze(matread['FFT_BE_wave']))
-        return np.float32(np.real(np.fft.ifft(np.fft.ifftshift(fft_full))))
-        
+
+        if 'more_parms' in filepath:
+            matread = loadmat(filepath, variable_names=['FFT_BE_wave'])
+            fft_full = np.complex64(np.squeeze(matread['FFT_BE_wave']))
+            bin_inds = None
+            fft_full_rev = None
+        else:
+            matread = loadmat(filepath, variable_names=['FFT_BE_wave', 'FFT_BE_rev_wave', 'BE_bin_ind'])
+            bin_inds = np.uint(np.squeeze(matread['BE_bin_ind']))-1
+            fft_full = np.complex64(np.squeeze(matread['FFT_BE_wave']))
+            fft_full_rev = np.complex64(np.squeeze(matread['FFT_BE_rev_wave']))
+
+        return fft_full, fft_full_rev, bin_inds
+
     # ##################################################################################################
         
     @staticmethod
@@ -913,7 +935,7 @@ class BEPSndfParser(object):
         # print('Total of {} spatial dimensions'.format(spat_dim))
         self.__spat_dim__ = spat_dim
              
-    def read_pixel(self):
+    def read_pixel(self, bin_fft=None):
         """
         Returns a BEpixel object containing the parsed information within a pixel.
         Moves pixel index up by one.
@@ -942,7 +964,7 @@ class BEPSndfParser(object):
             self.__EOF__ = True
             self.__file_handle__.close()
                 
-        return BEPSndfPixel(data_vec, abs(self.__wave_type__))
+        return BEPSndfPixel(data_vec, abs(self.__wave_type__), bin_fft)
         
 
 class BEPSndfPixel(object):
@@ -952,7 +974,7 @@ class BEPSndfPixel(object):
     format. Access desired parameter directly without get methods.
     """
     
-    def __init__(self, data_vec, harm=1):
+    def __init__(self, data_vec, harm=1, bin_fft=None):
         """
         Initializes the pixel instance by parsing the provided data. 
         
@@ -969,7 +991,7 @@ class BEPSndfPixel(object):
         if harm > 3 or harm < 1:
             harm = 1
             warn('Error in BEPSndfPixel: invalid wave type / harmonic provided.')
-        
+        self.harm = harm
         # Begin parsing data:
         self.spatial_index = int(data_vec[1])-1
         
@@ -1045,9 +1067,12 @@ class BEPSndfPixel(object):
         # complex part of response spectrogram
         self.spectrogram_mat = np.complex64(spectrogram_real_mat + 1j*spectrogram_imag_mat)  
         del spectrogram_real_mat, spectrogram_imag_mat 
-                
+
+        if bin_fft is not None:
+            self.FFT_BE_wave = bin_fft
+
         self.spectrogram_mat = normalizeBEresponse(self.spectrogram_mat, self.FFT_BE_wave, harm)
-            
+
         #  Reshape as one column (its free in Python anyway):
         temp_mat = self.spectrogram_mat.transpose() 
         self.spectrogram_vec = temp_mat.reshape(self.spectrogram_mat.size)
