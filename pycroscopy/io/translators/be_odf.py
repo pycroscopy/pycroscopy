@@ -990,11 +990,9 @@ class BEodfTranslator(Translator):
 
         return chosen_spectra
 
+
 class BEodfParser(object):
-    """
-    Objects that help in reading raw .dat files either a pixel at a time or all at once.
-    """
-    
+
     def __init__(self, real_path, imag_path, num_pix, bytes_per_pix):
         """
         This object reads the two binary data files (real and imaginary data).
@@ -1023,7 +1021,7 @@ class BEodfParser(object):
         Returns the content of the next pixel
 
         Returns 
-        --------------------
+        -------
         raw_vec : 1D numpy complex64 array
             Content of one pixel's data
         """
@@ -1055,7 +1053,7 @@ class BEodfParser(object):
         Returns the complete contents of the file pair
 
         Returns 
-        --------------------
+        -------
         raw_vec : 1D numpy complex64 array
             Entire content of the file pair
         """
@@ -1073,11 +1071,24 @@ class BEodfParser(object):
         return full_file
 
     def seek_to_pixel(self, pixel_ind):
+        """
+
+        Parameters
+        ----------
+        pixel_ind
+
+        Returns
+        -------
+
+        """
         if self.__num_pix__ is not None:
             pixel_ind = min(pixel_ind, self.__num_pix__ )
         self.__pix_indx__ = pixel_ind
 
     def reset(self):
+        """
+
+        """
         self.f_real.seek(0, 0)
         self.f_imag.seek(0, 0)
         self.__pix_indx__ = 0
