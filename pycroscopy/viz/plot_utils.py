@@ -7,15 +7,17 @@ Created on Thu May 05 13:29:12 2016
 # TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
 from __future__ import division  # int/int = float
-from warnings import warn
-import os
-import h5py
-import scipy
+
 import inspect
+from warnings import warn
+
+import h5py
 import matplotlib.pyplot as plt
+import numpy as np
+import scipy
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
-import numpy as np
+
 from ..analysis.utils.be_loop import loop_fit_function
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
@@ -460,7 +462,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     else:
         chosen_pos = np.arange(sq_num_plots ** 2, dtype=int)
 
-    fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, figsize=(12, 12))
+    fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, sharex=True, figsize=(12, 12))
     axes_lin = axes.flatten()
 
     cent_ind = int(0.5 * excit_wfm.size)
@@ -669,7 +671,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
             title = title[:num_comps]
         elif len(title) < num_comps:
             # add titles
-            title = title + ['Component' + ' ' + str(x) for x in range(len(title), num_comps)]
+            title += ['Component' + ' ' + str(x) for x in range(len(title), num_comps)]
     else:
         if not isinstance(title, str):
             title = 'Component'
@@ -1256,145 +1258,3 @@ def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
         plt.savefig(figure_path, format='png')
 
     return fig
-
-
-def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
-    """
-    Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
-    Note: The file MUST contain SHO fit gusses at the very least
-
-    Parameters
-    ----------
-    h5_main : HDF5 Dataset
-        dataset to be plotted
-    save_plots : (Optional) Boolean
-        Whether or not to save plots to files in the same directory as the h5 file
-    show_plots : (Optional) Boolean
-        Whether or not to display the plots on the screen
-
-    Returns
-    -------
-    None
-    """
-
-    def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
-                          folder_path, basename, num_rows, num_cols):
-        plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, use_rainbow_plots=False,
-                             x_label=spec_var_title, y_label=meas_var_title, subtitles='Loop', title=plt_title)
-        if save_plots:
-            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
-
-        plt_title = grp_name + '_' + win_title + '_Snaps'
-        fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
-                                   color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
-                                   heading=plt_title, cmap=cmap_jet_white_center())
-        if save_plots:
-            fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
-
-    plt_path = None
-
-    print('Creating plots of SHO Results from {}.'.format(h5_main.name))
-
-    h5_file = h5_main.file
-
-    expt_type = h5_file.attrs['data_type']
-    if expt_type not in ['BEPSData', 'BELineData']:
-        warn('Unsupported data format')
-        return
-    isBEPS = expt_type == 'BEPSData'
-
-    (folder_path, basename) = os.path.split(h5_file.filename)
-    basename, _ = os.path.splitext(basename)
-
-    sho_grp = h5_main.parent
-
-    chan_grp = h5_file['/'.join(sho_grp.name[1:].split('/')[:2])]
-
-    grp_name = '_'.join(chan_grp.name[1:].split('/'))
-    grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
-
-    try:
-        h5_pos = h5_file[h5_main.attrs['Position_Indices']]
-    except KeyError:
-        print('No Position_Indices found as attribute of {}'.format(h5_main.name))
-        print('Rows and columns will be calculated from dataset shape.')
-        num_rows = int(np.floor((np.sqrt(h5_main.shape[0]))))
-        num_cols = int(np.reshape(h5_main, [num_rows, -1, h5_main.shape[1]]).shape[1])
-    else:
-        num_rows = len(np.unique(h5_pos[:, 0]))
-        num_cols = len(np.unique(h5_pos[:, 1]))
-
-    try:
-        h5_spec_vals = h5_file[h5_main.attrs['Spectroscopic_Values']]
-    # except KeyError:
-    #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
-    #     raise
-    except:
-        raise
-
-    # Assume that there's enough memory to load all the guesses into memory
-    amp_mat = h5_main['Amplitude [V]'] * 1000  # convert to mV ahead of time
-    freq_mat = h5_main['Frequency [Hz]'] / 1000
-    q_mat = h5_main['Quality Factor']
-    phase_mat = h5_main['Phase [rad]']
-    rsqr_mat = h5_main['R2 Criterion']
-
-    if isBEPS:
-        meas_type = chan_grp.parent.attrs['VS_mode']
-        # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
-        if meas_type == 'load user defined VS Wave from file':
-            warn('Not handling custom experiments for now')
-            # h5_file.close()
-            return
-
-        # Plot amplitude and phase maps at one or more UDVS steps
-
-        if meas_type == 'AC modulation mode with time reversal':
-            center = int(h5_spec_vals.shape[1] * 0.5)
-            ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][:, 0:center])
-
-            forw_resp = np.squeeze(amp_mat[:, slice(0, center)])
-            rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
-
-            for win_title, resp_mat in zip(['Forward', 'Reverse'], [forw_resp, rev_resp]):
-                __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude', save_plots,
-                                  folder_path, basename, num_rows, num_cols)
-        else:
-            # plot loops at a few locations
-            dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
-            if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
-
-                dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
-
-                in_phase = np.squeeze(phase_mat[:, slice(0, None, 2)])
-                in_amp = np.squeeze(amp_mat[:, slice(0, None, 2)])
-                out_phase = np.squeeze(phase_mat[:, slice(1, None, 2)])
-                out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
-
-                for win_title, resp_mat in zip(['In_Field', 'Out_of_Field'], [in_phase * in_amp, out_phase * out_amp]):
-                    __plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias', 'Piezoresponse (a.u.)',
-                                      save_plots, folder_path, basename, num_rows, num_cols)
-            else:
-                __plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias', 'Piezoresponse (a.u.)',
-                                  save_plots, folder_path, basename, num_rows, num_cols)
-
-    else:  # BE-Line can only visualize the amplitude and phase maps:
-        amp_mat = amp_mat.reshape(num_rows, num_cols)
-        freq_mat = freq_mat.reshape(num_rows, num_cols)
-        q_mat = q_mat.reshape(num_rows, num_cols)
-        phase_mat = phase_mat.reshape(num_rows, num_cols)
-        rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
-        if save_plots:
-            plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
-
-        fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)),
-                                       num_comps=5, color_bar_mode='each', heading=grp_name,
-                                       title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
-                                              'R^2 Criterion'], cmap=cmap_jet_white_center())
-        fig_ms.savefig(plt_path, format='png', dpi=300)
-
-    if show_plots:
-        plt.show()
-
-    plt.close('all')
