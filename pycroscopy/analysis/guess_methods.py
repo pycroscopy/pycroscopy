@@ -31,7 +31,7 @@ class GuessMethods(object):
         Parameters
         ----------
         args: dictionary
-            List of optional parmeters for this function - not used.
+            List of optional parameters for this function - not used.
 
         kwargs: dictionary
             Passed to find_peaks_cwt().

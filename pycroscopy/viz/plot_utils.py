@@ -186,10 +186,11 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
     new_cmap : matplotlib.colors.LinearSegmentedColormap object
         Discretized color map
 
-    Credits
-    -------
-    Jake VanderPlas
-    License: BSD-style
+    Notes
+    -----
+    Jake VanderPlas License: BSD-style
+    https://gist.github.com/jakevdp/91077b0cae40f8f8244a
+
     """
 
     base = plt.cm.get_cmap(base_cmap)
@@ -507,7 +508,7 @@ def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel=
     """
     Plots the provided spectrograms from SVD V vector
 
-    Parameters:
+    Parameters
     -------------
     map_stack : 3D numpy complex matrices
         Eigenvectors rearranged as - [row, col, component]
@@ -520,7 +521,7 @@ def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel=
     stdevs : int
         Number of standard deviations to consider for plotting
 
-    Returns:
+    Returns
     ---------
     fig, axes
     """
@@ -552,7 +553,7 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
     """
     Plots the provided spectrograms from SVD V vector
 
-    Parameters:
+    Parameters
     -------------
     loop_stack : 3D numpy complex matrices
         Loops rearranged as - [component, points]
@@ -567,7 +568,7 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
     stdevs : int
         Number of standard deviations to consider for plotting
 
-    Returns:
+    Returns
     ---------
     fig, axes
     """
@@ -596,12 +597,12 @@ def plotScree(scree, title='Scree'):
     """
     Plots the scree or scree
 
-    Parameters:
+    Parameters
     -------------
     scree : 1D real numpy array
         The scree vector from SVD
 
-    Returns:
+    Returns
     ---------
     fig, axes
     """
@@ -626,7 +627,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     """
     Plots the provided stack of maps
 
-    Parameters:
+    Parameters
     -------------
     map_stack : 3D real numpy array
         structured as [rows, cols, component]
@@ -653,7 +654,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
 
-    Returns:
+    Returns
     ---------
     fig, axes
     """

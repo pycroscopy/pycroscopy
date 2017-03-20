@@ -179,14 +179,14 @@ class FeatureExtractorSerial(object):
 
     Parameters
     ----------
-        detector_name : (string)
-            name of detector.
-        lib : (string)
-            computer vision library to use (opencv or skimage)
+    detector_name : (string)
+        name of detector.
+    lib : (string)
+        computer vision library to use (opencv or skimage)
 
-            The following can be used for:
-            lib = opencv: SIFT, ORB, SURF
-            lib = skimage: ORB, BRIEF, CENSURE
+        The following can be used for:
+        lib = opencv: SIFT, ORB, SURF
+        lib = skimage: ORB, BRIEF, CENSURE
 
     """
 

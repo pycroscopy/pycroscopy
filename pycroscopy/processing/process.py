@@ -17,18 +17,16 @@ import multiprocessing as mp
 class Process(object):
     """
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset instance
+        The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
+        indices and values, and position indices and values datasets.
+
     """
 
     def __init__(self, h5_main):
-        """
-
-
-        Parameters:
-        ----
-        h5_main : h5py.Dataset instance
-            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-            indices and values, and position indices and values datasets.
-        """
         # Checking if dataset is "Main"
         if checkIfMain(h5_main):
             self.h5_main = h5_main
@@ -51,6 +49,7 @@ class Process(object):
         Returns
         -------
         None
+        
         """
 
         if self._parallel:
@@ -70,12 +69,12 @@ class Process(object):
         """
         Returns a chunk of data for the guess or the fit
 
-        Parameters:
-        -----
+        Parameters
+        ----------
         None
 
-        Returns:
-        --------
+        Returns
+        -------
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -110,7 +109,7 @@ class Process(object):
 
         Parameters
         ----------
-        data
+        func
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods

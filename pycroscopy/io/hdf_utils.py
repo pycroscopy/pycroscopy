@@ -455,30 +455,31 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
 
     Parameters
     ----------
-        h5_main : HDF5 Dataset
-            2D data to be reshaped
-        h5_pos : HDF5 Dataset, optional
-            Position indices corresponding to rows in `h5_main`
-        h5_spec : HDF5 Dataset, optional
-            Spectroscopic indices corresponding to columns in `h5_main`
+    h5_main : HDF5 Dataset
+        2D data to be reshaped
+    h5_pos : HDF5 Dataset, optional
+        Position indices corresponding to rows in `h5_main`
+    h5_spec : HDF5 Dataset, optional
+        Spectroscopic indices corresponding to columns in `h5_main`
 
     Returns
     -------
-        ds_Nd : N-D numpy array
-            N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
-        success : boolean or string
-            True if full reshape was successful
+    ds_Nd : N-D numpy array
+        N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
+    success : boolean or string
+        True if full reshape was successful
 
-            "Positions" if it was only possible to reshape by
-            the position dimensions
+        "Positions" if it was only possible to reshape by
+        the position dimensions
 
-            False if no reshape was possible
+        False if no reshape was possible
 
     Notes
     -----
     If either `h5_pos` or `h5_spec` are not provided, the function will first
     attempt to find them as attributes of `h5_main`.  If that fails, it will
     generate dummy values for them.
+
     """
 
     if h5_pos is None:
@@ -591,30 +592,31 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
 
     Parameters
     ----------
-        ds_Nd : numpy.array
-            N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
-        h5_pos : HDF5 Dataset
-            Position indices corresponding to rows in the final 2d array
-        h5_spec : HDF5 Dataset
-            Spectroscopic indices corresponding to columns in the final 2d array
+    ds_Nd : numpy.array
+        N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
+    h5_pos : HDF5 Dataset
+        Position indices corresponding to rows in the final 2d array
+    h5_spec : HDF5 Dataset
+        Spectroscopic indices corresponding to columns in the final 2d array
 
     Returns
     -------
-        ds_2d : numpy.array
-            2 dimensional numpy array arranged as [positions, spectroscopic]
-        success : boolean or string
-            True if full reshape was successful
+    ds_2d : numpy.array
+        2 dimensional numpy array arranged as [positions, spectroscopic]
+    success : boolean or string
+        True if full reshape was successful
 
-            "Positions" if it was only possible to reshape by
-            the position dimensions
+        "Positions" if it was only possible to reshape by
+        the position dimensions
 
-            False if no reshape was possible
+        False if no reshape was possible
 
     Notes
     -----
     If either `h5_pos` or `h5_spec` are not provided, the function will
     assume the first dimension is position and the remaining are spectroscopic already
     in order from fastest to slowest.
+
     """
 
     if h5_pos is None:

@@ -36,7 +36,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     resp_wfm : 1D numpy float array
         Raw response waveform in the time domain
     filter_parms : dictionary
-        Dictionary that contains all the filtering parameters
+        Dictionary that contains all the filtering parameters, see Notes for details.
     samp_rate : unsigned int 
         Sampling rate in Hertz
     show_plots : (Optional) Boolean
@@ -48,27 +48,30 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     central_resp_size : (Optional) unsigned int
         Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC 
     
-    Filter Parameters
-    -----------------
-    noise_threshold : float 
-        0<1 eg 1E-4
-    comb_[Hz] : Retain harmonics of frequency 
-        [first frequency, band width, number of harmonics]
-    LPF_cutOff_[Hz] : float
-        low pass frequency cut off frequency 
-    band_filt_[Hz] : 2D list 
-        [0] = center frequency, [1] = band widths
-    phase_[rad] : float
-        Compensation for instrumentation induced phase offset in radians 
-    samp_rate_[Hz] : unsigned int
-        Sampling rate in Hz
-    num_pix : unsigned int
-        Number of pixels to filter simultaneously
-    
     Returns
     -------
     filt_data : 1D numpy float array
         Filtered signal in the time domain
+
+    Notes
+    -----
+    *Filter Parameters*
+
+    noise_threshold : float
+        0<1 eg 1E-4
+    comb_[Hz] : Retain harmonics of frequency
+        [first frequency, band width, number of harmonics]
+    LPF_cutOff_[Hz] : float
+        low pass frequency cut off frequency
+    band_filt_[Hz] : 2D list
+        [0] = center frequency, [1] = band widths
+    phase_[rad] : float
+        Compensation for instrumentation induced phase offset in radians
+    samp_rate_[Hz] : unsigned int
+        Sampling rate in Hz
+    num_pix : unsigned int
+        Number of pixels to filter simultaneously
+
     """
     
     num_pts = len(resp_wfm)
@@ -595,10 +598,11 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
     time_resp : 2D numpy array
         Time domain response arranged as [position, time]
         
-    Implemntation Note
-    ------------------
+    Notes
+    -----
     Memory is given higher priority here, so this function loops over the position
     instead of doing the inverse FFT on the complete data.
+
     """
     f_condensed_mat = np.atleast_2d(f_condensed_mat)
     hot_inds_mirror = np.flipud(num_pts - hot_inds)

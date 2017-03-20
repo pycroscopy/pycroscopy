@@ -26,7 +26,7 @@ class Model(object):
         For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
         after testing the basic components.
 
-        Parameters:
+        Parameters
         ----
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
@@ -34,7 +34,7 @@ class Model(object):
         variables : list(string), Default ['Frequency']
             Lists of attributes that h5_main should possess so that it may be analyzed by Model.
 
-        Returns:
+        Returns
         -------
         None
 
@@ -92,7 +92,7 @@ class Model(object):
         Checks whether or not the provided object can be analyzed by this Model class.
         Classes that extend this class will do additional checks to ensure that the supplied dataset is legal.
 
-        Parameters:
+        Parameters
         ----
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
@@ -101,7 +101,7 @@ class Model(object):
         variables : list(string)
             The dimensions needed to be present in the attributes of h5_main to analyze the data with Model.
 
-        Returns:
+        Returns
         -------
         legal : Boolean
             Whether or not this dataset satisfies the necessary conditions for analysis
@@ -127,11 +127,11 @@ class Model(object):
         """
         Returns a chunk of data for the guess or the fit
 
-        Parameters:
+        Parameters
         -----
         None
 
-        Returns:
+        Returns
         --------
 
         """
@@ -153,11 +153,11 @@ class Model(object):
         Should be called BEFORE _getDataChunk since it relies upon current values of
         self.__start_pos, self._end_pos
 
-        Parameters:
+        Parameters
         -----
         None
 
-        Returns:
+        Returns
         --------
 
         """
@@ -375,7 +375,7 @@ class Model(object):
     # def _optimize(self, func, data, guess, solver, parallel='multiprocess',
     #               processors=max(1, abs(mp.cpu_count()-2)), **kwargs):
     #     """
-    #     Parameters:
+    #     Parameters
     #     -----
     #     func : callable
     #         Function of the parameters.
@@ -393,7 +393,7 @@ class Model(object):
     #     **kwargs:
     #         Additional keyword arguments that are passed on to the solver.
     #
-    #     Returns:
+    #     Returns
     #     -------
     #     Results of the optimization.
     #
