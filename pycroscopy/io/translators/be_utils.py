@@ -1505,11 +1505,11 @@ class BEHistogram():
         """
         Create the histogram for a single dataset
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         h5_main : HDF5 Dataset
             Main_Dataset to be histogramed
-        activ_udvs_steps : numpy array
+        active_udvs_steps : numpy array
             the active udvs steps in the current plot group
         x_hist : 1d numpy array
             the spectroscopic indices matrix, used to find the
@@ -1519,7 +1519,8 @@ class BEHistogram():
         -------
         ds_hist : numpy array
             the 4 histogram matrices
-"""
+
+        """
 
 
         """

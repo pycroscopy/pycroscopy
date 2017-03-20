@@ -1100,7 +1100,7 @@ class BEPSndfPixel(object):
         b. Amplitude, Phase Variation, Band Edge Smoothing, Band Edge Trim - Harder to find out what happened
         exactly - FFT should show changes
         c. BE repeats, desired duration - changes in the spectrogram length?
-        2. VS Parameters:
+        2. VS Parameters
         a. Amplitude, Phase shift - Changes in the AC_amp_vec / DC offset
         b. Offset, Read voltage - Shows up in the DC offset
         c. Steps per full Cycle - Changes in DC offset / AC amplitude ....

@@ -66,8 +66,8 @@ class Translator(object):
         """
         Writes the provided datasets and parameters to an h5 file
         
-        Parmeters
-        ---------
+        Parameters
+        ----------
         h5_path : String / Unicode
             Absolute path of the h5 file to be written
         data_name : String / Unicode
@@ -83,6 +83,7 @@ class Translator(object):
         -------
         h5_path : String / unicode
             Absolute path of the written h5 file
+
         """
         if parm_dict is None:
             parm_dict = {}

@@ -35,16 +35,16 @@ class ImageWindow(object):
 
         Parameters
         ----------
-            h5_main : h5py.Dataset
-                HDF5 Dataset containing the data to be windowed
-            max_RAM_mb : int, optional
-                integer maximum amount of ram, in Mb, to use in windowing
-                Default 1024
-            cores : int, optional
-                integer number of [logical] CPU cores to use in windowing
-                Defualt None, use number of available cores minus 2
-            reset : Boolean, optional
-                should all data in the hdf5 file be deleted
+        h5_main : h5py.Dataset
+            HDF5 Dataset containing the data to be windowed
+        max_RAM_mb : int, optional
+            integer maximum amount of ram, in Mb, to use in windowing
+            Default 1024
+        cores : int, optional
+            integer number of [logical] CPU cores to use in windowing
+            Defualt None, use number of available cores minus 2
+        reset : Boolean, optional
+            should all data in the hdf5 file be deleted
 
         """
         self.h5_file = h5_main.file
@@ -81,30 +81,31 @@ class ImageWindow(object):
 
         Parameters
         ----------
-            win_x : int, optional
-                size of the window, in pixels, in the horizontal direction
-                Default None, a guess will be made based on the FFT of the image
-            win_y : int, optional
-                size of the window, in pixels, in the vertical direction
-                Default None, a guess will be made based on the FFT of the image
-            win_step_x : int, optional
-                step size, in pixels, to take between windows in the horizontal direction
-                Default 1
-            win_step_y : int, optional
-                step size, in pixels, to take between windows in the vertical direction
-                Default 1
-            win_typ : str, optional
-                What kind of fft should be stored with the windows.  Options are
-                None - Only the window
-                'abs' - Only the magnitude of the fft
-                'data+abs' - The window and magnitude of the fft
-                'complex' - The window and the complex fft
-                Default None
+        win_x : int, optional
+            size of the window, in pixels, in the horizontal direction
+            Default None, a guess will be made based on the FFT of the image
+        win_y : int, optional
+            size of the window, in pixels, in the vertical direction
+            Default None, a guess will be made based on the FFT of the image
+        win_step_x : int, optional
+            step size, in pixels, to take between windows in the horizontal direction
+            Default 1
+        win_step_y : int, optional
+            step size, in pixels, to take between windows in the vertical direction
+            Default 1
+        win_typ : str, optional
+            What kind of fft should be stored with the windows.  Options are
+            None - Only the window
+            'abs' - Only the magnitude of the fft
+            'data+abs' - The window and magnitude of the fft
+            'complex' - The window and the complex fft
+            Default None
 
         Returns
         -------
-            h5_wins : HDF5 Dataset
-                Dataset containing the flattened windows
+        h5_wins : HDF5 Dataset
+            Dataset containing the flattened windows
+
         """
         h5_main = self.h5_raw
 
@@ -305,6 +306,7 @@ class ImageWindow(object):
         windows : numpy.ndarray
             Array of the Magnitude of the FFT of each window for the input
             `image`
+
         """
         windows = np.empty_like(image, dtype=absfft32)
         windows['FFT Magnitude'] = np.abs(np.fft.fftshift(np.fft.fft2(image)))
@@ -1010,24 +1012,24 @@ class ImageWindow(object):
 
         Parameters
         ----------
-            num_peaks : int, optional
-                number of peaks to use during least squares fit
-                Default 2
-            save_plots : Boolean, optional
-                If True then a plot showing the quality of the fit will be
-                generated and saved to disk.  Ignored if do_fit is false.
-                Default True
-            show_plots : Boolean, optional
-                If True then a plot showing the quality of the fit will be
-                generated and shown on screen.  Ignored if do_fit is false.
-                Default False
+        num_peaks : int, optional
+            number of peaks to use during least squares fit
+            Default 2
+        save_plots : Boolean, optional
+            If True then a plot showing the quality of the fit will be
+            generated and saved to disk.  Ignored if do_fit is false.
+            Default True
+        show_plots : Boolean, optional
+            If True then a plot showing the quality of the fit will be
+            generated and shown on screen.  Ignored if do_fit is false.
+            Default False
 
         Returns
         -------
-            window_size : int
-                Optimal window size in pixels
-            psf_width : int
-                Estimate atom spacing in pixels
+        window_size : int
+            Optimal window size in pixels
+        psf_width : int
+            Estimate atom spacing in pixels
 
         """
         h5_main = self.h5_raw

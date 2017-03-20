@@ -97,6 +97,22 @@ pycroscopy.io.translators.image module
     :undoc-members:
     :show-inheritance:
 
+pycroscopy.io.translators.ndata_translator module
+-------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.ndata_translator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycroscopy.io.translators.numpy_translator module
+-------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.numpy_translator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pycroscopy.io.translators.oneview module
 ----------------------------------------
 

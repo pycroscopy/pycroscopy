@@ -26,6 +26,7 @@ def read_image(image_path, *args, **kwargs):
     image_parms : dict
         Dictionary containing image parameters.  If image type does not have
         parameters then an empty dictionary is returned.
+
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.dm3':
@@ -54,6 +55,7 @@ def read_dm3(image_path, get_parms=True):
     -------
     image : numpy.ndarray
         Array containing the image from the file `image_path`
+
     """
     image_file = open(image_path, 'rb')
     dmtag = parse_dm_header(image_file)
@@ -100,8 +102,18 @@ def read_dm4(file_path, *args, **kwargs):
     """
     Read dm4 file
 
-    :param file_path:
-    :return:
+    Parameters
+    ----------
+    file_path : str
+        Path to the file to be read
+
+    Returns
+    -------
+    image_array : numpy.ndarray
+        Image data from the file located at `file_path`
+    file_parms : dict
+        Dictionary of parameters read from the dm4 file
+
     """
     get_parms = kwargs.pop('get_parms', True)
     header = kwargs.pop('header', None)
@@ -146,6 +158,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
             tag_dir.name : str
                 Name of the directory
             tag_dir.dm4_tag : str
+
     base_name : str
         Base name of parameters.  Tag and subdirectory names will be appended
         for named tags and subdirectories.  Unnamed ones will recieve a number.
@@ -155,6 +168,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     -------
     parm_dict : dict()
         Dictionary containing the name:value pairs of all parameters `dm4_file`
+
     """
     parm_dict = dict()
 
@@ -227,6 +241,11 @@ def try_tag_to_string(tag_data):
     tag_data : array.array
         Array of 16-bit integers
 
+    Returns
+    -------
+    tag_data : str
+        Decoded string from the integer tag
+
     """
     if not isinstance(tag_data, array.array):
         return tag_data
@@ -244,20 +263,28 @@ def try_tag_to_string(tag_data):
     return tag_data
 
 
-def read_txt(image_path, *args, **kwargs):
+def read_txt(image_path, header_lines=0, delimiter=None, *args, **kwargs):
     """
 
-    :param image_path:
-    :param args:
-    :param kwargs:
-    :return:
+    Parameters
+    ----------
+    image_path : str
+        Path to the image file
+    header_lines : int
+        Number of lines to skip as the header
+    delimiter : str
+        Separator between the columns of data
+    args
+    kwargs
+
+    Returns
+    -------
+    image : numpy.ndarray
+        Image array read from the plaintext file
+
     """
-
-    header_lines = kwargs.pop('header_lines', 0)
-    delimiter = kwargs.pop('delimiter', None)
-
-    image = np.loadtxt(image_path,
+    image = np.loadtxt(image_path, *args,
                        skiprows=header_lines,
-                       delimiter=delimiter)
+                       delimiter=delimiter, **kwargs)
 
     return image
