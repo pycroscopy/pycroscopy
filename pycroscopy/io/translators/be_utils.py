@@ -772,7 +772,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """ 
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=True)   
                                    
-            return __BEPSgen(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, iSpecVals, udvs_units)
+            return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
+                             parm_dict, udvs_labs, iSpecVals, udvs_units)
             
     
     def __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
@@ -1031,8 +1032,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             wmod = inSpecVals[step][1]
             forrev = np.sign(wmod)
-            wmod = abs(wmod)
-            
+
             """
             Get bins for current step based on waveform
             """
@@ -1130,7 +1130,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ----------
         ds_spec_val_mat : numpy array of floats, 
             Holds the spectroscopic values to be indexed
-        
+
         Returns
         -------
         ds_spec_inds_mat : numpy array of uints the same shape as ds_spec_val_mat
@@ -1195,10 +1195,23 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         
     elif dtype == 'BEPSData':
         # Call __BEPSVals to finish the refining of the Spectroscopic Value array        
-        ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = __BEPSVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, udvs_units)
+        ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = __BEPSVals(udvs_mat, spec_inds,
+                                                                                                bin_freqs, bin_wfm_type,
+                                                                                                parm_dict, udvs_labs,
+                                                                                                udvs_units)
         mode = parm_dict['VS_mode']
         ds_spec_inds_mat = __BEPSSpecInds(ds_spec_val_mat)
-    
+
+        # Make sure that the frequencies reset properly for user defined case
+        spec_start = 0
+        if mode == 'load user defined VS Wave from file':
+            wave_form = udvs_mat[:, 3]
+            for wave in wave_form:
+                wave_freqs = bin_freqs[np.argwhere(bin_wfm_type==wave)].squeeze()
+                num_bins = wave_freqs.size
+                ds_spec_inds_mat[0, spec_start:spec_start+num_bins] = range(num_bins)
+                spec_start += num_bins
+
     else:
         warn('Unknown format! Cannot generate Spectroscopic Values!')
         ds_spec_val_mat = []
