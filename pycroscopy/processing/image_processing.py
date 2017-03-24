@@ -98,7 +98,7 @@ class ImageWindow(object):
             None - Only the window
             'abs' - Only the magnitude of the fft
             'data+abs' - The window and magnitude of the fft
-            'complex' - The window and the complex fft
+            'data+complex' - The window and the complex fft
             Default None
 
         Returns
@@ -112,6 +112,7 @@ class ImageWindow(object):
         parent = h5_main.parent
 
         if win_fft is None:
+            win_fft = 'data'
             win_type = windata32
             win_func = lambda tmp_win: tmp_win
         if win_fft == 'abs':
@@ -120,7 +121,7 @@ class ImageWindow(object):
         elif win_fft == 'data+abs':
             win_type = winabsfft32
             win_func = self.win_abs_fft_func
-        elif win_fft == 'complex':
+        elif win_fft == 'data+complex':
             win_type = wincompfft32
             win_func = self.win_comp_fft_func
 
@@ -232,6 +233,7 @@ class ImageWindow(object):
         ds_group.attrs['image_x'] = im_x
         ds_group.attrs['image_y'] = im_y
         ds_group.attrs['psf_width'] = psf_width
+        ds_group.attrs['fft_mode'] = win_fft
         
         image_refs = self.hdf.writeData(ds_group)
         
