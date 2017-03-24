@@ -8,7 +8,7 @@ import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-
+from multiprocessing import cpu_count
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes, checkIfMain
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType
@@ -46,6 +46,11 @@ class Cluster(object):
             raise TypeError('Cannot work with {} just yet'.format(method_name))
 
         self.h5_main = h5_main
+
+        '''
+        If n_jobs is not provided, set to n_cores-2
+        '''
+        kwargs.update({'n_jobs': kwargs.pop('n_jobs', max(1, cpu_count() - 2))})
 
         # Instantiate the clustering object
         self.estimator = cls.__dict__[method_name].__call__(*args, **kwargs)
@@ -213,13 +218,32 @@ class Cluster(object):
 
         h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
         h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
-        if isinstance(self.data_slice[1], np.ndarray):
+
+        '''
+        Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
+        '''
+        if self.num_comps != self.h5_main.shape[1]:
             ds_centroid_indices = MicroDataset('Mean_Response_Indices', np.arange(self.num_comps, dtype=np.uint32))
-            centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
+
+            if isinstance(self.data_slice[1], np.ndarray):
+                centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
+                cluster_grp.attrs['components_used'] = self.data_slice[1].tolist()
+
+            else:
+                centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
+
+                cluster_grp.attrs['components_used'] = np.arange(self.data_slice[1].start,
+                                                                 self.data_slice[1].stop,
+                                                                 self.data_slice[1].step,
+                                                                 dtype=np.uint32)
+
             ds_centroid_values = MicroDataset('Mean_Response_Values',
-                                              centroid_vals_mat)
-            cluster_grp.attrs['components_used'] = self.data_slice[1].tolist()
+                                      centroid_vals_mat)
+
             cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
+
+        else:
+            cluster_grp.attrs['components_used'] = 'all'
 
         '''
         Get the parameters of the estimator used and write them

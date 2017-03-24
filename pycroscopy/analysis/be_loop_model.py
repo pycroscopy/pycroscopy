@@ -77,18 +77,19 @@ class BELoopModel(Model):
         """
         Checks whether or not the provided object can be analyzed by this class.
 
-        Parameters:
-        ----
+        Parameters
+        ----------
         h5_main : h5py.Dataset instance
             The dataset containing the SHO Fit (not necessarily the dataset directly resulting from SHO fit)
             over which the loop projection, guess, and fit will be performed.
         variables : list(string)
             The dimensions needed to be present in the attributes of h5_main to analyze the data with Model.
 
-        Returns:
+        Returns
         -------
         legal : Boolean
             Whether or not this dataset satisfies the necessary conditions for analysis
+
         """
         if h5_main.file.attrs['data_type'] != 'BEPSData':
             warn('Provided dataset does not appear to be a BEPS dataset')

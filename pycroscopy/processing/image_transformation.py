@@ -6,13 +6,13 @@ Created on Tue Oct  6 15:34:12 2015
 """
 
 import math
-import warnings
-
-import h5py
-import numpy as np
 from skimage.feature import match_descriptors, register_translation
 from skimage.measure import ransac
 from skimage.transform import warp, SimilarityTransform
+import warnings
+import h5py
+import numpy as np
+import skimage.feature
 
 
 class ImageTransformation(object):
@@ -23,20 +23,6 @@ class ImageTransformation(object):
     # Don't merge ancillary functions and transforms.
 
     pass
-
-
-
-
-
-
-
-
-import warnings
-
-import h5py
-import numpy as np
-import skimage.feature
-
 
 # TODO: Docstrings following numpy standard.
 
@@ -205,14 +191,14 @@ class FeatureExtractorSerial(object):
 
     Parameters
     ----------
-        detector_name : (string)
-            name of detector.
-        lib : (string)
-            computer vision library to use (opencv or skimage)
+    detector_name : (string)
+        name of detector.
+    lib : (string)
+        computer vision library to use (opencv or skimage)
 
-            The following can be used for:
-            lib = opencv: SIFT, ORB, SURF
-            lib = skimage: ORB, BRIEF, CENSURE
+        The following can be used for:
+        lib = opencv: SIFT, ORB, SURF
+        lib = skimage: ORB, BRIEF, CENSURE
 
     """
 

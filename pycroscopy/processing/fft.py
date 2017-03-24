@@ -14,8 +14,10 @@ from warnings import warn
 
 def getNoiseFloor(fft_data, tolerance):
     """
-    Paramters
-    ---------
+    Calculate the noise floor from the `fft_data`
+
+    Parameters
+    ----------
     fft_data : 1D or 2D complex numpy array
         Signal in frequency space (ie - after FFT shifting) arranged as (channel or repetition, signal)
     tolerance : unsigned float
@@ -25,6 +27,7 @@ def getNoiseFloor(fft_data, tolerance):
     -------
     noise_floor : 1D real numpy array 
         One value per channel / repetition
+
     """
     
     fft_data = np.atleast_2d(fft_data)
@@ -61,14 +64,14 @@ def downSample(fft_vec, freq_ratio):
     """
     Downsamples the provided data vector
     
-    Parameters:
+    Parameters
     -----------
     fft_vec : 1D complex numpy array
         Waveform that is already FFT shifted
     freq_ratio : float
         new sampling rate / old sampling rate (less than 1)
     
-    Returns:
+    Returns
     --------
     fft_vec : 1D numpy array
         downsampled waveform
@@ -91,7 +94,7 @@ def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
     """
     Builds a filter that removes specified noise frequencies
     
-    Parameters:
+    Parameters
     ---------------------    
     num_pts : unsigned int
         Number of points in the FFT signal
@@ -104,7 +107,7 @@ def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
     
     Note: sampRate, freqs, freq_widths have same units - eg MHz
     
-    Returns:
+    Returns
     ----------
     noise_filter : 1D numpy array
         Array of ones set to 0 at noise bands
@@ -161,8 +164,8 @@ def makeLPF(num_pts, samp_rate, f_cutoff, roll_off=0.05):
     """
     Builds a low pass filter
     
-    Paramters:
-    -----------
+    Parameters
+    ----------
     num_pts : unsigned int
         Points in the FFT. Assuming Signal in frequency space (ie - after FFT shifting)
     samp_rate : unsigned integer
@@ -173,9 +176,10 @@ def makeLPF(num_pts, samp_rate, f_cutoff, roll_off=0.05):
         Frequency band over which the filter rolls off. rol off = 0.05 on a 
         100 kHz low pass filter -> roll off from 95 kHz (1) to 100 kHz (0)
         
-    Returns:
-    -----------
+    Returns
+    -------
     LPF : 1D numpy array describing the low pass filter
+
     """
     
     num_pts = abs(int(num_pts))
@@ -207,12 +211,12 @@ def makeLPF(num_pts, samp_rate, f_cutoff, roll_off=0.05):
 ###############################################################################
 
 
-def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, doPlots=False):
+def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do_plots=False):
     """
     Builds a filter that only keeps N harmonics
     
-    Parameters:
-    -------------
+    Parameters
+    ----------
     num_pts : unsigned int
         Number of points in the FFt signal
     samp_rate : unsigned int
@@ -228,8 +232,8 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 
     Note that the frequency values must all have the same units
     
-    Returns:
-    ---------
+    Returns
+    -------
     harm_filter : 1D numpy array
         0s where the signal is to be rejected and 1s at harmonics
         
@@ -243,7 +247,7 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 
     w_vec = 1
         
-    if doPlots:    
+    if do_plots:
         print('OnlyKeepHarmonics: samp_rate = %2.1e Hz, first harmonic = %3.2f Hz, %d harmonics w/- %3.2f Hz bands\n' %(samp_rate,first_freq,num_harm,band_width))     
         w_vec = np.arange(-samp_rate/2.0, samp_rate/2.0, samp_rate/num_pts)
         fig, ax = plt.subplots(figsize=(5, 5))
@@ -259,7 +263,7 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 
     harm_filter[max(cent-ind+sz+1, 0):min(num_pts, cent+ind-sz)] = 0
     
-    if doPlots:
+    if do_plots:
         fig2, ax2 = plt.subplots(figsize=(5, 5))
         ax2.plot(w_vec, harm_filter)
         ax2.set_title('Step 1')
@@ -269,7 +273,7 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
     harm_filter[:cent-ind-sz] = 0
     harm_filter[cent+ind+sz+1:] = 0
     
-    if doPlots:
+    if do_plots:
         fig3, ax3 = plt.subplots(figsize=(5, 5))
         ax3.plot(w_vec, harm_filter)
         ax3.set_title('Step 2')
@@ -282,7 +286,7 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
         ind2 = int(round(num_pts*((harm_ind+1)*first_freq/samp_rate)))
         harm_filter[cent-ind2+sz+1:cent-ind-sz] = 0
         harm_filter[cent+ind+sz+1:cent+ind2-sz] = 0
-        if doPlots:
+        if do_plots:
             fig4, ax4 = plt.subplots(figsize=(5, 5))
             ax4.plot(w_vec, harm_filter)
             ax4.set_title('Step %d' % (harm_ind + 2))
@@ -296,7 +300,7 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 #     """
 #     Removes specified noise frequencies from the signal
 #     
-#     Parameters:
+#     Parameters
 #     ---------------------
 #     * F_AI_vec -- matrix (chan x pts) already FFT + FFT shifted
 #     

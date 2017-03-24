@@ -310,7 +310,7 @@ class BEPSwindow(QtGui.QMainWindow):
 #         Makes a QWindow, fills it with ImageView objects, sets an roi to line.
 #         Allows viewing of raw spectrograms
 #         Input: 
-#             initialParameters: Dictionary,  
+#             initialParameters Dictionary,
 #                     Dictionary containing parameters of data file, needed for GUI setup.
 #             winTitle: string, Optional 
 #                     Title of QWindow, default = 'Window'.None

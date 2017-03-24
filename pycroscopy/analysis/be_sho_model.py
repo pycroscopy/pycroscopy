@@ -157,12 +157,12 @@ class BESHOmodel(Model):
         """
         Returns a chunk of data for the guess or the fit
 
-        Parameters:
+        Parameters
         -----
         None
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if self._start_pos < self.h5_main.shape[0]:
@@ -185,12 +185,12 @@ class BESHOmodel(Model):
         """
         Returns a chunk of guess dataset corresponding to the main dataset
 
-        Parameters:
-        -----
+        Parameters
+        ----------
         None
 
-        Returns:
-        --------
+        Returns
+        -------
         None
         """
         if self.data is None:
