@@ -26,23 +26,36 @@ class NumpyTranslator(Translator):
         pass
 
     def translate(self, h5_path, main_data, num_rows, num_cols, qty_name='Unknown', data_unit='a. u.',
-                  spec_name='Spectroscopic_Variable', spec_val=None, spec_unit='a. u.',
-                  scan_height=None, scan_width=None, spatial_unit='m'):
+                  spec_name='Spectroscopic_Variable', spec_val=None, spec_unit='a. u.', data_type='generic',
+                  translator_name='numpy', scan_height=None, scan_width=None, spatial_unit='m', parms_dict={}):
         """
         The main function that translates the provided data into a .h5 file
 
         Parameters
-        ------------
-        raw_data_path : string / unicode
-            Absolute file path of the data .mat file.
+        ----------
+        h5_path
+        main_data
+        num_rows
+        num_cols
+        qty_name
+        data_unit
+        spec_name
+        spec_val
+        spec_unit
+        data_type
+        translator_name
+        scan_height
+        scan_width
+        spatial_unit
+        parms_dict
 
         Returns
-        ----------
+        -------
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
         if main_data.ndim != 2:
-            raise ValueError('Main dataset must be a 2-dimensional array arranged as [positions')
+            raise ValueError('Main dataset must be a 2-dimensional array arranged as [positions x spectra]')
 
         spectra_length = main_data.shape[1]
 
@@ -56,12 +69,14 @@ class NumpyTranslator(Translator):
             pos_steps = [1.0 * scan_height / num_rows, 1.0 * scan_width / num_cols]
 
         ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False, steps=pos_steps,
-                                                     labels=['Y', 'X'], units=[spatial_unit, spatial_unit], verbose=False)
+                                                     labels=['Y', 'X'], units=[spatial_unit, spatial_unit],
+                                                     verbose=False)
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets([spectra_length], is_spectral=True,
                                                          labels=[spec_name], units=[spec_unit], verbose=False)
         if spec_val is not None:
             if type(spec_val) in [list, np.ndarray]:
-                ds_spec_vals.data = np.atleast_2d(spec_val)
+                ds_spec_vals.data = np.float32(np.atleast_2d(spec_val))
 
-        return super(NumpyTranslator, self).simple_write(h5_path, 'FORC_IV', ds_main,
-                                                         [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
+        return super(NumpyTranslator, self).simple_write(h5_path, data_type, translator_name, ds_main,
+                                                         [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
+                                                         parm_dict=parms_dict)

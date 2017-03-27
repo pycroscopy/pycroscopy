@@ -8,6 +8,7 @@ Created on Tue Nov  3 15:07:16 2015
 from __future__ import division
 
 import abc
+from os import path, remove
 from ..io_utils import getAvailableMem
 from ..microdata import MicroDataGroup, MicroDataset
 from .utils import generate_dummy_main_parms
@@ -62,7 +63,7 @@ class Translator(object):
         """
 
     @staticmethod
-    def simple_write(h5_path, data_name, ds_main, aux_dset_list, parm_dict=None):
+    def simple_write(h5_path, data_name, translator_name, ds_main, aux_dset_list, parm_dict=None):
         """
         Writes the provided datasets and parameters to an h5 file
         
@@ -72,6 +73,8 @@ class Translator(object):
             Absolute path of the h5 file to be written
         data_name : String / Unicode
             Name of the data type
+        translator_name : String / unicode
+            Name of the translator
         ds_main : MicroDataset object
             Main dataset
         aux_dset_list : list of MicroDataset objects
@@ -96,7 +99,7 @@ class Translator(object):
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = data_name
-        global_parms['translator'] = data_name
+        global_parms['translator'] = translator_name
         spm_data.attrs = global_parms
         spm_data.addChildren([meas_grp])
 
@@ -104,6 +107,9 @@ class Translator(object):
         for dset in aux_dset_list:
             if isinstance(dset, MicroDataset):
                 aux_dset_names.append(dset.name)
+
+        if path.exists(h5_path):
+            remove(h5_path)
 
         hdf = ioHDF5(h5_path)
         h5_refs = hdf.writeData(spm_data, print_log=False)
