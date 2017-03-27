@@ -1089,7 +1089,7 @@ class ImageWindow(object):
         '''
         Perform an fft on the normalize image 
         '''
-        im_shape = image.shape[0]
+        im_shape = np.min(image.shape)
         
         def __hamming(data):
             """
