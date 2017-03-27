@@ -282,7 +282,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    num_udvs_steps = h5_main.parent.parent.attrs['num_UDVS_steps']
+    num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
     h5_udvs_inds = getAuxData(h5_main, auxDataName='UDVS_Indices')[-1]
     h5_freqs = getAuxData(h5_main, auxDataName='Bin_Frequencies')[-1]
     wfm_type_vec = getAuxData(h5_main, auxDataName='Bin_Wfm_Type')[-1][()]

@@ -155,7 +155,7 @@ class BEodfRelaxationTranslator(Translator):
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
-        parm_dict['num_UDVS_steps'] = num_actual_udvs_steps 
+        parm_dict['num_udvs_steps'] = num_actual_udvs_steps
         
         udvs_slices = dict();
         for col_ind, col_name in enumerate(UDVS_labs):
