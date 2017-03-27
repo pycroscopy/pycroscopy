@@ -8,6 +8,7 @@ Created on Tue Nov  3 15:07:16 2015
 from __future__ import division
 
 import abc
+from os import path, remove
 from ..io_utils import getAvailableMem
 from ..microdata import MicroDataGroup, MicroDataset
 from .utils import generate_dummy_main_parms
@@ -104,6 +105,9 @@ class Translator(object):
         for dset in aux_dset_list:
             if isinstance(dset, MicroDataset):
                 aux_dset_names.append(dset.name)
+
+        if path.exists(h5_path):
+            remove(h5_path)
 
         hdf = ioHDF5(h5_path)
         h5_refs = hdf.writeData(spm_data, print_log=False)
