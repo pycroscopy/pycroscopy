@@ -63,7 +63,7 @@ class Translator(object):
         """
 
     @staticmethod
-    def simple_write(h5_path, data_name, ds_main, aux_dset_list, parm_dict=None):
+    def simple_write(h5_path, data_name, translator_name, ds_main, aux_dset_list, parm_dict=None):
         """
         Writes the provided datasets and parameters to an h5 file
         
@@ -73,6 +73,8 @@ class Translator(object):
             Absolute path of the h5 file to be written
         data_name : String / Unicode
             Name of the data type
+        translator_name : String / unicode
+            Name of the translator
         ds_main : MicroDataset object
             Main dataset
         aux_dset_list : list of MicroDataset objects
@@ -97,7 +99,7 @@ class Translator(object):
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = data_name
-        global_parms['translator'] = data_name
+        global_parms['translator'] = translator_name
         spm_data.attrs = global_parms
         spm_data.addChildren([meas_grp])
 
