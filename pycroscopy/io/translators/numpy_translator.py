@@ -55,7 +55,7 @@ class NumpyTranslator(Translator):
             Absolute path of the translated h5 file
         """
         if main_data.ndim != 2:
-            raise ValueError('Main dataset must be a 2-dimensional array arranged as [positions')
+            raise ValueError('Main dataset must be a 2-dimensional array arranged as [positions x spectra]')
 
         spectra_length = main_data.shape[1]
 
@@ -75,7 +75,7 @@ class NumpyTranslator(Translator):
                                                          labels=[spec_name], units=[spec_unit], verbose=False)
         if spec_val is not None:
             if type(spec_val) in [list, np.ndarray]:
-                ds_spec_vals.data = np.atleast_2d(spec_val)
+                ds_spec_vals.data = np.float32(np.atleast_2d(spec_val))
 
         return super(NumpyTranslator, self).simple_write(h5_path, data_type, translator_name, ds_main,
                                                          [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
