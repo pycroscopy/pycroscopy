@@ -77,6 +77,8 @@ class NumpyTranslator(Translator):
             if type(spec_val) in [list, np.ndarray]:
                 ds_spec_vals.data = np.float32(np.atleast_2d(spec_val))
 
+        parms_dict.update({'translator': 'NumpyTranslator'})
+
         return super(NumpyTranslator, self).simple_write(h5_path, data_type, translator_name, ds_main,
                                                          [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
                                                          parm_dict=parms_dict)
