@@ -93,7 +93,7 @@ class GuessMethods(object):
         pass
 
     @staticmethod
-    def gaussianProcesses(*args, **kwargs):
+    def gaussian_processes(*args, **kwargs):
         pass
 
     @staticmethod

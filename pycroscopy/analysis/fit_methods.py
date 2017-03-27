@@ -7,6 +7,7 @@ from warnings import warn
 import numpy as np
 from .utils.be_loop import loop_fit_function
 
+
 class Fit_Methods(object):
     """
     This is a container class for the different objective functions used in BE fitting
@@ -83,5 +84,6 @@ class BE_Fit_Methods(object):
 
         return loop_func
 
-class forcIV_Fit_Methods(Fit_Methods):
+
+class forc_iv_fit_methods(Fit_Methods):
     pass
