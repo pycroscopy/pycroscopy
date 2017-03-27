@@ -18,7 +18,6 @@ import scipy
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from ..analysis.utils.be_loop import loop_fit_function
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
 
@@ -197,51 +196,6 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
     color_list = base(np.linspace(0, 1, num_bins))
     cmap_name = base.name + str(num_bins)
     return base.from_list(cmap_name, color_list, num_bins)
-
-
-def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
-    """
-    Plots the loop guess, fit, source projected loops for a single cycle
-
-    Parameters
-    ----------
-    vdc - 1D float numpy array
-        DC offset vector (unshifted)
-    ds_proj_loops - 2D numpy array
-        Projected loops arranged as [position, vdc]
-    ds_guess - 1D compound numpy array
-        Loop guesses arranged as [position]
-    ds_fit - 1D compound numpy array
-        Loop fits arranged as [position]
-    title - (Optional) String / unicode
-        Title for the figure
-
-    Returns
-    ----------
-    fig - matplotlib.pyplot.figure object
-        Figure handle
-    axes - 2D array of matplotlib.pyplot.axis handles
-        handles to axes in the 2d figure
-    """
-    shift_ind = int(-1 * len(vdc) / 4)
-    vdc_shifted = np.roll(vdc, shift_ind)
-    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
-
-    num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
-    fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
-    positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
-    for ax, pos in zip(axes.flat, positions):
-        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
-        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
-        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
-        ax.set_xlabel('V_DC (V)')
-        ax.set_ylabel('PR (a.u.)')
-        ax.set_title('Position ' + str(pos))
-    ax.legend()
-    fig.suptitle(title)
-    fig.tight_layout()
-
-    return fig, axes
 
 
 def _add_loop_parameters(axes, switching_coef_vec):
