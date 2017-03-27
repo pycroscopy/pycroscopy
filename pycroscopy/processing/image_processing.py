@@ -1034,6 +1034,28 @@ class ImageWindow(object):
             Estimate atom spacing in pixels
 
         """
+
+        def __gauss_fit(p, x):
+            """
+            simple gaussian fitting function
+            """
+            a = p[0]
+            s = p[1]
+
+            g = a*np.exp(-(x/s)**2)
+
+            return g
+
+        def __gauss_chi(p, x, y):
+            """
+            Simple chi-squared fit
+            """
+            gauss = __gauss_fit(p, x)
+
+            chi2 = ((y-gauss)/y)**2
+
+            return chi2
+
         h5_main = self.h5_raw
 
         print('Determining appropriate window size from image.')
@@ -1129,15 +1151,29 @@ class ImageWindow(object):
         '''
         fimabs_loc_max_ind = np.argmax(fimabs_loc_max_vec)
         fimabs_loc_max_vec = fimabs_loc_max_vec[fimabs_loc_max_ind:]
-        r_loc_max_vec = r_loc_max_vec [fimabs_loc_max_ind:]
-        
+        r_loc_max_vec = r_loc_max_vec[fimabs_loc_max_ind:]
+
         '''
         Sort the peaks from largest to smallest
         ''' 
         sort_ind = np.argsort(fimabs_loc_max_vec)[::-1]
         fimabs_sort = fimabs_loc_max_vec[sort_ind]
         r_sort = r_loc_max_vec[sort_ind]
-        
+
+        '''
+        Check to ensure there are at least 2 peaks left.
+        '''
+        if fimabs_sort.size == 1:
+            window_size = im_shape / (r_sort[0] + 0.5)
+
+            window_size = np.int(np.round(window_size * 2))
+
+            gauss_guess = (2*fimabs_sort[0], r_sort[0])
+
+            psf_width = im_shape/gauss_guess[1]/np.pi
+
+            return window_size, psf_width
+
         '''
         Only use specified number of peaks
         '''
@@ -1147,30 +1183,9 @@ class ImageWindow(object):
         '''
         Fit to a gaussian
         '''
-        def gauss_fit(p, x):
-            """
-            simple gaussian fitting function
-            """
-            a = p[0]
-            s = p[1]
-
-            g = a*np.exp(-(x/s)**2)
-
-            return g
-
-        def gauss_chi(p, x, y):
-            """
-            Simple chi-squared fit
-            """
-            gauss = gauss_fit(p, x)
-
-            chi2 = ((y-gauss)/y)**2
-
-            return chi2
-
         gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
 
-        fit_vec, pcov, info, errmsg, success = leastsq(gauss_chi,
+        fit_vec, pcov, info, errmsg, success = leastsq(__gauss_chi,
                                                        gauss_guess,
                                                        args=(r_sort, fimabs_sort),
                                                        full_output=1,
@@ -1179,8 +1194,8 @@ class ImageWindow(object):
         psf_width = im_shape/fit_vec[1]/np.pi
 
         if save_plots or show_plots:
-            guess_vec = gauss_fit(gauss_guess, r_vec)
-            fit_vec = gauss_fit(fit_vec, r_vec)
+            guess_vec = __gauss_fit(gauss_guess, r_vec)
+            fit_vec = __gauss_fit(fit_vec, r_vec)
             self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
                                    guess_vec, fit_vec, save_plots, show_plots)
 
