@@ -27,6 +27,7 @@ from .oneview import OneViewTranslator
 from .igor_ibw import IgorIBWTranslator
 from . import image
 from .image import ImageTranslator
+from . import numpy_translator
 from .numpy_translator import NumpyTranslator
 from . import ndata_translator
 from .ndata_translator import NDataTranslator

@@ -73,7 +73,7 @@ class BELoopModel(Model):
         self._met_all_but_forc_inds = None
         self._current_forc = 0
 
-    def _isLegal(self, h5_main, variables=['DC_Offset']):
+    def _is_legal(self, h5_main, variables=['DC_Offset']):
         """
         Checks whether or not the provided object can be analyzed by this class.
 
@@ -114,7 +114,7 @@ class BELoopModel(Model):
             warn('Provided dataset is not a SHO results dataset.')
             return False
 
-        return super(BELoopModel, self)._isLegal(h5_main, variables)
+        return super(BELoopModel, self)._is_legal(h5_main, variables)
 
     # def simulate_script(self):
     #
@@ -143,7 +143,7 @@ class BELoopModel(Model):
     def _set_guess(self, h5_guess):
         """
         Setup to run the fit on an existing guess dataset.  Sets the attributes
-        normally defined during doGuess.
+        normally defined during do_guess.
 
         Parameters
         ----------
@@ -175,7 +175,7 @@ class BELoopModel(Model):
 
         self.h5_guess = h5_guess
 
-    def doGuess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
+    def do_guess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
         """
 
         Parameters
@@ -205,7 +205,7 @@ class BELoopModel(Model):
         if max_mem is None:
             max_mem = self._maxDataChunk
         self._get_sho_chunk_sizes(max_mem, verbose=verbose)
-        self._createGuessDatasets()
+        self._create_guess_datasets()
 
         '''
         Loop over positions
@@ -217,7 +217,7 @@ class BELoopModel(Model):
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
         self._get_dc_offset(verbose=True)
 
-        self._getDataChunk()
+        self._get_data_chunk()
         while self.data is not None:
             # Reshape the SHO
             print('Generating Guesses for FORC {}, and positions {}-{}'.format(self._current_forc,
@@ -252,16 +252,16 @@ class BELoopModel(Model):
 
             self._start_pos = self._end_pos
 
-            self._getDataChunk()
+            self._get_data_chunk()
 
         if get_loop_parameters:
             self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
 
         return self.h5_guess
 
-    def doFit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
-              obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
-              get_loop_parameters=True, h5_guess=None):
+    def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
+               obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
+               get_loop_parameters=True, h5_guess=None):
         """
         Fit the loops
 
@@ -306,7 +306,7 @@ class BELoopModel(Model):
             print("You need to guess before fitting\n")
             return None
 
-        self._createFitDataset()
+        self._create_fit_dataset()
         self._get_sho_chunk_sizes(max_mem, verbose=True)
 
         self._start_pos = 0
@@ -318,7 +318,7 @@ class BELoopModel(Model):
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
         self._get_dc_offset(verbose=True)
 
-        self._getGuessChunk()
+        self._get_guess_chunk()
 
         if len(self._sho_all_but_forc_inds) == 1:
             loops_2d = np.transpose(self.data)
@@ -344,17 +344,17 @@ class BELoopModel(Model):
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
-                temp = self._reformatResults(temp, obj_func['obj_func'])
+                temp = self._reformat_results(temp, obj_func['obj_func'])
                 # temp = temp.reshape(nd_mat_shape_dc_first[-1:0:-1])
                 temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
 
                 results.append(temp)
 
                 self._start_pos = self._end_pos
-                self._getGuessChunk()
+                self._get_guess_chunk()
 
             self.fit = np.hstack(tuple(results))
-            self._setResults()
+            self._set_results()
 
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
@@ -367,7 +367,7 @@ class BELoopModel(Model):
         if get_loop_parameters:
             self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
 
-        return results
+        return self.h5_fit
 
     def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
         """
@@ -821,7 +821,7 @@ class BELoopModel(Model):
 
         pass
 
-    def _getDataChunk(self):
+    def _get_data_chunk(self):
         """
         Get the next chunk of raw data for doing the loop projections.
         :return:
@@ -850,7 +850,7 @@ class BELoopModel(Model):
 
         return
 
-    def _getGuessChunk(self):
+    def _get_guess_chunk(self):
         """
 
         :return:
@@ -883,7 +883,7 @@ class BELoopModel(Model):
 
 
 
-    def _createGuessDatasets(self):
+    def _create_guess_datasets(self):
         """
         Creates the HDF5 Guess dataset and links the it to the ancillary datasets.
         """
@@ -1001,7 +1001,7 @@ class BELoopModel(Model):
         vdc_shifted = np.roll(vdc_vec, shift_ind)
         return shift_ind, vdc_shifted
 
-    def _createFitDataset(self):
+    def _create_fit_dataset(self):
         """
         Creates the HDF5 Fit dataset and links the it to the ancillary datasets.
         """
@@ -1013,7 +1013,7 @@ class BELoopModel(Model):
         self.h5_fit = create_empty_dataset(self.h5_guess, loop_fit32, 'Fit')
         self._h5_group.attrs['fit method'] = 'pycroscopy functional'
 
-    def _reformatResults(self, results, strategy='BE_LOOP', verbose=False):
+    def _reformat_results(self, results, strategy='BE_LOOP', verbose=False):
         """
 
         :param results:

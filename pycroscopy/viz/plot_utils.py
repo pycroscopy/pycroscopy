@@ -15,10 +15,10 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
+from scipy.signal import blackman
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from ..analysis.utils.be_loop import loop_fit_function
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
 
@@ -197,51 +197,6 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
     color_list = base(np.linspace(0, 1, num_bins))
     cmap_name = base.name + str(num_bins)
     return base.from_list(cmap_name, color_list, num_bins)
-
-
-def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
-    """
-    Plots the loop guess, fit, source projected loops for a single cycle
-
-    Parameters
-    ----------
-    vdc - 1D float numpy array
-        DC offset vector (unshifted)
-    ds_proj_loops - 2D numpy array
-        Projected loops arranged as [position, vdc]
-    ds_guess - 1D compound numpy array
-        Loop guesses arranged as [position]
-    ds_fit - 1D compound numpy array
-        Loop fits arranged as [position]
-    title - (Optional) String / unicode
-        Title for the figure
-
-    Returns
-    ----------
-    fig - matplotlib.pyplot.figure object
-        Figure handle
-    axes - 2D array of matplotlib.pyplot.axis handles
-        handles to axes in the 2d figure
-    """
-    shift_ind = int(-1 * len(vdc) / 4)
-    vdc_shifted = np.roll(vdc, shift_ind)
-    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
-
-    num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
-    fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
-    positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
-    for ax, pos in zip(axes.flat, positions):
-        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
-        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
-        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
-        ax.set_xlabel('V_DC (V)')
-        ax.set_ylabel('PR (a.u.)')
-        ax.set_title('Position ' + str(pos))
-    ax.legend()
-    fig.suptitle(title)
-    fig.tight_layout()
-
-    return fig, axes
 
 
 def _add_loop_parameters(axes, switching_coef_vec):
@@ -1131,7 +1086,7 @@ def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
     fig.suptitle(title + ': mean UDVS, mean spatial response')
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return fig, ax
+    return
 
 
 ###############################################################################
@@ -1259,3 +1214,93 @@ def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
         plt.savefig(figure_path, format='png')
 
     return fig
+
+
+def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image Cleaning Results', color_bar_mode=None,
+                                fig_mult=(4, 4), fig_args={}, **kwargs):
+    """
+    
+    Parameters
+    ----------
+    raw_image
+    clean_image
+    stdevs
+    color_bar_mode
+    fig_mult
+    fig_args
+    heading
+
+    Returns
+    -------
+
+    """
+    plot_args = {'cbar_pad': '2.0%', 'cbar_size': '4%', 'hor_axis_pad': 0.115, 'vert_axis_pad': 0.1,
+                 'sup_title_size': 26, 'sub_title_size': 22, 'show_x_y_ticks': False, 'show_tick_marks': False,
+                 'x_y_tick_font_size': 18, 'cbar_tick_font_size': 18}
+
+    plot_args.update(fig_args)
+
+    fig_h, fig_w = fig_mult
+    p_rows = 2
+    p_cols = 3
+
+    fig_clean = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
+    axes_clean = ImageGrid(fig_clean, 111, nrows_ncols=(p_rows, p_cols), cbar_mode=color_bar_mode,
+                           cbar_pad=plot_args['cbar_pad'], cbar_size=plot_args['cbar_size'],
+                           axes_pad=(plot_args['hor_axis_pad']*fig_w, plot_args['vert_axis_pad']*fig_h))
+    fig_clean.canvas.set_window_title(heading)
+    fig_clean.suptitle(heading, fontsize=plot_args['sup_title_size'])
+
+    '''
+    Calculate the removed noise and the FFT's of the raw, clean, and noise
+    '''
+    removed_noise = raw_image - clean_image
+    blackman_window_rows = scipy.signal.blackman(clean_image.shape[0])
+    blackman_window_cols = scipy.signal.blackman(clean_image.shape[1])
+
+    FFT_raw = np.abs(np.fft.fftshift(
+        np.fft.fft2(blackman_window_rows[:, np.newaxis] * raw_image * blackman_window_cols[np.newaxis, :]),
+        axes=(0, 1)))
+    FFT_clean = np.abs(np.fft.fftshift(
+        np.fft.fft2(blackman_window_rows[:, np.newaxis] * clean_image * blackman_window_cols[np.newaxis, :]),
+        axes=(0, 1)))
+    FFT_noise = np.abs(np.fft.fftshift(
+        np.fft.fft2(blackman_window_rows[:, np.newaxis] * removed_noise * blackman_window_cols[np.newaxis, :]),
+        axes=(0, 1)))
+
+    '''
+    Now find the mean and standard deviation of the images
+    '''
+    raw_mean = np.mean(raw_image)
+    clean_mean = np.mean(clean_image)
+    noise_mean = np.mean(removed_noise)
+
+    raw_std = np.std(raw_image)
+    clean_std = np.std(clean_image)
+    noise_std = np.std(removed_noise)
+    fft_clean_std = np.std(FFT_clean)
+
+    '''
+    Make lists of everything needed to plot
+    '''
+    plot_names = ['Original Image', 'Cleaned Image', 'Removed Noise',
+                  'FFT Original Image', 'FFT Cleaned Image', 'FFT Removed Noise']
+    plot_data = [raw_image, clean_image, removed_noise, FFT_raw, FFT_clean, FFT_noise]
+    plot_means = [raw_mean, clean_mean, noise_mean, 0, 0, 0]
+    plot_stds = [raw_std, clean_std, noise_std, 2*fft_clean_std, 2*fft_clean_std, 2*fft_clean_std]
+
+    for count, ax, image, title, mean, std in zip(range(6), axes_clean, plot_data, plot_names, plot_means, plot_stds):
+        im = plot_map(ax, image, stdevs, **kwargs)
+        im.set_clim(vmin=mean-stdevs*std, vmax=mean+stdevs*std)
+        axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
+        cbar = axes_clean.cbar_axes[count].colorbar(im)
+        cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])
+
+        if not plot_args['show_x_y_ticks']:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+        if not plot_args['show_tick_marks']:
+            ax.get_yaxis().set_visible(False)
+            ax.get_xaxis().set_visible(False)
+
+    return fig_clean, axes_clean

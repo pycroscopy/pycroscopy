@@ -7,6 +7,7 @@ from IPython.display import display
 
 from .plot_utils import plot_loops, plot_map_stack, cmap_jet_white_center, plot_map
 from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality
+from ..analysis.utils.be_loop import loop_fit_function
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
@@ -151,8 +152,68 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     plt.close('all')
 
 
-def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_label='Response'):
+def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
+    """
+    Plots the loop guess, fit, source projected loops for a single cycle
 
+    Parameters
+    ----------
+    vdc - 1D float numpy array
+        DC offset vector (unshifted)
+    ds_proj_loops - 2D numpy array
+        Projected loops arranged as [position, vdc]
+    ds_guess - 1D compound numpy array
+        Loop guesses arranged as [position]
+    ds_fit - 1D compound numpy array
+        Loop fits arranged as [position]
+    title - (Optional) String / unicode
+        Title for the figure
+
+    Returns
+    ----------
+    fig - matplotlib.pyplot.figure object
+        Figure handle
+    axes - 2D array of matplotlib.pyplot.axis handles
+        handles to axes in the 2d figure
+    """
+    shift_ind = int(-1 * len(vdc) / 4)
+    vdc_shifted = np.roll(vdc, shift_ind)
+    loops_shifted = np.roll(ds_proj_loops, shift_ind, axis=1)
+
+    num_plots = np.min([5, int(np.sqrt(ds_proj_loops.shape[0]))])
+    fig, axes = plt.subplots(nrows=num_plots, ncols=num_plots, figsize=(18, 18))
+    positions = np.linspace(0, ds_proj_loops.shape[0] - 1, num_plots ** 2, dtype=np.int)
+    for ax, pos in zip(axes.flat, positions):
+        ax.plot(vdc_shifted, loops_shifted[pos, :], 'k', label='Raw')
+        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_guess[pos]))), 'g', label='guess')
+        ax.plot(vdc_shifted, loop_fit_function(vdc_shifted, np.array(list(ds_fit[pos]))), 'r--', label='Fit')
+        ax.set_xlabel('V_DC (V)')
+        ax.set_ylabel('PR (a.u.)')
+        ax.set_title('Position ' + str(pos))
+    ax.legend()
+    fig.suptitle(title)
+    fig.tight_layout()
+
+    return fig, axes
+
+
+def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_label='Response'):
+    """
+    Jupyer notebook ONLY function. Sets up an interactive visualizer for viewing SHO fitted BEPS data.
+    Currently, this is limited to DC and AC spectroscopy datasets.
+
+    Parameters
+    ----------
+    h5_sho_dset : h5py.Dataset
+        dataset to be plotted
+    step_chan : string / unicode
+        Name of the channel that forms the primary spectroscopic axis (eg - DC offset)
+    resp_func : function (optional)
+        Function to apply to the spectroscopic data. Currently, DC spectroscopy uses A*cos(phi) and AC spectroscopy
+        uses A
+    resp_label : string / unicode (optional)
+        Label for the response (y) axis.
+    """
     guess_3d_data, success = reshape_to_Ndims(h5_sho_dset)
 
     h5_sho_spec_inds = getAuxData(h5_sho_dset, 'Spectroscopic_Indices')[0]
@@ -277,12 +338,24 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
 
 def jupyter_visualize_be_spectrograms(h5_main):
+    """
+    Jupyer notebook ONLY function. Sets up a simple visualzier for visualizing raw BE data.
+    Sliders for position indices can be used to visualize BE spectrograms (frequency, UDVS step).
+    In the case of 2 spatial dimensions, a spatial map will be provided as well
 
+    Parameters
+    ----------
+    h5_main : h5py.Dataset
+        Raw dataset
+    """
     h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    num_udvs_steps = h5_main.parent.parent.attrs['num_UDVS_steps']
+    try:
+        num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
+    except KeyError:
+        num_udvs_steps = h5_main.parent.parent.attrs['num_UDVS_steps']
     h5_udvs_inds = getAuxData(h5_main, auxDataName='UDVS_Indices')[-1]
     h5_freqs = getAuxData(h5_main, auxDataName='Bin_Frequencies')[-1]
     wfm_type_vec = getAuxData(h5_main, auxDataName='Bin_Wfm_Type')[-1][()]

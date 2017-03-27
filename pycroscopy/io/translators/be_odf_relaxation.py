@@ -43,7 +43,7 @@ class BEodfRelaxationTranslator(Translator):
             Nothing
         """
         (folder_path, basename) = path.split(file_path)
-        (basename, path_dict) = self.__getFilePaths(file_path)
+        (basename, path_dict) = self._parse_file_path(file_path)
             
         h5_path = path.join(folder_path,basename+'.h5')
 
@@ -155,7 +155,7 @@ class BEodfRelaxationTranslator(Translator):
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
-        parm_dict['num_UDVS_steps'] = num_actual_udvs_steps 
+        parm_dict['num_udvs_steps'] = num_actual_udvs_steps
         
         udvs_slices = dict();
         for col_ind, col_name in enumerate(UDVS_labs):
@@ -267,7 +267,7 @@ class BEodfRelaxationTranslator(Translator):
         self.min_resp = np.zeros(shape=(self.ds_main.shape[0]), dtype=np.float32)
         
         # Now read the raw data files:
-        self.__pixelReadData(path_dict['read_real'],path_dict['read_imag'],parm_dict)
+        self._read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict)
         self.hdf.flush()
         
         generatePlotGroups(self.ds_main, self.hdf, self.mean_resp, folder_path, basename,
@@ -280,7 +280,7 @@ class BEodfRelaxationTranslator(Translator):
         
         return h5_path
             
-    def __pixelReadData(self,real_path, imag_path, parm_dict):
+    def _read_data(self, real_path, imag_path, parm_dict):
         """
         Reads the imaginary and real data files one pixel at a time andwrites to the H5 dataset.
         
@@ -362,7 +362,7 @@ class BEodfRelaxationTranslator(Translator):
         bin_FFT = np.conjugate(FFT_full[bin_inds]);
         return (bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full)
         
-    def __getFilePaths(self,data_filepath):
+    def _parse_file_path(self, data_filepath):
         """
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary

@@ -11,8 +11,6 @@ from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             copyAttributes
 from ..io.microdata import MicroDataset, MicroDataGroup
-from .guess_methods import r_square
-from .utils.be_sho import SHOfunc
 
 
 sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
@@ -32,18 +30,10 @@ class BESHOmodel(Model):
         self.num_udvs_steps = None
         self.freq_vec = None
 
-    def _createGuessDatasets(self):
+    def _create_guess_datasets(self):
         """
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
-
-        Parameters
-        --------
-        None
-
-        Returns
-        -------
-        None
         """
         # Create all the ancilliary datasets, allocate space.....
 
@@ -54,7 +44,7 @@ class BESHOmodel(Model):
         self.num_udvs_steps = len(self.step_start_inds)
 
         # find the frequency vector and hold in memory
-        self._getFrequencyVector()
+        self._get_frequency_vector()
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
@@ -91,20 +81,12 @@ class BESHOmodel(Model):
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
-    def _createFitDatasets(self):
+    def _create_fit_datasets(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
         corresponding spectroscopic and position datasets be created and populated at this point.
         This function will create the HDF5 dataset for the fit and link it to same ancillary datasets as the guess.
         The fit dataset will NOT be populated here but will instead be populated using the __setData function
-
-        Parameters
-        --------
-        None
-
-        Returns
-        -------
-        None
         """
 
         if self.h5_guess is None:
@@ -119,7 +101,7 @@ class BESHOmodel(Model):
             self.num_udvs_steps = len(self.step_start_inds)
 
         if self.freq_vec is None:
-            self._getFrequencyVector()
+            self._get_frequency_vector()
 
         h5_sho_grp = self.h5_guess.parent
 
@@ -141,7 +123,7 @@ class BESHOmodel(Model):
         '''
         copyAttributes(self.h5_guess, self.h5_fit, skip_refs=False)
 
-    def _getFrequencyVector(self):
+    def _get_frequency_vector(self):
         """
         Assumes that the data is reshape-able
         :return:
@@ -153,17 +135,14 @@ class BESHOmodel(Model):
             end_ind = self.step_start_inds[1]
         self.freq_vec = h5_spec_vals[0, self.step_start_inds[0]:end_ind]
 
-    def _getDataChunk(self, verbose=False):
+    def _get_data_chunk(self, verbose=False):
         """
         Returns a chunk of data for the guess or the fit
 
         Parameters
-        -----
-        None
-
-        Returns
-        -------
-        None
+        ----------
+        verbose : Boolean (optional. default = False)
+            Whether or not to print debug statements
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -177,21 +156,15 @@ class BESHOmodel(Model):
             self.data = None
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         if self.data is not None:
-            if verbose: print('Got raw data of shape {} from super'.format(self.data.shape))
+            if verbose:
+                print('Got raw data of shape {} from super'.format(self.data.shape))
             self.data = reshapeToOneStep(self.data, self.num_udvs_steps)
-            if verbose: print('Reshaped raw data to shape {}'.format(self.data.shape))
+            if verbose:
+                print('Reshaped raw data to shape {}'.format(self.data.shape))
 
-    def _getGuessChunk(self):
+    def _get_guess_chunk(self):
         """
         Returns a chunk of guess dataset corresponding to the main dataset
-
-        Parameters
-        ----------
-        None
-
-        Returns
-        -------
-        None
         """
         if self.data is None:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -204,16 +177,16 @@ class BESHOmodel(Model):
         self.guess = np.hstack([self.guess[name] for name in self.guess.dtype.names[:-1]])
         # bear in mind that this self.guess is a compound dataset.
 
-    def _setResults(self, is_guess=False, verbose=False):
+    def _set_results(self, is_guess=False, verbose=False):
         """
         Writes the provided chunk of data into the guess or fit datasets. This method is responsible for any and all book-keeping
 
         Parameters
         ---------
-        data_chunk : nd array
-            n dimensional array of the same type as the guess / fit dataset
         is_guess : Boolean
             Flag that differentiates the guess from the fit
+        verbose : Boolean (optional. default = False)
+            Whether or not to print debug statements
         """
         if is_guess:
             # prepare to reshape:
@@ -228,18 +201,17 @@ class BESHOmodel(Model):
             self.fit = reshapeToNsteps(self.fit, self.num_udvs_steps)
 
         # ask super to take care of the rest, which is a standardized operation
-        super(BESHOmodel, self)._setResults(is_guess)
+        super(BESHOmodel, self)._set_results(is_guess)
 
     def _set_guess(self, h5_guess):
         """
         Setup to run the fit on an existing guess dataset.  Sets the attributes
-        normally defined during doGuess.
+        normally defined during do_guess.
 
         Parameters
         ----------
         h5_guess : h5py.Dataset
             Dataset object containing the guesses
-
         """
         h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
 
@@ -247,14 +219,14 @@ class BESHOmodel(Model):
         self.num_udvs_steps = len(self.step_start_inds)
 
         # find the frequency vector and hold in memory
-        self._getFrequencyVector()
+        self._get_frequency_vector()
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
         self.h5_guess = h5_guess
 
-    def doGuess(self, processors=None, strategy='complex_gaussian',
-                     options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
+    def do_guess(self, processors=None, strategy='complex_gaussian',
+                 options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
 
         Parameters
@@ -271,43 +243,48 @@ class BESHOmodel(Model):
 
         Returns
         -------
-
+        results : h5py.Dataset object
+            Dataset with the SHO guess parameters
         """
         if processors is None:
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
 
-        self._createGuessDatasets()
+        self._create_guess_datasets()
         self._start_pos = 0
         if strategy == 'complex_gaussian':
             freq_vec = self.freq_vec
             options = {'frequencies': freq_vec}
-        super(BESHOmodel, self).doGuess(processors=processors, strategy=strategy, options=options)
+        results = super(BESHOmodel, self).do_guess(processors=processors, strategy=strategy, options=options)
+        return self.h5_guess
 
-    def doFit(self, processors=None, solver_type='least_squares', solver_options={'jac':'cs'},
-              obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])},
-              h5_guess=None):
+    def do_fit(self, processors=None, solver_type='least_squares', solver_options={'jac': 'cs'},
+               obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])},
+               h5_guess=None):
         """
+        Fits the dataset to the SHO function
 
         Parameters
         ----------
         processors : int
             Number of processors to use.
             Default None, output of psutil.cpu_count - 2 is used
-        strategy : string
+        solver_type : string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
-        options : dict
+        solver_options : dict
             Default {"peaks_widths": np.array([10,200])}}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
+        obj_func
         h5_guess : h5py.Dataset
             Existing guess to use as input to fit.
             Default None
 
         Returns
         -------
-
+        results : h5py.Dataset object
+            Dataset with the SHO fit parameters
         """
         if processors is None:
             processors = self._maxCpus
@@ -317,19 +294,27 @@ class BESHOmodel(Model):
         if h5_guess is not None:
             self._set_guess(h5_guess)
 
-        self._createFitDatasets()
+        self._create_fit_datasets()
         self._start_pos = 0
         xvals = self.freq_vec
-        results = super(BESHOmodel, self).doFit(processors=processors, solver_type=solver_type,
-                                                solver_options=solver_options,
-                                                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': xvals})
-        return results
+        results = super(BESHOmodel, self).do_fit(processors=processors, solver_type=solver_type,
+                                                 solver_options=solver_options,
+                                                 obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': xvals})
+        return self.h5_fit
 
-    def _reformatResults(self, results, strategy='wavelet_peaks', verbose=False):
+    def _reformat_results(self, results, strategy='wavelet_peaks', verbose=False):
         """
         Model specific calculation and or reformatting of the raw guess or fit results
-        :param results:
-        :return:
+
+        Parameters
+        ----------
+        results
+        strategy
+        verbose
+
+        Returns
+        -------
+
         """
         if verbose:
             print('Strategy to use: {}'.format(strategy))
@@ -380,23 +365,3 @@ class BESHOmodel(Model):
                 sho_vec['R2 Criterion'][iresult] = 1-result.fun
 
         return sho_vec
-
-#####################################
-# Guess Functions                   #
-#####################################
-
-# def waveletPeaks(vector, peakWidthBounds=[10,300],**kwargs):
-#     waveletWidths = np.linspace(peakWidthBounds[0],peakWidthBounds[1],20)
-#     def __wpeaks(vector):
-#         peakIndices = find_peaks_cwt(vector, waveletWidths,**kwargs)
-#         return peakIndices
-#     return __wpeaks
-#
-# def relativeMax(vector, peakWidthBounds=[10,300],**kwargs):
-#     waveletWidths = np.linspace(peakWidthBounds[0],peakWidthBounds[1],20)
-#     peakIndices = find_peaks_cwt(vector, waveletWidths,**kwargs)
-#     return peakIndices
-
-
-
-

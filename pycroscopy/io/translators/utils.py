@@ -253,7 +253,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     ds_indices = MicroDataset(mode + 'Indices', indices, dtype=np.uint32)
     ds_indices.attrs['labels'] = region_slices
 
-    ds_values = MicroDataset(mode + 'Values', values, dtype=np.float32)
+    ds_values = MicroDataset(mode + 'Values', np.float32(values), dtype=np.float32)
     ds_values.attrs['labels'] = region_slices
 
     if units is None:

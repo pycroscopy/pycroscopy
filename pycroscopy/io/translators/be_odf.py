@@ -208,7 +208,7 @@ class BEodfTranslator(Translator):
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
-        parm_dict['num_UDVS_steps'] = num_actual_udvs_steps
+        parm_dict['num_udvs_steps'] = num_actual_udvs_steps
         
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
@@ -371,13 +371,13 @@ class BEodfTranslator(Translator):
         # Now read the raw data files:
         if not isBEPS:
             # Do this for all BE-Line (always small enough to read in one shot)
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_UDVS_steps'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_UDVS_steps'])
+            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
-            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_UDVS_steps'])
+            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_udvs_steps'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
             self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
