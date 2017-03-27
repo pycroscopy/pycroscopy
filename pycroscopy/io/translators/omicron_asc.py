@@ -67,7 +67,8 @@ class AscTranslator(NumpyTranslator):
         h5_path = super(AscTranslator, self).translate(h5_path, raw_data_2d, num_rows, num_cols, qty_name='Current',
                                                        data_unit='nA', spec_name='Bias', spec_unit='V',
                                                        spec_val=volt_vec, scan_height=100, scan_width=200,
-                                                       spatial_unit='nm', data_type='FORC_IV', parms_dict=parm_dict)
+                                                       spatial_unit='nm', data_type='STS', translator_name='ASC',
+                                                       parms_dict=parm_dict)
 
         return h5_path
 

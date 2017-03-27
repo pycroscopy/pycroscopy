@@ -27,7 +27,7 @@ class NumpyTranslator(Translator):
 
     def translate(self, h5_path, main_data, num_rows, num_cols, qty_name='Unknown', data_unit='a. u.',
                   spec_name='Spectroscopic_Variable', spec_val=None, spec_unit='a. u.', data_type='generic',
-                  scan_height=None, scan_width=None, spatial_unit='m', parms_dict={}):
+                  translator_name='numpy', scan_height=None, scan_width=None, spatial_unit='m', parms_dict={}):
         """
         The main function that translates the provided data into a .h5 file
 
@@ -42,6 +42,8 @@ class NumpyTranslator(Translator):
         spec_name
         spec_val
         spec_unit
+        data_type
+        translator_name
         scan_height
         scan_width
         spatial_unit
@@ -75,6 +77,6 @@ class NumpyTranslator(Translator):
             if type(spec_val) in [list, np.ndarray]:
                 ds_spec_vals.data = np.atleast_2d(spec_val)
 
-        return super(NumpyTranslator, self).simple_write(h5_path, data_type, ds_main,
+        return super(NumpyTranslator, self).simple_write(h5_path, data_type, translator_name, ds_main,
                                                          [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
                                                          parm_dict=parms_dict)
