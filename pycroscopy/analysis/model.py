@@ -45,8 +45,8 @@ class Model(object):
             self.hdf = ioHDF5(self.h5_main.file)
 
         else:
-            warn('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
-            return
+            raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
+
         # Checking if parallel processing will be used
         self._parallel = parallel
 
@@ -85,7 +85,6 @@ class Model(object):
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1]/1e6
         self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
         print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
-
 
     def _isLegal(self, h5_main, variables):
         """
@@ -212,7 +211,7 @@ class Model(object):
 
         """
         warn('Please override the _createGuessDatasets specific to your model')
-        self.guess = None # replace with actual h5 dataset
+        self.guess = None  # replace with actual h5 dataset
         pass
 
     def _createFitDatasets(self):
@@ -275,7 +274,8 @@ class Model(object):
             # Write to file
             self._setResults(is_guess=True)
         else:
-            warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
+            raise KeyError('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' %
+                           strategy)
 
         return self.guess
 
@@ -354,12 +354,11 @@ class Model(object):
             self._setResults()
 
         elif legit_obj_func:
-            warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
-            results = None
+            raise KeyError('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % solver_type)
+
         elif legit_solver:
-            warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
-                 (obj_func['obj_func']))
-            results = None
+            raise KeyError('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods' %
+                           obj_func['obj_func'])
 
         return results
 
