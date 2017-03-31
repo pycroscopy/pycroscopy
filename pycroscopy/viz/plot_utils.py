@@ -1216,7 +1216,7 @@ def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
     return fig
 
 
-def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image Cleaning Results', color_bar_mode=None,
+def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image Cleaning Results',
                                 fig_mult=(4, 4), fig_args={}, **kwargs):
     """
     
@@ -1245,7 +1245,7 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     p_cols = 3
 
     fig_clean = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
-    axes_clean = ImageGrid(fig_clean, 111, nrows_ncols=(p_rows, p_cols), cbar_mode=color_bar_mode,
+    axes_clean = ImageGrid(fig_clean, 111, nrows_ncols=(p_rows, p_cols), cbar_mode='each',
                            cbar_pad=plot_args['cbar_pad'], cbar_size=plot_args['cbar_size'],
                            axes_pad=(plot_args['hor_axis_pad']*fig_w, plot_args['vert_axis_pad']*fig_h))
     fig_clean.canvas.set_window_title(heading)
@@ -1286,12 +1286,13 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     plot_names = ['Original Image', 'Cleaned Image', 'Removed Noise',
                   'FFT Original Image', 'FFT Cleaned Image', 'FFT Removed Noise']
     plot_data = [raw_image, clean_image, removed_noise, FFT_raw, FFT_clean, FFT_noise]
-    plot_means = [raw_mean, clean_mean, noise_mean, 0, 0, 0]
-    plot_stds = [raw_std, clean_std, noise_std, 2*fft_clean_std, 2*fft_clean_std, 2*fft_clean_std]
+    plot_mins = [raw_mean-stdevs*raw_std, clean_mean-stdevs*clean_std, noise_mean-stdevs*noise_std, 0, 0, 0]
+    plot_maxes = [raw_mean+stdevs*raw_std, clean_mean+stdevs*clean_std, noise_mean+stdevs*noise_std,
+                  2*stdevs*fft_clean_std, 2*stdevs*fft_clean_std, 2*stdevs*fft_clean_std]
 
-    for count, ax, image, title, mean, std in zip(range(6), axes_clean, plot_data, plot_names, plot_means, plot_stds):
+    for count, ax, image, title, min, max in zip(range(6), axes_clean, plot_data, plot_names, plot_mins, plot_maxes):
         im = plot_map(ax, image, stdevs, **kwargs)
-        im.set_clim(vmin=mean-stdevs*std, vmax=mean+stdevs*std)
+        im.set_clim(vmin=min, vmax=max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
         cbar = axes_clean.cbar_axes[count].colorbar(im)
         cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])

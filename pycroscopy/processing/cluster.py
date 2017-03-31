@@ -121,7 +121,7 @@ class Cluster(object):
             # get all pixels with this label
             targ_pos = np.argwhere(labels == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[targ_pos, :])[:, self.data_slice[1]]
+            data_chunk = np.atleast_2d(self.h5_main[:, self.data_slice[1]][targ_pos, :])
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
@@ -232,13 +232,11 @@ class Cluster(object):
             else:
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
 
-                cluster_grp.attrs['components_used'] = np.arange(self.data_slice[1].start,
-                                                                 self.data_slice[1].stop,
-                                                                 self.data_slice[1].step,
-                                                                 dtype=np.uint32)
+                cluster_grp.attrs['components_used'] = range(self.data_slice[1].start,
+                                                             self.data_slice[1].stop,
+                                                             self.data_slice[1].step)
 
-            ds_centroid_values = MicroDataset('Mean_Response_Values',
-                                      centroid_vals_mat)
+            ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
 
             cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
 
