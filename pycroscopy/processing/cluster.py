@@ -121,7 +121,7 @@ class Cluster(object):
             # get all pixels with this label
             targ_pos = np.argwhere(labels == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[targ_pos, :])[:, self.data_slice[1]]
+            data_chunk = np.atleast_2d(self.h5_main[:, self.data_slice[1]][targ_pos, :])
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
