@@ -232,13 +232,11 @@ class Cluster(object):
             else:
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
 
-                cluster_grp.attrs['components_used'] = np.arange(self.data_slice[1].start,
-                                                                 self.data_slice[1].stop,
-                                                                 self.data_slice[1].step,
-                                                                 dtype=np.uint32)
+                cluster_grp.attrs['components_used'] = range(self.data_slice[1].start,
+                                                             self.data_slice[1].stop,
+                                                             self.data_slice[1].step)
 
-            ds_centroid_values = MicroDataset('Mean_Response_Values',
-                                      centroid_vals_mat)
+            ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
 
             cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
 
