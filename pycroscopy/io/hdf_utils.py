@@ -16,6 +16,24 @@ __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensional
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims']
 
 
+def print_tree(parent):
+    """
+    Simple function to recursively print the contents of an hdf5 group
+    Parameters
+    ----------
+    parent : h5py.Group
+
+    Returns
+    -------
+    None
+    
+    """
+    def __print(name, obj):
+        print(name)
+
+    print(parent.name)
+    parent.visititems(__print)
+
 def getDataSet(h5_parent, data_name):
     """
     Search for dataset objects in the hdf5 file with given name
