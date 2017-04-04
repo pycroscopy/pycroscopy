@@ -460,3 +460,140 @@ def jupyter_visualize_be_spectrograms(h5_main):
             pos_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
 
         widgets.interact(position_unpacker, **pos_dict)
+
+
+def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit, step_chan='DC_Offset'):
+    """
+    Interactive plotting of the BE Loops
+    
+    Parameters
+    ----------
+    h5_projected_loops : h5py.Dataset
+        Dataset holding the loop projections
+    h5_loop_guess : h5py.Dataset
+        Dataset holding the loop guesses
+    h5_loop_fit : h5py.Dataset
+        Dataset holding the loop gits
+    step_chan : str, optional
+        The name of the Spectroscopic dimension to plot versus.  Needs testing.
+        Default 'DC_Offset'
+
+    Returns
+    -------
+    None
+    
+    """
+    # Prepare some variables for plotting loops fits and guesses
+    # Plot the Loop Guess and Fit Results
+    proj_nd, _ = reshape_to_Ndims(h5_projected_loops)
+    guess_nd, _ = reshape_to_Ndims(h5_loop_guess)
+    fit_nd, _ = reshape_to_Ndims(h5_loop_fit)
+
+    h5_projected_loops = h5_loop_guess.parent['Projected_Loops']
+    h5_proj_spec_inds = getAuxData(h5_projected_loops,
+                                                auxDataName='Spectroscopic_Indices')[-1]
+    h5_proj_spec_vals = getAuxData(h5_projected_loops,
+                                                auxDataName='Spectroscopic_Values')[-1]
+    h5_pos_inds = getAuxData(h5_projected_loops,
+                             auxDataName='Position_Indices')[-1]
+    pos_sort = get_sort_order(np.transpose(h5_pos_inds))
+    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
+    pos_labels = np.array(h5_pos_inds.attrs['labels'])
+    pos_labels = pos_labels[pos_sort]
+
+    # reshape the vdc_vec into DC_step by Loop
+    loop_spec_sort_order = get_sort_order(h5_proj_spec_inds)
+    loop_spec_dims = get_dimensionality(h5_proj_spec_inds[()], loop_spec_sort_order)
+    loop_spec_labels = h5_proj_spec_vals.attrs['labels'][loop_spec_sort_order]
+
+    spec_step_dim_ind = np.where(loop_spec_labels == step_chan)[0][0]
+
+    # move the step dimension to be the first after all position dimensions
+    rest_loop_dim_order = range(len(pos_dims), len(proj_nd.shape))
+    rest_loop_dim_order.pop(spec_step_dim_ind)
+    new_order = range(len(pos_dims)) + [len(pos_dims)+spec_step_dim_ind] + rest_loop_dim_order
+
+    proj_nd_2 = np.transpose(proj_nd, new_order)
+    new_spec_order = np.array(new_order[len(pos_dims):], dtype=np.uint)-len(pos_dims)
+    new_spec_dims = get_dimensionality(h5_proj_spec_inds[()], new_spec_order)
+    new_spec_labels = loop_spec_labels[new_spec_order]
+
+    #Also reshape the projected loops to Positions-DC_Step-Loop
+    final_loop_shape = pos_dims+[new_spec_dims[0]]+[-1]
+    proj_nd_3 = np.reshape(proj_nd_2, final_loop_shape)
+
+    # Get the bias vector:
+    bias_vec = np.reshape(h5_proj_spec_vals[h5_proj_spec_vals.attrs[step_chan]], loop_spec_dims[::-1]).T
+    bias_vec = np.transpose(bias_vec, new_spec_order)
+
+    # Shift the bias vector and the loops by a quarter cycle
+    shift_ind = int(-1*bias_vec.shape[0]/4)
+    # shift_ind = 0
+    bias_shifted = np.roll(bias_vec, shift_ind, axis=0)
+    proj_nd_shifted = np.roll(proj_nd_3, shift_ind, axis=len(pos_dims))
+
+    # This is just the visualizer:
+    loop_field_names = fit_nd.dtype.names
+    loop_field = loop_field_names[0]
+    loop_ind = 0
+    row_ind = 0
+    col_ind = 0
+
+    # Initial plot data
+    spatial_map = fit_nd[:,:, loop_ind][loop_field]
+    proj_data = proj_nd_shifted[row_ind, col_ind, :, loop_ind]
+    bias_data = bias_shifted[:, loop_ind]
+    guess_data = loop_fit_function(bias_data, np.array(list(guess_nd[row_ind, col_ind, loop_ind])))
+    fit_data = loop_fit_function(bias_data, np.array(list(fit_nd[row_ind, col_ind, loop_ind])))
+
+    fig = plt.figure(figsize=(12, 8))
+    ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
+    ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
+
+    im_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(), origin='lower')
+    ax_map.set_xlabel('X')
+    ax_map.set_ylabel('Y')
+    main_vert_line = ax_map.axvline(x=row_ind, color='k')
+    main_hor_line = ax_map.axhline(y=col_ind, color='k')
+
+    ax_loop.plot(bias_data, proj_data, 'k', label='Projection')
+    ax_loop.plot(bias_data, guess_data, 'g', label='Guess')
+    ax_loop.plot(bias_data, fit_data, 'r--', label='Fit')
+    line_handles = ax_loop.get_lines()
+
+    ax_loop.tick_params(labelleft=False, labelright=True)
+    ax_loop.yaxis.set_label_position('right')
+    ax_loop.set_ylabel('PR (a.u.)')
+    ax_loop.set_xlabel('V_DC (V)')
+    ax_loop.set_title('Position ({},{})'.format(col_ind, row_ind))
+    ax_loop.legend()
+    fig.tight_layout()
+
+    def update_loop_plots(loop_field, **kwargs):
+        loop_ind = kwargs['Loop Number']
+        spatial_map = fit_nd[:,:, loop_ind][loop_field]
+        im_map.set_data(spatial_map)
+        spat_mean = np.mean(spatial_map)
+        spat_std = np.std(spatial_map)
+        im_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
+
+        row_ind = kwargs['Y']
+        col_ind = kwargs['X']
+        main_vert_line.set_xdata((kwargs['X'], kwargs['X']))
+        main_hor_line.set_ydata((kwargs['Y'], kwargs['Y']))
+
+        proj_data = proj_nd_shifted[row_ind, col_ind, :, loop_ind]
+        bias_data = bias_shifted[:, loop_ind]
+        guess_data = loop_fit_function(bias_data, np.array(list(guess_nd[row_ind, col_ind, loop_ind])))
+        fit_data = loop_fit_function(bias_data, np.array(list(fit_nd[row_ind, col_ind, loop_ind])))
+        for line_handle, data in zip(line_handles, [proj_data, guess_data, fit_data]):
+            line_handle.set_ydata(data)
+        ax_loop.set_ylim([np.min([proj_data, guess_data, fit_data]), np.max([proj_data, guess_data, fit_data])])
+        ax_loop.set_title('Position ({},{})'.format(col_ind, row_ind))
+        display(fig)
+
+    slider_dict = dict()
+    for pos_dim_ind, dim_name in enumerate(pos_labels):
+        slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
+    slider_dict['Loop Number'] = (0, bias_vec.shape[1] - 1, 1)
+    widgets.interact(update_loop_plots, loop_field=fit_nd.dtype.names, **slider_dict)
