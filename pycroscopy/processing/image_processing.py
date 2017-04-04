@@ -924,10 +924,10 @@ class ImageWindow(object):
 
         h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
         h5_comp_inds = h5_clean.file[h5_V.attrs['Position_Indices']]
-        h5_spec_inds = self.h5_file[self.h5_raw.attrs['Spectroscopic_Indices']]
-        h5_spec_vals = self.h5_file[self.h5_raw.attrs['Spectroscopic_Values']]
+        h5_pos_inds = self.h5_file[self.h5_raw.attrs['Position_Indices']]
+        h5_pos_vals = self.h5_file[self.h5_raw.attrs['Position_Values']]
 
-        link_as_main(h5_clean, h5_comp_inds, h5_S, h5_spec_inds, h5_spec_vals)
+        link_as_main(h5_clean, h5_pos_inds, h5_pos_vals, h5_comp_inds, h5_S)
 
         self.h5_clean = h5_clean
 
@@ -1089,7 +1089,7 @@ class ImageWindow(object):
         '''
         Perform an fft on the normalize image 
         '''
-        im_shape = image.shape[0]
+        im_shape = np.min(image.shape)
         
         def __hamming(data):
             """
@@ -1164,7 +1164,10 @@ class ImageWindow(object):
         Check to ensure there are at least 2 peaks left.
         '''
         if fimabs_sort.size == 1:
+            warn('Only one peak in sorted vector.  Simple estimate being used.')
             window_size = im_shape / (r_sort[0] + 0.5)
+
+            window_size = np.clip(window_size, 1, int(im_shape / 6.0))
 
             window_size = np.int(np.round(window_size * 2))
 
@@ -1200,6 +1203,8 @@ class ImageWindow(object):
                                    guess_vec, fit_vec, save_plots, show_plots)
 
         window_size = im_shape/(r_sort[0]+0.5)
+
+        window_size = np.clip(window_size, 1, int(im_shape / 6.0))
 
         window_size = np.int(np.round(window_size*2))
 
