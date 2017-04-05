@@ -233,8 +233,7 @@ class Cluster(object):
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
 
                 cluster_grp.attrs['components_used'] = range(self.data_slice[1].start,
-                                                             self.data_slice[1].stop,
-                                                             self.data_slice[1].step)
+                                                             self.data_slice[1].stop)[self.data_slice[1]]
 
             ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
 
