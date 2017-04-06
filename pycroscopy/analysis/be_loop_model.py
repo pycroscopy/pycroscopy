@@ -175,7 +175,7 @@ class BELoopModel(Model):
 
         self.h5_guess = h5_guess
 
-    def do_guess(self, max_mem=None, processors=None, verbose=False, get_loop_parameters=True):
+    def do_guess(self, max_mem=None, processors=None, get_loop_parameters=True, verbose=False):
         """
 
         Parameters
@@ -215,9 +215,9 @@ class BELoopModel(Model):
                                              self.sho_spec_inds_per_forc * (self._current_forc + 1))
         self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-        self._get_dc_offset(verbose=True)
+        self._get_dc_offset(verbose=verbose)
 
-        self._get_data_chunk()
+        self._get_data_chunk(verbose=verbose)
         while self.data is not None:
             # Reshape the SHO
             print('Generating Guesses for FORC {}, and positions {}-{}'.format(self._current_forc,
@@ -229,7 +229,7 @@ class BELoopModel(Model):
                 nd_mat_shape_dc_first = loops_2d.shape
             else:
                 loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
-                                                                                                    verbose=True)
+                                                                                                    verbose=verbose)
 
             # step 8: perform loop unfolding
             projected_loops_2d, loop_metrics_1d = self._project_loop_batch(self.dc_vec, np.transpose(loops_2d))
@@ -252,7 +252,7 @@ class BELoopModel(Model):
 
             self._start_pos = self._end_pos
 
-            self._get_data_chunk()
+            self._get_data_chunk(verbose=verbose)
 
         if get_loop_parameters:
             self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
@@ -261,7 +261,7 @@ class BELoopModel(Model):
 
     def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
                obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
-               get_loop_parameters=True, h5_guess=None):
+               get_loop_parameters=True, h5_guess=None, verbose=False):
         """
         Fit the loops
 
@@ -286,6 +286,8 @@ class BELoopModel(Model):
         h5_guess : h5py.Dataset
             Existing guess to use as input to fit.
             Default None
+        verbose : Boolean
+            Whether or not to print debugging statements
 
         Returns
         -------
@@ -307,7 +309,7 @@ class BELoopModel(Model):
             return None
 
         self._create_fit_dataset()
-        self._get_sho_chunk_sizes(max_mem, verbose=True)
+        self._get_sho_chunk_sizes(max_mem, verbose=verbose)
 
         self._start_pos = 0
         self._current_forc = 0
@@ -316,7 +318,7 @@ class BELoopModel(Model):
                                              self.sho_spec_inds_per_forc * (self._current_forc + 1))
         self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-        self._get_dc_offset(verbose=True)
+        self._get_dc_offset(verbose=verbose)
 
         self._get_guess_chunk()
 
@@ -326,7 +328,7 @@ class BELoopModel(Model):
             nd_mat_shape_dc_first = loops_2d.shape
         else:
             loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
-                                                                                                verbose=True)
+                                                                                                verbose=verbose)
 
         shift_ind, vdc_shifted = self.shift_vdc(self.dc_vec)
 
@@ -351,16 +353,16 @@ class BELoopModel(Model):
                 results.append(temp)
 
                 self._start_pos = self._end_pos
-                self._get_guess_chunk()
+                self._get_guess_chunk(verbose=verbose)
 
             self.fit = np.hstack(tuple(results))
             self._set_results()
 
         elif legit_obj_func:
-            warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % (solver_type))
+            warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % solver_type)
             return None
         elif legit_solver:
-            warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods'%
+            warn('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods' %
                  (obj_func['obj_func']))
             return None
 
@@ -388,7 +390,7 @@ class BELoopModel(Model):
         dset_name = h5_loop_fit.name+'_Loop_Parameters'
         h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
                                                   dset_name=dset_name,
-                                                  new_attrs={'nuc_threshold':nuc_threshold})
+                                                  new_attrs={'nuc_threshold': nuc_threshold})
 
         loop_coef_vec = compound_to_scalar(np.reshape(h5_loop_fit, [-1, 1]))
         switching_coef_vec = calc_switching_coef_vec(loop_coef_vec, nuc_threshold)
@@ -777,14 +779,16 @@ class BELoopModel(Model):
 
         return projected_loop_mat, ancillary_mat
 
-    def _project_loops(self):
+    def _project_loops(self, verbose=False):
         """
-
-        :return:
+        Parameters
+        ----------
+        verbose : Boolean
+            Whether or not to print debugging statements
         """
 
         self._create_projection_datasets()
-        self._get_sho_chunk_sizes(10, verbose=True)
+        self._get_sho_chunk_sizes(10, verbose=verbose)
 
         '''
         Loop over the FORCs
@@ -796,7 +800,7 @@ class BELoopModel(Model):
                                                  self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                                  self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-            dc_vec = self._get_dc_offset(verbose=True)
+            dc_vec = self._get_dc_offset(verbose=verbose)
             '''
             Loop over positions
             '''
@@ -821,10 +825,14 @@ class BELoopModel(Model):
 
         pass
 
-    def _get_data_chunk(self):
+    def _get_data_chunk(self, verbose=False):
         """
         Get the next chunk of raw data for doing the loop projections.
-        :return:
+
+        Parameters
+        ----------
+        verbose : Boolean
+            Whether or not to print debugging statements
         """
         if self._start_pos < self.max_pos:
             self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
@@ -839,7 +847,7 @@ class BELoopModel(Model):
                                                  self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                                  self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-            self._get_dc_offset(verbose=True)
+            self._get_dc_offset(verbose=verbose)
 
             self._start_pos = 0
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self.max_pos))
@@ -850,10 +858,12 @@ class BELoopModel(Model):
 
         return
 
-    def _get_guess_chunk(self):
+    def _get_guess_chunk(self, verbose=False):
         """
-
-        :return:
+        Parameters
+        ----------
+        verbose : Boolean
+            Whether or not to print debugging statements
         """
         if self._start_pos < self.max_pos:
             self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
@@ -868,7 +878,7 @@ class BELoopModel(Model):
                                                  self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                                  self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-            self._get_dc_offset(verbose=True)
+            self._get_dc_offset(verbose=verbose)
 
             self._start_pos = 0
             self._end_pos = int(min(self.h5_projected_loops.shape[0], self._start_pos + self.max_pos))
@@ -880,8 +890,6 @@ class BELoopModel(Model):
         guess = self.h5_guess[self._start_pos:self._end_pos,
                               self._current_met_spec_slice].reshape([-1, 1])
         self.guess = compound_to_scalar(guess)[:, :-1]
-
-
 
     def _create_guess_datasets(self):
         """
@@ -1031,6 +1039,7 @@ class BELoopModel(Model):
             temp = np.array([np.hstack([result.x, result.fun]) for result in results])
             temp = realToCompound(temp, loop_fit32)
         return temp
+
 
 class LoopOptimize(Optimize):
     def _initiateSolverAndObjFunc(self):
