@@ -11,9 +11,10 @@ from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 import scipy
 
+
 def targetFuncGuess(args, **kwargs):
     """
-    Needed to create mappable function for multiprocessing
+    This is just creates mappable function for multiprocessing guess
     :param args:
     :param kwargs:
     :return:
@@ -22,6 +23,7 @@ def targetFuncGuess(args, **kwargs):
     func = opt._guessFunc()
     results = func(args[0])
     return results
+
 
 def targetFuncFit(args, **kwargs):
     """
@@ -34,6 +36,7 @@ def targetFuncFit(args, **kwargs):
     solver, solver_options, func = opt._initiateSolverAndObjFunc()
     results = solver(func, args[1], args=[args[0]])
     return results
+
 
 class Optimize(object):
     """
@@ -54,7 +57,6 @@ class Optimize(object):
             sys.exit()
         self._parallel = parallel
 
-
     def _guessFunc(self):
         gm = GuessMethods()
         if self.strategy in gm.methods:
@@ -63,15 +65,15 @@ class Optimize(object):
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % self.strategy)
 
-
-
-    def computeGuess(self, processors = 1, strategy='wavelet_peaks',
-                     options={"peak_widths": np.array([10,200]),"peak_step":20}, **kwargs):
+    def computeGuess(self, processors=1, strategy='wavelet_peaks',
+                     options={"peak_widths": np.array([10, 200]), "peak_step": 20}, **kwargs):
         """
+        Computes the guess function using numerous cores
 
         Parameters
         ----------
-        data
+        processors : unsigned int
+            Number of logical cores to use for computing
         strategy: string
             Default is 'Wavelet_Peaks'.
             Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
@@ -85,7 +87,8 @@ class Optimize(object):
 
         Returns
         -------
-
+        results : unknown
+            unknown
         """
         self.strategy = strategy
         self.options = options
@@ -125,13 +128,14 @@ class Optimize(object):
             func = fm.__getattribute__(self.obj_func_name)(self.obj_func_xvals)
         return solver, self.solver_options, func
 
-    def computeFit(self, processors = 1, solver_type='least_squares', solver_options={},
-                   obj_func={'class':'Fit_Methods','obj_func':'SHO','xvals':np.array([])}):
+    def computeFit(self, processors=1, solver_type='least_squares', solver_options={},
+                   obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
 
         Parameters
         ----------
-        data
+        processors : unsigned int
+            Number of logical cores to use for computing
         solver_type : string
             Optimization solver to use (minimize,least_sq, etc...). For additional info see scipy.optimize
         solver_options: dict()
@@ -139,11 +143,13 @@ class Optimize(object):
             Dictionary of options passed to solver. For additional info see scipy.optimize
         obj_func: dict()
             Default is 'SHO'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes'].
+            For updated list, run GuessMethods.methods
 
         Returns
         -------
-
+        results : unknown
+            unknown
         """
         self.solver_type = solver_type
         self.solver_options = solver_options

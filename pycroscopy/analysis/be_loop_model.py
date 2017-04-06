@@ -340,7 +340,7 @@ class BELoopModel(Model):
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
         if legit_solver and legit_obj_func:
-            print("Using solver %s and objective function %s to fit your data\n" %(solver_type, obj_func['obj_func']))
+            print("Using solver %s and objective function %s to fit your data\n" % solver_type, obj_func['obj_func'])
             while self.data is not None:
                 opt = LoopOptimize(data=loops_2d_shifted, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
@@ -371,7 +371,8 @@ class BELoopModel(Model):
 
         return self.h5_fit
 
-    def extract_loop_parameters(self, h5_loop_fit, nuc_threshold=0.03):
+    @staticmethod
+    def extract_loop_parameters(h5_loop_fit, nuc_threshold=0.03):
         """
         Method to extract a set of physical loop parameters from a dataset of fit parameters
 
@@ -461,13 +462,13 @@ class BELoopModel(Model):
 
         return
 
-    def _get_sho_chunk_sizes(self, max_mem_MB, verbose=False):
+    def _get_sho_chunk_sizes(self, max_mem_mb, verbose=False):
         """
         Calculates the largest number of positions that can be read into memory for a single FORC cycle
 
         Parameters
         ----------
-        max_mem_MB : unsigned int
+        max_mem_mb : unsigned int
             Maximum allowable memory in megabytes
         verbose : Boolean (Optional. Default is False)
             Whether or not to print debugging statements
@@ -502,10 +503,10 @@ class BELoopModel(Model):
         1 for the original data, 1 for data copied to all children processes, 1 for results, 0.5 for fit, guess, misc
         """
         mem_overhead = 3.5
-        max_pos = int(max_mem_MB * 1024 ** 2 / (size_per_forc * mem_overhead))
+        max_pos = int(max_mem_mb * 1024 ** 2 / (size_per_forc * mem_overhead))
         if verbose:
             print('Can read {} of {} pixels given a {} MB memory limit'.format(max_pos,
-                                                                               self._sho_pos_inds.shape[0], max_mem_MB))
+                                                                               self._sho_pos_inds.shape[0], max_mem_mb))
         self.max_pos = int(min(self._sho_pos_inds.shape[0], max_pos))
         self.sho_spec_inds_per_forc = int(self._sho_spec_inds.shape[1] / self._num_forcs)
         self.metrics_spec_inds_per_forc = int(self._met_spec_inds.shape[1] / self._num_forcs)
@@ -627,11 +628,6 @@ class BELoopModel(Model):
 
     def _reshape_results_for_h5(self, raw_results, nd_mat_shape_dc_first, verbose=False):
         """
-
-        :param raw_results:
-        :param nd_mat_shape_dc_first:
-        :param verbose:
-        :return:
         Reshapes the 1D loop metrics to the format such that they can be written to the h5 file
 
         Parameters
@@ -862,7 +858,7 @@ class BELoopModel(Model):
         """
         Parameters
         ----------
-        verbose : Boolean
+        verbose : Boolean (optional)
             Whether or not to print debugging statements
         """
         if self._start_pos < self.max_pos:
@@ -1000,11 +996,20 @@ class BELoopModel(Model):
 
     @staticmethod
     def shift_vdc(vdc_vec):
-        '''
-        Shift the vdc vector
-        :param vdc_vec:
-        :return:
-        '''
+        """
+        Rolls the Vdc vector by a quarter cycle
+
+        Parameters
+        ----------
+        vdc_vec : 1D numpy array
+            DC offset vector
+        Returns
+        -------
+        shift_ind : int
+            Number of indices by which the vector was rolled
+        vdc_shifted : 1D numpy array
+            Vdc vector rolled by a quarter cycle
+        """
         shift_ind = int(-1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
         vdc_shifted = np.roll(vdc_vec, shift_ind)
         return shift_ind, vdc_shifted
@@ -1023,11 +1028,21 @@ class BELoopModel(Model):
 
     def _reformat_results(self, results, strategy='BE_LOOP', verbose=False):
         """
+        Reformat loop fit results to target compound dataset
 
-        :param results:
-        :param strategy:
-        :param verbose:
-        :return:
+        Parameters
+        ----------
+        results : list
+            list of loop fit / guess results objects
+        strategy : string / unicode (optional)
+            Name of the computational strategy
+        verbose : Boolean (optional)
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        temp : 1D compound array
+            An array of the loop parameters in the target compound datatype
         """
         if verbose:
             print('Strategy to use: {}'.format(strategy))
