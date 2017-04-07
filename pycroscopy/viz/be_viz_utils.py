@@ -218,16 +218,15 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     h5_sho_spec_inds = getAuxData(h5_sho_dset, 'Spectroscopic_Indices')[0]
     h5_sho_spec_vals = getAuxData(h5_sho_dset, 'Spectroscopic_Values')[0]
-    sho_spec_sort = get_sort_order(h5_sho_spec_inds)
-    sho_spec_dims = get_dimensionality(h5_sho_spec_inds[()], sho_spec_sort)
-    sho_spec_labels = np.array(h5_sho_spec_vals.attrs['labels'])
-    sho_spec_labels = sho_spec_labels[sho_spec_sort]
+    spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
+    # sho_spec_sort = get_sort_order(h5_sho_spec_inds)
+    sho_spec_dims = np.array(spec_nd.shape[1:])
+    sho_spec_labels = h5_sho_spec_inds.attrs['labels']
 
     h5_pos_inds = getAuxData(h5_sho_dset, auxDataName='Position_Indices')[-1]
-    pos_sort = get_sort_order(np.transpose(h5_pos_inds))
-    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    pos_labels = np.array(h5_pos_inds.attrs['labels'])
-    pos_labels = pos_labels[pos_sort]
+    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
+    pos_labels = h5_pos_inds.attrs['labels']
 
     # reshape to X, Y, step, all others
     spec_step_dim_ind = np.where(sho_spec_labels == step_chan)[0][0]
@@ -253,13 +252,9 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     final_guess_shape = pos_dims + [new_spec_dims[0]] + [-1]
     sho_dset_collapsed = np.reshape(sho_guess_Nd_1, final_guess_shape)
 
-    # Get the bias vector:
-    bias_vec = []
-    bias_ind_vec = np.unique(h5_sho_spec_inds[spec_step_dim_ind])
-    for step_ind in np.unique(bias_ind_vec):
-        temp = np.where(h5_sho_spec_inds[spec_step_dim_ind] == step_ind)[0][0]
-        bias_vec.append(h5_sho_spec_vals[spec_step_dim_ind, temp])
-    bias_vec = np.array(bias_vec)
+    # Get the bias matrix:
+    bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
+    bias_mat = np.transpose(bias_mat[spec_step_dim_ind], new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
 
     # This is just the visualizer:
     sho_quantity = 'Amplitude [V]'
@@ -285,12 +280,14 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     resp_vec = sho_dset_collapsed[row_ind, col_ind, :, :]
     resp_vec = resp_func(resp_vec)
 
+    # bias_vec = bias_mat[:, loop_ind]
+
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
     ax_map = plt.subplot2grid((3, 2), (1, 0), rowspan=2)
     ax_loop = plt.subplot2grid((3, 2), (0, 1), colspan=1, rowspan=3)
 
-    ax_bias.plot(bias_vec)
+    ax_bias.plot(bias_mat[:, 0])
     ax_bias.set_xlabel('Bias Step')
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
@@ -303,7 +300,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     ax_loop.axvline(x=0, color='gray', linestyle='--')
     ax_loop.axhline(y=0, color='gray', linestyle='--')
-    line_handles = ax_loop.plot(bias_vec, resp_vec)
+    line_handles = ax_loop.plot(bias_mat, resp_vec)
     ax_loop.set_xlabel(step_chan.replace('_', ' ') + ' (V)')
     ax_loop.set_ylabel(resp_label)
     fig.tight_layout()
@@ -332,7 +329,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     slider_dict = dict()
     for pos_dim_ind, dim_name in enumerate(pos_labels):
         slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
-    slider_dict['Bias Step'] = (0, bias_vec.size - 1, 1)
+    slider_dict['Bias Step'] = (0, bias_mat.shape[0] - 1, 1)
 
     widgets.interact(update_sho_plots, sho_quantity=sho_dset_collapsed.dtype.names[:-1], **slider_dict)
 
@@ -356,7 +353,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
         num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
     except KeyError:
         num_udvs_steps = h5_main.parent.parent.attrs['num_UDVS_steps']
-    h5_udvs_inds = getAuxData(h5_main, auxDataName='UDVS_Indices')[-1]
+    # h5_udvs_inds = getAuxData(h5_main, auxDataName='UDVS_Indices')[-1]
     h5_freqs = getAuxData(h5_main, auxDataName='Bin_Frequencies')[-1]
     wfm_type_vec = getAuxData(h5_main, auxDataName='Bin_Wfm_Type')[-1][()]
     freq_inds = wfm_type_vec == np.unique(wfm_type_vec)[-1]
@@ -496,39 +493,39 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
                                                 auxDataName='Spectroscopic_Values')[-1]
     h5_pos_inds = getAuxData(h5_projected_loops,
                              auxDataName='Position_Indices')[-1]
-    pos_sort = get_sort_order(np.transpose(h5_pos_inds))
-    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    pos_labels = np.array(h5_pos_inds.attrs['labels'])
-    pos_labels = pos_labels[pos_sort]
+    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
+    pos_labels = h5_pos_inds.attrs['labels']
 
     # reshape the vdc_vec into DC_step by Loop
-    loop_spec_sort_order = get_sort_order(h5_proj_spec_inds)
-    loop_spec_dims = get_dimensionality(h5_proj_spec_inds[()], loop_spec_sort_order)
-    loop_spec_labels = h5_proj_spec_vals.attrs['labels'][loop_spec_sort_order]
+    spec_nd, _ = reshape_to_Ndims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
+    loop_spec_dims = np.array(spec_nd.shape[1:])
+    loop_spec_labels = h5_proj_spec_vals.attrs['labels']
 
     spec_step_dim_ind = np.where(loop_spec_labels == step_chan)[0][0]
 
-    # move the step dimension to be the first after all position dimensions
+    # # move the step dimension to be the first after all position dimensions
     rest_loop_dim_order = range(len(pos_dims), len(proj_nd.shape))
     rest_loop_dim_order.pop(spec_step_dim_ind)
     new_order = range(len(pos_dims)) + [len(pos_dims)+spec_step_dim_ind] + rest_loop_dim_order
 
-    proj_nd_2 = np.transpose(proj_nd, new_order)
-    new_spec_order = np.array(new_order[len(pos_dims):], dtype=np.uint)-len(pos_dims)
-    new_spec_dims = get_dimensionality(h5_proj_spec_inds[()], new_spec_order)
-    new_spec_labels = loop_spec_labels[new_spec_order]
+    new_spec_order = np.array(new_order[len(pos_dims):], dtype=np.uint32)-len(pos_dims)
+    # new_spec_dims = loop_spec_dims[new_spec_order]
+    # new_spec_labels = loop_spec_labels[new_spec_order]
 
     #Also reshape the projected loops to Positions-DC_Step-Loop
-    final_loop_shape = pos_dims+[new_spec_dims[0]]+[-1]
-    proj_nd_3 = np.reshape(proj_nd_2, final_loop_shape)
+    final_loop_shape = pos_dims+[loop_spec_dims[spec_step_dim_ind]]+[-1]
+    proj_nd_3 = np.reshape(proj_nd, final_loop_shape)
+
+    # Do the same for the guess and fit datasets
+    guess_3d = np.reshape(guess_nd, pos_dims+[-1])
+    fit_3d = np.reshape(fit_nd, pos_dims + [-1])
 
     # Get the bias vector:
-    bias_vec = np.reshape(h5_proj_spec_vals[h5_proj_spec_vals.attrs[step_chan]], loop_spec_dims[::-1]).T
-    bias_vec = np.transpose(bias_vec, new_spec_order)
+    bias_vec = np.reshape(spec_nd[spec_step_dim_ind], final_loop_shape[len(pos_dims):])
 
     # Shift the bias vector and the loops by a quarter cycle
     shift_ind = int(-1*bias_vec.shape[0]/4)
-    # shift_ind = 0
     bias_shifted = np.roll(bias_vec, shift_ind, axis=0)
     proj_nd_shifted = np.roll(proj_nd_3, shift_ind, axis=len(pos_dims))
 
@@ -540,11 +537,11 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     col_ind = 0
 
     # Initial plot data
-    spatial_map = fit_nd[:,:, loop_ind][loop_field]
+    spatial_map = fit_3d[:,:, loop_ind][loop_field]
     proj_data = proj_nd_shifted[row_ind, col_ind, :, loop_ind]
     bias_data = bias_shifted[:, loop_ind]
-    guess_data = loop_fit_function(bias_data, np.array(list(guess_nd[row_ind, col_ind, loop_ind])))
-    fit_data = loop_fit_function(bias_data, np.array(list(fit_nd[row_ind, col_ind, loop_ind])))
+    guess_data = loop_fit_function(bias_data, np.array(list(guess_3d[row_ind, col_ind, loop_ind])))
+    fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[row_ind, col_ind, loop_ind])))
 
     fig = plt.figure(figsize=(12, 8))
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
@@ -571,7 +568,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     def update_loop_plots(loop_field, **kwargs):
         loop_ind = kwargs['Loop Number']
-        spatial_map = fit_nd[:,:, loop_ind][loop_field]
+        spatial_map = fit_3d[:,:, loop_ind][loop_field]
         im_map.set_data(spatial_map)
         spat_mean = np.mean(spatial_map)
         spat_std = np.std(spatial_map)
@@ -584,8 +581,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
         proj_data = proj_nd_shifted[row_ind, col_ind, :, loop_ind]
         bias_data = bias_shifted[:, loop_ind]
-        guess_data = loop_fit_function(bias_data, np.array(list(guess_nd[row_ind, col_ind, loop_ind])))
-        fit_data = loop_fit_function(bias_data, np.array(list(fit_nd[row_ind, col_ind, loop_ind])))
+        guess_data = loop_fit_function(bias_data, np.array(list(guess_3d[row_ind, col_ind, loop_ind])))
+        fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[row_ind, col_ind, loop_ind])))
         for line_handle, data in zip(line_handles, [proj_data, guess_data, fit_data]):
             line_handle.set_ydata(data)
         ax_loop.set_ylim([np.min([proj_data, guess_data, fit_data]), np.max([proj_data, guess_data, fit_data])])
