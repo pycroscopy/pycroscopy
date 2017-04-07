@@ -510,9 +510,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             except KeyError:
                 print('No position datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
-                    ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8)
+                    ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
                 else:
-                    ds_pos = np.array(0, dtype=np.uint8)
+                    ds_pos = np.array(0, dtype=np.uint8).reshape(-1, 1)
             except:
                 raise
         else:
@@ -539,9 +539,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             except KeyError:
                 print ('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
-                    ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8)
+                    ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
                 else:
-                    ds_spec = np.array(0, dtype=np.uint8)
+                    ds_spec = np.array(0, dtype=np.uint8).reshape([1, 1])
             except:
                 raise
         else:
