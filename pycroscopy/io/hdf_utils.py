@@ -13,7 +13,7 @@ from .microdata import MicroDataset
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'getDataAttr', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims']
+           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset']
 
 
 def print_tree(parent):
@@ -180,6 +180,23 @@ def getH5GroupRefs(group_name, h5_refs):
         if item.name.split('/')[-1].startswith(group_name):
             group_list.append(item)
     return group_list
+
+
+def findDataset(h5_group, ds_name):
+    """
+    Uses visit() to find all datasets with the desired name
+    """
+    # print 'Finding all instances of', ds_name
+    ds = []
+
+    def __find_name(name, obj):
+        if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
+            ds.append([name, obj])
+        return
+
+    h5_group.visititems(__find_name)
+
+    return ds
 
 
 def findH5group(h5_main, tool_name):
