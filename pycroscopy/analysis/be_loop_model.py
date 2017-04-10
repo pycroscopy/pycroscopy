@@ -340,7 +340,8 @@ class BELoopModel(Model):
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
         if legit_solver and legit_obj_func:
-            print("Using solver %s and objective function %s to fit your data\n" % solver_type, obj_func['obj_func'])
+            print("Using solver {} and objective function {} to fit your data\n".format(solver_type,
+                                                                                        obj_func['obj_func']))
             while self.data is not None:
                 opt = LoopOptimize(data=loops_2d_shifted, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
