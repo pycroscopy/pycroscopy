@@ -10,7 +10,7 @@ from skimage.measure import block_reduce
 from ..io_image import read_image
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
+from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main, findDataset
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
@@ -99,7 +99,6 @@ class ImageTranslator(Translator):
             image -= np.min(image)
             image = image/np.float32(np.max(image))
 
-
         h5_main = self._setup_h5(usize, vsize, image.dtype.type, image_parms)
 
         h5_main = self._read_data(image, h5_main)
@@ -175,6 +174,25 @@ class ImageTranslator(Translator):
         # Open the hdf5 file and delete any contents
         try:
             hdf = ioHDF5(self.h5_path)
+
+            '''
+            See if existing Raw_Data exists
+            '''
+            raw_list = findDataset(hdf.file, 'Raw_Data')
+
+            '''
+            Check in the list to see if any match the chosen parameters.
+            Return the first that matches.  Clear file if none foound.
+            '''
+            for _, h5_raw in raw_list:
+                h5_meas = h5_raw.parent.parent
+                old_parms = h5_meas.attrs
+                old_parms.pop('machine_id', None)
+                old_parms.pop('timestame', None)
+                test = [h5_meas.attrs[key] == old_parms[key] for key in old_parms.iterkeys()]
+                if all(test):
+                    return h5_raw
+
             hdf.clear()
         except:
             raise
