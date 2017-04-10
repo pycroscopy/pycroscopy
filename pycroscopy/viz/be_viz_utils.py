@@ -292,7 +292,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(), origin='lower')
+    img_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(), origin='lower',
+                            interpolation='none')
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
     main_vert_line = ax_map.axvline(x=row_ind, color='k')
@@ -367,18 +368,23 @@ def jupyter_visualize_be_spectrograms(h5_main):
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4))
         # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.jet)
         spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
-                               cmap=cmap_jet_white_center())
+                               cmap=cmap_jet_white_center(),
+                               interpolation='none')
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
         amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.jet,
-                                 extent=[freq_vals[0], freq_vals[-1], spectrogram.shape[0], 0])
+                                 extent=[freq_vals[0], freq_vals[-1],
+                                         spectrogram.shape[0], 0],
+                                 interpolation='none')
         axes[1].set_title('Amplitude')
         axes[1].set_xlabel('Frequency (kHz)')
         axes[1].set_ylabel('BE step')
         phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.jet,
-                                   extent=[freq_vals[0], freq_vals[-1], spectrogram.shape[0], 0])
+                                   extent=[freq_vals[0], freq_vals[-1],
+                                           spectrogram.shape[0], 0],
+                                   interpolation='none')
         axes[2].set_title('Phase')
         axes[2].set_xlabel('Frequency (kHz)')
         for axis in axes[1:3]:
@@ -424,11 +430,14 @@ def jupyter_visualize_be_spectrograms(h5_main):
             fig, axes = plt.subplots(ncols=2, figsize=(9, 5), sharey=True)
             im_handles = list()
             im_handles.append(axes[0].imshow(np.abs(data), cmap=plt.cm.jet,
-                                             extent=[freq_vals[0], freq_vals[-1], data.shape[0], 0]))
+                                             extent=[freq_vals[0], freq_vals[-1],
+                                                     data.shape[0], 0],
+                                             interpolation='none'))
             axes[0].set_title('Amplitude')
             axes[0].set_ylabel('BE step')
             im_handles.append(axes[1].imshow(np.angle(data), cmap=plt.cm.jet,
-                                             extent=[freq_vals[0], freq_vals[-1], data.shape[0], 0]))
+                                             extent=[freq_vals[0], freq_vals[-1], data.shape[0], 0],
+                                             interpolation='none'))
             axes[1].set_title('Phase');
             axes[0].set_xlabel('Frequency index')
             axes[1].set_xlabel('Frequency index')
@@ -547,7 +556,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(), origin='lower')
+    im_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(),
+                           origin='lower', interpolation='none')
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
     main_vert_line = ax_map.axvline(x=row_ind, color='k')
