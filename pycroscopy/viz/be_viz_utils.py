@@ -368,8 +368,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4))
         # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.jet)
         spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
-                               cmap=cmap_jet_white_center(),
-                               interpolation='none')
+                               cmap=cmap_jet_white_center())
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
