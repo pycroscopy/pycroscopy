@@ -30,8 +30,10 @@ def read_image(image_path, *args, **kwargs):
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.dm3':
+        kwargs.pop('as_grey',None)
         return read_dm3(image_path, *args, **kwargs)
     elif ext == '.dm4':
+        kwargs.pop('as_grey', None)
         return read_dm4(image_path, *args, **kwargs)
     elif ext == '.txt':
         return read_txt(image_path, *args, **kwargs), dict()

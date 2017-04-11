@@ -116,30 +116,6 @@ class BELoopModel(Model):
 
         return super(BELoopModel, self)._is_legal(h5_main, variables)
 
-    # def simulate_script(self):
-    #
-    #     self._create_projection_datasets()
-    #     max_pos, sho_spec_inds_per_forc, metrics_spec_inds_per_forc = self._get_sho_chunk_sizes(10, verbose=True)
-    #
-    #     # turn this into a loop
-    #     forc_chunk_index = 0
-    #     pos_chunk_index = 0
-    #
-    #     dc_vec, loops_2d, nd_mat_shape_dc_first, order_dc_offset_reverse = self._get_projection_data(
-    #         forc_chunk_index, max_pos, metrics_spec_inds_per_forc, pos_chunk_index, sho_spec_inds_per_forc)
-    #
-    #     # step 8: perform loop unfolding
-    #     projected_loops_2d, loop_metrics_1d = self._project_loop_batch(dc_vec, np.transpose(loops_2d))
-    #     print('Finished projecting all loops')
-    #     print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
-    #     print 'Loop metrics of shape:', loop_metrics_1d.shape, ', need to bring to:', nd_mat_shape_dc_first[1:]
-    #
-    #     # test the reshapes back
-    #     projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d,
-    #                                                               order_dc_offset_reverse,
-    #                                                               nd_mat_shape_dc_first)
-    #     metrics_2d, success = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
-
     def _set_guess(self, h5_guess):
         """
         Setup to run the fit on an existing guess dataset.  Sets the attributes
@@ -913,6 +889,7 @@ class BELoopModel(Model):
         -------
         guess_parms : 1D compound numpy array
             Loop parameter guesses for the provided projected loops
+            
         """
 
         def _loop_fit_tree(tree, guess_mat, fit_results, vdc_shifted, shift_ind):
@@ -938,6 +915,7 @@ class BELoopModel(Model):
                 Loop parameters that serve as guesses for the loops in the tree
             fit_results : 1D numpy float array
                 Loop parameters that serve as fits for the loops in the tree
+                
             """
             # print('Now fitting cluster #{}'.format(tree.name))
             # I already have a guess. Now fit myself
@@ -1004,12 +982,14 @@ class BELoopModel(Model):
         ----------
         vdc_vec : 1D numpy array
             DC offset vector
+            
         Returns
         -------
         shift_ind : int
             Number of indices by which the vector was rolled
         vdc_shifted : 1D numpy array
             Vdc vector rolled by a quarter cycle
+            
         """
         shift_ind = int(-1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
         vdc_shifted = np.roll(vdc_vec, shift_ind)
@@ -1044,6 +1024,7 @@ class BELoopModel(Model):
         -------
         temp : 1D compound array
             An array of the loop parameters in the target compound datatype
+            
         """
         if verbose:
             print('Strategy to use: {}'.format(strategy))
@@ -1058,6 +1039,9 @@ class BELoopModel(Model):
 
 
 class LoopOptimize(Optimize):
+    """
+    Subclass of Optimize with BE Loop specific changes 
+    """
     def _initiateSolverAndObjFunc(self):
         if self.solver_type in scipy.optimize.__dict__.keys():
             solver = scipy.optimize.__dict__[self.solver_type]

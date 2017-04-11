@@ -113,7 +113,7 @@ class Model(object):
         # Check if variables are in the attributes of spectroscopic indices
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
         # assert isinstance(h5_spec_vals, list)
-        cond_B =  set(variables).issubset(set(h5_spec_vals.attrs.keys()))
+        cond_B = set(variables).issubset(set(h5_spec_vals.attrs.keys()))
 
         if cond_A and cond_B:
             legal = True
