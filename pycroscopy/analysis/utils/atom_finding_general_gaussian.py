@@ -159,6 +159,14 @@ class Gauss_Fit(object):
                                               ('theta', np.float32),
                                               ('background', np.float32)])
 
+            self.motif_coeff_dtype = np.dtype([('amplitude', np.float32),
+                                              ('x', np.float32),
+                                              ('y', np.float32),
+                                              ('sigma_x', np.float32),
+                                              ('sigma_y', np.float32),
+                                              ('theta', np.float32),
+                                              ('background', np.float32)])
+
             # initialize some variables
             self.atom_grp = atom_grp
             self.cropped_clean_image = self.atom_grp['Cropped_Clean_Image'][()]
@@ -232,8 +240,6 @@ class Gauss_Fit(object):
                 parm_list = itt.izip(self.guess_parms, itt.repeat(self.fitting_parms))
                 self.fitting_results = [do_fit(parm) for parm in parm_list]
 
-            tot_time = np.round(tm.time() - t_start)
-            print('Took {} sec to find {} atoms with {} cores'.format(tot_time, len(self.fitting_results), num_cores))
             print ('Finalizing datasets...')
             self.guess_dataset = np.zeros(shape=(self.num_atoms, self.num_nearest_neighbors + 1), dtype=self.atom_coeff_dtype)
             self.fit_dataset = np.zeros(shape=self.guess_dataset.shape, dtype=self.guess_dataset.dtype)
@@ -249,7 +255,8 @@ class Gauss_Fit(object):
                 atom_guess_data = [tuple(element) for element in atom_guess_data]
                 self.guess_dataset[atom_ind] = atom_guess_data
 
-            print ('Done!')
+            tot_time = np.round(tm.time() - t_start)
+            print('Took {} sec to find {} atoms with {} cores'.format(tot_time, len(self.fitting_results), num_cores))
 
             # if plotting is desired
             if plot_results:
@@ -394,8 +401,8 @@ class Gauss_Fit(object):
             lb_mat = [lb_a,                                                              # amplitude
                       coef_guess_mat[:, 1] - position_range,                             # x position
                       coef_guess_mat[:, 2] - position_range,                             # y position
-                      coef_guess_mat[:, 3] - coef_guess_mat[:, 3] * movement_allowance,  # sigma x
-                      coef_guess_mat[:, 4] - coef_guess_mat[:, 4] * movement_allowance,  # sigma y
+                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 3]],  # coef_guess_mat[:, 3] - coef_guess_mat[:, 3] * movement_allowance,  # sigma x
+                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 4]],  # coef_guess_mat[:, 4] - coef_guess_mat[:, 4] * movement_allowance,  # sigma y
                       coef_guess_mat[:, 5] - 2 * 3.14159,                                # theta
                       lb_background]                                                     # background
 
@@ -443,15 +450,14 @@ class Gauss_Fit(object):
                 Returns the atom parent group containing the original data and the newly written data. 
             """
 
-
-            ds_atom_guesses = MicroDataset('Guess', data=self.guess_dataset)
-            ds_atom_fits = MicroDataset('Fit', data=self.fit_dataset)
-            motif_parms = [item[1] for item in self.motif_parms]
-            ds_motif_guesses = MicroDataset('Motif_Guesses', data=motif_parms)
-            ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_parms)
+            ds_atom_guesses = MicroDataset('Gaussian_Guesses', data=self.guess_dataset)
+            ds_atom_fits = MicroDataset('Gaussian_Fits', data=self.fit_dataset)
+            ds_motif_guesses = MicroDataset('Motif_Guesses', data=self.motif_guess_dataset)
+            ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_dataset)
+            ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices', data=self.closest_neighbors_mat, dtype=np.uint32)
             dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
             dgrp_atom_finding.attrs = self.fitting_parms
-            dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses, ds_motif_fits])
+            dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses, ds_motif_fits, ds_nearest_neighbors])
 
             hdf = ioHDF5(self.atom_grp.file)
             h5_atom_refs = hdf.writeData(dgrp_atom_finding)
@@ -467,6 +473,12 @@ class Gauss_Fit(object):
             self.fit_motifs = []
             fit_region = []
 
+            # generate final dataset forms
+            self.motif_guess_dataset = np.zeros(shape=(self.motif_centers.shape[0], self.num_nearest_neighbors + 1),
+                                                dtype=self.motif_coeff_dtype)
+            self.motif_converged_dataset = np.zeros(shape=(self.motif_centers.shape[0], self.num_nearest_neighbors + 1),
+                                                    dtype=self.motif_coeff_dtype)
+
             for motif in range(len(self.motif_centers)):
                 # get guesses
                 self.motif_parms.append(self.do_guess(self.center_atom_indices[motif], initial_motifs=True))
@@ -477,6 +489,9 @@ class Gauss_Fit(object):
                 s2 = self.motif_parms[motif][4].T
                 fit_region.append(self.motif_parms[motif][2])
 
+                # put guesses into final dataset form
+                self.motif_guess_dataset[motif] = [tuple(element) for element in coef_guess_mat]
+
                 # store the guess results for plotting
                 self.motif_guesses.append(gauss2d(s1, s2, *coef_guess_mat, **self.fitting_parms))
 
@@ -486,6 +501,7 @@ class Gauss_Fit(object):
 
                 # store the converged results
                 self.motif_converged_parms.append(fitting_results)
+                self.motif_converged_dataset[motif] = [tuple(element) for element in fitting_results]
 
                 # store the images of the converged gaussians
                 self.fit_motifs.append(gauss2d(s1, s2, *fitting_results, **self.fitting_parms))
@@ -554,11 +570,11 @@ if __name__=='__main__':
                      'num_nearest_neighbors': num_nearest_neighbors,
                      'sigma_guess': 3, # starting guess for gaussian standard deviation
                      'position_range': win_size / 4,# range that the fitted position can go from initial guess position[pixels]
-                     'max_function_evals': 500,
+                     'max_function_evals': 100,
                      'fitting_tolerance': 1E-4,
-                     'symmetric': False,
+                     'symmetric': True,
                      'background': True,
-                     'movement_allowance': 10.0} # percent of movement allowed (on some parameters)
+                     'movement_allowance': 5.0} # percent of movement allowed (on some parameters)
 
     foo = Gauss_Fit(atom_grp, fitting_parms)
 
