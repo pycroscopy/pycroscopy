@@ -137,14 +137,15 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
         q_mat = q_mat.reshape(num_rows, num_cols)
         phase_mat = phase_mat.reshape(num_rows, num_cols)
         rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
-        if save_plots:
-            plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
 
         fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)),
                                        num_comps=5, color_bar_mode='each', heading=grp_name,
                                        title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
                                               'R^2 Criterion'], cmap=cmap_jet_white_center())
-        fig_ms.savefig(plt_path, format='png', dpi=300)
+
+        if save_plots:
+            plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
+            fig_ms.savefig(plt_path, format='png', dpi=300)
 
     if show_plots:
         plt.show()
