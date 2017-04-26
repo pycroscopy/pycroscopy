@@ -124,26 +124,34 @@ def gauss2d(X, Y, *parms, **kwargs):
 
 class Gauss_Fit(object):
         """
-        Computes the guess and fit coefficients for the provided atom guess positions and writes these results to the
-        given h5 group
+        Initializes the gaussian fitting routines:
+            fit_motif()
+            fit_atom_positions_parallel()
+            write_to_disk()
+            
 
         Parameters
         ----------
 
         atom_grp : h5py.Group reference
-            Parent group containing the atom guess positions, cropped clean image and some necessary parameters
+            Parent group containing the atom guess positions, cropped clean image and motif positions
+            
         fitting_parms : dictionary
             Parameters used for atom position fitting
-        parallel : optional boolean (Default = True)
-            Whether to perform fitting in parallel. Cores used = total number of cores - 2
-
-        Returns
-        -------
-        atom_grp : h5py.Group reference
-            Same group as the parameter but now with the 'Guess' and 'Fit' datasets
+            Example:
+                fitting_parms = {'fit_region_size': win_size * 0.5,                 # region to consider when fitting. Should be large enough to see the nearest neighbors.
+                                 'num_nearest_neighbors': num_nearest_neighbors,    # the number of nearest neighbors to fit
+                                 'sigma_guess': 3,                                  # starting guess for gaussian standard deviation. Should be about the size of an atom width in pixels.
+                                 'position_range': win_size / 4,                    # range that the fitted position can move from initial guess position in pixels
+                                 'max_function_evals': 100,                         # maximum allowed function calls; passed to the least squares fitter
+                                 'fitting_tolerance': 1E-4,                         # target difference between the fit and the data
+                                 'symmetric': True,                                 # flag to signal if a symmetric gaussian is desired (i.e. sigma_x == sigma_y)
+                                 'background': True,                                # flag to signal if a background constant is desired
+                                 'movement_allowance': 5.0}                         # percent of movement allowed (on all parameters except x and y positions
+        
         """
 
-        def __init__(self, atom_grp, fitting_parms, parallel=True):
+        def __init__(self, atom_grp, fitting_parms):
             # we should do some initial checks here to ensure the data is at the correct stage for atom fitting
             print('Initializing Gauss Fit')
             # check that the data is appropriate (does nothing yet)
@@ -217,6 +225,13 @@ class Gauss_Fit(object):
                 Number of cores to compute with
 
             Creates guess_dataset and fit_dataset with the results.
+            
+            Returns
+            -------
+            
+            fit_dataset: NxM numpy array of tuples where N is the number of atoms fit and M is the number of nearest
+                neighbors considered. Each tuple contains the converged values for each gaussian.
+                The value names are stored in the dtypes.
             """
 
             t_start = tm.time()
@@ -268,10 +283,8 @@ class Gauss_Fit(object):
                 axis.legend()
                 fig.tight_layout()
                 fig.show()
-                return fig, axis
 
-            else:
-                return
+            return self.fit_dataset
 
         def do_guess(self, atom_ind, initial_motifs=False):
             """
@@ -401,8 +414,8 @@ class Gauss_Fit(object):
             lb_mat = [lb_a,                                                              # amplitude
                       coef_guess_mat[:, 1] - position_range,                             # x position
                       coef_guess_mat[:, 2] - position_range,                             # y position
-                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 3]],  # coef_guess_mat[:, 3] - coef_guess_mat[:, 3] * movement_allowance,  # sigma x
-                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 4]],  # coef_guess_mat[:, 4] - coef_guess_mat[:, 4] * movement_allowance,  # sigma y
+                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 3]],  # sigma x
+                      [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 4]],  # sigma y
                       coef_guess_mat[:, 5] - 2 * 3.14159,                                # theta
                       lb_background]                                                     # background
 
@@ -432,8 +445,38 @@ class Gauss_Fit(object):
             return atom_ind, coef_guess_mat, fit_region, s1, s2, lb_mat, ub_mat
 
         def check_data(self, atom_grp):
-            # need to implement some data checks here
-            pass
+            # some data checks here
+            try:
+                img = atom_grp['Cropped_Clean_Image']
+            except KeyError:
+                raise KeyError('The data \'Cropped_Clean_Image\' must exist before fitting')
+
+            try:
+                guesses = atom_grp['Guess_Positions']
+            except KeyError:
+                raise KeyError('The data \'Guess_Positions\' must exist before fitting')
+
+            try:
+                motifs = atom_grp['Motif_Centers']
+            except KeyError:
+                raise KeyError('The data \'Motif_Centers\' must exist before fitting')
+
+            if np.shape(img)[0] < 1 or np.shape(img)[1] < 1:
+                raise Exception('\'Cropped_Clean_Image\' data must have two dimensions with lengths greater than one')
+
+            if len(guesses) < 1:
+                raise Exception('\'Guess_Positions\' data length must be greater than one')
+
+            if len(guesses[0]) < 3:
+                raise Exception('\'Guess_Positions\' data must have at least three values for each entry: '
+                                'type, x position, and y position')
+
+            if motifs.shape[0] < 1:
+                raise Exception('\'Motif_Centers\' data must contain at least one motif')
+
+            if motifs.shape[1] != 2:
+                raise Exception('\'Motif_Centers\' data is expected to have a shape of (n, 2). '
+                                'The second dimension is not 2.')
 
         def write_to_disk(self):
             """
@@ -447,7 +490,12 @@ class Gauss_Fit(object):
             Returns
             -------
 
-                Returns the atom parent group containing the original data and the newly written data. 
+                Returns the atom parent group containing the original data and the newly written data:
+                    Gaussian_Guesses
+                    Gaussian_Fits
+                    Motif_Guesses
+                    Motif_Fits
+                    Nearest_Neighbor_Indices
             """
 
             ds_atom_guesses = MicroDataset('Gaussian_Guesses', data=self.guess_dataset)
@@ -461,9 +509,22 @@ class Gauss_Fit(object):
 
             hdf = ioHDF5(self.atom_grp.file)
             h5_atom_refs = hdf.writeData(dgrp_atom_finding)
+            hdf.flush()
             return self.atom_grp
 
         def fit_motif(self, plot_results=True):
+            '''
+            Parameters
+            ----------
+                plot_results: boolean (default = True)
+                    Flag to specify whether a result summary should be plotted
+            
+            Returns
+            -------
+                motif_converged_dataset: NxM numpy array of tuples where N is the number of motifs and M is the number
+                    of nearest neighbors considered. Each tuple contains the converged parameters for a gaussian fit to
+                    an atom in a motif window. 
+            '''
 
             # initial_params = [x0, y0, sigma_x, sigma_y, fit_window]
             # atom_neighborhoods = []
@@ -533,9 +594,8 @@ class Gauss_Fit(object):
                     ax_row[2].set_title('Converged Gaussians')
 
                 fig.show()
-                return fig, axes
-            else:
-                return
+
+            return self.motif_converged_dataset
 
 
 if __name__=='__main__':
