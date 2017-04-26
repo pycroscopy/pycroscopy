@@ -90,10 +90,34 @@ class GuessMethods(object):
 
     @staticmethod
     def relative_maximum(*args, **kwargs):
+        """
+        Not yet implemented
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
         pass
 
     @staticmethod
     def gaussian_processes(*args, **kwargs):
+        """
+        Not yet implemented
+        
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
         pass
 
     @staticmethod
@@ -115,8 +139,8 @@ class GuessMethods(object):
         """
         try:
             w_vec = kwargs.pop('frequencies')
-            lower_bounds = kwargs.pop('lower_bounds', [0, np.min(w_vec), -1e5, -np.pi])
-            lower_bounds = kwargs.pop('upper_bounds', [1e5, np.max(w_vec), 1e5, np.pi])
+            # lower_bounds = kwargs.pop('lower_bounds', [0, np.min(w_vec), -1e5, -np.pi])
+            # upper_bounds = kwargs.pop('upper_bounds', [1e5, np.max(w_vec), 1e5, np.pi])
             num_points = kwargs.pop('num_points', 5)
 
             def sho_guess(resp_vec):
