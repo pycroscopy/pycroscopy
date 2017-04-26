@@ -932,7 +932,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 
                 ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
     
-        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
+        return ds_spec_val_mat[:,1:], ds_spec_val_labs, ds_spec_val_units, [['Field',field_names]]
         
     def __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
         """
