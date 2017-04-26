@@ -190,11 +190,13 @@ class BESHOmodel(Model):
         
         """
 
-        if self.data is None:
-            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
-        else:
-            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
+        # if self.data is None:
+        #     self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+        #     self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
+        # else:
+        #     self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
+        self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
+        self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
@@ -323,7 +325,7 @@ class BESHOmodel(Model):
         else:
             processors = min(processors, self._maxCpus)
 
-        if h5_guess is not None:
+        if h5_guess is not None or self.h5_guess is None:
             self._set_guess(h5_guess)
 
         self._create_fit_datasets()
