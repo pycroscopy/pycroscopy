@@ -20,23 +20,25 @@ class Model(object):
     Encapsulates the typical routines performed during model-dependent analysis of data.
     This abstract class should be extended to cover different types of imaging modalities.
 
+    Parameters
+    ----------
+    h5_main : h5py.Dataset instance
+        The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
+        indices and values, and position indices and values datasets.
+    variables : list(string), Default ['Frequency']
+        Lists of attributes that h5_main should possess so that it may be analyzed by Model.
+    parallel : bool, optional
+        Should the parallel implementation of the fitting be used.  Default True.
+
+    Returns
+    -------
+    None
+
     """
     def __init__(self, h5_main, variables=['Frequency'], parallel=True):
         """
         For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
         after testing the basic components.
-
-        Parameters
-        ----
-        h5_main : h5py.Dataset instance
-            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-            indices and values, and position indices and values datasets.
-        variables : list(string), Default ['Frequency']
-            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
-
-        Returns
-        -------
-        None
 
         """
         # Checking if dataset is "Main"
@@ -124,7 +126,7 @@ class Model(object):
 
     def _get_data_chunk(self):
         """
-        Returns a chunk of data for the guess or the fit
+        Returns the next chunk of data for the guess or the fit
 
         Parameters
         -----
@@ -150,7 +152,7 @@ class Model(object):
         """
         Returns a chunk of guess dataset corresponding to the main dataset.
         Should be called BEFORE _get_data_chunk since it relies upon current values of
-        self.__start_pos, self._end_pos
+        `self._start_pos`, `self._end_pos`
 
         Parameters
         -----
@@ -185,7 +187,7 @@ class Model(object):
             source_dset = self.fit
 
         """print('Writing data to positions: {} to {}'.format(self.__start_pos, self._end_pos))
-        targ_dset[self.__start_pos:self._end_pos, :] = source_dset"""
+        targ_dset[self._start_pos:self._end_pos, :] = source_dset"""
         targ_dset[:, :] = source_dset
 
         # flush the file
@@ -244,7 +246,8 @@ class Model(object):
         ----------
         strategy: string
             Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. 
+            For updated list, run GuessMethods.methods
         options: dict
             Default, options for wavelet_peaks {"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
@@ -285,13 +288,16 @@ class Model(object):
 
         Parameters
         ----------
-        results :
+        results : array-like
+            Results to be formatted for writing
         strategy : str
+            The strategy used in the fit.  Determines how the results will be reformatted.
             Default 'wavelet_peaks'
 
         Returns
         -------
-        results
+        results : numpy.ndarray
+            Formatted array that is ready to be writen to the HDF5 file 
 
         """
         return np.array(results)
@@ -307,7 +313,7 @@ class Model(object):
         self.h5_fit = None  # replace with actual h5 dataset
         pass
 
-    def do_fit(self, processors=4, solver_type='least_squares', solver_options={'jac': '2-point'},
+    def do_fit(self, processors=None, solver_type='least_squares', solver_options={'jac': '2-point'},
                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """
         Generates the fit for the given dataset and writes back to file
@@ -315,9 +321,14 @@ class Model(object):
         Parameters
         ----------
         processors : int
-        solver_type
-        solver_options
-        obj_func
+            Number of cpu cores the user wishes to run on.  The minimum of this and self._maxCpus is used.
+        solver_type : str
+            The name of the solver in scipy.optimize to use for the fit
+        solver_options : dict
+            Dictionary of parameters to pass to the solver specified by `solver_type`
+        obj_func : dict
+            Dictionary defining the class and method containing the function to be fit as well as any 
+            additional function parameters.
 
         Returns
         -------
@@ -326,6 +337,12 @@ class Model(object):
         if self.h5_guess is None:
             print("You need to guess before fitting\n")
             return None
+
+        if processors is None:
+            processors = self._maxCpus
+        else:
+            processors = min(processors, self._maxCpus)
+
         self._start_pos = 0
         self._get_guess_chunk()
         self._get_data_chunk()

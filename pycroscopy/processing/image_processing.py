@@ -11,7 +11,8 @@ import numpy as np
 from scipy.optimize import leastsq
 from scipy.signal import blackman
 from sklearn.utils import gen_batches
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main
+from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main, \
+    check_for_old
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
@@ -109,9 +110,7 @@ class ImageWindow(object):
         """
         h5_main = self.h5_raw
 
-        parent = h5_main.parent
-
-        if win_fft is None:
+        if win_fft == 'data' or win_fft is None:
             win_fft = 'data'
             win_type = windata32
             win_func = lambda tmp_win: tmp_win
@@ -126,27 +125,6 @@ class ImageWindow(object):
             win_func = self.win_comp_fft_func
 
         '''
-        Get the position indices of h5_main and reshape the flattened image back
-        '''
-        try:
-            h5_pos = h5_main.file[h5_main.attrs['Position_Indices']][()]
-            x_pix = len(np.unique(h5_pos[:, 0]))
-            y_pix = len(np.unique(h5_pos[:, 1]))
-
-        except KeyError:
-            '''
-            Position Indices dataset does not exist
-            Assume square image
-            '''
-            x_pix = np.int(np.sqrt(h5_main.size))
-            y_pix = x_pix
-
-        except:
-            raise
-
-        image = h5_main[()].reshape(x_pix, y_pix)
-
-        '''
         If a window size has not been specified, obtain a guess value from 
         window_size_extract
         '''
@@ -156,99 +134,15 @@ class ImageWindow(object):
         if win_y is None:
             win_y = win_test
 
-        '''
-        Step size must be less than 1/4th the image size
-        '''
-        win_step_x = min(x_pix/4, win_step_x)
-        win_step_y = min(y_pix/4, win_step_y)
+        image, h5_wins, win_pos_mat, have_old = self._setup_window_h5(h5_main, psf_width, win_fft, win_step_x,
+                                                                      win_step_y, win_type, win_x, win_y)
 
-        '''
-        Prevent windows from being less that twice the step size and more than half the image size
-        '''
-        win_x = max(2*win_step_x, min(x_pix, win_x))
-        win_y = max(2*win_step_y, min(y_pix, win_y))
+        if have_old:
+            self.h5_wins = h5_wins
+            return h5_wins
 
-        print('Optimal window size determined to be {wx}x{wy} pixels.'.format(wx=win_x, wy=win_y))
-        
-        '''
-        Build the Spectroscopic and Position Datasets 
-        '''
-        im_x, im_y = image.shape
-
-        x_steps = np.arange(0, im_x-win_x+1, win_step_x, dtype=np.uint32)
-        y_steps = np.arange(0, im_y-win_y+1, win_step_y, dtype=np.uint32)
-        
-        nx = len(x_steps)
-        ny = len(y_steps)
-        
-        n_wins = nx*ny
-        
-        win_pix = win_x*win_y
-        
-        win_pos_mat = np.array([np.repeat(x_steps, ny), np.tile(y_steps, nx)], dtype=np.uint32).T
-        
-        win_pix_mat = make_position_mat([win_x, win_y]).T
-
-        '''
-        Set up the HDF5 Group and Datasets for the windowed data
-        '''
-        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
-        ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
-        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
-        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
-
-        pos_labels = get_position_slicing(['Window Origin X', 'Window Origin Y'])
-        ds_pos_inds.attrs['labels'] = pos_labels
-        ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
-        ds_pos_vals.attrs['labels'] = pos_labels
-        ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-
-        pix_labels = get_spectral_slicing(['U', 'V'])
-        ds_pix_inds.attrs['labels'] = pix_labels
-        ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
-        ds_pix_vals.attrs['labels'] = pix_labels
-        ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
-
-        '''
-        Calculate the chunk size
-        '''
-        win_chunks = calc_chunks([n_wins, win_pix], win_type.itemsize, unit_chunks=[1, win_pix])
-        ds_windows = MicroDataset('Image_Windows',
-                                  data=[],
-                                  maxshape=[n_wins, win_pix],
-                                  dtype=win_type,
-                                  chunking=win_chunks,
-                                  compression='gzip')
-        
-        basename = h5_main.name.split('/')[-1]
-        ds_group = MicroDataGroup(basename+'-Windowing_', parent.name[1:])
-        
-        ds_group.addChildren([ds_windows, ds_pos_inds, ds_pix_inds,
-                              ds_pos_vals, ds_pix_vals])
-        
-        ds_group.attrs['win_x'] = win_x
-        ds_group.attrs['win_y'] = win_y
-        ds_group.attrs['win_step_x'] = win_step_x
-        ds_group.attrs['win_step_y'] = win_step_y
-        ds_group.attrs['image_x'] = im_x
-        ds_group.attrs['image_y'] = im_y
-        ds_group.attrs['psf_width'] = psf_width
-        ds_group.attrs['fft_mode'] = win_fft
-        
-        image_refs = self.hdf.writeData(ds_group)
-        
-        '''
-        Get the hdf5 objects for the windows and ancillary datasets
-        '''
-        h5_wins = getH5DsetRefs(['Image_Windows'], image_refs)[0]
-
-        '''
-        Link references to windowed dataset
-        '''
-        aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
-
-        self.hdf.flush()
+        n_wins = win_pos_mat.shape[0]
+        win_pix = win_x * win_y
 
         '''
         Create slice object from the positions
@@ -292,6 +186,235 @@ class ImageWindow(object):
         self.h5_wins = h5_wins
         
         return h5_wins
+
+    @staticmethod
+    def _check_win_parameters(h5_main, win_step_x, win_step_y, win_x, win_y):
+        """
+        Check the window parameters
+        
+        Parameters
+        ----------
+        h5_main : h5py.Dataset
+            Dataset containing the Raw Image
+        win_step_x : uint
+            Step size in the x-direction between windows.
+        win_step_y : uint
+            Step size in the y-direction between windows.
+        win_x : uint
+            Size of the window in the x-direction.
+        win_y : uint
+            Size of the window in the y-direction.
+
+        Returns
+        -------
+        image : numpy.ndarray
+            Array containing the original image reshaped by position.
+        win_step_x : uint
+            Step size in the x-direction between windows.
+        win_step_y : uint
+            Step size in the y-direction between windows.
+        win_x : uint
+            Size of the window in the x-direction.
+        win_y : uint
+            Size of the window in the y-direction.
+        
+        """
+        '''
+        Get the position indices of h5_main and reshape the flattened image back
+        '''
+        try:
+            h5_pos = h5_main.file[h5_main.attrs['Position_Indices']][()]
+            x_pix = len(np.unique(h5_pos[:, 0]))
+            y_pix = len(np.unique(h5_pos[:, 1]))
+
+        except KeyError:
+            '''
+            Position Indices dataset does not exist
+            Assume square image
+            '''
+            x_pix = np.int(np.sqrt(h5_main.size))
+            y_pix = x_pix
+
+        except:
+            raise
+        image = h5_main[()].reshape(x_pix, y_pix)
+        '''
+            Step size must be less than 1/4th the image size
+            '''
+        win_step_x = min(x_pix / 4, win_step_x)
+        win_step_y = min(y_pix / 4, win_step_y)
+        '''
+            Prevent windows from being less that twice the step size and more than half the image size
+            '''
+        win_x = max(2 * win_step_x, min(x_pix, win_x))
+        win_y = max(2 * win_step_y, min(y_pix, win_y))
+        print('Optimal window size determined to be {wx}x{wy} pixels.'.format(wx=win_x, wy=win_y))
+
+        return image, win_step_x, win_step_y, win_x, win_y
+
+    def _setup_window_h5(self, h5_main, psf_width, win_fft, win_step_x, win_step_y, win_type, win_x,
+                         win_y):
+        """
+        Setup the hdf5 group for the windows
+        
+        Parameters
+        ----------
+        h5_main : h5py.Dataset
+            Dataset containing the Raw Image
+        psf_width : uint
+            psf_width???  Someone who knows what this is should fill it in 
+        win_fft : 
+        win_step_x : uint
+            Step size in the x-direction between windows.
+        win_step_y : uint
+            Step size in the y-direction between windows.
+        win_type
+        win_x : uint
+            Size of the window in the x-direction.
+        win_y : uint
+            Size of the window in the y-direction.
+
+        Returns
+        -------
+        
+
+        """
+
+        image, win_step_x, win_step_y, win_x, win_y = self._check_win_parameters(h5_main,
+                                                                                 win_step_x, win_step_y,
+                                                                                 win_x, win_y)
+
+        '''
+        Build the Spectroscopic and Position Datasets 
+        '''
+        ds_pix_inds, ds_pix_vals, ds_pos_inds, ds_pos_vals, win_pos_mat = self._get_window_pos_spec(
+            image, win_step_x, win_step_y, win_x, win_y)
+        im_x, im_y = image.shape
+        n_wins = win_pos_mat.shape[0]
+        win_pix = win_x * win_y
+
+        '''
+        Calculate the chunk size
+        '''
+        win_chunks = calc_chunks([n_wins, win_pix], win_type.itemsize, unit_chunks=[1, win_pix])
+
+        parent = h5_main.parent
+
+        check_parameters = {'fft_mode': win_fft,
+                            'psf_width': psf_width,
+                            'win_x': win_x,
+                            'win_y': win_y,
+                            'win_step_x': win_step_x,
+                            'win_step_y': win_step_y,
+                            'image_x': im_x,
+                            'image_y': im_y}
+        basename = h5_main.name.split('/')[-1]
+
+        old_group = check_for_old(h5_main, '-Windowing', check_parameters)
+
+        if old_group is not None:
+            old = True
+            h5_wins = old_group['Image_Windows']
+
+        else:
+            old = False
+            '''
+            Create the Windows Dataset and Datagroup
+            '''
+            ds_windows = MicroDataset('Image_Windows',
+                                      data=[],
+                                      maxshape=[n_wins, win_pix],
+                                      dtype=win_type,
+                                      chunking=win_chunks,
+                                      compression='gzip')
+
+            ds_group = MicroDataGroup(basename + '-Windowing_', parent.name[1:])
+            ds_group.addChildren([ds_windows, ds_pos_inds, ds_pix_inds,
+                                  ds_pos_vals, ds_pix_vals])
+            ds_group.attrs['win_x'] = win_x
+            ds_group.attrs['win_y'] = win_y
+            ds_group.attrs['win_step_x'] = win_step_x
+            ds_group.attrs['win_step_y'] = win_step_y
+            ds_group.attrs['image_x'] = im_x
+            ds_group.attrs['image_y'] = im_y
+            ds_group.attrs['psf_width'] = psf_width
+            ds_group.attrs['fft_mode'] = win_fft
+            image_refs = self.hdf.writeData(ds_group)
+
+            '''
+            Get the hdf5 objects for the windows and ancillary datasets
+            '''
+            h5_wins = getH5DsetRefs(['Image_Windows'], image_refs)[0]
+
+            '''
+            Link references to windowed dataset
+            '''
+            aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
+            linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
+
+            self.hdf.flush()
+
+        return image, h5_wins, win_pos_mat, old
+
+    @staticmethod
+    def _get_window_pos_spec(image, win_step_x, win_step_y, win_x, win_y):
+        """
+        Create the position and spectroscopic datasets for the windows.
+        
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Raw Image
+        win_step_x : uint
+            Step size in the x-direction between windows.
+        win_step_y : uint
+            Step size in the y-direction between windows.
+        win_x : uint
+            Size of the window in the x-direction.
+        win_y : uint
+            Size of the window in the y-direction.
+
+        Returns
+        -------
+        ds_pix_inds : MicroDataset
+            Spectroscopic Indices of the windows
+        ds_pix_vals : MicroDataset
+            Spectroscopic Values of the windows
+        ds_pos_inds : MicroDataset
+            Position Indices of the windows
+        ds_pos_vals : MicroDataset
+            Position Values of the windows
+        win_pos_mat : numpy.ndarray
+            Array containing the positions of the window origins
+
+        """
+        im_x, im_y = image.shape
+        x_steps = np.arange(0, im_x - win_x + 1, win_step_x, dtype=np.uint32)
+        y_steps = np.arange(0, im_y - win_y + 1, win_step_y, dtype=np.uint32)
+        nx = len(x_steps)
+        ny = len(y_steps)
+        win_pos_mat = np.array([np.repeat(x_steps, ny), np.tile(y_steps, nx)], dtype=np.uint32).T
+        win_pix_mat = make_position_mat([win_x, win_y]).T
+
+        '''
+        Set up the HDF5 Group and Datasets for the windowed data
+        '''
+        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
+        ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
+        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
+        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+        pos_labels = get_position_slicing(['Window Origin X', 'Window Origin Y'])
+        ds_pos_inds.attrs['labels'] = pos_labels
+        ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
+        ds_pos_vals.attrs['labels'] = pos_labels
+        ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
+        pix_labels = get_spectral_slicing(['U', 'V'])
+        ds_pix_inds.attrs['labels'] = pix_labels
+        ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
+        ds_pix_vals.attrs['labels'] = pix_labels
+        ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
+
+        return ds_pix_inds, ds_pix_vals, ds_pos_inds, ds_pos_vals, win_pos_mat
 
     @staticmethod
     def abs_fft_func(image):

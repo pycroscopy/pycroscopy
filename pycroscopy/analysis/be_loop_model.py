@@ -26,6 +26,9 @@ from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, 
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec
 from ..io.microdata import MicroDataset, MicroDataGroup
 
+'''
+Custom dtypes for the datasets created during fitting.
+'''
 loop_metrics32 = np.dtype([('Area', np.float32),
                            ('Centroid x', np.float32),
                            ('Centroid y', np.float32),
@@ -52,6 +55,21 @@ loop_fit32 = np.dtype([('a_0', np.float32),
 class BELoopModel(Model):
     """
     Analysis of Band excitation loops using functional fits
+    
+    Parameters
+    ----------
+    h5_main : h5py.Dataset instance
+        The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
+        indices and values, and position indices and values datasets.
+    variables : list(string), Default ['Frequency']
+        Lists of attributes that h5_main should possess so that it may be analyzed by Model.
+    parallel : bool, optional
+        Should the parallel implementation of the fitting be used.  Default True.
+
+    Returns
+    -------
+    None
+    
     """
 
     def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
@@ -94,8 +112,7 @@ class BELoopModel(Model):
         if h5_main.file.attrs['data_type'] != 'BEPSData':
             warn('Provided dataset does not appear to be a BEPS dataset')
             return False
-
-        if not h5_main.name.startswith('/Measurement_'):
+        elif not h5_main.name.startswith('/Measurement_'):
             warn('Provided dataset is not derived from a measurement group')
             return False
 
@@ -105,12 +122,10 @@ class BELoopModel(Model):
         if h5_meas_grp.attrs['VS_mode'] not in ['DC modulation mode', 'current mode']:
             warn('Provided dataset is not a DC modulation or current mode BEPS dataset')
             return False
-
-        if h5_meas_grp.attrs['VS_cycle_fraction'] != 'full':
+        elif h5_meas_grp.attrs['VS_cycle_fraction'] != 'full':
             warn('Provided dataset does not have full cycles')
             return False
-
-        if h5_main.dtype != sho32:
+        elif h5_main.dtype != sho32:
             warn('Provided dataset is not a SHO results dataset.')
             return False
 
@@ -153,7 +168,8 @@ class BELoopModel(Model):
 
     def do_guess(self, max_mem=None, processors=None, get_loop_parameters=True, verbose=False):
         """
-
+        Compute the loop projections and the initial guess for the loop parameters.
+        
         Parameters
         ----------
         processors : uint, optional
@@ -184,22 +200,32 @@ class BELoopModel(Model):
         self._create_guess_datasets()
 
         '''
-        Loop over positions
+        Get the first slice of the sho and loop metrics
         '''
-
         self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
                                              self.sho_spec_inds_per_forc * (self._current_forc + 1))
         self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-        self._get_dc_offset(verbose=verbose)
 
+        '''
+        Get the dc_offset and data_chunk for the first slice
+        '''
+        self._get_dc_offset(verbose=verbose)
         self._get_data_chunk(verbose=verbose)
+
+        '''
+        Loop over positions
+        '''
         while self.data is not None:
             # Reshape the SHO
             print('Generating Guesses for FORC {}, and positions {}-{}'.format(self._current_forc,
                                                                                self._start_pos,
                                                                                self._end_pos))
+            '''
+            Reshape the sho data by loops
+            '''
             if len(self._sho_all_but_forc_inds) == 1:
+                # Check for the special case where there is only one loop
                 loops_2d = np.transpose(self.data)
                 order_dc_offset_reverse = np.array([1, 0], dtype=np.uint8)
                 nd_mat_shape_dc_first = loops_2d.shape
@@ -207,9 +233,10 @@ class BELoopModel(Model):
                 loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
                                                                                                     verbose=verbose)
 
-            # step 8: perform loop unfolding
+            '''
+            Do the projection and guess
+            '''
             projected_loops_2d, loop_metrics_1d = self._project_loop_batch(self.dc_vec, np.transpose(loops_2d))
-
             guessed_loops = self._guess_loops(self.dc_vec, projected_loops_2d)
 
             # Reshape back
@@ -226,8 +253,10 @@ class BELoopModel(Model):
             self.h5_loop_metrics[self._start_pos:self._end_pos, self._current_met_spec_slice] = metrics_2d
             self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice] = guessed_loops_2
 
+            '''
+            Change the starting position and get the next chunk of data
+            '''
             self._start_pos = self._end_pos
-
             self._get_data_chunk(verbose=verbose)
 
         if get_loop_parameters:
@@ -270,48 +299,63 @@ class BELoopModel(Model):
         results: list
             List of the results returned by the solver
         """
+        '''
+        Set the number of processors and the ammount of RAM to use in the fit
+        '''
         if processors is None:
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
-
         if max_mem is None:
             max_mem = self._maxDataChunk
 
+        '''
+        Ensure that a guess exists
+        '''
         if h5_guess is not None:
             self._set_guess(h5_guess)
         elif self.h5_guess is None:
             print("You need to guess before fitting\n")
             return None
 
+        '''
+        Setup the datasets
+        '''
         self._create_fit_dataset()
         self._get_sho_chunk_sizes(max_mem, verbose=verbose)
 
+        '''
+        Get the dc_vector and the data for the first loop
+        '''
         self._start_pos = 0
         self._current_forc = 0
-
         self._current_sho_spec_slice = slice(self.sho_spec_inds_per_forc * self._current_forc,
                                              self.sho_spec_inds_per_forc * (self._current_forc + 1))
         self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
         self._get_dc_offset(verbose=verbose)
-
         self._get_guess_chunk()
 
+        '''
+        Reshape the sho data by loop
+        '''
         if len(self._sho_all_but_forc_inds) == 1:
+            # Check for the special case of a single loop
             loops_2d = np.transpose(self.data)
-            order_dc_offset_reverse = np.array([1, 0], dtype=np.uint8)
             nd_mat_shape_dc_first = loops_2d.shape
         else:
-            loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
-                                                                                                verbose=verbose)
+            loops_2d, _, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
+                                                                          verbose=verbose)
 
+        '''
+        Shift the loops and vdc vector
+        '''
         shift_ind, vdc_shifted = self.shift_vdc(self.dc_vec)
-
-        # vdc_shifted = self.dc_vec
-        # loops_2d = loops_2d.T
         loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=0).T
 
+        '''
+        Do the fit
+        '''
         results = list()
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
@@ -324,7 +368,6 @@ class BELoopModel(Model):
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformat_results(temp, obj_func['obj_func'])
-                # temp = temp.reshape(nd_mat_shape_dc_first[-1:0:-1])
                 temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
 
                 results.append(temp)
@@ -378,6 +421,10 @@ class BELoopModel(Model):
         return h5_loop_parameters
 
     def _create_projection_datasets(self):
+        """
+        Setup the Loop_Fit Group and the loop projection datasets
+
+        """
         # First grab the spectroscopic indices and values and position indices
         self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
@@ -754,6 +801,7 @@ class BELoopModel(Model):
 
     def _project_loops(self, verbose=False):
         """
+        Do the projection of the SHO fit
         Parameters
         ----------
         verbose : Boolean
@@ -833,6 +881,8 @@ class BELoopModel(Model):
 
     def _get_guess_chunk(self, verbose=False):
         """
+        Read the next chunk of the Guess to use for fitting
+        
         Parameters
         ----------
         verbose : Boolean (optional)

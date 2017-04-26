@@ -157,7 +157,7 @@ class ImageTranslator(Translator):
 
         ds_chunking = calc_chunks([num_pixels, 1],
                                   data_type(0).itemsize,
-                                  unit_chunks=[num_pixels, 1])
+                                  unit_chunks=[1, 1])
 
         # Allocate space for Main_Data and Pixel averaged Data
         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pixels, 1),
@@ -189,7 +189,7 @@ class ImageTranslator(Translator):
                 old_parms = h5_meas.attrs
                 old_parms.pop('machine_id', None)
                 old_parms.pop('timestame', None)
-                test = [h5_meas.attrs[key] == old_parms[key] for key in old_parms.iterkeys()]
+                test = [meas_grp.attrs[key] == old_parms[key] for key in old_parms.iterkeys()]
                 if all(test):
                     return h5_raw
 
