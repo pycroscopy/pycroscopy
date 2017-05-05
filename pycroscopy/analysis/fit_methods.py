@@ -60,13 +60,26 @@ class Fit_Methods(object):
 
 
 class BE_Fit_Methods(object):
-
+    """
+    Contains fit methods that are specific to BE data.
+    """
     def __init__(self):
         self.methods = ['BE_LOOP']
 
     @staticmethod
     def BE_LOOP(dc_vec, *args):
+        """
+        
+        Parameters
+        ----------
+        dc_vec : numpy.ndarray
+            The DC offset vector
+        args : list
 
+        Returns
+        -------
+
+        """
         def loop_func(coef_vec, data_vec):
             if coef_vec.size < 9:
                 raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
@@ -86,4 +99,7 @@ class BE_Fit_Methods(object):
 
 
 class forc_iv_fit_methods(Fit_Methods):
+    """
+    Any fitting methods specific to FORC_IV should go here.
+    """
     pass

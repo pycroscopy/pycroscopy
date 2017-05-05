@@ -12,6 +12,7 @@ from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
+from ..io.io_utils import getAvailableMem, recommendCores
 from .optimize import Optimize
 
 
@@ -79,12 +80,13 @@ class Model(object):
             self._maxCpus = psutil.cpu_count() - 2
         else:
             self._maxCpus = 1
-        self._maxMemoryMB = psutil.virtual_memory().available / 1e6  # in MB
+
+        self._maxMemoryMB = getAvailableMem() / 1024**2 # in Mb
 
         self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
         # Now calculate the number of positions that can be stored in memory in one go.
-        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1]/1e6
+        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
         self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
         print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
 
@@ -238,7 +240,7 @@ class Model(object):
         self.fit = None # replace with actual h5 dataset
         pass
 
-    def do_guess(self, processors=4, strategy='wavelet_peaks',
+    def do_guess(self, processors=None, strategy='wavelet_peaks',
                  options={"peak_widths": np.array([10,200]), "peak_step":20}):
         """
 
@@ -258,8 +260,10 @@ class Model(object):
         """
 
         self._start_pos = 0
+
+        processors = recommendCores(self._max_pos_per_read, processors)
+
         self._get_data_chunk()
-        processors = min(processors, self._maxCpus)
         gm = GuessMethods()
         results = list()
         if strategy in gm.methods:
@@ -338,10 +342,7 @@ class Model(object):
             print("You need to guess before fitting\n")
             return None
 
-        if processors is None:
-            processors = self._maxCpus
-        else:
-            processors = min(processors, self._maxCpus)
+        processors = recommendCores(self._max_pos_per_read, processors)
 
         self._start_pos = 0
         self._get_guess_chunk()

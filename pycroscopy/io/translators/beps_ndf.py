@@ -151,7 +151,7 @@ class BEPSndfTranslator(Translator):
         ########################################################
         # Reading and parsing the .dat file(s) 
 
-        self._read_data(parsers, unique_waves, show_plots=False, save_plots=True, do_histogram=False,)
+        self._read_data(parsers, unique_waves, show_plots=show_plots, save_plots=save_plots, do_histogram=False,)
         
         self.hdf.close()
             
