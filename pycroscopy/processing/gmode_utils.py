@@ -12,6 +12,7 @@ from multiprocessing import Pool, cpu_count
 from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
+from time import time
 from .fft import getNoiseFloor, noiseBandFilter, makeLPF, harmonicsPassFilter
 from ..io.io_hdf5 import ioHDF5
 from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes, copy_main_attributes
@@ -278,7 +279,10 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     if write_filtered is False and write_condensed is False:
         warn('You need to write the filtered and/or the condensed dataset to the file')
         return
-    
+
+    if 'num_pix' not in filter_parms:
+        filter_parms['num_pix'] = 1
+
     num_effective_pix = h5_main.shape[0]*1.0/filter_parms['num_pix']
     if num_effective_pix % 1 > 0:
         warn('Number of pixels not divisible by the number of pixels to use for FFT filter')
@@ -286,28 +290,56 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     num_effective_pix = int(num_effective_pix)
         
     num_pts = h5_main.shape[1]*filter_parms['num_pix']
+
     noise_band_filter = 1
     low_pass_filter = 1
-    if filter_parms['band_filt_[Hz]'] is not None:
-        band_filt = filter_parms['band_filt_[Hz]']
-        noise_band_filter = noiseBandFilter(num_pts, filter_parms['samp_rate_[Hz]'], band_filt[0], band_filt[1])
-    if filter_parms['LPF_cutOff_[Hz]'] > 0:
-        low_pass_filter = makeLPF(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['LPF_cutOff_[Hz]'])
-    composite_filter = noise_band_filter * low_pass_filter    
+    harmonic_filter = 1
+
+    if 'band_filt_[Hz]' in filter_parms:
+        if type(filter_parms['band_filt_[Hz]']) in [list, np.ndarray]:
+            band_filt = filter_parms['band_filt_[Hz]']
+            noise_band_filter = noiseBandFilter(num_pts, filter_parms['samp_rate_[Hz]'], band_filt[0], band_filt[1])
+    if 'LPF_cutOff_[Hz]' in filter_parms:
+        if filter_parms['LPF_cutOff_[Hz]'] > 0:
+            low_pass_filter = makeLPF(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['LPF_cutOff_[Hz]'])
+
+    if 'comb_[Hz]' in filter_parms:
+        if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
+            harmonic_filter = harmonicsPassFilter(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['comb_[Hz]'][0],
+                                                  filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
+
+    composite_filter = noise_band_filter * low_pass_filter * harmonic_filter
     
     # ioHDF now handles automatic indexing
-    grp_name = h5_main.name.split('/')[-1] + '-FFT_Filtering_' 
-        
-    ds_comp_filt = MicroDataset('Composite_Filter', np.float32(composite_filter))
-    ds_noise_floors = MicroDataset('Noise_Floors',
-                                   data=np.zeros(shape=num_effective_pix, dtype=np.float32))
+    grp_name = h5_main.name.split('/')[-1] + '-FFT_Filtering_'
+
+    doing_noise_floor_filter = False
+
+    if 'noise_threshold' in filter_parms:
+        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+            ds_noise_floors = MicroDataset('Noise_Floors',
+                                           data=np.zeros(shape=num_effective_pix, dtype=np.float32))
+            doing_noise_floor_filter = True
+        else:
+            # Illegal inputs will be deleted from dictionary
+            warn('Provided noise floor threshold: {} not within (0,1)'.format(filter_parms['noise_threshold']))
+            del filter_parms['noise_threshold']
+
+    if not doing_noise_floor_filter and not isinstance(composite_filter, np.ndarray):
+        warn("No filtering being performed on this dataset. Exiting!")
+
+    if isinstance(composite_filter, np.ndarray):
+        ds_comp_filt = MicroDataset('Composite_Filter', np.float32(composite_filter))
                                         
     grp_filt = MicroDataGroup(grp_name, h5_main.parent.name)
     filter_parms['timestamp'] = getTimeStamp()
     filter_parms['algorithm'] = 'GmodeUtils-Parallel'
     grp_filt.attrs = filter_parms
-    grp_filt.addChildren([ds_comp_filt, ds_noise_floors])
-     
+    if isinstance(composite_filter, np.ndarray):
+        grp_filt.addChildren([ds_comp_filt])
+    if doing_noise_floor_filter:
+        grp_filt.addChildren([ds_noise_floors])
+
     if write_filtered:
         ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=h5_main.maxshape,
                                     dtype=np.float32, chunking=h5_main.chunks, compression='gzip')
@@ -341,25 +373,35 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
 
     hdf = ioHDF5(h5_main.file)
     h5_filt_refs = hdf.writeData(grp_filt)
-
-    h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
-    h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
+    if isinstance(composite_filter, np.ndarray):
+        h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
+    if doing_noise_floor_filter:
+        h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
     
     # Now need to link appropriately:
     if write_filtered:
         h5_filt_data = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
         copyAttributes(h5_main, h5_filt_data, skip_refs=False)
-        linkRefs(h5_filt_data, [h5_comp_filt, h5_noise_floors])
+        if isinstance(composite_filter, np.ndarray):
+            linkRefs(h5_filt_data, [h5_comp_filt])
+        if doing_noise_floor_filter:
+            linkRefs(h5_filt_data, [h5_noise_floors])
+
         """link_as_main(h5_filt_data, h5_pos_inds, h5_pos_vals,
                      getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
                      getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
       
     if write_condensed:
         h5_cond_data = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
-        linkRefs(h5_cond_data, [h5_comp_filt, h5_noise_floors])
+        if isinstance(composite_filter, np.ndarray):
+            linkRefs(h5_cond_data, [h5_comp_filt])
+        if doing_noise_floor_filter:
+            linkRefs(h5_cond_data, [h5_noise_floors])
+
         if filter_parms['num_pix'] > 1:
             h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_filt_refs)[0]
             h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_filt_refs)[0]
+
         link_as_main(h5_cond_data, h5_pos_inds, h5_pos_vals,
                      getH5DsetRefs(['Spectroscopic_Indices'], h5_filt_refs)[0],
                      getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
@@ -370,13 +412,15 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
                   
     print('Filtering data now. Be patient, this could take a few minutes') 
 
-    max_pix = __max_pixel_read(h5_main, 10, store_filt=write_filtered, hot_bins=hot_inds, bytes_per_bin=2, max_RAM_gb=16)
+    max_pix = __max_pixel_read(h5_main, max(1, cpu_count() - 2), store_filt=write_filtered, hot_bins=hot_inds,
+                               bytes_per_bin=2, max_RAM_gb=16)
     # Ensure that whole sets of pixels can be read.
     max_pix = np.uint(filter_parms['num_pix']*np.floor(max_pix / filter_parms['num_pix']))
     
     parm_dict = {'filter_parms': filter_parms, 'composite_filter': composite_filter,
                  'rot_pts': rot_pts, 'hot_inds': hot_inds}
-    
+
+    t_start = time()
     st_pix = 0
     line_count = 0
     while st_pix < h5_main.shape[0]:
@@ -392,7 +436,8 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
         # Insert things into appropriate HDF datasets
         print('Writing filtered data to h5')
         # print 'Noise floors of shape:', nse_flrs.shape
-        h5_noise_floors[line_count: line_count + num_lines] = nse_flrs
+        if doing_noise_floor_filter:
+            h5_noise_floors[line_count: line_count + num_lines] = nse_flrs
         if write_condensed:
             # print('Condensed data of shape:', cond_data.shape)
             h5_cond_data[line_count: line_count + num_lines, :] = cond_data
@@ -401,13 +446,19 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
             h5_filt_data[st_pix:en_pix, :] = filt_data
         hdf.flush()
         st_pix = en_pix
-    
-    return h5_comp_filt.parent
+
+    print('FFT filtering took {} seconds'.format(time() - t_start))
+
+    if isinstance(composite_filter, np.ndarray):
+        return h5_comp_filt.parent
+    if doing_noise_floor_filter:
+        return h5_noise_floors.parent
               
 # #############################################################################
 
 
 def filter_chunk_parallel(raw_data, parm_dict, num_cores):
+    # TODO: Need to check to ensure that all cores are indeed being utilized
     """
     Filters the provided dataset in parallel
     
@@ -436,10 +487,20 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
     num_sets = raw_data.shape[0]
     pts_per_set = raw_data.shape[1]
     # print('sending unit filter data of size', pts_per_set)
-    noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
+
+    noise_floors = None
+    noise_thresh = None
+    if 'noise_threshold' in parm_dict['filter_parms']:
+        noise_thresh = parm_dict['filter_parms']['noise_threshold']
+        if noise_thresh > 0 and noise_thresh < 1:
+            noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
+        else:
+            noise_thresh = None
+
     filt_data = None
     if not parm_dict['rot_pts']:
         filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
+
     cond_data = None
     if parm_dict['hot_inds'] is not None:
         cond_data = np.zeros(shape=(num_sets, parm_dict['hot_inds'].size), dtype=np.complex64)
@@ -465,7 +526,9 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
         if set_ind in print_set:
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
         
-        (noise_floors[set_ind], filt_data_set, cond_data_set) = parallel_results.next()
+        (temp_noise, filt_data_set, cond_data_set) = parallel_results.next()
+        if noise_thresh is not None:
+            noise_floors[set_ind] = temp_noise
         if parm_dict['hot_inds'] is not None:
             cond_data[set_ind, :] = cond_data_set
         if parm_dict['rot_pts'] is not None:
@@ -501,10 +564,20 @@ def filter_chunk_serial(raw_data, parm_dict):
     num_sets = raw_data.shape[0]
     pts_per_set = raw_data.shape[1]
     # print ('sending unit filter data of size', pts_per_set)
-    noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
+
+    noise_floors = None
+    noise_thresh = None
+    if 'noise_threshold' in parm_dict['filter_parms']:
+        noise_thresh = parm_dict['filter_parms']['noise_threshold']
+        if noise_thresh > 0 and noise_thresh < 1:
+            noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
+        else:
+            noise_thresh = None
+
     filt_data = None
     if parm_dict['rot_pts'] is not None:
         filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
+
     cond_data = None
     if parm_dict['hot_inds'] is not None:
         cond_data = np.zeros(shape=(num_sets, parm_dict['hot_inds'].size), dtype=np.complex64)
@@ -516,7 +589,9 @@ def filter_chunk_serial(raw_data, parm_dict):
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
 
         # parm_dict['t_raw'] = raw_data[set_ind,:]
-        (noise_floors[set_ind], filt_data_set, cond_data_set) = unit_filter((raw_data[set_ind, :], parm_dict))
+        (temp_noise, filt_data_set, cond_data_set) = unit_filter((raw_data[set_ind, :], parm_dict))
+        if noise_thresh is not None:
+            noise_floors[set_ind] = temp_noise
         if parm_dict['hot_inds'] is not None:
             cond_data[set_ind, :] = cond_data_set
         if parm_dict['rot_pts'] is not None:
@@ -554,11 +629,18 @@ def unit_filter(single_parm):
     rot_pts = parm_dict['rot_pts']
     hot_inds = parm_dict['hot_inds']
 
+    noise_floor = None
+
     t_raw = t_raw.reshape(-1)
     f_data = np.fft.fftshift(np.fft.fft(t_raw))
-    noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
+
+    if 'noise_threshold' in filter_parms:
+        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+            noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
+            f_data[np.abs(f_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
+
     f_data = f_data * composite_filter
-    f_data[np.abs(f_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
+
     cond_data = None
     filt_data = None
     if hot_inds is not None:
@@ -617,7 +699,7 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
     return np.squeeze(time_resp)
 
 
-def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m):
+def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     """
     Breaks up the provided raw G-mode dataset into lines and pixels (from just lines)
 
