@@ -280,6 +280,9 @@ class BESHOmodel(Model):
         else:
             processors = min(processors, self._maxCpus)
 
+        if self._parallel:
+            self._max_pos_per_read /= 2
+
         self._create_guess_datasets()
         self._start_pos = 0
         if strategy == 'complex_gaussian':
