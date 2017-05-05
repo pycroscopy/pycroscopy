@@ -72,8 +72,13 @@ def getAvailableMem():
     mem : unsigned int
         Memory in bytes
     """
-    mem = vm()
-    return getattr(mem, 'available')
+    import sys
+    mem = vm().available
+
+    if sys.maxsize <= 2**32:
+        mem = min([mem, sys.maxsize])
+
+    return mem
 
 
 def recommendCores(num_jobs, requested_cores=None, lengthy_computation=False):

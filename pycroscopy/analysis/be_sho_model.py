@@ -253,6 +253,9 @@ class BESHOmodel(Model):
 
         self.h5_guess = h5_guess
 
+        if self._parallel:
+            self._max_pos_per_read /= 2
+
     def do_guess(self, processors=None, strategy='complex_gaussian',
                  options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
@@ -279,6 +282,9 @@ class BESHOmodel(Model):
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
+
+        if self._parallel:
+            self._max_pos_per_read /= 2
 
         self._create_guess_datasets()
         self._start_pos = 0
