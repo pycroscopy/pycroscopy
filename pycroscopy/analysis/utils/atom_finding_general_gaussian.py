@@ -526,8 +526,7 @@ class Gauss_Fit(object):
                     an atom in a motif window. 
             '''
 
-            # initial_params = [x0, y0, sigma_x, sigma_y, fit_window]
-            # atom_neighborhoods = []
+
             self.motif_guesses = []
             self.motif_parms = []
             self.motif_converged_parms = []
