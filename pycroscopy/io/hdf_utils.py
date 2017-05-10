@@ -356,8 +356,6 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
 
     Parameters
     ----------
-    hdf : ioHDF5 object
-        object associated with the HDF5 file
     h5_dset : HDF5 Dataset
         dataset to which the attributes will be written
     anc_names : list of str
@@ -1286,3 +1284,32 @@ def copy_main_attributes(h5_main, h5_new):
         if att_name in h5_main.attrs:
             val = h5_main.attrs[att_name]
         h5_new.attrs[att_name] = val
+
+    return
+
+def check_for_old(h5_base, tool_name, new_parms=dict()):
+    """
+    Check to see if the results of a tool already exist and if they 
+    were performed with the same parameters.
+    
+    Parameters
+    ----------
+    h5_base
+    tool_name
+    new_parms
+
+    Returns
+    -------
+    group : h5py.Group or None
+    Group with parameters matching those in `new_parms`
+    """
+
+    groups = findH5group(h5_base, tool_name)
+
+    for group in groups:
+        test = [new_parms[key] == group.attrs[key] for key in new_parms.iterkeys()]
+
+        if all(test):
+            return group
+
+    return None

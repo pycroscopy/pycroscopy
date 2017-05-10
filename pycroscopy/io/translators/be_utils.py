@@ -1227,11 +1227,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 BEHistogram Class and Functions
 """
 class BEHistogram():
+    # TODO: Turn into proper class
+    # TODO: Parallelize Histogram generation
     """
     Class just functions as a container so we can have shared objects
     Chris Smith -- csmith55@utk.edu
     """
-    def addBEHist(self,h5_path, max_mem_mb=1024, show_plot=True, save_plot=True):
+    def addBEHist(self, h5_path, max_mem_mb=1024, show_plot=True, save_plot=True):
         """
         This function adds Histgrams from the Main Data to the Plot Groups for
         an existing hdf5 BEPS datafile.
@@ -1386,7 +1388,7 @@ class BEHistogram():
 
     def buildPlotGroupHist(self, h5_main, active_spec_steps, max_response=[],
                            min_response=[], max_mem_mb=1024, max_bins=256,
-                           std_mult=3):
+                           std_mult=3, debug=False):
         """
         Creates Histograms for a given plot group
 
@@ -1409,6 +1411,8 @@ class BEHistogram():
             number of standard deviations from the mean of
             max_response and min_response to include in
             binning
+        debug : boolean
+            Turns on debug printing statements if true.  Default False.
 
         Returns
         -------
@@ -1422,8 +1426,6 @@ class BEHistogram():
             labels for the hist_indices array
 
         """
-        debug=False
-
         free_mem = getAvailableMem()
         if debug: print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb,0.75*free_mem)
