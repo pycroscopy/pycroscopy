@@ -77,7 +77,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     
     num_pts = len(resp_wfm)
     
-    show_loops = excit_wfm is not None
+    show_loops = excit_wfm is not None and show_plots
     
     noise_band_filter = 1
     low_pass_filter = 1
