@@ -64,15 +64,18 @@ def getNoiseFloor(fft_data, tolerance):
         threshold = np.sqrt((2 * temp ** 2) * (-np.log(tolerance)))
 
         bdiff = 1
-        b_vec = list()
-        b_vec.append(temp)
+        b_vec = list([temp])
+        # b_vec.append(temp)
+        n_b_vec = 1
 
-        while (bdiff > 10 ** -2) and len(b_vec) < 50:
+        while (bdiff > 10 ** -2) and n_b_vec < 50:
             amp[amp > threshold] = 0
-            temp = np.sqrt(sum(amp ** 2) / (2 * num_pts))
+            temp = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
             b_vec.append(temp)
-            bdiff = abs(b_vec[-1] - b_vec[-2])
+            bdiff = abs(b_vec[1] - b_vec[0])
             threshold = np.sqrt((2 * temp ** 2) * (-np.log(tolerance)))
+            del b_vec[0]
+            n_b_vec += 1
 
         noise_floor[chan] = threshold
 

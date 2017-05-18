@@ -5,7 +5,8 @@ Created on Mar 1, 2016
 """
 import numpy as np
 from numpy_groupies import aggregate_np
-def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None, debug=False, *args, **kwargs):
+def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
+                   debug=False, *args, **kwargs):
     """
     Creates histogram for a single block of pixels
 
@@ -34,24 +35,23 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
     pixel_hist : 2D numpy array
         contains the histogram of the input data
 
-
-
     Apply func to input data, convert to 1D array, and normalize
     """
-    if debug: print 'min_resp',min_resp,'max_resp',max_resp
-    y_hist = data_mat
     if func is not None:
-        y_hist = func(y_hist, *args, **kwargs)
-    y_hist = np.squeeze(np.reshape(y_hist,(data_mat.size,1)))
-    y_hist = np.clip(y_hist, min_resp, max_resp, y_hist)
-    y_hist = y_hist-min_resp
-    y_hist = y_hist/(max_resp-min_resp)
+        y_hist = func(data_mat, *args, **kwargs)
+    else:
+        y_hist = data_mat
 
     '''
-    Descritize y_hist
+    Get the min_resp and max_resp from y_hist if they are none
     '''
-    y_hist = np.rint(y_hist*(N_y_bins-1))
-    if debug: print 'ymin',min(y_hist),'ymax',max(y_hist)
+    if min_resp is None:
+        min_resp = np.minb(y_hist)
+    if max_resp is None:
+        max_resp = np.max(y_hist)
+    if debug: print 'min_resp', min_resp, 'max_resp', max_resp
+
+    y_hist = __scale_and_descritize(y_hist, N_y_bins, max_resp, min_resp, debug)
 
     '''
     Combine x_hist and y_hist into one matrix
@@ -61,9 +61,9 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
         print np.shape(y_hist)
 
     try:
-        group_idx = np.zeros((2,x_hist.size), dtype = np.int32)
-        group_idx[0,:] = x_hist
-        group_idx[1,:] = y_hist
+        group_idx = np.zeros((2, x_hist.size), dtype=np.int32)
+        group_idx[0, :] = x_hist
+        group_idx[1, :] = y_hist
     except:
         raise
 
@@ -76,8 +76,38 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
         print N_x_bins,N_y_bins
 
     try:
-        pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size = (N_x_bins,N_y_bins), dtype = np.int32)
+        pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size=(N_x_bins, N_y_bins), dtype=np.int32)
     except:
         raise
 
     return pixel_hist
+
+
+def __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug=False):
+    """
+    Normalizes and discretizes the `y_hist` array 
+    
+    Parameters
+    ----------
+    y_hist : numpy.ndarray
+    N_y_bins : int
+    max_resp : float
+    min_resp : float
+    debug : bool
+
+    Returns
+    -------
+    y_hist numpy.ndarray
+    """
+    y_hist = y_hist.flatten()
+    y_hist = np.clip(y_hist, min_resp, max_resp, y_hist)
+    y_hist = np.add(y_hist, min_resp)
+    y_hist = np.dot(y_hist, 1.0/(max_resp - min_resp))
+    '''
+    Descritize y_hist
+    '''
+    y_hist = np.rint(y_hist * (N_y_bins - 1))
+    if debug:
+        print 'ymin', min(y_hist), 'ymax', max(y_hist)
+
+    return y_hist

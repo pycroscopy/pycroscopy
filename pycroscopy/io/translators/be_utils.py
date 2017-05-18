@@ -1604,9 +1604,9 @@ class BEHistogram():
                 """
         Set up the list of functions to call and their corresponding maxima and minima
                 """
-                func_list = [np.abs,np.angle,np.real,np.imag]
-                max_list = [self.max_response,np.pi,self.max_response,self.max_response]
-                min_list = [self.min_response,-np.pi,self.min_response,self.min_response]
+                func_list = [np.abs, np.angle, np.real, np.imag]
+                max_list = [self.max_response, np.pi, self.max_response, self.max_response]
+                min_list = [self.min_response, -np.pi, self.min_response, self.min_response]
                 """
         Get the Histograms and store in correct place in ds_hist
                 """
@@ -1621,15 +1621,15 @@ class BEHistogram():
                                                 func,
                                                 debug)
                     if debug:
-                        print('chunkhist-amp',np.shape(chunk_hist))
+                        print('chunkhist-{}'.format(func.__name__), np.shape(chunk_hist))
                         print(chunk_hist.dtype)
 
-                    for (i,ifreq) in enumerate(udvs_bins):
-                        ids_freq =this_x_hist[i]
+                    for (i, ifreq) in enumerate(udvs_bins):
+                        ids_freq = this_x_hist[i]
                         if debug:
-                            print(i,ifreq)
+                            print(i, ifreq)
                             print(ids_freq)
-                        ds_hist[ifunc,ids_freq,:] = np.add(ds_hist[ifunc,ids_freq,:],chunk_hist[i,:])
+                        ds_hist[ifunc, ids_freq, :] = np.add(ds_hist[ifunc, ids_freq, :], chunk_hist[i, :])
 
         return ds_hist
 

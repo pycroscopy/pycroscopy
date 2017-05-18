@@ -13,7 +13,7 @@ from .microdata import MicroDataset
 __all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'getDataAttr', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset']
+           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree']
 
 
 def print_tree(parent):
@@ -95,6 +95,7 @@ def getAuxData(parent_data, auxDataName=None):
              % (str(auxName), parent_data.name))
     except:
         raise
+    print(data_list)
 
     return data_list
 
