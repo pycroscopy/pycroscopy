@@ -120,7 +120,7 @@ class BEPSndfTranslator(Translator):
         # Gathering some basic details before parsing the files:
         self.max_pixels = parsers[0].get_num_pixels()
         s_pixels = np.array(parsers[0].get_spatial_pixels())
-        self.pos_labels = ['Laser Spot', 'Z', 'X', 'Y']
+        self.pos_labels = ['Laser Spot', 'Z', 'Y', 'X']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
         self.pos_mat = make_position_mat(s_pixels)
         self.pos_units = ['um' for _ in range(len(self.pos_labels))]
@@ -128,12 +128,14 @@ class BEPSndfTranslator(Translator):
         
         # Helping Eric out a bit. Remove this section at a later time:
         main_parms = generate_dummy_main_parms()
-        main_parms['grid_size_x'] = self.parm_dict['grid_num_cols']
-        main_parms['grid_size_y'] = self.parm_dict['grid_num_rows']
-        main_parms['experiment_date'] = self.parm_dict['File_date_and_time']        
+        # main_parms['grid_size_x'] = self.parm_dict['grid_num_cols']
+        # main_parms['grid_size_y'] = self.parm_dict['grid_num_rows']
+        main_parms['grid_size_x'] = self.parm_dict['grid_num_rows']
+        main_parms['grid_size_y'] = self.parm_dict['grid_num_cols']
+        main_parms['experiment_date'] = self.parm_dict['File_date_and_time']
         # assuming that the experiment was completed:        
-        main_parms['current_position_x'] = self.parm_dict['grid_num_cols']-1
-        main_parms['current_position_y'] = self.parm_dict['grid_num_rows']-1
+        main_parms['current_position_x'] = self.parm_dict['grid_num_rows']-1
+        main_parms['current_position_y'] = self.parm_dict['grid_num_cols']-1
         main_parms['data_type'] = 'BEPSData'
         main_parms['translator'] = 'NDF'
         
@@ -151,7 +153,7 @@ class BEPSndfTranslator(Translator):
         ########################################################
         # Reading and parsing the .dat file(s) 
 
-        self._read_data(parsers, unique_waves, show_plots=show_plots, save_plots=save_plots, do_histogram=False,)
+        self._read_data(parsers, unique_waves, show_plots, save_plots, do_histogram)
         
         self.hdf.close()
             
@@ -1033,16 +1035,22 @@ class BEPSndfPixel(object):
      
         # Now look at the top few rows to get more information: 
         self.daq_channel = data_mat1[2, 2]
-        self.num_x_steps = int(data_mat1[3, 0])
-        self.num_y_steps = int(data_mat1[4, 0])
+        # self.num_x_steps = int(data_mat1[3, 0])
+        # self.num_y_steps = int(data_mat1[4, 0])
         self.num_z_steps = int(data_mat1[5, 0])
-        self.z_index = int(data_mat1[5, 1] - 1)        
-        self.y_index = int(data_mat1[4, 1] - 1)
-        self.x_index = int(data_mat1[3, 1] - 1)
+        self.z_index = int(data_mat1[5, 1] - 1)
+        # self.y_index = int(data_mat1[4, 1] - 1)
+        # self.x_index = int(data_mat1[3, 1] - 1)
         self.z_value = data_mat1[5, 2]
-        self.y_value = data_mat1[4, 2]
-        self.x_value = data_mat1[3, 2]
-     
+        # self.y_value = data_mat1[4, 2]
+        # self.x_value = data_mat1[3, 2]
+        self.num_x_steps = int(data_mat1[4, 0])
+        self.num_y_steps = int(data_mat1[3, 0])
+        self.x_index = int(data_mat1[4, 1] - 1)
+        self.y_index = int(data_mat1[3, 1] - 1)
+        self.x_value = data_mat1[4, 2]
+        self.y_value = data_mat1[3, 2]
+
         self.step_ind_vec = data_mat1[0, s4:]  # vector of step indices   
         self.DC_off_vec = data_mat1[1, s4:]  # vector of dc offsets  voltages
         self.AC_amp_vec = data_mat1[2, s4:]  # vector of ac amplitude voltages 
