@@ -49,7 +49,7 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
         min_resp = np.minb(y_hist)
     if max_resp is None:
         max_resp = np.max(y_hist)
-    if debug: print 'min_resp', min_resp, 'max_resp', max_resp
+    if debug: print('min_resp', min_resp, 'max_resp', max_resp)
 
     y_hist = __scale_and_descritize(y_hist, N_y_bins, max_resp, min_resp, debug)
 
@@ -57,8 +57,8 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
     Combine x_hist and y_hist into one matrix
     '''
     if debug:
-        print np.shape(x_hist)
-        print np.shape(y_hist)
+        print(np.shape(x_hist))
+        print(np.shape(y_hist))
 
     try:
         group_idx = np.zeros((2, x_hist.size), dtype=np.int32)
@@ -71,9 +71,9 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
     Aggregate matrix for histogram of current chunk
     '''
     if debug:
-        print np.shape(group_idx)
-        print np.shape(weighting_vec)
-        print N_x_bins,N_y_bins
+        print(np.shape(group_idx))
+        print(np.shape(weighting_vec))
+        print(N_x_bins, N_y_bins)
 
     try:
         pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size=(N_x_bins, N_y_bins), dtype=np.int32)
@@ -108,6 +108,6 @@ def __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug=False):
     '''
     y_hist = np.rint(y_hist * (N_y_bins - 1))
     if debug:
-        print 'ymin', min(y_hist), 'ymax', max(y_hist)
+        print('ymin', min(y_hist), 'ymax', max(y_hist))
 
     return y_hist
