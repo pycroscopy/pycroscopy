@@ -10,6 +10,7 @@
 # There is a seperate DatatType and PixelDepth stored for images different
 # from the tag file datatype. I think these are used more than the tag
 # datratypes in describing the data.
+from __future__ import print_function, division
 from parse_dm3 import *
 import numpy as np
 
@@ -109,7 +110,7 @@ def save_image(image, file):
     """
     if isinstance(file, str):
         with open(file, "wb") as f:
-            return save_image(n, f)
+            return save_image(image, f)
     # we need to create a basic DM tree suitable for an imge
     # we'll try the minimum: just an image list
     # doesn't work. Do we need a ImageSourceList too?

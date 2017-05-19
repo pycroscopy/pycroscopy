@@ -3,6 +3,7 @@ Created on Jun 22, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
+
 import sys
 import os
 import h5py
@@ -12,8 +13,6 @@ import matplotlib.patches as patches
 from skimage import measure
 from scipy.optimize import least_squares
 from time import time
-import cProfile
-import pstats
 sys.path.append('../../../')
 import pycroscopy as px
 from pycroscopy import ImageTranslator
@@ -22,7 +21,7 @@ from pycroscopy.processing.svd_utils import doSVD
 from pycroscopy import Cluster
 from pycroscopy.viz.plot_utils import plotScree, plot_map_stack, plot_cluster_results_together
 from pycroscopy.io.io_utils import uiGetFile
-from pycroscopy.io.hdf_utils import reshape_to_Ndims, findH5group, findDataset
+from pycroscopy.io.hdf_utils import reshape_to_Ndims
 
 if __name__ == '__main__':
     '''

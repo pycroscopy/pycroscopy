@@ -3,6 +3,8 @@ Created on Jun 16, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
+
+from __future__ import print_function, division
 import os
 from multiprocessing import cpu_count
 from warnings import warn
@@ -11,6 +13,7 @@ import numpy as np
 from scipy.optimize import leastsq
 from scipy.signal import blackman
 from sklearn.utils import gen_batches
+
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main, \
     check_for_old
 from ..io.io_hdf5 import ioHDF5

@@ -4,18 +4,20 @@ Created on Thu Jan 12 15:31:55 2017
 
 @author: Kody Law, Suhas Somnath, Rama K. Vasudevan
 """
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import recommendCores
-from ..io.microdata import MicroDataGroup, MicroDataset
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, link_as_main, copyAttributes, linkRefAsAlias
+
+from __future__ import print_function, division
 from multiprocessing import Pool
 from _warnings import warn
 import itertools
 import time as tm
-
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import sqrtm
+
+from ..io.io_hdf5 import ioHDF5
+from ..io.io_utils import recommendCores
+from ..io.microdata import MicroDataGroup, MicroDataset
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, link_as_main, copyAttributes, linkRefAsAlias
 
 
 def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,

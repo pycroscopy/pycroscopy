@@ -5,7 +5,7 @@ Created on Tue Nov  3 15:24:12 2015
 @author: Suhas Somnath, Stephen Jesse
 """
 
-from __future__ import division  # int/int = float
+from __future__ import division, print_function  # int/int = float
 
 from os import path, listdir, remove
 from warnings import warn

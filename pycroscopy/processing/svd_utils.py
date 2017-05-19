@@ -5,12 +5,14 @@ Created on Mon Mar 28 09:45:08 2016
 @author: Suhas Somnath, Chris Smith
 """
 
+from __future__ import print_function, division
 import time
 from warnings import warn
 from multiprocessing import cpu_count
 import numpy as np
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
+
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, create_empty_dataset, \
     getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes, copyAttributes
 from ..io.io_hdf5 import ioHDF5

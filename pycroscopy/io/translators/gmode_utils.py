@@ -5,8 +5,10 @@ Created on Fri Mar 04 11:16:20 2016
 @author: Suhas Somnath
 """
 
-from scipy.io.matlab import loadmat # To load parameters stored in Matlab .mat file
+from __future__ import print_function, division
+from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 import numpy as np
+
 
 def readGmodeParms(parm_path):
     """

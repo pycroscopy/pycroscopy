@@ -6,7 +6,7 @@ Created on Tue Nov  3 15:07:16 2015
 
 """
 
-from __future__ import division  # int/int = float
+from __future__ import print_function, division  # int/int = float
 import numpy as np
 from os import path, listdir, remove
 from warnings import warn

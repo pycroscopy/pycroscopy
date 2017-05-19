@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import print_function, division
 import os
 import numpy as np
 from scipy.optimize import least_squares

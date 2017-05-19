@@ -3,8 +3,11 @@ Created on Mar 1, 2016
 
 @author: Chris Smith -- cmsith55@utk.edu
 """
+
+from __future__ import print_function, division
 import numpy as np
 from numpy_groupies import aggregate_np
+
 def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
                    debug=False, *args, **kwargs):
     """
@@ -51,7 +54,7 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
         max_resp = np.max(y_hist)
     if debug: print('min_resp', min_resp, 'max_resp', max_resp)
 
-    y_hist = __scale_and_descritize(y_hist, N_y_bins, max_resp, min_resp, debug)
+    y_hist = __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug)
 
     '''
     Combine x_hist and y_hist into one matrix

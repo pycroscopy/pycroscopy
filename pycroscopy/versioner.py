@@ -3,6 +3,7 @@ Created on Mar 14, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
+from __future__ import print_function, division
 import os
 import datetime
 import argparse
