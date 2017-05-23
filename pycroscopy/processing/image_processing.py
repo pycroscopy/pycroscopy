@@ -22,10 +22,18 @@ from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
 from .svd_utils import _get_component_slice
 
-windata32 = np.dtype([('Image Data', np.float32)])
-absfft32 = np.dtype([('FFT Magnitude', np.float32)])
-winabsfft32 = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
-wincompfft32 = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
+# windata32 = np.dtype([('Image Data', np.float32)])
+# absfft32 = np.dtype([('FFT Magnitude', np.float32)])
+# winabsfft32 = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
+# wincompfft32 = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
+windata32 = np.dtype({'names': ['Image Data'],
+                      'formats': [np.float32]})
+absfft32 = np.dtype({'names': ['FFT Magnitude'],
+                     'formats': [np.float32]})
+winabsfft32 = np.dtype({'names': ['Image Data', 'FFT Magnitude'],
+                        'formats': [np.float32, np.float32]})
+wincompfft32 = np.dtype({'names': ['Image Data', 'FFT Real', 'FFT Imag'],
+                         'formats': [np.float32, np.float32, np.float32]})
 
 class ImageWindow(object):
     """

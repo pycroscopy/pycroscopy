@@ -14,15 +14,12 @@ import xlrd as xlreader  # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 from .utils import make_position_mat, generate_dummy_main_parms
 from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
-    createSpecVals
+    createSpecVals, nf32
 from ..microdata import MicroDataGroup, MicroDataset
 from ..io_hdf5 import ioHDF5
 from .translator import Translator
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
-
-nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
-                 ('sub_band', np.float32)])
 
 
 class BEPSndfTranslator(Translator):

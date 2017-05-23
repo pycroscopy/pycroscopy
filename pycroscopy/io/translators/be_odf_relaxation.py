@@ -12,14 +12,11 @@ from os import path, remove  # File Path formatting
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 from .translator import Translator  # Because this class extends the abstract Translator class
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals
+from .be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, nf32
 from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs
-
-nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
-                 ('sub_band', np.float32)])
 
 
 class BEodfRelaxationTranslator(Translator):

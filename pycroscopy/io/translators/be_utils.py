@@ -24,6 +24,10 @@ from ...processing.proc_utils import buildHistogram
 from ...viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
 
 
+nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
+                 'formats': [np.float32, np.float32, np.float32]})
+
+
 def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 

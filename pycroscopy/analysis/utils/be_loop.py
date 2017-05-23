@@ -17,15 +17,19 @@ from scipy.optimize import leastsq
 from scipy.spatial import ConvexHull
 from scipy.special import erf, erfinv
 
-switching32 = np.dtype([('V+', np.float32),
-                        ('V-', np.float32),
-                        ('Imprint', np.float32),
-                        ('R+', np.float32),
-                        ('R-', np.float32),
-                        ('Switchable Polarization', np.float32),
-                        ('Work of Switching', np.float32),
-                        ('Nucleation Bias 1', np.float32),
-                        ('Nucleation Bias 2', np.float32)])
+# switching32 = np.dtype([('V+', np.float32),
+#                         ('V-', np.float32),
+#                         ('Imprint', np.float32),
+#                         ('R+', np.float32),
+#                         ('R-', np.float32),
+#                         ('Switchable Polarization', np.float32),
+#                         ('Work of Switching', np.float32),
+#                         ('Nucleation Bias 1', np.float32),
+#                         ('Nucleation Bias 2', np.float32)])
+field_names = ['V+', 'V-', 'Imprint', 'R+', 'R-', 'Switchable Polarization',
+               'Work of Switching', 'Nucleation Bias 1', 'Nucleation Bias 2']
+switching32 = np.dtype({'names': field_names,
+                        'formats': [np.float32 for name in field_names]})
 
 
 ###############################################################################
