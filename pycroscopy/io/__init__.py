@@ -9,6 +9,7 @@ from .microdata import MicroDataset, MicroDataGroup
 from . import translators
 from .translators import *
 from . import dm4reader
+from . import parse_dm3
 
 __all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'be_hdf_utils', 'hdf_utils', 'io_utils', 'microdata']
-__all__+= translators.__all__
+__all__ += translators.__all__

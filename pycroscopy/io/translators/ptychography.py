@@ -4,13 +4,14 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
-import os
+from __future__ import print_function, division
 
+import os
 import numpy as np
 # from scipy.misc import imread
-
 from skimage.data import imread
 from skimage.measure import block_reduce
+
 from ..io_image import read_image, read_dm3
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets

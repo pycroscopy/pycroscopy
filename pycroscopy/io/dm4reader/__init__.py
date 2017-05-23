@@ -4,6 +4,7 @@ Created on Aug 7, 2015
 @author: James Anderson
 '''
 
+from __future__ import print_function, division
 import collections
 import struct
 import array 

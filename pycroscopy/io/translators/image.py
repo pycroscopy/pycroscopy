@@ -4,6 +4,7 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
+from __future__ import print_function, division
 import os
 import numpy as np
 from skimage.measure import block_reduce

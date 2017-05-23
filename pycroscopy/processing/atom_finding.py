@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+
 
 def apply_select_channel(file_in_h5,img_num,channel_num):
     

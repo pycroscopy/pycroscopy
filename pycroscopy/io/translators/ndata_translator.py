@@ -4,6 +4,7 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
+from __future__ import print_function, division
 import os
 import json
 import zipfile
@@ -16,7 +17,7 @@ from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_sl
     get_position_slicing, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, getH5GroupRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
-from ..io_image import unnest_parm_dicts
+from ..io_image import unnest_parm_dicts, read_dm3
 from ..microdata import MicroDataGroup, MicroDataset
 
 

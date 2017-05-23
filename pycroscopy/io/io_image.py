@@ -3,6 +3,8 @@ Created on Nov 8, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
+
+from __future__ import print_function, division
 import os
 import numpy as np
 import array

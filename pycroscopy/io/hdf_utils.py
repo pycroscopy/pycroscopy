@@ -4,7 +4,7 @@ Created on Tue Nov  3 21:14:25 2015
 
 @author: Suhas Somnath, Chris Smith, Numan Laanait
 """
-from __future__ import print_function
+from __future__ import print_function, division
 import os
 import h5py
 from warnings import warn

@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 """
 Created on Wed Aug 31 17:03:29 2016
 
 @author: Suhas Somnath
 """
+
+from __future__ import print_function, division
 import numpy as np
 
 # TODO: Test and debug node and clusterTree classes for agglomerative clustering etc
-
 
 class Node(object):
     """

@@ -7,7 +7,7 @@ Created on Wed Jun 29 11:13:22 2016
 Various helper functions for aiding loop fitting and projection
 """
 
-from __future__ import division
+from __future__ import print_function, division
 
 import matplotlib.pyplot as plt
 import numpy as np

@@ -4,12 +4,13 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
+from __future__ import print_function, division
 import os
-
 import numpy as np
 from warnings import warn
 from skimage.measure import block_reduce
 from skimage.util import crop
+
 from ..io_image import read_image, read_dm3, parse_dm4_parms
 from .translator import Translator
 from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \

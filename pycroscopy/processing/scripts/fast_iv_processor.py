@@ -7,6 +7,7 @@ Created on Sun May 29 19:09:34 2016
 
 #%% Translate data first 
 
+from __future__ import print_function, division
 from pycroscopy.io.io_utils import uiGetFile
 from pycroscopy.io.translators.gmode_iv import GIVTranslator
 parm_path = uiGetFile('parms.mat')

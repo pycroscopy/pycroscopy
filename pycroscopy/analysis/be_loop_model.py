@@ -6,7 +6,7 @@ Created on Thu Aug 25 11:48:53 2016
 
 """
 
-from __future__ import division
+from __future__ import print_function, division
 
 from warnings import warn
 
@@ -580,8 +580,8 @@ class BELoopModel(Model):
             warn('Error - could not reshape provided raw data chunk...')
             return None
         if verbose:
-            print 'Shape of N dimensional dataset:', fit_nd.shape
-            print 'Dimensions of order:', dim_names_orig
+            print('Shape of N dimensional dataset:', fit_nd.shape)
+            print('Dimensions of order:', dim_names_orig)
 
         # order_dc_outside_nd = np.roll(range(fit_nd.ndim), -self._dc_offset_index)
         # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
@@ -594,13 +594,13 @@ class BELoopModel(Model):
         fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
-            print 'originally:', fit_nd.shape, ', after moving DC offset outside:', fit_nd2.shape
-            print 'new dim names:', dim_names_dc_out
+            print('originally:', fit_nd.shape, ', after moving DC offset outside:', fit_nd2.shape)
+            print('new dim names:', dim_names_dc_out)
 
         # step 6: reshape the ND data to 2D arrays
         loops_2d = np.reshape(fit_nd2, (fit_nd2.shape[0], -1))
         if verbose:
-            print 'Loops ready to be projected of shape (Vdc, all other dims besides FORC):', loops_2d.shape
+            print('Loops ready to be projected of shape (Vdc, all other dims besides FORC):', loops_2d.shape)
 
         return loops_2d, order_dc_offset_reverse, fit_nd2.shape
 
@@ -628,15 +628,15 @@ class BELoopModel(Model):
             Projected loops reshaped to the original chronological order in which the data was acquired
         """
         if verbose:
-            print 'Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first
+            print('Projected loops of shape:', projected_loops_2d.shape, ', need to bring to:', nd_mat_shape_dc_first)
         # Step 9: Reshape back to same shape as fit_Nd2:
         projected_loops_nd = np.reshape(projected_loops_2d, nd_mat_shape_dc_first)
         if verbose:
-            print 'Projected loops reshaped to N dimensions :', projected_loops_nd.shape
+            print('Projected loops reshaped to N dimensions :', projected_loops_nd.shape)
         # Step 10: Move Vdc back inwards. Only for projected loop
         projected_loops_nd_2 = np.transpose(projected_loops_nd, order_dc_offset_reverse)
         if verbose:
-            print 'Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape
+            print('Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape)
         # step 11: reshape back to 2D
         proj_loops_2d, success = reshape_from_Ndims(projected_loops_nd_2,
                                                     h5_pos=None,
@@ -646,7 +646,7 @@ class BELoopModel(Model):
             warn('unable to reshape projected loops')
             return None
         if verbose:
-            print 'loops shape after collapsing dimensions:', proj_loops_2d.shape
+            print('loops shape after collapsing dimensions:', proj_loops_2d.shape)
 
         return proj_loops_2d
 
@@ -671,7 +671,7 @@ class BELoopModel(Model):
             Loop metrics reshaped to the original chronological order in which the data was acquired
         """
         if verbose:
-            print 'Loop metrics of shape:', raw_results.shape
+            print('Loop metrics of shape:', raw_results.shape)
         # Step 9: Reshape back to same shape as fit_Nd2:
         if not self._met_all_but_forc_inds:
             spec_inds = None
@@ -681,7 +681,7 @@ class BELoopModel(Model):
             loop_metrics_nd = np.reshape(raw_results, nd_mat_shape_dc_first[1:])
 
         if verbose:
-            print 'Loop metrics reshaped to N dimensions :', loop_metrics_nd.shape
+            print('Loop metrics reshaped to N dimensions :', loop_metrics_nd.shape)
 
         # step 11: reshape back to 2D
         metrics_2d, success = reshape_from_Ndims(loop_metrics_nd,
@@ -691,7 +691,7 @@ class BELoopModel(Model):
             warn('unable to reshape ND results back to 2D')
             return None
         if verbose:
-            print 'metrics shape after collapsing dimensions:', metrics_2d.shape
+            print('metrics shape after collapsing dimensions:', metrics_2d.shape)
 
         return metrics_2d
 
