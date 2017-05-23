@@ -316,7 +316,7 @@ class ioHDF5(object):
                         if found_dim:
                             headers = [None]*len(labels) # The list that will hold all the names
                             for col_name in labels.keys():
-                                headers[labels[col_name][dimen].start] = col_name.encode('utf8')
+                                headers[labels[col_name][dimen].start] = col_name
                             # Now write the list of col / row names as an attribute:
                             itm.attrs[key] = headers
                         else:
@@ -324,7 +324,7 @@ class ioHDF5(object):
 
                         if print_log: print('Wrote Region References of Dataset %s' %(itm.name.split('/')[-1]))
                     else:
-                        itm.attrs[key] = [item.encode('utf8') if isinstance(item, str) else item for item in child.attrs[key]]
+                        itm.attrs[key] = child.attrs[key] 
                         if print_log: print('Wrote Attributes of Dataset %s \n' %(itm.name.split('/')[-1]))
                         # Make a dictionary of references
             refList.append(itm)
