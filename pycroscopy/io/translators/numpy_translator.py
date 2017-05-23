@@ -5,7 +5,7 @@ Created on Fri Jan 27 17:58:35 2017
 @author: Suhas Somnath
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np  # For array operations
 
 from .translator import Translator

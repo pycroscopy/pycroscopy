@@ -4,7 +4,7 @@ Created on Mar 1, 2016
 @author: Chris Smith -- cmsith55@utk.edu
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 from numpy_groupies import aggregate_np
 

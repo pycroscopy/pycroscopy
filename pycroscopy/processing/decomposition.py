@@ -5,7 +5,7 @@ Created on Tue Jan 05 07:55:56 2016
 @author: Suhas Somnath, Chris Smith
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function, absolute_import, unicode_literals
 import h5py
 import numpy as np
 import sklearn.decomposition as dec

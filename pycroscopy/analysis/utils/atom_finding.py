@@ -5,7 +5,7 @@ Created on Mon Jan 23 11:13:22 2017
 @author: Suhas Somnath, Stephen Jesse
 """
 
-from __future__ import print_function, division
+from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 from scipy.optimize import least_squares
 import itertools as itt

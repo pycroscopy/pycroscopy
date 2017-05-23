@@ -10,7 +10,8 @@
 # There is a seperate DatatType and PixelDepth stored for images different
 # from the tag file datatype. I think these are used more than the tag
 # datratypes in describing the data.
-from __future__ import print_function, division
+
+from __future__ import division, print_function, absolute_import, unicode_literals
 from .parse_dm3 import *
 import numpy as np
 
