@@ -866,14 +866,14 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         if field_type == 'out-of-field':
             field = 1
-            numsteps = numsteps/2
-            numcyclesteps = numcyclesteps/2
+            numsteps = int(numsteps/2)
+            numcyclesteps = int(numcyclesteps/2)
             swapfield = [1,1]
             field_names = ['out-of-field']
         elif field_type == 'in-field':
             field = 0
-            numsteps = numsteps/2
-            numcyclesteps = numcyclesteps/2
+            numsteps = int(numsteps/2)
+            numcyclesteps = int(numcyclesteps/2)
             swapfield = [0,0]
             field_names = ['in-field']
         elif field_type == 'in and out-of-field':
