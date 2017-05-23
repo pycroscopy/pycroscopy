@@ -13,8 +13,8 @@ import numpy as np
 from skimage.measure import block_reduce
 from skimage.util import crop
 
-from io.translators.utils import dm4reader
-from io.translators.utils.io_image import read_image, read_dm3, parse_dm4_parms
+from io.translators.df_utils import dm4reader
+from io.translators.df_utils.io_image import read_image, read_dm3, parse_dm4_parms
 from .translator import Translator
 from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
     get_position_slicing, build_ind_val_dsets

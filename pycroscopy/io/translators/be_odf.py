@@ -13,8 +13,8 @@ from warnings import warn
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from io.translators.utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
-    requires_conjugate, nf32
+from io.translators.df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
+    createSpecVals, requires_conjugate, nf32
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks

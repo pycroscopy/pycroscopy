@@ -1,4 +1,4 @@
-from io.translators.utils import dm4reader, parse_dm3
+from io.translators.df_utils import dm4reader, parse_dm3
 from . import be_hdf_utils
 from . import hdf_utils
 from . import io_hdf5
