@@ -5,7 +5,7 @@ Created on Fri Mar 04 11:12:45 2016
 @author: Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 
 from os import path, remove  # File Path formatting
 

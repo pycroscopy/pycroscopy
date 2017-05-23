@@ -4,7 +4,7 @@ Created on Aug 7, 2015
 @author: James Anderson
 '''
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import collections
 import struct
 import array 

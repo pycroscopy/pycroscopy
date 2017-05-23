@@ -6,7 +6,7 @@ Created on Thu May 05 13:29:12 2016
 """
 # TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
-from __future__ import division, print_function, absolute_import, unicode_literals  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 
 import inspect
 from warnings import warn

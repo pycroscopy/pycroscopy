@@ -5,7 +5,7 @@ Created on Thursday May 26 11:23:00 2016
 @author:  Rama Vasudevan, Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 import numpy as np # For array operations
 from warnings import warn
 from os import path, remove  # File Path formatting

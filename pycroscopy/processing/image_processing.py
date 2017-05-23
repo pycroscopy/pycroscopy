@@ -4,7 +4,7 @@ Created on Jun 16, 2016
 @author: Chris Smith -- csmith55@utk.edu
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import os
 from multiprocessing import cpu_count
 from warnings import warn

@@ -5,7 +5,7 @@ Created on Thu Jan 12 15:31:55 2017
 @author: Kody Law, Suhas Somnath, Rama K. Vasudevan
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 from multiprocessing import Pool
 from _warnings import warn
 import itertools

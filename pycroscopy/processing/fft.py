@@ -6,7 +6,7 @@ Created on Tue Oct 20 17:42:41 2015
 """
 ###############################################################################
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import numpy as np  # for all array, data operations
 import matplotlib.pyplot as plt  # for all plots
 from scipy.special import erf

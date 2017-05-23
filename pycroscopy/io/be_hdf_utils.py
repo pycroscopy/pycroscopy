@@ -5,7 +5,8 @@ Created on Tue Dec 15 11:10:37 2015
 @author: Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+# cannot import unicode_literals since it is not compatible with h5py just yet
+from __future__ import division, print_function, absolute_import
 import numpy as np
 
 from .hdf_utils import getAuxData

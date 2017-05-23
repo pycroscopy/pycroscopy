@@ -2,7 +2,7 @@
 """
 @author: Oleg Ovchinnikov
 """
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 
 
 def apply_select_channel(file_in_h5,img_num,channel_num):

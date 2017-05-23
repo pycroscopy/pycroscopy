@@ -11,7 +11,7 @@
 # from the tag file datatype. I think these are used more than the tag
 # datratypes in describing the data.
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 from .parse_dm3 import *
 import numpy as np
 

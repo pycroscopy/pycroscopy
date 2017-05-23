@@ -5,7 +5,7 @@ Created on Tue Jan 05 07:55:56 2016
 @author: Suhas Somnath, Chris Smith, Rama K. Vasudevan
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 from os import path
 from warnings import warn
 

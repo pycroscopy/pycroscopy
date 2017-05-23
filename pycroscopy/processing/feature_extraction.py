@@ -5,7 +5,7 @@ Created on Tue Oct  6 15:34:12 2015
 @author: Numan Laanait -- nlaanait@gmail.com
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import warnings
 import multiprocessing as mp
 

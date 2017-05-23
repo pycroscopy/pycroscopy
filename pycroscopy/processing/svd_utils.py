@@ -5,7 +5,7 @@ Created on Mon Mar 28 09:45:08 2016
 @author: Suhas Somnath, Chris Smith
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import time
 from warnings import warn
 from multiprocessing import cpu_count

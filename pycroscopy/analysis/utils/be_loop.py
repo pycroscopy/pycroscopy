@@ -7,7 +7,7 @@ Created on Wed Jun 29 11:13:22 2016
 Various helper functions for aiding loop fitting and projection
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 
 import matplotlib.pyplot as plt
 import numpy as np

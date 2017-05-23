@@ -5,7 +5,7 @@ Created on Wed Aug 31 17:03:29 2016
 @author: Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import numpy as np
 
 # TODO: Test and debug node and clusterTree classes for agglomerative clustering etc

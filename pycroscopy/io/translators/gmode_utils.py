@@ -5,7 +5,7 @@ Created on Fri Mar 04 11:16:20 2016
 @author: Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 import numpy as np
 

@@ -1,4 +1,4 @@
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import struct
 import array
 import logging

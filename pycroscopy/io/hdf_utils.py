@@ -4,7 +4,9 @@ Created on Tue Nov  3 21:14:25 2015
 
 @author: Suhas Somnath, Chris Smith, Numan Laanait
 """
-from __future__ import division, print_function, absolute_import, unicode_literals
+
+# cannot import unicode_literals since it is not compatible with h5py just yet
+from __future__ import division, print_function, absolute_import
 import os
 import h5py
 from warnings import warn

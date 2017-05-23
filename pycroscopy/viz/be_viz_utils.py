@@ -4,7 +4,7 @@ Created on Thu Jan 05 13:29:12 2017
 
 @author: Suhas Somnath, Chris R. Smith
 """
-from __future__ import division, print_function, absolute_import, unicode_literals
+from __future__ import division, print_function, absolute_import
 import os
 from warnings import warn
 import numpy as np
