@@ -8,8 +8,8 @@ from .processing import *
 from . import viz
 from .viz import *
 
-from __version__ import version as __version__
-from __version__ import date as __date__
+from .__version__ import version as __version__
+from .__version__ import date as __date__
 
 # TODO: need to figure out what to do with external libs: numpy_groupies and pyqtgraph.
 

@@ -1,9 +1,15 @@
 from __future__ import print_function, division
 import struct
 import array
-import StringIO
 import logging
 import re
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
+    unicode = str
+except:
+    raise
 
 # mfm 2013-05-21 do we need the numpy array stuff? The python array module
 # allows us to store arrays easily and efficiently. How do we deal
@@ -235,7 +241,7 @@ dm_simple_names = {
     2: ("short", "h", []),
     3: ("long", "i", [int]),
     4: ("ushort", "H", []),
-    5: ("ulong", "I", [long]),
+    5: ("ulong", "I", [int]),
     6: ("float", "f", []),
     7: ("double", "d", [float]),
     8: ("bool", "b", [bool]),
@@ -250,10 +256,10 @@ dm_complex_names = {
 
 
 def get_dmtype_for_name(name):
-    for key, (_name, sc, types) in dm_simple_names.iteritems():
+    for key, (_name, sc, types) in dm_simple_names.items():
         if _name == name:
             return key
-    for key, _name in dm_complex_names.iteritems():
+    for key, _name in dm_complex_names.items():
         if _name == name:
             return key
     return 0
@@ -273,7 +279,7 @@ def get_structdmtypes_for_python_typeorobject(typeorobj):
     else:
         comparer = lambda test: isinstance(typeorobj, test)
 
-    for key, (name, sc, types) in dm_simple_names.iteritems():
+    for key, (name, sc, types) in dm_simple_names.items():
         for t in types:
             if comparer(t):
                 return sc, key
@@ -295,7 +301,7 @@ def get_structchar_for_dmtype(dm_type):
 
 
 def get_dmtype_for_structchar(struct_char):
-    for key, (name, sc, types) in dm_simple_names.iteritems():
+    for key, (name, sc, types) in dm_simple_names.items():
         if struct_char == sc:
             return key
     return -1
