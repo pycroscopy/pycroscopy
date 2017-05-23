@@ -194,7 +194,7 @@ class GLineTranslator(Translator):
         targ_str = 'bigtime_0'
         for filenames in listdir(folder_path):
             ind = filenames.find(targ_str)
-            if ind > 0:
+            if ind > 0 and filenames.endswith('.dat'):
                 data_paths[int(filenames[ind+len(targ_str)])] = path.join(folder_path, filenames)
         
             if filenames.endswith('.txt') and filenames.find('parm') > 0:
