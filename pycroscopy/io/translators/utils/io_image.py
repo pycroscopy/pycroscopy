@@ -5,12 +5,16 @@ Created on Nov 8, 2016
 """
 
 from __future__ import division, print_function, absolute_import
-import os
-import numpy as np
+
 import array
+import os
+
+import numpy as np
 from skimage.io import imread
-from .dm3_image_utils import parse_dm_header, imagedatadict_to_ndarray
-from . import dm4reader
+
+from io.translators.utils import dm4reader
+from io.translators.utils.dm3_image_utils import parse_dm_header, imagedatadict_to_ndarray
+
 
 def read_image(image_path, *args, **kwargs):
     """

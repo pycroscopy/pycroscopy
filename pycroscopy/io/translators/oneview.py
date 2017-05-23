@@ -5,20 +5,22 @@ Created on Feb 9, 2016
 """
 
 from __future__ import division, print_function, absolute_import
+
 import os
-import numpy as np
 from warnings import warn
+
+import numpy as np
 from skimage.measure import block_reduce
 from skimage.util import crop
 
-from ..io_image import read_image, read_dm3, parse_dm4_parms
+from io.translators.utils import dm4reader
+from io.translators.utils.io_image import read_image, read_dm3, parse_dm4_parms
 from .translator import Translator
 from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
     get_position_slicing, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
-from .. import dm4reader
 
 
 class OneViewTranslator(Translator):

@@ -5,10 +5,13 @@ Created on Feb 9, 2016
 """
 
 from __future__ import division, print_function, absolute_import
+
 import os
+
 import numpy as np
 from skimage.measure import block_reduce
-from ..io_image import read_image
+
+from io.translators.utils.io_image import read_image
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main, findDataset

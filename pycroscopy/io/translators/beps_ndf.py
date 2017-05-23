@@ -7,19 +7,21 @@ Created on Tue Nov  3 15:07:16 2015
 """
 
 from __future__ import division, print_function, absolute_import  # int/int = float
-import numpy as np
+
 from os import path, listdir, remove
 from warnings import warn
+
+import numpy as np
 import xlrd as xlreader  # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
-from .utils import make_position_mat, generate_dummy_main_parms
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
+
+from io.translators.utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
     createSpecVals, nf32
-from ..microdata import MicroDataGroup, MicroDataset
-from ..io_hdf5 import ioHDF5
 from .translator import Translator
-from ..be_hdf_utils import maxReadPixels
+from .utils import make_position_mat, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
+from ..io_hdf5 import ioHDF5
+from ..microdata import MicroDataGroup, MicroDataset
 
 
 class BEPSndfTranslator(Translator):

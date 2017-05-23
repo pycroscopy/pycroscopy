@@ -12,8 +12,10 @@
 # datratypes in describing the data.
 
 from __future__ import division, print_function, absolute_import
-from .parse_dm3 import *
+
 import numpy as np
+
+from io.translators.utils.parse_dm3 import *
 
 structarray_to_np_map = {
     ('d', 'd'): np.complex128,

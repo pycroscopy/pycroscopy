@@ -6,17 +6,20 @@ Created on Thursday May 26 11:23:00 2016
 """
 
 from __future__ import division, print_function, absolute_import  # int/int = float
-import numpy as np # For array operations
-from warnings import warn
+
 from os import path, remove  # File Path formatting
+from warnings import warn
+
+import numpy as np # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
+
+from io.translators.utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, nf32
 from .translator import Translator  # Because this class extends the abstract Translator class
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, nf32
-from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs
+from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
 
 
 class BEodfRelaxationTranslator(Translator):

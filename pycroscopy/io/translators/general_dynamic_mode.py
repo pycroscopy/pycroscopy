@@ -12,7 +12,7 @@ from os import path, remove  # File Path formatting
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .gmode_utils import readGmodeParms
+from io.translators.utils.gmode_utils import readGmodeParms
 from .translator import Translator  # Because this class extends the abstract Translator class
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs

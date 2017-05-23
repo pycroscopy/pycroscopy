@@ -9,10 +9,11 @@ from __future__ import division, print_function, absolute_import  # int/int = fl
 
 from os import path, listdir, remove
 from warnings import warn
+
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
+from io.translators.utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
     requires_conjugate, nf32
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
