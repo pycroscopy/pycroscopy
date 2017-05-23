@@ -365,6 +365,8 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     freq_inds = spec_inds[spec_inds.attrs['Frequency']].flatten()
     
     for col_name in col_names:
+        # Names are stored as utf8 now, need to convert to a string to use
+        col_name = col_name.decode('utf8')
         ref = UDVS.attrs[col_name]
 #         Make sure we're actually dealing with a reference of some type
         if not isinstance(ref, h5py.RegionReference):
