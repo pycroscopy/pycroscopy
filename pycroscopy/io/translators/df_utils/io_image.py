@@ -12,8 +12,8 @@ import os
 import numpy as np
 from skimage.io import imread
 
-from io.translators.df_utils import dm4reader
-from io.translators.df_utils.dm3_image_utils import parse_dm_header, imagedatadict_to_ndarray
+from . import dm4reader
+from .dm3_image_utils import parse_dm_header, imagedatadict_to_ndarray
 
 
 def read_image(image_path, *args, **kwargs):

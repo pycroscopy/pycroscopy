@@ -14,14 +14,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from io.be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from io.hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
-from io.io_hdf5 import ioHDF5
-from io.io_utils import getAvailableMem, recommendCores
-from io.microdata import MicroDataset, MicroDataGroup
-from analysis.optimize import Optimize
-from processing.proc_utils import buildHistogram
-from viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
+from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
+from ...io_hdf5 import ioHDF5
+from ...io_utils import getAvailableMem, recommendCores
+from ...microdata import MicroDataset, MicroDataGroup
+from ....analysis.optimize import Optimize
+from ....processing.proc_utils import buildHistogram
+from ....viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
 
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],

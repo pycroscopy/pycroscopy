@@ -15,7 +15,7 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 
-from io.translators.df_utils.parse_dm3 import *
+from .parse_dm3 import *
 
 structarray_to_np_map = {
     ('d', 'd'): np.complex128,
