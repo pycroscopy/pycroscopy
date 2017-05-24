@@ -354,10 +354,20 @@ def jupyter_visualize_be_spectrograms(h5_main):
     h5_main : h5py.Dataset
         Raw dataset
     """
-    h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
+    pos_labels = np.array(h5_pos_inds.attrs['labels'])[pos_sort]
+
+    h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
+    h5_spec_inds = getAuxData(h5_main, auxDataName='Spectroscopic_Indices')[-1]
+    spec_sort = get_sort_order(h5_spec_inds)
+    spec_dims = get_dimensionality(h5_spec_inds, spec_sort)
+    spec_labels = np.array(h5_spec_inds.attrs['labels'])[spec_sort]
+
+    ifreq = int(np.argwhere(spec_labels == 'Frequency'))
+    freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
+    freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
     try:
         num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
     except KeyError:
@@ -382,14 +392,14 @@ def jupyter_visualize_be_spectrograms(h5_main):
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
         amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.jet,
-                                 extent=[freq_vals[0], freq_vals[-1],
+                                 extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                          spectrogram.shape[0], 0],
                                  interpolation='none')
         axes[1].set_title('Amplitude')
         axes[1].set_xlabel('Frequency (kHz)')
         axes[1].set_ylabel('BE step')
         phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.jet,
-                                   extent=[freq_vals[0], freq_vals[-1],
+                                   extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                            spectrogram.shape[0], 0],
                                    interpolation='none')
         axes[2].set_title('Phase')
@@ -437,13 +447,14 @@ def jupyter_visualize_be_spectrograms(h5_main):
             fig, axes = plt.subplots(ncols=2, figsize=(9, 5), sharey=True)
             im_handles = list()
             im_handles.append(axes[0].imshow(np.abs(data), cmap=plt.cm.jet,
-                                             extent=[freq_vals[0], freq_vals[-1],
+                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                      data.shape[0], 0],
                                              interpolation='none'))
             axes[0].set_title('Amplitude')
             axes[0].set_ylabel('BE step')
             im_handles.append(axes[1].imshow(np.angle(data), cmap=plt.cm.jet,
-                                             extent=[freq_vals[0], freq_vals[-1], data.shape[0], 0],
+                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
+                                                     data.shape[0], 0],
                                              interpolation='none'))
             axes[1].set_title('Phase');
             axes[0].set_xlabel('Frequency index')
