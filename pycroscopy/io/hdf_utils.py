@@ -1383,9 +1383,12 @@ def patch_be_lv_format(h5_path):
 
         # Also link the Bin_Frequencies and Bin_Wfm_Type datasets
         h5_freqs = h5_chan['Bin_Frequencies']
-        h5_wfm = h5_chan['Bin_Wfm_Type']
-        aux_dset_names = ['Bin_Frequencies', 'Bin_Wfm_Type']
-        checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=[h5_freqs.ref, h5_wfm.ref])
+        # h5_wfm = h5_chan['Bin_Wfm_Type']
+        # aux_dset_names = ['Bin_Frequencies', 'Bin_Wfm_Type']
+        # aus_dset_refs = [h5_freqs.ref, h5_wfm.ref]
+        aux_dset_names = ['Bin_Frequencies']
+        aus_dset_refs = [h5_freqs.ref]
+        checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
 
         '''
         Get all SHO_Fit groups for the Raw_Data and loop over them
