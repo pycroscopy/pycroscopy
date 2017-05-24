@@ -739,7 +739,7 @@ def get_dimensionality(ds_index, index_sort=None):
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
 
-    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index[index_sort], ndmin=2)]
+    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index[index_sort, :], ndmin=2)]
 
     return sorted_dims
 
