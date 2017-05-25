@@ -168,7 +168,7 @@ class ImageWindow(object):
             free_mem = self.max_memory-image.size*image.itemsize
         else:
             free_mem = self.max_memory*2-image.size*image.itemsize
-        batch_size = free_mem/mem_per_win
+        batch_size = int(free_mem/mem_per_win)
         batch_slices = gen_batches(n_wins, batch_size)
 
         for ibatch, batch in enumerate(batch_slices):
@@ -1004,7 +1004,7 @@ class ImageWindow(object):
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
             free_mem = self.max_memory/2-ds_V.size*ds_V.itemsize
-        batch_size = free_mem/mem_per_win
+        batch_size = int(free_mem/mem_per_win)
         if batch_size < 1:
             raise MemoryError('Not enough memory to perform Image Cleaning.')
         batch_slices = gen_batches(n_wins, batch_size)
