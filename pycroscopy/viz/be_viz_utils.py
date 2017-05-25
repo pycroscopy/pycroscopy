@@ -372,13 +372,6 @@ def jupyter_visualize_be_spectrograms(h5_main):
         num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
     except KeyError:
         num_udvs_steps = h5_main.parent.parent.attrs['num_UDVS_steps']
-    # h5_udvs_inds = getAuxData(h5_main, auxDataName='UDVS_Indices')[-1]
-    h5_freqs = getAuxData(h5_main, auxDataName='Bin_Frequencies')[-1]
-    wfm_type_vec = getAuxData(h5_main, auxDataName='Bin_Wfm_Type')[-1][()]
-    freq_inds = wfm_type_vec == np.unique(wfm_type_vec)[-1]
-    freq_vals = h5_freqs[freq_inds] / 1000  # convert to kHz
-    pos_labels = np.array(h5_pos_inds.attrs['labels'])
-    pos_labels = pos_labels[pos_sort]
 
     if len(pos_dims) == 2:
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims))
@@ -465,7 +458,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
             fig.tight_layout()
             return fig, axes, im_handles
 
-        fig, axes, im_handles = plot_spectrogram(np.reshape(h5_main[0], (num_udvs_steps, -1)), freq_vals)
+        fig, axes, im_handles = plot_spectrogram(np.reshape(h5_main[0], (num_udvs_steps, -1)), freqs_2d)
 
         def position_unpacker(**kwargs):
             pos_dim_vals = range(len(pos_labels))
