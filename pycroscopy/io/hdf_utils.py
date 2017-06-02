@@ -484,7 +484,7 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
-
+# TODO: Reshape to Ndims should return the labels of the dimensions as a list as well
 def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
