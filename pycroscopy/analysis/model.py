@@ -78,7 +78,7 @@ class Model(object):
         """
 
         if self._parallel:
-            self._maxCpus = psutil.cpu_count() - 2
+            self._maxCpus = max(1, psutil.cpu_count() - 2)
         else:
             self._maxCpus = 1
 
