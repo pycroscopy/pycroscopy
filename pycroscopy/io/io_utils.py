@@ -13,7 +13,6 @@ from psutil import virtual_memory as vm
 
 import h5py
 import numpy as np
-from PyQt5 import QtWidgets
 
 __all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
@@ -33,31 +32,6 @@ def getTimeStamp():
     String
     """
     return strftime('%Y_%m_%d-%H_%M_%S')
-
-
-def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
-    """
-    Presents a File dialog used for selecting the .mat file
-    and returns the absolute filepath of the selecte file\n
-
-    Parameters
-    ----------
-    extension : String or list of strings
-        file extensions to look for
-    caption : (Optional) String
-        Title for the file browser window
-
-    Returns
-    -------
-    file_path : String
-        Absolute path of the chosen file
-    """
-    app = QtWidgets.QApplication([])
-    path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
-    app.exit()
-    del app
-
-    return str(path)
 
 
 def getAvailableMem():
