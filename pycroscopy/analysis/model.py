@@ -82,6 +82,9 @@ class Model(object):
         else:
             self._maxCpus = 1
 
+        if self._maxCpus == 1:
+            self._parallel = False
+
         self._maxMemoryMB = getAvailableMem() / 1024**2 # in Mb
 
         self._maxDataChunk = int(self._maxMemoryMB / self._maxCpus)
