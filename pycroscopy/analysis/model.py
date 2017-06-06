@@ -84,7 +84,7 @@ class Model(object):
 
         self._maxMemoryMB = getAvailableMem() / 1024**2 # in Mb
 
-        self._maxDataChunk = self._maxMemoryMB / self._maxCpus
+        self._maxDataChunk = int(self._maxMemoryMB / self._maxCpus)
 
         # Now calculate the number of positions that can be stored in memory in one go.
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
