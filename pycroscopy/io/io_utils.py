@@ -10,13 +10,13 @@ from __future__ import division, print_function, absolute_import
 from multiprocessing import cpu_count
 from time import strftime
 from psutil import virtual_memory as vm
-
 import h5py
 import numpy as np
 
-__all__ = ['getAvailableMem', 'getTimeStamp', 'uiGetFile', 'transformToTargetType', 'transformToReal',
+__all__ = ['getAvailableMem', 'getTimeStamp', 'transformToTargetType', 'transformToReal',
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
            'recommendCores']
+
 
 def getTimeStamp():
     """
