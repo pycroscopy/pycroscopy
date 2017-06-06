@@ -196,8 +196,13 @@ class ImageTranslator(Translator):
                 test = [meas_grp.attrs[key] == old_parms[key] for key in old_parms.iterkeys()]
                 if all(test):
                     return h5_raw
+            # the clear (actually the repack) does not work on the ubuntu VM / Windows.
+            # hdf.clear()
+            # Just close, remove, and start new
+            hdf.close()
+            os.remove(self.h5_path)
+            hdf = ioHDF5(self.h5_path)
 
-            hdf.clear()
         except:
             raise
 
