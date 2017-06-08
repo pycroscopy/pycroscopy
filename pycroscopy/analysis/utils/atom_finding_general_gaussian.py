@@ -3,7 +3,7 @@
 @author: Ondrej Dyck
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 import numpy as np
 from scipy.optimize import least_squares

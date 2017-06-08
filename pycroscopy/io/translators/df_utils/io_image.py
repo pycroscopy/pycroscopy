@@ -4,7 +4,7 @@ Created on Nov 8, 2016
 @author: Chris Smith -- csmith55@utk.edu
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 import array
 import os

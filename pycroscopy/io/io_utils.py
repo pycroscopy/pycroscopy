@@ -5,8 +5,7 @@ Created on Tue Nov  3 21:14:25 2015
 @author: Suhas Somnath, Chris Smith
 """
 
-# cannot import unicode_literals since it is not compatible with h5py just yet
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 from multiprocessing import cpu_count
 from time import strftime
 from psutil import virtual_memory as vm

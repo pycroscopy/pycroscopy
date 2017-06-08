@@ -6,7 +6,7 @@ Created on Aug 7, 2015
 link: https://github.com/jamesra/dm4reader
 '''
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 import collections
 import struct
 import array 
