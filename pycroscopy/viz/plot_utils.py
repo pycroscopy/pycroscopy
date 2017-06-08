@@ -662,7 +662,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                 'share_all': False,
                 'aspect': True,
                 'label_mode': 'L'}
-    for key in igkwargs.iterkeys():
+    for key in igkwargs.keys():
         if key in kwargs:
             igkwargs.update({key: kwargs.pop(key)})
 
