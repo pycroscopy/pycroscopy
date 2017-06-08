@@ -9,7 +9,7 @@ import numpy as np
 from .model import Model
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
-            copyAttributes
+            copyAttributes, get_attr
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 '''
@@ -72,7 +72,7 @@ class BESHOmodel(Model):
                                 maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
 
-        not_freq = h5_spec_inds.attrs['labels'] != 'Frequency'
+        not_freq = get_attr(h5_spec_inds, 'labels') != 'Frequency'
 
         ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
@@ -150,7 +150,7 @@ class BESHOmodel(Model):
         
         """
         h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        freq_dim = np.argwhere(h5_spec_vals.attrs['labels'] == 'Frequency').squeeze()
+        freq_dim = np.argwhere(get_attr(h5_spec_vals, 'labels') == 'Frequency').squeeze()
 
         if len(self.step_start_inds) == 1:  # BE-Line
             end_ind = h5_spec_vals.shape[1]
