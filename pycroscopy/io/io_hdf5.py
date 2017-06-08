@@ -6,7 +6,7 @@ Main Class in charge of writing/reading to/from hdf5 file.
 """
 
 # cannot import unicode_literals since it is not compatible with h5py just yet
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 import subprocess
 import sys
@@ -19,8 +19,11 @@ import numpy as np
 from .microdata import MicroDataGroup
 from ..__version__ import version
 
+"""
 if sys.version_info.major == 3:
     unicode = str
+"""
+
 
 class ioHDF5(object):
 
@@ -81,7 +84,6 @@ class ioHDF5(object):
         self.file.clear()
         self.repack()
 
-
     def repack(self):
         """
         Uses the h5repack command to recover cleared space in an hdf5 file.
@@ -125,7 +127,7 @@ class ioHDF5(object):
         '''
         Open the repacked file
         '''
-        self.file = h5py.File(self.path, mode = 'r+')
+        self.file = h5py.File(self.path, mode='r+')
 
     def close(self):
         """
@@ -156,6 +158,8 @@ class ioHDF5(object):
         ----------
         data : Instance of MicroData
             Tree structure describing the organization of the data
+        print_log : Boolean (Optional)
+            Whether or not to print all log statements - use for debugging purposes
 
         Returns
         -------
@@ -163,9 +167,9 @@ class ioHDF5(object):
             References to the objects written
         """
 
-        f = self.file
+        h5_file = self.file
 
-        f.attrs['Pycroscopy version'] = version
+        h5_file.attrs['Pycroscopy version'] = version
 
         # Checking if the data is an MicroDataGroup object
         if not isinstance(data, MicroDataGroup):
@@ -173,13 +177,14 @@ class ioHDF5(object):
             sys.exit("Input not of type MicroDataGroup.\n We're done here! \n")
 
         # Figuring out if the first item in AFMData tree is file or group
-        if data.name is '' and data.parent is '/':
+        if data.name == '' and data.parent == '/':
             # For file we just write the attributes
+
             for key, val in data.attrs.items():
-                f.attrs[key] = val
+                h5_file.attrs[key] = self.clean_string_att(val)
             if print_log:
-                print('Wrote attributes of file {} \n'.format(f.name))
-            root = f.name
+                print('Wrote attributes of file {} \n'.format(h5_file.name))
+            root = h5_file.name
         else:
             # For a group we write it and its attributes
             if data.indexed:
@@ -187,60 +192,66 @@ class ioHDF5(object):
                 the suffix index to be appended automatically. Here, we check to
                 ensure that the chosen index is new.
                 '''
-                previous = np.where([data.name in key for key in f[data.parent].keys()])[0]
+                previous = np.where([data.name in key for key in h5_file[data.parent].keys()])[0]
                 if len(previous) == 0:
                     index = 0
                 else:
                     # assuming that the last element of previous contains the highest index
-                    last = f[data.parent].keys()[previous[-1]]
+                    last = h5_file[data.parent].keys()[previous[-1]]
                     index = int(last.split('_')[-1])+1
                 data.name += '{:03d}'.format(index)
             try:
-                g = f[data.parent].create_group(data.name)
-                if print_log: print('Created group {}'.format(g.name))
+                g = h5_file[data.parent].create_group(data.name)
+                if print_log:
+                    print('Created group {}'.format(g.name))
             except ValueError:
-                g = f[data.parent][data.name]
-                if print_log: print('Group already exists: {}'.format(g.name))
+                g = h5_file[data.parent][data.name]
+                if print_log:
+                    print('Group already exists: {}'.format(g.name))
             except:
-                f.flush()
-                f.close()
+                h5_file.flush()
+                h5_file.close()
                 raise
             for key, val in data.attrs.items():
                 if val is None:
                     continue
-                g.attrs[key] = val
-            if print_log: print('Wrote attributes to group: {} \n'.format(data.name))
+                g.attrs[key] = self.clean_string_att(val)
+            if print_log:
+                print('Wrote attributes to group: {} \n'.format(data.name))
             root = g.name
 
         # Populating the tree structure recursively
-        refList = []
+        ref_list = []
         # Recursive function
+
         def __populate(child, parent):
 
             if isinstance(child, MicroDataGroup):
                 if child.indexed:
-                    previous = np.where([child.name in key for key in f[parent].keys()])[0]
-                    if len(previous)==0:
+                    previous = np.where([child.name in key for key in h5_file[parent].keys()])[0]
+                    if len(previous) == 0:
                         index = 0
                     else:
-                        last = f[parent].keys()[previous[-1]]
+                        last = h5_file[parent].keys()[previous[-1]]
                         index = int(last.split('_')[-1])+1
-                    child.name+='{:03d}'.format(index)
+                    child.name += '{:03d}'.format(index)
                 try:
-                    itm = f[parent].create_group(child.name)
-                    if print_log: print('Created Group {}'.format(itm.name))
+                    itm = h5_file[parent].create_group(child.name)
+                    if print_log:
+                        print('Created Group {}'.format(itm.name))
                 except ValueError:
-                    itm = f[parent][child.name]
+                    itm = h5_file[parent][child.name]
                     print('Found Group already exists {}'.format(itm.name))
                 except:
-                    f.flush()
-                    f.close()
+                    h5_file.flush()
+                    h5_file.close()
                     raise
                 for key, val in child.attrs.items():
                     if val is None:
                         continue
-                    itm.attrs[key] = val
-                if print_log: print('Wrote attributes to group {}\n'.format(itm.name))
+                    itm.attrs[key] = self.clean_string_att(val)
+                if print_log:
+                    print('Wrote attributes to group {}\n'.format(itm.name))
                 # here we do the recursive function call
                 for ch in child.children:
                     __populate(ch, parent+'/'+child.name)
@@ -250,59 +261,60 @@ class ioHDF5(object):
                         # finite sized dataset and maxshape is not provided
                         # Typically for small / ancilliary datasets
                         try:
-                            itm = f[parent].create_dataset(child.name,
-                                                        data = child.data,
-                                                        compression = child.compression,
-                                                        dtype = child.data.dtype,
-                                                        chunks= child.chunking)
+                            itm = h5_file[parent].create_dataset(child.name,
+                                                                 data=child.data,
+                                                                 compression=child.compression,
+                                                                 dtype=child.data.dtype,
+                                                                 chunks=child.chunking)
                         except RuntimeError:
-                            itm = f[parent][child.name]
+                            itm = h5_file[parent][child.name]
                             warn('Found Dataset already exists {}'.format(itm.name))
                         except:
-                            f.flush()
-                            f.close()
+                            h5_file.flush()
+                            h5_file.close()
                             raise
                     else:
                         # In many cases, we DON'T need resizable datasets but we know the max-size
                         # Here, we only allocate the space. The provided data is ignored
                         # print child.name
                         try:
-                            itm = f[parent].create_dataset(child.name, child.maxshape,
-                                                        compression = child.compression,
-                                                        dtype = child.dtype,
-                                                        chunks= child.chunking)
+                            itm = h5_file[parent].create_dataset(child.name, child.maxshape,
+                                                                 compression=child.compression,
+                                                                 dtype=child.dtype,
+                                                                 chunks=child.chunking)
                         except RuntimeError:
-                            itm = f[parent][child.name]
+                            itm = h5_file[parent][child.name]
                             warn('Found Dataset already exists {}'.format(itm.name))
                         except:
-                            f.flush()
-                            f.close()
+                            h5_file.flush()
+                            h5_file.close()
                             raise
                 else:
                     # Resizable but the written files are significantly larger
-                    max_shape = tuple([ None for i in range(len(child.data.shape))])
+                    max_shape = tuple([None for _ in range(len(child.data.shape))])
                     try:
-                        itm = f[parent].create_dataset(child.name,
-                                                    data = child.data,
-                                                    compression = child.compression,
-                                                    dtype = child.data.dtype,
-                                                    chunks= child.chunking,
-                                                    maxshape = max_shape)
+                        itm = h5_file[parent].create_dataset(child.name,
+                                                             data=child.data,
+                                                             compression=child.compression,
+                                                             dtype=child.data.dtype,
+                                                             chunks=child.chunking,
+                                                             maxshape=max_shape)
                     except RuntimeError:
-                        itm = f[parent][child.name]
+                        itm = h5_file[parent][child.name]
                         warn('Found Dataset already exists {}'.format(itm.name))
                     except:
-                        f.flush()
-                        f.close()
+                        h5_file.flush()
+                        h5_file.close()
                         raise
 
-                if print_log: print('Created Dataset {}'.format(itm.name))
+                if print_log:
+                    print('Created Dataset {}'.format(itm.name))
                 for key, val in child.attrs.items():
                     # print('Found some region references')
                     # writing region reference
-                    if key is 'labels':
+                    if key == 'labels':
                         # print('Found some region references')
-                        labels = child.attrs[key]# labels here is a dictionary
+                        labels = child.attrs[key]  # labels here is a dictionary
                         self.write_region_references(itm, labels, print_log=print_log)
                         '''
                         Now make an attribute called 'labels' that is a list of strings 
@@ -311,35 +323,59 @@ class ioHDF5(object):
                         found_dim = False
                         for dimen, slobj in enumerate(list(labels.values())[0]):
                             # We make the assumption that checking the start is sufficient
-                            if slobj.start != None:
+                            if slobj.start is not None:
                                 found_dim = True
                                 break
                         if found_dim:
-                            headers = [None]*len(labels) # The list that will hold all the names
+                            headers = [None]*len(labels)  # The list that will hold all the names
                             for col_name in labels.keys():
                                 headers[labels[col_name][dimen].start] = col_name
                             # Now write the list of col / row names as an attribute:
-                            itm.attrs[key] = headers
+                            itm.attrs[key] = self.clean_string_att(headers)
                         else:
-                            warn('Unable to write region labels for %s' %(itm.name.split('/')[-1]))
+                            warn('Unable to write region labels for %s' % (itm.name.split('/')[-1]))
 
-                        if print_log: print('Wrote Region References of Dataset %s' %(itm.name.split('/')[-1]))
+                        if print_log:
+                            print('Wrote Region References of Dataset %s' % (itm.name.split('/')[-1]))
                     else:
-                        itm.attrs[key] = child.attrs[key] 
-                        if print_log: print('Wrote Attributes of Dataset %s \n' %(itm.name.split('/')[-1]))
+                        itm.attrs[key] = self.clean_string_att(child.attrs[key])
+                        if print_log:
+                            print('Wrote Attributes of Dataset %s \n' % (itm.name.split('/')[-1]))
                         # Make a dictionary of references
-            refList.append(itm)
-            return refList
+            ref_list.append(itm)
+            return ref_list
 
         # Recursive function is called at each stage beginning at the root
         for child in data.children:
             __populate(child, root)
 
         if print_log:
-            print('Finished writing to h5 file.\n'+
-                  'Right now you got yourself a fancy folder structure. \n'+
+            print('Finished writing to h5 file.\n' +
+                  'Right now you got yourself a fancy folder structure. \n' +
                   'Make sure you do some reference linking to take advantage of the full power of HDF5.')
-        return refList
+        return ref_list
+
+    @staticmethod
+    def clean_string_att(att_val):
+        """
+        Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
+        If the attribute is indeed a list of unicodes, the changes will be made in-place
+
+        Parameters
+        ----------
+        att_val : object
+            Attribute object
+
+        Returns
+        -------
+        att_val : object
+            Attribute object
+        """
+        if type(att_val) == list:
+            for item_ind, item in enumerate(att_val):
+                if type(item) == unicode:  # These don't work on python 3 due to unicode literals
+                    att_val[item_ind] = str(item)
+        return att_val
 
     @staticmethod
     def write_region_references(dataset, slices, print_log=False):
