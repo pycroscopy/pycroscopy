@@ -1,9 +1,9 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Numan Laanait, Suhas Somnath
+@author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 
 import numpy as np

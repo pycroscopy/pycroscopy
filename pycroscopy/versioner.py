@@ -3,7 +3,7 @@ Created on Mar 14, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
-from __future__ import print_function, division
+from __future__ import print_function, division, absolute_import, unicode_literals
 import os
 import datetime
 import argparse
@@ -138,6 +138,6 @@ if __name__ == '__main__':
         mv_file.write('time = {} \n'.format(mv_time))
         
         print('New main version is {}'.format(mv_version))
-        print('Vesion date is {}'.format(mv_date))
+        print('Version date is {}'.format(mv_date))
                         
     pass                

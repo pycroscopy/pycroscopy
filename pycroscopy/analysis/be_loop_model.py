@@ -6,7 +6,7 @@ Created on Thu Aug 25 11:48:53 2016
 
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 from warnings import warn
 
