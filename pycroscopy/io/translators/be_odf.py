@@ -72,8 +72,7 @@ class BEodfTranslator(Translator):
             isBEPS = True
             parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
         else:
-            warn('No parameters file found! Cannot translate this dataset!')
-            return
+            raise IOError('No parameters file found! Cannot translate this dataset!')
           
         ignored_plt_grps = []
         if isBEPS:
@@ -83,8 +82,7 @@ class BEodfTranslator(Translator):
             std_expt = parm_dict['VS_mode'] != 'load user defined VS Wave from file'
             
             if not std_expt:
-                warn('This translator does not handle user defined voltage spectroscopy')
-                return
+                raise ValueError('This translator does not handle user defined voltage spectroscopy')
             
             spec_label = getSpectroscopicParmLabel(parm_dict['VS_mode']) 
             
@@ -125,8 +123,7 @@ class BEodfTranslator(Translator):
         check_bins = real_size/((num_pix-1)*4)
         
         if tot_bins % 1 and check_bins % 1: 
-            warn('Aborting! Some parameter appears to have changed in-between')
-            return
+            raise ValueError('Aborting! Some parameter appears to have changed in-between')
         elif not tot_bins % 1:
             # Everything's ok
             pass
@@ -147,7 +144,7 @@ class BEodfTranslator(Translator):
             en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width            
             bin_freqs = np.linspace(st_f, en_f, tot_bins, dtype=np.float32)
             
-            print('No parms .mat file found.... Filling dummy values into ancillary datasets.')
+            warn('No parms .mat file found.... Filling dummy values into ancillary datasets.')
             bin_inds = np.zeros(shape=tot_bins, dtype=np.int32)
             bin_FFT = np.zeros(shape=tot_bins, dtype=np.complex64)
             ex_wfm = np.zeros(shape=100, dtype=np.float32)
@@ -178,10 +175,9 @@ class BEodfTranslator(Translator):
             bins_per_step = tot_bins/num_actual_udvs_steps
            
             if bins_per_step % 1:
-                warn('Non integer number of bins per step!')
                 print('UDVS mat shape: {}, total bins: {}, bins per step: {}'.format(UDVS_mat.shape, tot_bins,
                                                                                      bins_per_step))
-                return
+                raise ValueError('Non integer number of bins per step!')
             
             bins_per_step = int(bins_per_step)
             num_actual_udvs_steps = int(num_actual_udvs_steps)
@@ -419,8 +415,8 @@ class BEodfTranslator(Translator):
         elif mode == 'in and out-of-field':
             # each file will only have half the udvs steps:
             if 0.5*udvs_steps % 1:
-                warn('Odd number of UDVS')
-                return
+                raise ValueError('Odd number of UDVS')
+
             udvs_steps = int(0.5*udvs_steps)
             # be careful - each pair contains only half the necessary bins - so read half
             parsers = [BEodfParser(path_dict['write_real'], path_dict['write_imag'], 
@@ -429,8 +425,8 @@ class BEodfTranslator(Translator):
                                    self.h5_raw.shape[0], int(bytes_per_pix/2))]
             
             if step_size % 1:
-                warn('weird number of bins per UDVS step. Exiting')
-                return
+                raise ValueError('strange number of bins per UDVS step. Exiting')
+
             step_size = int(step_size)
 
         rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
@@ -750,8 +746,7 @@ class BEodfTranslator(Translator):
             Band Excitation waveform
         """
         if not path.exists(file_path):
-            warn('BEodfTranslator - NO More parms file found')
-            return None
+            raise IOError('NO "More parms" file found')
         if is_beps:
             fft_name = 'FFT_BE_wave'
         else:
@@ -922,8 +917,7 @@ class BEodfTranslator(Translator):
             half = int(0.5*num_VS_steps)
             
             if num_VS_steps is not half * 2:
-                warn('Odd number of UDVS steps found. Exiting!')
-                return
+                raise ValueError('Odd number of UDVS steps found. Exiting!')
                 
             UD_dc_vec = VS_offset*np.ones(num_VS_steps)
             UD_VS_table_label = ['step_num', 'dc_offset', 'ac_amp', 'wave_type', 'wave_mod', 'forward', 'reverse']
