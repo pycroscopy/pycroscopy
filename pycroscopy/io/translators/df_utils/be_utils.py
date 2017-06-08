@@ -15,7 +15,7 @@ import numpy as np
 import xlrd as xlreader
 
 from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
+from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr
 from ...io_hdf5 import ioHDF5
 from ...io_utils import getAvailableMem, recommendCores
 from ...microdata import MicroDataset, MicroDataGroup
@@ -362,7 +362,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         return
     
     # Removing the standard columns
-    col_names = UDVS.attrs['labels'][5:]
+    col_names = get_attr(UDVS, 'labels')[5:]
 
 #     col_names = [col for col in col_names if col not in std_cols + ignore_plot_groups]
     
@@ -403,7 +403,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         plot_grp.attrs['Name'] = col_name
         plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
         
-        h5_plt_grp_refs = hdf.writeData(plot_grp)
+        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=False)
         
         h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
