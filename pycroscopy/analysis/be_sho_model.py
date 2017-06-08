@@ -168,15 +168,23 @@ class BESHOmodel(Model):
         verbose : Boolean (optional. default = False)
             Whether or not to print debug statements
         """
+
+        """
+        # The model class should take care of all the basic reading
+        super(BESHOmodel, self)._get_data_chunk(verbose=verbose)
+        """
+
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
+            if verbose:
+                print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
             self._start_pos = self._end_pos
         else:
-            print('Finished reading all data!')
+            if verbose:
+                print('Finished reading all data!')
             self.data = None
 
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
