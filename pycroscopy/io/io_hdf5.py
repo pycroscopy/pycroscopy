@@ -19,10 +19,8 @@ import numpy as np
 from .microdata import MicroDataGroup
 from ..__version__ import version
 
-"""
 if sys.version_info.major == 3:
     unicode = str
-"""
 
 
 class ioHDF5(object):
@@ -372,9 +370,8 @@ class ioHDF5(object):
             Attribute object
         """
         if type(att_val) == list:
-            for item_ind, item in enumerate(att_val):
-                if type(item) == unicode:  # These don't work on python 3 due to unicode literals
-                    att_val[item_ind] = str(item)
+            if np.any([type(x) in [str, bytes] for x in att_val]):
+                return np.array(att_val, dtype='S')
         return att_val
 
     @staticmethod
