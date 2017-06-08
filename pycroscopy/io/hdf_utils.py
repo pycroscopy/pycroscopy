@@ -130,7 +130,7 @@ def get_attr(h5_object, attr_name):
 
     elif type(att_val) == np.ndarray:
         if att_val.dtype.type == np.bytes_:
-            att_val = [str(x, 'utf-8') for x in att_val]
+            att_val = np.array([str(x, 'utf-8') for x in att_val])
 
     return att_val
 
