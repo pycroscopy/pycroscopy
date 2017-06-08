@@ -21,10 +21,6 @@ from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
-# nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
-#                  ('sub_band', np.float32)])
-
-
 
 class BEodfTranslator(Translator):
     """
@@ -38,7 +34,7 @@ class BEodfTranslator(Translator):
         self.h5_raw = None
         self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
 
-    def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False):
+    def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False, verbose=False):
         """
         Translates .dat data file(s) to a single .h5 file
         
@@ -53,6 +49,8 @@ class BEodfTranslator(Translator):
             Whether or not to save plots to disk
         do_histogram : (optional) Boolean
             Whether or not to construct histograms to visualize data quality. Note - this takes a fair amount of time
+        verbose : (optional) Boolean
+            Whether or not to print statements
             
         Returns
         ----------
@@ -160,7 +158,7 @@ class BEodfTranslator(Translator):
         self.FFT_BE_wave = bin_FFT
 
         ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
-                                                     labels=['X', 'Y'], units=['m', 'm'], verbose=False)
+                                                     labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
         
         if isBEPS:
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
@@ -321,7 +319,7 @@ class BEodfTranslator(Translator):
         # Write everything except for the main data.
         self.hdf = ioHDF5(h5_path)
         
-        h5_refs = self.hdf.writeData(spm_data)
+        h5_refs = self.hdf.writeData(spm_data, print_log=verbose)
                     
         self.h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             
