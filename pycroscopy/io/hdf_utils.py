@@ -98,7 +98,6 @@ def getAuxData(parent_data, auxDataName=None):
              % (str(auxName), parent_data.name))
     except:
         raise
-    print(data_list)
 
     return data_list
 
