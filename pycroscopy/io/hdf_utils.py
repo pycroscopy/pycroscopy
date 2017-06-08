@@ -7,15 +7,19 @@ Created on Tue Nov  3 21:14:25 2015
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os
+import sys
 import h5py
 from warnings import warn
 import numpy as np
 from .microdata import MicroDataset
 
-__all__ = ['getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'getDataAttr', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
+__all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
+           'getAuxData', 'get_attribute', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree']
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 def print_tree(parent):
@@ -101,7 +105,37 @@ def getAuxData(parent_data, auxDataName=None):
     return data_list
 
 
-def getDataAttr(parent_data, **kwargs):
+def get_attr(h5_object, attr_name):
+    """
+    Returns the attribute from the h5py object
+
+    Parameters
+    ----------
+    h5_object : h5py object
+        dataset or datagroup object
+    attr_name : str
+        Name of the attribute of interest
+
+    Returns
+    -------
+    att_val : object
+        value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
+    """
+    if attr_name not in h5_object.attrs.keys():
+        raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
+    att_val = h5_object.attrs[attr_name]
+
+    if type(att_val) == np.bytes_:
+        att_val = str(att_val, 'utf-8')
+
+    elif type(att_val) == np.ndarray:
+        if att_val.dtype.type == np.bytes_:
+            att_val = [str(x, 'utf-8') for x in att_val]
+
+    return att_val
+
+
+def get_attributes(parent_data, attr_name=None):
     """
     Returns attribute associated with some DataSet.
 
@@ -109,29 +143,30 @@ def getDataAttr(parent_data, **kwargs):
     ----------
     parent_data : h5py.Dataset
         Dataset object reference.
-
-    Expected attribute as keyword argument:
-    attr_name : list of strings, optional, default = all (DataSet.attrs).
+    attr_name : string or list of strings, optional, default = all (DataSet.attrs).
         Name of attribute object to return.
 
     Returns
     -------
-    tuple containing (name,value) pairs of attributes
+    Dictionary containing (name,value) pairs of attributes
     """
-    attr_name = kwargs.get('attr_name', parent_data.attrs.iterkeys())
+    if attr_name is None:
+        attr_name = parent_data.attrs.keys()
 
+    if type(attr_name) == str:
+        attr_name = [attr_name]
+
+    att_dict = {}
     try:
-        data_list = []
         for attr in attr_name:
-            ref = parent_data.attrs[attr]
-            data_list.append(ref)
+            att_dict[attr_name] = get_attr(parent_data, attr)
     except KeyError:
         warn('%s is not an attribute of %s'
              % (str(attr), parent_data.name))
     except:
         raise
 
-    return data_list
+    return att_dict
 
 
 def getH5DsetRefs(ds_names, h5_refs):
@@ -271,7 +306,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
                 the list of points in each dimension
             """
             ranges = []
-            for i in xrange(len(start)):
+            for i in range(len(start)):
                 if start[i] == stop[i]:
                     ranges.append([stop[i]])
                 else:
@@ -307,7 +342,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
                 pair of slices representing the region
             """
             slices = []
-            for idim in xrange(len(start)):
+            for idim in range(len(start)):
                 slices.append(slice(start[idim], stop[idim]))
 
             return slices
@@ -757,7 +792,7 @@ def get_sort_order(ds_spec):
     change_sort : List of unsigned integers
         Order of rows sorted from fastest changing to slowest
     """
-    change_count = [len(np.where([row[i] != row[i - 1] for i in xrange(len(row))])[0]) for row in ds_spec]
+    change_count = [len(np.where([row[i] != row[i - 1] for i in range(len(row))])[0]) for row in ds_spec]
     change_sort = np.argsort(change_count)[::-1]
 
     return change_sort
@@ -830,7 +865,7 @@ def copyAttributes(source, dest, skip_refs=True):
 
                     start, end = region.get_select_bounds()
                     ref_slice = []
-                    for i in xrange(len(start)):
+                    for i in range(len(start)):
                         if start[i] == end[i]:
                             ref_slice.append(start[i])
                         else:
