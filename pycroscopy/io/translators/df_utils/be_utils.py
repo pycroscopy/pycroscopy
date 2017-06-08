@@ -779,8 +779,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                                    
             return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
                              parm_dict, udvs_labs, iSpecVals, udvs_units)
-            
-    
+
     def __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
         """
         Calculates Spectroscopic Values for BEPS data in DC modulation mode
@@ -801,7 +800,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         hascycles = False
         hasFORCS = False
         
-        print('inshape',np.shape(inSpecVals))
+        # print('in shape:',np.shape(inSpecVals))
         """
         All DC datasets will need Spectroscopic Value fields for Bin, DC, and Field
         
