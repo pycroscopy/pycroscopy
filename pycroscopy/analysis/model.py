@@ -66,10 +66,15 @@ class Model(object):
         self.guess = None
         self.fit = None
 
-    def _set_memory_and_cores(self):
+    def _set_memory_and_cores(self, verbose=False):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
+
+        Parameters
+        ----------
+        verbose : Boolean (Optional)
+            Whether or not to print log statements
 
         Returns
         -------
@@ -92,7 +97,8 @@ class Model(object):
         # Now calculate the number of positions that can be stored in memory in one go.
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
         self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
-        print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
+        if verbose:
+            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
 
     def _is_legal(self, h5_main, variables):
         """
@@ -130,7 +136,7 @@ class Model(object):
 
         return legal
 
-    def _get_data_chunk(self):
+    def _get_data_chunk(self, verbose=False):
         """
         Returns the next chunk of data for the guess or the fit
 
@@ -145,12 +151,14 @@ class Model(object):
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
+            if verbose:
+                print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
             self._start_pos = self._end_pos
         else:
-            print('Finished reading all data!')
+            if verbose:
+                print('Finished reading all data!')
             self.data = None
 
 
@@ -185,10 +193,13 @@ class Model(object):
             Flag that differentiates the guess from the fit
 
         """
+        statement = 'guess'
+
         if is_guess:
             targ_dset = self.h5_guess
             source_dset = self.guess
         else:
+            statement = 'fit'
             targ_dset = self.h5_fit
             source_dset = self.fit
 
@@ -198,7 +209,7 @@ class Model(object):
 
         # flush the file
         self.hdf.flush()
-        print('Finished writing to file!')
+        print('Finished writing ' + statement + ' results to file!')
 
     def _create_guess_datasets(self):
         """
@@ -245,15 +256,17 @@ class Model(object):
         pass
 
     def do_guess(self, processors=None, strategy='wavelet_peaks',
-                 options={"peak_widths": np.array([10,200]), "peak_step":20}):
+                 options={"peak_widths": np.array([10, 200]), "peak_step":20}):
         """
 
         Parameters
         ----------
-        strategy: string
+        strategy: string (optional)
             Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. 
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes'].
             For updated list, run GuessMethods.methods
+        processors : int (optional)
+            Number of cores to use for computing. Default = all available - 2 cores
         options: dict
             Default, options for wavelet_peaks {"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
@@ -271,7 +284,7 @@ class Model(object):
         gm = GuessMethods()
         results = list()
         if strategy in gm.methods:
-            print("Using %s to find guesses...\n" % (strategy))
+            print("Using %s to find guesses...\n" % strategy)
             while self.data is not None:
                 opt = Optimize(data=self.data, parallel=self._parallel)
                 temp = opt.computeGuess(processors=processors, strategy=strategy, options=options)
@@ -355,7 +368,7 @@ class Model(object):
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in Fit_Methods().methods
         if legit_solver and legit_obj_func:
-            print("Using solver %s and objective function %s to fit your data\n" %(solver_type, obj_func['obj_func']))
+            print("Using solver %s and objective function %s to fit your data\n" % (solver_type, obj_func['obj_func']))
             while self.data is not None:
                 opt = Optimize(data=self.data, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
