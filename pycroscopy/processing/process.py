@@ -160,7 +160,7 @@ class Process(object):
             self._get_data_chunk()
             while self.data is not None:  # as long as we have not reached the end of this data set:
                 temp = [func(vector) for vector in self.data]
-                results.append(self._reformatResults(temp, strategy))
+                results.append(self._reformatResults(temp))
                 # read the next chunk
                 self._get_data_chunk()
 
