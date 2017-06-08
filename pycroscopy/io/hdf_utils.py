@@ -86,7 +86,7 @@ def getAuxData(parent_data, auxDataName=None):
     list of h5py.Reference of auxiliary dataset objects.
     """
     if auxDataName is None:
-        auxDataName = parent_data.attrs.iterkeys()
+        auxDataName = parent_data.attrs.keys()
     elif type(auxDataName) not in [list, tuple, set]:
         auxDataName = [auxDataName]  # typically a single string
     try:
@@ -130,7 +130,7 @@ def get_attr(h5_object, attr_name):
 
     elif type(att_val) == np.ndarray:
         if att_val.dtype.type == np.bytes_:
-            att_val = [str(x, 'utf-8') for x in att_val]
+            att_val = np.array([str(x, 'utf-8') for x in att_val])
 
     return att_val
 
@@ -1011,7 +1011,7 @@ def copyRegionRefs(h5_source, h5_target):
     h5_spec_vals = h5_target.file[h5_target.attrs['Spectroscopic_Values']]
 
 
-    for key in h5_source.attrs.iterkeys():
+    for key in h5_source.attrs.keys():
         if '_Plot_Group' not in key:
             continue
 
@@ -1343,7 +1343,7 @@ def check_for_old(h5_base, tool_name, new_parms=dict()):
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
-        test = [new_parms[key] == group.attrs[key] for key in new_parms.iterkeys()]
+        test = [new_parms[key] == group.attrs[key] for key in new_parms.keys()]
 
         if all(test):
             return group
