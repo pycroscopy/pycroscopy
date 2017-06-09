@@ -6,7 +6,6 @@ Created on Tue Oct  6 15:34:12 2015
 """
 
 from __future__ import division, print_function, absolute_import
-import math
 from skimage.feature import match_descriptors, register_translation
 from skimage.measure import ransac
 from skimage.transform import warp, SimilarityTransform
@@ -14,6 +13,7 @@ import warnings
 import h5py
 import numpy as np
 import skimage.feature
+import multiprocessing as mp
 
 
 class ImageTransformation(object):
@@ -160,7 +160,7 @@ class FeatureExtractorParallel(object):
 
         # start pool of workers
         print('launching %i kernels...' % (processes))
-        pool = multiProcess.Pool(processes)
+        pool = mp.Pool(processes)
         tasks = [(imp) for imp in self.data]
         chunk = int(self.data.shape[0] / processes)
         jobs = pool.imap(detect, tasks, chunksize=chunk)
@@ -351,9 +351,9 @@ def _center_and_normalize_points(points):
 
     centroid = np.mean(points, axis=0)
 
-    rms = math.sqrt(np.sum((points - centroid) ** 2) / points.shape[0])
+    rms = np.sqrt(np.sum((points - centroid) ** 2) / points.shape[0])
 
-    norm_factor = math.sqrt(2) / rms
+    norm_factor = np.sqrt(2) / rms
 
     matrix = np.array([[norm_factor, 0, -norm_factor * centroid[0]],
                        [0, norm_factor, -norm_factor * centroid[1]],
@@ -546,8 +546,8 @@ class RigidTransform(object):
                 rotation = 0
 
             self.params = np.array([
-                [math.cos(rotation), - math.sin(rotation), 0],
-                [math.sin(rotation),   math.cos(rotation), 0],
+                [np.cos(rotation), - np.sin(rotation), 0],
+                [np.sin(rotation),   np.cos(rotation), 0],
                 [                 0,                    0, 1]
             ])
 
@@ -708,7 +708,7 @@ class RigidTransform(object):
 
     @property
     def rotation(self):
-        return math.atan2(self.params[1, 0], self.params[1, 1])
+        return np.atan2(self.params[1, 0], self.params[1, 1])
 
     @property
     def translation(self):
@@ -803,7 +803,7 @@ class geoTransformerParallel(object):
             return matches
 
         # start pool of workers
-        pool = multiprocess.Pool(processes)
+        pool = mp.Pool(processes)
         print('launching %i kernels...'%(processes))
 
         tasks = [ (desc1, desc2) for desc1, desc2 in zip(desc[:],desc[1:]) ]
@@ -1125,6 +1125,7 @@ class geoTransformerSerial(object):
         desc = self.features[-1]
         keypts = self.features[0]
         maxDis = kwargs.get('maximum_distance', np.infty)
+        processes = kwargs.get('processes', 2)
 
 
         def match(desc):

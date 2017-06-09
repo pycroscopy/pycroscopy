@@ -490,8 +490,8 @@ class NDataTranslator(Translator):
             # Create new measurement group for each set of parameters
             meas_grp = MicroDataGroup('Measurement_')
             # Write the parameters as attributes of the group
-            for key, val in meas_parms.iteritems():
-                meas_grp.attrs[key] = val
+            for key in meas_parms.keys():
+                meas_grp.attrs[key] = meas_parms[key]
             chan_grp = MicroDataGroup('Channel_000')
 
             meas_grp.addChildren([chan_grp])

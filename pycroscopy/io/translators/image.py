@@ -193,7 +193,7 @@ class ImageTranslator(Translator):
                 old_parms = h5_meas.attrs
                 old_parms.pop('machine_id', None)
                 old_parms.pop('timestame', None)
-                test = [meas_grp.attrs[key] == old_parms[key] for key in old_parms.iterkeys()]
+                test = [meas_grp.attrs[key] == old_parms[key] for key in old_parms.keys()]
                 if all(test):
                     return h5_raw
             # the clear (actually the repack) does not work on the ubuntu VM / Windows.

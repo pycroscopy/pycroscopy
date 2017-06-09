@@ -93,7 +93,8 @@ def unnest_parm_dicts(image_parms, prefix=''):
 
     """
     new_parms = dict()
-    for name, val in image_parms.iteritems():
+    for name in image_parms.keys():
+        val = image_parms[name]
         # print 'name',name,'val',val
         name = '-'.join([prefix]+name.split()).strip('-')
         if isinstance(val, dict):
