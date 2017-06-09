@@ -848,7 +848,8 @@ def copyAttributes(source, dest, skip_refs=True):
     """
     Copy attributes from one h5object to another
     """
-    for attr, atval in source.attrs.iteritems():
+    for attr in source.attrs.keys():
+        atval = source.attrs[attr]
         """
         Don't copy references unless asked
         """

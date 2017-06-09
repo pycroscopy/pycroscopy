@@ -275,12 +275,12 @@ def generateTestSpectroscopicData(num_bins=7, num_steps=3, num_pos=4):
         Data organized as [steps x bins, positions]
     """
     full_data = np.zeros((num_steps * num_bins, num_pos))
-    for pos in xrange(num_pos):
+    for pos in range(num_pos):
         bin_count=0
-        for step in xrange(num_steps):
-            for bind in xrange(num_bins):
-                full_data[bin_count,pos] = (pos+1)*100 + (step+1)*10 + (bind+1)
-                bin_count+=1
+        for step in range(num_steps):
+            for bind in range(num_bins):
+                full_data[bin_count, pos] = (pos+1)*100 + (step+1)*10 + (bind+1)
+                bin_count += 1
     return full_data
 
 

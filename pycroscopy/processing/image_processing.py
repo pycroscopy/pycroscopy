@@ -1256,7 +1256,7 @@ class ImageWindow(object):
         fimabs = np.abs(fim)
         fimabs_max = np.zeros(r_n-1)
         
-        for k in xrange(r_n-1):
+        for k in range(r_n-1):
             r1 = r_vec[k]
             r2 = r_vec[k+1]
             r_ind = np.where((r_mat >= r1) & (r_mat <= r2) == True)
@@ -1269,7 +1269,7 @@ class ImageWindow(object):
         '''
         count = 0
         local_max = []
-        for k in xrange(1, fimabs_max.size-1):
+        for k in range(1, fimabs_max.size-1):
             if fimabs_max[k-1] < fimabs_max[k] and fimabs_max[k] > fimabs_max[k+1]:
                 count += 1
                 local_max.append(k)
