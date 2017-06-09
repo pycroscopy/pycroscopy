@@ -66,12 +66,11 @@ def doSVD(h5_main, num_comps=None):
     '''
     print('Performing SVD decomposition')
 
-
     U, S, V = randomized_svd(func(h5_main), num_comps, n_iter=3)
 
     svd_type = 'sklearn-randomized'
 
-    print('SVD took {} seconds.  Writing results to file.'.format((time.time() - t1)))
+    print('SVD took {} seconds.  Writing results to file.'.format(round(time.time() - t1, 2)))
 
     '''
     Create datasets for V and S, deleting original arrays afterward to save
