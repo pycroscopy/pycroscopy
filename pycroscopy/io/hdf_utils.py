@@ -484,7 +484,7 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
-
+# TODO: Reshape to Ndims should return the labels of the dimensions as a list as well
 def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
@@ -739,7 +739,7 @@ def get_dimensionality(ds_index, index_sort=None):
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
 
-    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index[index_sort], ndmin=2)]
+    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index, ndmin=2)[index_sort]]
 
     return sorted_dims
 
@@ -1383,9 +1383,12 @@ def patch_be_lv_format(h5_path):
 
         # Also link the Bin_Frequencies and Bin_Wfm_Type datasets
         h5_freqs = h5_chan['Bin_Frequencies']
-        h5_wfm = h5_chan['Bin_Wfm_Type']
-        aux_dset_names = ['Bin_Frequencies', 'Bin_Wfm_Type']
-        checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=[h5_freqs.ref, h5_wfm.ref])
+        # h5_wfm = h5_chan['Bin_Wfm_Type']
+        # aux_dset_names = ['Bin_Frequencies', 'Bin_Wfm_Type']
+        # aux_dset_refs = [h5_freqs.ref, h5_wfm.ref]
+        aux_dset_names = ['Bin_Frequencies']
+        aux_dset_refs = [h5_freqs.ref]
+        checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
 
         '''
         Get all SHO_Fit groups for the Raw_Data and loop over them

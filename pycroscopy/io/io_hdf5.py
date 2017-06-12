@@ -165,7 +165,7 @@ class ioHDF5(object):
 
         f = self.file
 
-        f.attrs['PySPM version']=version
+        f.attrs['Pycroscopy version'] = version
 
         # Checking if the data is an MicroDataGroup object
         if not isinstance(data, MicroDataGroup):
