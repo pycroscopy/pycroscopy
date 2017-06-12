@@ -105,7 +105,7 @@ class ImageWindow(object):
         win_step_y : int, optional
             step size, in pixels, to take between windows in the vertical direction
             Default 1
-        win_typ : str, optional
+        win_fft : str, optional
             What kind of fft should be stored with the windows.  Options are
             None - Only the window
             'abs' - Only the magnitude of the fft
