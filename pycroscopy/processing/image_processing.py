@@ -124,7 +124,7 @@ class ImageWindow(object):
         if win_fft == 'data' or win_fft is None:
             win_fft = 'data'
             win_type = windata32
-            win_func = lambda tmp_win: tmp_win
+            win_func = self.win_data_func
         if win_fft == 'abs':
             win_type = absfft32
             win_func = self.abs_fft_func
@@ -134,6 +134,11 @@ class ImageWindow(object):
         elif win_fft == 'data+complex':
             win_type = wincompfft32
             win_func = self.win_comp_fft_func
+        else:
+            warn('Invalid FFT option supplied.  Windowing will default to data only.')
+            win_fft = 'data'
+            win_type = windata32
+            win_func = self.win_data_func
 
         '''
         If a window size has not been specified, obtain a guess value from 
@@ -426,6 +431,26 @@ class ImageWindow(object):
         ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
 
         return ds_pix_inds, ds_pix_vals, ds_pos_inds, ds_pos_vals, win_pos_mat
+
+    @staticmethod
+    def win_data_func(image):
+        """
+        Returns the input image in the `windata32` format
+
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array the image in the windata32 format
+        """
+        windows = np.empty_like(image, dtype=windata32)
+        windows['Image Data'] = image
+
+        return windows
 
     @staticmethod
     def abs_fft_func(image):
