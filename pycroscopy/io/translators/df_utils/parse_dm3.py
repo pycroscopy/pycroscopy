@@ -1,8 +1,16 @@
+from __future__ import division, print_function, absolute_import
 import struct
 import array
-import StringIO
 import logging
 import re
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
+    unicode = str
+except:
+    raise
+
 # mfm 2013-05-21 do we need the numpy array stuff? The python array module
 # allows us to store arrays easily and efficiently. How do we deal
 # with arrays of complex data? We could use numpy arrays with custom dtypes
@@ -23,7 +31,7 @@ verbose = False
 treat_as_string_names = ['.*Name']
 
 def get_from_file(f, stype):
-    #print "reading", stype, "size", struct.calcsize(stype)
+    # print("reading", stype, "size", struct.calcsize(stype))
     src = f.read(struct.calcsize(stype))
     assert(len(src) == struct.calcsize(stype))
     d = struct.unpack(stype, src)
@@ -103,7 +111,7 @@ def parse_dm_header(f, outdata=None):
         start = f.tell()
         ret = parse_dm_tag_root(f, outdata)
         end = f.tell()
-        # print "fs", file_size, end - start, (end-start)%8
+        # print("fs", file_size, end - start, (end-start)%8)
         # mfm 2013-07-11 the file_size value is not always
         # end-start, sometimes there seems to be an extra 4 bytes,
         # other times not. Let's just ignore it for the moment
@@ -120,28 +128,28 @@ def parse_dm_tag_root(f, outdata=None):
         put_into_file(f, "> b b l", is_dict, _open, num_tags)
         if not is_dict:
             if verbose:
-                print "list:", outdata
+                print("list:", outdata)
             for subdata in outdata:
                 parse_dm_tag_entry(f, subdata, None)
         else:
             if verbose:
-                print "dict:", outdata
+                print("dict:", outdata)
             for key in outdata:
                 if verbose:
-                    print "Writing", key, outdata[key]
+                    print("Writing", key, outdata[key])
                 assert(key is not None)
                 parse_dm_tag_entry(f, outdata[key], key)
     else:
         is_dict, _open, num_tags = get_from_file(f, "> b b l")
         if verbose:
-            print "New tag root", is_dict, _open, num_tags
+            print("New tag root", is_dict, _open, num_tags)
         if is_dict:
             new_obj = {}
             for i in range(num_tags):
                 name, data = parse_dm_tag_entry(f)
                 assert(name is not None)
                 if verbose:
-                    print "Read name", name, "at", f.tell()
+                    print("Read name", name, "at", f.tell())
                 new_obj[name] = data
         else:
             new_obj = []
@@ -149,7 +157,7 @@ def parse_dm_tag_root(f, outdata=None):
                 name, data = parse_dm_tag_entry(f)
                 assert(name is None)
                 if verbose:
-                    print "appending...", i, "at", f.tell()
+                    print("appending...", i, "at", f.tell())
                 new_obj.append(data)
 
         return new_obj
@@ -206,7 +214,7 @@ def parse_dm_tag_data(f, outdata=None):
         # ie can all numbers be doubles or ints, and we have lists
         _, data_type = get_structdmtypes_for_python_typeorobject(outdata)
         if verbose:
-            print "treating {} as {}".format(outdata, data_type)
+            print("treating {} as {}".format(outdata, data_type))
         if not data_type:
             raise Exception("Unsupported type: {}".format(type(outdata)))
         _delim = "%%%%"
@@ -233,7 +241,7 @@ dm_simple_names = {
     2: ("short", "h", []),
     3: ("long", "i", [int]),
     4: ("ushort", "H", []),
-    5: ("ulong", "I", [long]),
+    5: ("ulong", "I", [int]),
     6: ("float", "f", []),
     7: ("double", "d", [float]),
     8: ("bool", "b", [bool]),
@@ -248,10 +256,10 @@ dm_complex_names = {
 
 
 def get_dmtype_for_name(name):
-    for key, (_name, sc, types) in dm_simple_names.iteritems():
+    for key, (_name, sc, types) in dm_simple_names.items():
         if _name == name:
             return key
-    for key, _name in dm_complex_names.iteritems():
+    for key, _name in dm_complex_names.items():
         if _name == name:
             return key
     return 0
@@ -271,7 +279,7 @@ def get_structdmtypes_for_python_typeorobject(typeorobj):
     else:
         comparer = lambda test: isinstance(typeorobj, test)
 
-    for key, (name, sc, types) in dm_simple_names.iteritems():
+    for key, (name, sc, types) in dm_simple_names.items():
         for t in types:
             if comparer(t):
                 return sc, key
@@ -293,7 +301,7 @@ def get_structchar_for_dmtype(dm_type):
 
 
 def get_dmtype_for_structchar(struct_char):
-    for key, (name, sc, types) in dm_simple_names.iteritems():
+    for key, (name, sc, types) in dm_simple_names.items():
         if struct_char == sc:
             return key
     return -1
@@ -349,7 +357,7 @@ def dm_read_string(f, outdata=None):
         slen = get_from_file(f, ">L")
         raws = get_from_file(f, ">" + str(slen) + "s")
         if verbose:
-            print "Got String", unicode(raws, "utf_16_le"), "at", f.tell()
+            print("Got String", unicode(raws, "utf_16_le"), "at", f.tell())
         return unicode(raws, "utf_16_le"), header_size
 
 dm_types[get_dmtype_for_name('string')] = dm_read_string
@@ -400,7 +408,7 @@ def dm_read_struct(f, outdata=None):
     else:
         types, header = dm_read_struct_types(f)
         if verbose:
-            print "Found struct with types", types, "at", f.tell()
+            print("Found struct with types", types, "at", f.tell())
 
         ret = []
         for t in types:
@@ -453,8 +461,8 @@ def dm_read_array(f, outdata=None):
             types, struct_header = dm_read_struct_types(f)
             alen = get_from_file(f, "> L")
             if verbose:
-                print types
-                print "Array of structs! types %s, len %d" % (",".join(map(str, types)), alen), "at", f.tell()
+                print(types)
+                print("Array of structs! types %s, len %d" % (",".join(map(str, types)), alen), "at", f.tell())
             ret = structarray([get_structchar_for_dmtype(d) for d in types])
             ret.from_file(f, alen)
             return ret, array_header + struct_header
@@ -467,15 +475,15 @@ def dm_read_array(f, outdata=None):
             ret = array.array(struct_char)
             alen = get_from_file(f, "> L")
             if verbose:
-                print "Array type %d len %d struct %c size %d" % (
-                    dtype, alen, struct_char, struct.calcsize(struct_char)), "at", f.tell()
+                print("Array type %d len %d struct %c size %d" % (
+                    dtype, alen, struct_char, struct.calcsize(struct_char)), "at", f.tell())
             if alen:
                 # faster to read <1024f than <f 1024 times. probly
                 # stype = "<" + str(alen) + dm_simple_names[dtype][1]
                 # ret = get_from_file(f, stype)
                 read_array(f, ret, alen)
             if verbose:
-                print "Done Array type %d len %d" % (dtype, alen), "at", f.tell()
+                print("Done Array type %d len %d" % (dtype, alen), "at", f.tell())
             return ret, array_header
 
 dm_types[get_dmtype_for_name('array')] = dm_read_array

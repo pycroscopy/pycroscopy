@@ -3,6 +3,8 @@ Created on Jun 16, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
 """
+
+from __future__ import division, print_function, absolute_import
 import os
 from multiprocessing import cpu_count
 from warnings import warn
@@ -11,6 +13,7 @@ import numpy as np
 from scipy.optimize import leastsq
 from scipy.signal import blackman
 from sklearn.utils import gen_batches
+
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main, \
     check_for_old
 from ..io.io_hdf5 import ioHDF5
@@ -19,10 +22,18 @@ from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
 from .svd_utils import _get_component_slice
 
-windata32 = np.dtype([('Image Data', np.float32)])
-absfft32 = np.dtype([('FFT Magnitude', np.float32)])
-winabsfft32 = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
-wincompfft32 = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
+# windata32 = np.dtype([('Image Data', np.float32)])
+# absfft32 = np.dtype([('FFT Magnitude', np.float32)])
+# winabsfft32 = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
+# wincompfft32 = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
+windata32 = np.dtype({'names': ['Image Data'],
+                      'formats': [np.float32]})
+absfft32 = np.dtype({'names': ['FFT Magnitude'],
+                     'formats': [np.float32]})
+winabsfft32 = np.dtype({'names': ['Image Data', 'FFT Magnitude'],
+                        'formats': [np.float32, np.float32]})
+wincompfft32 = np.dtype({'names': ['Image Data', 'FFT Real', 'FFT Imag'],
+                         'formats': [np.float32, np.float32, np.float32]})
 
 class ImageWindow(object):
     """
@@ -94,7 +105,7 @@ class ImageWindow(object):
         win_step_y : int, optional
             step size, in pixels, to take between windows in the vertical direction
             Default 1
-        win_typ : str, optional
+        win_fft : str, optional
             What kind of fft should be stored with the windows.  Options are
             None - Only the window
             'abs' - Only the magnitude of the fft
@@ -113,7 +124,7 @@ class ImageWindow(object):
         if win_fft == 'data' or win_fft is None:
             win_fft = 'data'
             win_type = windata32
-            win_func = lambda tmp_win: tmp_win
+            win_func = self.win_data_func
         if win_fft == 'abs':
             win_type = absfft32
             win_func = self.abs_fft_func
@@ -123,6 +134,11 @@ class ImageWindow(object):
         elif win_fft == 'data+complex':
             win_type = wincompfft32
             win_func = self.win_comp_fft_func
+        else:
+            warn('Invalid FFT option supplied.  Windowing will default to data only.')
+            win_fft = 'data'
+            win_type = windata32
+            win_func = self.win_data_func
 
         '''
         If a window size has not been specified, obtain a guess value from 
@@ -157,7 +173,7 @@ class ImageWindow(object):
             free_mem = self.max_memory-image.size*image.itemsize
         else:
             free_mem = self.max_memory*2-image.size*image.itemsize
-        batch_size = free_mem/mem_per_win
+        batch_size = int(free_mem/mem_per_win)
         batch_slices = gen_batches(n_wins, batch_size)
 
         for ibatch, batch in enumerate(batch_slices):
@@ -415,6 +431,26 @@ class ImageWindow(object):
         ds_pix_vals.attrs['units'] = ['pixel', 'pixel']
 
         return ds_pix_inds, ds_pix_vals, ds_pos_inds, ds_pos_vals, win_pos_mat
+
+    @staticmethod
+    def win_data_func(image):
+        """
+        Returns the input image in the `windata32` format
+
+        Parameters
+        ----------
+        image : numpy.ndarray
+            Windowed image to take the FFT of
+
+        Returns
+        -------
+        windows : numpy.ndarray
+            Array the image in the windata32 format
+        """
+        windows = np.empty_like(image, dtype=windata32)
+        windows['Image Data'] = image
+
+        return windows
 
     @staticmethod
     def abs_fft_func(image):
@@ -993,7 +1029,7 @@ class ImageWindow(object):
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
             free_mem = self.max_memory/2-ds_V.size*ds_V.itemsize
-        batch_size = free_mem/mem_per_win
+        batch_size = int(free_mem/mem_per_win)
         if batch_size < 1:
             raise MemoryError('Not enough memory to perform Image Cleaning.')
         batch_slices = gen_batches(n_wins, batch_size)

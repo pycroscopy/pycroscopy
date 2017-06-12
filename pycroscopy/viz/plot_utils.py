@@ -6,7 +6,7 @@ Created on Thu May 05 13:29:12 2016
 """
 # TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
-from __future__ import division  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 
 import inspect
 from warnings import warn
@@ -437,7 +437,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
             for dataset, col_val in zip(datasets, line_colors):
                 axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind], color=col_val)
         if h5_pos is not None:
-            # print 'Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0])
+            # print('Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0]))
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)
         else:
             axes_lin[count].set_title(subtitles + ' ' + str(posn), fontsize=12)
@@ -1005,10 +1005,10 @@ def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full
         mode = 'Full'
 
     if mode == 'Full':
-        print 'Creating full dendrogram from clusters'
+        print('Creating full dendrogram from clusters')
         mode = None
     elif mode == 'Truncated':
-        print 'Creating truncated dendrogram from clusters.  Will stop at {}.'.format(last)
+        print('Creating truncated dendrogram from clusters.  Will stop at {}.'.format(last))
         mode = 'lastp'
     else:
         raise ValueError('Error: Unknown mode requested for plotting dendrograms. mode={}'.format(mode))
@@ -1127,8 +1127,8 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=No
 
     freq *= 1E-3  # to kHz
     fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-    # print mean_spectrogram.shape
-    # print freq.shape
+    # print(mean_spectrogram.shape)
+    # print(freq.shape)
     ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest', cmap=col_map,
                  extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
     ax[0].set_title('Amplitude')

@@ -4,19 +4,23 @@ Created on Feb 9, 2016
 @author: Chris Smith
 """
 
-import os
+from __future__ import division, print_function, absolute_import
+
 import json
+import os
 import zipfile
-import numpy as np
 from warnings import warn
+
+import numpy as np
 from skimage.measure import block_reduce
 from skimage.util import crop
+
+from .df_utils.io_image import unnest_parm_dicts, read_dm3
 from .translator import Translator
 from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
     get_position_slicing, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, getH5GroupRefs, calc_chunks, link_as_main
 from ..io_hdf5 import ioHDF5
-from ..io_image import unnest_parm_dicts
 from ..microdata import MicroDataGroup, MicroDataset
 
 

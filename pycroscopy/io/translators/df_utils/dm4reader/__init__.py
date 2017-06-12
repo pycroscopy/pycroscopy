@@ -2,8 +2,11 @@
 Created on Aug 7, 2015
 
 @author: James Anderson
+
+link: https://github.com/jamesra/dm4reader
 '''
 
+from __future__ import division, print_function, absolute_import
 import collections
 import struct
 import array 

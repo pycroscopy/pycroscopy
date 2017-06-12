@@ -5,23 +5,25 @@ Created on Tue Nov  3 15:24:12 2015
 @author: Suhas Somnath, Stephen Jesse
 """
 
-from __future__ import division  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 
 from os import path, listdir, remove
 from warnings import warn
+
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, createSpecVals, \
-    requires_conjugate
+from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
+    createSpecVals, requires_conjugate, nf32
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
-nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
-                 ('sub_band', np.float32)])
+# nf32 = np.dtype([('super_band', np.float32), ('inter_bin_band', np.float32),
+#                  ('sub_band', np.float32)])
+
 
 
 class BEodfTranslator(Translator):

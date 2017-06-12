@@ -1,9 +1,9 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Suhas Somnath, Numan Laanait
+@author: Suhas Somnath, Numan Laanait, Chris R. Smith
 """
 
-from __future__ import division
+from __future__ import division, print_function, absolute_import
 from warnings import warn
 import numpy as np
 from .model import Model
@@ -15,9 +15,12 @@ from ..io.microdata import MicroDataset, MicroDataGroup
 '''
 Custom dtype for the datasets created during fitting.
 '''
-sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
-                  ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
-                  ('R2 Criterion', np.float32)])
+# sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
+#                   ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
+#                   ('R2 Criterion', np.float32)])
+field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]', 'R2 Criterion']
+sho32 = np.dtype({'names': field_names,
+                  'formats': [np.float32 for name in field_names]})
 
 
 class BESHOmodel(Model):

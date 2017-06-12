@@ -5,6 +5,7 @@ Created on Mon Jan 23 11:13:22 2017
 @author: Suhas Somnath, Stephen Jesse
 """
 
+from __future__ import division, print_function, absolute_import
 import numpy as np
 from scipy.optimize import least_squares
 import itertools as itt
@@ -20,15 +21,18 @@ from ...io.io_utils import recommendCores, realToCompound
 from ...io.microdata import MicroDataset, MicroDataGroup
 from ...io.io_hdf5 import ioHDF5
 
-atom_dtype = np.dtype([('x', np.float32),
-                       ('y', np.float32),
-                       ('type', np.uint32)])
+# atom_dtype = np.dtype([('x', np.float32),
+#                        ('y', np.float32),
+#                        ('type', np.uint32)])
+atom_dtype = np.dtype({'names': ['x', 'y', 'type'],
+                       'formats': [np.float32, np.float32, np.float32]})
 
-atom_coeff_dtype = np.dtype([('Amplitude', np.float32),
-                             ('x', np.float32),
-                             ('y', np.float32),
-                             ('Sigma', np.float32)])
-
+# atom_coeff_dtype = np.dtype([('Amplitude', np.float32),
+#                              ('x', np.float32),
+#                              ('y', np.float32),
+#                              ('Sigma', np.float32)])
+atom_coeff_dtype = np.dtype({'names': ['Amplitude', 'x', 'y', 'Sigma'],
+                             'formats': [np.float32, np.float32, np.float32, np.float32]})
 
 def multi_gauss_surface_fit(coef_mat, s_mat):
     """

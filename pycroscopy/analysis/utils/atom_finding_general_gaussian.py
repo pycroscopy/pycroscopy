@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+@author: Ondrej Dyck
+"""
 
+from __future__ import division, print_function, absolute_import
 import os
 import numpy as np
 from scipy.optimize import least_squares
@@ -14,13 +18,11 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import sys
 
-sys.path.append('../../../')
-import pycroscopy
-from pycroscopy.io.io_utils import recommendCores, realToCompound
-from pycroscopy.io.microdata import MicroDataset, MicroDataGroup
-from pycroscopy.io.io_hdf5 import ioHDF5
-from pycroscopy.viz import plot_utils
-from pycroscopy.analysis.model import Model
+from ...io.io_utils import recommendCores, realToCompound
+from ...io.microdata import MicroDataset, MicroDataGroup
+from ...io.io_hdf5 import ioHDF5
+from ...viz import plot_utils
+from ..model import Model
 
 def do_fit(single_parm):
     parms = single_parm[0]
@@ -597,44 +599,44 @@ class Gauss_Fit(object):
             return self.motif_converged_dataset
 
 
-if __name__=='__main__':
-    file_name = "C:\Users\o2d\Documents\pycroscopy\\test_scripts\\testing_gauss_fit\image 04.h5"
-    folder_path, file_path = os.path.split(file_name)
-
-    file_base_name, file_extension = file_name.rsplit('.')
-    h5_file = h5py.File(file_name, mode='r+')
-    # look at the data tree in the h5
-    '''
-    # define a small function called 'print_tree' to look at the folder tree structure
-    def print_tree(parent):
-        print(parent.name)
-        if isinstance(parent, h5py.Group):
-            for child in parent:
-                print_tree(parent[child])
-    '''
-
-    #print('Datasets and datagroups within the file:')
-    file_handle = h5_file
-    #print_tree(file_handle)
-
-    cropped_clean_image = h5_file['/Measurement_000/Channel_000/Raw_Data-Windowing_000/Image_Windows-SVD_000/U-Cluster_000/Labels-Atom_Finding_000/Cropped_Clean_Image']
-    atom_grp = cropped_clean_image.parent
-    guess_params = atom_grp['Guess_Positions']
-
-    num_nearest_neighbors = 4
-    psf_width = atom_grp.attrs['psf_width']
-    win_size = atom_grp.attrs['motif_win_size']
-
-    fitting_parms = {'fit_region_size': win_size * 0.5,  # region to consider when fitting
-                     'num_nearest_neighbors': num_nearest_neighbors,
-                     'sigma_guess': 3, # starting guess for gaussian standard deviation
-                     'position_range': win_size / 4,# range that the fitted position can go from initial guess position[pixels]
-                     'max_function_evals': 100,
-                     'fitting_tolerance': 1E-4,
-                     'symmetric': True,
-                     'background': True,
-                     'movement_allowance': 5.0} # percent of movement allowed (on some parameters)
-
-    foo = Gauss_Fit(atom_grp, fitting_parms)
-
-
+# if __name__=='__main__':
+#     file_name = r"C:\Users\o2d\Documents\pycroscopy\\test_scripts\\testing_gauss_fit\image 04.h5"
+#     folder_path, file_path = os.path.split(file_name)
+#
+#     file_base_name, file_extension = file_name.rsplit('.')
+#     h5_file = h5py.File(file_name, mode='r+')
+#     # look at the data tree in the h5
+#     '''
+#     # define a small function called 'print_tree' to look at the folder tree structure
+#     def print_tree(parent):
+#         print(parent.name)
+#         if isinstance(parent, h5py.Group):
+#             for child in parent:
+#                 print_tree(parent[child])
+#     '''
+#
+#     #print('Datasets and datagroups within the file:')
+#     file_handle = h5_file
+#     #print_tree(file_handle)
+#
+#     cropped_clean_image = h5_file['/Measurement_000/Channel_000/Raw_Data-Windowing_000/Image_Windows-SVD_000/U-Cluster_000/Labels-Atom_Finding_000/Cropped_Clean_Image']
+#     atom_grp = cropped_clean_image.parent
+#     guess_params = atom_grp['Guess_Positions']
+#
+#     num_nearest_neighbors = 4
+#     psf_width = atom_grp.attrs['psf_width']
+#     win_size = atom_grp.attrs['motif_win_size']
+#
+#     fitting_parms = {'fit_region_size': win_size * 0.5,  # region to consider when fitting
+#                      'num_nearest_neighbors': num_nearest_neighbors,
+#                      'sigma_guess': 3, # starting guess for gaussian standard deviation
+#                      'position_range': win_size / 4,# range that the fitted position can go from initial guess position[pixels]
+#                      'max_function_evals': 100,
+#                      'fitting_tolerance': 1E-4,
+#                      'symmetric': True,
+#                      'background': True,
+#                      'movement_allowance': 5.0} # percent of movement allowed (on some parameters)
+#
+#     foo = Gauss_Fit(atom_grp, fitting_parms)
+#
+#

@@ -4,13 +4,15 @@ Created on Sat Nov 07 15:21:46 2015
 
 @author: Suhas Somnath
 """
-from __future__ import division, print_function  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 
 from os import path, listdir, remove
 from warnings import warn
+
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
-from .be_utils import parmsToDict
+
+from .df_utils.be_utils import parmsToDict
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs
@@ -194,7 +196,7 @@ class GLineTranslator(Translator):
         targ_str = 'bigtime_0'
         for filenames in listdir(folder_path):
             ind = filenames.find(targ_str)
-            if ind > 0:
+            if ind > 0 and filenames.endswith('.dat'):
                 data_paths[int(filenames[ind+len(targ_str)])] = path.join(folder_path, filenames)
         
             if filenames.endswith('.txt') and filenames.find('parm') > 0:

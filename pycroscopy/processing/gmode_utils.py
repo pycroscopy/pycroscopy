@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 """
 Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath
 """
 
+from __future__ import division, print_function, absolute_import
 import itertools
 from multiprocessing import Pool, cpu_count
 from warnings import warn

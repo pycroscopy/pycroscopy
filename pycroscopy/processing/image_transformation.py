@@ -5,6 +5,7 @@ Created on Tue Oct  6 15:34:12 2015
 @author: Numan Laanait -- nlaanait@gmail.com
 """
 
+from __future__ import division, print_function, absolute_import
 import math
 from skimage.feature import match_descriptors, register_translation
 from skimage.measure import ransac

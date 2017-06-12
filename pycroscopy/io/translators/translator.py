@@ -5,7 +5,7 @@ Created on Tue Nov  3 15:07:16 2015
 @author: Suhas Somnath
 """
 
-from __future__ import division
+from __future__ import division, print_function, absolute_import
 
 import abc
 from os import path, remove

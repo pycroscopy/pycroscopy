@@ -5,12 +5,14 @@ Created on Mon Mar 28 09:45:08 2016
 @author: Suhas Somnath, Chris Smith
 """
 
+from __future__ import division, print_function, absolute_import
 import time
 from warnings import warn
 from multiprocessing import cpu_count
 import numpy as np
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
+
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, create_empty_dataset, \
     getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes, copyAttributes
 from ..io.io_hdf5 import ioHDF5
@@ -62,14 +64,14 @@ def doSVD(h5_main, num_comps=None):
     C.Smith -- We might need to put a lower limit on num_comps in the future.  I don't
                know enough about svd to be sure.
     '''
-    print 'Performing SVD decomposition'
+    print('Performing SVD decomposition')
 
 
     U, S, V = randomized_svd(func(h5_main), num_comps, n_iter=3)
 
     svd_type = 'sklearn-randomized'
 
-    print 'SVD took {} seconds.  Writing results to file.'.format((time.time() - t1))
+    print('SVD took {} seconds.  Writing results to file.'.format((time.time() - t1)))
 
     '''
     Create datasets for V and S, deleting original arrays afterward to save
@@ -249,7 +251,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
 
     # Ensuring that at least one core is available for use / 2 cores are available for other use
     max_cores = max(1, cpu_count() - 2)
-    #         print 'max_cores',max_cores
+    #         print('max_cores',max_cores)
     if cores is not None:
         cores = min(round(abs(cores)), max_cores)
     else:

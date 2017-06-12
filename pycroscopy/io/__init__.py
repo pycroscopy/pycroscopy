@@ -1,14 +1,13 @@
-from . import hdf_utils
 from . import be_hdf_utils
+from . import hdf_utils
 from . import io_hdf5
-from .io_hdf5 import ioHDF5
 from . import io_utils
-from .io_utils import *
 from . import microdata
-from .microdata import MicroDataset, MicroDataGroup
 from . import translators
+from .io_hdf5 import ioHDF5
+from .io_utils import *
+from .microdata import MicroDataset, MicroDataGroup
 from .translators import *
-from . import dm4reader
 
 __all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'be_hdf_utils', 'hdf_utils', 'io_utils', 'microdata']
-__all__+= translators.__all__
+__all__ += translators.__all__

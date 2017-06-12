@@ -3,6 +3,7 @@ Created on Thu Oct  8 10:40:43 2015
 @author: Numan Laanait -- nlaanait@gmail.com
 """
 
+from __future__ import division, print_function, absolute_import
 import math
 import warnings
 
@@ -13,7 +14,7 @@ from skimage.measure import ransac
 from skimage.transform import warp, SimilarityTransform
 
 
-#TODO: Docstrings following numpy standard.
+# TODO: Docstrings following numpy standard.
 
 # Functions
 def euclidMatch(Matches, keypts1, keypts2, misalign):

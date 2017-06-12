@@ -5,7 +5,7 @@ Created on Wed Dec 07 16:04:34 2016
 @author: Suhas Somnath
 """
 
-from __future__ import print_function, division  # int/int = float
+from __future__ import division, print_function, absolute_import  # int/int = float
 from os import path, remove  # File Path formatting
 import numpy as np  # For array operations
 
@@ -64,10 +64,10 @@ class IgorIBWTranslator(Translator):
             images = images.transpose(2, 0, 1)  # now ordered as [chan, Y, X] image
             images = np.reshape(images, (images.shape[0], -1, 1))  # 3D [chan, Y*X points,1]
 
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
-                                                         steps=[1.0 * parm_dict['SlowScanSize'] / num_rows,
-                                                                1.0 * parm_dict['FastScanSize'] / num_cols],
-                                                         labels=['Y', 'X'], units=['m', 'm'], verbose=verbose)
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
+                                                         steps=[1.0 * parm_dict['FastScanSize'] / num_cols,
+                                                                1.0 * parm_dict['SlowScanSize'] / num_rows],
+                                                         labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
 
             ds_spec_inds, ds_spec_vals = build_ind_val_dsets([1], is_spectral=True, steps=[1],
                                                              labels=['arb'], units=['a.u.'], verbose=verbose)

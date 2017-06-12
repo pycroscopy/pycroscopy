@@ -5,7 +5,9 @@ Created on Tue Oct  6 15:34:12 2015
 @author: Numan Laanait -- nlaanait@gmail.com
 """
 
+from __future__ import division, print_function, absolute_import
 import warnings
+import multiprocessing as mp
 
 import h5py
 import numpy as np
@@ -147,7 +149,7 @@ class FeatureExtractorParallel(object):
 
         # start pool of workers
         print('launching %i kernels...' % (processes))
-        pool = multiProcess.Pool(processes)
+        pool = mp.Pool(processes)
         tasks = [(imp) for imp in self.data]
         chunk = int(self.data.shape[0] / processes)
         jobs = pool.imap(detect, tasks, chunksize=chunk)

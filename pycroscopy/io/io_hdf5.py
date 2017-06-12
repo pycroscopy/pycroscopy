@@ -5,6 +5,8 @@ Main Class in charge of writing/reading to/from hdf5 file.
 @author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
+# cannot import unicode_literals since it is not compatible with h5py just yet
+from __future__ import division, print_function, absolute_import
 import os
 import subprocess
 import sys
@@ -17,6 +19,8 @@ import numpy as np
 from .microdata import MicroDataGroup
 from ..__version__ import version
 
+if sys.version_info.major == 3:
+    unicode = str
 
 class ioHDF5(object):
 
@@ -35,20 +39,27 @@ class ioHDF5(object):
         """
         if type(file_handle) in [str, unicode]:
             # file handle is actually a file path
-            propfaid = h5py.h5p.create(h5py.h5p.FILE_ACCESS)
-            if cachemult != 1:
-                settings = list(propfaid.get_cache())
-                settings[2] *= cachemult
-                propfaid.set_cache(*settings)
+            # propfaid = h5py.h5p.create(h5py.h5p.FILE_ACCESS)
+            # if cachemult != 1:
+            #     settings = list(propfaid.get_cache())
+            #     settings[2] *= cachemult
+            #     propfaid.set_cache(*settings)
+            # try:
+            #     fid = h5py.h5f.open(file_handle, fapl=propfaid)
+            #     self.file = h5py.File(fid, mode = 'r+')
+            # except IOError:
+            #     #print('Unable to open file %s. \n Making a new one! \n' %(filename))
+            #     fid = h5py.h5f.create(file_handle, fapl=propfaid)
+            #     self.file = h5py.File(fid, mode = 'w')
+            # except:
+            #     raise
             try:
-                fid = h5py.h5f.open(file_handle,fapl=propfaid)
-                self.file = h5py.File(fid, mode = 'r+')
+                self.file = h5py.File(file_handle, 'r+')
             except IOError:
-                #print('Unable to open file %s. \n Making a new one! \n' %(filename))
-                fid = h5py.h5f.create(file_handle,fapl=propfaid)
-                self.file = h5py.File(fid, mode = 'w')
+                self.file = h5py.File(file_handle, 'w')
             except:
                 raise
+            
             self.path = file_handle
         elif type(file_handle) == h5py.File:
             # file handle is actually an open hdf file
@@ -154,7 +165,7 @@ class ioHDF5(object):
 
         f = self.file
 
-        f.attrs['PySPM version']=version
+        f.attrs['Pycroscopy version'] = version
 
         # Checking if the data is an MicroDataGroup object
         if not isinstance(data, MicroDataGroup):
@@ -164,7 +175,7 @@ class ioHDF5(object):
         # Figuring out if the first item in AFMData tree is file or group
         if data.name is '' and data.parent is '/':
             # For file we just write the attributes
-            for key, val in data.attrs.iteritems():
+            for key, val in data.attrs.items():
                 f.attrs[key] = val
             if print_log:
                 print('Wrote attributes of file {} \n'.format(f.name))
@@ -194,7 +205,7 @@ class ioHDF5(object):
                 f.flush()
                 f.close()
                 raise
-            for key, val in data.attrs.iteritems():
+            for key, val in data.attrs.items():
                 if val is None:
                     continue
                 g.attrs[key] = val
@@ -225,7 +236,7 @@ class ioHDF5(object):
                     f.flush()
                     f.close()
                     raise
-                for key, val in child.attrs.iteritems():
+                for key, val in child.attrs.items():
                     if val is None:
                         continue
                     itm.attrs[key] = val
@@ -286,7 +297,7 @@ class ioHDF5(object):
                         raise
 
                 if print_log: print('Created Dataset {}'.format(itm.name))
-                for key in child.attrs.iterkeys():
+                for key, val in child.attrs.items():
                     # print('Found some region references')
                     # writing region reference
                     if key is 'labels':
@@ -298,8 +309,8 @@ class ioHDF5(object):
                         First ascertain the dimension of the slicing:
                         '''
                         found_dim = False
-                        for dimen, slobj in enumerate(labels[labels.keys()[0]]):
-                            # We make the assumption that checking the start is sufficient 
+                        for dimen, slobj in enumerate(list(labels.values())[0]):
+                            # We make the assumption that checking the start is sufficient
                             if slobj.start != None:
                                 found_dim = True
                                 break
@@ -314,7 +325,7 @@ class ioHDF5(object):
 
                         if print_log: print('Wrote Region References of Dataset %s' %(itm.name.split('/')[-1]))
                     else:
-                        itm.attrs[key] = child.attrs[key]
+                        itm.attrs[key] = child.attrs[key] 
                         if print_log: print('Wrote Attributes of Dataset %s \n' %(itm.name.split('/')[-1]))
                         # Make a dictionary of references
             refList.append(itm)
@@ -346,7 +357,7 @@ class ioHDF5(object):
             Whether or not to print status messages
         """
         if print_log: print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
-        for sl in slices.iterkeys():
+        for sl in slices.keys():
             if print_log:
                 print('About to write region reference:', sl, ':', slices[sl])
             if len(slices[sl]) == len(dataset.shape):

@@ -3,6 +3,7 @@ Created on 12/15/16 10:08 AM
 @author: Numan Laanait
 """
 
+from __future__ import division, print_function, absolute_import
 from warnings import warn
 import numpy as np
 import sys

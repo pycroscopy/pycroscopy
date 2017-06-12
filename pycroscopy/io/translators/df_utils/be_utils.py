@@ -5,6 +5,7 @@ Created on Tue Jan 05 07:55:56 2016
 @author: Suhas Somnath, Chris Smith, Rama K. Vasudevan
 """
 
+from __future__ import division, print_function, absolute_import
 from os import path
 from warnings import warn
 
@@ -13,14 +14,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from ..be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from ..hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5
-from ..io_utils import getAvailableMem, recommendCores
-from ..microdata import MicroDataset, MicroDataGroup
-from ...analysis.optimize import Optimize
-from ...processing.proc_utils import buildHistogram
-from ...viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
+from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
+from ...io_hdf5 import ioHDF5
+from ...io_utils import getAvailableMem, recommendCores
+from ...microdata import MicroDataset, MicroDataGroup
+from ....analysis.optimize import Optimize
+from ....processing.proc_utils import buildHistogram
+from ....viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+
+
+nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
+                 'formats': [np.float32, np.float32, np.float32]})
 
 
 def parmsToDict(filepath, parms_to_remove=[]):
@@ -288,8 +293,8 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
         scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**2))/(2*np.exp(1j*3*np.pi*0.5))
     elif harmonic == 3:
         scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**3))/(4*np.exp(1j*np.pi))
-    elif harmonic>=4:
-        print "Warning these high harmonics are not supported in translator."
+    elif harmonic >= 4:
+        print("Warning these high harmonics are not supported in translator.")
  
     # Generate transfer functions
     F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave/scaling_factor, [spectrogram_mat.shape[1], 1]))
@@ -865,14 +870,14 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         if field_type == 'out-of-field':
             field = 1
-            numsteps = numsteps/2
-            numcyclesteps = numcyclesteps/2
+            numsteps = int(numsteps/2)
+            numcyclesteps = int(numcyclesteps/2)
             swapfield = [1,1]
             field_names = ['out-of-field']
         elif field_type == 'in-field':
             field = 0
-            numsteps = numsteps/2
-            numcyclesteps = numcyclesteps/2
+            numsteps = int(numsteps/2)
+            numcyclesteps = int(numcyclesteps/2)
             swapfield = [0,0]
             field_names = ['in-field']
         elif field_type == 'in and out-of-field':
@@ -1287,7 +1292,7 @@ class BEHistogram():
                     max_resp = []
                     min_resp = []
 
-                print 'Creating BEHistogram for Plot Group {}'.format(p_group.name)
+                print('Creating BEHistogram for Plot Group {}'.format(p_group.name))
                 udvs_lab = p_group.attrs['Name']
                 udvs_col = h5_udvs[im][h5_udvs[im].attrs[udvs_lab]]
                 actual_udvs_steps = np.where(np.isnan(udvs_col)==False)[0]
@@ -1337,7 +1342,7 @@ class BEHistogram():
         """
 
         free_mem = getAvailableMem()
-        if debug: print 'We have {} bytes of memory available'.format(free_mem)
+        if debug: print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb*1024**2,0.75*free_mem)
 
         """
@@ -1372,17 +1377,17 @@ class BEHistogram():
 
         self.N_bins = np.size(freqs_mat)
         self.N_freqs = np.size(np.unique(freqs_mat))
-        # print 'There are {} total frequencies in this dataset'.format(self.N_bins)
+        # print('There are {} total frequencies in this dataset'.format(self.N_bins))
         del freqs_mat, spec_ind_mat
 
         self.N_pixels = np.shape(h5_main)[1]
-        # print 'There are {} pixels in this dataset'.format(self.N_pixels)
+        # print('There are {} pixels in this dataset'.format(self.N_pixels))
 
         self.N_y_bins = np.int(np.min( (max_bins, np.rint(np.sqrt(self.N_pixels*self.N_spectral_steps)))))
 #         self.N_y_bins = np.min( (max_bins, np.rint(2*(self.N_pixels*self.N_spectral_steps)**(1.0/3.0))))
-        # print '{} bins will be used'.format(self.N_y_bins)
+        # print('{} bins will be used'.format(self.N_y_bins))
 
-        ds_hist = self.__datasetHist(h5_main, active_udvs_steps, x_hist,debug)
+        ds_hist = self.__datasetHist(h5_main, active_udvs_steps, x_hist, debug)
 
         return ds_hist
 
@@ -1557,9 +1562,9 @@ class BEHistogram():
         loop over pixels
         """
         for ichunk in range(len(pix_chunks)-1):
-            if debug: print 'pixel chunk',ichunk
+            if debug: print('pixel chunk', ichunk)
 
-            chunk = range(pix_chunks[ichunk],pix_chunks[ichunk+1])
+            chunk = range(pix_chunks[ichunk], pix_chunks[ichunk+1])
 
             """
         Loop over active UDVS steps
