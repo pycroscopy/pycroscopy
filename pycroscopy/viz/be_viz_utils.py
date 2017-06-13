@@ -13,7 +13,7 @@ import ipywidgets as widgets
 from IPython.display import display
 
 from .plot_utils import plot_loops, plot_map_stack, cmap_jet_white_center, plot_map
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality
+from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr
 from ..analysis.utils.be_loop import loop_fit_function
 
 
@@ -357,13 +357,13 @@ def jupyter_visualize_be_spectrograms(h5_main):
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    pos_labels = np.array(h5_pos_inds.attrs['labels'])[pos_sort]
+    pos_labels = np.array(get_attr(h5_pos_inds, 'labels'))[pos_sort]
 
     h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
     h5_spec_inds = getAuxData(h5_main, auxDataName='Spectroscopic_Indices')[-1]
     spec_sort = get_sort_order(h5_spec_inds)
     spec_dims = get_dimensionality(h5_spec_inds, spec_sort)
-    spec_labels = np.array(h5_spec_inds.attrs['labels'])[spec_sort]
+    spec_labels = np.array(get_attr(h5_spec_inds, 'labels'))[spec_sort]
 
     ifreq = int(np.argwhere(spec_labels == 'Frequency'))
     freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
@@ -410,11 +410,11 @@ def jupyter_visualize_be_spectrograms(h5_main):
             spatial_img.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
             spec_heading = ''
-            for dim_ind, dim_name in enumerate(h5_spec_vals.attrs['labels']):
+            for dim_ind, dim_name in enumerate(spec_labels):
                 spec_heading += dim_name + ': ' + str(h5_spec_vals[dim_ind, kwargs['spectroscopic']]) + ', '
             axes[0].set_title(spec_heading[:-2])
 
-            pos_dim_vals = range(len(pos_labels))
+            pos_dim_vals = list(range(len(pos_labels)))
             for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
                 pos_dim_vals[pos_dim_ind] = kwargs[pos_dim_name]
 
@@ -434,7 +434,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
             pos_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
         pos_dict['spectroscopic'] = (0, h5_main.shape[1] - 1, 1)
 
-        widgets.interact(index_unpacker, **pos_dict);
+        widgets.interact(index_unpacker, **pos_dict)
     else:
         def plot_spectrogram(data, freq_vals):
             fig, axes = plt.subplots(ncols=2, figsize=(9, 5), sharey=True)

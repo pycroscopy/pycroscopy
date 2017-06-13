@@ -516,7 +516,7 @@ class BELoopModel(Model):
         # Step 1: Find number of FORC cycles (if any), DC steps, and number of loops
         # dc_offset_index = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'DC_Offset').squeeze()
         num_dc_steps = np.unique(self._sho_spec_inds[self._dc_spec_index, :]).size
-        all_spec_dims = range(self._sho_spec_inds.shape[0])
+        all_spec_dims = list(range(self._sho_spec_inds.shape[0]))
         all_spec_dims.remove(self._dc_spec_index)
         self._num_forcs = 1
         if 'FORC' in get_attr(self._sho_spec_inds, 'labels'):
@@ -594,10 +594,10 @@ class BELoopModel(Model):
         # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
 
         # step 5: Move the voltage dimension to the first dim
-        order_dc_outside_nd = [self._dc_offset_index] + range(self._dc_offset_index) + \
-                               range(self._dc_offset_index + 1, len(fit_nd.shape))
-        order_dc_offset_reverse = range(1, self._dc_offset_index + 1) + [0] + range(self._dc_offset_index + 1,
-                                                                                    len(fit_nd.shape))
+        order_dc_outside_nd = [self._dc_offset_index] + list(range(self._dc_offset_index)) + \
+                              list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
+        order_dc_offset_reverse = list(range(1, self._dc_offset_index + 1)) + [0] + \
+                                  list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
         fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
