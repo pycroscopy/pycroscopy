@@ -404,7 +404,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         plot_grp.attrs['Name'] = col_name
         plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
         
-        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=False)
+        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
         
         h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
