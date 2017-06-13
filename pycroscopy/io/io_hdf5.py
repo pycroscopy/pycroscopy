@@ -192,12 +192,15 @@ class ioHDF5(object):
                 the suffix index to be appended automatically. Here, we check to
                 ensure that the chosen index is new.
                 '''
-                previous = np.where([data.name in key for key in h5_file[data.parent].keys()])[0]
+                previous = list()
+                for key in h5_file[data.parent].keys():
+                    if data.name in key:
+                        previous.append(key)
                 if len(previous) == 0:
                     index = 0
                 else:
                     # assuming that the last element of previous contains the highest index
-                    last = h5_file[data.parent].keys()[previous[-1]]
+                    last = h5_file[data.parent][previous[-1]].name
                     index = int(last.split('_')[-1])+1
                 data.name += '{:03d}'.format(index)
             try:
