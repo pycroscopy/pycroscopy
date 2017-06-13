@@ -1569,12 +1569,12 @@ class BEHistogram():
         Loop over active UDVS steps
             """
             for iudvs in range(self.num_udvs_steps):
-                selected = (iudvs+chunk[0]*self.num_udvs_steps)%np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
+                selected = (iudvs+chunk[0]*self.num_udvs_steps) % np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
                 if selected:
                     per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))
                     print('Binning BEHistogram...{}% --pixels {}-{}, step # {}'.format(per_done,chunk[0],chunk[-1],iudvs))
                 udvs_step = active_udvs_steps[iudvs]
-                if debug: print('udvs step',udvs_step)
+                if debug: print('udvs step', udvs_step)
 
                 """
         Get the correct Spectroscopic bins for the current UDVS step
