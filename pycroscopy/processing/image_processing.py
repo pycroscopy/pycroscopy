@@ -125,7 +125,7 @@ class ImageWindow(object):
             win_fft = 'data'
             win_type = windata32
             win_func = self.win_data_func
-        if win_fft == 'abs':
+        elif win_fft == 'abs':
             win_type = absfft32
             win_func = self.abs_fft_func
         elif win_fft == 'data+abs':
