@@ -306,7 +306,8 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     
 def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[], 
                        max_mem_mb=1024, spec_label='None', ignore_plot_groups=[], 
-                       show_plots=True, save_plots=True, do_histogram=False):
+                       show_plots=True, save_plots=True, do_histogram=False,
+                       debug=False):
     """
     Generates the spatially averaged datasets for the given raw dataset. 
     The averaged datasets are necessary for quick visualization of the quality of data. 
@@ -436,7 +437,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             hist = BEHistogram()
             hist_mat, hist_labels, hist_indices, hist_indices_labels = \
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
-                                        min_response=min_resp, max_mem_mb=max_mem_mb)
+                                        min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
             ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
                                    chunking=(1, hist_mat.shape[1]),compression='gzip')
             hist_slice_dict = dict()
@@ -1583,14 +1584,14 @@ class BEHistogram():
                 udvs_bins = np.where(x_hist[1] == udvs_step)[0]
                 if debug:
                     print(np.shape(x_hist))
-                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk+1],(udvs_bins)]
+                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk+1], (udvs_bins)]
 
                 """
         Get the frequecies that correspond to the current UDVS bins from the total x_hist
                 """
                 this_x_hist = np.take(x_hist[0], udvs_bins)
                 this_x_hist = this_x_hist-this_x_hist[0]
-                this_x_hist = np.transpose(np.tile(this_x_hist,(1,pix_chunks[ichunk+1]-pix_chunks[ichunk])))
+                this_x_hist = np.transpose(np.tile(this_x_hist, (1, pix_chunks[ichunk+1]-pix_chunks[ichunk])))
                 this_x_hist = np.squeeze(this_x_hist)
 
                 N_x_bins = np.shape(this_x_hist)[0]
@@ -1614,7 +1615,7 @@ class BEHistogram():
                 """
         Get the Histograms and store in correct place in ds_hist
                 """
-                for ifunc,func in enumerate(func_list):
+                for ifunc, func in enumerate(func_list):
                     chunk_hist = buildHistogram(this_x_hist,
                                                 data_mat,
                                                 N_x_bins,
