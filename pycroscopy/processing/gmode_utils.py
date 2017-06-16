@@ -7,6 +7,7 @@ Created on Thu May 05 13:29:12 2016
 
 from __future__ import division, print_function, absolute_import
 import itertools
+from collections import Iterable
 from multiprocessing import Pool, cpu_count
 from warnings import warn
 import matplotlib.pyplot as plt
@@ -26,7 +27,7 @@ from ..io.translators.utils import build_ind_val_dsets
 
 
 def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_plots=True,
-                excit_wfm=None, central_resp_size=None):
+                excit_wfm=None, central_resp_size=None, verbose=False):
     """
     Filters the provided response with the provided filters. Use this only to test filters.
     This function does not care about the file structure etc.
@@ -46,7 +47,9 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     excit_wfm : (Optional) 1D numpy float array
         Excitation waveform in the time domain. This waveform is necessary for plotting loops. 
     central_resp_size : (Optional) unsigned int
-        Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC 
+        Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC
+    verbose : (Optional) string
+        Whether or not to print statements
     
     Returns
     -------
@@ -73,7 +76,6 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
         Number of pixels to filter simultaneously
 
     """
-    
     num_pts = len(resp_wfm)
     
     show_loops = excit_wfm is not None and show_plots
@@ -81,19 +83,28 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     '''
     Get parameters from the dictionary.
     '''
-    noise_band_filter = filter_parms.get('band_file_[Hz]', 1)
-    if type(noise_band_filter) in [list, np.ndarray]:
+    noise_band_filter = filter_parms.get('band_filt_[Hz]', 1)
+    if isinstance(noise_band_filter, Iterable):
         noise_band_filter = noiseBandFilter(num_pts, samp_rate, noise_band_filter[0],
                                             noise_band_filter[1])
+        if verbose and isinstance(noise_band_filter, Iterable):
+            print('Calculated valid noise_band_filter')
 
-    low_pass_filter = filter_parms.get('LPF_cutOff_[Hz]', 1)
+    low_pass_filter = filter_parms.get('LPF_cutOff_[Hz]', -1)
     if low_pass_filter > 0:
         low_pass_filter = makeLPF(num_pts, samp_rate, low_pass_filter)
+        if verbose and isinstance(low_pass_filter, Iterable):
+            print('Calculated valid low pass filter')
+    else:
+        low_pass_filter = 1
+
 
     harmonic_filter = filter_parms.get('comb_[Hz]', 1)
-    if type(harmonic_filter) in [list, np.ndarray]:
+    if isinstance(harmonic_filter, Iterable):
         harmonic_filter = harmonicsPassFilter(num_pts, samp_rate, harmonic_filter[0],
                                               harmonic_filter[1], harmonic_filter[2])
+        if verbose and isinstance(harmonic_filter, Iterable):
+            print('Calculated valid harmonic filter')
 
     composite_filter = noise_band_filter * low_pass_filter * harmonic_filter
 
@@ -104,7 +115,10 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
 
     if show_plots:       
         l_ind = int(0.5*num_pts)
-        r_ind = max(np.where(composite_filter > 0)[0])
+        if type(composite_filter) == np.ndarray:
+            r_ind = np.max(np.where(composite_filter > 0)[0])
+        else:
+            r_ind = num_pts
         w_vec = np.linspace(-0.5*samp_rate, 0.5*samp_rate, num_pts)*1E-3
         if central_resp_size:
             sz = int(0.5*central_resp_size)
@@ -130,7 +144,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     if show_plots:
         amp = np.abs(fft_pix_data)
         ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind])
-        ax_raw.semilogy(w_vec[l_ind:r_ind], (composite_filter[l_ind:r_ind] + min(amp))*(max(amp)-min(amp)))
+        ax_raw.semilogy(w_vec[l_ind:r_ind], (composite_filter[l_ind:r_ind] + np.min(amp))*(np.max(amp)-np.min(amp)))
         if noise_floor is not None:
             ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind-l_ind)*noise_floor)
         ax_raw.set_title('Raw Signal')
@@ -292,7 +306,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     harmonic_filter = 1
 
     if 'band_filt_[Hz]' in filter_parms:
-        if type(filter_parms['band_filt_[Hz]']) in [list, np.ndarray]:
+        if isinstance(filter_parms['band_filt_[Hz]'], Iterable):
             band_filt = filter_parms['band_filt_[Hz]']
             noise_band_filter = noiseBandFilter(num_pts, filter_parms['samp_rate_[Hz]'], band_filt[0], band_filt[1])
     if 'LPF_cutOff_[Hz]' in filter_parms:
@@ -300,7 +314,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
             low_pass_filter = makeLPF(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['LPF_cutOff_[Hz]'])
 
     if 'comb_[Hz]' in filter_parms:
-        if type(filter_parms['comb_[Hz]']) in [list, np.ndarray]:
+        if isinstance(filter_parms['comb_[Hz]'], Iterable):
             harmonic_filter = harmonicsPassFilter(num_pts, filter_parms['samp_rate_[Hz]'], filter_parms['comb_[Hz]'][0],
                                                   filter_parms['comb_[Hz]'][1], filter_parms['comb_[Hz]'][2])
 
