@@ -334,7 +334,7 @@ class BEodfTranslator(Translator):
         generatePlotGroups(self.h5_raw, self.hdf, self.mean_resp, folder_path, basename,
                            self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
                            spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
-                           do_histogram=do_histogram)
+                           do_histogram=do_histogram, debug=verbose)
         
         self.hdf.close()
         

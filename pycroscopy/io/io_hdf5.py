@@ -179,8 +179,6 @@ class ioHDF5(object):
             # For file we just write the attributes
 
             for key, val in data.attrs.items():
-                if print_log:
-                    print('Writing attribute: {} with value: {}'.format(key, val))
                 h5_file.attrs[key] = self.clean_string_att(val)
             if print_log:
                 print('Wrote attributes of file {} \n'.format(h5_file.name))
@@ -192,12 +190,15 @@ class ioHDF5(object):
                 the suffix index to be appended automatically. Here, we check to
                 ensure that the chosen index is new.
                 '''
-                previous = np.where([data.name in key for key in h5_file[data.parent].keys()])[0]
+                previous = list()
+                for key in h5_file[data.parent].keys():
+                    if data.name in key:
+                        previous.append(key)
                 if len(previous) == 0:
                     index = 0
                 else:
                     # assuming that the last element of previous contains the highest index
-                    last = h5_file[data.parent].keys()[previous[-1]]
+                    last = h5_file[data.parent][previous[-1]].name
                     index = int(last.split('_')[-1])+1
                 data.name += '{:03d}'.format(index)
             try:
@@ -215,8 +216,6 @@ class ioHDF5(object):
             for key, val in data.attrs.items():
                 if val is None:
                     continue
-                if print_log:
-                    print('Writing attribute: {} with value: {}'.format(key, val))
                 g.attrs[key] = self.clean_string_att(val)
             if print_log:
                 print('Wrote attributes to group: {} \n'.format(data.name))
@@ -251,8 +250,6 @@ class ioHDF5(object):
                 for key, val in child.attrs.items():
                     if val is None:
                         continue
-                    if print_log:
-                        print('Writing attribute: {} with value: {}'.format(key, val))
                     itm.attrs[key] = self.clean_string_att(val)
                 if print_log:
                     print('Wrote attributes to group {}\n'.format(itm.name))
@@ -335,8 +332,6 @@ class ioHDF5(object):
                             for col_name in labels.keys():
                                 headers[labels[col_name][dimen].start] = col_name
                             # Now write the list of col / row names as an attribute:
-                            if print_log:
-                                print('Writing header attributes: {}'.format(key))
                             itm.attrs[key] = self.clean_string_att(headers)
                         else:
                             warn('Unable to write region labels for %s' % (itm.name.split('/')[-1]))
@@ -344,8 +339,6 @@ class ioHDF5(object):
                         if print_log:
                             print('Wrote Region References of Dataset %s' % (itm.name.split('/')[-1]))
                     else:
-                        if print_log:
-                            print('Writing attribute: {} with value: {}'.format(key, val))
                         itm.attrs[key] = self.clean_string_att(child.attrs[key])
                         if print_log:
                             print('Wrote Attributes of Dataset %s \n' % (itm.name.split('/')[-1]))
@@ -366,8 +359,8 @@ class ioHDF5(object):
     @staticmethod
     def clean_string_att(att_val):
         """
-        Replaces any unicode / binary string objects within lists with their string counterparts to ensure compatibility
-        with python 3.
+        Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
+        If the attribute is indeed a list of unicodes, the changes will be made in-place
 
         Parameters
         ----------
@@ -379,16 +372,10 @@ class ioHDF5(object):
         att_val : object
             Attribute object
         """
-        try:
-            if type(att_val) == list:
-                if np.any([type(x) in [str, bytes] for x in att_val]):
-                    return np.array(att_val, dtype='S')
-            if type(att_val) == np.str_:
-                return str(att_val)
-            return att_val
-        except TypeError:
-            warn('Failed to clean: {}'.format(att_val))
-            raise
+        if type(att_val) == list:
+            if np.any([type(x) in [str, bytes] for x in att_val]):
+                return np.array(att_val, dtype='S')
+        return att_val
 
     @staticmethod
     def write_region_references(dataset, slices, print_log=False):

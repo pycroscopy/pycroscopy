@@ -7,7 +7,7 @@ Created on Mar 1, 2016
 from __future__ import division, print_function, absolute_import
 import numpy as np
 # Numpy groupies not importing at all in python 3
-# from numpy_groupies import aggregate_np
+from numpy_groupies import aggregate_np
 
 def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
                    debug=False, *args, **kwargs):
@@ -50,7 +50,7 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
     Get the min_resp and max_resp from y_hist if they are none
     '''
     if min_resp is None:
-        min_resp = np.minb(y_hist)
+        min_resp = np.min(y_hist)
     if max_resp is None:
         max_resp = np.max(y_hist)
     if debug: print('min_resp', min_resp, 'max_resp', max_resp)
@@ -81,8 +81,8 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
 
     try:
         # TODO: Fix import for numpy_groupies in python 3
-        # pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size=(N_x_bins, N_y_bins), dtype=np.int32)
-        pixel_hist = group_idx
+        pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size=(N_x_bins, N_y_bins), dtype=np.int32)
+        # pixel_hist = group_idx
     except:
         raise
 
@@ -106,8 +106,8 @@ def __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug=False):
     y_hist numpy.ndarray
     """
     y_hist = y_hist.flatten()
-    y_hist = np.clip(y_hist, min_resp, max_resp, y_hist)
-    y_hist = np.add(y_hist, min_resp)
+    y_hist = np.clip(y_hist, min_resp, max_resp)
+    y_hist = np.add(y_hist, -min_resp)
     y_hist = np.dot(y_hist, 1.0/(max_resp - min_resp))
     '''
     Descritize y_hist
