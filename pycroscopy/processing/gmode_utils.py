@@ -6,6 +6,7 @@ Created on Thu May 05 13:29:12 2016
 """
 
 from __future__ import division, print_function, absolute_import
+import sys
 import itertools
 from collections import Iterable
 from multiprocessing import Pool, cpu_count
@@ -517,7 +518,11 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
         cond_data = np.zeros(shape=(num_sets, parm_dict['hot_inds'].size), dtype=np.complex64)
         
     # Set up single parameter:
-    sing_parm = itertools.izip(raw_data, itertools.repeat(parm_dict))
+    if sys.version_info.major == 3:
+        zip_fun = zip
+    else:
+        zip_fun = itertools.izip
+    sing_parm = zip_fun(raw_data, itertools.repeat(parm_dict))
     
     # Setup parallel processing:
     # num_cores = 10
@@ -533,11 +538,12 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
     
     # Extract data for each line...
     print_set = np.linspace(0, num_sets-1, 10, dtype=int)
-    for set_ind in range(num_sets):
+    for set_ind, current_results in enumerate(parallel_results):
         if set_ind in print_set:
             print('Reading...', np.rint(100 * set_ind / num_sets), '% complete')
-        
-        (temp_noise, filt_data_set, cond_data_set) = parallel_results.next()
+
+        temp_noise, filt_data_set, cond_data_set = current_results
+
         if noise_thresh is not None:
             noise_floors[set_ind] = temp_noise
         if parm_dict['hot_inds'] is not None:
@@ -755,6 +761,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     resh_grp.addChildren([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
 
     hdf = ioHDF5(h5_main.file)
+    print('Starting to reshape G-mode line data. Please be patient')
     h5_refs = hdf.writeData(resh_grp)
 
     h5_resh = getH5DsetRefs(['Reshaped_Data'], h5_refs)[0]
