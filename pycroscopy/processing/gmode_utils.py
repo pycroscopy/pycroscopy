@@ -22,6 +22,7 @@ from ..viz.plot_utils import rainbow_plot
 from ..io.translators.utils import build_ind_val_dsets
 
 # TODO: Use filter_parms as a kwargs instead of a required input
+# TODO: Phase rotation not implemented correctly. Find and use excitation frequency
 
 ###############################################################################
 
@@ -233,7 +234,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
         # Multiply this memory requirement per pixel by the number of cores
         bytes_per_pix *= num_cores
         
-        max_pix = np.rint(max_RAM_gb*1024**3 / bytes_per_pix)
+        max_pix = int(np.rint(max_RAM_gb*1024**3 / bytes_per_pix))
         max_pix = max(1, min(h5_raw.shape[0], max_pix))
         print('Allowed to read', max_pix, 'of', h5_raw.shape[0], 'pixels')
         return np.uint(max_pix)
@@ -509,7 +510,7 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
 
     filt_data = None
     if not parm_dict['rot_pts']:
-        filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
+        filt_data = np.zeros(shape=(num_sets*pix_per_set, int(pts_per_set/pix_per_set)), dtype=raw_data.dtype)
 
     cond_data = None
     if parm_dict['hot_inds'] is not None:
@@ -586,7 +587,7 @@ def filter_chunk_serial(raw_data, parm_dict):
 
     filt_data = None
     if parm_dict['rot_pts'] is not None:
-        filt_data = np.zeros(shape=(num_sets*pix_per_set, pts_per_set/pix_per_set), dtype=raw_data.dtype)
+        filt_data = np.zeros(shape=(num_sets*pix_per_set, int(pts_per_set/pix_per_set)), dtype=raw_data.dtype)
 
     cond_data = None
     if parm_dict['hot_inds'] is not None:
