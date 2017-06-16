@@ -103,7 +103,7 @@ def downSample(fft_vec, freq_ratio):
         downsampled waveform
     """
     if freq_ratio >= 1:
-        print('Error at downSample: New sampling rate > old sampling rate')
+        warn('Error at downSample: New sampling rate > old sampling rate')
         return fft_vec
 
     vec_len = len(fft_vec)
@@ -215,8 +215,8 @@ def makeLPF(num_pts, samp_rate, f_cutoff, roll_off=0.05):
     cent = int(round(0.5 * num_pts))
 
     if f_cutoff >= 0.5 * samp_rate:
-        print('Error in LPFClip --> LPF too high! Skipping')
-        return
+        warn('Error in LPFClip --> LPF too high! Skipping')
+        return 1
 
     # BW = 0.1; %MHz - Nothing beyond BW.
     roll_off *= f_cutoff  # MHz
@@ -290,7 +290,8 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
     # First harmonic
     ind = int(round(num_pts * (first_freq / samp_rate)))
     if ind >= num_pts:
-        return None
+        warn('Invalid harmonic frequency')
+        return 1
 
     harm_filter[max(cent - ind + sz + 1, 0):min(num_pts, cent + ind - sz)] = 0
 
