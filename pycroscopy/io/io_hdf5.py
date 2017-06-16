@@ -10,6 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 import subprocess
 import sys
+from collections import Iterable
 from time import time, sleep
 from warnings import warn
 
@@ -216,6 +217,8 @@ class ioHDF5(object):
             for key, val in data.attrs.items():
                 if val is None:
                     continue
+                if print_log:
+                    print('Writing attribute: {} with value: {}'.format(key, val))
                 g.attrs[key] = self.clean_string_att(val)
             if print_log:
                 print('Wrote attributes to group: {} \n'.format(data.name))
@@ -250,6 +253,8 @@ class ioHDF5(object):
                 for key, val in child.attrs.items():
                     if val is None:
                         continue
+                    if print_log:
+                        print('Writing attribute: {} with value: {}'.format(key, val))
                     itm.attrs[key] = self.clean_string_att(val)
                 if print_log:
                     print('Wrote attributes to group {}\n'.format(itm.name))
@@ -331,6 +336,8 @@ class ioHDF5(object):
                             headers = [None]*len(labels)  # The list that will hold all the names
                             for col_name in labels.keys():
                                 headers[labels[col_name][dimen].start] = col_name
+                            if print_log:
+                                print('Writing header attributes: {}'.format(key))
                             # Now write the list of col / row names as an attribute:
                             itm.attrs[key] = self.clean_string_att(headers)
                         else:
@@ -339,6 +346,8 @@ class ioHDF5(object):
                         if print_log:
                             print('Wrote Region References of Dataset %s' % (itm.name.split('/')[-1]))
                     else:
+                        if print_log:
+                            print('Writing attribute: {} with value: {}'.format(key, val))
                         itm.attrs[key] = self.clean_string_att(child.attrs[key])
                         if print_log:
                             print('Wrote Attributes of Dataset %s \n' % (itm.name.split('/')[-1]))
@@ -372,10 +381,16 @@ class ioHDF5(object):
         att_val : object
             Attribute object
         """
-        if type(att_val) == list:
-            if np.any([type(x) in [str, bytes] for x in att_val]):
-                return np.array(att_val, dtype='S')
-        return att_val
+        try:
+            if isinstance(att_val, Iterable):
+                if np.any([type(x) in [str, bytes] for x in att_val]):
+                    return np.array(att_val, dtype='S')
+            if type(att_val) == np.str_:
+                return str(att_val)
+            return att_val
+        except TypeError:
+            warn('Failed to clean: {}'.format(att_val))
+            raise
 
     @staticmethod
     def write_region_references(dataset, slices, print_log=False):
