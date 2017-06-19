@@ -17,7 +17,7 @@ def no_impl(*args,**kwargs):
                               "Switching to the serial version. ")
 
 from .feature_extraction import FeatureExtractorParallel, FeatureExtractorSerial
-from .geometric_transformation import geoTransformerParallel, geoTransformerSerial
+from .image_transformation import geoTransformerParallel, geoTransformerSerial
 
 FeatureExtractor = FeatureExtractorSerial
 geoTransformer = geoTransformerSerial

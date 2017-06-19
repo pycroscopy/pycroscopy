@@ -5,7 +5,7 @@ Created on Fri Mar 04 11:12:45 2016
 @author: Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import  # int/int = float
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 from os import path, remove  # File Path formatting
 
@@ -135,8 +135,8 @@ class GDMTranslator(Translator):
 
         # Now read the raw data files:
         pos_ind = 0
-        for row_ind in xrange(1,num_rows+1):
-            for col_ind in xrange(1,num_cols+1):
+        for row_ind in range(1,num_rows+1):
+            for col_ind in range(1,num_cols+1):
                 file_path = path.join(folder_path,'fSweep_r'+str(row_ind)+'_c'+str(col_ind)+'.mat')
                 print('Working on row {} col {}'.format(row_ind,col_ind))
                 if path.exists(file_path):

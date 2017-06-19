@@ -66,12 +66,11 @@ def doSVD(h5_main, num_comps=None):
     '''
     print('Performing SVD decomposition')
 
-
     U, S, V = randomized_svd(func(h5_main), num_comps, n_iter=3)
 
     svd_type = 'sklearn-randomized'
 
-    print('SVD took {} seconds.  Writing results to file.'.format((time.time() - t1)))
+    print('SVD took {} seconds.  Writing results to file.'.format(round(time.time() - t1, 2)))
 
     '''
     Create datasets for V and S, deleting original arrays afterward to save
@@ -139,7 +138,7 @@ def doSVD(h5_main, num_comps=None):
 
     # copy attributes
     copy_main_attributes(h5_main, h5_V)
-    h5_V.attrs['units'] = ['a. u.']
+    h5_V.attrs['units'] = np.array(['a. u.'], dtype='S')
 
     del ds_S, ds_V, ds_U, svd_grp
 
@@ -165,11 +164,11 @@ def doSVD(h5_main, num_comps=None):
     Check h5_main for plot group references.
     Copy them into V if they exist
     '''
-    for key, ref in h5_main.attrs.iteritems():
+    for key in h5_main.attrs.keys():
         if '_Plot_Group' not in key:
             continue
 
-        ref_inds = getH5RegRefIndices(ref, h5_main, return_method='corners')
+        ref_inds = getH5RegRefIndices(h5_main.attrs[key], h5_main, return_method='corners')
         ref_inds = ref_inds.reshape([-1, 2, 2])
         ref_inds[:, 1, 0] = h5_V.shape[0] - 1
 

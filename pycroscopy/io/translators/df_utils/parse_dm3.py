@@ -1,7 +1,7 @@
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 import struct
 import array
-import logging
+import warnings
 import re
 try:
     import StringIO
@@ -291,7 +291,7 @@ def get_structdmtypes_for_python_typeorobject(typeorobj):
         return None, get_dmtype_for_name('struct')
     elif comparer(structarray):
         return None, get_dmtype_for_name('array')
-    logging.warn("No appropriate DMType found for %s, %s", typeorobj, type(typeorobj))
+    warnings.warn("No appropriate DMType found for %s, %s", typeorobj, type(typeorobj))
     return None
 
 
@@ -441,7 +441,7 @@ def dm_read_array(f, outdata=None):
             write_array(f, outdata)
             return array_header
         else:
-            logging.warn("Unsupported type for conversion to array:%s", outdata)
+            warnings.warn("Unsupported type for conversion to array:%s", outdata)
 
     else:
         # supports arrays of structs and arrays of types,

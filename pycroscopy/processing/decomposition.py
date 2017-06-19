@@ -156,8 +156,8 @@ class Decomposition(object):
         Get the parameters of the estimator used and write them
         as attributes of the group
         '''
-        for parm, val in self.estimator.get_params().iteritems():
-            decomp_grp.attrs[parm] = val
+        for parm in self.estimator.get_params().keys():
+            decomp_grp.attrs[parm] = self.estimator.get_params()[parm]
 
         hdf = ioHDF5(self.h5_main.file)
         h5_decomp_refs = hdf.writeData(decomp_grp)

@@ -5,7 +5,7 @@ Created on Thursday May 26 11:23:00 2016
 @author:  Rama Vasudevan, Suhas Somnath
 """
 
-from __future__ import division, print_function, absolute_import  # int/int = float
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 from os import path, remove  # File Path formatting
 from warnings import warn
@@ -220,7 +220,7 @@ class BEodfRelaxationTranslator(Translator):
         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix,tot_bins), dtype=np.complex64, chunking=(chunking,chunking*bins_per_step), compression='gzip')
         
         chan_grp = MicroDataGroup('Channel_')
-        chan_grp.attrs['Channel_Input'] = curr_parm_dict['IO_Analog_Input_1']      
+        chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
         chan_grp.addChildren([ds_main_data, ds_noise_floor])
         chan_grp.addChildren([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
                               ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,ds_wfm_typ,ds_spec_vals_mat])

@@ -7,7 +7,7 @@ Created on Wed Jun 29 11:13:22 2016
 Various helper functions for aiding loop fitting and projection
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -605,7 +605,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
     """Find the coordinates of the points where the vertical line through the
     centroid intersects with the convex hull"""
     y_intersections = []
-    for pair in xrange(outline_1.shape[0]):
+    for pair in range(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                 [geom_centroid[0], hull.min_bound[1]],
                                 [geom_centroid[0], hull.max_bound[1]])
@@ -617,7 +617,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
     centroid intersects with the convex hull
     '''
     x_intersections = []
-    for pair in xrange(outline_1.shape[0]):
+    for pair in range(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                 [hull.min_bound[0], geom_centroid[1]],
                                 [hull.max_bound[0], geom_centroid[1]])

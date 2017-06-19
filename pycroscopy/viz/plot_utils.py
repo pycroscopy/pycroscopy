@@ -6,11 +6,11 @@ Created on Thu May 05 13:29:12 2016
 """
 # TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
-from __future__ import division, print_function, absolute_import  # int/int = float
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 import inspect
 from warnings import warn
-
+import sys
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
@@ -645,7 +645,13 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     Set defaults for kwargs to the figure creation and extract any non-default values from current kwargs
     '''
     figkwargs = dict()
-    for key in inspect.getargspec(plt.figure).args:
+
+    if sys.version_info.major == 3:
+        inspec_func = inspect.getfullargspec
+    else:
+        inspec_func = inspect.getargspec
+
+    for key in inspec_func(plt.figure).args:
         if key in kwargs:
             figkwargs.update({key: kwargs.pop(key)})
 
@@ -662,7 +668,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                 'share_all': False,
                 'aspect': True,
                 'label_mode': 'L'}
-    for key in igkwargs.iterkeys():
+    for key in igkwargs.keys():
         if key in kwargs:
             igkwargs.update({key: kwargs.pop(key)})
 

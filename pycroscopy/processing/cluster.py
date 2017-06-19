@@ -247,8 +247,8 @@ class Cluster(object):
         Get the parameters of the estimator used and write them
         as attributes of the group
         '''
-        for parm, val in self.estimator.get_params().iteritems():
-            cluster_grp.attrs[parm] = val
+        for parm in self.estimator.get_params().keys():
+            cluster_grp.attrs[parm] = self.estimator.get_params()[parm]
 
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)

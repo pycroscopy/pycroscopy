@@ -5,7 +5,7 @@ Created on Tue Jan 05 07:55:56 2016
 @author: Suhas Somnath, Chris Smith, Rama K. Vasudevan
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 from os import path
 from warnings import warn
 
@@ -15,7 +15,7 @@ import numpy as np
 import xlrd as xlreader
 
 from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs
+from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr
 from ...io_hdf5 import ioHDF5
 from ...io_utils import getAvailableMem, recommendCores
 from ...microdata import MicroDataset, MicroDataGroup
@@ -306,7 +306,8 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     
 def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[], 
                        max_mem_mb=1024, spec_label='None', ignore_plot_groups=[], 
-                       show_plots=True, save_plots=True, do_histogram=False):
+                       show_plots=True, save_plots=True, do_histogram=False,
+                       debug=False):
     """
     Generates the spatially averaged datasets for the given raw dataset. 
     The averaged datasets are necessary for quick visualization of the quality of data. 
@@ -362,7 +363,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         return
     
     # Removing the standard columns
-    col_names = UDVS.attrs['labels'][5:]
+    col_names = get_attr(UDVS, 'labels')[5:]
 
 #     col_names = [col for col in col_names if col not in std_cols + ignore_plot_groups]
     
@@ -403,7 +404,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         plot_grp.attrs['Name'] = col_name
         plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
         
-        h5_plt_grp_refs = hdf.writeData(plot_grp)
+        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
         
         h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
@@ -436,7 +437,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             hist = BEHistogram()
             hist_mat, hist_labels, hist_indices, hist_indices_labels = \
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
-                                        min_response=min_resp, max_mem_mb=max_mem_mb)
+                                        min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
             ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
                                    chunking=(1, hist_mat.shape[1]),compression='gzip')
             hist_slice_dict = dict()
@@ -779,8 +780,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                                    
             return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
                              parm_dict, udvs_labs, iSpecVals, udvs_units)
-            
-    
+
     def __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
         """
         Calculates Spectroscopic Values for BEPS data in DC modulation mode
@@ -801,7 +801,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         hascycles = False
         hasFORCS = False
         
-        print('inshape',np.shape(inSpecVals))
+        # print('in shape:',np.shape(inSpecVals))
         """
         All DC datasets will need Spectroscopic Value fields for Bin, DC, and Field
         
@@ -1570,12 +1570,12 @@ class BEHistogram():
         Loop over active UDVS steps
             """
             for iudvs in range(self.num_udvs_steps):
-                selected = (iudvs+chunk[0]*self.num_udvs_steps)%np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
+                selected = (iudvs+chunk[0]*self.num_udvs_steps) % np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
                 if selected:
                     per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))
                     print('Binning BEHistogram...{}% --pixels {}-{}, step # {}'.format(per_done,chunk[0],chunk[-1],iudvs))
                 udvs_step = active_udvs_steps[iudvs]
-                if debug: print('udvs step',udvs_step)
+                if debug: print('udvs step', udvs_step)
 
                 """
         Get the correct Spectroscopic bins for the current UDVS step
@@ -1584,14 +1584,14 @@ class BEHistogram():
                 udvs_bins = np.where(x_hist[1] == udvs_step)[0]
                 if debug:
                     print(np.shape(x_hist))
-                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk+1],(udvs_bins)]
+                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk+1], (udvs_bins)]
 
                 """
         Get the frequecies that correspond to the current UDVS bins from the total x_hist
                 """
                 this_x_hist = np.take(x_hist[0], udvs_bins)
                 this_x_hist = this_x_hist-this_x_hist[0]
-                this_x_hist = np.transpose(np.tile(this_x_hist,(1,pix_chunks[ichunk+1]-pix_chunks[ichunk])))
+                this_x_hist = np.transpose(np.tile(this_x_hist, (1, pix_chunks[ichunk+1]-pix_chunks[ichunk])))
                 this_x_hist = np.squeeze(this_x_hist)
 
                 N_x_bins = np.shape(this_x_hist)[0]
@@ -1615,7 +1615,7 @@ class BEHistogram():
                 """
         Get the Histograms and store in correct place in ds_hist
                 """
-                for ifunc,func in enumerate(func_list):
+                for ifunc, func in enumerate(func_list):
                     chunk_hist = buildHistogram(this_x_hist,
                                                 data_mat,
                                                 N_x_bins,

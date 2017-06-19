@@ -3,7 +3,7 @@ Created on 10/5/16 3:44 PM
 @author: Numan Laanait -- nlaanait@gmail.com
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 
 import numpy as np

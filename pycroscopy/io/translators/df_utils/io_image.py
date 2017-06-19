@@ -4,7 +4,7 @@ Created on Nov 8, 2016
 @author: Chris Smith -- csmith55@utk.edu
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 import array
 import os
@@ -93,7 +93,8 @@ def unnest_parm_dicts(image_parms, prefix=''):
 
     """
     new_parms = dict()
-    for name, val in image_parms.iteritems():
+    for name in image_parms.keys():
+        val = image_parms[name]
         # print 'name',name,'val',val
         name = '-'.join([prefix]+name.split()).strip('-')
         if isinstance(val, dict):

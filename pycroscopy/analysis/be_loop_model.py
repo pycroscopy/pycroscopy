@@ -6,7 +6,7 @@ Created on Thu Aug 25 11:48:53 2016
 
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 
 from warnings import warn
 
@@ -23,7 +23,8 @@ from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
 from ..io.io_utils import realToCompound, compound_to_scalar
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
-    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec
+    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
+    get_attr
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 '''
@@ -158,7 +159,7 @@ class BELoopModel(Model):
         '''
         Find the Spectroscopic index for the DC_Offset
         '''
-        dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').squeeze()
+        dc_ind = np.argwhere(get_attr(self._sho_spec_vals, 'labels') == 'DC_Offset').squeeze()
         self._dc_spec_index = dc_ind
         self._dc_offset_index = 1 + dc_ind
 
@@ -436,8 +437,8 @@ class BELoopModel(Model):
         self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
         self._sho_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
 
-        dc_ind = np.argwhere(self._sho_spec_vals.attrs['labels'] == 'DC_Offset').squeeze()
-        not_dc = self._sho_spec_vals.attrs['labels'] != 'DC_Offset'
+        dc_ind = np.argwhere(get_attr(self._sho_spec_vals, 'labels') == 'DC_Offset').squeeze()
+        not_dc = get_attr(self._sho_spec_vals, 'labels') != 'DC_Offset'
 
         self._dc_spec_index = dc_ind
         self._dc_offset_index = 1 + dc_ind
@@ -515,11 +516,11 @@ class BELoopModel(Model):
         # Step 1: Find number of FORC cycles (if any), DC steps, and number of loops
         # dc_offset_index = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'DC_Offset').squeeze()
         num_dc_steps = np.unique(self._sho_spec_inds[self._dc_spec_index, :]).size
-        all_spec_dims = range(self._sho_spec_inds.shape[0])
+        all_spec_dims = list(range(self._sho_spec_inds.shape[0]))
         all_spec_dims.remove(self._dc_spec_index)
         self._num_forcs = 1
-        if 'FORC' in self._sho_spec_inds.attrs['labels']:
-            forc_pos = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'FORC')[0][0]
+        if 'FORC' in get_attr(self._sho_spec_inds, 'labels'):
+            forc_pos = np.argwhere(get_attr(self._sho_spec_inds.attrs, 'labels') == 'FORC')[0][0]
             self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
             all_spec_dims.remove(forc_pos)
         # calculate number of loops:
@@ -546,7 +547,7 @@ class BELoopModel(Model):
         self._met_all_but_forc_inds = range(self._met_spec_inds.shape[0])
         if self._num_forcs > 1:
             self._sho_all_but_forc_inds.remove(forc_pos)
-            met_forc_pos = np.argwhere(self._met_spec_inds.attrs['labels'] == 'FORC')[0][0]
+            met_forc_pos = np.argwhere(get_attr(self._met_spec_inds, 'labels') == 'FORC')[0][0]
             self._met_all_but_forc_inds.remove(met_forc_pos)
 
         return
@@ -580,7 +581,7 @@ class BELoopModel(Model):
                                            h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
                                                                        self._current_sho_spec_slice])
         dim_names_orig = np.hstack(('Positions',
-                                    self._sho_spec_inds.attrs['labels'][self._sho_all_but_forc_inds]))
+                                    get_attr(self._sho_spec_inds, 'labels')[self._sho_all_but_forc_inds]))
 
         if not success:
             warn('Error - could not reshape provided raw data chunk...')
@@ -593,10 +594,10 @@ class BELoopModel(Model):
         # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
 
         # step 5: Move the voltage dimension to the first dim
-        order_dc_outside_nd = [self._dc_offset_index] + range(self._dc_offset_index) + \
-                               range(self._dc_offset_index + 1, len(fit_nd.shape))
-        order_dc_offset_reverse = range(1, self._dc_offset_index + 1) + [0] + range(self._dc_offset_index + 1,
-                                                                                    len(fit_nd.shape))
+        order_dc_outside_nd = [self._dc_offset_index] + list(range(self._dc_offset_index)) + \
+                              list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
+        order_dc_offset_reverse = list(range(1, self._dc_offset_index + 1)) + [0] + \
+                                  list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
         fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
@@ -726,7 +727,7 @@ class BELoopModel(Model):
                                   [-1] + spec_dims[::-1])
         # This should result in a N+1 dimensional matrix where the first index contains the actual data
         # the other dimensions are present to easily slice the data
-        spec_labels_sorted = np.hstack(('Dim', self._sho_spec_inds.attrs['labels'][spec_sort[::-1]]))
+        spec_labels_sorted = np.hstack(('Dim', get_attr(self._sho_spec_inds, 'labels')[spec_sort[::-1]]))
         if verbose:
             print('Spectroscopic dimensions sorted by rate of change:')
             print(spec_labels_sorted)

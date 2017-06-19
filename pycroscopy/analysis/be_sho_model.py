@@ -3,13 +3,13 @@ Created on 7/17/16 10:08 AM
 @author: Suhas Somnath, Numan Laanait, Chris R. Smith
 """
 
-from __future__ import division, print_function, absolute_import
+from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 import numpy as np
 from .model import Model
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
-            copyAttributes
+            copyAttributes, get_attr
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 '''
@@ -72,7 +72,7 @@ class BESHOmodel(Model):
                                 maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
 
-        not_freq = h5_spec_inds.attrs['labels'] != 'Frequency'
+        not_freq = get_attr(h5_spec_inds, 'labels') != 'Frequency'
 
         ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
@@ -150,7 +150,7 @@ class BESHOmodel(Model):
         
         """
         h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        freq_dim = np.argwhere(h5_spec_vals.attrs['labels'] == 'Frequency').squeeze()
+        freq_dim = np.argwhere(get_attr(h5_spec_vals, 'labels') == 'Frequency').squeeze()
 
         if len(self.step_start_inds) == 1:  # BE-Line
             end_ind = h5_spec_vals.shape[1]
@@ -168,15 +168,23 @@ class BESHOmodel(Model):
         verbose : Boolean (optional. default = False)
             Whether or not to print debug statements
         """
+
+        """
+        # The model class should take care of all the basic reading
+        super(BESHOmodel, self)._get_data_chunk(verbose=verbose)
+        """
+
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
+            if verbose:
+                print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
             self._start_pos = self._end_pos
         else:
-            print('Finished reading all data!')
+            if verbose:
+                print('Finished reading all data!')
             self.data = None
 
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
