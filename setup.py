@@ -37,7 +37,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',
-        'Topic :: Scientific / Engineering :: Information Analysis',
+        'Topic :: Scientific/Engineering :: Information Analysis',
         ],
     keywords='scientific microscopy data analysis',
     packages=find_packages(exclude='tests'),
