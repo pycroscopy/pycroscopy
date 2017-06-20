@@ -1380,6 +1380,8 @@ def patch_be_lv_format(h5_path):
     for _, h5_raw in raw_list:
         # Grab the channel and measurement group of the data to check some needed attributes
         h5_chan = h5_raw.parent
+        if get_attr(h5_chan, 'channel_type') != 'BE':
+            continue
         h5_meas = h5_chan.parent
         h5_meas.attrs['num_UDVS_steps'] = h5_meas.attrs['num_steps']
 
