@@ -16,7 +16,7 @@ from .microdata import MicroDataset
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'get_attribute', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree']
+           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -39,6 +39,39 @@ def print_tree(parent):
 
     print(parent.name)
     parent.visititems(__print)
+
+
+def get_all_main(parent, verbose=False):
+    """
+    Simple function to recursively print the contents of an hdf5 group
+    Parameters
+    ----------
+    parent : h5py.Group
+        HDF5 Group to search within
+    verbose : bool
+        If true, extra print statements are enabled
+
+    Returns
+    -------
+    None
+
+    """
+    main_list = list()
+
+    def __check(name, obj):
+        if verbose: print(name, obj)
+        if isinstance(obj, h5py.Dataset):
+            if verbose: print(name, 'is an HDF5 Dataset.')
+            ismain = checkIfMain(obj)
+            if ismain:
+                if verbose: print(name, 'is a `Main` dataset.')
+                main_list.append(obj)
+
+    if verbose: print('Checking the group {} for `Main` datasets.'.format(parent.name))
+    parent.visititems(__check)
+
+    return main_list
+
 
 def getDataSet(h5_parent, data_name):
     """
