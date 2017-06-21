@@ -229,27 +229,27 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
     # sho_spec_sort = get_sort_order(h5_sho_spec_inds)
     sho_spec_dims = np.array(spec_nd.shape[1:])
-    sho_spec_labels = h5_sho_spec_inds.attrs['labels']
+    sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
 
     h5_pos_inds = getAuxData(h5_sho_dset, auxDataName='Position_Indices')[-1]
     pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
-    pos_labels = h5_pos_inds.attrs['labels']
+    pos_labels = get_attr(h5_pos_inds, 'labels')
 
     # reshape to X, Y, step, all others
     spec_step_dim_ind = np.where(sho_spec_labels == step_chan)[0][0]
     step_dim_ind = len(pos_dims) + spec_step_dim_ind
 
     # move the step dimension to be the first after all position dimensions
-    rest_sho_dim_order = range(len(pos_dims), len(guess_3d_data.shape))
+    rest_sho_dim_order = list(range(len(pos_dims), len(guess_3d_data.shape)))
     rest_sho_dim_order.remove(step_dim_ind)
-    new_order = range(len(pos_dims)) + [step_dim_ind] + rest_sho_dim_order
+    new_order = list(range(len(pos_dims))) + [step_dim_ind] + rest_sho_dim_order
 
     # Transpose the 3D dataset to this shape:
     sho_guess_Nd_1 = np.transpose(guess_3d_data, new_order)
 
     # Now move the step dimension to the front for the spec labels as well
-    new_spec_order = range(len(sho_spec_labels))
+    new_spec_order = list(range(len(sho_spec_labels)))
     new_spec_order.remove(spec_step_dim_ind)
     new_spec_order = [spec_step_dim_ind] + new_spec_order
 
@@ -340,7 +340,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Bias Step'] = (0, bias_mat.shape[0] - 1, 1)
 
-    widgets.interact(update_sho_plots, sho_quantity=sho_dset_collapsed.dtype.names[:-1], **slider_dict)
+    widgets.interact(update_sho_plots, sho_quantity=list(sho_dset_collapsed.dtype.names[:-1]), **slider_dict)
 
 
 def jupyter_visualize_be_spectrograms(h5_main):
@@ -515,19 +515,19 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
                              auxDataName='Position_Indices')[-1]
     pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
-    pos_labels = h5_pos_inds.attrs['labels']
+    pos_labels = get_attr(h5_pos_inds, 'labels')
 
     # reshape the vdc_vec into DC_step by Loop
     spec_nd, _ = reshape_to_Ndims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
     loop_spec_dims = np.array(spec_nd.shape[1:])
-    loop_spec_labels = h5_proj_spec_vals.attrs['labels']
+    loop_spec_labels = get_attr(h5_proj_spec_vals, 'labels')
 
     spec_step_dim_ind = np.where(loop_spec_labels == step_chan)[0][0]
 
     # # move the step dimension to be the first after all position dimensions
-    rest_loop_dim_order = range(len(pos_dims), len(proj_nd.shape))
+    rest_loop_dim_order = list(range(len(pos_dims), len(proj_nd.shape)))
     rest_loop_dim_order.pop(spec_step_dim_ind)
-    new_order = range(len(pos_dims)) + [len(pos_dims)+spec_step_dim_ind] + rest_loop_dim_order
+    new_order = list(range(len(pos_dims))) + [len(pos_dims)+spec_step_dim_ind] + rest_loop_dim_order
 
     new_spec_order = np.array(new_order[len(pos_dims):], dtype=np.uint32)-len(pos_dims)
     # new_spec_dims = loop_spec_dims[new_spec_order]
@@ -614,4 +614,4 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     for pos_dim_ind, dim_name in enumerate(pos_labels):
         slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Loop Number'] = (0, bias_vec.shape[1] - 1, 1)
-    widgets.interact(update_loop_plots, loop_field=fit_nd.dtype.names, **slider_dict)
+    widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), **slider_dict)
