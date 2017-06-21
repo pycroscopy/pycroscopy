@@ -20,7 +20,7 @@ else:
 
 setup(
     name='pycroscopy',
-    version='0.0a46',
+    version='0.0a47',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description=long_description,
     classifiers=[
@@ -37,7 +37,7 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',
-        'Topic :: Scientific / Engineering :: Information Analysis',
+        'Topic :: Scientific/Engineering :: Information Analysis',
         ],
     keywords='scientific microscopy data analysis',
     packages=find_packages(exclude='tests'),
