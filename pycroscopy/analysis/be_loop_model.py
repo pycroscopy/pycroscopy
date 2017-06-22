@@ -116,7 +116,7 @@ class BELoopModel(Model):
             Whether or not this dataset satisfies the necessary conditions for analysis
 
         """
-        if h5_main.file.attrs['data_type'] != 'BEPSData':
+        if get_attr(h5_main.file,'data_type') != 'BEPSData':
             warn('Provided dataset does not appear to be a BEPS dataset')
             return False
         elif not h5_main.name.startswith('/Measurement_'):
@@ -126,10 +126,10 @@ class BELoopModel(Model):
         meas_grp_name = h5_main.name.split('/')
         h5_meas_grp = h5_main.file[meas_grp_name[1]]
 
-        if h5_meas_grp.attrs['VS_mode'] not in ['DC modulation mode', 'current mode']:
+        if get_attr(h5_meas_grp, 'VS_mode') not in ['DC modulation mode', 'current mode']:
             warn('Provided dataset is not a DC modulation or current mode BEPS dataset')
             return False
-        elif h5_meas_grp.attrs['VS_cycle_fraction'] != 'full':
+        elif get_attr(h5_meas_grp, 'VS_cycle_fraction') != 'full':
             warn('Provided dataset does not have full cycles')
             return False
         elif h5_main.dtype != sho32:
