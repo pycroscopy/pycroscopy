@@ -21,7 +21,7 @@ Classes implemented here are ported to a high performance computing platform at 
 
 1. Package Structure
 --------------------
-The package structure is simple, with 4 main modules:
+The package structure is simple, with 3 main modules:
    1. `io`: Input/Output from custom & proprietary microscope formats to HDF5.
    2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.
    3. `analysis`: Model-dependent analysis of information.
