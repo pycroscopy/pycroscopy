@@ -33,7 +33,7 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
 
 2. Installation
 ---------------
-Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. We are currently testing python 3 compatibility (see the cades_dev branch).
+Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder.
 
    1. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
 
