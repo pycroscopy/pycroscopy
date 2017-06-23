@@ -159,11 +159,11 @@ def get_attr(h5_object, attr_name):
     att_val = h5_object.attrs[attr_name]
 
     if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
-        att_val = str(att_val, 'utf-8')
+        att_val = att_val.decode('utf-8')
 
     elif type(att_val) == np.ndarray:
         if att_val.dtype.type == np.bytes_:
-            att_val = np.array([str(x, 'utf-8') for x in att_val])
+            att_val = np.array([x.decode('utf-8') for x in att_val])
 
     return att_val
 
