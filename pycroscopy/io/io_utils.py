@@ -40,19 +40,38 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
     file_path : String
         Absolute path of the chosen file
     """
-    try:
-        from PyQt5 import QtWidgets
-    except ImportError:
-        warn('The required package PyQt5 could not be imported.\n',
-             'Exiting uigetfile.  The user should specify the file path manually.')
-        return None
-    except:
-        raise
+    # Only try to use the GUI options if not over an SSH connection.
+    if not check_ssh():
+        try:
+            from PyQt5 import QtWidgets
+        except ImportError:
+            warn('The required package PyQt5 could not be imported.\n',
+                 'The code will check for PyQt4.')
+        except:
+            raise
+        else:
+            app = QtWidgets.QApplication([])
+            path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
+            app.exit()
+            del app
 
-    app = QtWidgets.QApplication([])
-    path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
-    app.exit()
-    del app
+            return str(path)
+
+        try:
+            from PyQt4 import QtGui
+        except ImportError:
+            warn('PyQt4 also not found.  Will use standard text input.')
+        except:
+            raise
+        else:
+            app = QtGui.QApplication([])
+            path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
+            app.exit()
+            del app
+
+            return str(path)
+
+    path = input('Enter path to datafile.  Raw Data (*.txt, *.mat, *.xls, *.xlsx) or Translated file (*.h5)')
 
     return str(path)
 
