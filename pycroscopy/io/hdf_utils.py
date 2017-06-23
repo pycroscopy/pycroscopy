@@ -158,7 +158,7 @@ def get_attr(h5_object, attr_name):
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
     att_val = h5_object.attrs[attr_name]
 
-    if type(att_val) == np.bytes_:
+    if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
         att_val = str(att_val, 'utf-8')
 
     elif type(att_val) == np.ndarray:
@@ -168,7 +168,7 @@ def get_attr(h5_object, attr_name):
     return att_val
 
 
-def get_attributes(parent_data, attr_name=None):
+def get_attributes(parent_data, attr_names=None):
     """
     Returns attribute associated with some DataSet.
 
@@ -176,23 +176,23 @@ def get_attributes(parent_data, attr_name=None):
     ----------
     parent_data : h5py.Dataset
         Dataset object reference.
-    attr_name : string or list of strings, optional, default = all (DataSet.attrs).
+    attr_names : string or list of strings, optional, default = all (DataSet.attrs).
         Name of attribute object to return.
 
     Returns
     -------
     Dictionary containing (name,value) pairs of attributes
     """
-    if attr_name is None:
-        attr_name = parent_data.attrs.keys()
+    if attr_names is None:
+        attr_names = parent_data.attrs.keys()
 
-    if type(attr_name) == str:
-        attr_name = [attr_name]
+    if type(attr_names) == str:
+        attr_names = [attr_names]
 
     att_dict = {}
     try:
-        for attr in attr_name:
-            att_dict[attr_name] = get_attr(parent_data, attr)
+        for attr in attr_names:
+            att_dict[attr] = get_attr(parent_data, attr)
     except KeyError:
         warn('%s is not an attribute of %s'
              % (str(attr), parent_data.name))
