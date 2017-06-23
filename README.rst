@@ -33,14 +33,18 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
 
 2. Installation
 ---------------
-Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder.
+Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
+
+Pycroscopy was initially developed in python 2 but all current / future development for pycroscopy will be on python 3.5+. Nonetheless, we will do our best to ensure continued compatibility with python 2. 
 
    1. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
 
    2. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
 	  
    3. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
-      
+   	
+	.. code-block:: python
+	
          pip install pycroscopy
          
    4. Enjoy pycroscopy!
