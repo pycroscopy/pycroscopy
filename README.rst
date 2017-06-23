@@ -43,13 +43,15 @@ Pycroscopy was initially developed in python 2 but all current / future developm
 	  
    3. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
    	
-	.. code-block:: python
-	
-         pip install pycroscopy
+	.. code-block:: bash
+
+	 pip install pycroscopy
          
    4. Enjoy pycroscopy!
    
 If you already have pycroscopy installed and want to update to the latest version, use the following command:
+
+	.. code-block:: bash
 	
 	pip install -U pycroscopy
    
