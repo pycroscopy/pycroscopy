@@ -1475,15 +1475,15 @@ def patch_be_lv_format(h5_path):
             sho_inds_and_vals = [h5_sho_spec_inds, h5_sho_spec_vals]
 
             for dset in sho_inds_and_vals:
-                ds_labels = dset.attrs['labels']
+                ds_labels = get_attr(dset, 'labels')
                 try:
-                    ds_units = dset.attrs['units']
+                    ds_units = get_attr(dset, 'units')
 
                     if len(ds_units) != len(ds_labels):
                         raise KeyError
 
                 except KeyError:
-                    ds_units = ['' for _ in ds_labels]
+                    ds_units = [''.encode('utf-8') for _ in ds_labels]
                     dset.attrs['units'] = ds_units
 
                 except:
@@ -1493,12 +1493,12 @@ def patch_be_lv_format(h5_path):
             for ilabel, label in enumerate(h5_sho_spec_labels):
                 label_slice = (slice(ilabel, ilabel + 1), slice(None))
                 if label == '':
-                    label = 'Step'
+                    label = 'Step'.encode('utf-8')
                 h5_sho_spec_inds.attrs[label] = h5_sho_spec_inds.regionref[label_slice]
                 h5_sho_spec_vals.attrs[label] = h5_sho_spec_vals.regionref[label_slice]
 
         h5_file.flush()
 
-    h5_file.attrs['translator'] = 'V3patcher'
+    h5_file.attrs['translator'] = 'V3patcher'.encode('utf-8')
 
     return h5_file
