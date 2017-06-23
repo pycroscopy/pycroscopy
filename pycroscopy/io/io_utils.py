@@ -6,6 +6,7 @@ Created on Tue Nov  3 21:14:25 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import os
 from multiprocessing import cpu_count
 from time import strftime
 from psutil import virtual_memory as vm
@@ -16,6 +17,10 @@ import numpy as np
 __all__ = ['getAvailableMem', 'getTimeStamp', 'transformToTargetType', 'transformToReal',
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
            'recommendCores', 'uiGetFile']
+
+
+def check_ssh():
+    return 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
 
 
 def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
