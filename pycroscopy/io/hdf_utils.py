@@ -162,7 +162,7 @@ def get_attr(h5_object, attr_name):
         att_val = str(att_val, 'utf-8')
 
     elif type(att_val) == np.ndarray:
-        if att_val.dtype.type == np.bytes_:
+        if att_val.dtype.type in [np.bytes_, np.object_]:
             att_val = np.array([str(x, 'utf-8') for x in att_val])
 
     return att_val
@@ -1413,8 +1413,24 @@ def patch_be_lv_format(h5_path):
     for _, h5_raw in raw_list:
         # Grab the channel and measurement group of the data to check some needed attributes
         h5_chan = h5_raw.parent
-        if get_attr(h5_chan, 'channel_type') != 'BE':
+        try:
+            c_type = get_attr(h5_chan, 'channel_type')
+
+        except KeyError:
+            warn_str = "'channel_type' was not found as an attribute of {}.\n".format(h5_chan.name)
+            warn_str +="If this is BEPS or BELine data from the LabView aquisition software, " + \
+                       "please run the following piece of code.  Afterwards, run this function again.\n" + \
+                       "CODE: " \
+                       "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
+            warn(warn_str)
+            return h5_file
+
+        except:
+            raise
+
+        if c_type != 'BE':
             continue
+
         h5_meas = h5_chan.parent
         h5_meas.attrs['num_UDVS_steps'] = h5_meas.attrs['num_steps']
 
@@ -1452,9 +1468,6 @@ def patch_be_lv_format(h5_path):
 
         # Also link the Bin_Frequencies and Bin_Wfm_Type datasets
         h5_freqs = h5_chan['Bin_Frequencies']
-        # h5_wfm = h5_chan['Bin_Wfm_Type']
-        # aux_dset_names = ['Bin_Frequencies', 'Bin_Wfm_Type']
-        # aux_dset_refs = [h5_freqs.ref, h5_wfm.ref]
         aux_dset_names = ['Bin_Frequencies']
         aux_dset_refs = [h5_freqs.ref]
         checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
@@ -1470,7 +1483,7 @@ def patch_be_lv_format(h5_path):
             h5_sho_spec_vals = h5_sho['Spectroscopic_Values']
 
             # Get the labels and units for the Spectroscopic datasets
-            h5_sho_spec_labels = h5_sho_spec_inds.attrs['labels']
+            h5_sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
             link_as_main(h5_sho_guess, h5_pos_inds, h5_pos_vals, h5_sho_spec_inds, h5_sho_spec_vals)
             sho_inds_and_vals = [h5_sho_spec_inds, h5_sho_spec_vals]
 
