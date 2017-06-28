@@ -13,14 +13,14 @@ if on_rtd:
     requirements = ['psutil', 'xlrd>=1.0.0']
 else:
     requirements = ['numpy_groupies>=0.9.6', 'pyqtgraph>=0.10',
-                    'h5py>=2.6.0', 'igor', 'matplotlib',
+                    'h5py>=2.6.0', 'igor', 'matplotlib>=2.0.0',
                     'scikit-learn>=0.17.1', 'xlrd>=1.0.0',
                     'psutil', 'scikit-image>=0.12.3', 'scipy>=0.17.1',
                     'numpy>=1.11.0', 'ipywidgets>=5.2.2', 'ipython>=5.1.0']
 
 setup(
     name='pycroscopy',
-    version='0.0a49',
+    version='0.0a50',
     description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description=long_description,
     classifiers=[
