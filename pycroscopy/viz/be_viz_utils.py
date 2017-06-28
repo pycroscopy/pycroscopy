@@ -377,21 +377,21 @@ def jupyter_visualize_be_spectrograms(h5_main):
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4))
-        # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.jet)
+        # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.viridis)
         spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
                                cmap=cmap_jet_white_center())
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
-        amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.jet,
+        amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.viridis,
                                  extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                          spectrogram.shape[0], 0],
                                  interpolation='none')
         axes[1].set_title('Amplitude')
         axes[1].set_xlabel('Frequency (kHz)')
         axes[1].set_ylabel('BE step')
-        phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.jet,
+        phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.viridis,
                                    extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                            spectrogram.shape[0], 0],
                                    interpolation='none')
@@ -439,13 +439,13 @@ def jupyter_visualize_be_spectrograms(h5_main):
         def plot_spectrogram(data, freq_vals):
             fig, axes = plt.subplots(ncols=2, figsize=(9, 5), sharey=True)
             im_handles = list()
-            im_handles.append(axes[0].imshow(np.abs(data), cmap=plt.cm.jet,
+            im_handles.append(axes[0].imshow(np.abs(data), cmap=plt.cm.viridis,
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                      data.shape[0], 0],
                                              interpolation='none'))
             axes[0].set_title('Amplitude')
             axes[0].set_ylabel('BE step')
-            im_handles.append(axes[1].imshow(np.angle(data), cmap=plt.cm.jet,
+            im_handles.append(axes[1].imshow(np.angle(data), cmap=plt.cm.viridis,
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                      data.shape[0], 0],
                                              interpolation='none'))

@@ -62,7 +62,7 @@ def cmap_jet_white_center():
     Returns
     -------
     white_jet : matplotlib.colors.LinearSegmentedColormap object
-        color map object that can be used in place of plt.cm.jet
+        color map object that can be used in place of plt.cm.viridis
     """
     # For red - central column is like brightness
     # For blue - last column is like brightness
@@ -170,7 +170,7 @@ def cmap_hot_desaturated():
     return cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
 
 
-def discrete_cmap(num_bins, base_cmap=plt.cm.jet):
+def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
     """
     Create an N-bin discrete colormap from the specified input map
 
@@ -226,7 +226,7 @@ def _add_loop_parameters(axes, switching_coef_vec):
 
     return axes
 
-def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
+def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.viridis, **kwargs):
     """
     Plots the input against the output waveform (typically loops).
     The color of the curve changes as a function of time using the jet colorscheme
@@ -254,11 +254,11 @@ def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.jet, **kwargs):
             ai_vec[(num_steps - 1) * pts_per_step:],
             color=cmap(255 * num_steps / num_steps), **kwargs)
     """
-    CS3=plt.contourf([[0,0],[0,0]], range(0,310),cmap=plt.cm.jet)
+    CS3=plt.contourf([[0,0],[0,0]], range(0,310),cmap=plt.cm.viridis)
     fig.colorbar(CS3)"""
 
 
-def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.jet,
+def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.viridis,
                      **kwargs):
     """
     Plots a family of lines with a sequence of colors
@@ -760,7 +760,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 ###############################################################################
 
 
-def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.jet,
+def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.viridis,
                                   spec_label='Spectroscopic Value', resp_label='Response',
                                   pos_labels=('X', 'Y'), pos_ticks=None):
     """
@@ -860,9 +860,9 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     """divider = make_axes_locatable(ax_map)
     cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
     fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
-                 cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.jet))
+                 cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
     ax_map.axis('tight')"""
-    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.jet))
+    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
     fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
     ax_map.set_aspect('auto')
@@ -933,7 +933,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
 
     # First plot the labels map:
     pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0],
-                                                      base_cmap=plt.cm.jet))
+                                                      base_cmap=plt.cm.viridis))
     fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
     fax1.axis('tight')
     fax1.set_aspect('auto')
@@ -950,7 +950,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
     for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(max_centroids)):
         if cluster_centroids.ndim == 2:
             ax.plot(spec_val, cluster_centroids[index, :],
-                    color=plt.cm.jet(int(255 * index / (cluster_centroids.shape[0] - 1))))
+                    color=plt.cm.viridis(int(255 * index / (cluster_centroids.shape[0] - 1))))
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
         elif cluster_centroids.ndim == 3:
@@ -1110,7 +1110,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=No
     title : String
         Plot group name
     cmap : matplotlib.colors.LinearSegmentedColormap object
-        color map. Default = plt.cm.jet
+        color map. Default = plt.cm.viridis
     figure_path : String / Unicode
         Absolute path of the file to write the figure to
 
@@ -1129,7 +1129,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=No
     """cmap = kwargs.get('cmap')
     kwargs.pop('cmap')"""
     if cmap is None:  # unpack from kwargs instead
-        col_map = plt.cm.jet  # overriding default
+        col_map = plt.cm.viridis  # overriding default
 
     freq *= 1E-3  # to kHz
     fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
