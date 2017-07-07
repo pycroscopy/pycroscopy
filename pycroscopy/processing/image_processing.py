@@ -856,7 +856,7 @@ class ImageWindow(object):
             free_mem = self.max_memory-ds_V.size*ds_V.itemsize
         else:
             free_mem = self.max_memory*2-ds_V.size*ds_V.itemsize
-        batch_size = free_mem/mem_per_win
+        batch_size = int(free_mem/mem_per_win)
         batch_slices = gen_batches(n_wins, batch_size)
 
         print('Reconstructing in batches of {} windows.'.format(batch_size))
