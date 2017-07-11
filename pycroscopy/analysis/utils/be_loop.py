@@ -260,7 +260,7 @@ def loop_fit_function(vdc, coef_vec):
     loop_eval : 1D numpy array
         Loop values
     """
-    
+
     a = coef_vec[:5]
     b = coef_vec[5:]
     d = 1000
