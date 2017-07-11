@@ -4,7 +4,7 @@ import array
 import warnings
 import re
 try:
-    import StringIO
+    import StringIO.StringIO
 except ImportError:
     from io import StringIO
     unicode = str
@@ -35,6 +35,9 @@ def get_from_file(f, stype):
     src = f.read(struct.calcsize(stype))
     assert(len(src) == struct.calcsize(stype))
     d = struct.unpack(stype, src)
+    if verbose:
+        print(d)
+    d = [d1.decode('utf-8', 'ignore') if isinstance(d1, bytes) else d1 for d1 in d]
     if len(d) == 1:
         return d[0]
     else:
@@ -45,8 +48,8 @@ def put_into_file(f, stype, *args):
     f.write(struct.pack(
         stype, *args))
 
-read_array = lambda f, a, l: a.fromstring(f.read(l*struct.calcsize(a.typecode))) if isinstance(f, StringIO.StringIO) else a.fromfile(f, l)
-write_array = lambda f, a: f.write(a.tostring()) if isinstance(f, StringIO.StringIO) else a.tofile(f)
+read_array = lambda f, a, l: a.fromstring(f.read(l*struct.calcsize(a.typecode))) if isinstance(f, StringIO) else a.fromfile(f, l)
+write_array = lambda f, a: f.write(a.tostring()) if isinstance(f, StringIO) else a.tofile(f)
 
 
 class structarray(object):
