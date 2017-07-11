@@ -176,3 +176,11 @@ class MicroDataset(MicroData):
         self.maxshape = _make_iterable(maxshape)
         if resizable is True:
             self.maxshape = None  # Overridden
+            self.shape = None
+        elif maxshape is not None:
+            self.shape = self.maxshape
+        else:
+            self.shape = self.data.shape
+
+    def __getitem__(self, item):
+        return self.data[item]
