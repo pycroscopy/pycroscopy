@@ -301,7 +301,7 @@ class BESHOmodel(Model):
         self._start_pos = 0
         if strategy == 'complex_gaussian':
             freq_vec = self.freq_vec
-            options = {'frequencies': freq_vec}
+            options.update({'frequencies': freq_vec})
         super(BESHOmodel, self).do_guess(processors=processors, strategy=strategy, options=options)
 
         return self.h5_guess
