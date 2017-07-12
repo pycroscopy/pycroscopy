@@ -17,6 +17,8 @@ A `python <http://www.python.org/>`_ package for image processing and scientific
 scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
 Classes implemented here are ported to a high performance computing platform at `Oak Ridge National Laboratory (ORNL) <http://www.ornl.gov/>`_.
 
+To learn more about the motivation, general structure, and philosophy of pycroscopy, check this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
+
 .. _structure:
 
 1. Package Structure
@@ -65,7 +67,8 @@ Compatibility
 3. API and Documentation
 ------------------------
 * See our `homepage <https://pycroscopy.github.io/pycroscopy/>`_ for more information
-* Our api (documentation for our functions and classes) is available `here <http://pycroscopy.readthedocs.io/>`_
+* Our api (documentation for our functions and classes) is available on `ReadTheDocs <http://pycroscopy.readthedocs.io/>`_
+* Details regarding pycroscopy's `data format <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Pycroscopy_Data_Formatting.pdf>`_ for HDF5 are also available in the docs. You can check out how we are able to represent multidimensional datasets of arbitrary sizes.
 
 .. _resources:
 
@@ -87,10 +90,12 @@ Compatibility
  
 4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/BE_Processing.ipynb>`_
 
+5. Many more coming soon....
+
 .. _conferences:
 
-6. International conferences and workshops
-------------------------------------------
+6. International conferences and workshops using pycroscopy
+-----------------------------------------------------------
 * Aug 8 2017 @ 10:45 AM - Microscopy and Microanalysis conference - poster session
 * Aug 9 2017 @ 8:30 - 10:00 AM - Microscopy and Microanalysis conference; X40 - Tutorial session on `Large Scale Data Acquisition and Analysis for Materials Imaging and Spectroscopy <http://microscopy.org/MandM/2017/program/tutorials.cfm>`_ by S. Jesse and S. V. Kalinin
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; poster 1641
@@ -107,6 +112,8 @@ Compatibility
 
 8. Contact us
 -------------
+* We are interested in collaborating with industry members to integrate pycroscopy into instrumentation or analysis software. 
+* We can work with you to convert your file formats into pycroscopy compatible HDF5 files and help you get started with data analysis.
 * Join our slack project at https://pycroscopy.slack.com to discuss about pycroscopy
 * Feel free to get in touch with us at pycroscopy (at) gmail [dot] com
 * If you find any bugs or if you want a feature added to pycroscopy, raise an `issue <https://github.com/pycroscopy/pycroscopy/issues>`_. You will need a free Github account to do this
