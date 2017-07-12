@@ -17,7 +17,7 @@ A `python <http://www.python.org/>`_ package for image processing and scientific
 scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
 Classes implemented here are ported to a high performance computing platform at `Oak Ridge National Laboratory (ORNL) <http://www.ornl.gov/>`_.
 
-To learn more about the motivation, general structure, and philosophy of pycroscopy, check this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
+To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
 
 .. _structure:
 
