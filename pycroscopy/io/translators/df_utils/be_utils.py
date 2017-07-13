@@ -763,6 +763,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)   
             
             return __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
+
         elif mode == 'AC modulation mode with time reversal':
             """ 
             First we call the FindSpecVals function to get the columns in UDVS of  
