@@ -140,6 +140,7 @@ class ioHDF5(object):
         """
         self.close()
         os.remove(self.path)
+        self.file = h5py.File(self.path, 'w')
 
     def flush(self):
         """

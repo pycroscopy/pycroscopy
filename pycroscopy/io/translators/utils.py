@@ -225,7 +225,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         print(initial_values)
 
     if labels is None:
-        labels = ['' for _ in len(dimensions)]
+        labels = ['' for _ in dimensions]
     elif len(labels) != len(dimensions):
         raise ValueError('The arrays for labels and dimension sizes must be the same.')
 
