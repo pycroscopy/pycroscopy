@@ -17,7 +17,7 @@ from ..microdata import MicroDataGroup, MicroDataset
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.be_sho_model import sho32
 from ...analysis.be_loop_model import loop_fit32
-from .df_utils.beps_gen_utils import build_loop_from_mat, get_noise_vec
+from .df_utils.beps_gen_utils import build_loop_from_mat, get_noise_vec, beps_image_folder
 
 
 class FakeDataGenerator(Translator):
@@ -73,27 +73,55 @@ class FakeDataGenerator(Translator):
 
     def translate(self, h5_path, N_x, N_y, n_steps, n_bins, start_freq, end_freq,
                   data_type='BEPSData', mode='DC modulation mode', field_mode='in and out-of-field',
-                  n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4, image_folder=None,):
+                  n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4, image_folder=beps_image_folder):
         """
 
         Parameters
         ----------
-        h5_path
-        N_x
-        N_y
-        n_steps
-        n_bins
-        start_freq
-        end_freq
-        data_type
-        mode
-        field_mode
-        n_cycles
-        FORC_cycles
-        FORC_repeats
-        loop_a
-        loop_b
-        image_folder
+        h5_path : str
+            Desired path to write the new HDF5 file
+        N_x : uint
+            Number of pixels in the x-dimension
+        N_y : uint
+            Number of pixels in the y-dimension
+        n_steps : uint
+            Number of voltage steps
+        n_bins : n_bins
+            Number of frequency bins
+        start_freq : float
+            Starting frequency in Hz
+        end_freq : float
+            Final freqency in Hz
+        data_type : str, optional
+            Type of data to generate
+            Options -  'BEPSData', 'BELineData'
+            Default - 'BEPSData'
+        mode  : str, optional
+            Modulation mode to use when generating the data.
+            Options - 'DC modulation mode', 'AC modulation mode'
+            Default - 'DC modulation mode'
+        field_mode : str, optional
+            Field mode
+            Options - 'in-field', 'out-of-field', 'in and out-of-field'
+            Default - 'in and out-of-field'
+        n_cycles : uint, optional
+            Number of cycles
+            Default - 1
+        FORC_cycles : uint, optional
+            Number of FORC cycles
+            Default - 1
+        FORC_repeats : uint, optional
+            Number of FORC repeats
+            Default - 1
+        loop_a : float, optional
+            Loop coefficient a
+            Default - 1
+        loop_b : float, optional
+            Loop coefficient b
+        image_folder : str
+            Path to the images that will be used to generate the loop coefficients.  There must be 11 images named
+            '1.tif', '2.tif', ..., '11.tif'
+            Default - pycroscopy.io.translators.df_utils.beps_gen_utils.beps_image_folder
 
         Returns
         -------
@@ -145,9 +173,11 @@ class FakeDataGenerator(Translator):
         coef_mat = self.calc_loop_coef_mat(image_folder)
 
         # In-and-out of field coefficients
-        coef_OF_mat = np.copy(coef_mat)
-        coef_IF_mat = np.copy(coef_mat)
-        coef_IF_mat[:, 4] -= 0.05
+        if field_mode != 'in-field':
+            coef_OF_mat = np.copy(coef_mat)
+        if field_mode != 'out-of-field':
+            coef_IF_mat = np.copy(coef_mat)
+            coef_IF_mat[:, 4] -= 0.05
 
         # Calculate the SHO fit and guess from the loop coefficients
         self._calc_sho(coef_OF_mat, coef_IF_mat)
@@ -177,12 +207,17 @@ class FakeDataGenerator(Translator):
         Parameters
         ----------
         None
+
         Returns
         -------
-        ds_pos_inds
-        ds_pos_vals
-        ds_spec_inds
-        ds_spec_vals
+        ds_pos_inds : MicroDataset
+            Position Indices
+        ds_pos_vals : MicroDataset
+            Position Values
+        ds_spec_inds : MicroDataset
+            Spectrosocpic Indices
+        ds_spec_vals : MicroDataset
+            Spectroscopic Values
 
         """
         # create spectrogram at each pixel from the coefficients
@@ -256,6 +291,11 @@ class FakeDataGenerator(Translator):
         """
         Setups up the hdf5 file structure before doing the actual generation
 
+        Parameters
+        ----------
+        data_gen_parms : dict
+            Dictionary containing the parameters to write to the Measurement Group as attributes
+
         Returns
         -------
 
@@ -273,7 +313,7 @@ class FakeDataGenerator(Translator):
         meas_grp = MicroDataGroup('Measurement_')
         chan_grp = MicroDataGroup('Channel_')
 
-        chan_grp.attrs.update(data_gen_parms)
+        meas_grp.attrs.update(data_gen_parms)
 
         # Create the Position and Spectroscopic datasets for the Raw Data
         ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals = self._build_ancillary_datasets()
@@ -432,11 +472,13 @@ class FakeDataGenerator(Translator):
 
         Parameters
         ----------
-        folder
+        folder : str
+            Path to the folder holding the images
 
         Returns
         -------
-        coef_mat
+        coef_mat : numpy.ndarray
+            Array of loop coefficients
 
         """
 
@@ -468,18 +510,26 @@ class FakeDataGenerator(Translator):
 
     def _calc_sho(self, coef_OF_mat, coef_IF_mat, amp_noise=0.1, phase_noise=0.1, q_noise=0.2, resp_noise=0.01):
         """
+        Build the SHO dataset from the coefficient matrices
 
         Parameters
         ----------
-        coef_OF_mat
-        coef_IF_mat
-        amp_noise
-        phase_noise
-        q_noise
-        resp_noise
+        coef_OF_mat : numpy.ndarray
+            Out-of-field coefficients
+        coef_IF_mat : numpy.ndarray
+            In-field coefficients
+        amp_noise : float
+            Noise factor for amplitude parameter
+        phase_noise : float
+            Noise factor for phase parameter
+        q_noise : float
+            Noise factor for Q-value parameter
+        resp_noise : float
+            Noide factor for w0 parameter
 
         Returns
         -------
+        None
 
         """
         vdc_vec = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['DC_Offset']].squeeze()
