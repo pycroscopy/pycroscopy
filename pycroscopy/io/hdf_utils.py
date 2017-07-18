@@ -622,7 +622,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             try:
                 ds_spec = h5_main.file[h5_main.attrs['Spectroscopic_Indices']][()]
             except KeyError:
-                print ('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
+                print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
                 else:
