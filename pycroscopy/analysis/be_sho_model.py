@@ -267,12 +267,15 @@ class BESHOmodel(Model):
         if self._parallel:
             self._max_pos_per_read /= 2
 
-    def do_guess(self, processors=None, strategy='complex_gaussian',
+    def do_guess(self, max_mem=None, processors=None, strategy='complex_gaussian',
                  options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
 
         Parameters
         ----------
+        max_mem : uint, optional
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
         processors: int
             Number of processors to use during parallel guess
             Default None, output of psutil.cpu_count - 2 is used
@@ -294,6 +297,14 @@ class BESHOmodel(Model):
         else:
             processors = min(processors, self._maxCpus)
 
+        if max_mem is not None:
+            max_mem = min(max_mem, self._maxMemoryMB)
+            self._maxDataChunk = int(max_mem / self._maxCpus)
+
+            # Now calculate the number of positions that can be stored in memory in one go.
+            mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
+            self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
+
         if self._parallel:
             self._max_pos_per_read /= 2
 
@@ -306,7 +317,7 @@ class BESHOmodel(Model):
 
         return self.h5_guess
 
-    def do_fit(self, processors=None, solver_type='least_squares', solver_options={'jac': 'cs'},
+    def do_fit(self, max_mem=None, processors=None, solver_type='least_squares', solver_options={'jac': 'cs'},
                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])},
                h5_guess=None):
         """
@@ -314,6 +325,9 @@ class BESHOmodel(Model):
 
         Parameters
         ----------
+        max_mem : uint, optional
+            Memory in MB to use for computation
+            Default None, available memory from psutil.virtual_memory is used
         processors : int
             Number of processors the user requests.  The minimum of this and self._maxCpus is used.
             Default None
@@ -341,6 +355,14 @@ class BESHOmodel(Model):
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
+
+        if max_mem is not None:
+            max_mem = min(max_mem, self._maxMemoryMB)
+            self._maxDataChunk = int(max_mem / self._maxCpus)
+
+            # Now calculate the number of positions that can be stored in memory in one go.
+            mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
+            self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
 
         if h5_guess is not None or self.h5_guess is None:
             self._set_guess(h5_guess)
