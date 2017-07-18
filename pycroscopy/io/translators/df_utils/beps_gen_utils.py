@@ -1,6 +1,9 @@
 
 
 import numpy as np
+import os
+
+beps_image_folder = os.path.abspath(os.path.join(os.path.realpath(__file__), '../beps_data_gen_images'))
 
 def combine_in_out_field_loops(in_vec, out_vec):
     """
