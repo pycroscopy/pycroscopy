@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 07 15:21:46 2015
+Created on Wed Jul 19 10:59:46 2017
 
-@author: Anugrah Saxena
+@author: anugrahsaxena
 """
+
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 from os import path, listdir, remove
