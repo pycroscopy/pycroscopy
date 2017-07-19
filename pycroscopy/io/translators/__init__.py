@@ -31,8 +31,10 @@ from .sporc import SporcTranslator
 from .time_series import MovieTranslator
 from .translator import Translator
 from .beps_data_generator import FakeDataGenerator
+from .labview_h5_patcher import LabViewH5Patcher
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
-           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator']
+           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator',
+           'LabViewH5Patcher']
