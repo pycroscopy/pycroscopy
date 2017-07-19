@@ -99,6 +99,7 @@ class GLineBETranslator(Translator):
         parm_dict['BE_center_frequency_[Hz]'] = ex_freq_correct
 
         # Some very basic information that can help the processing crew
+        parm_dict['points_per_line'] = self.points_per_line
         parm_dict['num_bins'] = self.points_per_pixel
         parm_dict['grid_num_rows'] = self.num_rows
         parm_dict['data_type'] = 'G_mode_line'
