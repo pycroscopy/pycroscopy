@@ -7,6 +7,7 @@ from . import gmode_line
 from . import image
 from . import ndata_translator
 from . import numpy_translator
+from . import igor_ibw
 from . import oneview
 from . import ptychography
 from . import sporc
