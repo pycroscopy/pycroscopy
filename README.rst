@@ -1,28 +1,19 @@
-Jump to:
---------
-0. Description_
-1. Package structure_
-2. Installation_
-3. API and documentation_
-4. Examples and resources_
-5. Journal papers_ using pycroscopy
-6. International conferences_ and Workshops
-7. Pycroscopy news_
-8. Contact_ us
+==========
+pycroscopy
+==========
 
-.. _Description:
-0. Description
---------------
-A `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy,
+.. contents::
+
+What is pycroscopy?
+-------------------
+pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy,
 scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
 Classes implemented here are ported to a high performance computing platform at `Oak Ridge National Laboratory (ORNL) <http://www.ornl.gov/>`_.
 
 To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
 
-.. _structure:
-
-1. Package Structure
---------------------
+Package Structure
+-----------------
 The package structure is simple, with 3 main modules:
    1. `io`: Input/Output from custom & proprietary microscope formats to HDF5.
    2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.
@@ -30,10 +21,8 @@ The package structure is simple, with 3 main modules:
 
 Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`. 
 
-.. _Installation:
-
-2. Installation
----------------
+Installation
+------------
 
 Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
 
@@ -62,26 +51,20 @@ Compatibility
 * Pycroscopy was initially developed in python 2 but all current / future development for pycroscopy will be on python 3.5+. Nonetheless, we will do our best to ensure continued compatibility with python 2. 
 * We currently do not support 32 bit architectures
 
-.. _documentation:
-
-3. API and Documentation
-------------------------
+API and Documentation
+---------------------
 * See our `homepage <https://pycroscopy.github.io/pycroscopy/>`_ for more information
 * Our api (documentation for our functions and classes) is available on `ReadTheDocs <http://pycroscopy.readthedocs.io/>`_
 * Details regarding pycroscopy's `data format <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Pycroscopy_Data_Formatting.pdf>`_ for HDF5 are also available in the docs. You can check out how we are able to represent multidimensional datasets of arbitrary sizes.
 
-.. _resources:
-
-4. Examples and Resources
--------------------------
+Examples and Resources
+----------------------
 * We use `jupyter notebooks <http://jupyter.org>`_ for our scientific workflows. This `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_ provides a nice overview on jupyter notebooks. 
 * Our jupyter notebooks are available `here <https://github.com/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/>`_ and many of our notebooks are tied to journal publications (see below).
 * Videos and other tutorials are available at the `Institute For Functional Imaging of Materials <http://ifim.ornl.gov/resources.html>`_ 
 
-.. _papers:
-
-5. Journal Papers using pycroscopy
-----------------------------------
+Journal Papers using pycroscopy
+-------------------------------
 1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here <ttps://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/Ptychography.ipynb>`_
  
 2. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by S. Somnath et al., Nature Communications (2016); jupyter notebook `here <ttps://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/G_mode_filtering.ipynb>`_
@@ -92,26 +75,20 @@ Compatibility
 
 5. Many more coming soon....
 
-.. _conferences:
-
-6. International conferences and workshops using pycroscopy
------------------------------------------------------------
+International conferences and workshops using pycroscopy
+--------------------------------------------------------
 * Aug 8 2017 @ 10:45 AM - Microscopy and Microanalysis conference - poster session
 * Aug 9 2017 @ 8:30 - 10:00 AM - Microscopy and Microanalysis conference; X40 - Tutorial session on `Large Scale Data Acquisition and Analysis for Materials Imaging and Spectroscopy <http://microscopy.org/MandM/2017/program/tutorials.cfm>`_ by S. Jesse and S. V. Kalinin
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; poster 1641
 * Dec 2017 - Materials Research Society conference
 
-.. _news:
-
-7. Pycroscopy news
-------------------
+News
+----
 * Apr 2017 - Lecture on `atom finding <https://physics.appstate.edu/events/aberration-corrected-stem-teaching-machines-and-atomic-forge>`_
 * Dec 2016 - Poster + `abstract <https://mrsspring.zerista.com/poster/member/85350>`_ at the 2017 Spring Materials Research Society (MRS) conference
 
-.. _Contact:
-
-8. Contact us
--------------
+Contact us
+----------
 * We are interested in collaborating with industry members to integrate pycroscopy into instrumentation or analysis software. 
 * We can work with you to convert your file formats into pycroscopy compatible HDF5 files and help you get started with data analysis.
 * Join our slack project at https://pycroscopy.slack.com to discuss about pycroscopy
