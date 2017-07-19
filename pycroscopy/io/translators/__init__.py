@@ -34,6 +34,6 @@ from .time_series import MovieTranslator
 from .translator import Translator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
-           'GIVTranslator', 'GLineTranslator', 'GLineBETranslator', GDMTranslator', 'PtychographyTranslator',
+           'GIVTranslator', 'GLineTranslator', 'GLineBETranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator']
