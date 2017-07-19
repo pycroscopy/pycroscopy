@@ -158,7 +158,7 @@ class FakeDataGenerator(Translator):
                           'end_freq': end_freq, 'n_cycles': n_cycles,
                           'forc_cycles': FORC_cycles, 'forc_repeats': FORC_repeats,
                           'loop_a': loop_a, 'loop_b': loop_b, 'data_type': data_type,
-                          'mode': mode, 'field_mode': field_mode}
+                          'VS_mode': mode, 'field_mode': field_mode, 'num_udvs_steps': self.n_spec_bins}
 
         # Make sure we have a proper path to the images to use
         if image_folder is None:
@@ -308,6 +308,7 @@ class FakeDataGenerator(Translator):
         root_grp = MicroDataGroup('')
         root_parms = generate_dummy_main_parms()
         root_parms['translator'] = 'FAKEBEPS'
+        root_parms['data_type'] = data_gen_parms['data_type']
         root_grp.attrs = root_parms
 
         meas_grp = MicroDataGroup('Measurement_')
