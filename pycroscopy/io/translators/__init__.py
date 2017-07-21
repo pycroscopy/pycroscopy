@@ -4,7 +4,6 @@ from . import beps_ndf
 from . import general_dynamic_mode
 from . import gmode_iv
 from . import gmode_line
-from . import gmode_lineBE
 from . import image
 from . import ndata_translator
 from . import numpy_translator
@@ -22,7 +21,6 @@ from .beps_ndf import BEPSndfTranslator
 from .general_dynamic_mode import GDMTranslator
 from .gmode_iv import GIVTranslator
 from .gmode_line import GLineTranslator
-from .gmode_lineBE import GLineBETranslator
 from .igor_ibw import IgorIBWTranslator
 from .image import ImageTranslator
 from .ndata_translator import NDataTranslator
@@ -34,6 +32,6 @@ from .time_series import MovieTranslator
 from .translator import Translator
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
-           'GIVTranslator', 'GLineTranslator', 'GLineBETranslator', 'GDMTranslator', 'PtychographyTranslator',
+           'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator']
