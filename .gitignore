@@ -6,6 +6,13 @@ __pycache__/
 # C extensions
 *.so
 
+# OS Files
+.DS_Store
+
+# Spyder Files from devEnv
+.spyproject/
+
+
 # Distribution / packaging
 .Python
 env/
