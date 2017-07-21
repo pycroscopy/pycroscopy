@@ -26,7 +26,7 @@ class GLineBETranslator(Translator):
     """
     Translated G-mode line (bigtimedata.dat) files from actual BE line experiments to HDF5
     """
-    
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file
@@ -40,6 +40,7 @@ class GLineBETranslator(Translator):
         -------
         h5_path : String / unicode
             Absolute path of the h5 file
+
         """
         # Figure out the basename of the data:
         (basename, parm_paths, data_paths) = self._parse_file_path(file_path)
@@ -87,13 +88,13 @@ class GLineBETranslator(Translator):
         ex_freq_correct = 1 / (pixel_duration / np.floor(num_periods))
 
         # method 2 for calculating the exact excitation frequency:
-        
-        """fft_ex_wfm = np.abs(np.fft.fftshift(np.fft.fft(be_wave)))
+        """
+        fft_ex_wfm = np.abs(np.fft.fftshift(np.fft.fft(be_wave)))
         w_vec = np.linspace(-0.5 * samp_rate, 0.5 * samp_rate - 1.0*samp_rate / self.points_per_pixel,
                             self.points_per_pixel)
         hot_bins = np.squeeze(np.argwhere(fft_ex_wfm > 1E+3))
-        ex_freq_correct = w_vec[hot_bins[-1]]"""
-        
+        ex_freq_correct = w_vec[hot_bins[-1]]
+        """
 
         # correcting the excitation frequency - will be VERY useful during analysis and filtering
         parm_dict['BE_center_frequency_[Hz]'] = ex_freq_correct
@@ -128,10 +129,12 @@ class GLineBETranslator(Translator):
         # Now that the file has been created, go over each raw data file:
         # 1. write all ancillary data. Link data. 2. Write main data sequentially
                 
-        """ We only allocate the space for the main data here.
+        """ 
+        We only allocate the space for the main data here.
         This does NOT change with each file. The data written to it does.
         The auxiliary datasets will not change with each raw data file since
-        only one excitation waveform is used"""
+        only one excitation waveform is used
+        """
         ds_main_data = MicroDataset('Raw_Data', data=[], 
                                     maxshape=(self.num_rows, self.points_per_pixel * num_cols),
                                     chunking=(1, self.points_per_pixel), dtype=np.float16)
@@ -146,10 +149,10 @@ class GLineBETranslator(Translator):
         
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
-        
-        for f_index in data_paths.keys():
+
+        for data in data_paths:
             
-            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
+            chan_grp = MicroDataGroup('Channel_', '/Measurement_000/')
             chan_grp.addChildren([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
             
             # print('Writing following tree to file:')
@@ -162,7 +165,7 @@ class GLineBETranslator(Translator):
             linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
             
             # Now transfer scan data in the dat file to the h5 file:
-            self._read_data(data_paths[f_index], h5_main)
+            self._read_data(data, h5_main)
             
         hdf.close()
         print('G-Line translation complete!')
@@ -176,21 +179,21 @@ class GLineBETranslator(Translator):
         parameter (text and .mat), data file paths (for each analog input channel)
         
         Parameters
-        -----------------
+        ----------
         data_filepath : string / unicode
             absolute path of any file in the data folder
         
         Returns
-        ----------------
+        -------
         basename : string / unicode
             base name of the experiment\n
         parm_paths : dictionary
             paths for the text and .mat parameter files\n
             parm_text : absolute file path of the parameter text file\n
             parm_mat : absolute file path of the parameter .mat file
-        data_paths : dictionary of the paths for the big-time data files.
-            key : index of the analog input that generated the data file\n
-            value : absolute file path of the data file
+        data_paths : list
+            The absolute file paths to the bigtime data files
+
         """
         # Return (basename, parameter text path)
         (folder_path, basename) = path.split(data_filepath)
@@ -198,12 +201,12 @@ class GLineBETranslator(Translator):
         
         # There may be one or two bigdata files. May need both paths
         parm_paths = dict()
-        data_paths = dict()
+        data_paths = list()
         targ_str = 'bigtime_0'
         for filenames in listdir(folder_path):
             ind = filenames.find(targ_str)
             if ind > 0 and filenames.endswith('.dat'):
-                data_paths[int(filenames[ind+len(targ_str)])] = path.join(folder_path, filenames)
+                data_paths.append(path.join(folder_path, filenames))
         
             if filenames.endswith('.txt') and filenames.find('parm') > 0:
                 parm_paths['parm_txt'] = path.join(folder_path, filenames)
@@ -218,14 +221,14 @@ class GLineBETranslator(Translator):
         Reads the .dat file and populates the .h5 dataset
 
         Parameters
-        ---------
+        ---------_
         filepath : String / unicode
             absolute path of the data file for a particular analog input channel
         h5_dset : HDF5 dataset reference
             Reference to the target Raw_Data dataset
 
         Returns
-        ---------
+        -------
         None
         """
         # Create data matrix - Only need 16 bit floats (time)
