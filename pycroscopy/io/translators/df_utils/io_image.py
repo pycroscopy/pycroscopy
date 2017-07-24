@@ -297,3 +297,25 @@ def read_txt(image_path, header_lines=0, delimiter=None, *args, **kwargs):
                        delimiter=delimiter, **kwargs)
 
     return image
+
+
+def no_bin(image, *args, **kwargs):
+    """
+    Does absolutely nothing to the image.  Exists so that we can have
+    a bin function to call whether we actually rebin the image or not.
+
+    Parameters
+    ----------
+    image : ndarray
+        Image
+    args:
+        Argument list
+    kwargs:
+        Keyword argument list
+
+    Returns
+    -------
+    image : ndarray
+        The input image
+    """
+    return image
