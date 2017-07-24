@@ -154,9 +154,12 @@ def get_attr(h5_object, attr_name):
     att_val : object
         value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
     """
-    if attr_name not in h5_object.attrs.keys():
+    try:
+        att_val = h5_object.attrs.get(attr_name)
+    except KeyError:
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
-    att_val = h5_object.attrs[attr_name]
+    except:
+        raise
 
     if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
         att_val = att_val.decode('utf-8')
