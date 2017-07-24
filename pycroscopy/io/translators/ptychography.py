@@ -62,6 +62,9 @@ class PtychographyTranslator(Translator):
         scan_size_y : int, optional
             Number of Ronchigrams in the y direction.  Default is None, value will be determined
             from the number of images and `scan_size_x` if it is given.
+        image_type : str
+            File extension of images to be read.  Default '.tif'
+
         Returns
         ----------
         h5_main : h5py.Dataset
