@@ -14,7 +14,7 @@ import numpy as np
 from .microdata import MicroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'get_attribute', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
+           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main']
 
@@ -44,6 +44,7 @@ def print_tree(parent):
 def get_all_main(parent, verbose=False):
     """
     Simple function to recursively print the contents of an hdf5 group
+
     Parameters
     ----------
     parent : h5py.Group
@@ -53,7 +54,8 @@ def get_all_main(parent, verbose=False):
 
     Returns
     -------
-    None
+    main_list : list of h5py.Dataset
+        The datasets found in the file that meet the 'Main Data' criteria.
 
     """
     main_list = list()
