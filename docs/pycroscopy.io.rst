@@ -1,5 +1,5 @@
-pycroscopy.io package
-=====================
+pycroscopy\.io package
+======================
 
 .. automodule:: pycroscopy.io
     :members:
@@ -11,73 +11,48 @@ Subpackages
 
 .. toctree::
 
-    pycroscopy.io.dm4reader
     pycroscopy.io.tests
     pycroscopy.io.translators
 
 Submodules
 ----------
 
-pycroscopy.io.be_hdf_utils module
----------------------------------
+pycroscopy\.io\.be\_hdf\_utils module
+-------------------------------------
 
 .. automodule:: pycroscopy.io.be_hdf_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.io.dm3_image_utils module
-------------------------------------
-
-.. automodule:: pycroscopy.io.dm3_image_utils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pycroscopy.io.hdf_utils module
-------------------------------
+pycroscopy\.io\.hdf\_utils module
+---------------------------------
 
 .. automodule:: pycroscopy.io.hdf_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.io.io_hdf5 module
-----------------------------
+pycroscopy\.io\.io\_hdf5 module
+-------------------------------
 
 .. automodule:: pycroscopy.io.io_hdf5
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.io.io_image module
------------------------------
-
-.. automodule:: pycroscopy.io.io_image
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pycroscopy.io.io_utils module
------------------------------
+pycroscopy\.io\.io\_utils module
+--------------------------------
 
 .. automodule:: pycroscopy.io.io_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.io.microdata module
-------------------------------
+pycroscopy\.io\.microdata module
+--------------------------------
 
 .. automodule:: pycroscopy.io.microdata
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pycroscopy.io.parse_dm3 module
-------------------------------
-
-.. automodule:: pycroscopy.io.parse_dm3
     :members:
     :undoc-members:
     :show-inheritance:
