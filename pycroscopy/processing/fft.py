@@ -16,14 +16,17 @@ from warnings import warn
 def get_fft_stack(image_stack):
     """
     Gets the 2D FFT for a stack of images by applying a blackman window
+
     Parameters
     ----------
     image_stack : 2D or 3D real numpy array
         Either a 2D matrix [x, y] or a stack of 2D images arranged as [x, y, z or spectral]
+
     Returns
     -------
     fft_stack : 2D or 3D real numpy array
         2 or 3 dimensional matrix arranged as [x, y, spectral dimension]
+
     """
     image_stack = np.atleast_3d(image_stack)
     blackman_2d = np.atleast_2d(np.blackman(image_stack.shape[1])) * np.atleast_2d(np.blackman(image_stack.shape[0])).T
@@ -50,6 +53,7 @@ def getNoiseFloor(fft_data, tolerance):
     -------
     noise_floor : 1D real numpy array 
         One value per channel / repetition
+
     """
 
     fft_data = np.atleast_2d(fft_data)
@@ -91,16 +95,17 @@ def downSample(fft_vec, freq_ratio):
     Downsamples the provided data vector
     
     Parameters
-    -----------
+    ----------
     fft_vec : 1D complex numpy array
         Waveform that is already FFT shifted
     freq_ratio : float
         new sampling rate / old sampling rate (less than 1)
     
     Returns
-    --------
+    -------
     fft_vec : 1D numpy array
         downsampled waveform
+
     """
     if freq_ratio >= 1:
         warn('Error at downSample: New sampling rate > old sampling rate')
@@ -122,7 +127,7 @@ def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
     Builds a filter that removes specified noise frequencies
     
     Parameters
-    ---------------------    
+    ----------
     num_pts : unsigned int
         Number of points in the FFT signal
     samp_rate : unsigned int
@@ -131,13 +136,13 @@ def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
         Target frequencies as unsigned ints    
     freq_widths : 1D array or list
         Width around the target frequency that should be set to 0\n    
-    
     Note: sampRate, freqs, freq_widths have same units - eg MHz
     
     Returns
-    ----------
+    -------
     noise_filter : 1D numpy array
         Array of ones set to 0 at noise bands
+
     """
     num_pts = abs(int(num_pts))
 
