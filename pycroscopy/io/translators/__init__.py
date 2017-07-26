@@ -16,6 +16,7 @@ from . import time_series
 from . import translator
 from . import utils
 from . import df_utils
+from . import beps_data_generator
 from .be_odf import BEodfTranslator
 from .be_odf_relaxation import BEodfRelaxationTranslator
 from .beps_ndf import BEPSndfTranslator
@@ -32,8 +33,11 @@ from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator
 from .time_series import MovieTranslator
 from .translator import Translator
+from .beps_data_generator import FakeDataGenerator
+from .labview_h5_patcher import LabViewH5Patcher
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GLineBETranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
-           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator']
+           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator',
+           'LabViewH5Patcher']

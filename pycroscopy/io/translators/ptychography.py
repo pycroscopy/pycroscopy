@@ -12,7 +12,7 @@ import numpy as np
 from skimage.data import imread
 from skimage.measure import block_reduce
 
-from .df_utils.io_image import read_image, read_dm3
+from .df_utils.io_image import read_image, read_dm3, no_bin
 from .translator import Translator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
@@ -30,7 +30,7 @@ class PtychographyTranslator(Translator):
         self.rebin = False
         self.bin_factor = 1
         self.hdf = None
-        self.binning_func = self.__no_bin
+        self.binning_func = no_bin
         self.bin_func = None
         self.image_ext = None
 
@@ -62,6 +62,9 @@ class PtychographyTranslator(Translator):
         scan_size_y : int, optional
             Number of Ronchigrams in the y direction.  Default is None, value will be determined
             from the number of images and `scan_size_x` if it is given.
+        image_type : str
+            File extension of images to be read.  Default '.tif'
+
         Returns
         ----------
         h5_main : h5py.Dataset
@@ -358,24 +361,3 @@ class PtychographyTranslator(Translator):
         
         return h5_main, h5_mean_spec, h5_ronch
 
-    @staticmethod
-    def __no_bin(image, *args, **kwargs):
-        """
-        Does absolutely nothing to the image.  Exists so that we can have
-        a bin function to call whether we actually rebin the image or not.
-
-        Parameters
-        ----------
-        image : ndarray
-            Image
-        args:
-            Argument list
-        kwargs:
-            Keyword argument list
-
-        Returns
-        -------
-        image : ndarray
-            The input image
-        """
-        return image

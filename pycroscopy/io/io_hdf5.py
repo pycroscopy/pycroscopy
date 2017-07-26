@@ -230,6 +230,20 @@ class ioHDF5(object):
         # Recursive function
 
         def __populate(child, parent):
+            """
+            Recursive function to build the tree from the top down.
+
+            Parameters
+            ----------
+            child
+            parent
+
+            Returns
+            -------
+
+            """
+            # Update the parent attribute with the true path
+            child.parent = parent
 
             if isinstance(child, MicroDataGroup):
                 if child.indexed:
