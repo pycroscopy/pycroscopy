@@ -23,6 +23,7 @@ from .beps_ndf import BEPSndfTranslator
 from .general_dynamic_mode import GDMTranslator
 from .gmode_iv import GIVTranslator
 from .gmode_line import GLineTranslator
+from .gmode_tune import GTuneTranslator
 from .igor_ibw import IgorIBWTranslator
 from .image import ImageTranslator
 from .ndata_translator import NDataTranslator
