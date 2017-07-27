@@ -14,7 +14,7 @@ import numpy as np
 from .microdata import MicroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'get_attribute', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
+           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main']
 
@@ -44,6 +44,7 @@ def print_tree(parent):
 def get_all_main(parent, verbose=False):
     """
     Simple function to recursively print the contents of an hdf5 group
+
     Parameters
     ----------
     parent : h5py.Group
@@ -53,7 +54,8 @@ def get_all_main(parent, verbose=False):
 
     Returns
     -------
-    None
+    main_list : list of h5py.Dataset
+        The datasets found in the file that meet the 'Main Data' criteria.
 
     """
     main_list = list()
@@ -154,9 +156,12 @@ def get_attr(h5_object, attr_name):
     att_val : object
         value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
     """
-    if attr_name not in h5_object.attrs.keys():
+    try:
+        att_val = h5_object.attrs.get(attr_name)
+    except KeyError:
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
-    att_val = h5_object.attrs[attr_name]
+    except:
+        raise
 
     if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
         att_val = att_val.decode('utf-8')
@@ -1383,135 +1388,3 @@ def check_for_old(h5_base, tool_name, new_parms=dict()):
             return group
 
     return None
-
-def patch_be_lv_format(h5_path):
-    """
-    Add the needed references and attributes to the h5 file that are not created by the 
-     LabView data aquisition program.
-    Parameters
-    ----------
-    h5_path : str
-        path to the h5 file
-
-    Returns
-    -------
-    h5_file : h5py.File
-        patched hdf5 file 
-
-    """
-    # Open the file and check if a patch is needed
-    h5_file = h5py.File(os.path.abspath(h5_path), 'r+')
-    if h5_file.attrs.get('translator') is not None:
-        print('File is already Pycroscopy ready.')
-        return h5_file
-
-    '''
-    Get the list of all Raw_Data Datasets
-    Loop over the list and update the needed attributes
-    '''
-    raw_list = findDataset(h5_file, 'Raw_Data')
-    for _, h5_raw in raw_list:
-        # Grab the channel and measurement group of the data to check some needed attributes
-        h5_chan = h5_raw.parent
-        try:
-            c_type = get_attr(h5_chan, 'channel_type')
-
-        except KeyError:
-            warn_str = "'channel_type' was not found as an attribute of {}.\n".format(h5_chan.name)
-            warn_str +="If this is BEPS or BELine data from the LabView aquisition software, " + \
-                       "please run the following piece of code.  Afterwards, run this function again.\n" + \
-                       "CODE: " \
-                       "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
-            warn(warn_str)
-            return h5_file
-
-        except:
-            raise
-
-        if c_type != 'BE':
-            continue
-
-        h5_meas = h5_chan.parent
-        h5_meas.attrs['num_UDVS_steps'] = h5_meas.attrs['num_steps']
-
-        # Get the object handles for the Indices and Values datasets
-        h5_pos_inds = h5_chan['Position_Indices']
-        h5_pos_vals = h5_chan['Position_Values']
-        h5_spec_inds = h5_chan['Spectroscopic_Indices']
-        h5_spec_vals = h5_chan['Spectroscopic_Values']
-
-        # Get the labels and units for the Spectroscopic datasets
-        h5_spec_labels = h5_spec_inds.attrs['labels']
-        inds_and_vals = [h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]
-        for dset in inds_and_vals:
-            ds_labels = dset.attrs['labels']
-            try:
-                ds_units = dset.attrs['units']
-
-                if len(ds_units) != len(ds_labels):
-                    raise KeyError
-
-            except KeyError:
-                ds_units = ['' for _ in ds_labels]
-            except:
-                raise
-
-        for ilabel, label in enumerate(h5_spec_labels):
-            label_slice = (slice(ilabel, ilabel + 1), slice(None))
-            if label == '':
-                label = 'Step'
-            h5_spec_inds.attrs[label] = h5_spec_inds.regionref[label_slice]
-            h5_spec_vals.attrs[label] = h5_spec_vals.regionref[label_slice]
-
-        # Link the references to the Indices and Values datasets to the Raw_Data
-        link_as_main(h5_raw, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
-
-        # Also link the Bin_Frequencies and Bin_Wfm_Type datasets
-        h5_freqs = h5_chan['Bin_Frequencies']
-        aux_dset_names = ['Bin_Frequencies']
-        aux_dset_refs = [h5_freqs.ref]
-        checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
-
-        '''
-        Get all SHO_Fit groups for the Raw_Data and loop over them
-        Get the Guess and Spectroscopic Datasets for each SHO_Fit group
-        '''
-        sho_list = findH5group(h5_raw, 'SHO_Fit')
-        for h5_sho in sho_list:
-            h5_sho_guess = h5_sho['Guess']
-            h5_sho_spec_inds = h5_sho['Spectroscopic_Indices']
-            h5_sho_spec_vals = h5_sho['Spectroscopic_Values']
-
-            # Get the labels and units for the Spectroscopic datasets
-            h5_sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
-            link_as_main(h5_sho_guess, h5_pos_inds, h5_pos_vals, h5_sho_spec_inds, h5_sho_spec_vals)
-            sho_inds_and_vals = [h5_sho_spec_inds, h5_sho_spec_vals]
-
-            for dset in sho_inds_and_vals:
-                ds_labels = get_attr(dset, 'labels')
-                try:
-                    ds_units = get_attr(dset, 'units')
-
-                    if len(ds_units) != len(ds_labels):
-                        raise KeyError
-
-                except KeyError:
-                    ds_units = [''.encode('utf-8') for _ in ds_labels]
-                    dset.attrs['units'] = ds_units
-
-                except:
-                    raise
-
-            # Make region references in the
-            for ilabel, label in enumerate(h5_sho_spec_labels):
-                label_slice = (slice(ilabel, ilabel + 1), slice(None))
-                if label == '':
-                    label = 'Step'.encode('utf-8')
-                h5_sho_spec_inds.attrs[label] = h5_sho_spec_inds.regionref[label_slice]
-                h5_sho_spec_vals.attrs[label] = h5_sho_spec_vals.regionref[label_slice]
-
-        h5_file.flush()
-
-    h5_file.attrs['translator'] = 'V3patcher'.encode('utf-8')
-
-    return h5_file

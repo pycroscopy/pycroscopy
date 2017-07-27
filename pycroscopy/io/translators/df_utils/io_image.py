@@ -162,6 +162,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     ----------
     dm4_file : DM4File
         File object of the dm4 file to be parsed.
+
     tag_dir : dict
         Dictionary to be traced.  Has the following attributes:
             tag_dir.name : str
@@ -296,4 +297,26 @@ def read_txt(image_path, header_lines=0, delimiter=None, *args, **kwargs):
                        skiprows=header_lines,
                        delimiter=delimiter, **kwargs)
 
+    return image
+
+
+def no_bin(image, *args, **kwargs):
+    """
+    Does absolutely nothing to the image.  Exists so that we can have
+    a bin function to call whether we actually rebin the image or not.
+
+    Parameters
+    ----------
+    image : ndarray
+        Image
+    args:
+        Argument list
+    kwargs:
+        Keyword argument list
+
+    Returns
+    -------
+    image : ndarray
+        The input image
+    """
     return image
