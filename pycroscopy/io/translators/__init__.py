@@ -4,6 +4,7 @@ from . import beps_ndf
 from . import general_dynamic_mode
 from . import gmode_iv
 from . import gmode_line
+from . import gmode_tune
 from . import image
 from . import ndata_translator
 from . import numpy_translator
@@ -35,7 +36,7 @@ from .beps_data_generator import FakeDataGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
-           'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
+           'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator',
            'LabViewH5Patcher']
