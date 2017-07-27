@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Jul 19 10:59:46 2017
+Created on Wed Jul 27 3:19:46 2017
 
 @author: anugrahsaxena
 """
@@ -43,7 +43,7 @@ class GTuneTranslator(GLineTranslator):
 
         """
         # Figure out the basename of the data:
-        (basename, parm_paths, data_paths) = self._parse_file_path(file_path)
+        (basename, parm_paths, data_paths) = super(GTuneTranslator, self)._parse_file_path(file_path)
         
         (folder_path, unused) = path.split(file_path)
         h5_path = path.join(folder_path, basename+'.h5')
@@ -149,10 +149,10 @@ class GTuneTranslator(GLineTranslator):
         
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
-
-        for data in data_paths:
+        
+        for f_index in data_paths.keys():
             
-            chan_grp = MicroDataGroup('Channel_', '/Measurement_000/')
+            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
             chan_grp.addChildren([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
             
             # print('Writing following tree to file:')
@@ -165,9 +165,9 @@ class GTuneTranslator(GLineTranslator):
             linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
             
             # Now transfer scan data in the dat file to the h5 file:
-            self._read_data(data, h5_main)
+            super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)
             
         hdf.close()
-        print('G-Line translation complete!')
+        print('G-Tune translation complete!')
 
         return h5_path

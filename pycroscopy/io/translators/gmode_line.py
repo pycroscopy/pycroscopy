@@ -48,17 +48,16 @@ class GLineTranslator(Translator):
         if path.exists(h5_path):
             remove(h5_path)
         
-        # Load parameters from .mat file - 'AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'
-        matread = loadmat(parm_paths['parm_mat'], variable_names=['AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'])
+        # Load parameters from .mat file - 'BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'
+        matread = loadmat(parm_paths['parm_mat'], variable_names=['BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'])
         be_wave = np.float32(np.squeeze(matread['BE_wave']))
-        be_wave_train = np.float32(np.squeeze(matread['BE_wave_train']))
+
         # Need to take the complex conjugate if reading from a .mat file
         # FFT_BE_wave = np.conjugate(np.complex64(np.squeeze(matread['FFT_BE_wave'])))
         
         num_cols = int(matread['total_cols'][0][0])
         expected_rows = int(matread['total_rows'][0][0])
         self.points_per_pixel = len(be_wave)
-        self.points_per_line = len(be_wave_train)
         
         # Load parameters from .txt file - 'BE_center_frequency_[Hz]', 'IO rate'
         is_beps, parm_dict = parmsToDict(parm_paths['parm_txt'])
@@ -96,7 +95,6 @@ class GLineTranslator(Translator):
         parm_dict['BE_center_frequency_[Hz]'] = ex_freq_correct
 
         # Some very basic information that can help the processing crew
-        parm_dict['points_per_line'] = self.points_per_line
         parm_dict['num_bins'] = self.points_per_pixel
         parm_dict['grid_num_rows'] = self.num_rows
         parm_dict['data_type'] = 'G_mode_line'
