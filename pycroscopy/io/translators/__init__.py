@@ -7,6 +7,7 @@ from . import gmode_line
 from . import image
 from . import ndata_translator
 from . import numpy_translator
+from . import trKPFM_translator
 from . import igor_ibw
 from . import oneview
 from . import ptychography
@@ -16,6 +17,7 @@ from . import translator
 from . import utils
 from . import df_utils
 from . import beps_data_generator
+
 from .be_odf import BEodfTranslator
 from .be_odf_relaxation import BEodfRelaxationTranslator
 from .beps_ndf import BEPSndfTranslator
@@ -26,6 +28,7 @@ from .igor_ibw import IgorIBWTranslator
 from .image import ImageTranslator
 from .ndata_translator import NDataTranslator
 from .numpy_translator import NumpyTranslator
+from .trKPFM_translator import TRKPFMTranslator
 from .oneview import OneViewTranslator
 from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator
@@ -35,7 +38,7 @@ from .beps_data_generator import FakeDataGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
-           'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'PtychographyTranslator',
+           'GIVTranslator', 'GLineTranslator', 'GDMTranslator', 'TRKPFMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator',
            'LabViewH5Patcher']
