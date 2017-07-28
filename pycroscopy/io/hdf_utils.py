@@ -1357,6 +1357,7 @@ def copy_main_attributes(h5_main, h5_new):
 
     return
 
+
 def check_for_old(h5_base, tool_name, new_parms=dict()):
     """
     Check to see if the results of a tool already exist and if they 
@@ -1377,9 +1378,18 @@ def check_for_old(h5_base, tool_name, new_parms=dict()):
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
-        test = [new_parms[key] == group.attrs[key] for key in new_parms.keys()]
 
-        if all(test):
+        tests = []
+        for key in new_parms.keys():
+            old_parm = get_attr(group, key)
+            if isinstance(old_parm, np.ndarray):
+                new_array = np.array(new_parms[key])
+                if old_parm.size == np.array():
+                    tests.append(np.all(np.isclose(old_parm, new_array)))
+            else:
+                tests.append(new_parms[key] == old_parm)
+
+        if all(tests):
             return group
 
     return None
