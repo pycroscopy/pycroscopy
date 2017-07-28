@@ -6,24 +6,28 @@ import os
 import numpy as np
 from PIL import Image
 from sklearn.utils import gen_batches
+from skimage.measure import block_reduce
 # Pycroscopy imports
 from ..io_hdf5 import ioHDF5
-from ..hdf_utils import calc_chunks, getH5DsetRefs, link_as_main, get_attr, buildReducedSpec, reshape_to_Ndims, \
-    get_dimensionality
-from ..io_utils import realToCompound
+from ..hdf_utils import calc_chunks, getH5DsetRefs, link_as_main, get_attr, buildReducedSpec
+from ..io_utils import realToCompound, compound_to_scalar
 from .utils import build_ind_val_dsets, generate_dummy_main_parms
 from .translator import Translator
 from ..microdata import MicroDataGroup, MicroDataset
 from ...analysis.utils.be_loop import loop_fit_function
+from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_model import sho32
 from ...analysis.be_loop_model import loop_fit32
-from .df_utils.beps_gen_utils import build_loop_from_mat, get_noise_vec, beps_image_folder
-
+from .df_utils.beps_gen_utils import get_noise_vec, beps_image_folder
+from .df_utils.io_image import read_image, no_bin
 
 class FakeDataGenerator(Translator):
     """
 
     """
+    # TODO: Add other cycle fractions
+    # TODO: Add support for other VS_modes
+    # TODO: Add support for other field modes
     def __init__(self, *args, **kwargs):
         """
 
@@ -48,42 +52,88 @@ class FakeDataGenerator(Translator):
         self.n_sho_bins = None
         self.n_spec_bins = None
         self.n_fields = None
+        self.binning_func = no_bin
 
-    def _read_data(self):
+    def _read_data(self, folder):
         """
 
         Returns
         -------
 
         """
-        pass
 
-    def _parse_file_path(self, input_path):
+        file_list = self._parse_file_path(folder, self.image_ext)
+
+        images = list()
+
+        for image_file in file_list:
+            image_path = os.path.join(folder, image_file)
+            image, _ = read_image(image_path, as_grey=True)
+            image = self.binning_func(image, self.bin_factor, self.bin_func)
+            images.append(image)
+
+        self.N_x, self.N_y = image.shape
+        self.n_pixels = self.N_x*self.N_y
+
+        return images
+
+    @staticmethod
+    def _parse_file_path(path, ftype='all'):
         """
+        Returns a list of all files in the directory given by path
 
         Parameters
-        ----------
-        input_path
+        ---------------
+        path : string / unicode
+            absolute path to directory containing files
+        ftype : this file types to return in file_list. (optional. Default is all)
 
         Returns
-        -------
-
+        ----------
+        file_list : list of strings
+            names of all files in directory located at path
+        numfiles : unsigned int
+            number of files in file_list
         """
-        pass
 
-    def translate(self, h5_path, N_x, N_y, n_steps, n_bins, start_freq, end_freq,
+        # Make sure we have a proper path to the images to use
+        if path is None:
+            path = os.path.join(os.getcwd(), 'df_utils/beps_data_gen_images')
+        else:
+            path = os.path.abspath(path)
+
+        # Get all files in directory
+        file_list = os.listdir(path)
+
+        # If no file type specified, return full list
+        if ftype == 'all':
+            return file_list
+
+        # Remove files of type other than the request ftype from the list
+        new_file_list = []
+        for this_thing in file_list:
+            # Make sure it's really a file
+            if not os.path.isfile(os.path.join(path, this_thing)):
+                continue
+
+            split = os.path.splitext(this_thing)
+            ext = split[1]
+            if ext == ftype:
+                new_file_list.append(os.path.join(path, this_thing))
+
+        return new_file_list
+
+    def translate(self, h5_path, n_steps, n_bins, start_freq, end_freq,
                   data_type='BEPSData', mode='DC modulation mode', field_mode='in and out-of-field',
-                  n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4, image_folder=beps_image_folder):
+                  n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4,
+                  cycle_frac='full', image_folder=beps_image_folder, bin_factor=None,
+                  bin_func=np.mean, image_type='.tif'):
         """
 
         Parameters
         ----------
         h5_path : str
             Desired path to write the new HDF5 file
-        N_x : uint
-            Number of pixels in the x-dimension
-        N_y : uint
-            Number of pixels in the y-dimension
         n_steps : uint
             Number of voltage steps
         n_bins : n_bins
@@ -118,10 +168,22 @@ class FakeDataGenerator(Translator):
             Default - 1
         loop_b : float, optional
             Loop coefficient b
+        cycle_frac : str
+            Cycle fraction parameter.
+            Default - 'full'
         image_folder : str
             Path to the images that will be used to generate the loop coefficients.  There must be 11 images named
             '1.tif', '2.tif', ..., '11.tif'
             Default - pycroscopy.io.translators.df_utils.beps_gen_utils.beps_image_folder
+        bin_factor : array_like of uint, optional
+            Downsampling factor for each dimension.  Default is None.
+        bin_func : callable, optional
+            Function which will be called to calculate the return value
+            of each block.  Function must implement an axis parameter,
+            i.e. numpy.mean.  Ignored if bin_factor is None.  Default is
+            numpy.mean.
+        image_type : str
+            File extension of images to be read.  Default '.tif'
 
         Returns
         -------
@@ -129,8 +191,6 @@ class FakeDataGenerator(Translator):
         """
 
         # Setup shared parameters
-        self.N_x = N_x
-        self.N_y = N_y
         self.n_steps = n_steps
         self.n_bins = n_bins
         self.start_freq = start_freq
@@ -143,7 +203,9 @@ class FakeDataGenerator(Translator):
         self.data_type = data_type
         self.mode = mode
         self.field_mode = field_mode
-        self.n_pixels = N_x*N_y
+        self.cycle_fraction = cycle_frac
+        self.bin_factor = bin_factor
+        self.bin_func = bin_func
         if field_mode == 'in and out-of-field':
             self.n_fields = 2
         else:
@@ -152,25 +214,38 @@ class FakeDataGenerator(Translator):
         self.n_sho_bins = n_steps*self.n_loops
         self.n_spec_bins = n_bins*self.n_sho_bins
         self.h5_path = h5_path
+        self.image_ext = image_type
 
-        data_gen_parms = {'N_x': N_x, 'N_y': N_y, 'n_steps;:': n_steps,
+        '''
+        Check if a bin_factor is given.  Set up binning objects if it is.
+        '''
+        if bin_factor is not None:
+            self.rebin = True
+            if isinstance(bin_factor, int):
+                self.bin_factor = (bin_factor, bin_factor)
+            elif len(bin_factor) == 2:
+                self.bin_factor = tuple(bin_factor)
+            else:
+                raise ValueError('Input parameter `bin_factor` must be a length 2 array_like or an integer.\n' +
+                                 '{} was given.'.format(bin_factor))
+            self.binning_func = block_reduce
+            self.bin_func = bin_func
+
+        images = self._read_data(image_folder)
+
+        data_gen_parms = {'N_x': self.N_x, 'N_y':self.N_y, 'n_steps;:': n_steps,
                           'n_bins': n_bins, 'start_freq': start_freq,
                           'end_freq': end_freq, 'n_cycles': n_cycles,
                           'forc_cycles': FORC_cycles, 'forc_repeats': FORC_repeats,
                           'loop_a': loop_a, 'loop_b': loop_b, 'data_type': data_type,
-                          'VS_mode': mode, 'field_mode': field_mode, 'num_udvs_steps': self.n_spec_bins}
-
-        # Make sure we have a proper path to the images to use
-        if image_folder is None:
-            image_folder = os.path.join(os.getcwd(), 'df_utils/beps_data_gen_images')
-        else:
-            image_folder = os.path.abspath(image_folder)
+                          'VS_mode': mode, 'field_mode': field_mode, 'num_udvs_steps': self.n_spec_bins,
+                          'VS_cycle_fraction': cycle_frac}
 
         # Build the hdf5 file and get the datasets to write the data to
         self._setup_h5(data_gen_parms)
 
         # Calculate the loop parameters
-        coef_mat = self.calc_loop_coef_mat(image_folder)
+        coef_mat = self.calc_loop_coef_mat(images)
 
         # In-and-out of field coefficients
         if field_mode != 'in-field':
@@ -194,6 +269,8 @@ class FakeDataGenerator(Translator):
         self.h5_loop_guess[:] = np.tile(realToCompound(coef_mat * get_noise_vec(coef_mat.shape, 0.1),
                                                        loop_fit32),
                                         [1, int(self.n_loops / self.n_fields)])
+
+        self._calc_raw()
 
         self.h5_file.flush()
 
@@ -467,14 +544,14 @@ class FakeDataGenerator(Translator):
 
         return
 
-    def calc_loop_coef_mat(self, folder):
+    def calc_loop_coef_mat(self, image_list):
         """
         Build the loop coefficient matrix
 
         Parameters
         ----------
-        folder : str
-            Path to the folder holding the images
+        image_list : list of numpy.ndarray
+            Images that will be used to generate the coefficients
 
         Returns
         -------
@@ -499,8 +576,7 @@ class FakeDataGenerator(Translator):
         # build loop coef matrix
         coef_mat = np.zeros([self.n_pixels, 11])
         for coef_ind in range(11):
-            image_name = str(coef_ind + 1) + '.tif'
-            coef_img = np.array(Image.open(os.path.join(folder, image_name))) / 256
+            coef_img = image_list[coef_ind]
             coef_min = coef_limits[coef_ind][0]
             coef_max = coef_limits[coef_ind][1]
             coef_img = coef_img * (coef_max - coef_min) + coef_min
@@ -568,6 +644,34 @@ class FakeDataGenerator(Translator):
                                                                         phase*get_noise_vec(self.n_sho_bins, phase_noise),
                                                                         np.ones_like(R_mat)]),
                                                              sho32)
+
+            self.h5_file.flush()
+
+        return
+
+    def _calc_raw(self):
+        """
+
+        Returns
+        -------
+
+        """
+        mem_per_pix = self.n_sho_bins*self.h5_sho_fit.dtype.itemsize+self.n_spec_bins*self.h5_raw.dtype.itemsize
+        free_mem = self.max_ram
+        batch_size = int(free_mem/mem_per_pix)
+        batches = gen_batches(self.n_pixels, batch_size)
+
+        w_vec = self.h5_spec_vals[get_attr(self.h5_spec_vals, 'Frequency')].squeeze()
+        w_vec = w_vec[:self.n_bins]
+
+        for pix_batch in batches:
+            sho_chunk = self.h5_sho_fit[pix_batch, :].flatten()
+
+            raw_data = np.zeros([sho_chunk.shape[0], self.n_bins], dtype=np.complex64)
+            for iparm, sho_parms in enumerate(sho_chunk):
+                raw_data[iparm, :] = SHOfunc(sho_parms, w_vec)
+
+            self.h5_raw[pix_batch, :] = raw_data.reshape([-1, self.n_spec_bins])
 
             self.h5_file.flush()
 

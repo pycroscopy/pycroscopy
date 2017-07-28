@@ -14,7 +14,7 @@ import numpy as np
 from .microdata import MicroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'get_attribute', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
+           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
            'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main']
 
@@ -44,6 +44,7 @@ def print_tree(parent):
 def get_all_main(parent, verbose=False):
     """
     Simple function to recursively print the contents of an hdf5 group
+
     Parameters
     ----------
     parent : h5py.Group
@@ -53,7 +54,8 @@ def get_all_main(parent, verbose=False):
 
     Returns
     -------
-    None
+    main_list : list of h5py.Dataset
+        The datasets found in the file that meet the 'Main Data' criteria.
 
     """
     main_list = list()
@@ -154,9 +156,12 @@ def get_attr(h5_object, attr_name):
     att_val : object
         value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
     """
-    if attr_name not in h5_object.attrs.keys():
+    try:
+        att_val = h5_object.attrs.get(attr_name)
+    except KeyError:
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
-    att_val = h5_object.attrs[attr_name]
+    except:
+        raise
 
     if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
         att_val = att_val.decode('utf-8')
@@ -550,8 +555,7 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
-# TODO: Reshape to Ndims should return the labels of the dimensions as a list as well
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
+def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -564,6 +568,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
         Position indices corresponding to rows in `h5_main`
     h5_spec : HDF5 Dataset, optional
         Spectroscopic indices corresponding to columns in `h5_main`
+    get_labels : bool
+        Should the labels be returned.  Default False
 
     Returns
     -------
@@ -576,6 +582,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
         the position dimensions
 
         False if no reshape was possible
+    ds_labels : list of str
+        List of the labels of each dimension of `ds_Nd`
 
     Notes
     -----
@@ -622,7 +630,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
             try:
                 ds_spec = h5_main.file[h5_main.attrs['Spectroscopic_Indices']][()]
             except KeyError:
-                print ('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
+                print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
                 else:
@@ -655,6 +663,20 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
     spec_dims = get_dimensionality(ds_spec, spec_sort)
 
+    '''
+    Get the labels in the proper order
+    '''
+    if isinstance(h5_pos, h5py.Dataset):
+        pos_labs = get_attr(h5_pos, 'labels')[pos_sort]
+    else:
+        pos_labs = ['' for _ in pos_dims]
+    if isinstance(h5_spec, h5py.Dataset):
+        spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
+    else:
+        spec_labs = ['' for _ in spec_dims]
+
+    ds_labels = pos_labs + spec_labs
+
     ds_main = h5_main[()]
 
     """
@@ -685,8 +707,12 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
 
     ds_Nd2 = np.transpose(ds_Nd, swap_axes)
 
-    return ds_Nd2, True
+    if get_labels:
+        results = (ds_Nd2, True, ds_labels)
+    else:
+        results = (ds_Nd2, True)
 
+    return results
 
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     """

@@ -203,6 +203,10 @@ class BELoopModel(Model):
         self._create_projection_datasets()
         if max_mem is None:
             max_mem = self._maxDataChunk
+        else:
+            max_mem = min(max_mem, self._maxMemoryMB)
+            self._maxDataChunk = int(max_mem / self._maxCpus)
+
         self._get_sho_chunk_sizes(max_mem, verbose=verbose)
         self._create_guess_datasets()
 
@@ -315,6 +319,9 @@ class BELoopModel(Model):
             processors = min(processors, self._maxCpus)
         if max_mem is None:
             max_mem = self._maxDataChunk
+        else:
+            max_mem = min(max_mem, self._maxMemoryMB)
+            self._maxDataChunk = int(max_mem / self._maxCpus)
 
         '''
         Ensure that a guess exists

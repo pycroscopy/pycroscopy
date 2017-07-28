@@ -57,7 +57,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
 
     h5_file = h5_main.file
 
-    expt_type = h5_file.attrs['data_type']
+    expt_type = get_attr(h5_file, 'data_type')
     if expt_type not in ['BEPSData', 'BELineData']:
         warn('Unsupported data format')
         return
@@ -74,7 +74,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
     grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
 
     try:
-        h5_pos = h5_file[h5_main.attrs['Position_Indices']]
+        h5_pos = h5_file[get_attr(h5_main, 'Position_Indices')]
     except KeyError:
         print('No Position_Indices found as attribute of {}'.format(h5_main.name))
         print('Rows and columns will be calculated from dataset shape.')
@@ -85,7 +85,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
         num_cols = len(np.unique(h5_pos[:, 1]))
 
     try:
-        h5_spec_vals = h5_file[h5_main.attrs['Spectroscopic_Values']]
+        h5_spec_vals = h5_file[get_attr(h5_main, 'Spectroscopic_Values')]
     # except KeyError:
     #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
     #     raise
