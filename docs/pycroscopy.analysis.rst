@@ -1,5 +1,5 @@
-pycroscopy.analysis package
-===========================
+pycroscopy\.analysis package
+============================
 
 .. automodule:: pycroscopy.analysis
     :members:
@@ -17,48 +17,48 @@ Subpackages
 Submodules
 ----------
 
-pycroscopy.analysis.be_loop_model module
-----------------------------------------
+pycroscopy\.analysis\.be\_loop\_model module
+--------------------------------------------
 
 .. automodule:: pycroscopy.analysis.be_loop_model
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.be_sho_model module
----------------------------------------
+pycroscopy\.analysis\.be\_sho\_model module
+-------------------------------------------
 
 .. automodule:: pycroscopy.analysis.be_sho_model
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.fit_methods module
---------------------------------------
+pycroscopy\.analysis\.fit\_methods module
+-----------------------------------------
 
 .. automodule:: pycroscopy.analysis.fit_methods
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.guess_methods module
-----------------------------------------
+pycroscopy\.analysis\.guess\_methods module
+-------------------------------------------
 
 .. automodule:: pycroscopy.analysis.guess_methods
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.model module
---------------------------------
+pycroscopy\.analysis\.model module
+----------------------------------
 
 .. automodule:: pycroscopy.analysis.model
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.analysis.optimize module
------------------------------------
+pycroscopy\.analysis\.optimize module
+-------------------------------------
 
 .. automodule:: pycroscopy.analysis.optimize
     :members:

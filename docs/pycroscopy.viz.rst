@@ -1,5 +1,5 @@
-pycroscopy.viz package
-======================
+pycroscopy\.viz package
+=======================
 
 .. automodule:: pycroscopy.viz
     :members:
@@ -16,16 +16,16 @@ Subpackages
 Submodules
 ----------
 
-pycroscopy.viz.be_viz_utils module
-----------------------------------
+pycroscopy\.viz\.be\_viz\_utils module
+--------------------------------------
 
 .. automodule:: pycroscopy.viz.be_viz_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-pycroscopy.viz.plot_utils module
---------------------------------
+pycroscopy\.viz\.plot\_utils module
+-----------------------------------
 
 .. automodule:: pycroscopy.viz.plot_utils
     :members:

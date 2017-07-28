@@ -17,15 +17,3 @@ Subpackages
     pycroscopy.tests
     pycroscopy.viz
 
-Submodules
-----------
-
-pycroscopy.versioner module
----------------------------
-
-.. automodule:: pycroscopy.versioner
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-

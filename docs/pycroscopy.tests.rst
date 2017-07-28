@@ -1,5 +1,5 @@
-pycroscopy.tests package
-========================
+pycroscopy\.tests package
+=========================
 
 .. automodule:: pycroscopy.tests
     :members:
@@ -9,8 +9,8 @@ pycroscopy.tests package
 Submodules
 ----------
 
-pycroscopy.tests.test_123 module
---------------------------------
+pycroscopy\.tests\.test\_123 module
+-----------------------------------
 
 .. automodule:: pycroscopy.tests.test_123
     :members:

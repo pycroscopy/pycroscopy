@@ -162,6 +162,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     ----------
     dm4_file : DM4File
         File object of the dm4 file to be parsed.
+
     tag_dir : dict
         Dictionary to be traced.  Has the following attributes:
             tag_dir.name : str

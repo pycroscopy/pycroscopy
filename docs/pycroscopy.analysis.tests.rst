@@ -1,5 +1,5 @@
-pycroscopy.analysis.tests package
-=================================
+pycroscopy\.analysis\.tests package
+===================================
 
 .. automodule:: pycroscopy.analysis.tests
     :members:
@@ -9,8 +9,8 @@ pycroscopy.analysis.tests package
 Submodules
 ----------
 
-pycroscopy.analysis.tests.test_123 module
------------------------------------------
+pycroscopy\.analysis\.tests\.test\_123 module
+---------------------------------------------
 
 .. automodule:: pycroscopy.analysis.tests.test_123
     :members:
