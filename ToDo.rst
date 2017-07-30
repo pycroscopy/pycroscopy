@@ -5,7 +5,8 @@ New features
 Core development
 ~~~~~~~~~~~~~~~~
 * Data Generators
-*	Parallel framework for Processing - Should be similar to Optimize from Analysis.
+* Parallel framework for Processing - Should be similar to Optimize from Analysis.
+* Either host real data for people to play with
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Li Xin classification code 
@@ -13,6 +14,7 @@ External user contributions
 *	Nina’s processing code (Tselev) – in progress
 * Sabine's cKPFM code
 * Josh Agar's convex hull
+* Port everything from our old Matlab > Python translation exercise
 * Other workflows/functions that already exist as scripts or notebooks
 
 Plotting updates
@@ -37,6 +39,7 @@ Short notebooks / tutorials on how to use pycroscopy
     * ioHDF5
     * linking as main etc.
 * Setting up interactive visualizers
+* Link to tutorials on pycharm, Git, 
 Longer examples (probably scientific workflows / pipelines)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *	Ttranslators – probably only one needed
@@ -49,9 +52,13 @@ Longer examples (probably scientific workflows / pipelines)
 
 Documentation
 -------------
-*	Switch to using Sphinx-gallery for documentation
-  *	Done for existing documentation
-  *	Work will be needed after examples are done
+*	Switch to using Sphinx-gallery for documentation:
+   * https://sphinx-gallery.readthedocs.io/en/latest/
+   * http://scikit-image.org/docs/dev/auto_examples/ 
+   * http://scikit-learn.org/stable/auto_examples/index.html 
+   * more complicated analyses -  http://nipy.org/dipy/examples_index.html
+   * Done for existing documentation
+   * Work will be needed after examples are done
 *	Host docs somewhere other than readthedocs - On github?
 *	Include examples in documentation
 
@@ -75,4 +82,42 @@ Testing
 *	Write test code
 *	Unit tests for simple functions
 *	Longer tests using data (real or generated) for the workflow tests
-* Use Travis-CI for automatic testing, document generation, versioning, uploading, etc.
+*  measure coverage using codecov.io and codecov package
+
+Software Engineering
+--------------------
+* Use Travis-CI or Circle for automatic testing, document generation, versioning, uploading, etc.
+   * https://ilovesymposia.com/2014/10/15/continuous-integration-in-python-4-set-up-travis-ci/  
+   * (good example: scikit-learn: https://github.com/scikit-learn/scikit-learn/blob/master/.travis.yml
+   * https://github.com/scikit-learn/scikit-learn/tree/master/build_tools/circle)
+* Consider releasing bug fixes (to onsite CNMS users) via git instead of rapid pypi releases 
+   * example release steps (incl. git tagging): https://github.com/cesium-ml/cesium/blob/master/RELEASE.txt
+* Proper pypi versioning - https://www.python.org/dev/peps/pep-0440/#developmental-releases
+* Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
+* Add requirements.txt
+
+Scaling to clusters
+-------------------
+We have two kinds of large computational jobs and one kind of large I/O job:
+
+* I/O - reading and writing large amounts of data
+   * Dask and MPI are compatible. Spark is probably not
+* Computation
+   1. Machine learning and Statistics
+   
+      * Either use custom algorithms developed for BEAM
+         * Advantage - Optimized (and tested) for various HPC environments
+         * Disadvantages:
+            * Need to integarate non-python code
+            * We only have a handful of these. NOT future compatible
+            
+      * Or continue using a single FAT node for these jobs
+         * Advantages:
+            - No optimization required
+            - Continue using the same scikit learn packages
+         * Disadvantage - Is not optimized for HPC
+   2. Parallel parametric search - analyze subpackage and some user defined functions in processing. Can be extended using:
+   
+      * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
+         * simple dask netcdf example: http://matthewrocklin.com/blog/work/2016/02/26/dask-distributed-part-3
+      * MPI - Need alternatives to Optimize / Process classes - Better efficiency but a pain to implement
