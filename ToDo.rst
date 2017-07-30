@@ -105,16 +105,15 @@ We have two kinds of large computational jobs and one kind of large I/O job:
 * Computation
    1. Machine learning and Statistics
    
-      * Either use custom algorithms developed for BEAM
+      1.1. Either use custom algorithms developed for BEAM
          * Advantage - Optimized (and tested) for various HPC environments
          * Disadvantages:
             * Need to integarate non-python code
-            * We only have a handful of these. NOT future compatible
-            
-      * Or continue using a single FAT node for these jobs
+            * We only have a handful of these. NOT future compatible            
+      1.2. Or continue using a single FAT node for these jobs
          * Advantages:
-            - No optimization required
-            - Continue using the same scikit learn packages
+            * No optimization required
+            * Continue using the same scikit learn packages
          * Disadvantage - Is not optimized for HPC
    2. Parallel parametric search - analyze subpackage and some user defined functions in processing. Can be extended using:
    
