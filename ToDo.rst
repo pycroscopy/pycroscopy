@@ -1,3 +1,5 @@
+.. contents::
+
 New features
 ------------
 Core development
