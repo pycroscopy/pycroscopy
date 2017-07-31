@@ -663,20 +663,6 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
     spec_dims = get_dimensionality(ds_spec, spec_sort)
 
-    '''
-    Get the labels in the proper order
-    '''
-    if isinstance(h5_pos, h5py.Dataset):
-        pos_labs = get_attr(h5_pos, 'labels')[pos_sort]
-    else:
-        pos_labs = ['' for _ in pos_dims]
-    if isinstance(h5_spec, h5py.Dataset):
-        spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
-    else:
-        spec_labs = ['' for _ in spec_dims]
-
-    ds_labels = pos_labs + spec_labs
-
     ds_main = h5_main[()]
 
     """
@@ -708,6 +694,20 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     ds_Nd2 = np.transpose(ds_Nd, swap_axes)
 
     if get_labels:
+        '''
+        Get the labels in the proper order
+        '''
+        if isinstance(h5_pos, h5py.Dataset):
+            pos_labs = get_attr(h5_pos, 'labels')[pos_sort]
+        else:
+            pos_labs = np.array(['' for _ in pos_dims])
+        if isinstance(h5_spec, h5py.Dataset):
+            spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
+        else:
+            spec_labs = np.array(['' for _ in spec_dims])
+
+        ds_labels = np.hstack([pos_labs, spec_labs])
+
         results = (ds_Nd2, True, ds_labels)
     else:
         results = (ds_Nd2, True)
