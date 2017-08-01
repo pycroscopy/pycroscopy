@@ -10,11 +10,12 @@ Core development
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Li Xin classification code 
-* Ondrej’s atom finding code – written but needs work before fully integrated
-*	Nina’s processing code (Tselev) – in progress
-* Sabine's cKPFM code
-* Josh Agar's convex hull
-* Port everything from our old Matlab > Python translation exercise
+* Ondrej Dyck’s atom finding code – written but needs work before fully integrated
+* Nina Wisinger’s processing code (Tselev) – in progress
+* Sabine Neumeyer's cKPFM code
+* Josh Agar's convex hull code
+* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
+* Port everything from CNMS Matlab > Python translation exercises
 * Other workflows/functions that already exist as scripts or notebooks
 
 Plotting updates
