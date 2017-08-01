@@ -555,8 +555,7 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
-# TODO: Reshape to Ndims should return the labels of the dimensions as a list as well
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
+def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -569,6 +568,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
         Position indices corresponding to rows in `h5_main`
     h5_spec : HDF5 Dataset, optional
         Spectroscopic indices corresponding to columns in `h5_main`
+    get_labels : bool
+        Should the labels be returned.  Default False
 
     Returns
     -------
@@ -581,6 +582,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
         the position dimensions
 
         False if no reshape was possible
+    ds_labels : list of str
+        List of the labels of each dimension of `ds_Nd`
 
     Notes
     -----
@@ -660,6 +663,20 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
     pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
     spec_dims = get_dimensionality(ds_spec, spec_sort)
 
+    '''
+    Get the labels in the proper order
+    '''
+    if isinstance(h5_pos, h5py.Dataset):
+        pos_labs = get_attr(h5_pos, 'labels')[pos_sort]
+    else:
+        pos_labs = ['' for _ in pos_dims]
+    if isinstance(h5_spec, h5py.Dataset):
+        spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
+    else:
+        spec_labs = ['' for _ in spec_dims]
+
+    ds_labels = pos_labs + spec_labs
+
     ds_main = h5_main[()]
 
     """
@@ -690,8 +707,12 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None):
 
     ds_Nd2 = np.transpose(ds_Nd, swap_axes)
 
-    return ds_Nd2, True
+    if get_labels:
+        results = (ds_Nd2, True, ds_labels)
+    else:
+        results = (ds_Nd2, True)
 
+    return results
 
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     """
@@ -1362,6 +1383,7 @@ def copy_main_attributes(h5_main, h5_new):
 
     return
 
+
 def check_for_old(h5_base, tool_name, new_parms=dict()):
     """
     Check to see if the results of a tool already exist and if they 
@@ -1382,9 +1404,18 @@ def check_for_old(h5_base, tool_name, new_parms=dict()):
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
-        test = [new_parms[key] == group.attrs[key] for key in new_parms.keys()]
 
-        if all(test):
+        tests = []
+        for key in new_parms.keys():
+            old_parm = get_attr(group, key)
+            if isinstance(old_parm, np.ndarray):
+                new_array = np.array(new_parms[key])
+                if old_parm.size == np.array():
+                    tests.append(np.all(np.isclose(old_parm, new_array)))
+            else:
+                tests.append(new_parms[key] == old_parm)
+
+        if all(tests):
             return group
 
     return None

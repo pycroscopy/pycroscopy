@@ -1404,7 +1404,6 @@ class ImageWindow(object):
         
         fig = plt.figure(figsize=[8, 8], tight_layout=True)
         plt1, = plt.semilogy(r_vec, fft_absimage, label='magnitude')
-        plt.hold(True)
         plt2, = plt.semilogy(r_sort, fft_abssort, 'ro', label='chosen peaks')
         plt3, = plt.semilogy(r_vec, guess, 'g', label='guess')
         plt4, = plt.semilogy(r_vec, fit, 'r', label='fit')
@@ -1415,7 +1414,6 @@ class ImageWindow(object):
         ax.set_xlabel('radius [pixels]')
         ax.set_ylabel('max magnitude')
         plt.legend(handles=[plt1, plt2, plt3, plt4])
-        plt.hold(False)
         
         if save_plots:
             folder,filename = os.path.split(self.hdf.path)
