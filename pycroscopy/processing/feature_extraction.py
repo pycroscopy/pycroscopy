@@ -20,6 +20,15 @@ import skimage.feature
 def pickle_keypoints(keypoints):
     """
     Function to pickle cv2.sift keypoint objects
+
+    Parameters
+    ----------
+    keypoints
+        keypoint object to be pickled
+
+    Returns
+    -------
+
     """
     kpArray = np.array([])
     for point in keypoints:

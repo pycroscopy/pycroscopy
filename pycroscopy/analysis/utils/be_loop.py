@@ -222,8 +222,6 @@ def projectLoop(vdc, amp_vec, phase_vec):
     c_point, geo_area_loop = calculate_loop_centroid(vdc, ydat_new)
     c_point_orth, geo_area_loop_orth = calculate_loop_centroid(vdc, ydat_new_orth)
 
-    pr_vec = np.zeros(shape=(len(ydat_new)))
-
     # Based on the above we can see that the blue curve gives the correct rotation angle.
     if geo_area_loop > 0:
         pr_vec = ydat_new  # [0,:]
