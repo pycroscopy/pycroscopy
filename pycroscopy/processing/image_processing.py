@@ -1414,7 +1414,7 @@ class ImageWindow(object):
         ax.set_xlabel('radius [pixels]')
         ax.set_ylabel('max magnitude')
         plt.legend(handles=[plt1, plt2, plt3, plt4])
-        
+
         if save_plots:
             folder,filename = os.path.split(self.hdf.path)
             basename, junk = os.path.splitext(filename)
