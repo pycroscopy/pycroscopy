@@ -599,7 +599,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         """
         if isinstance(h5_main, h5py.Dataset):
             try:
-                ds_pos = h5_main.file[h5_main.attrs['Position_Indices']][()]
+                h5_pos = h5_main.file[h5_main.attrs['Position_Indices']]
+                ds_pos = h5_pos[()]
             except KeyError:
                 print('No position datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
@@ -628,7 +629,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         """
         if isinstance(h5_main, h5py.Dataset):
             try:
-                ds_spec = h5_main.file[h5_main.attrs['Spectroscopic_Indices']][()]
+                h5_spec = h5_main.file[h5_main.attrs['Spectroscopic_Indices']]
+                ds_spec = h5_spec[()]
             except KeyError:
                 print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
@@ -698,7 +700,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         Get the labels in the proper order
         '''
         if isinstance(h5_pos, h5py.Dataset):
-            pos_labs = get_attr(h5_pos, 'labels')[pos_sort]
+            pos_labs = get_attr(h5_spec, 'labels')
         else:
             pos_labs = np.array(['' for _ in pos_dims])
         if isinstance(h5_spec, h5py.Dataset):
