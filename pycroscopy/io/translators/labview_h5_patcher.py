@@ -79,15 +79,15 @@ class LabViewH5Patcher(Translator):
             h5_spec_labels = h5_spec_inds.attrs['labels']
             inds_and_vals = [h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]
             for dset in inds_and_vals:
-                ds_labels = dset.attrs['labels']
+                spec_labels = dset.attrs['labels']
                 try:
-                    ds_units = dset.attrs['units']
+                    spec_units = dset.attrs['units']
 
-                    if len(ds_units) != len(ds_labels):
+                    if len(spec_units) != len(spec_labels):
                         raise KeyError
 
                 except KeyError:
-                    ds_units = ['' for _ in ds_labels]
+                    dset['units'] = ['' for _ in spec_labels]
                 except:
                     raise
 
@@ -123,16 +123,16 @@ class LabViewH5Patcher(Translator):
                 sho_inds_and_vals = [h5_sho_spec_inds, h5_sho_spec_vals]
 
                 for dset in sho_inds_and_vals:
-                    ds_labels = get_attr(dset, 'labels')
+                    spec_labels = get_attr(dset, 'labels')
                     try:
-                        ds_units = get_attr(dset, 'units')
+                        spec_units = get_attr(dset, 'units')
 
-                        if len(ds_units) != len(ds_labels):
+                        if len(spec_units) != len(spec_labels):
                             raise KeyError
 
                     except KeyError:
-                        ds_units = [''.encode('utf-8') for _ in ds_labels]
-                        dset.attrs['units'] = ds_units
+                        spec_units = [''.encode('utf-8') for _ in spec_labels]
+                        dset.attrs['units'] = spec_units
 
                     except:
                         raise
