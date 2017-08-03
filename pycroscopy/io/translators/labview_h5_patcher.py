@@ -15,14 +15,26 @@ from ..hdf_utils import get_attr, link_as_main, checkAndLinkAncillary, findH5gro
 
 
 class LabViewH5Patcher(Translator):
+    """
+    Patches the hdf5 files from the LabView V3 data aquisition software to meet the
+    standards of the Pycroscopy data format.
+
+    """
 
     def __init__(self):
         super(LabViewH5Patcher, self).__init__()
 
+    def _parse_file_path(self, input_path):
+        pass
+
+    def _read_data(self):
+        pass
+
     def translate(self, h5_path):
         """
         Add the needed references and attributes to the h5 file that are not created by the
-         LabView data aquisition program.
+        LabView data aquisition program.
+
         Parameters
         ----------
         h5_path : str

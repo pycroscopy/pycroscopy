@@ -309,6 +309,7 @@ class BELoopModel(Model):
         -------
         results: list
             List of the results returned by the solver
+
         """
         '''
         Set the number of processors and the ammount of RAM to use in the fit

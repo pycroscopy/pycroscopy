@@ -30,6 +30,7 @@ Once a user converts their microscope's data format into an HDF5 format, by simp
    pycroscopy.processing
    pycroscopy.tests
    pycroscopy.viz
+   gallery_examples/index
 
 
 Indices and tables
