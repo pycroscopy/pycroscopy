@@ -116,7 +116,7 @@ class BELoopModel(Model):
             Whether or not this dataset satisfies the necessary conditions for analysis
 
         """
-        if get_attr(h5_main.file,'data_type') != 'BEPSData':
+        if get_attr(h5_main.file, 'data_type') != 'BEPSData':
             warn('Provided dataset does not appear to be a BEPS dataset')
             return False
         elif not h5_main.name.startswith('/Measurement_'):

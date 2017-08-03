@@ -113,7 +113,7 @@ class ioHDF5(object):
         '''
         Delete the original file and move the temporary file to the originals path
         '''
-# TODO Find way to get the real OS error that works in and out of Spyder
+        # TODO Find way to get the real OS error that works in and out of Spyder
         try:
             os.remove(self.path)
             os.rename(tmpfile, self.path)

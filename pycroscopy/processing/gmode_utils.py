@@ -238,6 +238,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
         max_pix = int(np.rint(max_RAM_gb*1024**3 / bytes_per_pix))
         max_pix = max(1, min(h5_raw.shape[0], max_pix))
         print('Allowed to read', max_pix, 'of', h5_raw.shape[0], 'pixels')
+
         return np.uint(max_pix)
         
     def __filter_chunk(raw_mat, parm_dict, recom_cores):
@@ -265,6 +266,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
             filtered data arranged as [repetition, points per measurement]
         cond_data : 2D complex numpy array
             [set of measurements, frequency bins containing data]
+
         """
         max_cores = max(1, cpu_count()-2)
             
@@ -492,7 +494,8 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
     filt_data : 2D numpy array or None
         filtered data arranged as [repetition, points per measurement]
     cond_data : 2D complex numpy array or None
-        [set of measurements, frequency bins containing data]        
+        [set of measurements, frequency bins containing data]
+
     """
     # Make place-holders to hold the data:
     pix_per_set = parm_dict['filter_parms']['num_pix']
@@ -575,6 +578,7 @@ def filter_chunk_serial(raw_data, parm_dict):
         filtered data arranged as [repetition, points per measurement]
     cond_data : 2D complex numpy array or None
         [set of measurements, frequency bins containing data]
+
     """
     # Make place-holders to hold the data:
     pix_per_set = parm_dict['filter_parms']['num_pix']

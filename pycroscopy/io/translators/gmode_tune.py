@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 07 15:21:46 2015
+Created on Wed Jul 27 3:19:46 2017
 
-@author: Suhas Somnath
+@author: anugrahsaxena
 """
+
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 from os import path, listdir, remove
@@ -13,18 +15,18 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
-from .translator import Translator
+from .gmode_line import GLineTranslator
 from .utils import generate_dummy_main_parms, build_ind_val_dsets
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5
 from ..microdata import MicroDataGroup, MicroDataset
 
 
-class GLineTranslator(Translator):
+class GTuneTranslator(GLineTranslator):
     """
-    Translated G-mode line (bigtimedata.dat) files from actual BE line experiments to HDF5
+    Translates G-mode Tune (bigtimedata.dat) files from actual BE line experiments to HDF5
     """
-    
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file
@@ -38,9 +40,10 @@ class GLineTranslator(Translator):
         -------
         h5_path : String / unicode
             Absolute path of the h5 file
+
         """
         # Figure out the basename of the data:
-        (basename, parm_paths, data_paths) = self._parse_file_path(file_path)
+        (basename, parm_paths, data_paths) = super(GTuneTranslator, self)._parse_file_path(file_path)
         
         (folder_path, unused) = path.split(file_path)
         h5_path = path.join(folder_path, basename+'.h5')
@@ -48,16 +51,18 @@ class GLineTranslator(Translator):
         if path.exists(h5_path):
             remove(h5_path)
         
-        # Load parameters from .mat file - 'BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'
-        matread = loadmat(parm_paths['parm_mat'], variable_names=['BE_wave', 'FFT_BE_wave', 'total_cols', 'total_rows'])
+        # Load parameters from .mat file - 'AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'total_cols', 'total_rows'
+        matread = loadmat(parm_paths['parm_mat'], variable_names=['AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'total_cols', 'total_rows'])
         be_wave = np.float32(np.squeeze(matread['BE_wave']))
-
+        be_wave_train = np.float32(np.squeeze(matread['BE_wave_train']))
         # Need to take the complex conjugate if reading from a .mat file
         # FFT_BE_wave = np.conjugate(np.complex64(np.squeeze(matread['FFT_BE_wave'])))
         
         num_cols = int(matread['total_cols'][0][0])
         expected_rows = int(matread['total_rows'][0][0])
+        
         self.points_per_pixel = len(be_wave)
+        self.points_per_line = len(be_wave_train)
         
         # Load parameters from .txt file - 'BE_center_frequency_[Hz]', 'IO rate'
         is_beps, parm_dict = parmsToDict(parm_paths['parm_txt'])
@@ -95,6 +100,7 @@ class GLineTranslator(Translator):
         parm_dict['BE_center_frequency_[Hz]'] = ex_freq_correct
 
         # Some very basic information that can help the processing crew
+        parm_dict['points_per_line'] = self.points_per_line
         parm_dict['num_bins'] = self.points_per_pixel
         parm_dict['grid_num_rows'] = self.num_rows
         parm_dict['data_type'] = 'G_mode_line'
@@ -123,10 +129,12 @@ class GLineTranslator(Translator):
         # Now that the file has been created, go over each raw data file:
         # 1. write all ancillary data. Link data. 2. Write main data sequentially
                 
-        """ We only allocate the space for the main data here.
+        """ 
+        We only allocate the space for the main data here.
         This does NOT change with each file. The data written to it does.
         The auxiliary datasets will not change with each raw data file since
-        only one excitation waveform is used"""
+        only one excitation waveform is used
+        """
         ds_main_data = MicroDataset('Raw_Data', data=[], 
                                     maxshape=(self.num_rows, self.points_per_pixel * num_cols),
                                     chunking=(1, self.points_per_pixel), dtype=np.float16)
@@ -157,84 +165,9 @@ class GLineTranslator(Translator):
             linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
             
             # Now transfer scan data in the dat file to the h5 file:
-            self._read_data(data_paths[f_index], h5_main)
+            super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)
             
         hdf.close()
-        print('G-Line translation complete!')
+        print('G-Tune translation complete!')
 
         return h5_path
-
-    @staticmethod
-    def _parse_file_path(data_filepath):
-        """
-        Goes through the file directory and figures out the basename and the 
-        parameter (text and .mat), data file paths (for each analog input channel)
-        
-        Parameters
-        -----------------
-        data_filepath : string / unicode
-            absolute path of any file in the data folder
-        
-        Returns
-        ----------------
-        basename : string / unicode
-            base name of the experiment\n
-        parm_paths : dictionary
-            paths for the text and .mat parameter files\n
-            parm_text : absolute file path of the parameter text file\n
-            parm_mat : absolute file path of the parameter .mat file
-        data_paths : dictionary of the paths for the big-time data files.
-            key : index of the analog input that generated the data file\n
-            value : absolute file path of the data file
-        """
-        # Return (basename, parameter text path)
-        (folder_path, basename) = path.split(data_filepath)
-        (upper_folder, basename) = path.split(folder_path)
-        
-        # There may be one or two bigdata files. May need both paths
-        parm_paths = dict()
-        data_paths = dict()
-        targ_str = 'bigtime_0'
-        for filenames in listdir(folder_path):
-            ind = filenames.find(targ_str)
-            if ind > 0 and filenames.endswith('.dat'):
-                data_paths[int(filenames[ind+len(targ_str)])] = path.join(folder_path, filenames)
-        
-            if filenames.endswith('.txt') and filenames.find('parm') > 0:
-                parm_paths['parm_txt'] = path.join(folder_path, filenames)
-                
-            if filenames.endswith('_all.mat'):
-                parm_paths['parm_mat'] = path.join(folder_path, filenames)
-                
-        return basename, parm_paths, data_paths
-
-    def _read_data(self, filepath, h5_dset):
-        """
-        Reads the .dat file and populates the .h5 dataset
-
-        Parameters
-        ---------
-        filepath : String / unicode
-            absolute path of the data file for a particular analog input channel
-        h5_dset : HDF5 dataset reference
-            Reference to the target Raw_Data dataset
-
-        Returns
-        ---------
-        None
-        """
-        # Create data matrix - Only need 16 bit floats (time) 
-                
-        # Read line by line and write to h5                 
-        with open(filepath, 'rb') as file_handl:
-            for row_indx in range(self.num_rows):
-                
-                if row_indx % 10 == 0:
-                    print('Reading line {} of {}'.format(row_indx, self.num_rows))
-                
-                file_handl.seek(row_indx*self.__bytes_per_row__, 0)
-                data_vec = np.fromstring(file_handl.read(self.__bytes_per_row__), dtype='f')
-                h5_dset[row_indx] = np.float16(data_vec)
-                h5_dset.file.flush()
-        
-        print('Finished reading file: {}!'.format(filepath))
