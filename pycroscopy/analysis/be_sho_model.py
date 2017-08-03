@@ -306,7 +306,7 @@ class BESHOmodel(Model):
             self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
 
         if self._parallel:
-            self._max_pos_per_read /= 2
+            self._max_pos_per_read = int(self._max_pos_per_read / 2)
 
         self._create_guess_datasets()
         self._start_pos = 0
