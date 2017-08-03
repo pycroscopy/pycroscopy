@@ -168,6 +168,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
             tag_dir.name : str
                 Name of the directory
             tag_dir.dm4_tag : str
+                Contents of the directory
 
     base_name : str
         Base name of parameters.  Tag and subdirectory names will be appended

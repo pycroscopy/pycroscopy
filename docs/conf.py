@@ -397,7 +397,9 @@ numpydoc_show_class_members = False
 # Sphinx-gallery configuration
 sphinx_gallery_conf = dict(examples_dirs='../examples', gallery_dirs='gallery_examples',
                            reference_urls=dict(sphinx_gallery=None, matplotlib='https://matplotlib.org',
-                                               numpy='https://docs.scipy.org/doc/numpy'),
-                           backreferences_dir='gen_modules/backreferences', doc_module=tuple('sphinx_gallery'))
+                                               numpy='https://docs.scipy.org/doc/numpy',
+                                               scipy='https://docs.scipy.org/doc/scipy'),
+                           backreferences_dir='gen_modules/backreferences',
+                           doc_module=('sphinx_gallery', 'numpy', 'scipy'))
 # Generate autosummary even if no references
 autosummary_generate = True
