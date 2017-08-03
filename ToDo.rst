@@ -51,6 +51,14 @@ Longer examples (probably scientific workflows / pipelines)
   *	How to use Optimize
 *	Vis
 
+Rama's tutorial goal
+~~~~~~~~~~~~~~~~~~~~
+1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
+2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
+3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
+4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
+5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 3.
+
 Documentation
 -------------
 *	Switch to using Sphinx-gallery for documentation:
@@ -96,6 +104,7 @@ Software Engineering
 * Proper pypi versioning - https://www.python.org/dev/peps/pep-0440/#developmental-releases
 * Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
 * Add requirements.txt
+* Consider facilitating conda installation in addition to pypi
 
 Scaling to clusters
 -------------------
