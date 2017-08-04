@@ -23,9 +23,19 @@ In this example, we will be loading the Raw_Data dataset from the hdf5 file.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import h5py
+import requests
+from os import remove
 import pycroscopy as px
 
-h5_path = px.io_utils.uiGetFile(caption='Select .h5 file', filter='HDF5 file (*.h5)')
+# Downloading the file from the pycroscopy Github project
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
+h5_path = 'temp.h5'
+r = requests.get(url, stream=True)
+with open(h5_path, 'wb') as f:
+    for chunk in r.iter_content():
+        f.write(chunk)
+
+#h5_path = px.io_utils.uiGetFile(caption='Select .h5 file', filter='HDF5 file (*.h5)')
 
 # Read the file using using h5py:
 h5_file1 = h5py.File(h5_path, 'r')
@@ -74,3 +84,6 @@ h5_raw2 = h5_file2['Measurement_000/Channel_000/Raw_Data']
 print('h5_raw2:', h5_raw2)
 
 h5_file2.close()
+
+# Delete the temporarily downloaded h5 file:
+remove(h5_path)
