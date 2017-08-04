@@ -6,12 +6,13 @@ Created on Tue Nov  3 15:24:12 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-
 from warnings import warn
 import h5py
 import os
+import numpy as np
 from .translator import Translator
-from ..hdf_utils import get_attr, link_as_main, checkAndLinkAncillary, findH5group, findDataset
+from ..hdf_utils import get_attr, link_as_main, checkAndLinkAncillary, findH5group, findDataset, \
+    create_spec_inds_from_vals
 
 
 class LabViewH5Patcher(Translator):
@@ -87,6 +88,12 @@ class LabViewH5Patcher(Translator):
             h5_spec_inds = h5_chan['Spectroscopic_Indices']
             h5_spec_vals = h5_chan['Spectroscopic_Values']
 
+            # Make sure we have correct spectroscopic indices for the given values
+            ds_spec_inds = create_spec_inds_from_vals(h5_spec_vals[()])
+            if not np.allclose(ds_spec_inds, h5_spec_inds[()]):
+                h5_spec_inds[:, :] = ds_spec_inds[:, :]
+                h5_file.flush()
+
             # Get the labels and units for the Spectroscopic datasets
             h5_spec_labels = h5_spec_inds.attrs['labels']
             inds_and_vals = [h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]
@@ -128,6 +135,11 @@ class LabViewH5Patcher(Translator):
                 h5_sho_guess = h5_sho['Guess']
                 h5_sho_spec_inds = h5_sho['Spectroscopic_Indices']
                 h5_sho_spec_vals = h5_sho['Spectroscopic_Values']
+
+                # Make sure we have correct spectroscopic indices for the given values
+                ds_sho_spec_inds = create_spec_inds_from_vals(h5_sho_spec_inds[()])
+                if not np.allclose(ds_sho_spec_inds, h5_sho_spec_inds[()]):
+                    h5_sho_spec_inds[:, :] = ds_sho_spec_inds[:, :]
 
                 # Get the labels and units for the Spectroscopic datasets
                 h5_sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
