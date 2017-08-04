@@ -187,12 +187,12 @@ class BELoopModel(Model):
         max_mem : uint, optional
             Memory in MB to use for computation
             Default None, available memory from psutil.virtual_memory is used
-        verbose : bool, optional
-            Whether or not to print debug statements
-            Default False
         get_loop_parameters : bool, optional
             Should the physical loop parameters be calculated after the guess is done
             Default True
+        verbose : bool, optional
+            Whether or not to print debug statements
+            Default False
 
         Returns
         -------
@@ -256,10 +256,10 @@ class BELoopModel(Model):
                 projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                           order_dc_offset_reverse,
                                                                           nd_mat_shape_dc_first,
-                                                                          verbose=True)
+                                                                          verbose=verbose)
 
-            metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
-            guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
+            metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first, verbose=verbose)
+            guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first, verbose=verbose)
 
             # Store results
             self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice] = projected_loops_2d
@@ -385,7 +385,7 @@ class BELoopModel(Model):
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformat_results(temp, obj_func['obj_func'])
-                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
+                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first, verbose=verbose)
 
                 results.append(temp)
 
