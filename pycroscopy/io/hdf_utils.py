@@ -793,7 +793,7 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     so that they are in the same order as in the index array
     '''
     swap_axes = np.append(np.argsort(pos_sort),
-                          spec_sort.size - spec_sort - 1 + len(pos_sort))
+                          spec_sort[::-1] + len(pos_sort))
 
     ds_Nd = np.transpose(ds_Nd, swap_axes)
 
@@ -1450,9 +1450,9 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
     index table based on those changed
     """
     indices = np.zeros(ds_spec_val_mat.shape[0])
-    for jcol in range(1,ds_spec_val_mat.shape[1]):
-        this_col = ds_spec_val_mat[change_sort,jcol]
-        last_col = ds_spec_val_mat[change_sort,jcol-1]
+    for jcol in range(1, ds_spec_val_mat.shape[1]):
+        this_col = ds_spec_val_mat[change_sort, jcol]
+        last_col = ds_spec_val_mat[change_sort, jcol-1]
 
         """
         Check if current column values are different than those 
@@ -1467,15 +1467,15 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
         the last row that changed and set all others to zero
         """
         if len(changed) == 1:
-            indices[changed]+=1
+            indices[changed] += 1
         elif len(changed > 1):
             for change in changed[:-1]:
-                indices[change]=0
-            indices[changed[-1]]+=1
+                indices[change] = 0
+            indices[changed[-1]] += 1
 
         """
         Store the indices for the current column in the dataset
         """
-        ds_spec_inds_mat[change_sort,jcol] = indices
+        ds_spec_inds_mat[change_sort, jcol] = indices
 
     return ds_spec_inds_mat
