@@ -87,7 +87,8 @@ class BELoopModel(Model):
         self._sho_spec_inds = None
         self._sho_spec_vals = None  # used only at one location. can remove if deemed unnecessary
         self._met_spec_inds = None
-        self._num_forcs = 0
+        self._num_forcs = 1
+        self._num_forc_repeats = 1
         self._sho_pos_inds = None
         self._current_pos_slice = slice(None)
         self._current_sho_spec_slice = slice(None)
@@ -254,7 +255,8 @@ class BELoopModel(Model):
             if len(self._sho_all_but_forc_inds) != 1:
                 projected_loops_2d = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                           order_dc_offset_reverse,
-                                                                          nd_mat_shape_dc_first)
+                                                                          nd_mat_shape_dc_first,
+                                                                          verbose=True)
 
             metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
             guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
@@ -521,16 +523,28 @@ class BELoopModel(Model):
         metrics_spec_inds_per_forc : unsigned int
             Number of indices in the Loop metrics spectroscopic table that will be used per read
         """
-        # Step 1: Find number of FORC cycles (if any), DC steps, and number of loops
+        # Step 1: Find number of FORC cycles and repeats (if any), DC steps, and number of loops
         # dc_offset_index = np.argwhere(self._sho_spec_inds.attrs['labels'] == 'DC_Offset').squeeze()
         num_dc_steps = np.unique(self._sho_spec_inds[self._dc_spec_index, :]).size
         all_spec_dims = list(range(self._sho_spec_inds.shape[0]))
         all_spec_dims.remove(self._dc_spec_index)
-        self._num_forcs = 1
-        if 'FORC' in get_attr(self._sho_spec_inds, 'labels'):
-            forc_pos = np.argwhere(get_attr(self._sho_spec_inds.attrs, 'labels') == 'FORC')[0][0]
+
+        # Remove FORC_cycles
+        sho_spec_labels = get_attr(self._sho_spec_inds, 'labels')
+        has_forcs = 'FORC' in sho_spec_labels or 'FORC_Cycle' in sho_spec_labels
+        if has_forcs:
+            forc_name = 'FORC' if 'FORC' in sho_spec_labels else 'FORC_Cycle'
+            forc_pos = np.argwhere(sho_spec_labels == forc_name)[0][0]
             self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
             all_spec_dims.remove(forc_pos)
+
+            # Remove FORC_repeats
+            has_forc_repeats = 'FORC_repeat' in sho_spec_labels
+            if has_forc_repeats:
+                forc_repeat_pos = np.argwhere(sho_spec_labels == 'FORC_repeat')[0][0]
+                self._num_forc_repeats = np.unique(self._sho_spec_inds[forc_repeat_pos]).size
+                all_spec_dims.remove(forc_repeat_pos)
+
         # calculate number of loops:
         loop_dims = get_dimensionality(self._sho_spec_inds, all_spec_dims)
         loops_per_forc = np.product(loop_dims)
@@ -545,18 +559,24 @@ class BELoopModel(Model):
         max_pos = int(max_mem_mb * 1024 ** 2 / (size_per_forc * mem_overhead))
         if verbose:
             print('Can read {} of {} pixels given a {} MB memory limit'.format(max_pos,
-                                                                               self._sho_pos_inds.shape[0], max_mem_mb))
+                                                                               self._sho_pos_inds.shape[0],
+                                                                               max_mem_mb))
         self.max_pos = int(min(self._sho_pos_inds.shape[0], max_pos))
-        self.sho_spec_inds_per_forc = int(self._sho_spec_inds.shape[1] / self._num_forcs)
-        self.metrics_spec_inds_per_forc = int(self._met_spec_inds.shape[1] / self._num_forcs)
+        self.sho_spec_inds_per_forc = int(self._sho_spec_inds.shape[1] / self._num_forcs / self._num_forc_repeats)
+        self.metrics_spec_inds_per_forc = int(self._met_spec_inds.shape[1] / self._num_forcs / self._num_forc_repeats)
 
         # Step 3: Read allowed chunk
-        self._sho_all_but_forc_inds = range(self._sho_spec_inds.shape[0])
-        self._met_all_but_forc_inds = range(self._met_spec_inds.shape[0])
+        self._sho_all_but_forc_inds = list(range(self._sho_spec_inds.shape[0]))
+        self._met_all_but_forc_inds = list(range(self._met_spec_inds.shape[0]))
         if self._num_forcs > 1:
             self._sho_all_but_forc_inds.remove(forc_pos)
-            met_forc_pos = np.argwhere(get_attr(self._met_spec_inds, 'labels') == 'FORC')[0][0]
+            met_forc_pos = np.argwhere(get_attr(self._met_spec_inds, 'labels') == forc_name)[0][0]
             self._met_all_but_forc_inds.remove(met_forc_pos)
+
+            if self._num_forc_repeats > 1:
+                self._sho_all_but_forc_inds.remove(forc_repeat_pos)
+                met_forc_repeat_pos = np.argwhere(get_attr(self._met_spec_inds, 'labels') == 'FORC_repeat')[0][0]
+                self._met_all_but_forc_inds.remove(met_forc_repeat_pos)
 
         return
 
@@ -626,7 +646,6 @@ class BELoopModel(Model):
 
         Parameters
         ----------
-
         projected_loops_2d : 2D numpy float array
             Projected loops arranged as [instance or position x dc voltage steps]
         order_dc_offset_reverse : tuple of unsigned ints
