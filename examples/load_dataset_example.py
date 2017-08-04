@@ -23,19 +23,23 @@ In this example, we will be loading the Raw_Data dataset from the hdf5 file.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import h5py
-import requests
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
+
 from os import remove
 import pycroscopy as px
 
 # Downloading the file from the pycroscopy Github project
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 h5_path = 'temp.h5'
-r = requests.get(url, stream=True)
-with open(h5_path, 'wb') as f:
-    for chunk in r.iter_content():
-        f.write(chunk)
+_ = wget.download(url, h5_path)
 
-#h5_path = px.io_utils.uiGetFile(caption='Select .h5 file', filter='HDF5 file (*.h5)')
+# h5_path = px.io_utils.uiGetFile(caption='Select .h5 file', filter='HDF5 file (*.h5)')
 
 # Read the file using using h5py:
 h5_file1 = h5py.File(h5_path, 'r')
