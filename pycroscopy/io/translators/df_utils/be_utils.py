@@ -6,6 +6,7 @@ Created on Tue Jan 05 07:55:56 2016
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+
 from os import path
 from warnings import warn
 
@@ -15,14 +16,13 @@ import numpy as np
 import xlrd as xlreader
 
 from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr
+from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
 from ...io_hdf5 import ioHDF5
 from ...io_utils import getAvailableMem, recommendCores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.proc_utils import buildHistogram
 from ....viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
-
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -1168,66 +1168,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         spec_vals_labs_names = []
     
     return ds_spec_val_mat, ds_spec_inds_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names
-
-
-def create_spec_inds_from_vals(ds_spec_val_mat):
-    """
-    Create new Spectroscopic Indices table from the changes in the
-    Spectroscopic Values
-
-    Parameters
-    ----------
-    ds_spec_val_mat : numpy array of floats,
-        Holds the spectroscopic values to be indexed
-
-    Returns
-    -------
-    ds_spec_inds_mat : numpy array of uints the same shape as ds_spec_val_mat
-        Indices corresponding to the values in ds_spec_val_mat
-    """
-    ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype = np.int32)
-
-    """
-    Find how quickly the spectroscopic values are changing in each row 
-    and the order of row from fastest changing to slowest.
-    """
-    change_count = [len(np.where([row[i] != row[i-1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
-    change_sort = np.argsort(change_count)[::-1]
-
-    """
-    Determine everywhere the spectroscopic values change and build 
-    index table based on those changed
-    """
-    indices = np.zeros(ds_spec_val_mat.shape[0])
-    for jcol in range(1,ds_spec_val_mat.shape[1]):
-        this_col = ds_spec_val_mat[change_sort,jcol]
-        last_col = ds_spec_val_mat[change_sort,jcol-1]
-
-        """
-        Check if current column values are different than those 
-        in last column.
-        """
-        changed = np.where(this_col != last_col)[0]
-
-        """
-        If only one row changed, increment the index for that 
-        column
-        If more than one row has changed, increment the index for 
-        the last row that changed and set all others to zero
-        """
-        if len(changed) == 1:
-            indices[changed]+=1
-        elif len(changed > 1):
-            for change in changed[:-1]:
-                indices[change]=0
-            indices[changed[-1]]+=1
-
-        """
-        Store the indices for the current column in the dataset
-        """
-        ds_spec_inds_mat[change_sort,jcol] = indices
-
-    return ds_spec_inds_mat
 
 
 """
