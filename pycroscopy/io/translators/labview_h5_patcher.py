@@ -31,7 +31,7 @@ class LabViewH5Patcher(Translator):
     def _read_data(self):
         pass
 
-    def translate(self, h5_path):
+    def translate(self, h5_path, force_patch=False):
         """
         Add the needed references and attributes to the h5 file that are not created by the
         LabView data aquisition program.
@@ -40,6 +40,9 @@ class LabViewH5Patcher(Translator):
         ----------
         h5_path : str
             path to the h5 file
+        force_patch : bool, optional
+            Should the check to see if the file has already been patched be ignored.
+            Default False.
 
         Returns
         -------
@@ -49,7 +52,7 @@ class LabViewH5Patcher(Translator):
         """
         # Open the file and check if a patch is needed
         h5_file = h5py.File(os.path.abspath(h5_path), 'r+')
-        if h5_file.attrs.get('translator') is not None:
+        if h5_file.attrs.get('translator') is not None and not force_patch:
             print('File is already Pycroscopy ready.')
             return h5_file
 
