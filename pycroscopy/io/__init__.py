@@ -1,3 +1,20 @@
+"""
+Pycroscopy's I/O module
+
+Submodules
+----------
+
+.. autosummary::
+    :toctree: _autosummary
+
+    be_hdf_utils
+    hdf_utils
+    io_hdf5
+    io_utils
+    microdata
+    translators
+
+"""
 from . import be_hdf_utils
 from . import hdf_utils
 from . import io_hdf5

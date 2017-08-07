@@ -1,4 +1,26 @@
+"""
+Pycroscopy's processing module
 
+Submodules
+----------
+
+.. autosummary::
+    :toctree: _autosummary
+
+    atom_finding
+    cluster
+    decomposition
+    feature_extraction
+    fft
+    giv_utils
+    gmode_utils
+    image_processing
+    image_transformation
+    proc_utils
+    process
+    svd_utils
+
+"""
 from . import fft
 from . import gmode_utils
 from . import proc_utils

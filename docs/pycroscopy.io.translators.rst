@@ -32,6 +32,14 @@ pycroscopy\.io\.translators\.be\_odf\_relaxation module
     :undoc-members:
     :show-inheritance:
 
+pycroscopy\.io\.translators\.beps\_data\_generator module
+---------------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.beps_data_generator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pycroscopy\.io\.translators\.beps\_ndf module
 ---------------------------------------------
 
@@ -72,6 +80,14 @@ pycroscopy\.io\.translators\.gmode\_line module
     :undoc-members:
     :show-inheritance:
 
+pycroscopy\.io\.translators\.gmode\_tune module
+-----------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.gmode_tune
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pycroscopy\.io\.translators\.igor\_ibw module
 ---------------------------------------------
 
@@ -84,6 +100,14 @@ pycroscopy\.io\.translators\.image module
 -----------------------------------------
 
 .. automodule:: pycroscopy.io.translators.image
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycroscopy\.io\.translators\.labview\_h5\_patcher module
+--------------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.labview_h5_patcher
     :members:
     :undoc-members:
     :show-inheritance:
@@ -140,6 +164,14 @@ pycroscopy\.io\.translators\.time\_series module
 ------------------------------------------------
 
 .. automodule:: pycroscopy.io.translators.time_series
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pycroscopy\.io\.translators\.trKPFM\_translator module
+------------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.trKPFM_translator
     :members:
     :undoc-members:
     :show-inheritance:

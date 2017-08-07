@@ -1,19 +1,13 @@
 pycroscopy package
 ==================
 
-.. automodule:: pycroscopy
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. currentmodule:: pycroscopy
 
-Subpackages
------------
+.. autosummary::
+    :toctree: gen_modules/
+    :template: module.rst
 
-.. toctree::
-
-    pycroscopy.analysis
-    pycroscopy.io
-    pycroscopy.processing
-    pycroscopy.tests
-    pycroscopy.viz
-
+    analysis
+    io
+    processing
+    viz

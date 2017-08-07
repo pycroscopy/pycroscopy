@@ -22,22 +22,6 @@ import sphinx
 import sphinx_rtd_theme
 import sphinx_gallery
 sys.path.append(os.path.abspath('../'))
-# import mock
-# MOCK_MODULES = ['numpy', 'scipy', 'matplotlib', 'matplotlib.pyplot',
-#                 'scipy.misc', 'scipy.special', 'PyQt5', 'h5py', 'mpl_toolkits',
-#                 'mpl_toolkits.axes_grid1', 'scipy.optimize',
-#                 'scipy.spatial', 'scipy.signal', 'scipy.cluster',
-#                 'scipy.cluster.hierarchy', 'scipy.spatial.distance',
-#                 'scipy.io', 'scipy.io.matlab', 'sklearn', 'sklearn.utils',
-#                 'sklearn.cluster', 'sklearn.decomposition',
-#                 'sklearn.utils.extmath', 'skimage', 'skimage.feature',
-#                 'skimage.measure', 'skimage.transform', 'matplotlib.patches',
-#                 'matplotlib.colors', 'numpy_groupies', 'scipy.linalg',
-#                 'skimage.data', 'skimage.io', 'skimage.util', 'igor',
-#                 'sklearn.neighbors', 'ipywidgets', 'IPython', 'IPython.display']
-# for mod_name in MOCK_MODULES:
-#     sys.modules[mod_name] = mock.Mock()
-#     sys.modules.update((mod_name, mock.Mock()))
 
 # -- General configuration ------------------------------------------------
 
@@ -56,7 +40,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'sphinx_gallery.gen_gallery',
-    'numpydoc',
+    'sphinx.ext.napoleon',
+    # 'numpydoc',
     # 'sphinx.ext.githubpages',
 ]
 
@@ -133,6 +118,14 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+# Generate autosummary even if no references
+autosummary_generate = True
+
+autoclass_content = 'both'
+
+autodoc_default_flags = ['members',
+                         'private-members',
+                         'show-inheritance']
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -395,11 +388,13 @@ numpydoc_show_class_members = False
 
 # -------------------------------------------------
 # Sphinx-gallery configuration
-sphinx_gallery_conf = dict(examples_dirs='../examples', gallery_dirs='gallery_examples',
-                           reference_urls=dict(sphinx_gallery=None, matplotlib='https://matplotlib.org',
+sphinx_gallery_conf = dict(examples_dirs='../examples',
+                           gallery_dirs='auto_examples',
+                           reference_urls=dict(pycroscopy=None,
+                                               matplotlib='https://matplotlib.org',
                                                numpy='https://docs.scipy.org/doc/numpy',
                                                scipy='https://docs.scipy.org/doc/scipy'),
+                           # directory where function granular galleries are stored
                            backreferences_dir='gen_modules/backreferences',
-                           doc_module=('sphinx_gallery', 'numpy', 'scipy'))
-# Generate autosummary even if no references
-autosummary_generate = True
+                           # Modules for which function level galleries are created.
+                           doc_module=('pycroscopy'))

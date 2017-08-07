@@ -24,6 +24,14 @@ pycroscopy\.io\.translators\.df\_utils\.be\_utils module
     :undoc-members:
     :show-inheritance:
 
+pycroscopy\.io\.translators\.df\_utils\.beps\_gen\_utils module
+---------------------------------------------------------------
+
+.. automodule:: pycroscopy.io.translators.df_utils.beps_gen_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pycroscopy\.io\.translators\.df\_utils\.dm3\_image\_utils module
 ----------------------------------------------------------------
 

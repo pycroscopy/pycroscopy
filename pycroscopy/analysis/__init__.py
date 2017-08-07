@@ -1,3 +1,21 @@
+"""
+Pycroscopy's analysis submodule
+
+Submodules
+----------
+
+.. autosummary::
+    :toctree: _autosummary
+
+    be_loop_model
+    be_sho_model
+    fit_methods
+    guess_methods
+    model
+    optimize
+
+"""
+
 from . import utils
 from .utils import *
 from . import be_sho_model

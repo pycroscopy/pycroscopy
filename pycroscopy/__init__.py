@@ -1,4 +1,18 @@
-# Not supporting for __all__
+"""
+The Pycroscopy package.
+
+Submodules
+----------
+
+.. autosummary::
+    :toctree: _autosummary
+
+    analysis
+    io
+    processing
+    viz
+
+"""
 from . import analysis
 from .analysis import *
 from . import io

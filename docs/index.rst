@@ -1,7 +1,8 @@
 .. pycroscopy documentation master file, created by
-   sphinx-quickstart on Thu Jul 20 11:56:03 2017.
+   sphinx-quickstart on Thu Aug  3 12:58:27 2017.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
+
 
 Welcome to pycroscopy's documentation!
 ======================================
@@ -21,17 +22,15 @@ The package structure is simple, with 4 main modules:
 
 Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`.
 
+
+.. currentmodule:: index
+
+.. autosummary::
+   :template: module.rst
+
 .. toctree::
-   :maxdepth: 4
-   :caption: Contents:
-
-   pycroscopy.analysis
-   pycroscopy.io
-   pycroscopy.processing
-   pycroscopy.tests
-   pycroscopy.viz
-   gallery_examples/index
-
+   pycroscopy
+   auto_examples/index
 
 Indices and tables
 ==================
