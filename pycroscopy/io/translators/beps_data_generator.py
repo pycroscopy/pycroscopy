@@ -300,16 +300,6 @@ class FakeDataGenerator(Translator):
         # create spectrogram at each pixel from the coefficients
         spec_step = np.arange(0, 1, 1 / self.n_steps)
         V_vec = 10 * np.arcsin(np.sin(self.n_fields * np.pi * spec_step)) * 2 / np.pi
-        # V1 = V_vec[np.gradient(V_vec) > 0]
-        # V2 = V_vec[np.gradient(V_vec) <= 0]
-        # # V_mat = np.vstack([V1, V2])
-        # bin_frequencies = np.linspace(self.start_freq, self.end_freq, self.n_bins)
-        # w_mat = np.array([bin_frequencies.T] * (self.n_steps * self.n_fields)).T
-        # bin_indices = np.arange(2000, 2000 + self.n_bins)
-        # bin_step = np.arange(self.n_bins)
-        # bin_fft_a = np.ones(self.n_bins)
-        # bin_fft_p = np.arange(self.n_bins) ** 2
-        # bin_fft = bin_fft_a * np.exp(1j * bin_fft_p)
 
         # build DC vector for typical BEPS
         Vdc_mat = np.vstack((V_vec, np.full(np.shape(V_vec), np.nan)))  # Add out-of-field values
@@ -319,27 +309,11 @@ class FakeDataGenerator(Translator):
         IF_vec = np.tile(IF_vec.flatten(), self.forc_repeats)  # Repeat the FORC
 
         IF_inds = np.logical_not(np.isnan(IF_vec))
-        # OF_inds = np.isnan(IF_vec)
 
         Vdc_vec = np.where(IF_inds, IF_vec, 0)
-        # OF_vec = np.where(OF_inds, Vdc_vec, np.nan)
-        #
-        # wave_type_vec = np.ones(np.shape(Vdc_vec))
-        # wave_mod_vec = np.ones(np.shape(Vdc_vec))
 
         # build AC vector
         Vac_vec = np.ones(np.shape(Vdc_vec))
-
-        # udvs_steps = self.n_steps * self.n_fields * self.n_cycles * self.forc_cycles* self.forc_repeats
-        # # build the UDVS matrix
-        # UDVS_mat = np.zeros((udvs_steps, 7))
-        # UDVS_mat[:, 0] = np.arange(udvs_steps)  # step numbers
-        # UDVS_mat[:, 1] = np.squeeze(Vdc_vec)  # DC
-        # UDVS_mat[:, 2] = np.squeeze(Vac_vec)  # AC
-        # UDVS_mat[:, 3] = np.squeeze(wave_type_vec)  # type
-        # UDVS_mat[:, 4] = np.squeeze(wave_mod_vec)  # mod
-        # UDVS_mat[:, 5] = np.squeeze(IF_vec)  # mod
-        # UDVS_mat[:, 6] = np.squeeze(OF_vec)  # mod
 
         # Build the Spectroscopic Values matrix
         spec_dims = [self.n_bins, self.n_fields, self.n_steps, self.n_cycles, self.forc_cycles, self.forc_repeats]
@@ -347,6 +321,15 @@ class FakeDataGenerator(Translator):
         spec_units = ['Hz', '', 'V', '', '', '']
         spec_start = [self.start_freq, 0, 0, 0, 0, 0]
         spec_steps = [(self.end_freq - self.start_freq) / self.n_bins, 1, 1, 1, 1, 1]
+
+        # Remove dimensions with single values
+        real_dims = np.argwhere(np.array(spec_dims) != 1).squeeze()
+        spec_dims = [spec_dims[idim] for idim in real_dims]
+        spec_labs = [spec_labs[idim] for idim in real_dims]
+        spec_units = [spec_units[idim] for idim in real_dims]
+        spec_start = [spec_start[idim] for idim in real_dims]
+        spec_steps = [spec_steps[idim] for idim in real_dims]
+
         spec_inds, spec_vals = build_ind_val_dsets(spec_dims,
                                                    labels=spec_labs,
                                                    units=spec_units,
