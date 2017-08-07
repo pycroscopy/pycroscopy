@@ -47,7 +47,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
         plt_title = grp_name + '_' + win_title + '_Snaps'
         fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
                                    color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
-                                   heading=plt_title, cmap=cmap_jet_white_center())
+                                   heading=plt_title, cmap=plt.cm.viridis)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
@@ -148,7 +148,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True):
         fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)),
                                        num_comps=5, color_bar_mode='each', heading=grp_name,
                                        title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
-                                              'R^2 Criterion'], cmap=cmap_jet_white_center())
+                                              'R^2 Criterion'], cmap=plt.cm.viridis)
 
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
@@ -300,7 +300,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(), origin='lower',
+    img_map = ax_map.imshow(spatial_map, cmap=plt.cm.viridis, origin='lower',
                             interpolation='none')
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
@@ -354,6 +354,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
     h5_main : h5py.Dataset
         Raw dataset
     """
+    # TODO add colormap options
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
@@ -379,7 +380,7 @@ def jupyter_visualize_be_spectrograms(h5_main):
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4))
         # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.viridis)
         spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
-                               cmap=cmap_jet_white_center())
+                               cmap=plt.cm.viridis)
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
@@ -567,7 +568,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map = ax_map.imshow(spatial_map, cmap=cmap_jet_white_center(),
+    im_map = ax_map.imshow(spatial_map, cmap=plt.cm.viridis,
                            origin='lower', interpolation='none')
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
