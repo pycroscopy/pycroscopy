@@ -385,22 +385,43 @@ def jupyter_visualize_be_spectrograms(h5_main):
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
-        amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.viridis,
-                                 extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                         spectrogram.shape[0], 0],
-                                 interpolation='none')
+
+        if len(spec_dims) > 1:
+            # BEPS
+            amp_img = axes[1].imshow(np.abs(spectrogram), cmap=plt.cm.viridis,
+                                     extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
+                                             spectrogram.shape[0], 0],
+                                     interpolation='none')
+            axes[1].set_ylabel('BE step')
+
+            phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.viridis,
+                                       extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
+                                               spectrogram.shape[0], 0],
+                                       interpolation='none')
+            for axis in axes[1:3]:
+                axis.axis('tight')
+                axis.set_ylim(0, spectrogram.shape[0])
+        else:
+            # BE-Line
+            axes[1].set_ylabel('Amplitude (a. u.)')
+            axes[2].set_ylabel('Phase (rad)')
+            spectrogram = np.squeeze(spectrogram)
+            amp_img = axes[1].plot(np.abs(spectrogram))[0]
+            phase_img = axes[2].plot(np.angle(spectrogram))[0]
+            amp_full = np.abs(h5_main[()])
+            amp_mean = np.mean(amp_full)
+            amp_std = np.std(amp_full)
+            st_devs = 4
+
+            axes[1].set_ylim([0, amp_mean + st_devs * amp_std])
+            axes[2].set_ylim([-np.pi, np.pi])
+
         axes[1].set_title('Amplitude')
         axes[1].set_xlabel('Frequency (kHz)')
-        axes[1].set_ylabel('BE step')
-        phase_img = axes[2].imshow(np.angle(spectrogram), cmap=plt.cm.viridis,
-                                   extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                           spectrogram.shape[0], 0],
-                                   interpolation='none')
+
         axes[2].set_title('Phase')
         axes[2].set_xlabel('Frequency (kHz)')
-        for axis in axes[1:3]:
-            axis.axis('tight')
-            axis.set_ylim(0, spectrogram.shape[0])
+
         fig.tight_layout()
 
         def index_unpacker(**kwargs):
@@ -426,8 +447,13 @@ def jupyter_visualize_be_spectrograms(h5_main):
             for pos_dim_ind in range(1, len(pos_labels)):
                 pix_ind += pos_dim_vals[pos_dim_ind] * pos_dims[pos_dim_ind - 1]
             spectrogram = np.reshape(h5_main[pix_ind], (num_udvs_steps, -1))
-            amp_img.set_data(np.abs(spectrogram))
-            phase_img.set_data(np.angle(spectrogram))
+
+            if len(spec_dims) > 1:
+                amp_img.set_data(np.abs(spectrogram))
+                phase_img.set_data(np.angle(spectrogram))
+            else:
+                amp_img.set_ydata(np.abs(spectrogram))
+                phase_img.set_ydata(np.angle(spectrogram))
             display(fig)
 
         pos_dict = dict()
