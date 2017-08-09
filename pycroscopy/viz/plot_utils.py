@@ -258,8 +258,8 @@ def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.viridis, **kwargs
     fig.colorbar(CS3)"""
 
 
-def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.viridis,
-                     **kwargs):
+def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='',
+                     cmap=plt.cm.viridis, y_offset=0, **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
@@ -279,6 +279,8 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
         suffix for the legend (after the index of the curve)
     cmap : matplotlib.colors.LinearSegmentedColormap object
         Colormap to be used
+    y_offset : (optional) number
+        quantity by which the lines are offset from each other vertically (useful for spectra)
     """
     num_lines = line_family.shape[0]
 
@@ -290,7 +292,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
             line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
 
     for line_ind in range(num_lines):
-        axis.plot(x_axis, line_family[line_ind],
+        axis.plot(x_axis, line_family[line_ind] + line_ind*  y_offset,
                   label=line_names[line_ind],
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
