@@ -21,6 +21,8 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
 
+if sys.version_info.major == 3:
+    unicode = str
 
 def set_tick_font_size(axes, font_size):
     """
@@ -170,7 +172,7 @@ def cmap_hot_desaturated():
     return cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
 
 
-def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
+def discrete_cmap(num_bins, base_cmap=None):
     """
     Create an N-bin discrete colormap from the specified input map
 
@@ -183,7 +185,7 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
 
     Returns
     -------
-    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+    new_cmap : String or matplotlib.colors.LinearSegmentedColormap object
         Discretized color map
 
     Notes
@@ -192,11 +194,16 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
     https://gist.github.com/jakevdp/91077b0cae40f8f8244a
 
     """
+    if base_cmap is None:
+        base_cmap = 'viridis'
 
-    base = plt.cm.get_cmap(base_cmap)
-    color_list = base(np.linspace(0, 1, num_bins))
-    cmap_name = base.name + str(num_bins)
-    return base.from_list(cmap_name, color_list, num_bins)
+    if type(base_cmap) == type(plt.cm.viridis):
+        base_cmap = base_cmap.name
+
+    if type(base_cmap) == str:
+        return plt.get_cmap(base_cmap, num_bins)
+
+    return base_cmap
 
 
 def _add_loop_parameters(axes, switching_coef_vec):
@@ -762,7 +769,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 ###############################################################################
 
 
-def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.viridis,
+def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=None,
                                   spec_label='Spectroscopic Value', resp_label='Response',
                                   pos_labels=('X', 'Y'), pos_ticks=None):
     """
@@ -800,6 +807,11 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     axes : 1D array_like of axes objects
         Axes of the individual plots within `fig`
     """
+    if cmap is None:
+        cmap = plt.cm.viridis
+
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
 
     def __plot_centroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
         plot_line_family(ax, spec_val, centroids, label_prefix='Cluster', cmap=cmap)
@@ -820,9 +832,9 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
         axes = [ax_map, ax_amp, ax_phase]
 
         __plot_centroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
-                        resp_label + ' - Amplitude', cmap, 'Mean Response')
+                         resp_label + ' - Amplitude', cmap, 'Mean Response')
         __plot_centroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
-                        resp_label + ' - Phase', cmap)
+                         resp_label + ' - Phase', cmap)
         plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
     else:
@@ -831,7 +843,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
         ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
         axes = [ax_map, ax_resp]
         __plot_centroids(mean_response, ax_resp, spec_val, spec_label,
-                        resp_label, cmap, 'Mean Response')
+                         resp_label, cmap, 'Mean Response')
         plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
 
     fleg = plt.figlegend(plot_handles, plot_labels, loc='center right',
@@ -864,7 +876,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
                  cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
     ax_map.axis('tight')"""
-    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
+    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=cmap))
     fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
     ax_map.set_aspect('auto')
