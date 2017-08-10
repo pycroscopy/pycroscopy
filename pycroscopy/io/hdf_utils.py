@@ -518,6 +518,31 @@ def createRefFromIndices(h5_main, ref_inds):
     return new_ref
 
 
+def get_data_descriptor(h5_dset):
+    """
+    Returns a string of the form 'quantity (unit)'
+
+    Parameters
+    ----------
+    h5_dset : h5py.Dataset object
+        A 'main' dataset in pycroscopy
+
+    Returns
+    -------
+    descriptor : String
+        string of the form 'quantity (unit)'
+    """
+    try:
+        quant = get_attr(h5_dset, 'quantity')
+    except KeyError:
+        quant = 'Unknown quantity'
+    try:
+        unit = get_attr(h5_dset, 'units')
+    except KeyError:
+        unit = 'unknown units'
+    return '{} ({})'.format(quant, unit)
+
+
 def get_formatted_labels(h5_dset):
     """
     Takes any dataset which has the labels and units attributes and returns a list of strings
