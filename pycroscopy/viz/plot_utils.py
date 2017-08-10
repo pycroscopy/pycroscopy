@@ -586,7 +586,7 @@ def plotScree(scree, title='Scree'):
 # ###############################################################################
 
 
-def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
+def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
                    title='Component', heading='Map Stack', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
     """
     Plots the provided stack of maps
@@ -594,7 +594,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     Parameters
     -------------
     map_stack : 3D real numpy array
-        structured as [rows, cols, component]
+        structured as [component, rows, cols]
     num_comps : unsigned int
         Number of components to plot
     stdevs : int
@@ -614,6 +614,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
+    reverse_dims : Boolean (Optional)
+        Set this to False to accept data structured as [component, rows, cols]
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
@@ -622,11 +624,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     ---------
     fig, axes
     """
+    if reverse_dims:
+        map_stack = np.transpose(map_stack, (2, 0, 1))
+
     num_comps = abs(num_comps)
-    num_comps = min(num_comps, map_stack.shape[-1])
+    num_comps = min(num_comps, map_stack.shape[0])
 
     if evenly_spaced:
-        chosen_pos = np.linspace(0, map_stack.shape[-1] - 1, num_comps, dtype=int)
+        chosen_pos = np.linspace(0, map_stack.shape[0] - 1, num_comps, dtype=int)
     else:
         chosen_pos = np.arange(num_comps, dtype=int)
 
@@ -645,7 +650,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     fig_h, fig_w = fig_mult
     p_rows = int(np.floor(np.sqrt(num_comps)))
     p_cols = int(np.ceil(num_comps / p_rows))
-    if p_rows*p_cols < num_comps:
+    if p_rows * p_cols < num_comps:
         p_cols += 1
 
     pad_w, pad_h = pad_mult
@@ -683,14 +688,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
     axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
                         cbar_mode=color_bar_mode,
-                        axes_pad=(pad_w*fig_w, pad_h*fig_h),
+                        axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],
-                      map_stack[:, :, index],
+                      map_stack[index],
                       stdevs=stdevs, **kwargs)
         axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
