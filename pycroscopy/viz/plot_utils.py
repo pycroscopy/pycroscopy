@@ -19,7 +19,7 @@ from scipy.signal import blackman
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
+from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
 if sys.version_info.major == 3:
     unicode = str
@@ -702,7 +702,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     return fig202, axes202
 
 
-def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
+def plot_cluster_h5_group(h5_group, centroids_together=True):
     """
     Plots the cluster labels and mean response for each cluster
 
@@ -710,8 +710,6 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
     ----------
     h5_group : h5py.Datagroup object
         H5 group containing the labels and mean response
-    y_spec_label : str
-        Label to use for Y axis on cluster centroid plot
     centroids_together : Boolean, optional - default = True
         Whether or nor to plot all centroids together on the same plot
 
@@ -722,7 +720,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
     axes : 1D array_like of axes objects
         Axes of the individual plots within `fig`
     """
-    # TODO: The quantity and units for the main dataset itself are missing in most cases!
+
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -756,6 +754,8 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
+
+    y_spec_label = get_data_descriptor(h5_mean_resp)
     # TODO: cleaner x and y axes labels instead of 0.0000125 etc.
 
     if centroids_together:
