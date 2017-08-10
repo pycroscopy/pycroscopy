@@ -534,12 +534,12 @@ def get_formatted_labels(h5_dset):
         list of strings formatted as 'label k (unit k)'
     """
     try:
-        labs = h5_dset.attrs['labels']
+        labs = get_attr(h5_dset, 'labels')
         try:
-            units = h5_dset.attrs['units']
+            units = get_attr(h5_dset, 'units')
         except KeyError:
             warn('units attribute was missing')
-            units = ['' for lab in labs]
+            units = ['' for _ in labs]
 
         if len(labs) != len(units):
             warn('Labels and units have different sizes!')
