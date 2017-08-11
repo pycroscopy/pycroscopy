@@ -24,7 +24,7 @@ from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_desc
 if sys.version_info.major == 3:
     unicode = str
 
-default_cmap = plt.cm.virdis
+default_cmap = plt.cm.viridis
 
 
 def get_cmap_object(cmap):
