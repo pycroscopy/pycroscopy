@@ -691,10 +691,12 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
 
     """
     Now we reshape the dataset based on those dimensions
-    We must use the spectroscopic dimensions in reverse order
+    numpy reshapes correctly when the dimensions are arranged from slowest to fastest. 
+    Since the sort orders we have are from fastest to slowest, we need to reverse the orders
+    for both the position and spectroscopic dimensions
     """
     try:
-        ds_Nd = np.reshape(ds_main, pos_dims + spec_dims[::-1])
+        ds_Nd = np.reshape(ds_main, pos_dims[::-1] + spec_dims[::-1])
     except ValueError:
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
         try:
@@ -709,10 +711,10 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         raise
 
     """
-    Now we transpose the axes associated with the spectroscopic dimensions
+    Now we transpose the axes for both the position and spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    swap_axes = np.append(np.argsort(pos_sort),
+    swap_axes = np.append(pos_sort.size - 1 - np.argsort(pos_sort),
                           spec_sort.size - spec_sort - 1 + len(pos_dims))
 
     ds_Nd2 = np.transpose(ds_Nd, swap_axes)
