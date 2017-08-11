@@ -707,7 +707,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     return fig202, axes202
 
 
-def plot_cluster_h5_group(h5_group, centroids_together=True):
+def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=None):
     """
     Plots the cluster labels and mean response for each cluster
 
@@ -717,6 +717,8 @@ def plot_cluster_h5_group(h5_group, centroids_together=True):
         H5 group containing the labels and mean response
     centroids_together : Boolean, optional - default = True
         Whether or nor to plot all centroids together on the same plot
+    cmap : plt.cm object or str, optional
+        Colormap to use for the labels map and the centroid.
 
     Returns
     -------
@@ -766,10 +768,10 @@ def plot_cluster_h5_group(h5_group, centroids_together=True):
     if centroids_together:
         return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
                                              spec_label=x_spec_label, resp_label=y_spec_label,
-                                             pos_labels=pos_labels, pos_ticks=pos_ticks)
+                                             pos_labels=pos_labels, pos_ticks=pos_ticks, cmap=cmap)
     else:
         return plot_cluster_results_separate(label_mat, mean_response, max_centroids=4, x_label=x_spec_label,
-                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label)
+                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label, cmap=cmap)
 
 ###############################################################################
 
@@ -814,6 +816,9 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     """
     if cmap is None:
         cmap = plt.cm.viridis
+    else:
+        if isinstance(cmap, str):
+            cmap = plt.get_cmap(cmap)
 
     if isinstance(cmap, str):
         cmap = plt.get_cmap(cmap)
@@ -895,7 +900,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
 ###############################################################################
 
 
-def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
+def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4, cmap=None,
                                   spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
     """
     Plots the provided labels mat and centroids from clustering
@@ -908,6 +913,8 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
                        structured as [cluster,features]
     max_centroids : unsigned int
                     Number of centroids to plot
+    cmap : plt.cm object or str, optional
+        Colormap to use for the labels map and the centroids
     spec_val :  array-like
         X axis to plot the centroids against
         If no value is specified, the data is plotted against the index
@@ -920,6 +927,12 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
     -------
     fig
     """
+
+    if cmap is None:
+        cmap = plt.cm.viridis
+    else:
+        if isinstance(cmap, str):
+            cmap = plt.get_cmap(cmap)
 
     if max_centroids < 5:
 
@@ -951,8 +964,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
         axes_handles = [fax1, fax2, fax3, fax4, fax5, fax6, fax7, fax8, fax9, fax10]
 
     # First plot the labels map:
-    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0],
-                                                      base_cmap=plt.cm.viridis))
+    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0], base_cmap=cmap))
     fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
     fax1.axis('tight')
     fax1.set_aspect('auto')
@@ -969,7 +981,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
     for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(max_centroids)):
         if cluster_centroids.ndim == 2:
             ax.plot(spec_val, cluster_centroids[index, :],
-                    color=plt.cm.viridis(int(255 * index / (cluster_centroids.shape[0] - 1))))
+                    color=cmap(int(255 * index / (cluster_centroids.shape[0] - 1))))
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
         elif cluster_centroids.ndim == 3:
