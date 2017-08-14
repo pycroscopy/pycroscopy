@@ -54,7 +54,7 @@ Compatibility
 API and Documentation
 ---------------------
 * See our `homepage <https://pycroscopy.github.io/pycroscopy/>`_ for more information
-* Our api (documentation for our functions and classes) is available `here <http://https://pycroscopy.github.io/pycroscopy/docs/index.html/>`_
+* Our api (documentation for our functions and classes) is available `here <http://https://pycroscopy.github.io/pycroscopy/index.html/>`_
 * Details regarding pycroscopy's `data format <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Pycroscopy_Data_Formatting.pdf>`_ for HDF5 are also available in the docs. You can check out how we are able to represent multidimensional datasets of arbitrary sizes.
 
 Examples and Resources
