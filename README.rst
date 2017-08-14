@@ -14,10 +14,11 @@ To learn more about the motivation, general structure, and philosophy of pycrosc
 
 Package Structure
 -----------------
-The package structure is simple, with 3 main modules:
+The package structure is simple, with 4 main modules:
    1. `io`: Input/Output from custom & proprietary microscope formats to HDF5.
    2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.
    3. `analysis`: Model-dependent analysis of information.
+   4. `viz`: Plotting functions and custom interactive jupyter widgets
 
 Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`. 
 
