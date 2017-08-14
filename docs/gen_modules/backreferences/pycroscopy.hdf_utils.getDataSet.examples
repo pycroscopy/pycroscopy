@@ -1,0 +1,22 @@
+
+
+Examples using ``pycroscopy.hdf_utils.getDataSet``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Conventionally, the h5py package is used to create, read, write, and modify h5 files.">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_load_dataset_example_thumb.png
+
+        :ref:`sphx_glr_auto_examples_load_dataset_example.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_load_dataset_example.py`
