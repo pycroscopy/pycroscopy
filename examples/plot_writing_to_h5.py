@@ -45,21 +45,9 @@ and all other (spectroscopic) dimensions collapsed to the second dimension.
     * Position Values
     * Spectroscopic Indices
     * Spectroscopic Values
-
-
-# NEED TO SAY THAT ALL THESE ANCILLARY MATRICES NEED TO BE 2 DIMENSIONAL
-
-# HAVE NOT TALKED ABOUT DIMENSIONALITY OF THESE DATASETS AND WHAT THAT MEANS
-
-# HAVE NOT SPOKEN ABOUT REGION REFERENCES
-
-# HAVE NOT SPOKEN ABOUT MANDATORY ATTRIBUTES
-
-# DATA GROUP NOMENCLATURE AND ATTRIBUTES STANDARDS
-
-# ABILITY TO PERFORM THE SAME OPERATION MULTIPLE TIMES
-
-
+* These ancillary datasets are always two dimensional.
+    * The Position datasets are NxM where N is the total number of positions and M is the number of position dimensions.
+    * The Spectroscopic datasets are MxN where M is the number of spectroscopic dimensions and N is the total number os specstroscopic steps.
 * All **`main`** datasets always have two attributes that describe the measurement itself:
     * `quantity`: The physical quantity contained in each cell of the dataset - such as voltage, current, force etc.
     * `units`: The units for the physical quantity such as `V` for volts, `nA` for nano amperes, `pN` for pico newtons
@@ -68,6 +56,7 @@ and all other (spectroscopic) dimensions collapsed to the second dimension.
 ancillary datasets
     * Storing just the references allows us to re-use the same position / spectroscopic datasets without having to
     remake them
+* For more information see the data format documentation
 
 This bookkeeping is necessary for helping the code to understand the dimensionality and structure of the data. While
 these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
