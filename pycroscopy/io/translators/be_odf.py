@@ -157,7 +157,7 @@ class BEodfTranslator(Translator):
 
         self.FFT_BE_wave = bin_FFT
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
                                                      labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
         
         if isBEPS:

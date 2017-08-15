@@ -194,11 +194,15 @@ class Cluster(object):
         print('Writing clustering results to file.')
         num_clusters = mean_response.shape[0]
         ds_label_mat = MicroDataset('Labels', np.uint32(labels.reshape([-1, 1])), dtype=np.uint32)
+        ds_label_mat.attrs['quantity'] = 'Cluster ID'
+        ds_label_mat.attrs['units'] = 'a. u.'
+
         clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
 
         ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))
         ds_cluster_vals = MicroDataset('Cluster_Values', np.float32(clust_ind_mat))
         ds_cluster_centroids = MicroDataset('Mean_Response', mean_response, dtype=mean_response.dtype)
+        # Main attributes will be copied from h5_main after writing
         ds_label_inds = MicroDataset('Label_Spectroscopic_Indices', np.atleast_2d([0]), dtype=np.uint32)
         ds_label_vals = MicroDataset('Label_Spectroscopic_Values', np.atleast_2d([0]), dtype=np.float32)
 

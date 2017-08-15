@@ -19,7 +19,32 @@ from scipy.signal import blackman
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels
+from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
+
+if sys.version_info.major == 3:
+    unicode = str
+
+default_cmap = plt.cm.viridis
+
+
+def get_cmap_object(cmap):
+    """
+    Get the matplotlib.colors.LinearSegmentedColormap object regardless of the input
+
+    Parameters
+    ----------
+    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
+        Requested color map
+    Returns
+    -------
+    cmap : matplotlib.colors.LinearSegmentedColormap object
+        Requested / Default colormap object
+    """
+    if cmap is None:
+        return default_cmap
+    elif isinstance(cmap, str):
+            return plt.get_cmap(cmap)
+    return cmap
 
 
 def set_tick_font_size(axes, font_size):
@@ -62,7 +87,7 @@ def cmap_jet_white_center():
     Returns
     -------
     white_jet : matplotlib.colors.LinearSegmentedColormap object
-        color map object that can be used in place of plt.cm.viridis
+        color map object that can be used in place of the default colormap
     """
     # For red - central column is like brightness
     # For blue - last column is like brightness
@@ -170,7 +195,7 @@ def cmap_hot_desaturated():
     return cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
 
 
-def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
+def discrete_cmap(num_bins, base_cmap=default_cmap):
     """
     Create an N-bin discrete colormap from the specified input map
 
@@ -183,7 +208,7 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
 
     Returns
     -------
-    new_cmap : matplotlib.colors.LinearSegmentedColormap object
+    new_cmap : String or matplotlib.colors.LinearSegmentedColormap object
         Discretized color map
 
     Notes
@@ -192,11 +217,16 @@ def discrete_cmap(num_bins, base_cmap=plt.cm.viridis):
     https://gist.github.com/jakevdp/91077b0cae40f8f8244a
 
     """
+    if base_cmap is None:
+        base_cmap = default_cmap.name
 
-    base = plt.cm.get_cmap(base_cmap)
-    color_list = base(np.linspace(0, 1, num_bins))
-    cmap_name = base.name + str(num_bins)
-    return base.from_list(cmap_name, color_list, num_bins)
+    elif isinstance(base_cmap, type(default_cmap)):
+        base_cmap = base_cmap.name
+
+    if type(base_cmap) == str:
+        return plt.get_cmap(base_cmap, num_bins)
+
+    return base_cmap
 
 
 def _add_loop_parameters(axes, switching_coef_vec):
@@ -226,7 +256,8 @@ def _add_loop_parameters(axes, switching_coef_vec):
 
     return axes
 
-def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.viridis, **kwargs):
+
+def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=default_cmap, **kwargs):
     """
     Plots the input against the output waveform (typically loops).
     The color of the curve changes as a function of time using the jet colorscheme
@@ -244,6 +275,8 @@ def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.viridis, **kwargs
     cmap : matplotlib.colors.LinearSegmentedColormap object
         Colormap to be used
     """
+    cmap = get_cmap_object(cmap)
+
     pts_per_step = int(len(ai_vec) / num_steps)
     for step in range(num_steps - 1):
         ax.plot(ao_vec[step * pts_per_step:(step + 1) * pts_per_step],
@@ -258,8 +291,8 @@ def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=plt.cm.viridis, **kwargs
     fig.colorbar(CS3)"""
 
 
-def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='', cmap=plt.cm.viridis,
-                     **kwargs):
+def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='',
+                     cmap=default_cmap, y_offset=0, **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
@@ -279,7 +312,11 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
         suffix for the legend (after the index of the curve)
     cmap : matplotlib.colors.LinearSegmentedColormap object
         Colormap to be used
+    y_offset : (optional) number
+        quantity by which the lines are offset from each other vertically (useful for spectra)
     """
+    cmap = get_cmap_object(cmap)
+
     num_lines = line_family.shape[0]
 
     if line_names is None:
@@ -290,7 +327,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
             line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
 
     for line_ind in range(num_lines):
-        axis.plot(x_axis, line_family[line_ind],
+        axis.plot(x_axis, line_family[line_ind] + line_ind*  y_offset,
                   label=line_names[line_ind],
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
@@ -459,7 +496,8 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
 ###############################################################################
 
 
-def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2):
+def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2,
+                           cmap=default_cmap):
     """
     Plots the provided spectrograms from SVD V vector
 
@@ -475,11 +513,15 @@ def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel=
         Label for x axis
     stdevs : int
         Number of standard deviations to consider for plotting
+    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
+        Requested color map
 
     Returns
     ---------
     fig, axes
     """
+    cmap = get_cmap_object(cmap)
+
     fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 8))
     fig201.subplots_adjust(hspace=0.4, wspace=0.4)
     fig201.canvas.set_window_title(title)
@@ -492,7 +534,7 @@ def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel=
         for func, lab, ax in zip(funcs, labels, axes):
             amp_mean = np.mean(func(cur_map))
             amp_std = np.std(func(cur_map))
-            ax.imshow(func(cur_map), cmap='inferno',
+            ax.imshow(func(cur_map), cmap=cmap,
                       vmin=amp_mean - stdevs * amp_std,
                       vmax=amp_mean + stdevs * amp_std)
             ax.set_title('Eigenvector: %d - %s' % (index + 1, lab))
@@ -577,7 +619,7 @@ def plotScree(scree, title='Scree'):
 # ###############################################################################
 
 
-def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False,
+def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
                    title='Component', heading='Map Stack', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
     """
     Plots the provided stack of maps
@@ -585,7 +627,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     Parameters
     -------------
     map_stack : 3D real numpy array
-        structured as [rows, cols, component]
+        structured as [component, rows, cols]
     num_comps : unsigned int
         Number of components to plot
     stdevs : int
@@ -605,6 +647,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
+    reverse_dims : Boolean (Optional)
+        Set this to False to accept data structured as [component, rows, cols]
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
@@ -613,11 +657,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     ---------
     fig, axes
     """
+    if reverse_dims:
+        map_stack = np.transpose(map_stack, (2, 0, 1))
+
     num_comps = abs(num_comps)
-    num_comps = min(num_comps, map_stack.shape[-1])
+    num_comps = min(num_comps, map_stack.shape[0])
 
     if evenly_spaced:
-        chosen_pos = np.linspace(0, map_stack.shape[-1] - 1, num_comps, dtype=int)
+        chosen_pos = np.linspace(0, map_stack.shape[0] - 1, num_comps, dtype=int)
     else:
         chosen_pos = np.arange(num_comps, dtype=int)
 
@@ -636,7 +683,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     fig_h, fig_w = fig_mult
     p_rows = int(np.floor(np.sqrt(num_comps)))
     p_cols = int(np.ceil(num_comps / p_rows))
-    if p_rows*p_cols < num_comps:
+    if p_rows * p_cols < num_comps:
         p_cols += 1
 
     pad_w, pad_h = pad_mult
@@ -674,14 +721,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
     axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
                         cbar_mode=color_bar_mode,
-                        axes_pad=(pad_w*fig_w, pad_h*fig_h),
+                        axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
     fig202.canvas.set_window_title(heading)
     fig202.suptitle(heading, fontsize=16)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],
-                      map_stack[:, :, index],
+                      map_stack[index],
                       stdevs=stdevs, **kwargs)
         axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
@@ -693,7 +740,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     return fig202, axes202
 
 
-def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
+def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
     """
     Plots the cluster labels and mean response for each cluster
 
@@ -701,10 +748,10 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
     ----------
     h5_group : h5py.Datagroup object
         H5 group containing the labels and mean response
-    y_spec_label : str
-        Label to use for Y axis on cluster centroid plot
     centroids_together : Boolean, optional - default = True
         Whether or nor to plot all centroids together on the same plot
+    cmap : plt.cm object or str, optional
+        Colormap to use for the labels map and the centroid.
 
     Returns
     -------
@@ -713,7 +760,7 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
     axes : 1D array_like of axes objects
         Axes of the individual plots within `fig`
     """
-    # TODO: The quantity and units for the main dataset itself are missing in most cases!
+
     h5_labels = h5_group['Labels']
     try:
         h5_mean_resp = h5_group['Mean_Response']
@@ -747,20 +794,22 @@ def plot_cluster_h5_group(h5_group, y_spec_label, centroids_together=True):
 
     # Figure out the correct axes labels for label map:
     pos_labels = get_formatted_labels(h5_pos_vals)
+
+    y_spec_label = get_data_descriptor(h5_mean_resp)
     # TODO: cleaner x and y axes labels instead of 0.0000125 etc.
 
     if centroids_together:
         return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
                                              spec_label=x_spec_label, resp_label=y_spec_label,
-                                             pos_labels=pos_labels, pos_ticks=pos_ticks)
+                                             pos_labels=pos_labels, pos_ticks=pos_ticks, cmap=cmap)
     else:
         return plot_cluster_results_separate(label_mat, mean_response, max_centroids=4, x_label=x_spec_label,
-                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label)
+                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label, cmap=cmap)
 
 ###############################################################################
 
 
-def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=plt.cm.viridis,
+def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=default_cmap,
                                   spec_label='Spectroscopic Value', resp_label='Response',
                                   pos_labels=('X', 'Y'), pos_ticks=None):
     """
@@ -798,6 +847,10 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     axes : 1D array_like of axes objects
         Axes of the individual plots within `fig`
     """
+    cmap = get_cmap_object(cmap)
+
+    if isinstance(cmap, str):
+        cmap = plt.get_cmap(cmap)
 
     def __plot_centroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
         plot_line_family(ax, spec_val, centroids, label_prefix='Cluster', cmap=cmap)
@@ -818,9 +871,9 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
         axes = [ax_map, ax_amp, ax_phase]
 
         __plot_centroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
-                        resp_label + ' - Amplitude', cmap, 'Mean Response')
+                         resp_label + ' - Amplitude', cmap, 'Mean Response')
         __plot_centroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
-                        resp_label + ' - Phase', cmap)
+                         resp_label + ' - Phase', cmap)
         plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
 
     else:
@@ -829,7 +882,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
         ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
         axes = [ax_map, ax_resp]
         __plot_centroids(mean_response, ax_resp, spec_val, spec_label,
-                        resp_label, cmap, 'Mean Response')
+                         resp_label, cmap, 'Mean Response')
         plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
 
     fleg = plt.figlegend(plot_handles, plot_labels, loc='center right',
@@ -862,7 +915,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
                  cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
     ax_map.axis('tight')"""
-    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
+    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=cmap))
     fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
     ax_map.set_aspect('auto')
@@ -876,7 +929,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
 ###############################################################################
 
 
-def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
+def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4, cmap=default_cmap,
                                   spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
     """
     Plots the provided labels mat and centroids from clustering
@@ -889,6 +942,8 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
                        structured as [cluster,features]
     max_centroids : unsigned int
                     Number of centroids to plot
+    cmap : plt.cm object or str, optional
+        Colormap to use for the labels map and the centroids
     spec_val :  array-like
         X axis to plot the centroids against
         If no value is specified, the data is plotted against the index
@@ -901,6 +956,8 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
     -------
     fig
     """
+
+    cmap = get_cmap_object(cmap)
 
     if max_centroids < 5:
 
@@ -932,8 +989,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
         axes_handles = [fax1, fax2, fax3, fax4, fax5, fax6, fax7, fax8, fax9, fax10]
 
     # First plot the labels map:
-    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0],
-                                                      base_cmap=plt.cm.viridis))
+    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0], base_cmap=cmap))
     fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
     fax1.axis('tight')
     fax1.set_aspect('auto')
@@ -950,7 +1006,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
     for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(max_centroids)):
         if cluster_centroids.ndim == 2:
             ax.plot(spec_val, cluster_centroids[index, :],
-                    color=plt.cm.viridis(int(255 * index / (cluster_centroids.shape[0] - 1))))
+                    color=cmap(int(255 * index / (cluster_centroids.shape[0] - 1))))
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
         elif cluster_centroids.ndim == 3:
@@ -1097,7 +1153,7 @@ def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
 
 ###############################################################################
 
-def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=None, **kwargs):
+def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwargs):
     """
     Plots the position averaged spectrogram
 
@@ -1109,8 +1165,6 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=No
         BE frequency that serves as the X axis of the plot
     title : String
         Plot group name
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        color map. Default = plt.cm.viridis
     figure_path : String / Unicode
         Absolute path of the file to write the figure to
 
@@ -1126,22 +1180,17 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, cmap=None, figure_path=No
         print('2D:', mean_spectrogram.shape, freq.shape)
         return
 
-    """cmap = kwargs.get('cmap')
-    kwargs.pop('cmap')"""
-    if cmap is None:  # unpack from kwargs instead
-        col_map = plt.cm.viridis  # overriding default
-
     freq *= 1E-3  # to kHz
     fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
     # print(mean_spectrogram.shape)
     # print(freq.shape)
-    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest', cmap=col_map,
+    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
                  extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
     ax[0].set_title('Amplitude')
     # ax[0].set_xticks(freq)
     # ax[0].set_ylabel('UDVS Step')
     ax[0].axis('tight')
-    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest', cmap=col_map,
+    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
                  extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
     ax[1].set_title('Phase')
     ax[1].set_xlabel('Frequency (kHz)')

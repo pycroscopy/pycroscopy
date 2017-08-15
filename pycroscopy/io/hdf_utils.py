@@ -518,6 +518,31 @@ def createRefFromIndices(h5_main, ref_inds):
     return new_ref
 
 
+def get_data_descriptor(h5_dset):
+    """
+    Returns a string of the form 'quantity (unit)'
+
+    Parameters
+    ----------
+    h5_dset : h5py.Dataset object
+        A 'main' dataset in pycroscopy
+
+    Returns
+    -------
+    descriptor : String
+        string of the form 'quantity (unit)'
+    """
+    try:
+        quant = get_attr(h5_dset, 'quantity')
+    except KeyError:
+        quant = 'Unknown quantity'
+    try:
+        unit = get_attr(h5_dset, 'units')
+    except KeyError:
+        unit = 'unknown units'
+    return '{} ({})'.format(quant, unit)
+
+
 def get_formatted_labels(h5_dset):
     """
     Takes any dataset which has the labels and units attributes and returns a list of strings
@@ -534,12 +559,12 @@ def get_formatted_labels(h5_dset):
         list of strings formatted as 'label k (unit k)'
     """
     try:
-        labs = h5_dset.attrs['labels']
+        labs = get_attr(h5_dset, 'labels')
         try:
-            units = h5_dset.attrs['units']
+            units = get_attr(h5_dset, 'units')
         except KeyError:
             warn('units attribute was missing')
-            units = ['' for lab in labs]
+            units = ['' for _ in labs]
 
         if len(labs) != len(units):
             warn('Labels and units have different sizes!')
@@ -666,10 +691,12 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
 
     """
     Now we reshape the dataset based on those dimensions
-    We must use the spectroscopic dimensions in reverse order
+    numpy reshapes correctly when the dimensions are arranged from slowest to fastest. 
+    Since the sort orders we have are from fastest to slowest, we need to reverse the orders
+    for both the position and spectroscopic dimensions
     """
     try:
-        ds_Nd = np.reshape(ds_main, pos_dims + spec_dims[::-1])
+        ds_Nd = np.reshape(ds_main, pos_dims[::-1] + spec_dims[::-1])
     except ValueError:
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
         try:
@@ -684,10 +711,10 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         raise
 
     """
-    Now we transpose the axes associated with the spectroscopic dimensions
+    Now we transpose the axes for both the position and spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    swap_axes = np.append(np.argsort(pos_sort),
+    swap_axes = np.append(pos_sort.size - 1 - np.argsort(pos_sort),
                           spec_sort.size - spec_sort - 1 + len(pos_dims))
 
     ds_Nd2 = np.transpose(ds_Nd, swap_axes)
