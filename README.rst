@@ -43,7 +43,7 @@ If you already have pycroscopy installed and want to update to the latest versio
 
 .. code:: bash
 
-  pip install -U pycroscopy
+  pip install -U --no-deps pycroscopy
   
 If it does not work try reinstalling the package:
 
