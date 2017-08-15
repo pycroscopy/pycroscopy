@@ -87,7 +87,7 @@ import pycroscopy as px
 # 0. Select the Raw Data file
 # ===========================
 # Download the data file from Github:
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/cades_dev/data/STS.asc'
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.asc'
 data_file_path = 'temp.asc'
 if os.path.exists(data_file_path):
     os.remove(data_file_path)
