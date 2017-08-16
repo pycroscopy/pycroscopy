@@ -123,22 +123,37 @@ h5_path = tran.translate(h5_path, data_mat, num_pos, 1, scan_height=spec_pts, sc
                          qty_name='Intensity', data_unit='a.u', spec_name=x_label,
                          spatial_unit='a.u.', data_type='NanoIR')
 
-h5_file = h5py.File(h5_path, mode='r')
+h5_file = h5py.File(h5_path, mode='r+')
 # See if a tree has been created within the hdf5 file:
 px.hdf_utils.print_tree(h5_file)
 
+#####################################################################################
+# Extracting the data and parameters
+# ==================================
+# All necessary information to understand, plot, analyze, and process the data is present in the H5 file now. Here, we show how to extract some basic parameters to plot the data
+
 h5_main = h5_file['Measurement_000/Channel_000/Raw_Data']
+h5_spec_vals = px.hdf_utils.getAuxData(h5_main,'Spectroscopic_Values')[0]
+h5_pos_vals = px.hdf_utils.getAuxData(h5_main,'Position_Values')[0]
+x_label = px.hdf_utils.get_formatted_labels(h5_spec_vals)[0]
+y_label = px.hdf_utils.get_formatted_labels(h5_pos_vals)[0]
+descriptor = px.hdf_utils.get_data_descriptor(h5_main)
 
 #####################################################################################
+# Visualize the Amplitude Data
+# ============================
+# Note that we are not hard-coding / writing any tick labels / axis labels by hand. All the necessary information was present in the H5 file
 
-## Basic Visualization
-fig, ax = plt.subplots()
-colors = plt.cm.get_cmap('viridis', spec_pts)
-for line_ind in range(num_pos):
-    ax.plot(h5_main[line_ind], '-', color = colors(line_ind))
-ax.set_xlabel(x_label)
-ax.set_ylabel(y_label)
-ax.set_title('Data')
+fig, axis = plt.subplots(figsize=(8,5))
+px.plot_utils.plot_map(axis, h5_main, cmap='inferno')
+axis.set_title('Raw data - ' + descriptor)
+axis.set_xlabel(x_label)
+axis.set_ylabel(y_label)
+vec = h5_spec_vals[0]
+cur_x_ticks = axis.get_xticks()
+for ind in range(1,len(cur_x_ticks)-1):
+    cur_x_ticks[ind] = h5_spec_vals[0, ind]
+axis.set_xticklabels([str(val) for val in cur_x_ticks]);
 
 #####################################################################################
 # 1. Singular Value Decomposition (SVD)
@@ -156,7 +171,11 @@ ax.set_title('Data')
 # * U - corresponding bundance maps
 # * S - Variance or importance of each of these components
 
-U, S, V = np.linalg.svd(h5_main, full_matrices = False, compute_uv = True)
+h5_svd_grp = px.processing.doSVD(h5_main)
+
+U = h5_svd_grp['U']
+S = h5_svd_grp['S']
+V = h5_svd_grp['V']
 
 # Visualize the variance / statistical importance of each component:
 px.plot_utils.plotScree(S, title='Note the exponential drop of variance with number of components')
@@ -183,21 +202,23 @@ px.plot_utils.plot_loops(np.arange(num_pos), U.T, plots_on_side=3,
 
 num_comps = 4
 
-estimators = KMeans(num_comps)
-results = estimators.fit(h5_main)
+estimators = px.Cluster(h5_main, 'KMeans', num_comps=num_comps)
+h5_kmeans_grp = estimators.do_cluster(h5_main)
+h5_kmeans_labels = h5_kmeans_grp['Labels']
+h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-fig, axes = plt.subplots(ncols=2,figsize=(18,8))
-for clust_ind, end_member in enumerate(results.cluster_centers_):
-    axes[0].plot(end_member+(500*clust_ind), label = 'Cluster #' + str(clust_ind))
-axes[0].legend(bbox_to_anchor = [1.05,1.0], fontsize=12)
+fig, axes = plt.subplots(ncols=2, figsize=(18, 8))
+for clust_ind, end_member in enumerate(h5_kmeans_mean_resp):
+    axes[0].plot(end_member+(500*clust_ind), label='Cluster #' + str(clust_ind))
+axes[0].legend(bbox_to_anchor=[1.05, 1.0], fontsize=12)
 axes[0].set_title('K-Means Cluster Centers', fontsize=14)
 axes[0].set_xlabel(x_label, fontsize=14)
 axes[0].set_ylabel(y_label, fontsize=14)
 
-axes[1].plot(results.labels_)
+axes[1].plot(h5_kmeans_labels)
 axes[1].set_title('KMeans Labels', fontsize=14)
 axes[1].set_xlabel('Position', fontsize=14)
-axes[1].set_ylabel('Label');
+axes[1].set_ylabel('Label')
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)
