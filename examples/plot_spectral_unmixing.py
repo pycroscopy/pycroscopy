@@ -107,6 +107,10 @@ x_label = 'Spectral dimension'
 y_label = 'Intensity (a.u.)'
 
 #####################################################################################
+# Convert to H5
+# =============
+# Now we will take our numpy array holding the data and use the NumpyTranslator in pycroscopy to
+# write it to an h5 file.
 
 folder_path, file_name = os.path.split(data_file_path)
 file_name = file_name[:-4] + '_'
