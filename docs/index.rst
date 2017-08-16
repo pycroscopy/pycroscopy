@@ -14,8 +14,11 @@ Scientific analysis of nanoscale materials imaging data
 
 What?
 --------------------
-A suite of utilities for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
-Classes implemented here are ported to a high performance computing platform at Oak Ridge National Laboratory (`ORNL <https://www.ornl.gov/>`_).
+A suite of utilities for image processing and scientific analysis of imaging modalities such as
+multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy,
+and transmission electron microscopy.
+Classes implemented here are ported to a high performance computing platform at Oak Ridge National
+Laboratory (`ORNL <https://www.ornl.gov/>`_).
 
 More information on pycroscopy is available at our `project page <https://github.com/pycroscopy/pycroscopy>`_.
 
@@ -25,16 +28,23 @@ TL;DR? - see this `short introduction <https://github.com/pycroscopy/pycroscopy/
 
 Who?
 -----------
-This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase **M**\aterials **S**\ciences (`CNMS <https://www.ornl.gov/facility/cnms>`_) to implement a python library that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes generate (thanks to the large CNMS users community!).
+This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase
+**M**\aterials **S**\ciences (`CNMS <https://www.ornl.gov/facility/cnms>`_) to implement a python library
+that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes
+generate (thanks to the large CNMS users community!).
 
-By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider community of materials science/physics. We also hope, quite ardently, that other materials scientists would follow suit.
+By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
+community of materials science/physics. We also hope, quite ardently, that other materials scientists would
+follow suit.
 ! |smilie|
 
 .. |smilie| image:: https://raw.githubusercontent.com/pycroscopy/pycroscopy/gh-pages/images/smiley_wink.png
 
 **The (core) pycroscopy team:**
 
-`@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath), `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith), `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) and many more...
+`@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), `@ssomnath <https://github.com/ssomnath>`_
+(Suhas Somnath), `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith),
+`@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) and many more...
 
 .. _why-label:
 
@@ -70,20 +80,31 @@ As we see it, there are a few  opportunities in microscopy / imaging and materia
 
 How?
 -----------------
-* pycroscopy uses an **instrument agnostic data structure** that facilitates the storage of data, regardless of dimensionality (conventional 2D images to 9D multispectral SPM datasets) or instrument of origin (AFMs, STMs, STEMs, TOF SIMS, and many more). This general defenition of data allows us to write a single and generalized version of analysis and processing functions that can be applied to any kind of data.
-* The data is stored in `heirarchical data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_ files which:
+* pycroscopy uses an **instrument agnostic data structure** that facilitates the storage of data, regardless
+ of dimensionality (conventional 2D images to 9D multispectral SPM datasets) or instrument of origin (AFMs,
+ STMs, STEMs, TOF SIMS, and many more). This general defenition of data allows us to write a single and
+ generalized version of analysis and processing functions that can be applied to any kind of data.
+* The data is stored in `heirarchical
+data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
+files which:
    * Allow easy and open acceess to data from any programming language.
    * Accomodate datasets ranging from kilobytes (kB) to petabytes (pB)
    * Are readily compaible with supercomputers and support parallel I/O
-   * Allows storage of relevant parameters along with data for improved traceability and reproducability of analysis
-* Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_ that are interactive and portable web applications containing, text, images, code / scripts, and text-based and graphical results
-* Once a user converts their microscope's data format into a HDF5 format, by simply extending some of the classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
-   * (On a High Performance Computing Platform if she/he is a CNMS user!   Sign up `here <https://www.ornl.gov/facility/cnms/subpage/user-program-overview>`_!)
+   * Allows storage of relevant parameters along with data for improved traceability and reproducability of
+   analysis
+* Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
+that are interactive and portable web applications containing, text, images, code / scripts, and text-based
+and graphical results
+* Once a user converts their microscope's data format into a HDF5 format, by simply extending some of the
+classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
+   * (On a High Performance Computing Platform if she/he is a CNMS user!   Sign up
+`here <https://www.ornl.gov/facility/cnms/subpage/user-program-overview>`_!)
 
 
 Acknowledgements
 ----------------
-Besides the packages used in pycroscopy, we would like to thank the developers of the following software packages:
+Besides the packages used in pycroscopy, we would like to thank the developers of the following software
+packages:
 
 + `Python <https://www.python.org>`_
 + `Anaconda Python <https://www.continuum.io/anaconda-overview>`_
