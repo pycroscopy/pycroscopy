@@ -7,7 +7,7 @@ before_install:
 install: pip install pycroscopy
 script: pytest
 after_success:
-  - pip install sphinx sphinx-gallery sphinx-rtd-theme numpydoc wget pysptools
+  - pip install sphinx sphinx-gallery sphinx-rtd-theme numpydoc wget pysptools cvxopt
   - sphinx-build -b html -aET docs docs/_build/html
 #  - git clone https://github.com/pycroscopy/pycroscopy.git --branch gh-pages --depth 1 gh-pages/
 #  - cp -R docs/_build/html/* gh-pages/_docs
