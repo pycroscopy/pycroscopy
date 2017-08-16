@@ -257,7 +257,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     ds_values.attrs['labels'] = region_slices
 
     if units is None:
-        pass
+        labels = ['' for _ in dimensions]
     elif len(units) != len(dimensions):
         raise ValueError('The arrays for labels and dimension sizes must be the same.')
     else:
