@@ -185,7 +185,7 @@ px.plot_utils.plot_loops(np.arange(spec_pts), V, x_label=x_label, y_label=y_labe
                          subtitles='Component', title='SVD Eigenvectors', evenly_spaced=False);
 
 # Visualize the abundance maps:
-px.plot_utils.plot_loops(np.arange(num_pos), U.T, plots_on_side=3,
+px.plot_utils.plot_loops(np.arange(num_pos), np.transpose(U), plots_on_side=3,
                          subtitles='Component', title='SVD Abundances', evenly_spaced=False);
 
 #####################################################################################
