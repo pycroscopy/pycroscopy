@@ -40,16 +40,18 @@ Short tutorials on how to use pycroscopy
 Longer examples (probably scientific workflows / pipelines)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Done:
-1. How to write a Translator
-2. How to write (back) to H5
-3. Spectral Unmixing with pycroscopy
-4. Basic introduction to loading data in pycroscopy
+
+* How to write a Translator
+* How to write (back) to H5
+* Spectral Unmixing with pycroscopy
+* Basic introduction to loading data in pycroscopy
 
 Pending:
-4. Handling multidimensional (6D) datasets - work in progress
-5. Visualizing data (interactively using widgets) - yet to begin
-6. How to write your write your own parallel computing function using the (yet to be written) process module
-7. Data formatting in pycroscopy explained - work in progress
+
+* Handling multidimensional (6D) datasets - work in progress
+* Visualizing data (interactively using widgets) - yet to begin
+* How to write your write your own parallel computing function using the (yet to be written) process module
+* Data formatting in pycroscopy explained - work in progress
 
 
 Rama's tutorial goal
@@ -111,16 +113,23 @@ We have two kinds of large computational jobs and one kind of large I/O job:
 * Computation
    1. Machine learning and Statistics
    
-      1.1. Either use custom algorithms developed for BEAM
+      1.1. Use custom algorithms developed for BEAM
          * Advantage - Optimized (and tested) for various HPC environments
          * Disadvantages:
             * Need to integarate non-python code
             * We only have a handful of these. NOT future compatible            
-      1.2. Or continue using a single FAT node for these jobs
+      1.2. OR continue using a single FAT node for these jobs
          * Advantages:
             * No optimization required
             * Continue using the same scikit learn packages
          * Disadvantage - Is not optimized for HPC
+       1.3. OR use pbdR / write pbdPy (wrappers around pbdR)
+         * Advantages:
+            * Already optimized / mature project
+            * In-house project (good support) 
+         * Disadvantages:
+            * Dependant on pbdR for implementing new algorithms
+            
    2. Parallel parametric search - analyze subpackage and some user defined functions in processing. Can be extended using:
    
       * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
