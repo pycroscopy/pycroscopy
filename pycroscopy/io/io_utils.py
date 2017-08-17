@@ -52,6 +52,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
         else:
             app = QtWidgets.QApplication([])
             path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
+            app.closeAllWindows()
             app.exit()
             del app
 
