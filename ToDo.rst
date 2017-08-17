@@ -39,9 +39,18 @@ Short tutorials on how to use pycroscopy
 
 Longer examples (probably scientific workflows / pipelines)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*	Analysis
-  *	How to use Optimize
-*	Visualization
+Done:
+1. How to write a Translator
+2. How to write (back) to H5
+3. Spectral Unmixing with pycroscopy
+4. Basic introduction to loading data in pycroscopy
+
+Pending:
+4. Handling multidimensional (6D) datasets - work in progress
+5. Visualizing data (interactively using widgets) - yet to begin
+6. How to write your write your own parallel computing function using the (yet to be written) process module
+7. Data formatting in pycroscopy explained - work in progress
+
 
 Rama's tutorial goal
 ~~~~~~~~~~~~~~~~~~~~
