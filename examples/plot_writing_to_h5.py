@@ -269,16 +269,6 @@ px.plot_utils.plot_cluster_results_together(np.reshape(labels, (num_rows, num_co
 # positions mean the same quantities for both datasets, we can simply reuse the ancillary dataset from `source`
 # for `labels`
 #
-# Preparing the missing ancillary arrays
-# ======================================
-
-labels_spec_mat = np.arange(1, dtype=np.uint32)
-centroids_pos_mat = np.arange(num_clusters, dtype=np.uint32)
-
-print('Spectroscopic Dataset for Labels', labels_spec_mat.shape)
-print('Position Dataset for Centroids', centroids_pos_mat.shape)
-print('Centroids',centroids.shape)
-print('Labels', labels.shape)
 
 ###############################################################################
 # Reshape the matricies to the correct dimensions
@@ -292,12 +282,19 @@ print('Labels', labels.shape)
 # 4. The `Position` ancillary datasets for `centroids` need to be of the form `points x dimensions` as well.
 # In this case, `centroids` has `k` positions all in one dimension. Thus the matrix needs to be reshaped to `k x 1`
 
-labels_spec_mat = np.atleast_2d(labels_spec_mat)
-centroids_pos_mat = np.atleast_2d(centroids_pos_mat).T
+ds_labels_spec_inds, ds_labels_spec_vals = px.io.translators.utils.build_ind_val_dsets([1], labels=['Label'])
+ds_cluster_inds, ds_cluster_vals = px.io.translators.utils.build_ind_val_dsets([centroids.shape[0]], is_spectral=False,
+                                                                               labels=['Cluster'])
 labels_mat = np.uint32(labels.reshape([-1, 1]))
 
-print('Spectroscopic Dataset for Labels', labels_spec_mat.shape)
-print('Position Dataset for Centroids', centroids_pos_mat.shape)
+# Rename the datasets
+ds_labels_spec_inds.name = 'Label_Spectroscopic_Indices'
+ds_labels_spec_vals.name = 'Label_Spectroscopic_Values'
+ds_cluster_inds.name = 'Cluster_Indices'
+ds_cluster_vals.name = 'Cluster_Values'
+
+print('Spectroscopic Dataset for Labels', ds_labels_spec_inds.shape)
+print('Position Dataset for Centroids', ds_cluster_inds.shape)
 print('Centroids',centroids.shape)
 print('Labels', labels_mat.shape)
 
@@ -314,23 +311,6 @@ ds_label_mat.attrs = {'quantity': 'Cluster ID', 'units': 'a. u.'}
 ds_cluster_centroids = px.MicroDataset('Mean_Response', centroids, dtype=h5_main.dtype)
 # Inhereting / copying the mandatory attributes
 px.hdf_utils.copy_main_attributes(h5_main, ds_cluster_centroids)
-
-###############################################################################
-# Create the ancillary MicroDataset objects
-# =========================================
-
-# Ancillary datasets
-ds_cluster_inds = px.MicroDataset('Cluster_Indices', centroids_pos_mat, dtype=np.uint32)
-ds_cluster_vals = px.MicroDataset('Cluster_Values', centroids_pos_mat, dtype=np.float32)
-ds_label_inds = px.MicroDataset('Label_Spectroscopic_Indices', labels_spec_mat, dtype=np.uint32)
-ds_label_vals = px.MicroDataset('Label_Spectroscopic_Values', labels_spec_mat, dtype=np.float32)
-
-# Creating region references:
-clust_slices = {'Cluster': (slice(None), slice(0, 1))}
-ds_cluster_inds.attrs['labels'] = clust_slices
-ds_cluster_inds.attrs['units'] = ['']
-ds_cluster_vals.attrs['labels'] = clust_slices
-ds_cluster_vals.attrs['units'] = ['']
 
 ###############################################################################
 # Create the group that will contain these datasets
@@ -367,8 +347,8 @@ print('New group to be created with name:', cluster_grp.name)
 print('This group (subtree) will be appended to the H5 file under the group:', subtree_root_path)
 
 # Making a tree structure by adding the MicroDataset objects as children of this group
-cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
-                         ds_label_vals])
+cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_labels_spec_inds,
+                         ds_labels_spec_vals])
 
 print('\nWill write the following tree:')
 cluster_grp.showTree()
@@ -391,7 +371,7 @@ for at_name in cluster_grp.attrs:
 #
 # Once the tree is prepared (previous cell), ioHDF5 will handle all the file writing.
 
-h5_clust_refs = hdf.writeData(cluster_grp)
+h5_clust_refs = hdf.writeData(cluster_grp, print_log=True)
 
 h5_labels = px.hdf_utils.getH5DsetRefs(['Labels'], h5_clust_refs)[0]
 h5_centroids = px.hdf_utils.getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
