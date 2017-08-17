@@ -24,7 +24,7 @@ class IgorIBWTranslator(Translator):
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
 
-    def translate(self, file_path, verbose=False):
+    def translate(self, file_path, verbose=False, parm_encoding='utf-8'):
         """
         Translates the provided file to .h5
 
@@ -34,6 +34,9 @@ class IgorIBWTranslator(Translator):
             Absolute path of the .ibw file
         verbose : Boolean (Optional)
             Whether or not to show  print statements for debugging
+        parm_encoding : str, optional
+            Codec to be used to decode the bytestrings into Python strings if needed.
+            Default 'utf-8'
 
         Returns
         -------
@@ -44,8 +47,8 @@ class IgorIBWTranslator(Translator):
         # Load the ibw file first
         ibw_obj = bw.load(file_path)
         ibw_wave = ibw_obj.get('wave')
-        parm_dict = self._read_parms(ibw_wave)
-        chan_labels, chan_units = self._get_chan_labels(ibw_wave)
+        parm_dict = self._read_parms(ibw_wave, parm_encoding)
+        chan_labels, chan_units = self._get_chan_labels(ibw_wave, parm_encoding)
         if verbose:
             print('Channels and units found:')
             print(chan_labels)
@@ -158,7 +161,7 @@ class IgorIBWTranslator(Translator):
         return h5_path
 
     @staticmethod
-    def _read_parms(ibw_wave):
+    def _read_parms(ibw_wave, codec='utf-8'):
         """
         Parses the parameters in the provided dictionary
 
@@ -166,6 +169,9 @@ class IgorIBWTranslator(Translator):
         ----------
         ibw_wave : dictionary
             Wave entry in the dictionary obtained from loading the ibw file
+        codec : str, optional
+            Codec to be used to decode the bytestrings into Python strings if needed.
+            Default 'utf-8'
 
         Returns
         -------
@@ -173,6 +179,8 @@ class IgorIBWTranslator(Translator):
             Dictionary containing parameters
         """
         parm_string = ibw_wave.get('note')
+        if type(parm_string) == bytes:
+            parm_string = parm_string.decode(codec)
         parm_string = parm_string.rstrip('\r')
         parm_list = parm_string.split('\r')
         parm_dict = dict()
@@ -201,7 +209,7 @@ class IgorIBWTranslator(Translator):
         return parm_dict
 
     @staticmethod
-    def _get_chan_labels(ibw_wave):
+    def _get_chan_labels(ibw_wave, codec='utf-8'):
         """
         Retrieves the names of the data channels and default units
 
@@ -209,6 +217,9 @@ class IgorIBWTranslator(Translator):
         ----------
         ibw_wave : dictionary
             Wave entry in the dictionary obtained from loading the ibw file
+        codec : str, optional
+            Codec to be used to decode the bytestrings into Python strings if needed.
+            Default 'utf-8'
 
         Returns
         -------
@@ -229,6 +240,8 @@ class IgorIBWTranslator(Translator):
         default_units = list()
         for chan_ind, chan in enumerate(labels):
             # clean up channel names
+            if type(chan) == bytes:
+                chan = chan.decode(codec)
             if chan.lower().rfind('trace') > 0:
                 labels[chan_ind] = chan[:chan.lower().rfind('trace') + 5]
             # Figure out (default) units
