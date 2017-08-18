@@ -696,7 +696,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     if sys.version_info.major == 3:
         inspec_func = inspect.getfullargspec
     else:
-        inspec_func = inspect.getargspec
+        inspec_func = inspect.signature
 
     for key in inspec_func(plt.figure).args:
         if key in kwargs:

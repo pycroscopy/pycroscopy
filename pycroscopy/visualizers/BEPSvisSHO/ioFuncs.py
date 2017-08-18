@@ -380,7 +380,7 @@ def __findDataset(h5_file,ds_name):
     '''
     Uses visit() to find all datasets with the desired name
     '''
-    print 'Finding all instances of',ds_name
+    print('Finding all instances of',ds_name)
     ds = []
     def __findName(name,obj):
         if name.split('/')[-1] == ds_name and isinstance(obj,h5py.Dataset):

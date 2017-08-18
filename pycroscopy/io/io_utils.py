@@ -111,7 +111,7 @@ def getAvailableMem():
     import sys
     mem = vm().available
 
-    if sys.maxsize <= 2**32:
+    if sys.maxsize <= 2 ** 32:
         mem = min([mem, sys.maxsize])
 
     return mem
@@ -293,7 +293,7 @@ def realToCompound(ds_real, compound_type):
     ds_compound : 2D complex numpy array
         Data arranged as [sample, features]
     """
-    new_spec_length = ds_real.shape[1]/len(compound_type)
+    new_spec_length = ds_real.shape[1] / len(compound_type)
     if new_spec_length % 1:
         raise TypeError('Provided compound type was not compatible by numbr of elements')
 

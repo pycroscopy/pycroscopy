@@ -330,7 +330,7 @@ def fft_filter_dataset(h5_main, filter_parms, write_filtered=True, write_condens
     doing_noise_floor_filter = False
 
     if 'noise_threshold' in filter_parms:
-        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+        if 0 < filter_parms['noise_threshold'] < 1:
             ds_noise_floors = MicroDataset('Noise_Floors',
                                            data=np.zeros(shape=num_effective_pix, dtype=np.float32))
             doing_noise_floor_filter = True
@@ -507,7 +507,7 @@ def filter_chunk_parallel(raw_data, parm_dict, num_cores):
     noise_thresh = None
     if 'noise_threshold' in parm_dict['filter_parms']:
         noise_thresh = parm_dict['filter_parms']['noise_threshold']
-        if noise_thresh > 0 and noise_thresh < 1:
+        if 0 < noise_thresh < 1:
             noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
         else:
             noise_thresh = None
@@ -590,7 +590,7 @@ def filter_chunk_serial(raw_data, parm_dict):
     noise_thresh = None
     if 'noise_threshold' in parm_dict['filter_parms']:
         noise_thresh = parm_dict['filter_parms']['noise_threshold']
-        if noise_thresh > 0 and noise_thresh < 1:
+        if 0 < noise_thresh < 1:
             noise_floors = np.zeros(shape=num_sets, dtype=np.float32)
         else:
             noise_thresh = None
@@ -656,7 +656,7 @@ def unit_filter(single_parm):
     f_data = np.fft.fftshift(np.fft.fft(t_raw))
 
     if 'noise_threshold' in filter_parms:
-        if filter_parms['noise_threshold'] > 0 and filter_parms['noise_threshold'] < 1:
+        if 0 < filter_parms['noise_threshold'] < 1:
             noise_floor = getNoiseFloor(f_data, filter_parms['noise_threshold'])[0]
             f_data[np.abs(f_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
 

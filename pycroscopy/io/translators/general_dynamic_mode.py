@@ -24,7 +24,13 @@ class GDMTranslator(Translator):
     """
     Translates G-mode w^2 datasets from .mat files to .h5
     """
-    
+
+    def _read_data(self):
+        pass
+
+    def _parse_file_path(self, input_path):
+        pass
+
     def translate(self, parm_path):
         """
         Basic method that translates .mat data files to a single .h5 file

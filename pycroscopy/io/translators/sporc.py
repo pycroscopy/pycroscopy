@@ -24,7 +24,10 @@ class SporcTranslator(Translator):
     """
     Translates G-mode SPORC datasets from .mat files to .h5
     """
-    
+
+    def _parse_file_path(self, input_path):
+        pass
+
     def translate(self, parm_path):
         """
         Basic method that translates .mat data files to a single .h5 file
@@ -39,7 +42,7 @@ class SporcTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
-		
+
         (folder_path, file_name) = path.split(parm_path)
         (file_name, base_name) = path.split(folder_path)
         h5_path = path.join(folder_path,base_name+'.h5')

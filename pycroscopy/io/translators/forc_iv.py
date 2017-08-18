@@ -22,6 +22,9 @@ class ForcIVTranslator(Translator):
     Translates FORC IV datasets from .mat files to .h5
     """
 
+    def _read_data(self):
+        pass
+
     def _parse_file_path(self, input_path):
         pass
 
