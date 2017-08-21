@@ -42,6 +42,16 @@ The data format in pycroscopy is based on this one simple ground truth. The data
 * __Grayscale photographs__: A single value (intensity) in is recorded at each pixel in a two dimensional grid. Thus, there are are two spatial dimensions - X, Y and one spectroscopic dimension - "Intensity". The data can be represented as a N x 1 matrix where N is the product of the number of rows and columns of pixels. The second axis has size of 1 since we only record one value (intensity) at each location. _The positions will be arranged as row0-col0, row0-col1.... row0-colN, row1-col0...._ Color images or photographs will be discussed below due to some very important subtleties about the measurement.
 * A __single Raman spectra__: In this case, the measurement is recorded at a single location. At this position, data is recorded as a function of a single (spectroscopic) variable such as wavelength. Thus this data is represented as a 1 x P matrix, where P is the number of points in the spectra
 * __Scanning Tunelling Spectroscopy or IV spectroscopy__: The current (A 1D array of size P) is recorded as a function of voltage at each position in a two dimensional grid of points (two spatial dimensions). Thus the data would be represented as a N x P matrix, where N is the product of the number of rows and columns in the grid and P is the number of spectroscopic points recorded. 
+
+   Using prefixes `i` for position and `j` for spectroscopic, the main dataset would be structured as:
+
+   | i0, j0   | i0, j1   | i0, j2   | .... | i0, jP-2   | i0, jP-1   |
+   | -------- | -------- | -------- | ---- | ---------- | ---------- |
+   | i1, j0   | i1, j1   | i1, j2   | .... | i1, jP-2   | i1, jP-1   |
+   | ........ | ........ | ........ | .... | .......... | .......... |
+   | iN-2, j0 | iN-2, j1 | iN-2, j2 | .... | iN-2, jP-2 | iN-2, jP-1 |
+   | iN-1, j0 | iN-1, j1 | iN-1, j2 | .... | iN-1, jP-1 | iN-1, jP-1 |
+
     * If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P. The data is still saved as a long (2*P) 1D array at each location. The number of spectroscopic dimensions would change from just ['Voltage'] to ['Voltage', 'Cycle'] where the second spectroscopic dimension would account for repetitions of this bias sweep.
         * __The spectroscopic data would be stored as it would be recorded as volt_0-cycle_0, volt_1-cycle_0..... volt_P-1-cycle_0, volt_0-cycle_1.....volt_P-1-cycle-1. Just like the positions__
     * Now, if the bias was swept thrice from -1 to +1V and then thrice again from -2 to 2V, the data bacomes N x 2 * 3 P. The data now has two position dimensions (X, Y) and three spectrosocpic dimensions ['Voltage', 'Cycle', 'Step']. The data is still saved as a (P * 2 * 3) 1D array at each location. 
@@ -62,27 +72,62 @@ In addition to serving as a legend or the key for the , these ancillary datasets
 * the original dimensionality of the dataset
 * how to reshape the data back to its N dimensional form
 
-Much like `main` datasets, the `ancillary` datasets are also two dimensional matricies regardless of the number of position or spectroscopic dimensions. Given a main dataset with `N` positions in `u` dimensions and `P` spectral values in `v` dimensions:
-* The `Position Indices` and `Position Values` datasets would both of the same size of `N x u`, where `u` is the number of position dimensions. The columns would be arranged in ascending order of rate of change. In other words, the first column would be the fastest changing dimension and the last column would be the slowest. A simple grayscale photograph
-* The `Spectroscopic Values` and `Spectroscopic Indices` dataset would both 
+Much like `main` datasets, the `ancillary` datasets are also two dimensional matricies regardless of the number of position or spectroscopic dimensions. Given a main dataset with `N` positions in `U` dimensions and `P` spectral values in `V` dimensions:
+* The `Position Indices` and `Position Values` datasets would both of the same size of `N x U`, where `U` is the number of position dimensions. The columns would be arranged in ascending order of rate of change. In other words, the first column would be the fastest changing position dimension and the last column would be the slowest. 
+   * A simple grayscale photograph with N pixels would have ancillary position datasets of size N x 2. The first column would be the columns (faster) and the second would be the rows assuming that the data was collected column-by-column and then row-by-row.
+* The `Spectroscopic Values` and `Spectroscopic Indices` dataset would both be `V x S` in shape, where `V` is the number of spectroscopic dimensions. Similarly to the position dimensions, the first row would be the fastest changing spectroscopic dimension while the last row would be the slowest. 
 
-As an example, for a main dataset with N positions in two dimensions (let's say X and Y) and P spectral values in three dimensiosn (e.g. - Voltage, Cycle, and Step):
+The ancillary datasets are better illustrated using an example. Let's take the __IV Spectorscopy__ example from above, which has two position dimensions - X and Y, and three spectroscopic dimensions - Voltage, Cycle, Step. 
 
+* If the dataset had 2 rows and 3 columns, the corresponding `Position Indices` dataset would be: 
 
-From the __IV Spectorscopy__ example with [X, Y] x [Voltage, Cycle, Step]:
-* The position datasets would be of shape N x 2 - N total position, two spatial dimensions. 
-    * The position indices datasets may start like: 
-    
-    ## Pending topics:
-* ALL THESE ANCILLARY MATRICES NEED TO BE 2 DIMENSIONAL   
-* DIMENSIONALITY OF THESE DATASETS AND WHAT THAT MEANS
-    
+|   X | Y   |
+|:---:|:---:|
+|  0  |  0  |
+|  1  |  0  |
+|  2  |  0  |
+|  0  |  1  |
+|  1  |  1  |
+|  2  |  1  |
+* Note that indices start from 0 instead of 1 and end at N-1 instead of N in lines with common programming languages such as C or python.
+* Correpondingly, if the measurements were performed at X locations: 0.0, 1.5, and 3.0 microns and Y locations: -7.0 and 2.3  nanometers, the `Position Values` dataset may look like the table below: 
 
+| X [um] | Y [nm] |
+|:-----:|:-----:|
+|  0.0  |  -7.0 |
+|  1.5  |  -7.0 |
+|  3.0  |  -7.0 |
+|  0.0  |  2.3  |
+|  1.5  |  2.3  |
+|  3.0  |  2.3  |
+
+* Note that X and Y have different units - microns and nanometers. Pycroscopy has been designed to handle variations in the units for each of these dimensions. Details regarding how and where to store the information regarding the `labels` ('X', 'Y') and `units` for these dimensions ('um', 'nm') will be discussed below.
+* If the dataset had 3 bias values in each cycle, each cycle repeated 2 times, and there were 5 such bias waveforms or steps; the `Spectroscopic Indices` would be:
+
+| Bias  | 0 | 1 | 2 | 0 | 1 | 2 | 0 | 1 | 2 | . | . | . | 0 | 1 | 2 | 0 | 1 | 2 | 0 | 1 | 2 |
+| ----- | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Cycle | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 0 | . | . | . | 1 | 1 | 1 | 0 | 0 | 0 | 1 | 1 | 1 |
+| Step  | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | . | . | . | 3 | 3 | 3 | 4 | 4 | 4 | 4 | 4 | 4 |
+
+* Similarly, the `Spectroscopic Values` table would be structured as:
+
+| Bias [V]  | -6.5 | 0.0 | 6.5 | -6.5 | 0.0 | 6.5 | -6.5 | 0.0 | 6.5 | . | . | . | 6.5 | -6.5 | 0.0 | 6.5 | -6.5 | 0.0 | 6.5 |
+| ----- | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
+| Cycle [] | 0 | 0 | 0 | 1 | 1 | 1 | 0 | 0 | 0 | . | . | . | 1 | 0 | 0 | 0 | 1 | 1 | 1 |
+| Step []  | 0 | 0 | 0 | 0 | 0 | 0 | 1 | 1 | 1 | . | . | . | 3 | 4 | 4 | 4 | 4 | 4 | 4 |
+
+* Thus, the data at the fourth row and seventh column of the main dataset can be explained using these ancillary datasets as data from:
+   * X index of 0, with value of 0.0 microns
+   * Y index of 1 and value of 2.3 nm
+   * where a bias of index 0 and value of -6.5 V was being applied
+   * on the first cycle
+   * of the second bias waveform step.
+* A simple glance at the shape of these datsets would be enough to reveal that the data has two position dimensions (from the second axis of the `Position Indices` dataset) and three spectroscopic dimensions (from the first axis of the `Spectroscopic Indices` dataset)
 
 #### Channels
-The pycroscopy data format also allows multiple channels of information to be recorded as separate datasets in the same file. For example, one channel could be a spectra (1D array) collected at each location on a 2D grid while another could be the temperature (single value) recorded by another sensor at the same spatial positions. In many cases, multiple channels of information, such as strain, current, etc., are acquired for each position in the dataset. In these cases, all the ancillary datasets are repeated / referenced. They can have different spectroscopic / positions. 
+The pycroscopy data format also allows multiple channels of information to be recorded as separate datasets in the same file. For example, one channel could be a spectra (1D array) collected at each location on a 2D grid while another could be the temperature (single value) recorded by another sensor at the same spatial positions. In this case, the two datasets could indeed share the same ancilalry position datasets but different spectroscopic datasets. Alternativeley, there could be other cases where the average measurement over multiple spatial points is recorded separately (possibly by another detector). In this case, the two measurement datasets would not share the ancillary position datasets as well. Other specifics regarding the implementation of different channels will be discussed in a later section.
 
-## File Format
+## File Format (HDF5)
 
 Among the numerous benefits of __HDF5__ files are that these files:
 * are readily compatible with high-performance computing facilities
@@ -91,8 +136,6 @@ Among the numerous benefits of __HDF5__ files are that these files:
 
 
 ## Pending topics:
-* ALL THESE ANCILLARY MATRICES NEED TO BE 2 DIMENSIONAL   
-* DIMENSIONALITY OF THESE DATASETS AND WHAT THAT MEANS
 * REGION REFERENCES
 * MANDATORY ATTRIBUTES for ancillary and main datasets
 * DATA GROUP NOMENCLATURE AND ATTRIBUTES STANDARDS
@@ -112,5 +155,7 @@ Among the numerous benefits of __HDF5__ files are that these files:
     * `units`: The units for the physical quantity such as `V` for volts, `nA` for nano amperes, `pN` for pico newtons etc.
 * All __`main`__ datasets additionally have 4 attributes that provide the references or links to the 4 aforementions ancillary datasets
     * Storing just the references allows us to re-use the same position / spectroscopic datasets without having to remake them
+    
+### Channels
     
 This bookkeeping is necesary for helping the code to understand the dimensionality and structure of the data. While these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
