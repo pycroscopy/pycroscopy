@@ -211,39 +211,74 @@ __Spectroscopic_Values__ structured as (spectroscopic dimensions x time)
    * Region references based on row names   
    
 ### Datagroups
+Datagroups in pycroscopy are used to organize datasets in an intuitive manner.
+* All datagroups must be created with the following two attributes for better traceability:
+   * `time_stamp` : '2017_08_15-22_15_45' (date and time of creation of the datagroup formatted as 'YYYY_MM_DD-HH_mm_ss' as a string)
+   * `machine_id` : 'mac1234.ornl.gov' (a fully qualified domain name as a string)
 
 #### Measurement data
-* As mentioned earlier, users tend to change experimental parameters during measurements. While the changes can be minor, they can lead to misinterpretation of data if the changes are not handled robustly. In pycroscopy, we choose to store data under datagroups named as `Measurement_00x` ...
-* Each channel gets its own group
-* This is what the tree structure looks like in 
+* As mentioned earlier, microscope users may change experimental parameters during measurements. Even if these changes are minor, they can lead to misinterpretation of data if the changes are not handled robustly. To solve this problem, we recommend storing data under datagroups named as __`Measurement_00x`__. Each time the parameters are changed, the dataset is truncated to the point until which data was collected and a new datagroup is created to store the upcoming new measurement data.
+* Each __channel__ of information acquired during the measurement gets its own datagroup. 
+   * The `main` datasets would reside within these channel datagroups. 
+   * Similar to the measurement datagroups, the channel datagroups are named as `Channel_00x`. The index for the datagroup is incremented according to the index of the information channel.
+   * Depending on the circumstances, the ancillary datasets can be shared among channels. 
+      * Instead of the main dataset in Channel_001 having references to the ancillary datasets in Channel_000, we recommend placing the ancillary datasets outside the Channel datagroups in a area common to both channel datagroups. Typically, this is the Measurement_00x datagroup.
+* This is what the tree structure in the file looks like when experimental parameters were changed twice and there are two channels of information being acquired during the measurements.
 * `/` (Root - also considered a datagroup)
+   * Datasets common to all measurement groups (perhaps some calibration data that is acquired only once before all measurements)
    * `Measurement_000` (datagroup)
       * `Channel_000` (datagroup)
          * Datasets here
       * `Channel_001` (datagroup)
          * Datasets here
+      * Datasets common to Channel_000 and Channel_001
    * `Measurement_001` (datagroup)
       * `Channel_000` (datagroup)
          * Datasets here
       * `Channel_001` (datagroup)
          * Datasets here
+      * Datasets common to Channel_000 and Channel_001
    * ....
 
-#### Analysis
-
-* `TargetDataset`
-   * `TargetDataset-ToolName_00x`
+#### Tool (analysis / processing)
+* Each time an analysis or processing routine, refered generally as `tool`, is performed on a dataset of interest, the results are stored in new datasets within a datagroup.
+   * A completely new dataset(s) and datagroup are created even if a minor operation is being performed on the dataset. 
+* Almost always, the tool is applied to a `main` dataset (refered to as the `parent` dataset) and at least one of the results is typically also a `main` dataset. These new `main` datasets will either need to be linked to the ancillary matricies of the `parent` or to new ancillary datasets that will need to be created. 
+* The resultant dataset(s) are always stored in a datagroup whose name is derived from the names of the tool and the dataset. This makes the data __traceable__, meaning that the names of the datasets and datagroups are sufficient to understand what processing or analysis steps were applied to the data to bring it to a particular point.
+   * The datagroup is named as `Parent_Dataset-Tool_Name_00x`, where a `tool` named `Tool_Name` is applied to a `main` dataset named `Parent_Dataset`.
+      * Since there is a possibility that the same tool could be applied to the very same dataset multiple times, we store the results of each run of the tool in a separate datagroup. These datagroups are differentiated by the index that is appened to the base-name of the datagroup. 
+      * Note that a `-` separates the dataset name from the tool name and anything after the last `_` will be assumed to be the index of the datagroup
+* In general, the results from tools applied to datasets should be stored as:
+* `Parent_Dataset`
+   * `Parent_Dataset-Tool_Name_000` (datagroup comtaining results from first run of the `tool` on `Parent_Dataset`)
       * Attributes:
          * `time_stamp`
          * `machine_id`
          * `algorithm`
          * Other tool-relevant attributes
-      * DatasetResult0
-      * DatasetResult1
-
-This bookkeeping is necesary for helping the code to understand the dimensionality and structure of the data. While these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
+      * `Dataset_Result0`
+      * `Dataset_Result1` ...
+   * `Parent_Dataset-Tool_Name_001` (datagroup comtaining results from second run of the `tool` on `Parent_Dataset`)
+* This methodolody is illustrated with an example of applying `K-Means Clustering` on the `Raw_Data` acquired from a mesurement:
+* `Raw_Data` (`main` dataset)
+* `Raw_Data-Cluster_000` (datagroup)
+   * Attributes:
+      * `time_stamp` : '2017_08_15-22_15_45'
+      * `machine_id` : 'mac1234.ornl.gov'
+      * `algorithm`  : 'K-Means'
+   * `Cluster_Indices` (dataset)
+   * `Cluster_Values` (dataset)
+   * `Labels` (dataset)
+      * Attributes:
+         * `quantity` : 'Cluster labels'
+         * `units`    : ''
+         * `Position_Indicies` : Reference to `Position_Indices` from attribute of `Raw_Data`
+         * `Position_Values` : Reference to `Position_Values` from attribute of `Raw_Data`
+         * `Spectrocopic_Indices` : Reference to 
+   * `Mean_Response` (dataset)
+   * `Spectral_Indices` (dataset)
+   * `Spectral_Values` (dataset)
 
 ## Pending topics:
-* REGION REFERENCES
+* Region references
 * DATA GROUP NOMENCLATURE AND ATTRIBUTES STANDARDS
-* ABILITY TO PERFORM THE SAME OPERATION MULTIPLE TIMES
