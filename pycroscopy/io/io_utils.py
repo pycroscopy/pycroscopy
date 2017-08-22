@@ -30,7 +30,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
 
     Parameters
     ----------
-    extension : String or list of strings
+    filter : String or list of strings
         file extensions to look for
     caption : (Optional) String
         Title for the file browser window
@@ -84,7 +84,6 @@ def getTimeStamp():
 
     Parameters
     ----------
-    None
 
     Returns
     -------
@@ -101,7 +100,6 @@ def getAvailableMem():
 
     Parameters
     ----------
-    None
 
     Returns
     -------

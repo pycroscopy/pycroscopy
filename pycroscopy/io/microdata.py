@@ -91,13 +91,6 @@ class MicroDataGroup(MicroData):
         """
         Return the tree structure given by MicroDataGroup.
         
-        Parameters
-        ----------
-        None
-        
-        Returns
-        -------
-        None
         """
 
         def __tree(child, parent):

@@ -341,6 +341,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     do_histogram : Boolean (Optional. Default = False)
         Whether or not to generate hisograms. 
         Caution - Histograms can take a fair amount of time to compute.
+    debug : Boolean, Optional
+        If True, then extra debug statements are printed.
+        Default False
     """
 
     grp = h5_main.parent
@@ -1287,9 +1290,15 @@ class BEHistogram():
 
         Parameters
         ----------
-            h5_path : hdf5 reference to Main_Dataset
+        h5_main : hdf5.Dataset
+        max_response : list
+        min_response : list
+        max_mem_mb : int
+        max_bins : int
+        debug : bool
 
-        Outputs:
+        Returns
+        -------
 
         """
 
@@ -1353,13 +1362,13 @@ class BEHistogram():
         ----------
         h5_main : HDF5 Dataset object
             Dataset to be historammed
-        activ_spec_steps : numpy array
+        active_spec_steps : numpy array
             active spectral steps in the current plot group
         max_response : numpy array
             maximum amplitude at each pixel
         min_response : numpy array
             minimum amplitude at each pixel
-        max_mem : Unsigned integer
+        max_mem_mb : Unsigned integer
             maximum number of Mb allowed for use.  Used to calculate the
             number of pixels to load in a chunk
         max_bins : integer

@@ -811,7 +811,7 @@ def return_pos(file_in_h5, img_num):
     image_path = "/Frame_%04i/Channel_Finished" % (img_num)
     type_ref = type(main_h5_handle.get(image_path))
     temp = 1
-    x = -1;
+    x = -1
     while temp:
         x = x + 1
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
@@ -890,7 +890,7 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
                         box_width <= pos[k1, 1].round() <= len(img[0, :]) - box_width):
             sel_vec[k1] = 1
             new_pos.append(pos[k1, :])
-            vector = img[pos[k1, 0] - box_width:pos[k1, 0] + box_width, pos[k1, 1] - box_width:pos[k1, 1] + box_width];
+            vector = img[pos[k1, 0] - box_width:pos[k1, 0] + box_width, pos[k1, 1] - box_width:pos[k1, 1] + box_width]
             img_vectors.append(vector.reshape([(box_width * 2) ** 2]))
 
     new_pos = array(new_pos)
