@@ -119,6 +119,7 @@ packages:
    :template: module.rst
 
 .. toctree::
+    Data_Format
     pycroscopy
     auto_examples/index
 
