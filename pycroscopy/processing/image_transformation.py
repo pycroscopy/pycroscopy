@@ -28,7 +28,7 @@ class ImageTransformation(object):
 
 # TODO: Docstrings following numpy standard.
 
-#### Functions
+# Functions
 def pickle_keypoints(keypoints):
     """
     Function to pickle cv2.sift keypoint objects
@@ -135,7 +135,7 @@ class FeatureExtractorParallel(object):
         if mask:
             def mask_func(x, winSize):
                 x[origin[0] - winSize / 2: origin[0] + winSize / 2,
-                origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
+                  origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
                 x = x - 1
                 return x
 
@@ -271,7 +271,7 @@ class FeatureExtractorSerial(object):
         if mask:
             def mask_func(x, winSize):
                 x[origin[0] - winSize / 2: origin[0] + winSize / 2,
-                origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
+                  origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
                 x = x - 1
                 return x
 

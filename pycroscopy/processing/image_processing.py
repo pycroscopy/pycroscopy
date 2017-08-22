@@ -1284,7 +1284,7 @@ class ImageWindow(object):
         for k in range(r_n - 1):
             r1 = r_vec[k]
             r2 = r_vec[k + 1]
-            r_ind = np.where((r_mat >= r1) & (r_mat <= r2) == True)
+            r_ind = np.where((r_mat >= r1) and (r_mat <= r2))
             fimabs_max[k] = np.max(fimabs[r_ind])
 
         r_vec = r_vec[:-1] + (r_max - r_min) / (r_n - 1.0) / 2.0
@@ -1482,7 +1482,7 @@ def radially_average_correlation(data_mat, num_r_bin):
 
     step = 1 / (num_r_bin * 1.0 - 1)
     for k, r_bin in enumerate(np.linspace(0, 1, num_r_bin)):
-        b = np.where((r_vec < r_bin + step) * (r_vec > r_bin) == True)[0]
+        b = np.where((r_vec < r_bin + step) and (r_vec > r_bin))[0]
 
         if b.size == 0:
             a_rad_avg_vec[k] = np.nan

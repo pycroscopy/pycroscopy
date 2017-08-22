@@ -509,8 +509,7 @@ def calc_switching_coef_vec(loop_coef_vec, nuc_threshold):
     switching_coef_vec['R-'] = loop_coef_vec[:, 0]
     switching_coef_vec['Switchable Polarization'] = loop_coef_vec[:, 1]
     switching_coef_vec['Work of Switching'] = np.abs(loop_coef_vec[:, 3] -
-                                                     loop_coef_vec[:, 2]) * \
-                                              np.abs(loop_coef_vec[:, 1])
+                                                     loop_coef_vec[:, 2]) * np.abs(loop_coef_vec[:, 1])
 
     switching_coef_vec['Nucleation Bias 1'] = nuc_v01
     switching_coef_vec['Nucleation Bias 2'] = nuc_v02
@@ -612,7 +611,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                  [geom_centroid[0], hull.min_bound[1]],
                                  [geom_centroid[0], hull.max_bound[1]])
-        if type(x_pt) != type(None):
+        if x_pt is None:
             y_intersections.append(x_pt)
 
     '''
@@ -624,7 +623,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                  [hull.min_bound[0], geom_centroid[1]],
                                  [hull.max_bound[0], geom_centroid[1]])
-        if type(x_pt) != type(None):
+        if x_pt is None:
             x_intersections.append(x_pt)
 
     '''

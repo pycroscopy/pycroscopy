@@ -54,7 +54,7 @@ class BEPSndfTranslator(Translator):
             Absolute path of the generated .h5 file
 
         """
-        ## Read the parameter files
+        # Read the parameter files
         if debug:
             print('BEndfTranslator: Getting file paths')
 
@@ -99,7 +99,8 @@ class BEPSndfTranslator(Translator):
         # Remove the unused plot group columns before proceeding:
         self.udvs_mat, self.udvs_labs, self.udvs_units = trimUDVS(self.udvs_mat, self.udvs_labs, self.udvs_units,
                                                                   ignored_plt_grps)
-        if debug: print('BEndfTranslator: Read UDVS file')
+        if debug:
+            print('BEndfTranslator: Read UDVS file')
 
         self.num_udvs_steps = self.udvs_mat.shape[0]
         # This is absolutely crucial for reconstructing the data chronologically
@@ -111,7 +112,8 @@ class BEPSndfTranslator(Translator):
         self.__num_wave_types__ = len(unique_waves)
         # print self.__num_wave_types__, 'different excitation waveforms in this experiment'
 
-        if debug: print('BEndfTranslator: Preparing to set up parsers')
+        if debug:
+            print('BEndfTranslator: Preparing to set up parsers')
 
         # Preparing objects to parse the file(s)
         parsers = self.__assemble_parsers()
@@ -192,11 +194,11 @@ class BEPSndfTranslator(Translator):
             for prsr in parsers:
                 wave_type = prsr.get_wave_type()
                 if self.parm_dict['VS_mode'] == 'AC modulation mode with time reversal' and \
-                                self.BE_bin_inds is not None:
-                    if np.sign(wave_type) == -1:
-                        bin_fft = self.BE_wave[self.BE_bin_inds]
-                    elif np.sign(wave_type) == 1:
-                        bin_fft = self.BE_wave_rev[self.BE_bin_inds]
+                    self.BE_bin_inds is not None:
+                        if np.sign(wave_type) == -1:
+                            bin_fft = self.BE_wave[self.BE_bin_inds]
+                        elif np.sign(wave_type) == 1:
+                            bin_fft = self.BE_wave_rev[self.BE_bin_inds]
                 else:
                     bin_fft = None
 
@@ -253,8 +255,12 @@ class BEPSndfTranslator(Translator):
         pos_slice_dict = dict()
         for spat_ind, spat_dim in enumerate(self.pos_labels):
             pos_slice_dict[spat_dim] = (slice(None), slice(spat_ind, spat_ind + 1))
-        ds_pos_ind = MicroDataset('Position_Indices', self.pos_mat[self.ds_pixel_start_indx:
-        self.ds_pixel_start_indx + self.ds_pixel_index, :], dtype=np.uint)
+
+        ds_pos_ind = MicroDataset('Position_Indices',
+                                  self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+                                                                        self.ds_pixel_index, :],
+                                  dtype=np.uint)
+
         ds_pos_ind.attrs['labels'] = pos_slice_dict
         ds_pos_ind.attrs['units'] = self.pos_units
 
@@ -276,8 +282,8 @@ class BEPSndfTranslator(Translator):
             # Z spectroscopy
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
-        pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:
-        self.ds_pixel_start_indx + self.ds_pixel_index, :])
+        pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+                                                                       self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
             if targ_dim_name in self.pos_labels:
@@ -1012,10 +1018,11 @@ class BEPSndfPixel(object):
         self.wave_modulation_type = data_mat1[2, 1]  # this is the one with useful information
         # print 'Pixel #',self.spatial_index,' Wave label: ',self.wave_label, ', Wave Type: ', self.wave_modulation_type
 
-        # First get the information from the columns:   
-        fft_be_wave_real = data_mat1[s3:s3 - 0 + self.num_bins, 1]  # real part of excitation waveform
-        fft_be_wave_imag = data_mat1[s3 + self.num_bins:s3 - 0 + spect_size1,
-                           1]  # imaginary part of excitation waveform
+        # First get the information from the columns:
+        # real part of excitation waveform
+        fft_be_wave_real = data_mat1[s3:s3 - 0 + self.num_bins, 1]
+        # imaginary part of excitation waveform
+        fft_be_wave_imag = data_mat1[s3 + self.num_bins:s3 - 0 + spect_size1, 1]
 
         """ Though typecasting the combination of the real and imaginary data looks fine in HDFviewer and Spyder, 
         Labview sees such data as an array of clusters having 'r' and 'i' elements """
@@ -1068,9 +1075,10 @@ class BEPSndfPixel(object):
         self.laser_spot_pos_vec = data_mat1[s3 - 1, s4:]  # NEVER used
 
         # Actual data for this pixel:
-        spectrogram_real_mat = data_mat1[s3:s3 + self.num_bins, s4:]  # real part of response spectrogram
-        spectrogram_imag_mat = data_mat1[s3 + self.num_bins:s3 + spect_size1,
-                               s4:]  # imaginary part of response spectrogram
+        # real part of response spectrogram
+        spectrogram_real_mat = data_mat1[s3:s3 + self.num_bins, s4:]
+        # imaginary part of response spectrogram
+        spectrogram_imag_mat = data_mat1[s3 + self.num_bins:s3 + spect_size1, s4:]
         # Be consistent and ensure that the data is also stored as 64 bit complex as in the array creation
         # complex part of response spectrogram
         self.spectrogram_mat = np.complex64(spectrogram_real_mat + 1j * spectrogram_imag_mat)

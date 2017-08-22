@@ -488,7 +488,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                      data.shape[0], 0],
                                              interpolation='none'))
-            axes[1].set_title('Phase');
+            axes[1].set_title('Phase')
             axes[0].set_xlabel('Frequency index')
             axes[1].set_xlabel('Frequency index')
             for axis in axes:

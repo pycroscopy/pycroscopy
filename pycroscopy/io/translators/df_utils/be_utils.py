@@ -102,7 +102,7 @@ def parmsToDict(filepath, parms_to_remove=[]):
                 name = 'mode'
             if name == 'IO_rate':
                 name = 'IO_rate_[Hz]'
-                value = int(value.split()[0])*1E6
+                value = int(value.split()[0]) * 1E6
             if name == 'AO_range':
                 name = 'AO_range_[V]'
                 value = ' '.join(value.split()[:-1])
@@ -130,7 +130,7 @@ def parmsToDict(filepath, parms_to_remove=[]):
                 name = 'step_edge_smoothing_[s]'
 
             # Append the prefix to the name
-            name = prefix+name.lstrip(prefix)
+            name = prefix + name.lstrip(prefix)
 
             # Write parameter to parm_dict
             try:
@@ -145,7 +145,7 @@ def parmsToDict(filepath, parms_to_remove=[]):
         elif len(fields) == 1:
             # Change the parameter prefix to the new one from the group header
             prefix = fields[0].strip('<').strip('>')
-            prefix = prefix.split()[0]+'_'
+            prefix = prefix.split()[0] + '_'
 
             # Check if there are VS Parameters.  Set isBEPS to true if so.
             is_beps = is_beps or prefix == 'VS_'
@@ -189,7 +189,7 @@ def parmsToDict(filepath, parms_to_remove=[]):
         try:
             del parm_dict[uparm]
         except KeyError:
-            #warn('Parameter to be deleted does not exist')
+            # warn('Parameter to be deleted does not exist')
             pass
         except:
             raise
@@ -206,7 +206,8 @@ def parmsToDict(filepath, parms_to_remove=[]):
             parm_dict['VS_measure_in_field_loops'] = 'in-field'
 
     return is_beps, parm_dict
-    
+
+
 ###############################################################################
 
 
@@ -258,14 +259,13 @@ def getSpectroscopicParmLabel(expt_type):
     str
         label for the spectroscopic parameter axis in the plot
     """
-    
+
     if expt_type in ['DC modulation mode', 'current mode']:
         return 'DC Bias'
     elif expt_type == 'AC modulation mode with time reversal':
         return 'AC amplitude'
     return 'User Defined'
 
-###############################################################################
 
 def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     """
@@ -285,27 +285,27 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     spectrogram_mat : 2D complex numpy array
         Normalized BE response spectrogram
 
-    """  
+    """
     BE_wave = np.fft.ifftshift(np.fft.ifft(FFT_BE_wave))
     scaling_factor = 1
-      
+
     if harmonic == 2:
-        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**2))/(2*np.exp(1j*3*np.pi*0.5))
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 2)) / (2 * np.exp(1j * 3 * np.pi * 0.5))
     elif harmonic == 3:
-        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave**3))/(4*np.exp(1j*np.pi))
+        scaling_factor = np.fft.fftshift(np.fft.fft(BE_wave ** 3)) / (4 * np.exp(1j * np.pi))
     elif harmonic >= 4:
         print("Warning these high harmonics are not supported in translator.")
- 
+
     # Generate transfer functions
-    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave/scaling_factor, [spectrogram_mat.shape[1], 1]))
+    F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave / scaling_factor, [spectrogram_mat.shape[1], 1]))
     # Divide by transfer function
-    spectrogram_mat = spectrogram_mat/(F_AO_spectrogram)
-  
+    spectrogram_mat = spectrogram_mat / (F_AO_spectrogram)
+
     return spectrogram_mat
 
-    
-def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[], 
-                       max_mem_mb=1024, spec_label='None', ignore_plot_groups=[], 
+
+def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
+                       max_mem_mb=1024, spec_label='None', ignore_plot_groups=[],
                        show_plots=True, save_plots=True, do_histogram=False,
                        debug=False):
     """
@@ -344,16 +344,16 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     """
 
     grp = h5_main.parent
-    h5_freq = grp['Bin_Frequencies']    
+    h5_freq = grp['Bin_Frequencies']
     UDVS = grp['UDVS']
     spec_inds = grp['Spectroscopic_Indices']
     UDVS_inds = grp['UDVS_Indices']
     spec_vals = grp['Spectroscopic_Values']
-                    
-#     std_cols = ['wave_type','Frequency','DC_Offset','wave_mod','AC_Amplitude','dc_offset','ac_amplitude']
-    
+
+    #     std_cols = ['wave_type','Frequency','DC_Offset','wave_mod','AC_Amplitude','dc_offset','ac_amplitude']
+
     col_names = UDVS.attrs['labels']
-    
+
     if len(col_names) <= 5:
         """
         No plot groups are defined in the UDVS table.
@@ -361,17 +361,17 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         Channel group
         """
         return
-    
+
     # Removing the standard columns
     col_names = get_attr(UDVS, 'labels')[5:]
 
-#     col_names = [col for col in col_names if col not in std_cols + ignore_plot_groups]
-    
+    #     col_names = [col for col in col_names if col not in std_cols + ignore_plot_groups]
+
     freq_inds = spec_inds[spec_inds.attrs['Frequency']].flatten()
-    
+
     for col_name in col_names:
         ref = UDVS.attrs[col_name]
-#         Make sure we're actually dealing with a reference of some type
+        #         Make sure we're actually dealing with a reference of some type
         if not isinstance(ref, h5py.RegionReference):
             continue
         # 4. Access that column of the data through region reference
@@ -381,7 +381,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         selected_UDVS_steps = selected_UDVS_steps[np.isfinite(selected_UDVS_steps)]"""
 
         (step_averaged_vec, mean_spec) = reshape_mean_data(spec_inds, step_inds, mean_resp)
-            
+
         """ 
         Need to account for cases with multiple excitation waveforms
         This will affect the frequency indices / values
@@ -389,32 +389,32 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         """
         freq_slice = np.unique(freq_inds[step_inds])
         freq_vec = h5_freq.value[freq_slice]
-        
+
         num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
         pg_data = np.repeat(UDVS[ref], num_bins)
-            
+
         ds_mean_spec = MicroDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
         ds_step_avg = MicroDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
         # cannot assume that this is DC offset, could be AC amplitude....
         ds_spec_parm = MicroDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
         ds_spec_parm.attrs = {'name': spec_label}
         ds_freq = MicroDataset('Bin_Frequencies', freq_vec)
-        
+
         plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
         plot_grp.attrs['Name'] = col_name
         plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
-        
+
         h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
-        
+
         h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
         h5_spec_parm = getH5DsetRefs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
         h5_freq_vec = getH5DsetRefs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
-        
+
         # Linking the datasets with the frequency and the spectroscopic variable:
         linkRefs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
         linkRefs(h5_step_avg, [h5_freq_vec])
-        
+
         """
         Create Region Reference for the plot group in the Raw_Data, Spectroscopic_Indices 
         and Spectroscopic_Values Datasets
@@ -422,14 +422,14 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         raw_ref = h5_main.regionref[:, step_inds]
         spec_inds_ref = spec_inds.regionref[:, step_inds]
         spec_vals_ref = spec_vals.regionref[:, step_inds]
-        
-        ref_name = col_name.replace(' ', '_').replace('-', '_')+'_Plot_Group'
+
+        ref_name = col_name.replace(' ', '_').replace('-', '_') + '_Plot_Group'
         h5_main.attrs[ref_name] = raw_ref
         spec_inds.attrs[ref_name] = spec_inds_ref
         spec_vals.attrs[ref_name] = spec_vals_ref
-        
+
         hdf.flush()
-        
+
         if do_histogram:
             """
             Build the histograms for the current plot group
@@ -439,35 +439,35 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
                                         min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
             ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
-                                   chunking=(1, hist_mat.shape[1]),compression='gzip')
+                                   chunking=(1, hist_mat.shape[1]), compression='gzip')
             hist_slice_dict = dict()
             for hist_ind, hist_dim in enumerate(hist_labels):
-                hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind+1), slice(None))
+                hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
             ds_hist.attrs['labels'] = hist_slice_dict
             ds_hist.attrs['units'] = ['V', '', 'V', 'V']
             ds_hist_indices = MicroDataset('Indices', hist_indices, dtype=np.uint)
             ds_hist_values = MicroDataset('Values', hist_indices, dtype=np.float32)
             hist_ind_dict = dict()
             for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
-                hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind+1), slice(None))
+                hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
             ds_hist_indices.attrs['labels'] = hist_ind_dict
             ds_hist_values.attrs['labels'] = hist_ind_dict
 
             hist_grp = MicroDataGroup('Histogram', h5_mean_spec.parent.name[1:])
 
             hist_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_values])
-            
+
             h5_hist_grp_refs = hdf.writeData(hist_grp)
-            
+
             h5_hist = getH5DsetRefs(['Histograms'], h5_hist_grp_refs)[0]
             h5_hist_inds = getH5DsetRefs(['Indices'], h5_hist_grp_refs)[0]
             h5_hist_vals = getH5DsetRefs(['Values'], h5_hist_grp_refs)[0]
-            
+
             linkRefs(h5_hist, getH5DsetRefs(['Indices', 'Values'], h5_hist_grp_refs))
-            
+
             h5_hist.attrs['Spectroscopic_Indices'] = h5_hist_inds.ref
             h5_hist.attrs['Spectroscopic_Values'] = h5_hist_vals.ref
-                
+
         else:
             """
             Write the min and max response vectors so that histograms can be generated later.
@@ -475,9 +475,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             ds_max_resp = MicroDataset('Max_Response', max_resp)
             ds_min_resp = MicroDataset('Min_Response', min_resp)
             plot_grp.addChildren([ds_max_resp, ds_min_resp])
-        
+
         if save_plots or show_plots:
-            fig_title = '_'.join(grp.name[1:].split('/')+[col_name])
+            fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
             path_1d = None
             path_2d = None
             path_hist = None
@@ -489,12 +489,13 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             plot_2d_spectrogram(mean_spec, freq_vec, fig_title, figure_path=path_2d)
             if do_histogram:
                 plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
-            
+
             if show_plots:
                 plt.show()
             plt.close('all')
-        # print('Generated spatially average data for group: %s' %(col_name))
+            # print('Generated spatially average data for group: %s' %(col_name))
     print('Completed generating spatially averaged plot groups')
+
 
 ###############################################################################
 
@@ -523,10 +524,11 @@ def reshape_mean_data(spec_inds, step_inds, mean_resp):
     num_bins = len(np.unique(spec_inds[0, step_inds]))
     # Stephen says that we can assume that the number of bins will NOT change in a plot group
     mean_spectrogram = mean_resp[step_inds].reshape(-1, num_bins)
-        
+
     step_averaged_vec = np.mean(mean_spectrogram, axis=0)
     return step_averaged_vec, mean_spectrogram
-    
+
+
 ###############################################################################
 
 
@@ -543,11 +545,11 @@ def visualize_plot_groups(h5_filepath):
         expt_type = h5f.attrs.get('data_type')
         if expt_type not in ['BEPSData', 'BELineData']:
             warn('Invalid data format')
-            return         
-        for grp_name in h5f.keys():            
-            grp = h5f[grp_name]['Channel_000']            
-            for plt_grp_name in grp.keys():                
-                if plt_grp_name.startswith('Spatially_Averaged_Plot_Group_'): 
+            return
+        for grp_name in h5f.keys():
+            grp = h5f[grp_name]['Channel_000']
+            for plt_grp_name in grp.keys():
+                if plt_grp_name.startswith('Spatially_Averaged_Plot_Group_'):
                     plt_grp = grp[plt_grp_name]
                     if expt_type == 'BEPSData':
                         spect_data = plt_grp['Mean_Spectrogram'].value
@@ -560,10 +562,11 @@ def visualize_plot_groups(h5_filepath):
                         plot_histgrams(hist_data, hist_bins, plt_grp.attrs['Name'])
                     except:
                         pass
-                    
+
     plt.show()
     plt.close('all')
-    
+
+
 ###############################################################################
 
 
@@ -591,14 +594,14 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
     udvs_units : list of strings
         Truncated list of UDVS column units
     """
-    
+
     if len(target_col_names) == 0:
         return udvs_mat, udvs_labs, udvs_units
-        
+
     if len(udvs_labs) != udvs_mat.shape[1]:
         warn('Error: Incompatible UDVS matrix and labels. Not truncating!')
         return udvs_mat, udvs_labs, udvs_units
-    
+
     # First figure out the column indices
     col_inds = []
     found_cols = []
@@ -609,18 +612,17 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
                 found_cols.append(udvs_col)
                 break
     col_inds = np.sort(np.unique(col_inds))
-    
+
     # Now remove from the labels and the matrix
     udvs_mat = np.delete(udvs_mat, col_inds, axis=1)
     # col_inds.sort(reverse=True)
     [udvs_units.pop(ind) for ind in range(len(col_inds), 0, -1)]
     udvs_labs = [col for col in udvs_labs if col not in found_cols]
-    
+
     return udvs_mat, udvs_labs, udvs_units
 
-###############################################################################
 
-def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict, 
+def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                    udvs_labs, udvs_units):
     """
     This function will determine the proper Spectroscopic Value array for the 
@@ -656,6 +658,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
     ds_spec_val_labs_names : list of Strings
         labels with the names of their parameters
     """
+
     def __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=False):
         """
         This function finds the Spectroscopic Values associated with the dataset that
@@ -671,15 +674,15 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         iSpec_var : integer array holding column indices in UDVS that change
         ds_spec_val_mat : array holding all spectral values for columns in iSpec_var
         """
-#         Copy even step values of DC_offset into odd steps 
+        #         Copy even step values of DC_offset into odd steps
         UDVS = np.copy(udvs_mat)
 
         if not usr_defined:
             DC = UDVS[:, 1]
             for step in range(0, DC.size, 2):
-                DC[step+1] = DC[step]
+                DC[step + 1] = DC[step]
             UDVS[:, 1] = DC
-        
+
         """
         icheck is an array containing all UDVS steps which should be checked.
         """
@@ -689,8 +692,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         first 5 columns
         """
         UDVS = UDVS[icheck, :5]
-#         UDVS = np.array([UDVS[i] for i in icheck])
-        
+        #         UDVS = np.array([UDVS[i] for i in icheck])
+
         """
         Transpose UDVS for ease of looping later on and store the number of steps
         as num_cols
@@ -699,9 +702,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize the iSpec_var as an empty array.  It will store the index of the 
         UDVS label for any column which has more than one unique value
-        """    
+        """
         iSpec_var = []
-        
+
         """
         Loop over all columns in udvs_mat
         """
@@ -723,14 +726,14 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Check if more that one unique value
             Append column number to iSpec_var if true
             """
-            if (uvals.size > 1): 
+            if (uvals.size > 1):
                 iSpec_var = np.append(iSpec_var, int(i))
-        
+
         iSpec_var = np.asarray(iSpec_var, np.int)
         ds_spec_val_mat = UDVS[:, iSpec_var]
-        
+
         return iSpec_var, ds_spec_val_mat
-                    
+
     def __BEPSVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, udvs_units):
         """
         Returns the Spectroscopic Value array for a BEPS dataset
@@ -749,40 +752,40 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         -------
         ds_spec_val_mat : list holding final Spectroscopic Value table 
         """
-        
+
         """
         Check the mode to determine if DC, AC, or something else
         """
         mode = parm_dict['VS_mode']
-        
+
         if mode == 'DC modulation mode' or mode == 'current mode':
             """ 
             First we call the FindSpecVals function to get the columns in UDVS of  
             interest and return a first pass on the spectral value array 
-            """ 
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)   
-            
-            return __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
+            """
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+
+            return __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
 
         elif mode == 'AC modulation mode with time reversal':
             """ 
             First we call the FindSpecVals function to get the columns in UDVS of  
             interest and return a first pass on the spectral value array 
-            """ 
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)   
-                       
-            return __BEPSAC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
+            """
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+
+            return __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
         else:
             """ 
             First we call the FindSpecVals function to get the columns in UDVS of  
             interest and return a first pass on the spectral value array 
-            """ 
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=True)   
-                                   
+            """
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=True)
+
             return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
                              parm_dict, udvs_labs, iSpecVals, udvs_units)
 
-    def __BEPSDC(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
+    def __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
         """
         Calculates Spectroscopic Values for BEPS data in DC modulation mode
         
@@ -801,7 +804,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         hascycles = False
         hasFORCS = False
-        
+
         # print('in shape:',np.shape(inSpecVals))
         """
         All DC datasets will need Spectroscopic Value fields for Bin, DC, and Field
@@ -811,19 +814,19 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         Field   - 0 if in-field, 1 if out-of-field 
         """
         nrow = 2
-        ds_spec_val_labs = ['Frequency','DC_Offset']
+        ds_spec_val_labs = ['Frequency', 'DC_Offset']
         ds_spec_val_units = ['Hz', 'V']
-        
+
         """
         Get the number of and steps in the current dataset
         """
         numsteps = udvs_mat.shape[0]
-        
+
         """
         Get the wave form for each step from udvs_mat
         """
-        wave_form = udvs_mat[:,3]        
-        
+        wave_form = udvs_mat[:, 3]
+
         """
         Define list of attribute names needed from the group metadata
         """
@@ -832,16 +835,16 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         numFORCs = parm_dict['FORC_num_of_FORC_cycles']
         numcyclesteps = parm_dict['VS_steps_per_full_cycle']
         cycle_fraction = parm_dict['VS_cycle_fraction']
-        
+
         if field_type == 'in and out-of-field':
             ds_spec_val_labs.append('Field')
             ds_spec_val_units.append('')
             nrow += 1
-        
-        frac = {'full':1.0,'1/2':0.5,'1/4':0.25,'3/4':0.75}
-        
-        numcyclesteps = frac[cycle_fraction]*numcyclesteps
-        
+
+        frac = {'full': 1.0, '1/2': 0.5, '1/4': 0.25, '3/4': 0.75}
+
+        numcyclesteps = frac[cycle_fraction] * numcyclesteps
+
         """
         Check the number of cycles and FORCs
         Add to Spectroscopic Values Labels as needed 
@@ -851,7 +854,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             nrow += 1
             ds_spec_val_labs.append('Cycle')
             ds_spec_val_units.append('')
-            
+
         if numFORCs > 1:
             hasFORCS = True
             """
@@ -861,8 +864,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             nrow += 1
             ds_spec_val_labs.append('FORC')
             ds_spec_val_units.append('')
-            numFORCsteps = numcycles*numcyclesteps*2
-        
+            numFORCsteps = numcycles * numcyclesteps * 2
+
         """
         Check the field type
         For in-field and out-of-field we know all values of field ahead of time
@@ -871,46 +874,46 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         if field_type == 'out-of-field':
             field = 1
-            numsteps = int(numsteps/2)
-            numcyclesteps = int(numcyclesteps/2)
-            swapfield = [1,1]
+            numsteps = int(numsteps / 2)
+            numcyclesteps = int(numcyclesteps / 2)
+            swapfield = [1, 1]
             field_names = ['out-of-field']
         elif field_type == 'in-field':
             field = 0
-            numsteps = int(numsteps/2)
-            numcyclesteps = int(numcyclesteps/2)
-            swapfield = [0,0]
+            numsteps = int(numsteps / 2)
+            numcyclesteps = int(numcyclesteps / 2)
+            swapfield = [0, 0]
             field_names = ['in-field']
         elif field_type == 'in and out-of-field':
             field = 0
-            swapfield = [1,0]
-            field_names = ['out-of-field','in-field']
+            swapfield = [1, 0]
+            field_names = ['out-of-field', 'in-field']
         else:
             warn('{} is not a known field type'.format(field_type))
             field = 0
-            swapfield = [1,0]
-            
+            swapfield = [1, 0]
+
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow,1])
-    
+        ds_spec_val_mat = np.empty([nrow, 1])
+
         """
         Main loop over all steps
         """
-        FORC=-1
-        cycle=-1
+        FORC = -1
+        cycle = -1
         for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
             if hasFORCS:
-                FORC = np.floor(step/numFORCsteps)
-                stepinFORC = step-FORC*numFORCsteps
-                cycle = np.floor(stepinFORC/numcyclesteps/2)
+                FORC = np.floor(step / numFORCsteps)
+                stepinFORC = step - FORC * numFORCsteps
+                cycle = np.floor(stepinFORC / numcyclesteps / 2)
             elif hascycles:
-                cycle = np.floor(step/numcyclesteps/2)
-            
+                cycle = np.floor(step / numcyclesteps / 2)
+
             """
             Change field if needed
             """
@@ -918,14 +921,14 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Get bins for current step based on waveform
             """
-            this_wave = np.where(bin_wfm_type==wave_form[step])[0]
-            
+            this_wave = np.where(bin_wfm_type == wave_form[step])[0]
+
             """
             Loop over bins
             """
             for thisbin in this_wave:
-                colVal = np.array([[bin_freqs[thisbin]],[inSpecVals[step][0]]])
-                
+                colVal = np.array([[bin_freqs[thisbin]], [inSpecVals[step][0]]])
+
                 if field_type == 'in and out-of-field':
                     colVal = np.append(colVal, [[field]], axis=0)
                 """
@@ -935,11 +938,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                     colVal = np.append(colVal, [[cycle]], axis=0)
                 if hasFORCS:
                     colVal = np.append(colVal, [[FORC]], axis=0)
-                
+
                 ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
-    
-        return ds_spec_val_mat[:,1:], ds_spec_val_labs, ds_spec_val_units, [['Field',field_names]]
-        
+
+        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
+
     def __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
         """
         Calculates Spectroscopic Values for BEPS data in AC modulation mode with time 
@@ -958,10 +961,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_mat : list holding final Spectroscopic Value table 
         SpecValsLabels : list holding labels of column names of ds_spec_val_mat
         """
-        
+
         hascycles = False
         hasFORCS = False
-    
+
         """
         All AC datasets will need Spectroscopic Value fields for Bin, AC, and Direction
         
@@ -970,9 +973,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         forrev   - 1 if forward, -1 if reverse 
         """
         nrow = 3
-        ds_spec_val_labs = ['Frequency','AC_Amplitude','Direction']
+        ds_spec_val_labs = ['Frequency', 'AC_Amplitude', 'Direction']
         ds_spec_val_units = ['Hz', 'A', '']
-        
+
         """
         Get the number of bins and steps in the current dataset
         """
@@ -981,8 +984,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Get the wave form for each step from udvs_mat
         """
-        wave_form = udvs_mat[:,3]        
-        
+        wave_form = udvs_mat[:, 3]
+
         """
         Define list of attribute names needed from the group metadata
         """
@@ -990,11 +993,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         numFORCs = parm_dict['FORC_num_of_FORC_cycles']
         numcyclesteps = parm_dict['VS_steps_per_full_cycle']
         cycle_fraction = parm_dict['VS_cycle_fraction']
-        
-        frac = {'full':1.0,'1/2':0.5,'1/4':0.25,'3/4':0.75}
-        
-        numcyclesteps = frac[cycle_fraction]*numcyclesteps
-        
+
+        frac = {'full': 1.0, '1/2': 0.5, '1/4': 0.25, '3/4': 0.75}
+
+        numcyclesteps = frac[cycle_fraction] * numcyclesteps
+
         """
         Check the number of cycles and FORCs
         Add to Spectroscopic Values Labels as needed 
@@ -1004,35 +1007,35 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             nrow += 1
             ds_spec_val_labs.append('Cycle')
             ds_spec_val_units.append('')
-            
+
         if numFORCs > 1:
             hasFORCS = True
             nrow += 1
             ds_spec_val_labs.append('FORC')
             ds_spec_val_units.append('')
-            numFORCsteps = numcycles*numcyclesteps
+            numFORCsteps = numcycles * numcyclesteps
 
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow,1])
+        ds_spec_val_mat = np.empty([nrow, 1])
 
         """
         Main loop over all steps
         """
-        FORC=-1
-        cycle=-1
+        FORC = -1
+        cycle = -1
         for step in range(numsteps):
             """
             Calculate the cycle number if needed
             """
             if hasFORCS:
-                FORC = np.floor(step/numFORCsteps)
-                stepinFORC = step-FORC*numFORCsteps
-                cycle = np.floor(stepinFORC/numcyclesteps)
+                FORC = np.floor(step / numFORCsteps)
+                stepinFORC = step - FORC * numFORCsteps
+                cycle = np.floor(stepinFORC / numcyclesteps)
             elif hascycles:
-                cycle = np.floor(step/numcyclesteps)
-            
+                cycle = np.floor(step / numcyclesteps)
+
             """
             Check the wave_mod
             """
@@ -1042,13 +1045,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Get bins for current step based on waveform
             """
-            this_wave = np.where(bin_wfm_type==wave_form[step])[0]
-            
+            this_wave = np.where(bin_wfm_type == wave_form[step])[0]
+
             """
             Loop over bins
             """
             for thisbin in this_wave:
-                colVal = np.array([[bin_freqs[thisbin]],[inSpecVals[step][0]],[forrev]])
+                colVal = np.array([[bin_freqs[thisbin]], [inSpecVals[step][0]], [forrev]])
                 """
                 Add entries to cycle and/or FORC as needed
                 """
@@ -1056,13 +1059,12 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                     colVal = np.append(colVal, [[cycle]], axis=0)
                 if hasFORCS:
                     colVal = np.append(colVal, [[FORC]], axis=0)
-                
+
                 ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
-    
-        return ds_spec_val_mat[:,1:], ds_spec_val_labs, ds_spec_val_units, [['Direction',['reverse','forward']]]
-    
-    
-    def __BEPSgen(udvs_mat,inSpecVals, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, iSpecVals, udvs_units):
+
+        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
+
+    def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, iSpecVals, udvs_units):
         """
         Calculates Spectroscopic Values for BEPS data in generic mode
         
@@ -1080,18 +1082,17 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_mat -- list holding final Spectroscopic Value table 
         SpecValsLabels -- list holding labels of column names of ds_spec_val_mat
         """
-        
 
         """
         Get the number of bins and steps in the current dataset
         """
         numsteps = udvs_mat.shape[0]
-        
+
         """
         Get the wave form for each step from udvs_mat
         """
-        wave_form = udvs_mat[:,3]        
-        
+        wave_form = udvs_mat[:, 3]
+
         """
         All datasets will need Spectroscopic Value fields for Bin,
         everything else must be defined
@@ -1100,16 +1101,16 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         ds_spec_val_labs = ['Frequency']
         ds_spec_val_units = ['Hz']
-        
+
         ds_spec_val_labs.extend(udvs_labs[(iSpecVals[:])])
         ds_spec_val_units.extend([udvs_units[i] for i in iSpecVals])
         nrow = len(ds_spec_val_labs)
-        
+
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow,1])
-    
+        ds_spec_val_mat = np.empty([nrow, 1])
+
         """
         Main loop over all steps
         """
@@ -1117,15 +1118,15 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Get the wave form for each step from udvs_mat
             """
-            this_wave = np.where(bin_wfm_type==wave_form[step])[0]
-            
+            this_wave = np.where(bin_wfm_type == wave_form[step])[0]
+
             for thisbin in this_wave:
                 colVal = np.array([[bin_freqs[thisbin]]])
-                colVal = np.append(colVal, [[row] for row in inSpecVals[step,:]], axis=0)
-                
+                colVal = np.append(colVal, [[row] for row in inSpecVals[step, :]], axis=0)
+
                 ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
-    
-        return ds_spec_val_mat[:,1:], ds_spec_val_labs, ds_spec_val_units, []
+
+        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, []
 
     """
 ********************************************************************************************
@@ -1133,13 +1134,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
     """
     dtype = parm_dict['data_type']
     if dtype == 'BELineData':
-        ds_spec_val_mat = bin_freqs.reshape([1,-1])
-        ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype = np.int32)
+        ds_spec_val_mat = bin_freqs.reshape([1, -1])
+        ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype=np.int32)
         ds_spec_val_labs = ['Frequency']
         ds_spec_val_units = ['Hz']
         spec_vals_labs_names = []
-        ds_spec_inds_mat[0,:] = np.arange(ds_spec_val_mat.shape[1])
-        
+        ds_spec_inds_mat[0, :] = np.arange(ds_spec_val_mat.shape[1])
+
     elif dtype == 'BEPSData':
         # Call __BEPSVals to finish the refining of the Spectroscopic Value array        
         ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = __BEPSVals(udvs_mat, spec_inds,
@@ -1154,9 +1155,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         if mode == 'load user defined VS Wave from file':
             wave_form = udvs_mat[:, 3]
             for wave in wave_form:
-                wave_freqs = bin_freqs[np.argwhere(bin_wfm_type==wave)].squeeze()
+                wave_freqs = bin_freqs[np.argwhere(bin_wfm_type == wave)].squeeze()
                 num_bins = wave_freqs.size
-                ds_spec_inds_mat[0, spec_start:spec_start+num_bins] = range(num_bins)
+                ds_spec_inds_mat[0, spec_start:spec_start + num_bins] = range(num_bins)
                 spec_start += num_bins
 
     else:
@@ -1166,13 +1167,15 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_labs = []
         ds_spec_val_units = []
         spec_vals_labs_names = []
-    
+
     return ds_spec_val_mat, ds_spec_inds_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names
 
 
 """
 BEHistogram Class and Functions
 """
+
+
 class BEHistogram():
     # TODO: Turn into proper class
     # TODO: Parallelize Histogram generation
@@ -1180,6 +1183,7 @@ class BEHistogram():
     Class just functions as a container so we can have shared objects
     Chris Smith -- csmith55@utk.edu
     """
+
     def addBEHist(self, h5_path, max_mem_mb=1024, show_plot=True, save_plot=True):
         """
         This function adds Histgrams from the Main Data to the Plot Groups for
@@ -1207,28 +1211,27 @@ class BEHistogram():
         print('Adding Histograms to file {}'.format(h5_file.name))
         print('Path to HDF5 file is {}'.format(hdf.path))
 
-        max_mem = min(max_mem_mb*1024**2,0.75*getAvailableMem())
+        max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * getAvailableMem())
 
         h5_main = getDataSet(h5_file, 'Raw_Data')
-        h5_udvs = getDataSet(h5_file,'UDVS')
+        h5_udvs = getDataSet(h5_file, 'UDVS')
 
         m_groups = [data.parent for data in h5_main]
         print('{} Measurement groups found.'.format(len(m_groups)))
 
-        
         for im, group in enumerate(m_groups):
 
             p_groups = []
 
-            mspecs = getDataSet(group,'Mean_Spectrogram')
+            mspecs = getDataSet(group, 'Mean_Spectrogram')
             p_groups.extend([mspec.parent for mspec in mspecs])
 
-            print('{} Plot groups in {}'.format(len(p_groups),group.name))
+            print('{} Plot groups in {}'.format(len(p_groups), group.name))
 
             for ip, p_group in enumerate(p_groups):
                 try:
-                    max_resp = getDataSet(group,'Max_Response')
-                    min_resp = getDataSet(group,'Min_Response')
+                    max_resp = getDataSet(group, 'Max_Response')
+                    min_resp = getDataSet(group, 'Min_Response')
                 except:
                     warn('Maximum and Minimum Response vectors not found for {}.'.format(p_group.name))
                     max_resp = []
@@ -1257,29 +1260,28 @@ class BEHistogram():
 
                 hist_slice_dict = dict()
                 for hist_ind, hist_dim in enumerate(hist_labels):
-                    hist_slice_dict[hist_dim] = (slice(hist_ind,hist_ind+1), slice(None))
+                    hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
                 ds_hist.attrs['labels'] = hist_slice_dict
-                ds_hist_indices = MicroDataset('Histograms_Indices',hist_indices,dtype=np.int32)
+                ds_hist_indices = MicroDataset('Histograms_Indices', hist_indices, dtype=np.int32)
                 hist_ind_dict = dict()
                 for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
-                    hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind+1),slice(None))
+                    hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
-                ds_hist_labels = MicroDataset('Histograms_Labels',np.array(hist_labels))
+                ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
                 plot_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_labels])
                 hdf.writeData(plot_grp)
 
                 if show_plot or save_plot:
                     if save_plot:
-                        basename,junk = path.splitext(h5_path)
-                        plotfile = '{}_MG{}_PG{}_Histograms.png'.format(basename,im,ip)
+                        basename, junk = path.splitext(h5_path)
+                        plotfile = '{}_MG{}_PG{}_Histograms.png'.format(basename, im, ip)
                     plot_histgrams(hist_mat, hist_indices, p_group, plotfile)
                     if show_plot:
                         plt.show()
 
         hdf.close()
 
-
-    def buildBEHist(self,h5_main, max_response=[], min_response=[],max_mem_mb=1024, max_bins=256, debug=False):
+    def buildBEHist(self, h5_main, max_response=[], min_response=[], max_mem_mb=1024, max_bins=256, debug=False):
         """
         Creates Histograms from dataset
 
@@ -1292,37 +1294,37 @@ class BEHistogram():
         """
 
         free_mem = getAvailableMem()
-        if debug: print('We have {} bytes of memory available'.format(free_mem))
-        self.max_mem = min(max_mem_mb*1024**2,0.75*free_mem)
+        if debug:
+            print('We have {} bytes of memory available'.format(free_mem))
+        self.max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * free_mem)
 
         """
         Check that max_response and min_response have been defined.
         Call __getminmaxresponse__ is not
         """
         if max_response == [] or min_response == []:
-            max_response = np.max(np.abs(h5_main),axis=1)
-            min_response = np.min(np.abs(h5_main),axis=1)
+            max_response = np.max(np.abs(h5_main), axis=1)
+            min_response = np.min(np.abs(h5_main), axis=1)
 
-
-        self.max_response = np.mean(max_response)+3*np.std(max_response)
-        self.min_response = np.max([0,np.mean(min_response)-3*np.std(min_response)])
+        self.max_response = np.mean(max_response) + 3 * np.std(max_response)
+        self.min_response = np.max([0, np.mean(min_response) - 3 * np.std(min_response)])
 
         """
         Loop over all datasets
         """
-        active_udvs_steps = getActiveUDVSsteps(h5_main) # technically needs to be done only once
+        active_udvs_steps = getActiveUDVSsteps(h5_main)  # technically needs to be done only once
         self.num_udvs_steps = len(active_udvs_steps)
 
         """
         Load auxilary datasets and extract needed parameters
         """
-        spec_ind_mat = getAuxData(h5_main,auxDataName=['Spectroscopic_Indices'])[0]
+        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         self.N_spectral_steps = np.shape(spec_ind_mat)[0]
 
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main,auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
         x_hist = np.array(spec_ind_mat)
 
         self.N_bins = np.size(freqs_mat)
@@ -1333,8 +1335,8 @@ class BEHistogram():
         self.N_pixels = np.shape(h5_main)[1]
         # print('There are {} pixels in this dataset'.format(self.N_pixels))
 
-        self.N_y_bins = np.int(np.min( (max_bins, np.rint(np.sqrt(self.N_pixels*self.N_spectral_steps)))))
-#         self.N_y_bins = np.min( (max_bins, np.rint(2*(self.N_pixels*self.N_spectral_steps)**(1.0/3.0))))
+        self.N_y_bins = np.int(np.min((max_bins, np.rint(np.sqrt(self.N_pixels * self.N_spectral_steps)))))
+        #         self.N_y_bins = np.min( (max_bins, np.rint(2*(self.N_pixels*self.N_spectral_steps)**(1.0/3.0))))
         # print('{} bins will be used'.format(self.N_y_bins))
 
         ds_hist = self.__datasetHist(h5_main, active_udvs_steps, x_hist, debug)
@@ -1382,26 +1384,27 @@ class BEHistogram():
 
         """
         free_mem = getAvailableMem()
-        if debug: print('We have {} bytes of memory available'.format(free_mem))
-        self.max_mem = min(max_mem_mb,0.75*free_mem)
+        if debug:
+            print('We have {} bytes of memory available'.format(free_mem))
+        self.max_mem = min(max_mem_mb, 0.75 * free_mem)
 
         """
         Check that max_response and min_response have been defined.
         Call __getminmaxresponse__ is not
         """
         if max_response == [] or min_response == []:
-            max_response = np.amax(np.abs(h5_main),axis=0)
-            min_response = np.amin(np.abs(h5_main),axis=0)
+            max_response = np.amax(np.abs(h5_main), axis=0)
+            min_response = np.amin(np.abs(h5_main), axis=0)
 
-        self.max_response = np.mean(max_response)+std_mult*np.std(max_response)
-        self.min_response = np.mean(min_response)-std_mult*np.std(min_response)
-        del max_response,min_response
+        self.max_response = np.mean(max_response) + std_mult * np.std(max_response)
+        self.min_response = np.mean(min_response) - std_mult * np.std(min_response)
+        del max_response, min_response
 
         """
         Load auxilary datasets and extract needed parameters
         """
-        step_ind_mat = getAuxData(h5_main,auxDataName=['UDVS_Indices'])[0].value
-        spec_ind_mat = getAuxData(h5_main,auxDataName=['Spectroscopic_Indices'])[0].value
+        step_ind_mat = getAuxData(h5_main, auxDataName=['UDVS_Indices'])[0].value
+        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0].value
         self.N_spectral_steps = np.size(step_ind_mat)
 
         active_udvs_steps = np.unique(step_ind_mat[active_spec_steps])
@@ -1410,8 +1413,8 @@ class BEHistogram():
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main,auxDataName=['Bin_Frequencies'])[0]
-        x_hist = np.array([spec_ind_mat[0],step_ind_mat], dtype=np.int32)
+        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        x_hist = np.array([spec_ind_mat[0], step_ind_mat], dtype=np.int32)
 
         self.N_bins = np.size(freqs_mat)
         self.N_freqs = np.size(np.unique(freqs_mat))
@@ -1420,14 +1423,14 @@ class BEHistogram():
 
         self.N_pixels = np.shape(h5_main)[0]
 
-#         self.N_y_bins = np.int(np.min( (max_bins, np.rint(np.sqrt(self.N_pixels*self.N_spectral_steps)))))
-        self.N_y_bins = np.int(np.min( (max_bins, np.rint(2*(self.N_pixels*self.N_spectral_steps)**(1.0/3.0)))))
-
+        #         self.N_y_bins = np.int(np.min( (max_bins, np.rint(np.sqrt(self.N_pixels*self.N_spectral_steps)))))
+        self.N_y_bins = np.int(np.min((max_bins, np.rint(2 * (self.N_pixels * self.N_spectral_steps) ** (1.0 / 3.0)))))
 
         ds_hist = self.__datasetHist(h5_main, active_udvs_steps, x_hist, debug)
-        if debug: print(np.shape(ds_hist))
-        if debug: print('ds_hist max',np.max(ds_hist),
-                        'ds_hist min',np.min(ds_hist))
+        if debug:
+            print(np.shape(ds_hist))
+        if debug:
+            print('ds_hist max', np.max(ds_hist), 'ds_hist min', np.min(ds_hist))
 
         hist_mat, hist_labels, hist_indices, hist_index_labels = self.__reshapeHist(ds_hist)
 
@@ -1456,19 +1459,19 @@ class BEHistogram():
         """
         hist_shape = ds_hist.shape
 
-        hist_mat = np.reshape(ds_hist, (hist_shape[0],hist_shape[1]*hist_shape[2]))
+        hist_mat = np.reshape(ds_hist, (hist_shape[0], hist_shape[1] * hist_shape[2]))
 
-        hist_labels = ['Amplitude','Phase','Real Part','Imaginary Part']
+        hist_labels = ['Amplitude', 'Phase', 'Real Part', 'Imaginary Part']
 
-        hist_indices = np.zeros((2,hist_mat.shape[1]), dtype=np.int32)
+        hist_indices = np.zeros((2, hist_mat.shape[1]), dtype=np.int32)
 
-        hist_index_labels = ['Frequency Bin','Spectroscopic Bin']
+        hist_index_labels = ['Frequency Bin', 'Spectroscopic Bin']
 
         for isbin in range(hist_shape[1]):
             for ifbin in range(hist_shape[2]):
-                ihbin = ifbin+isbin*hist_shape[2]
-                hist_indices[0,ihbin] = ifbin
-                hist_indices[1,ihbin] = isbin
+                ihbin = ifbin + isbin * hist_shape[2]
+                hist_indices[0, ihbin] = ifbin
+                hist_indices[1, ihbin] = isbin
 
         return hist_mat, hist_labels, hist_indices, hist_index_labels
 
@@ -1493,42 +1496,45 @@ class BEHistogram():
 
         """
 
-
         """
         Estimate maximum number of pixels to read at once
         """
         max_pixels = maxReadPixels(self.max_mem, self.N_pixels, self.num_udvs_steps,
-                                   bytes_per_bin=h5_main.dtype.itemsize*self.N_y_bins*self.N_freqs)
+                                   bytes_per_bin=h5_main.dtype.itemsize * self.N_y_bins * self.N_freqs)
 
         """
         Divide the pixels into chunks that will fit in memory
         """
-        pix_chunks = np.append(np.arange(0,self.N_pixels,max_pixels,dtype=np.int),self.N_pixels)
+        pix_chunks = np.append(np.arange(0, self.N_pixels, max_pixels, dtype=np.int), self.N_pixels)
 
         """
         Initialize the histograms
         """
-        ds_hist = np.zeros((4,self.N_freqs,self.N_y_bins),dtype=np.int32)
+        ds_hist = np.zeros((4, self.N_freqs, self.N_y_bins), dtype=np.int32)
 
         """
         loop over pixels
         """
-        for ichunk in range(len(pix_chunks)-1):
-            if debug: print('pixel chunk', ichunk)
+        for ichunk in range(len(pix_chunks) - 1):
+            if debug:
+                print('pixel chunk', ichunk)
 
-            chunk = range(pix_chunks[ichunk], pix_chunks[ichunk+1])
+            chunk = range(pix_chunks[ichunk], pix_chunks[ichunk + 1])
 
             """
         Loop over active UDVS steps
             """
             for iudvs in range(self.num_udvs_steps):
-                selected = (iudvs+chunk[0]*self.num_udvs_steps) % np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
+                selected = (iudvs + chunk[0] * self.num_udvs_steps) % np.rint(
+                    self.num_udvs_steps * self.N_pixels / 10) == 0
                 if selected:
-                    per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))
+                    per_done = np.rint(
+                        100 * (iudvs + chunk[0] * self.num_udvs_steps) / (self.num_udvs_steps * self.N_pixels))
                     print('Binning BEHistogram...{}% --pixels {}-{}, step # {}'.format(per_done, chunk[0],
                                                                                        chunk[-1], iudvs))
                 udvs_step = active_udvs_steps[iudvs]
-                if debug: print('udvs step', udvs_step)
+                if debug:
+                    print('udvs step', udvs_step)
 
                 """
         Get the correct Spectroscopic bins for the current UDVS step
@@ -1537,19 +1543,19 @@ class BEHistogram():
                 udvs_bins = np.where(x_hist[1] == udvs_step)[0]
                 if debug:
                     print(np.shape(x_hist))
-                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk+1], (udvs_bins)]
+                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk + 1], (udvs_bins)]
 
                 """
         Get the frequecies that correspond to the current UDVS bins from the total x_hist
                 """
                 this_x_hist = np.take(x_hist[0], udvs_bins)
-                this_x_hist = this_x_hist-this_x_hist[0]
-                this_x_hist = np.transpose(np.tile(this_x_hist, (1, pix_chunks[ichunk+1]-pix_chunks[ichunk])))
+                this_x_hist = this_x_hist - this_x_hist[0]
+                this_x_hist = np.transpose(np.tile(this_x_hist, (1, pix_chunks[ichunk + 1] - pix_chunks[ichunk])))
                 this_x_hist = np.squeeze(this_x_hist)
 
                 N_x_bins = np.shape(this_x_hist)[0]
                 if debug:
-                    print('N_x_bins',N_x_bins)
+                    print('N_x_bins', N_x_bins)
                     print(this_x_hist)
                     print(np.shape(this_x_hist))
                 """
@@ -1557,7 +1563,8 @@ class BEHistogram():
                 """
                 weighting_vec = 1
 
-                if debug: print(np.shape(data_mat))
+                if debug:
+                    print(np.shape(data_mat))
 
                 """
         Set up the list of functions to call and their corresponding maxima and minima
@@ -1590,5 +1597,3 @@ class BEHistogram():
                         ds_hist[ifunc, ids_freq, :] = np.add(ds_hist[ifunc, ids_freq, :], chunk_hist[i, :])
 
         return ds_hist
-
-    

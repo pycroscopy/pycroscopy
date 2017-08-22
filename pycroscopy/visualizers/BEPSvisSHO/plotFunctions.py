@@ -112,7 +112,7 @@ class BEPSwindow(QtGui.QMainWindow):
 
         y_labs = np.array([['Amplitude', 'V'], ['Frequency', 'Hz'], ['Q Factor', ''], ['Phase', 'rad']])
 
-        ##The following should ALL be derived from the file in question via PySPM!!
+        # The following should ALL be derived from the file in question via PySPM!!
         plot_elements = [['Amplitude [V]', np.abs], ['Phase [rad]', np.angle]]
 
         initialPars = {'Number of Cycles': num_cycles,

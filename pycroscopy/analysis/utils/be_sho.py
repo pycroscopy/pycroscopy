@@ -22,7 +22,7 @@ def SHOfunc(parms, w_vec):
         Vector of frequency values
     """
     return parms[0] * exp(1j * parms[3]) * parms[1] ** 2 / \
-           (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
+        (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
 
 
 def SHOestimateGuess(w_vec, resp_vec, num_points=5):

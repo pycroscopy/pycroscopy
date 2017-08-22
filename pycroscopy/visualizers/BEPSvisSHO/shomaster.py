@@ -12,9 +12,6 @@ import sys
 from plotFunctions import BEPSwindow
 import pyqtgraph as pg
 
-
-
-
 if __name__ == '__main__':
     '''
     Need to load the file from PySPM that should be visualized.
@@ -24,9 +21,9 @@ if __name__ == '__main__':
     We also need to add another selection bar, that determines what we are 
     plotting i.e. A, phi, omega, or Q.
     '''
-    
+
     app = pg.QtGui.QApplication([])
-    
+
     h5_path = None
 
     '''
@@ -36,5 +33,5 @@ if __name__ == '__main__':
     win.setup(h5_path)
     win.showMaximized()
     win.setSignals()
-    
+
     sys.exit(app.exec_())

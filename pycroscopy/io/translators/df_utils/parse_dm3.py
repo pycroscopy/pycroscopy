@@ -30,6 +30,7 @@ verbose = False
 # string instead of an array
 treat_as_string_names = ['.*Name']
 
+
 def get_from_file(f, stype):
     # print("reading", stype, "size", struct.calcsize(stype))
     src = f.read(struct.calcsize(stype))

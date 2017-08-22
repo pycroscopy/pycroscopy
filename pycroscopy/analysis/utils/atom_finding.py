@@ -503,7 +503,7 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
         axis.imshow(double_cropped_image, interpolation='none', cmap="gray")
         axis.scatter(all_atom_pos[culprits[:, 0], 1], all_atom_pos[culprits[:, 0], 0], color='yellow')
         axis.scatter(all_atom_pos[culprits[:, 1], 1], all_atom_pos[culprits[:, 1], 0], color='red')
-        axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan');
+        axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan')
 
     # Now classify the culprit pairs into the correct family
     classifier = KNeighborsClassifier(n_neighbors=num_neighbors)
@@ -534,9 +534,9 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
             row_ind = int(np.round(all_atom_pos[atom_ind, 0]))
             col_ind = int(np.round(all_atom_pos[atom_ind, 1]))
             img_section = double_cropped_image[max(0, row_ind - neighbor_size):
-            min(double_cropped_image.shape[0], row_ind + neighbor_size),
-                          max(0, col_ind - neighbor_size):
-                          min(double_cropped_image.shape[1], col_ind + neighbor_size)]
+                                               min(double_cropped_image.shape[0], row_ind + neighbor_size),
+                                               max(0, col_ind - neighbor_size):
+                                               min(double_cropped_image.shape[1], col_ind + neighbor_size)]
             amplitude_pair.append(np.max(img_section))
         # print amplitude_pair
         if amplitude_pair[0] > amplitude_pair[1]:

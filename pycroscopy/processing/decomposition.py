@@ -58,9 +58,8 @@ class Decomposition(object):
         self.method_name = method_name
 
         # figure out the operation that needs need to be performed to convert to real scalar
-        retval = check_dtype(h5_main)
-        self.data_transform_func, self.data_is_complex, self.data_is_compound, \
-        self.data_n_features, self.data_n_samples, self.data_type_mult = retval
+        (self.data_transform_func, self.data_is_complex, self.data_is_compound,
+         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
     def doDecomposition(self):
         """

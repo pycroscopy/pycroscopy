@@ -63,9 +63,8 @@ class Cluster(object):
         self.data_slice = (slice(None), comp_slice)
 
         # figure out the operation that needs need to be performed to convert to real scalar
-        retval = check_dtype(h5_main)
-        self.data_transform_func, self.data_is_complex, self.data_is_compound, \
-        self.data_n_features, self.data_n_samples, self.data_type_mult = retval
+        (self.data_transform_func, self.data_is_complex, self.data_is_compound,
+         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
     def do_cluster(self, rearrange_clusters=True):
         """

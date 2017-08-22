@@ -77,7 +77,7 @@ class Node(object):
             self.num_nodes = 1
             if verbose:
                 print('Parent node:', str(name), 'has', str(self.num_nodes), 'children')
-        if all([len(self.children) > 0, type(value) == type(None), compute_mean]):
+        if all([len(self.children) > 0, value is None, compute_mean]):
             resp = []
             for child in children:
                 if verbose:

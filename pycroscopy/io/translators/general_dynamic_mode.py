@@ -117,11 +117,11 @@ class GDMTranslator(Translator):
 
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
-        global_parms['grid_size_x'] = parm_dict['grid_num_cols'];
-        global_parms['grid_size_y'] = parm_dict['grid_num_rows'];
+        global_parms['grid_size_x'] = parm_dict['grid_num_cols']
+        global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         # assuming that the experiment was completed:        
-        global_parms['current_position_x'] = parm_dict['grid_num_cols'] - 1;
-        global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1;
+        global_parms['current_position_x'] = parm_dict['grid_num_cols'] - 1
+        global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1
         global_parms['data_type'] = parm_dict['data_type']  # self.__class__.__name__
         global_parms['translator'] = 'W2'
         spm_data.attrs = global_parms

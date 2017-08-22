@@ -62,15 +62,19 @@ def get_all_main(parent, verbose=False):
     main_list = list()
 
     def __check(name, obj):
-        if verbose: print(name, obj)
+        if verbose:
+            print(name, obj)
         if isinstance(obj, h5py.Dataset):
-            if verbose: print(name, 'is an HDF5 Dataset.')
+            if verbose:
+                print(name, 'is an HDF5 Dataset.')
             ismain = checkIfMain(obj)
             if ismain:
-                if verbose: print(name, 'is a `Main` dataset.')
+                if verbose:
+                    print(name, 'is a `Main` dataset.')
                 main_list.append(obj)
 
-    if verbose: print('Checking the group {} for `Main` datasets.'.format(parent.name))
+    if verbose:
+        print('Checking the group {} for `Main` datasets.'.format(parent.name))
     parent.visititems(__check)
 
     return main_list

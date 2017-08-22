@@ -59,7 +59,8 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
         min_resp = np.min(y_hist)
     if max_resp is None:
         max_resp = np.max(y_hist)
-    if debug: print('min_resp', min_resp, 'max_resp', max_resp)
+    if debug:
+        print('min_resp', min_resp, 'max_resp', max_resp)
 
     y_hist = __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug)
 

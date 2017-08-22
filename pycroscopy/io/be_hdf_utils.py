@@ -191,7 +191,7 @@ def getIndicesforPlotGroup(h5_udvs_inds, ds_udvs, plt_grp_name):
     # All UDVS steps that are NOT part of the plot grop are empty cells in the table
     # and hence assume a nan value.
     # getting the udvs step indices that belong to this plot group:
-    step_inds = np.where(np.isnan(udvs_col_data) == False)[0]
+    step_inds = np.where(np.isnan(udvs_col_data) is False)[0]
     # Getting the values in that plot group that were non NAN
     udvs_plt_grp_col = udvs_col_data[step_inds]
 

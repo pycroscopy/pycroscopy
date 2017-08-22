@@ -330,9 +330,6 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 
     return harm_filter
 
-
-    ###############################################################################
-
     # def removeNoiseHarmonics(F_AI_vec,samp_rate,noise_combs):
     #     """
     #     Removes specified noise frequencies from the signal

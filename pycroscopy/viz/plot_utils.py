@@ -864,7 +864,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
             ax.set_title(title)
             ax.set_xlabel(spec_label)
 
-    if type(spec_val) == type(None):
+    if spec_val is None:
         spec_val = np.arange(mean_response.shape[1])
 
     if mean_response.dtype in [np.complex64, np.complex128, np.complex]:
