@@ -38,7 +38,10 @@ Regardless of origin, modality or complexity, imaging data have one thing in com
 
 __The same measurement is performed at multiple spatial locations__
 
-The data format in pycroscopy is based on this one simple ground truth. The data always has some `spatial dimensions` (X, Y, Z) and some `spectroscopic dimensions` (time, frequency, intensity, wavelength, temperature, cycle, voltage, etc.). __In pycroscopy, the spatial dimensions are collapsed onto a single dimension and the spectroscopic dimensions are flattened to the other dimensions.__ Thus, all data are stored as two dimensional grids. Here are some examples of how some familar data can be represented using this paradigm:
+The data format in pycroscopy is based on this one simple ground truth. The data always has some `spatial dimensions` (X, Y, Z) and some `spectroscopic dimensions` (time, frequency, intensity, wavelength, temperature, cycle, voltage, etc.). __In pycroscopy, the spatial dimensions are collapsed onto a single dimension and the spectroscopic dimensions are flattened to the other dimensions.__ Thus, all data are stored as two dimensional grids. While the data could indeed be stored in the original N-dimensional form, there are a few key advantages to the 2D format:
+* Researchers want to acquire ever larger datasets that take much longer to acquire. This has necessitated approaches such as sparse sampling or [compressed sensing](https://en.wikipedia.org/wiki/Compressed_sensing) wherein measurements are acqurired from a few randomly sampled positions and the data for the rest of the positions are inferred using complex algorithms. Storing such sparse sampled data in the N dimensional format would baloon the size of the stored data even though the majority of the data is actually empty. Two dimensional datasets would allow the random measurements to be written without any empty sections. 
+* When acquiring measurement data, users often adjust experimental parameters during the experiment that may affect the size of the data, especially the spectral sizes. Thus, changes in experimental parameters would mean that the existing N dimensional set would have to be left partially (in most cases largely) empty and a new N dimensional dataset would have to be allocated with the first few positions left empty. In the case of flattened datasets, the current dataset can be truncated at the point of the parameter change and a new dataset can be created to start from the current measurement. Thus, no space would be wasted.
+Here are some examples of how some familar data can be represented using this paradigm:
 * __Grayscale photographs__: A single value (intensity) in is recorded at each pixel in a two dimensional grid. Thus, there are are two spatial dimensions - X, Y and one spectroscopic dimension - "Intensity". The data can be represented as a N x 1 matrix where N is the product of the number of rows and columns of pixels. The second axis has size of 1 since we only record one value (intensity) at each location. _The positions will be arranged as row0-col0, row0-col1.... row0-colN, row1-col0...._ Color images or photographs will be discussed below due to some very important subtleties about the measurement.
 * A __single Raman spectra__: In this case, the measurement is recorded at a single location. At this position, data is recorded as a function of a single (spectroscopic) variable such as wavelength. Thus this data is represented as a 1 x P matrix, where P is the number of points in the spectra
 * __Scanning Tunelling Spectroscopy or IV spectroscopy__: The current (A 1D array of size P) is recorded as a function of voltage at each position in a two dimensional grid of points (two spatial dimensions). Thus the data would be represented as a N x P matrix, where N is the product of the number of rows and columns in the grid and P is the number of spectroscopic points recorded. 
@@ -55,6 +58,10 @@ The data format in pycroscopy is based on this one simple ground truth. The data
     * If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P. The data is still saved as a long (2*P) 1D array at each location. The number of spectroscopic dimensions would change from just ['Voltage'] to ['Voltage', 'Cycle'] where the second spectroscopic dimension would account for repetitions of this bias sweep.
         * __The spectroscopic data would be stored as it would be recorded as volt_0-cycle_0, volt_1-cycle_0..... volt_P-1-cycle_0, volt_0-cycle_1.....volt_P-1-cycle-1. Just like the positions__
     * Now, if the bias was swept thrice from -1 to +1V and then thrice again from -2 to 2V, the data bacomes N x 2 * 3 P. The data now has two position dimensions (X, Y) and three spectrosocpic dimensions ['Voltage', 'Cycle', 'Step']. The data is still saved as a (P * 2 * 3) 1D array at each location. 
+    
+* A collection of `k` chosen spectra would also be considered `main` datasets since the data is still structured as `[instance, features]`. Some examples include:
+   * the cluster centers obtained from a clustering algorithm like `k-Means clustering`.
+   * The abundance maps obtained from decomposition algorithms like `Singular Value Decomposition (SVD)` or `Non-negetive matrix factorization (NMF)`
     
 #### Compound Datasets:
 pycroscopy actually uses compound datasets a lot more frequently than one would think. The need and utility of compound datasets are best described with examples: 
@@ -129,33 +136,101 @@ The pycroscopy data format also allows multiple channels of information to be re
 
 ## File Format (HDF5)
 
-Among the numerous benefits of __HDF5__ files are that these files:
+While it is indeed possible to store data in the pycroscopy format in multiple kinds of file formats such at .mat files, plain binary files, etc., we chose the [HDF5 file format](https://support.hdfgroup.org/HDF5/doc/H5.intro.html) since it comfortably accomodates the pycroscopy format and offers several advantageous features. 
+
+Information can be stored in HDF5 files in several ways:
+* __`Datasets`__ allow the storageo of data matricies and these are the vessels used for storing the `main`, `ancillary`, and any extra data matricies
+* __`Datagroups`__ are similar to folders in conventional file systems and can be used to store any number of datasets or datagroups themselves
+* __`Attributes`__ are small pieces of information, such as experimental or analytical parameters, that are stored in key-value pairs in the same way as dictionaries in python. Both datagroups and datasets can store attributes.
+* While they are not means to store data, __`Links` or `references`__ can be used to provide shortcuts and aliases to datasets and datagroups. This feature is especially useful for avoiding duplication of datasets when two `main` datasets use the same ancillary datasets.
+
+Among the [various benefits](http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf) that they offer, HDF5 files:
 * are readily compatible with high-performance computing facilities
 * scale very efficiently from few kilobytes to several terabytes
 * can be read and modified using any language including Python, Matlab, C/C++, Java, Fortran, Igor Pro, etc.
+* store data in a intuitive and familiar heirarchical / tree-like structure that is similar to files and folders in personal computers.
+* faciliates storage of any number of experimental or analysis parameters in addition to regular data.
 
+## Implementation
+
+Here we discuss guidelines and specifications for implementing the pycroscopy format in HDF5 files.
+
+### `Main` data:
+
+__Dataset__ structured as (positions x time or spectroscopic values)
+* `dtype` : uint8, float32, complex64, compound if necessary, etc.
+* _Required_ attributes: 
+   * `quantity` - Single string that explains the data. The physical quantity contained in each cell of the dataset – eg – 'Current' or 'Deflection'
+   * `units` – Single string for units. The units for the physical quantity like 'nA', 'V', 'pF', etc.
+   * `Position_Indices` - Reference to the position indices dataset 
+   * `Position_Values` - Reference to the position values dataset 
+   * `Spectroscopic_Indices` - Reference to the spectroscopic indices dataset 
+   * `Spectroscopic_Values` - Reference to the spectroscopic values dataset 
+* [`chunking`](https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html) : HDF group recommends that chunks be between 100 kB to 1 MB. We recommend chunking by whole number of positions since data is more likely to be read by position rather than by specific spectral indices. 
+   
+Note that we are only storing references to the ancillary datasets. This allows multiple `main` datasets to share the same ancillary datasets without having to duplicate them. 
+
+### `Ancillary` data:
+
+__Position_Indices__ structured as (positions x spatial dimensions)
+* dimensions are arranged in ascending order of rate of change. In other words, the fastest changing dimension is in the first column and the slowest is in the last or rightmost column.
+* `dtype` : uint32
+* Required attributes: 
+   * `labels`  - list of strings for the column names like ['X', 'Y']
+   * `units` – list of strings for units like ['um', 'nm']
+* Optional attributes:
+   * Region references based on column names
+
+__Position_Values__ structured as (positions x spatial dimensions)
+* dimensions are arranged in ascending order of rate of change. In other words, the fastest changing dimension is in the first column and the slowest is in the last or rightmost column.
+* `dtype` : float32
+* Required attributes: 
+   * `labels`  - list of strings for the column names like ['X', 'Y']
+   * `units` – list of strings for units like ['um', 'nm']
+* Optional attributes:
+   * Region references based on column names
+   
+__Spectroscopic_Indices__ structured as (spectroscopic dimensions x time)
+* dimensions are arranged in ascending order of rate of change. In other words, the fastest changing dimension is in the first row and the slowest is in the last or lowermost row.
+* `dtype` : uint32
+* Required attributes: 
+   * `labels`  - list of strings for the column names like ['Bias', 'Cycle']
+   * `units` – list of strings for units like ['V', '']. Empty string for dimensionless quantities
+* Optional attributes:
+   * Region references based on row names
+   
+__Spectroscopic_Values__ structured as (spectroscopic dimensions x time)
+* dimensions are arranged in ascending order of rate of change. In other words, the fastest changing dimension is in the first row and the slowest is in the last or lowermost row.
+* `dtype` : float32
+* Required attributes: 
+   * `labels`  - list of strings for the column names like ['Bias', 'Cycle']
+   * `units` – list of strings for units like ['V', '']. Empty string for dimensionless quantities
+* Optional attributes:
+   * Region references based on row names   
+   
+### Datagroups
+
+#### Measurement data
+
+* / (Root)
+   * Measurement_00x
+      * Channel_00x
+
+#### Analysis
+
+* `TargetDataset`
+   * `TargetDataset-ToolName_00x`
+      * Attributes:
+         * `time_stamp`
+         * `machine_id`
+         * `algorithm`
+         * Other tool-relevant attributes
+      * DatasetResult0
+      * DatasetResult1
+
+This bookkeeping is necesary for helping the code to understand the dimensionality and structure of the data. While these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
 
 ## Pending topics:
 * REGION REFERENCES
-* MANDATORY ATTRIBUTES for ancillary and main datasets
 * DATA GROUP NOMENCLATURE AND ATTRIBUTES STANDARDS
 * ABILITY TO PERFORM THE SAME OPERATION MULTIPLE TIMES
-
-
- * __`main`__ datasets: These must be of the form: `[instance, features]`. 
-     * All imaging or measurement data satisfy this category, where positions form the instances and the spectral points form the features. Thus, even standard 2D images or a single spectra also satisfy this condition.
-     * A collection of `k` chosen spectra would still satisfy this condition. Some examples include:
-         * the cluster centers obtained from a clustering algorithm like `k-Means clustering`.
-         * The abundance maps obtained from decomposition algorithms like `Singular Value Decomposition (SVD)` or `Non-negetive matrix factorization (NMF)`
- * __`ancillary`__ datasets: All other datasets fall into this category. These include the frequency vector or bias vector as a function of which the main dataset was collected.
-    
-## Implementation:      
-* All __`main`__ datasets always have two attributes that describe the measurement itself:
-    * `quantity`: The physical quantity contained in each cell of the dataset - such as voltage, current, force etc.
-    * `units`: The units for the physical quantity such as `V` for volts, `nA` for nano amperes, `pN` for pico newtons etc.
-* All __`main`__ datasets additionally have 4 attributes that provide the references or links to the 4 aforementions ancillary datasets
-    * Storing just the references allows us to re-use the same position / spectroscopic datasets without having to remake them
-    
-### Channels
-    
-This bookkeeping is necesary for helping the code to understand the dimensionality and structure of the data. While these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
