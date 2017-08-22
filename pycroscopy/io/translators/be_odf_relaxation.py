@@ -369,10 +369,16 @@ class BEodfRelaxationTranslator(Translator):
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary
         
-        Inputs:
-            data_filepath: Absolute path of the real / imaginary data file (.dat)
-        Outputs:
-            Tuple (basename, path_dict)
+        Parameters
+        ----------
+        data_filepath : str
+            Absolute path of the real / imaginary data file (.dat)
+
+        Returns
+        -------
+        basename : str
+        path_dict : dict
+
         """
         (folder_path, basename) = path.split(data_filepath)
         (super_folder, basename) = path.split(folder_path)
