@@ -181,8 +181,11 @@ class BEodfRelaxationTranslator(Translator):
         ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
 
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
-        spec_vals, spec_vals_labs, spec_vals_units = createSpecVals(UDVS_mat, spec_inds, bin_freqs, exec_bin_vec,
-                                                                    parm_dict, UDVS_labs, UDVS_units)
+        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_names = createSpecVals(UDVS_mat, spec_inds,
+                                                                                                bin_freqs,
+                                                                                                exec_bin_vec,
+                                                                                                parm_dict, UDVS_labs,
+                                                                                                UDVS_units)
 
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
@@ -359,7 +362,7 @@ class BEodfRelaxationTranslator(Translator):
         FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
         bin_FFT = np.conjugate(FFT_full[bin_inds])
 
-        return (bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full)
+        return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
     def _parse_file_path(self, data_filepath):
         """
@@ -393,7 +396,7 @@ class BEodfRelaxationTranslator(Translator):
         path_dict['read_imag'] = imag_path
         path_dict['old_mat_parms'] = data_filepath
 
-        return (basename, path_dict)
+        return basename, path_dict
 
     @staticmethod
     def __getParmsFromOldMat(file_path):
@@ -493,7 +496,7 @@ class BEodfRelaxationTranslator(Translator):
         elif VS_parms[0] == 2:
             # AC mode 
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
-            parm_dict['VS_amplitude_[V]'] = 0.5 * (VS_final_loop_amp)
+            parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
             parm_dict[
                 'VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
         else:
@@ -620,4 +623,4 @@ class BEodfRelaxationTranslator(Translator):
             UD_VS_table[BE_IF_switch == 1, 5] = UD_VS_table[BE_IF_switch == 1, 1]
             UD_VS_table[BE_OF_switch == 1, 6] = UD_VS_table[BE_IF_switch == 1, 1]
 
-        return (UD_VS_table_label, UD_VS_table_unit, UD_VS_table)
+        return UD_VS_table_label, UD_VS_table_unit, UD_VS_table

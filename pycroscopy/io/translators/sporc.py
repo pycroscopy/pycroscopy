@@ -146,7 +146,7 @@ class SporcTranslator(Translator):
                 else:
                     print('File for row {} col {} not found'.format(row_ind, col_ind))
                 pos_ind += 1
-                if (100.0 * (pos_ind) / num_pix) % 10 == 0:
+                if (100.0 * pos_ind / num_pix) % 10 == 0:
                     print('Finished reading {} % of data'.format(int(100 * pos_ind / num_pix)))
 
         hdf.close()

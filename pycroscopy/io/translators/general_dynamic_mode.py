@@ -162,7 +162,7 @@ class GDMTranslator(Translator):
                 else:
                     print('File not found for: row {} col {}'.format(row_ind, col_ind))
                 pos_ind += 1
-                if (100.0 * (pos_ind) / num_pix) % 10 == 0:
+                if (100.0 * pos_ind / num_pix) % 10 == 0:
                     print('completed translating {} %'.format(int(100 * pos_ind / num_pix)))
 
         hdf.close()

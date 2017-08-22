@@ -129,8 +129,8 @@ def getAuxData(parent_data, auxDataName=None):
         auxDataName = parent_data.attrs.keys()
     elif type(auxDataName) not in [list, tuple, set]:
         auxDataName = [auxDataName]  # typically a single string
+    data_list = list()
     try:
-        data_list = []
         file_ref = parent_data.file
         for auxName in auxDataName:
             ref = parent_data.attrs[auxName]
@@ -197,14 +197,15 @@ def get_attributes(parent_data, attr_names=None):
         attr_names = [attr_names]
 
     att_dict = {}
-    try:
-        for attr in attr_names:
+
+    for attr in attr_names:
+        try:
             att_dict[attr] = get_attr(parent_data, attr)
-    except KeyError:
-        warn('%s is not an attribute of %s'
-             % (str(attr), parent_data.name))
-    except:
-        raise
+        except KeyError:
+            warn('%s is not an attribute of %s'
+                 % (str(attr), parent_data.name))
+        except:
+            raise
 
     return att_dict
 
@@ -410,6 +411,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
             ref_inds = return_func(start, end)
         else:
             warn('No method currently exists for converting this type of reference.')
+            ref_inds = np.empty(0)
     else:
         raise TypeError('Input ref must be an HDF5 Region Reference')
 
@@ -740,11 +742,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
 
         ds_labels = np.hstack([pos_labs, spec_labs])
 
-        results = (ds_Nd2, True, ds_labels)
+        return ds_Nd2, True, ds_labels
     else:
-        results = (ds_Nd2, True)
-
-    return results
+        return ds_Nd2, True
 
 
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):

@@ -21,7 +21,7 @@ class MicroData(object):
     """
 
     def __init__(self, name, parent):
-        '''
+        """
         Parameters
         ----------
         name : String
@@ -29,7 +29,7 @@ class MicroData(object):
         parent : String
             HDF5 path to the parent of this object. Typically used when
             appending to an existing HDF5 file
-        '''
+        """
         self.name = name
         self.attrs = dict()
         self.parent = parent
@@ -65,18 +65,18 @@ class MicroDataGroup(MicroData):
         pass
 
     def addChildren(self, children):
-        '''
+        """
         Adds Children to the class to make a tree structure.
-        
+
         Parameters
         ----------
         children : list of MicroData objects
             Children can be a mixture of groups and datasets
-            
+
         Returns
         -------
         None
-        '''
+        """
         for child in children:
             if isinstance(child, MicroData):
                 child.parent = self.parent + self.name

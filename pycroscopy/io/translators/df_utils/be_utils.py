@@ -299,7 +299,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     # Generate transfer functions
     F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave / scaling_factor, [spectrogram_mat.shape[1], 1]))
     # Divide by transfer function
-    spectrogram_mat = spectrogram_mat / (F_AO_spectrogram)
+    spectrogram_mat = spectrogram_mat / F_AO_spectrogram
 
     return spectrogram_mat
 
@@ -729,7 +729,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Check if more that one unique value
             Append column number to iSpec_var if true
             """
-            if (uvals.size > 1):
+            if uvals.size > 1:
                 iSpec_var = np.append(iSpec_var, int(i))
 
         iSpec_var = np.asarray(iSpec_var, np.int)
@@ -1179,7 +1179,7 @@ BEHistogram Class and Functions
 """
 
 
-class BEHistogram():
+class BEHistogram:
     # TODO: Turn into proper class
     # TODO: Parallelize Histogram generation
     """
@@ -1552,7 +1552,7 @@ class BEHistogram():
                 udvs_bins = np.where(x_hist[1] == udvs_step)[0]
                 if debug:
                     print(np.shape(x_hist))
-                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk + 1], (udvs_bins)]
+                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk + 1], udvs_bins]
 
                 """
         Get the frequecies that correspond to the current UDVS bins from the total x_hist

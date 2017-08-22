@@ -1354,9 +1354,10 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     plot_maxes = [raw_mean + stdevs * raw_std, clean_mean + stdevs * clean_std, noise_mean + stdevs * noise_std,
                   2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std]
 
-    for count, ax, image, title, min, max in zip(range(6), axes_clean, plot_data, plot_names, plot_mins, plot_maxes):
+    for count, ax, image, title, plot_min, plot_max in zip(range(6), axes_clean, plot_data,
+                                                           plot_names, plot_mins, plot_maxes):
         im = plot_map(ax, image, stdevs, **kwargs)
-        im.set_clim(vmin=min, vmax=max)
+        im.set_clim(vmin=plot_min, vmax=plot_max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
         cbar = axes_clean.cbar_axes[count].colorbar(im)
         cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])
