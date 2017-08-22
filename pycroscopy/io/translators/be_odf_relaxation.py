@@ -177,7 +177,8 @@ class BEodfRelaxationTranslator(Translator):
         ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
         
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
-        spec_vals, spec_vals_labs, spec_vals_units =  createSpecVals(UDVS_mat, spec_inds, bin_freqs, parm_dict, UDVS_labs, UDVS_units)
+        spec_vals, spec_vals_labs, spec_vals_units = createSpecVals(UDVS_mat, spec_inds, bin_freqs, exec_bin_vec,
+                                                                    parm_dict, UDVS_labs, UDVS_units)
         
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
