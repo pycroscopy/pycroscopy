@@ -599,8 +599,8 @@ def cluster_into_atomic_columns(file_in_h5,img_num,filter_num,dist_val):
     
     main_h5_handle = h5.File(file_in_h5,'r+')
     image_path="/Frame_%04i/Channel_Current" % (img_num)
-    for x in range(0,filter_num+1): 
-        image_path="%s/Filter_Step_%04i" % (image_path,x)        
+    for ifilt in range(0,filter_num+1):
+        image_path="%s/Filter_Step_%04i" % (image_path,ifilt)
     image_path="%s/Filtered_Image" % (image_path)
     
     h5_image=main_h5_handle.get(image_path)
@@ -653,9 +653,9 @@ def cluster_into_atomic_columns(file_in_h5,img_num,filter_num,dist_val):
     new_folder_attrs["Origin_Name"]=parrent_name;
     
     
-    for x in range(0,filter_num+1): 
-        image_path_org="%s/Filter_Step_%04i" % (image_path_org,x)   
-        image_path_new="%s/Filter_Step_%04i" % (image_path_new,x)        
+    for ifilt in range(0,filter_num+1):
+        image_path_org="%s/Filter_Step_%04i" % (image_path_org,ifilt)
+        image_path_new="%s/Filter_Step_%04i" % (image_path_new,ifilt)
         image_path_org_temp="%s/Filtered_Image" % (image_path_org)       
         image_path_new_temp="%s/Filtered_Image" % (image_path_new)
         
@@ -679,13 +679,13 @@ def cluster_into_atomic_columns(file_in_h5,img_num,filter_num,dist_val):
         h5_new_attrs = h5_image_new.attrs
         h5_new_attrs["Filter_Name"]=filter_name;
         h5_new_attrs["Number_Of_Variables"]=number_var;
-        for x in range(1,number_var+1):
-            var_name=h5_image_old.attrs.get("Variable_%01i_Name" % (x));
-            var_value=h5_image_old.attrs.get("Variable_%01i_Value" % (x));
-            h5_new_attrs["Variable_%01i_Name" % (x)]=var_name;
-            h5_new_attrs["Variable_%01i_Value" % (x)]=var_value;
-    
-        
+
+        for ivar in range(1,number_var+1):
+            var_name=h5_image_old.attrs.get("Variable_%01i_Name" % (ivar));
+            var_value=h5_image_old.attrs.get("Variable_%01i_Value" % (ivar));
+            h5_new_attrs["Variable_%01i_Name" % (ivar)]=var_name;
+            h5_new_attrs["Variable_%01i_Value" % (ivar)]=var_value;
+
         h5_new_attrs["Spectroscopic_Indices"]=sec_i_ref;
         h5_new_attrs["Spectroscopic_Indices_Region"]=sec_i_reg;
         h5_new_attrs["Spectroscopic_Values"]=sec_v_ref;
@@ -925,12 +925,13 @@ def run_PCA_atoms(file_in_h5,img_num,box_width):
     kk=0;
     new_pos=[];
     img_vectors=[];
-    for k1 in range(0,len(pos[:,0])):
-        if (pos[k1,0].round()>=box_width and pos[k1,1].round()>=box_width and pos[k1,0].round()<=len(img[:,0])-box_width and pos[k1,1].round()<=len(img[0,:])-box_width):
-            sel_vec[k1]=1
-            new_pos.append(pos[k1,:])
-            vector=img[pos[k1,0]-box_width:pos[k1,0]+box_width,pos[k1,1]-box_width:pos[k1,1]+box_width];
-            img_vectors.append(vector.reshape([(box_width*2)**2]))
+    for k1 in range(0,len(pos[:, 0])):
+        if (box_width <= pos[k1, 0].round() <= len(img[:,0])-box_width and
+            box_width <= pos[k1, 1].round() <= len(img[0,:])-box_width):
+                sel_vec[k1]=1
+                new_pos.append(pos[k1,:])
+                vector=img[pos[k1,0]-box_width:pos[k1,0]+box_width,pos[k1,1]-box_width:pos[k1,1]+box_width];
+                img_vectors.append(vector.reshape([(box_width*2)**2]))
 
     new_pos=array(new_pos)
     img_vectors=array(img_vectors)

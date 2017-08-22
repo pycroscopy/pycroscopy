@@ -1184,13 +1184,13 @@ class geoTransformerSerial(object):
 
         keypts = self.features[0]
 
-        def optimization(Pts):
-            robustTrans, inliers = ransac((Pts[0], Pts[1]), transform, **kwargs)
+        def optimization(pt1, pt2):
+            robustTrans, inliers = ransac((pt1, pt2), transform, **kwargs)
             output = [robustTrans, inliers]
             return output
 
         results = [optimization(key1[match[:, 0]], key2[match[:, 1]])
-                    for match, key1, key2 in zip(matches,keypts[:],keypts[1:])]
+                   for match, key1, key2 in zip(matches, keypts[:], keypts[1:])]
 
         # get Transforms and inlier matches
         transforms, trueMatches =[], []

@@ -148,7 +148,7 @@ class Process(object):
                 # Reformat the data to the appropriate type and or do additional computation now
 
                 # Write to file
-                self._set_results(is_guess=True)
+                self._set_results()
                 # read the next chunk
                 self._get_data_chunk()
 

@@ -425,7 +425,7 @@ def get_switching_coefs(loop_centroid, loop_coef_vec):
     else:
         nuc_1 = nuc_v01b
         
-    if np.isinf(nuc_1) == True:
+    if np.isinf(nuc_1):
         nuc_1 = 0
     
     # Lower Branch
@@ -440,7 +440,7 @@ def get_switching_coefs(loop_centroid, loop_coef_vec):
     else:
         nuc_2 = nuc_v02b
         
-    if np.isinf(nuc_2) == True:
+    if np.isinf(nuc_2):
         nuc_2 = 0
 
     # calculate switching parameters
