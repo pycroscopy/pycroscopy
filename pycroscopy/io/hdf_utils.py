@@ -577,7 +577,8 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
+
+def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -590,8 +591,10 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         Position indices corresponding to rows in `h5_main`
     h5_spec : HDF5 Dataset, optional
         Spectroscopic indices corresponding to columns in `h5_main`
-    get_labels : bool
-        Should the labels be returned.  Default False
+    get_labels : bool, optional
+        Whether or not to return the dimension labels.  Default False
+    verbose : bool, optional
+        Whether or not to print debugging statements
 
     Returns
     -------
@@ -681,11 +684,26 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     pos_sort = get_sort_order(np.transpose(ds_pos))
     spec_sort = get_sort_order(ds_spec)
 
+    if verbose:
+        print('Position dimensions:', get_attr(h5_pos, 'labels'))
+        print('Position sort order:', pos_sort)
+        print('Spectroscopic Dimensions:', get_attr(h5_spec, 'labels'))
+        print('Spectroscopic sort order:', spec_sort)
+
     '''
     Get the size of each dimension in the sorted order
     '''
     pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
     spec_dims = get_dimensionality(ds_spec, spec_sort)
+
+    if verbose:
+        print('\nPosition dimensions (sort applied):', get_attr(h5_pos, 'labels')[pos_sort])
+        print('Position dimensionality (sort applied):', pos_dims)
+        print('Spectroscopic dimensions (sort applied):', get_attr(h5_spec, 'labels')[spec_sort])
+        print('Spectroscopic dimensionality (sort applied):', spec_dims)
+
+        all_labels = np.hstack((get_attr(h5_pos, 'labels')[pos_sort][::-1],
+                                get_attr(h5_spec, 'labels')[spec_sort][::-1]))
 
     ds_main = h5_main[()]
 
@@ -710,14 +728,25 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     except:
         raise
 
-    """
-    Now we transpose the axes for both the position and spectroscopic dimensions
-    so that they are in the same order as in the index array
-    """
-    swap_axes = np.append(pos_sort.size - 1 - np.argsort(pos_sort),
-                          spec_sort.size - spec_sort - 1 + len(pos_dims))
+    if verbose:
+        print('\nAfter first reshape, labels are', all_labels)
+        print('Data shape is', ds_Nd.shape)
 
-    ds_Nd2 = np.transpose(ds_Nd, swap_axes)
+    """
+    Now we reverse the ordering of the axes such that they from fast to slow again
+    for both the position and spectroscopic dimensions
+    """
+    reverse_axes = np.append(np.arange(pos_sort.size - 1, -1, -1),
+                             np.arange(spec_sort.size - 1, -1, -1) + len(pos_dims))
+
+    if verbose:
+        print('\nAxes will permuted in this order:', reverse_axes)
+        print('New labels ordering:', all_labels[reverse_axes])
+
+    ds_Nd2 = np.transpose(ds_Nd, reverse_axes)
+
+    if verbose:
+        print('Dataset now of shape:', ds_Nd2.shape)
 
     if get_labels:
         '''
