@@ -194,11 +194,11 @@ class BEPSndfTranslator(Translator):
             for prsr in parsers:
                 wave_type = prsr.get_wave_type()
                 if self.parm_dict['VS_mode'] == 'AC modulation mode with time reversal' and \
-                    self.BE_bin_inds is not None:
-                        if np.sign(wave_type) == -1:
-                            bin_fft = self.BE_wave[self.BE_bin_inds]
-                        elif np.sign(wave_type) == 1:
-                            bin_fft = self.BE_wave_rev[self.BE_bin_inds]
+                        self.BE_bin_inds is not None:
+                    if np.sign(wave_type) == -1:
+                        bin_fft = self.BE_wave[self.BE_bin_inds]
+                    elif np.sign(wave_type) == 1:
+                        bin_fft = self.BE_wave_rev[self.BE_bin_inds]
                 else:
                     bin_fft = None
 
@@ -258,7 +258,7 @@ class BEPSndfTranslator(Translator):
 
         ds_pos_ind = MicroDataset('Position_Indices',
                                   self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                                                        self.ds_pixel_index, :],
+                                               self.ds_pixel_index, :],
                                   dtype=np.uint)
 
         ds_pos_ind.attrs['labels'] = pos_slice_dict
@@ -283,7 +283,7 @@ class BEPSndfTranslator(Translator):
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
         pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                                                       self.ds_pixel_index, :])
+                                              self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
             if targ_dim_name in self.pos_labels:

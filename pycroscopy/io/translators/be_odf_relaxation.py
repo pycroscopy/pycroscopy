@@ -311,7 +311,7 @@ class BEodfRelaxationTranslator(Translator):
         for pix_ind in range(num_pix):
             print('Reading pixel #{}, file position {}'.format(pix_ind, hex(pix_ind * bytes_per_pix)))
             pix_vec = np.fromstring(f_real.read(int(bytes_per_pix)), dtype='f') + \
-                      1j * np.fromstring(f_imag.read(int(bytes_per_pix)), dtype='f')
+                1j * np.fromstring(f_imag.read(int(bytes_per_pix)), dtype='f')
 
             # Make chronologically correct
             pix_mat = np.reshape(pix_vec, (parm_dict['BE_bins_per_read'],

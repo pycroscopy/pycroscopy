@@ -208,7 +208,7 @@ def getIndicesforPlotGroup(h5_udvs_inds, ds_udvs, plt_grp_name):
         step_bin_indices[indx, :] = np.where(spec_ind_udvs_step_col == step)[0]
 
     oneD_indices = step_bin_indices.reshape((step_bin_indices.shape[0] * step_bin_indices.shape[1]))
-    return (step_bin_indices, oneD_indices, udvs_plt_grp_col)
+    return step_bin_indices, oneD_indices, udvs_plt_grp_col
 
 
 def reshapeToOneStep(raw_mat, num_steps):

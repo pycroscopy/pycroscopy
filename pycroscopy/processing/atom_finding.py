@@ -369,9 +369,11 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
     for k1 in range(-filter_width, filter_width + 1):
         for k2 in range(-filter_width, filter_width + 1):
             mat_large[filter_width - k1:-(filter_width + k1) - 1,
-            filter_width - k2:-(filter_width + k2) - 1] = np.minimum(mat_large[filter_width - k1:-filter_width - k1 - 1,
-                                                                     filter_width - k2:-filter_width - k2 - 1],
-                                                                     h5_image)
+                      filter_width - k2:-(filter_width + k2) - 1] = np.minimum(mat_large[filter_width - k1:
+                                                                                         -filter_width - k1 - 1,
+                                                                                         filter_width - k2:
+                                                                                         -filter_width - k2 - 1],
+                                                                                h5_image)
 
     deconv_mat_temp = mat_large[filter_width:len(mat_larg[1, :]) - filter_width,
                       filter_width:len(mat_larg[:, 1]) - filter_width]
