@@ -1,12 +1,12 @@
 """
 ========================================================================================================
-Tutorials for Developing Scientific Workflows in Pycroscopy - Part 3: Handling Multidimensional datasets
+Tutorial 3: Handling Multidimensional datasets
 ========================================================================================================
 
 **Suhas Somnath**
 8/8/2017
 
-This set of notebooks will serve as examples for developing end-to-end workflows for and using pycroscopy.
+This set of tutorials will serve as examples for developing end-to-end workflows for and using pycroscopy.
 
 **In this example, we will learn how to slice multidimensional datasets.**
 
@@ -18,6 +18,8 @@ In pycroscopy, all position dimensions of a dataset are collapsed into the first
 matricies, namely the spectroscopic indices and values matrix as well as the position indicies and values matrices
 will be essential for reshaping the data back to its original N dimensional form and for slicing multidimensional
 datasets
+
+We highly recommend reading
 
 """
 

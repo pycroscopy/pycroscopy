@@ -1,12 +1,12 @@
 """
 ====================================================================================================
-Tutorials for Developing Scientific Workflows in Pycroscopy - Part 2: Writing to pycroscopy H5 files
+Tutorial 2: Writing to pycroscopy H5 files
 ====================================================================================================
 
 **Suhas Somnath**
 8/8/2017
 
-This set of notebooks will serve as examples for developing end-to-end workflows for and using pycroscopy.
+This set of tutorials will serve as examples for developing end-to-end workflows for and using pycroscopy.
 
 While pycroscopy contains many popular data processing function, it may not have a function you need. Since pycroscopy
 is data-centric, it is preferable to write processing results back to the same file as well.
@@ -15,7 +15,7 @@ is data-centric, it is preferable to write processing results back to the same f
 back to the file.**
 
 K-Means clustering is a quick and simple method to determine the types of spectral responses present in the data and
-their spatial occurrance.
+their spatial occurrence.
 
 Introduction:
 =============
@@ -23,40 +23,8 @@ Introduction:
 Data structuring and file format:
 =================================
 
-**Before proceeding with this example, we highly recommend you read about the data formatting in pycroscopy as well as
-reading and writing to HDF5 files.** We will summarize some key points below:
-
-* pycroscopy uses the **heirarchical data format (HDF5)** files to store data
-* These HDF5 or H5 files contain datasets and datagroups
-* pycroscopy data files have two kinds of datasets:
-    * **`main`** datasets: These must be of the form: `[instance, features]`.
-        * All imaging or measurement data satisfy this category, where positions form the instances and the spectral
-        points form the features. Thus, even standard 2D images or a single spectra also satisfy this condition.
-        * A collection of `k` chosen spectra would still satisfy this condition. Some examples include:
-            * the cluster centers obtained from a clustering algorithm like `k-Means clustering`.
-            * The abundance maps obtained from decomposition algorithms like `Singular Value Decomposition (SVD)` or
-            `Non-negetive matrix factorization (NMF)`
-    * **`ancillary`** datasets: All other datasets fall into this category. These include the frequency vector or bias
-    vector as a function of which the main dataset was collected.
-* pycroscopy stores all data in two dimensional matrices with all position dimensions collapsed to the first dimension
-and all other (spectroscopic) dimensions collapsed to the second dimension.
-* All these **`main`** datasets are always accompanied by four ancillary datasets:
-    * Position Indices
-    * Position Values
-    * Spectroscopic Indices
-    * Spectroscopic Values
-* These ancillary datasets are always two dimensional.
-    * The Position datasets are NxM where N is the total number of positions and M is the number of position dimensions.
-    * The Spectroscopic datasets are MxN where M is the number of spectroscopic dimensions and N is the total number os specstroscopic steps.
-* All **`main`** datasets always have two attributes that describe the measurement itself:
-    * `quantity`: The physical quantity contained in each cell of the dataset - such as voltage, current, force etc.
-    * `units`: The units for the physical quantity such as `V` for volts, `nA` for nano amperes, `pN` for pico newtons
-    etc.
-* All **`main`** datasets additionally have 4 attributes that provide the references or links to the 4 aforementions
-ancillary datasets
-    * Storing just the references allows us to re-use the same position / spectroscopic datasets without having to
-    remake them
-* For more information see the data format documentation
+**Before proceeding with this example, we highly recommend you read about data formatting in pycroscopy as well as
+reading and writing to HDF5 files.**
 
 This bookkeeping is necessary for helping the code to understand the dimensionality and structure of the data. While
 these rules may seem tedious, there are several functions and a few classes that make these tasks much easier
