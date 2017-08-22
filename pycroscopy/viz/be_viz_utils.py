@@ -364,7 +364,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
     """
-    cmap=get_cmap_object(cmap)
+    cmap = get_cmap_object(cmap)
 
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))

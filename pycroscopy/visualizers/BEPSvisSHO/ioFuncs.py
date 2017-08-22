@@ -182,31 +182,31 @@ def readDCData(h5_group):
             data_units.append('rad')
 
 
-        #     xaxis = {'XData':data_xvec,
-        #              'XData Name':'Voltage',
-        #              'XData Unit':'V',
-        #              'XStep':pt_xvec,
-        #              'XStep Name':'UDVS Step',
-        #              'XStep Unit':''}
+            #     xaxis = {'XData':data_xvec,
+            #              'XData Name':'Voltage',
+            #              'XData Unit':'V',
+            #              'XStep':pt_xvec,
+            #              'XStep Name':'UDVS Step',
+            #              'XStep Unit':''}
 
-        #     yaxis = dict([(data_labs[i],data_units[i]) for i in xrange(4)])
-        #     elements = {'Field':data_parts,
-        #                 'Parameters':yaxis,
-        #                 'Cycles':num_cycles,
-        #                 'Steps':num_steps,
-        #                 'X positions':num_rows,
-        #                 'Y positions':num_cols}
-        #
-        #     data_pack = {'Guess':data_guess,
-        #                  'Fit':data_results,
-        #                  'Raw':data_main,
-        #                  'Data Elements':elements,
-        #                  'X-axis':xaxis,
-        #                  'Y-axis':yaxis,
-        #                  'Num Cycles':num_cycles,
-        #                  'Groups':data_parts,
-        #                  'Dims':ndims,
-        #                  'Bins':h5_bins.value}
+            #     yaxis = dict([(data_labs[i],data_units[i]) for i in xrange(4)])
+            #     elements = {'Field':data_parts,
+            #                 'Parameters':yaxis,
+            #                 'Cycles':num_cycles,
+            #                 'Steps':num_steps,
+            #                 'X positions':num_rows,
+            #                 'Y positions':num_cols}
+            #
+            #     data_pack = {'Guess':data_guess,
+            #                  'Fit':data_results,
+            #                  'Raw':data_main,
+            #                  'Data Elements':elements,
+            #                  'X-axis':xaxis,
+            #                  'Y-axis':yaxis,
+            #                  'Num Cycles':num_cycles,
+            #                  'Groups':data_parts,
+            #                  'Dims':ndims,
+            #                  'Bins':h5_bins.value}
 
     return data_guess, data_results, xvec, xvec_labs, data_parts, ndims, data_main, np.unique(h5_bins.value)
 
@@ -321,31 +321,31 @@ def readACData(h5_group):
             data_units.append('rad')
 
 
-        #     xaxis = {'XData':data_xvec,
-        #              'XData Name':'Voltage',
-        #              'XData Unit':'V',
-        #              'XStep':pt_xvec,
-        #              'XStep Name':'UDVS Step',
-        #              'XStep Unit':''}
+            #     xaxis = {'XData':data_xvec,
+            #              'XData Name':'Voltage',
+            #              'XData Unit':'V',
+            #              'XStep':pt_xvec,
+            #              'XStep Name':'UDVS Step',
+            #              'XStep Unit':''}
 
-        #     yaxis = dict([(data_labs[i],data_units[i]) for i in xrange(4)])
-        #     elements = {'Field':data_parts,
-        #                 'Parameters':yaxis,
-        #                 'Cycles':num_cycles,
-        #                 'Steps':num_steps,
-        #                 'X positions':num_rows,
-        #                 'Y positions':num_cols}
-        #
-        #     data_pack = {'Guess':data_guess,
-        #                  'Fit':data_results,
-        #                  'Raw':data_main,
-        #                  'Data Elements':elements,
-        #                  'X-axis':xaxis,
-        #                  'Y-axis':yaxis,
-        #                  'Num Cycles':num_cycles,
-        #                  'Groups':data_parts,
-        #                  'Dims':ndims,
-        #                  'Bins':h5_bins.value}
+            #     yaxis = dict([(data_labs[i],data_units[i]) for i in xrange(4)])
+            #     elements = {'Field':data_parts,
+            #                 'Parameters':yaxis,
+            #                 'Cycles':num_cycles,
+            #                 'Steps':num_steps,
+            #                 'X positions':num_rows,
+            #                 'Y positions':num_cols}
+            #
+            #     data_pack = {'Guess':data_guess,
+            #                  'Fit':data_results,
+            #                  'Raw':data_main,
+            #                  'Data Elements':elements,
+            #                  'X-axis':xaxis,
+            #                  'Y-axis':yaxis,
+            #                  'Num Cycles':num_cycles,
+            #                  'Groups':data_parts,
+            #                  'Dims':ndims,
+            #                  'Bins':h5_bins.value}
 
     return data_guess, data_results, xvec, xvec_labs, data_parts, ndims, data_main, np.unique(h5_bins.value)
 

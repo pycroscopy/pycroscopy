@@ -34,6 +34,7 @@ atom_dtype = np.dtype({'names': ['x', 'y', 'type'],
 atom_coeff_dtype = np.dtype({'names': ['Amplitude', 'x', 'y', 'Sigma'],
                              'formats': [np.float32, np.float32, np.float32, np.float32]})
 
+
 def multi_gauss_surface_fit(coef_mat, s_mat):
     """
     Evaluates the provided coefficients for N gaussian peaks to generate a 2D matrix
@@ -233,7 +234,7 @@ def fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=None):
     all_atom_guesses = parm_dict['atom_pos_guess']
     t_start = tm.time()
     num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
-    if num_cores>1:
+    if num_cores > 1:
         pool = mp.Pool(processes=num_cores)
         parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
         chunk = int(all_atom_guesses.shape[0] / num_cores)
@@ -316,7 +317,7 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     fitting_results = fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=num_cores)
 
     # Make datasets to write back to file:
-    guess_parms = np.zeros(shape=(num_atoms, num_nearest_neighbors+1), dtype=atom_coeff_dtype)
+    guess_parms = np.zeros(shape=(num_atoms, num_nearest_neighbors + 1), dtype=atom_coeff_dtype)
     fit_parms = np.zeros(shape=guess_parms.shape, dtype=guess_parms.dtype)
 
     for atom_ind, single_atom_results in enumerate(fitting_results):

@@ -43,7 +43,7 @@ def get_cmap_object(cmap):
     if cmap is None:
         return default_cmap
     elif isinstance(cmap, str):
-            return plt.get_cmap(cmap)
+        return plt.get_cmap(cmap)
     return cmap
 
 
@@ -141,7 +141,7 @@ def cmap_from_rgba(name, interp_vals, normalization_val):
              'blue': tuple([(dist / normalization_val, colors[2] / normalization_val, colors[2] / normalization_val)
                             for (dist, colors) in interp_vals][::-1]),
              'alpha': tuple([(dist / normalization_val, colors[3] / normalization_val, colors[3] / normalization_val)
-                            for (dist, colors) in interp_vals][::-1])}
+                             for (dist, colors) in interp_vals][::-1])}
 
     return LinearSegmentedColormap(name, cdict)
 
@@ -327,7 +327,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
             line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
 
     for line_ind in range(num_lines):
-        axis.plot(x_axis, line_family[line_ind] + line_ind*  y_offset,
+        axis.plot(x_axis, line_family[line_ind] + line_ind * y_offset,
                   label=line_names[line_ind],
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
@@ -443,7 +443,6 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
                 warn('Insufficient number of line colors provided')
                 return
 
-
     if excit_wfm.size != num_points:
         warn('Length of excitation waveform not compatible with second axis of datasets')
         return
@@ -494,6 +493,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
         fig.suptitle(title, fontsize=14)
     plt.tight_layout()
     return fig, axes
+
 
 ###############################################################################
 
@@ -588,6 +588,7 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
     fig201.tight_layout()
 
     return fig201, axes201
+
 
 ###############################################################################
 
@@ -783,7 +784,7 @@ def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
     for col in range(h5_pos_inds.shape[1]):
         pos_dims.append(np.unique(h5_pos_inds[:, col]).size)
 
-    pos_ticks = [h5_pos_vals[:pos_dims[0], 0], h5_pos_vals[slice(0,None,pos_dims[0]), 1]]
+    pos_ticks = [h5_pos_vals[:pos_dims[0], 0], h5_pos_vals[slice(0, None, pos_dims[0]), 1]]
     # prepare the axes ticks for the map
 
     pos_dims.reverse()  # go from slowest to fastest
@@ -807,6 +808,7 @@ def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
     else:
         return plot_cluster_results_separate(label_mat, mean_response, max_centroids=4, x_label=x_spec_label,
                                              spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label, cmap=cmap)
+
 
 ###############################################################################
 
@@ -927,6 +929,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     fig.canvas.set_window_title('Cluster results')
 
     return fig, axes
+
 
 ###############################################################################
 
@@ -1203,6 +1206,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
         plt.savefig(figure_path, format='png', dpi=300)
     return fig, ax
 
+
 ###############################################################################
 
 
@@ -1304,7 +1308,7 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     fig_clean = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h))
     axes_clean = ImageGrid(fig_clean, 111, nrows_ncols=(p_rows, p_cols), cbar_mode='each',
                            cbar_pad=plot_args['cbar_pad'], cbar_size=plot_args['cbar_size'],
-                           axes_pad=(plot_args['hor_axis_pad']*fig_w, plot_args['vert_axis_pad']*fig_h))
+                           axes_pad=(plot_args['hor_axis_pad'] * fig_w, plot_args['vert_axis_pad'] * fig_h))
     fig_clean.canvas.set_window_title(heading)
     fig_clean.suptitle(heading, fontsize=plot_args['sup_title_size'])
 
@@ -1343,9 +1347,9 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     plot_names = ['Original Image', 'Cleaned Image', 'Removed Noise',
                   'FFT Original Image', 'FFT Cleaned Image', 'FFT Removed Noise']
     plot_data = [raw_image, clean_image, removed_noise, FFT_raw, FFT_clean, FFT_noise]
-    plot_mins = [raw_mean-stdevs*raw_std, clean_mean-stdevs*clean_std, noise_mean-stdevs*noise_std, 0, 0, 0]
-    plot_maxes = [raw_mean+stdevs*raw_std, clean_mean+stdevs*clean_std, noise_mean+stdevs*noise_std,
-                  2*stdevs*fft_clean_std, 2*stdevs*fft_clean_std, 2*stdevs*fft_clean_std]
+    plot_mins = [raw_mean - stdevs * raw_std, clean_mean - stdevs * clean_std, noise_mean - stdevs * noise_std, 0, 0, 0]
+    plot_maxes = [raw_mean + stdevs * raw_std, clean_mean + stdevs * clean_std, noise_mean + stdevs * noise_std,
+                  2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std]
 
     for count, ax, image, title, min, max in zip(range(6), axes_clean, plot_data, plot_names, plot_mins, plot_maxes):
         im = plot_map(ax, image, stdevs, **kwargs)

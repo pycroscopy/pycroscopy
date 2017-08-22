@@ -19,6 +19,7 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType, getAvailableMem
 from ..io.microdata import MicroDataset, MicroDataGroup
 
+
 def doSVD(h5_main, num_comps=None):
     """
     Does SVD on the provided dataset and writes the result. File is not closed
@@ -213,6 +214,7 @@ def simplifiedKPCA(kpca, source_data):
     scree = kpca.lambdas_
     return eigenvalues, scree, eigenvectors
 
+
 def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     """
     Rebuild the Image from the SVD results on the windows
@@ -256,9 +258,9 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         cores = max_cores
 
-    max_memory = min(max_RAM_mb*1024**2, 0.75*getAvailableMem())
+    max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * getAvailableMem())
     if cores != 1:
-        max_memory = int(max_memory/2)
+        max_memory = int(max_memory / 2)
 
     '''
     Get the handles for the SVD results
@@ -283,7 +285,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     Calculate the size of a single batch that will fit in the available memory
     '''
     n_comps = h5_S[comp_slice].size
-    mem_per_pix = (h5_U.dtype.itemsize+h5_V.dtype.itemsize*h5_V.shape[1])*n_comps
+    mem_per_pix = (h5_U.dtype.itemsize + h5_V.dtype.itemsize * h5_V.shape[1]) * n_comps
     fixed_mem = h5_main.size * h5_main.dtype.itemsize
 
     if cores is None:
@@ -295,7 +297,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     batch_slices = gen_batches(h5_U.shape[0], batch_size)
 
     print('Reconstructing in batches of {} positions.'.format(batch_size))
-    print('Batchs should be {} Mb each.'.format(mem_per_pix*batch_size/1024.0**2))
+    print('Batchs should be {} Mb each.'.format(mem_per_pix * batch_size / 1024.0 ** 2))
 
     '''
     Loop over all batches.
@@ -365,7 +367,7 @@ def _get_component_slice(components):
             # If only 2 numbers are given, use them as the start and stop of a slice
             comp_slice = slice(int(components[0]), int(components[1]))
         else:
-            #Convert components to an unsigned integer array
+            # Convert components to an unsigned integer array
             comp_slice = np.uint(np.round(components)).tolist()
     elif isinstance(components, slice):
         # Components is already a slice

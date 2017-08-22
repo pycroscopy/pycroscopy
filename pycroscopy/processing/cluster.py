@@ -38,7 +38,7 @@ class Cluster(object):
 
         allowed_methods = ['AgglomerativeClustering', 'Birch', 'KMeans',
                            'MiniBatchKMeans', 'SpectralClustering']
-        
+
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
             raise TypeError('Supplied dataset is not a pycroscopy main dataset')
@@ -161,15 +161,15 @@ class Cluster(object):
             if len(components) == 2:
                 # If only 2 numbers are given, use them as the start and stop of a slice
                 comp_slice = slice(int(components[0]), int(components[1]))
-                num_comps = abs(comp_slice.stop-comp_slice.start)
+                num_comps = abs(comp_slice.stop - comp_slice.start)
             else:
-                #Convert components to an unsigned integer array
+                # Convert components to an unsigned integer array
                 comp_slice = np.uint(components)
                 num_comps = len(comp_slice)
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components
-            num_comps = abs(comp_slice.stop-comp_slice.start)
+            num_comps = abs(comp_slice.stop - comp_slice.start)
         elif components is not None:
             raise TypeError('Unsupported component type supplied to clean_and_build.  '
                             'Allowed types are integer, numpy array, list, tuple, and slice.')

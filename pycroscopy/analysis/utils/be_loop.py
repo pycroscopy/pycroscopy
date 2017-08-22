@@ -57,25 +57,25 @@ def calculate_loop_centroid(vdc, loop_vals):
 
     vdc = np.squeeze(np.array(vdc))
     num_steps = vdc.size
-    
+
     x_vals = np.zeros(num_steps - 1)
     y_vals = np.zeros(num_steps - 1)
     area_vals = np.zeros(num_steps - 1)
-    
+
     for index in range(num_steps - 1):
         x_i = vdc[index]
         x_i1 = vdc[index + 1]
         y_i = loop_vals[index]
         y_i1 = loop_vals[index + 1]
-        
-        x_vals[index] = (x_i + x_i1)*(x_i*y_i1 - x_i1*y_i)
-        y_vals[index] = (y_i + y_i1)*(x_i*y_i1 - x_i1*y_i)
-        area_vals[index] = (x_i*y_i1 - x_i1*y_i)
-    
+
+        x_vals[index] = (x_i + x_i1) * (x_i * y_i1 - x_i1 * y_i)
+        y_vals[index] = (y_i + y_i1) * (x_i * y_i1 - x_i1 * y_i)
+        area_vals[index] = (x_i * y_i1 - x_i1 * y_i)
+
     area = 0.50 * np.sum(area_vals)
-    cent_x = (1.0/(6.0*area)) * np.sum(x_vals)
-    cent_y = (1.0/(6.0*area)) * np.sum(y_vals)
-    
+    cent_x = (1.0 / (6.0 * area)) * np.sum(x_vals)
+    cent_y = (1.0 / (6.0 * area)) * np.sum(y_vals)
+
     return (cent_x, cent_y), area
 
 
@@ -185,7 +185,7 @@ def projectLoop(vdc, amp_vec, phase_vec):
     pdist_vals = np.zeros(shape=len(xdat_fit))
     for point in range(len(xdat_fit)):
         pdist_vals[point] = np.linalg.norm(np.array([0, 0]) -
-                                  np.array([xdat_fit[point], ydat_fit[point]]))
+                                           np.array([xdat_fit[point], ydat_fit[point]]))
 
     min_point_ind = np.where(pdist_vals == pdist_vals.min())[0][0]
     min_point = np.array([xdat_fit[min_point_ind], ydat_fit[min_point_ind]])
@@ -238,7 +238,8 @@ def projectLoop(vdc, amp_vec, phase_vec):
                'Centroid': centroid, 'Geometric Area': geo_area}  # Dictionary of Results from projecting
 
     return results
-    
+
+
 ###############################################################################
 
 
@@ -262,19 +263,19 @@ def loop_fit_function(vdc, coef_vec):
     a = coef_vec[:5]
     b = coef_vec[5:]
     d = 1000
-    
+
     v1 = np.asarray(vdc[:int(len(vdc) / 2)])
     v2 = np.asarray(vdc[int(len(vdc) / 2):])
-    
-    g1 = (b[1]-b[0])/2*(erf((v1-a[2])*d)+1)+b[0]
-    g2 = (b[3]-b[2])/2*(erf((v2-a[3])*d)+1)+b[2]
 
-    y1 = (g1 * erf((v1-a[2])/g1) + b[0])/(b[0]+b[1])
-    y2 = (g2 * erf((v2-a[3])/g2) + b[2])/(b[2]+b[3])
+    g1 = (b[1] - b[0]) / 2 * (erf((v1 - a[2]) * d) + 1) + b[0]
+    g2 = (b[3] - b[2]) / 2 * (erf((v2 - a[3]) * d) + 1) + b[2]
 
-    f1 = a[0] + a[1]*y1 + a[4]*v1
-    f2 = a[0] + a[1]*y2 + a[4]*v2
-    
+    y1 = (g1 * erf((v1 - a[2]) / g1) + b[0]) / (b[0] + b[1])
+    y2 = (g2 * erf((v2 - a[3]) / g2) + b[2]) / (b[2] + b[3])
+
+    f1 = a[0] + a[1] * y1 + a[4] * v1
+    f2 = a[0] + a[1] * y2 + a[4] * v2
+
     loop_eval = np.hstack((f1, f2))
     return loop_eval
 
@@ -313,7 +314,7 @@ def loop_fit_jacobian(vdc, coef_vec):
     g2 = (b[3] - b[2]) / 2 * (erf((V2 - a[3]) * d) + 1) + b[2]
 
     # Some useful fractions
-    oosqpi = 1.0/np.sqrt(np.pi)
+    oosqpi = 1.0 / np.sqrt(np.pi)
     oob01 = 1.0 / (b[0] + b[1])
     oob23 = 1.0 / (b[2] + b[3])
 
@@ -325,16 +326,16 @@ def loop_fit_jacobian(vdc, coef_vec):
     dg2b2 = -0.5 * (erf(V2 - a[3]) * d + 1)
     dg2b3 = -dg2b2
 
-    Y1 = oob01 * (g1 * erf((V1-a[2])/g1) + b[0])
-    Y2 = oob23 * (g2 * erf((V2-a[3])/g2) + b[2])
+    Y1 = oob01 * (g1 * erf((V1 - a[2]) / g1) + b[0])
+    Y2 = oob23 * (g2 * erf((V2 - a[3]) / g2) + b[2])
 
     # Derivatives of Y1 and Y2
-    dY1g1 = oob01 * (erf((V1 - a[2]) / g1) - 2 * oosqpi * np.exp(-(V1 - a[2])**2 / g1**2))
-    dY2g2 = oob23 * (erf((V2 - a[4]) / g2) - 2 * oosqpi * np.exp(-(V2 - a[4])**2 / g2**2))
+    dY1g1 = oob01 * (erf((V1 - a[2]) / g1) - 2 * oosqpi * np.exp(-(V1 - a[2]) ** 2 / g1 ** 2))
+    dY2g2 = oob23 * (erf((V2 - a[4]) / g2) - 2 * oosqpi * np.exp(-(V2 - a[4]) ** 2 / g2 ** 2))
 
-    dY1a2 = -2 * oosqpi * oob01 * np.exp(-(V1 - a[2])**2 / g1**2)
+    dY1a2 = -2 * oosqpi * oob01 * np.exp(-(V1 - a[2]) ** 2 / g1 ** 2)
 
-    dY2a3 = -2 * oosqpi * oob01 * np.exp(-(V2 - a[3])**2 / g2**2)
+    dY2a3 = -2 * oosqpi * oob01 * np.exp(-(V2 - a[3]) ** 2 / g2 ** 2)
 
     dY1b0 = oob01 * (1 - Y1)
     dY1b1 = -oob01 * Y1
@@ -387,7 +388,7 @@ def loop_fit_jacobian(vdc, coef_vec):
 
     return J
 
-    
+
 ###############################################################################
 
 
@@ -409,50 +410,50 @@ def get_switching_coefs(loop_centroid, loop_coef_vec):
     anv = loop_coef_vec[0:5]
     bnv = loop_coef_vec[5:]
     nuc_threshold = .97
-    
+
     lc_x = loop_centroid[0]
-    
+
     # Upper Branch
     B = bnv[2]
-    nuc_v01a = B*erfinv((nuc_threshold*bnv[2] + nuc_threshold*bnv[3] - bnv[2]) /B) - abs(anv[2])
-    
+    nuc_v01a = B * erfinv((nuc_threshold * bnv[2] + nuc_threshold * bnv[3] - bnv[2]) / B) - abs(anv[2])
+
     B = bnv[3]
-    nuc_v01b = B*erfinv((nuc_threshold*bnv[2] + nuc_threshold*bnv[3] - bnv[2]) /B) -abs(anv[2])
+    nuc_v01b = B * erfinv((nuc_threshold * bnv[2] + nuc_threshold * bnv[3] - bnv[2]) / B) - abs(anv[2])
 
     # Choose the voltage which is closer to the centroid x value.
-    if abs(nuc_v01a-lc_x) <= abs(nuc_v01b-lc_x):
+    if abs(nuc_v01a - lc_x) <= abs(nuc_v01b - lc_x):
         nuc_1 = nuc_v01a
     else:
         nuc_1 = nuc_v01b
-        
+
     if np.isinf(nuc_1):
         nuc_1 = 0
-    
+
     # Lower Branch
     B = bnv[0]
-    nuc_v02a = B*erfinv(((1-nuc_threshold)*bnv[0] + (1-nuc_threshold)*bnv[1] - bnv[0])/B) + abs(anv[3])
-    
+    nuc_v02a = B * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / B) + abs(anv[3])
+
     B = bnv[1]
-    nuc_v02b = B*erfinv(((1-nuc_threshold)*bnv[0] + (1-nuc_threshold)*bnv[1] - bnv[0])/B) + abs(anv[3])
-    
-    if abs(nuc_v02a-lc_x) <= abs(nuc_v02b-lc_x):
+    nuc_v02b = B * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / B) + abs(anv[3])
+
+    if abs(nuc_v02a - lc_x) <= abs(nuc_v02b - lc_x):
         nuc_2 = nuc_v02a
     else:
         nuc_2 = nuc_v02b
-        
+
     if np.isinf(nuc_2):
         nuc_2 = 0
 
     # calculate switching parameters
     switching_coef_vec = np.zeros(shape=(9, 1))
-    
+
     switching_coef_vec[0] = loop_coef_vec[2]
     switching_coef_vec[1] = loop_coef_vec[3]
-    switching_coef_vec[2] = (loop_coef_vec[3]+loop_coef_vec[2])/2
-    switching_coef_vec[3] = loop_coef_vec[0]+loop_coef_vec[1]
+    switching_coef_vec[2] = (loop_coef_vec[3] + loop_coef_vec[2]) / 2
+    switching_coef_vec[3] = loop_coef_vec[0] + loop_coef_vec[1]
     switching_coef_vec[4] = loop_coef_vec[0]
     switching_coef_vec[5] = loop_coef_vec[1]
-    switching_coef_vec[6] = abs((loop_coef_vec[2]-loop_coef_vec[3])*abs(loop_coef_vec[1]))
+    switching_coef_vec[6] = abs((loop_coef_vec[2] - loop_coef_vec[3]) * abs(loop_coef_vec[1]))
     switching_coef_vec[7] = nuc_1
     switching_coef_vec[8] = nuc_2
 
@@ -460,9 +461,10 @@ def get_switching_coefs(loop_centroid, loop_coef_vec):
                              'Imprint': switching_coef_vec[2], 'R+': switching_coef_vec[3],
                              'R-': switching_coef_vec[4], 'Switchable Polarization': switching_coef_vec[5],
                              'Work of Switching': switching_coef_vec[6],
-                             'Nucleation Bias 1': nuc_1,  'Nucleation Bias 2': nuc_2}
-    
+                             'Nucleation Bias 1': nuc_1, 'Nucleation Bias 2': nuc_2}
+
     return switching_labels_dict
+
 
 ##############################################################################
 
@@ -497,7 +499,7 @@ def calc_switching_coef_vec(loop_coef_vec, nuc_threshold):
     nuc_v02a = bnv[0] * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / bnv[0]) + anv[2]
     nuc_v02b = bnv[1] * erfinv(((1 - nuc_threshold) * bnv[0] + (1 - nuc_threshold) * bnv[1] - bnv[0]) / bnv[1]) + anv[2]
 
-    nuc_v02 = np.where(np.isfinite(nuc_v02a),nuc_v02a,
+    nuc_v02 = np.where(np.isfinite(nuc_v02a), nuc_v02a,
                        np.where(np.isfinite(nuc_v02b), nuc_v02b, -1E-10))
 
     switching_coef_vec['V+'] = loop_coef_vec[:, 3]
@@ -608,8 +610,8 @@ def generate_guess(vdc, pr_vec, show_plots=False):
     y_intersections = []
     for pair in range(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
-                                [geom_centroid[0], hull.min_bound[1]],
-                                [geom_centroid[0], hull.max_bound[1]])
+                                 [geom_centroid[0], hull.min_bound[1]],
+                                 [geom_centroid[0], hull.max_bound[1]])
         if type(x_pt) != type(None):
             y_intersections.append(x_pt)
 
@@ -620,8 +622,8 @@ def generate_guess(vdc, pr_vec, show_plots=False):
     x_intersections = []
     for pair in range(outline_1.shape[0]):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
-                                [hull.min_bound[0], geom_centroid[1]],
-                                [hull.max_bound[0], geom_centroid[1]])
+                                 [hull.min_bound[0], geom_centroid[1]],
+                                 [hull.max_bound[0], geom_centroid[1]])
         if type(x_pt) != type(None):
             x_intersections.append(x_pt)
 
@@ -636,8 +638,8 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         max_y_intercept = max(y_intersections[0][1], y_intersections[1][1])
 
     if len(x_intersections) == 0:
-        min_x_intercept = min(vdc)/2.0
-        max_x_intercept = max(vdc)/2.0
+        min_x_intercept = min(vdc) / 2.0
+        max_x_intercept = max(vdc) / 2.0
     else:
         min_x_intercept = min(x_intersections[0][0], x_intersections[1][0])
         max_x_intercept = max(x_intersections[0][0], x_intersections[1][0])
@@ -671,6 +673,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         ax.plot(vdc, loop_fit_function(vdc, init_guess_coef_vec))
 
     return init_guess_coef_vec
+
 
 ###############################################################################
 

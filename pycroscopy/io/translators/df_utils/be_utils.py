@@ -1237,7 +1237,7 @@ class BEHistogram():
                 print('Creating BEHistogram for Plot Group {}'.format(p_group.name))
                 udvs_lab = p_group.attrs['Name']
                 udvs_col = h5_udvs[im][h5_udvs[im].attrs[udvs_lab]]
-                actual_udvs_steps = np.where(np.isnan(udvs_col)==False)[0]
+                actual_udvs_steps = np.where(np.isnan(udvs_col) is False)[0]
 
                 """
                 Add the BEHistogram for the current plot group
