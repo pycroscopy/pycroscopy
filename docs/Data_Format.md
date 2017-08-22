@@ -41,7 +41,9 @@ __The same measurement is performed at multiple spatial locations__
 The data format in pycroscopy is based on this one simple ground truth. The data always has some `spatial dimensions` (X, Y, Z) and some `spectroscopic dimensions` (time, frequency, intensity, wavelength, temperature, cycle, voltage, etc.). __In pycroscopy, the spatial dimensions are collapsed onto a single dimension and the spectroscopic dimensions are flattened to the other dimensions.__ Thus, all data are stored as two dimensional grids. While the data could indeed be stored in the original N-dimensional form, there are a few key advantages to the 2D format:
 * Researchers want to acquire ever larger datasets that take much longer to acquire. This has necessitated approaches such as sparse sampling or [compressed sensing](https://en.wikipedia.org/wiki/Compressed_sensing) wherein measurements are acqurired from a few randomly sampled positions and the data for the rest of the positions are inferred using complex algorithms. Storing such sparse sampled data in the N dimensional format would baloon the size of the stored data even though the majority of the data is actually empty. Two dimensional datasets would allow the random measurements to be written without any empty sections. 
 * When acquiring measurement data, users often adjust experimental parameters during the experiment that may affect the size of the data, especially the spectral sizes. Thus, changes in experimental parameters would mean that the existing N dimensional set would have to be left partially (in most cases largely) empty and a new N dimensional dataset would have to be allocated with the first few positions left empty. In the case of flattened datasets, the current dataset can be truncated at the point of the parameter change and a new dataset can be created to start from the current measurement. Thus, no space would be wasted.
+
 Here are some examples of how some familar data can be represented using this paradigm:
+
 * __Grayscale photographs__: A single value (intensity) in is recorded at each pixel in a two dimensional grid. Thus, there are are two spatial dimensions - X, Y and one spectroscopic dimension - "Intensity". The data can be represented as a N x 1 matrix where N is the product of the number of rows and columns of pixels. The second axis has size of 1 since we only record one value (intensity) at each location. _The positions will be arranged as row0-col0, row0-col1.... row0-colN, row1-col0...._ Color images or photographs will be discussed below due to some very important subtleties about the measurement.
 * A __single Raman spectra__: In this case, the measurement is recorded at a single location. At this position, data is recorded as a function of a single (spectroscopic) variable such as wavelength. Thus this data is represented as a 1 x P matrix, where P is the number of points in the spectra
 * __Scanning Tunelling Spectroscopy or IV spectroscopy__: The current (A 1D array of size P) is recorded as a function of voltage at each position in a two dimensional grid of points (two spatial dimensions). Thus the data would be represented as a N x P matrix, where N is the product of the number of rows and columns in the grid and P is the number of spectroscopic points recorded. 
@@ -211,10 +213,21 @@ __Spectroscopic_Values__ structured as (spectroscopic dimensions x time)
 ### Datagroups
 
 #### Measurement data
-
-* / (Root)
-   * Measurement_00x
-      * Channel_00x
+* As mentioned earlier, users tend to change experimental parameters during measurements. While the changes can be minor, they can lead to misinterpretation of data if the changes are not handled robustly. In pycroscopy, we choose to store data under datagroups named as `Measurement_00x` ...
+* Each channel gets its own group
+* This is what the tree structure looks like in 
+* `/` (Root - also considered a datagroup)
+   * `Measurement_000` (datagroup)
+      * `Channel_000` (datagroup)
+         * Datasets here
+      * `Channel_001` (datagroup)
+         * Datasets here
+   * `Measurement_001` (datagroup)
+      * `Channel_000` (datagroup)
+         * Datasets here
+      * `Channel_001` (datagroup)
+         * Datasets here
+   * ....
 
 #### Analysis
 
