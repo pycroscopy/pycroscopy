@@ -98,7 +98,8 @@ class Decomposition(object):
         --------
         data : (optional) HDF5 dataset
             Dataset to apply the transform to. 
-            The number of elements in the first axis of this dataset should match that of the original dataset that was fitted
+            The number of elements in the first axis of this dataset should match that of the original
+            dataset that was fitted
 
         Returns
         ------

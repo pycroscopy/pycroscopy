@@ -381,7 +381,9 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     atom_ind = np.argsort(temp_dist)[0]
 
     parm_dict['verbose'] = True
-    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind, parm_dict, fitting_parms))
+    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind,
+                                                                                          parm_dict,
+                                                                                          fitting_parms))
 
     print('\tAmplitude\tx position\ty position\tsigma')
     print('-------------------GUESS---------------------')

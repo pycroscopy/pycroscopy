@@ -1245,8 +1245,16 @@ class BEHistogram():
                 plot_grp = MicroDataGroup(p_group.name.split('/')[-1], group.name[1:])
                 plot_grp.attrs['Name'] = udvs_lab
                 hist = BEHistogram()
-                hist_mat, hist_labels, hist_indices, hist_indices_labels = hist.buildPlotGroupHist(h5_main[im], actual_udvs_steps, max_response=max_resp, min_response=min_resp, max_mem_mb=max_mem)
-                ds_hist = MicroDataset('Histograms',hist_mat, dtype=np.int32, chunking=(1,hist_mat.shape[1]),compression='gzip')
+                hist_mat, hist_labels, hist_indices, hist_indices_labels = \
+                    hist.buildPlotGroupHist(h5_main[im],
+                                            actual_udvs_steps,
+                                            max_response=max_resp,
+                                            min_response=min_resp,
+                                            max_mem_mb=max_mem)
+
+                ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
+                                       chunking=(1, hist_mat.shape[1]), compression='gzip')
+
                 hist_slice_dict = dict()
                 for hist_ind, hist_dim in enumerate(hist_labels):
                     hist_slice_dict[hist_dim] = (slice(hist_ind,hist_ind+1), slice(None))
@@ -1489,7 +1497,8 @@ class BEHistogram():
         """
         Estimate maximum number of pixels to read at once
         """
-        max_pixels = maxReadPixels(self.max_mem,self.N_pixels, self.num_udvs_steps, bytes_per_bin=h5_main.dtype.itemsize*self.N_y_bins*self.N_freqs)
+        max_pixels = maxReadPixels(self.max_mem, self.N_pixels, self.num_udvs_steps,
+                                   bytes_per_bin=h5_main.dtype.itemsize*self.N_y_bins*self.N_freqs)
 
         """
         Divide the pixels into chunks that will fit in memory
@@ -1516,7 +1525,8 @@ class BEHistogram():
                 selected = (iudvs+chunk[0]*self.num_udvs_steps) % np.rint(self.num_udvs_steps*self.N_pixels/10) == 0
                 if selected:
                     per_done = np.rint(100*(iudvs+chunk[0]*self.num_udvs_steps)/(self.num_udvs_steps*self.N_pixels))
-                    print('Binning BEHistogram...{}% --pixels {}-{}, step # {}'.format(per_done,chunk[0],chunk[-1],iudvs))
+                    print('Binning BEHistogram...{}% --pixels {}-{}, step # {}'.format(per_done, chunk[0],
+                                                                                       chunk[-1], iudvs))
                 udvs_step = active_udvs_steps[iudvs]
                 if debug: print('udvs step', udvs_step)
 

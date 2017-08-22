@@ -15,8 +15,8 @@ import numpy as np
 import xlrd as xlreader  # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, normalizeBEresponse, \
-    createSpecVals, nf32
+from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
+    normalizeBEresponse, createSpecVals, nf32
 from .translator import Translator
 from .utils import make_position_mat, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
@@ -142,11 +142,10 @@ class BEPSndfTranslator(Translator):
         spm_data = MicroDataGroup('')
         spm_data.attrs = main_parms
         self.hdf = ioHDF5(h5_path)
-#         self.hdf.clear()
+        # self.hdf.clear()
         
-        #cacheSettings = self.hdf.file.id.get_access_plist().get_cache()
-        #print 'H5 cache settings: Metadata Objects {}    Data Chunks {}    Raw Data Size(kB) {}'.format(cacheSettings[0],cacheSettings[1],cacheSettings[2]/1024)
-        
+        # cacheSettings = self.hdf.file.id.get_access_plist().get_cache()
+
         self.hdf.writeData(spm_data)
         
         ########################################################

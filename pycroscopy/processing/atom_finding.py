@@ -236,7 +236,9 @@ def apply_gaussian_corr_filter(file_in_h5,img_num,filter_num,gauss_width,gauss_b
             y_max=min([gauss_box_width,(s2-k2-1)]);
             [xx,yy]=np.meshgrid(range(y_min,y_max+1),range(x_min,x_max+1));
             gaus=fun_2d_gaussian(xx,yy,gauss_cell)   
-            temp=np.corrcoef(gaus.reshape([1,gaus.size]),img[k1+x_min:k1+x_max+1,k2+y_min:k2+y_max+1].reshape([1,gaus.size]));
+            temp=np.corrcoef(gaus.reshape([1,gaus.size]),
+                             img[k1+x_min:k1+x_max+1,
+                             k2+y_min:k2+y_max+1].reshape([1,gaus.size]));
             new_deconv[k1,k2]=temp[0,1]
             
                 
@@ -389,9 +391,12 @@ def apply_find (file_path_h5,file_name_h5,file_path_png,file_name_png,filter_wid
     
     for k1 in range(-filter_width,filter_width+1):
         for k2 in range(-filter_width,filter_width+1):
-            mat_large[filter_width-k1:-(filter_width+k1)-1,filter_width-k2:-(filter_width+k2)-1]=np.minimum(mat_large[filter_width-k1:-filter_width-k1-1,filter_width-k2:-filter_width-k2-1],h5_image)
+            mat_large[filter_width-k1:-(filter_width+k1)-1,
+            filter_width-k2:-(filter_width+k2)-1] = np.minimum(mat_large[filter_width-k1:-filter_width-k1-1,
+                                                               filter_width-k2:-filter_width-k2-1], h5_image)
  
-    deconv_mat_temp=mat_large[filter_width:len(mat_larg[1,:])-filter_width,filter_width:len(mat_larg[:,1])-filter_width];
+    deconv_mat_temp = mat_large[filter_width:len(mat_larg[1,:])-filter_width,
+                                filter_width:len(mat_larg[:,1])-filter_width]
     filtered_image=h5_image-deconv_mat_temp;
 
     return 1

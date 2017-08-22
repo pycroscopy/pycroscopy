@@ -25,7 +25,6 @@ if sys.version_info.major == 3:
 
 
 class ioHDF5(object):
-
     def __init__(self, file_handle, cachemult=1):
         """
         Handles:
@@ -61,7 +60,7 @@ class ioHDF5(object):
                 self.file = h5py.File(file_handle, 'w')
             except:
                 raise
-            
+
             self.path = file_handle
         elif type(file_handle) == h5py.File:
             # file handle is actually an open hdf file
@@ -90,19 +89,19 @@ class ioHDF5(object):
         not yet been implemented here.
         """
         self.close()
-        tmpfile = self.path+'.tmp'
+        tmpfile = self.path + '.tmp'
 
         '''
         Repack the opened hdf5 file into a temporary file
         '''
         try:
-            repack_line = ' '.join(['h5repack', '"'+self.path+'"', '"'+tmpfile+'"'])
+            repack_line = ' '.join(['h5repack', '"' + self.path + '"', '"' + tmpfile + '"'])
             subprocess.check_output(repack_line,
                                     stderr=subprocess.STDOUT,
                                     shell=True)
             # Check that the file is done being modified
             sleep(0.5)
-            while time()-os.stat(tmpfile).st_mtime <= 1:
+            while time() - os.stat(tmpfile).st_mtime <= 1:
                 sleep(0.5)
         except subprocess.CalledProcessError as err:
             print('Could not repack hdf5 file')
@@ -201,7 +200,7 @@ class ioHDF5(object):
                 else:
                     # assuming that the last element of previous contains the highest index
                     last = h5_file[data.parent][previous[-1]].name
-                    index = int(last.split('_')[-1])+1
+                    index = int(last.split('_')[-1]) + 1
                 data.name += '{:03d}'.format(index)
             try:
                 g = h5_file[data.parent].create_group(data.name)
@@ -227,6 +226,7 @@ class ioHDF5(object):
 
         # Populating the tree structure recursively
         ref_list = []
+
         # Recursive function
 
         def __populate(child, parent):
@@ -252,7 +252,7 @@ class ioHDF5(object):
                         index = 0
                     else:
                         last = h5_file[parent].keys()[previous[-1]]
-                        index = int(last.split('_')[-1])+1
+                        index = int(last.split('_')[-1]) + 1
                     child.name += '{:03d}'.format(index)
                 try:
                     itm = h5_file[parent].create_group(child.name)
@@ -275,7 +275,7 @@ class ioHDF5(object):
                     print('Wrote attributes to group {}\n'.format(itm.name))
                 # here we do the recursive function call
                 for ch in child.children:
-                    __populate(ch, parent+'/'+child.name)
+                    __populate(ch, parent + '/' + child.name)
             else:
                 if not child.resizable:
                     if not bool(child.maxshape):
@@ -348,7 +348,7 @@ class ioHDF5(object):
                                 found_dim = True
                                 break
                         if found_dim:
-                            headers = [None]*len(labels)  # The list that will hold all the names
+                            headers = [None] * len(labels)  # The list that will hold all the names
                             for col_name in labels.keys():
                                 headers[labels[col_name][dimen].start] = col_name
                             if print_log:
@@ -366,7 +366,7 @@ class ioHDF5(object):
                         itm.attrs[key] = self.clean_string_att(child.attrs[key])
                         if print_log:
                             print('Wrote Attributes of Dataset %s \n' % (itm.name.split('/')[-1]))
-                        # Make a dictionary of references
+                            # Make a dictionary of references
             ref_list.append(itm)
             return ref_list
 
@@ -424,7 +424,8 @@ class ioHDF5(object):
         print_log : Boolean (Optional. Default = False)
             Whether or not to print status messages
         """
-        if print_log: print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
+        if print_log:
+            print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
         for sl in slices.keys():
             if print_log:
                 print('About to write region reference:', sl, ':', slices[sl])

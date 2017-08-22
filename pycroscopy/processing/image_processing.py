@@ -1369,7 +1369,8 @@ class ImageWindow(object):
 
         return window_size, psf_width
 
-    def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit, save_plots=True, show_plots=False):
+    def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit,
+                          save_plots=True, show_plots=False):
         """
         Generate a plot showing the quality of the least-squares fit to the peaks of the FFT of the image
 

@@ -506,7 +506,10 @@ def calc_switching_coef_vec(loop_coef_vec, nuc_threshold):
     switching_coef_vec['R+'] = loop_coef_vec[:, 0] + loop_coef_vec[:, 1]
     switching_coef_vec['R-'] = loop_coef_vec[:, 0]
     switching_coef_vec['Switchable Polarization'] = loop_coef_vec[:, 1]
-    switching_coef_vec['Work of Switching'] = np.abs(loop_coef_vec[:, 3] - loop_coef_vec[:, 2]) * np.abs(loop_coef_vec[:, 1])
+    switching_coef_vec['Work of Switching'] = np.abs(loop_coef_vec[:, 3] -
+                                                     loop_coef_vec[:, 2]) * \
+                                              np.abs(loop_coef_vec[:, 1])
+
     switching_coef_vec['Nucleation Bias 1'] = nuc_v01
     switching_coef_vec['Nucleation Bias 2'] = nuc_v02
 

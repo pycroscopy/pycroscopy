@@ -621,10 +621,14 @@ class FakeDataGenerator(Translator):
                                                                       np.ones_like(R_mat)]),
                                                            sho32)
 
-            self.h5_sho_guess[pix_batch, :] = realToCompound(np.hstack([amp*get_noise_vec(self.n_sho_bins, amp_noise),
-                                                                        resp*get_noise_vec(self.n_sho_bins, resp_noise),
-                                                                        q_val*get_noise_vec(self.n_sho_bins, q_noise),
-                                                                        phase*get_noise_vec(self.n_sho_bins, phase_noise),
+            self.h5_sho_guess[pix_batch, :] = realToCompound(np.hstack([amp*get_noise_vec(self.n_sho_bins,
+                                                                                          amp_noise),
+                                                                        resp*get_noise_vec(self.n_sho_bins,
+                                                                                           resp_noise),
+                                                                        q_val*get_noise_vec(self.n_sho_bins,
+                                                                                            q_noise),
+                                                                        phase*get_noise_vec(self.n_sho_bins,
+                                                                                            phase_noise),
                                                                         np.ones_like(R_mat)]),
                                                              sho32)
 

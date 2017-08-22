@@ -171,7 +171,8 @@ class Cluster(object):
             comp_slice = components
             num_comps = abs(comp_slice.stop-comp_slice.start)
         elif components is not None:
-            raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
+            raise TypeError('Unsupported component type supplied to clean_and_build.  '
+                            'Allowed types are integer, numpy array, list, tuple, and slice.')
 
         return comp_slice, num_comps
 

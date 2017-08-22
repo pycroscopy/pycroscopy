@@ -17,7 +17,8 @@ from .translator import Translator  # Because this class extends the abstract Tr
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
+# The building blocks for defining heirarchical storage in the H5 file
+from ..microdata import MicroDataGroup, MicroDataset
 
 
 class SporcTranslator(Translator):

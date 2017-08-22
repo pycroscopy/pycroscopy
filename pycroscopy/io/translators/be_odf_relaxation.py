@@ -19,7 +19,8 @@ from .utils import make_position_mat, get_position_slicing, generate_dummy_main_
 from ..be_hdf_utils import maxReadPixels
 from ..hdf_utils import getH5DsetRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
+# The building blocks for defining hierarchical storage in the H5 file
+from ..microdata import MicroDataGroup, MicroDataset
 
 
 class BEodfRelaxationTranslator(Translator):
@@ -99,8 +100,10 @@ class BEodfRelaxationTranslator(Translator):
         
         tot_bins = int(tot_bins)
         (bin_inds, bin_freqs, bin_FFT,ex_wfm,dc_amp_vec) = self.__readOldMatBEvecs(path_dict['old_mat_parms'])
-        """Because this is the old data format and there is a discrepancy in the number of bins (they seem to be 2 less than the actual number),
-        we need to re-calculate it based on the available data. This is done below."""
+        """
+        Because this is the old data format and there is a discrepancy in the number of bins (they seem to be 2 less 
+        than the actual number), we need to re-calculate it based on the available data. This is done below.
+        """
         
         band_width = parm_dict['BE_band_width_[Hz]']*(0.5 - parm_dict['BE_band_edge_trim'])
         st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
@@ -125,13 +128,14 @@ class BEodfRelaxationTranslator(Translator):
 
         (UDVS_labs, UDVS_units, UDVS_mat) = self.__buildUDVSTable(parm_dict)
        
-#       Remove the unused plot group columns before proceeding:
+        # Remove the unused plot group columns before proceeding:
         (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
        
         spec_inds = np.zeros(shape=(2,tot_bins), dtype=np.uint)
                   
-#       Will assume that all excitation waveforms have same number of bins
-        num_actual_udvs_steps = UDVS_mat.shape[0]/2#Here, the denominator is 2 because only out of field measruements. For IF + OF, should be 1
+        # Will assume that all excitation waveforms have same number of bins
+        # Here, the denominator is 2 because only out of field measruements. For IF + OF, should be 1
+        num_actual_udvs_steps = UDVS_mat.shape[0]/2
         bins_per_step = tot_bins/num_actual_udvs_steps
        
         #Some more checks
@@ -190,12 +194,7 @@ class BEodfRelaxationTranslator(Translator):
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
         ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
                                       chunking=(1, num_actual_udvs_steps))
-        # noise_labs = ['super_band','inter_bin_band','sub_band']
-        # noise_slices = dict()
-        # for col_ind, col_name in enumerate(noise_labs):
-        #     noise_slices[col_name] = (slice(None),slice(col_ind,col_ind+1), slice(None))
-        # ds_noise_floor.attrs['labels'] = noise_slices
-        
+
         """ 
         ONLY ALLOCATING SPACE FOR MAIN DATA HERE!
         Chunk by each UDVS step - this makes it easy / quick to:
@@ -214,11 +213,13 @@ class BEodfRelaxationTranslator(Translator):
         
         Chris Smith -- csmith55@utk.edu
         """
-        pixel_chunking = maxReadPixels(10240, num_pix*num_actual_udvs_steps, bins_per_step, np.dtype('complex64').itemsize)
+        pixel_chunking = maxReadPixels(10240, num_pix*num_actual_udvs_steps,
+                                       bins_per_step, np.dtype('complex64').itemsize)
         chunking = np.floor(np.sqrt(pixel_chunking))
         chunking = max(1, chunking)
         chunking = min(num_actual_udvs_steps, num_pix, chunking)
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix,tot_bins), dtype=np.complex64, chunking=(chunking,chunking*bins_per_step), compression='gzip')
+        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix,tot_bins), dtype=np.complex64,
+                                    chunking=(chunking, chunking*bins_per_step), compression='gzip')
         
         chan_grp = MicroDataGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
@@ -271,10 +272,10 @@ class BEodfRelaxationTranslator(Translator):
         self._read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict)
         self.hdf.flush()
         
-        generatePlotGroups(self.ds_main, self.hdf, self.mean_resp, folder_path, basename,
-                           self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
-                           spec_label = spec_label, show_plots = show_plots, save_plots=save_plots,
-                           do_histogram=do_histogram, ignore_plot_groups=ignored_plt_grps) #We ignored in-field plot group.
+        generatePlotGroups(self.ds_main, self.hdf, self.mean_resp, folder_path, basename, self.max_resp,
+                           self.min_resp, max_mem_mb=self.max_ram, spec_label=spec_label, show_plots=show_plots,
+                           save_plots=save_plots, do_histogram=do_histogram,
+                           ignore_plot_groups=ignored_plt_grps) #We ignored in-field plot group.
         
         
         self.hdf.close()
@@ -311,13 +312,12 @@ class BEodfRelaxationTranslator(Translator):
         for pix_ind in xrange(num_pix):
 
             print('Reading pixel #{}, file position {}'.format(pix_ind,hex(pix_ind*bytes_per_pix)))
-            #f_real.seek(pix_ind*bytes_per_pix,0) #This is unnecessary step and fails for large datasets for an unknown reason.
-            #f_imag.seek(pix_ind*bytes_per_pix,0)
-            pix_vec = np.fromstring( f_real.read(int(bytes_per_pix)), dtype='f') + 1j*np.fromstring(f_imag.read(int(bytes_per_pix)), dtype='f') 
-            #verbose=0
+            pix_vec = np.fromstring(f_real.read(int(bytes_per_pix)), dtype='f') + \
+                      1j * np.fromstring(f_imag.read(int(bytes_per_pix)), dtype='f')
+
             # Make chronologically correct
-         #   print("Reshape values:", parm_dict['BE_bins_per_read'],parm_dict['VS_steps_per_full_cycle'],parm_dict['BE_repeats'])
-            pix_mat = np.reshape(pix_vec, (parm_dict['BE_bins_per_read'],parm_dict['VS_steps_per_full_cycle'],parm_dict['BE_repeats']))
+            pix_mat = np.reshape(pix_vec, (parm_dict['BE_bins_per_read'],
+                                           parm_dict['VS_steps_per_full_cycle'], parm_dict['BE_repeats']))
             pix_mat_temp = np.transpose(pix_mat, (1,2,0))
             pix_vec2 = np.reshape(pix_mat_temp, -1)
             
@@ -483,7 +483,7 @@ class BEodfRelaxationTranslator(Translator):
         
         if VS_parms[0] == 0:
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))# VS_parms[1] # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))  # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = max(dc_amp_vec_full) + min(dc_amp_vec_full)     
         elif VS_parms[0] == 1:
             # FORC
@@ -531,8 +531,8 @@ class BEodfRelaxationTranslator(Translator):
                     return fltval
             return None # not found in list
             
-        #% Extract values from parm text file    
-        BE_signal_type =1# translateVal(parm_dict['BE_phase_content'], ['chirp-sinc hybrid','1/2 harmonic excitation','1/3 harmonic excitation','pure sine'],[1,2,3,4])
+        # Extract values from parm text file
+        BE_signal_type =1
         # This is necessary when normalzing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
@@ -547,8 +547,12 @@ class BEodfRelaxationTranslator(Translator):
         VS_shift = parm_dict['VS_cycle_phase_shift']
         if VS_shift is not 0:
             VS_shift = translateVal(VS_shift,['1/4','1/2','3/4'],[0.25,0.5,0.75])
-        VS_in_out_cond = translateVal(parm_dict['VS_measure_in_field_loops'], ['out-of-field','in-field','in and out-of-field'],[0,1,2])
-        VS_ACDC_cond = translateVal(parm_dict['VS_mode'], ['DC modulation mode','AC modulation mode with time reversal','load user defined VS Wave from file','current mode'],[0,2,3,4])
+        VS_in_out_cond = translateVal(parm_dict['VS_measure_in_field_loops'],
+                                      ['out-of-field','in-field','in and out-of-field'],[0,1,2])
+        VS_ACDC_cond = translateVal(parm_dict['VS_mode'],
+                                    ['DC modulation mode','AC modulation mode with time reversal',
+                                     'load user defined VS Wave from file','current mode'],
+                                    [0,2,3,4])
         self.expt_type = VS_ACDC_cond
         FORC_cycles = parm_dict['FORC_num_of_FORC_cycles']
         FORC_A1 = parm_dict['FORC_V_high1_[V]']

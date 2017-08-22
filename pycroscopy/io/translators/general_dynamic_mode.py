@@ -17,7 +17,8 @@ from .translator import Translator  # Because this class extends the abstract Tr
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
+# The building blocks for defining heirarchical storage in the H5 file
+from ..microdata import MicroDataGroup, MicroDataset
 
 
 class GDMTranslator(Translator):
@@ -91,10 +92,12 @@ class GDMTranslator(Translator):
         ds_pos_val.attrs['labels'] = pos_slices
               
         ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
-        ds_spec_inds.attrs['labels'] = {'Response Bin Index':(slice(0,1), slice(None)), 'Excitation Frequency Index':(slice(1,2),slice(None))}
+        ds_spec_inds.attrs['labels'] = {'Response Bin Index': (slice(0,1), slice(None)),
+                                        'Excitation Frequency Index': (slice(1,2),slice(None))}
         
         ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_val_mat)
-        ds_spec_vals.attrs['labels'] = {'Response Bin':(slice(0,1), slice(None)), 'Excitation Frequency':(slice(1,2), slice(None))}
+        ds_spec_vals.attrs['labels'] = {'Response Bin': (slice(0,1), slice(None)),
+                                        'Excitation Frequency': (slice(1,2), slice(None))}
                 
         ds_ex_freqs = MicroDataset('Excitation_Frequencies', freq_array)
         ds_bin_freq = MicroDataset('Bin_Frequencies', w_vec)
@@ -102,7 +105,8 @@ class GDMTranslator(Translator):
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
         # For some reason, compression is more effective on time series data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix, len(freq_array)*num_bins), dtype=np.float32, chunking=(1,num_bins), compression='gzip')
+        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix, len(freq_array)*num_bins),
+                                    dtype=np.float32, chunking=(1,num_bins), compression='gzip')
         
         chan_grp = MicroDataGroup('Channel_000')		
         chan_grp.attrs = parm_dict        

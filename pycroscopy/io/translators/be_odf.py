@@ -182,10 +182,12 @@ class BEodfTranslator(Translator):
                
             stind = 0           
             for step_index in range(UDVS_mat.shape[0]):  
-                if UDVS_mat[step_index, 2] < 1E-3: # invalid AC amplitude
-                    continue  # skip
-                spec_inds[0, stind:stind+bins_per_step] = np.arange(bins_per_step, dtype=np.uint32) # Bin step
-                spec_inds[1, stind:stind+bins_per_step] = step_index * np.ones(bins_per_step, dtype=np.uint32) # UDVS step
+                if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
+                    continue
+                # Bin step
+                spec_inds[0, stind:stind+bins_per_step] = np.arange(bins_per_step, dtype=np.uint32)
+                # UDVS step
+                spec_inds[1, stind:stind+bins_per_step] = step_index * np.ones(bins_per_step, dtype=np.uint32)
                 stind += bins_per_step
             del stind, step_index
            
@@ -697,7 +699,7 @@ class BEodfTranslator(Translator):
         
         if VS_parms[0] == 0:
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))  # VS_parms[1] # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 0.5*(max(dc_amp_vec_full) - min(dc_amp_vec_full))  # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = max(dc_amp_vec_full) + min(dc_amp_vec_full)     
         elif VS_parms[0] == 1:
             # FORC
@@ -804,7 +806,10 @@ class BEodfTranslator(Translator):
             return None  # not found in list
             
         #% Extract values from parm text file    
-        BE_signal_type = translate_val(parm_dict['BE_phase_content'], ['chirp-sinc hybrid','1/2 harmonic excitation','1/3 harmonic excitation','pure sine'],[1,2,3,4])
+        BE_signal_type = translate_val(parm_dict['BE_phase_content'],
+                                       ['chirp-sinc hybrid','1/2 harmonic excitation',
+                                        '1/3 harmonic excitation','pure sine'],
+                                       [1,2,3,4])
         # This is necessary when normalzing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
@@ -845,9 +850,12 @@ class BEodfTranslator(Translator):
             VS_amp_vec_3 = -VS_amp_vec_1[1:]
             VS_amp_vec_4 =  VS_amp_vec_1[1:-1]-1
             vs_amp_vec = VS_amp*(np.hstack((VS_amp_vec_1, VS_amp_vec_2,  VS_amp_vec_3, VS_amp_vec_4)))
-            vs_amp_vec = np.roll(vs_amp_vec, int(np.floor(VS_steps/VS_fraction*VS_shift)))  # apply phase shift to VS wave
-            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps*VS_fraction))]  # cut VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles)  # repeat VS waveform
+            # apply phase shift to VS wave
+            vs_amp_vec = np.roll(vs_amp_vec, int(np.floor(VS_steps/VS_fraction*VS_shift)))
+            # cut VS waveform
+            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps*VS_fraction))]
+            # repeat VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles)
             vs_amp_vec = vs_amp_vec+VS_offset
             
         elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal

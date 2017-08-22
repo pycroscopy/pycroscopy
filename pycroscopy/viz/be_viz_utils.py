@@ -269,7 +269,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     # Get the bias matrix:
     bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
-    bias_mat = np.transpose(bias_mat[spec_step_dim_ind], new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
+    bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
+                            new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
 
     # This is just the visualizer:
     sho_quantity = 'Amplitude [V]'

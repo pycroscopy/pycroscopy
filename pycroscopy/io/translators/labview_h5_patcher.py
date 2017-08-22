@@ -69,10 +69,10 @@ class LabViewH5Patcher(Translator):
 
             except KeyError:
                 warn_str = "'channel_type' was not found as an attribute of {}.\n".format(h5_chan.name)
-                warn_str +="If this is BEPS or BELine data from the LabView aquisition software, " + \
-                           "please run the following piece of code.  Afterwards, run this function again.\n" + \
-                           "CODE: " \
-                           "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
+                warn_str += "If this is BEPS or BELine data from the LabView aquisition software, " + \
+                            "please run the following piece of code.  Afterwards, run this function again.\n" + \
+                            "CODE: " \
+                            "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
                 warn(warn_str)
                 return h5_file
 

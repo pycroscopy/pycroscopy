@@ -1009,8 +1009,7 @@ class geoTransformerParallel(object):
 
             chainTransforms = []
             for params in  chainL:
-                T = SimilarityTransform(scale = 1.0, rotation = np.deg2rad(params[0]), translation = (params[1],params[2]))
-#                T = SimilarityTransform(rotation = params, translation = (0,0))
+                T = SimilarityTransform(scale=1.0, rotation=np.deg2rad(params[0]), translation=(params[1], params[2]))
                 chainTransforms.append(T)
 
         # Use the chain transformations to transform the dataset
@@ -1327,7 +1326,7 @@ class geoTransformerSerial(object):
 
             chainTransforms = []
             for params in  chainL:
-                T = SimilarityTransform(scale = 1.0, rotation = np.deg2rad(params[0]), translation = (params[1],params[2]))
+                T = SimilarityTransform(scale=1.0, rotation=np.deg2rad(params[0]), translation=(params[1], params[2]))
 #                T = SimilarityTransform(rotation = params, translation = (0,0))
                 chainTransforms.append(T)
 

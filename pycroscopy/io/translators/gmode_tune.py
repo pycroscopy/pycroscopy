@@ -51,10 +51,13 @@ class GTuneTranslator(GLineTranslator):
         if path.exists(h5_path):
             remove(h5_path)
         
-        # Load parameters from .mat file - 'AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'total_cols', 'total_rows'
-        matread = loadmat(parm_paths['parm_mat'], variable_names=['AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train', 'BE_wave', 'total_cols', 'total_rows'])
+        # Load parameters from .mat file
+        matread = loadmat(parm_paths['parm_mat'],
+                          variable_names=['AI_wave', 'BE_wave_AO_0', 'BE_wave_AO_1', 'BE_wave_train',
+                                          'BE_wave', 'total_cols', 'total_rows'])
         be_wave = np.float32(np.squeeze(matread['BE_wave']))
         be_wave_train = np.float32(np.squeeze(matread['BE_wave_train']))
+
         # Need to take the complex conjugate if reading from a .mat file
         # FFT_BE_wave = np.conjugate(np.complex64(np.squeeze(matread['FFT_BE_wave'])))
         

@@ -39,8 +39,8 @@ class Model(object):
     """
     def __init__(self, h5_main, variables=['Frequency'], parallel=True):
         """
-        For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
-        after testing the basic components.
+        For now, we assume that the guess dataset has not been generated for this dataset but we will relax this
+        requirement after testing the basic components.
 
         """
         # Checking if dataset is "Main"

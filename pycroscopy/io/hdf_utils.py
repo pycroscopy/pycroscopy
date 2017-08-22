@@ -34,6 +34,7 @@ def print_tree(parent):
     None
     
     """
+
     def __print(name, obj):
         print(name)
 
@@ -577,6 +578,7 @@ def get_formatted_labels(h5_dset):
         warn('labels attribute was missing')
         return None
 
+
 def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
@@ -740,6 +742,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
 
     return results
 
+
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
@@ -837,6 +840,7 @@ def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
         raise
 
     return ds_2d, True
+
 
 def get_dimensionality(ds_index, index_sort=None):
     """
@@ -1096,7 +1100,6 @@ def copyRegionRefs(h5_source, h5_target):
     h5_spec_inds = h5_target.file[h5_target.attrs['Spectroscopic_Indices']]
     h5_spec_vals = h5_target.file[h5_target.attrs['Spectroscopic_Values']]
 
-
     for key in h5_source.attrs.keys():
         if '_Plot_Group' not in key:
             continue
@@ -1260,8 +1263,8 @@ def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename
         Create new MicroDatasets to hold the data
         Name them based on basename
         '''
-        ds_inds = MicroDataset(basename+'_Indices', ind_mat, dtype=h5_spec_inds.dtype)
-        ds_vals = MicroDataset(basename+'_Values', val_mat, dtype=h5_spec_vals.dtype)
+        ds_inds = MicroDataset(basename + '_Indices', ind_mat, dtype=h5_spec_inds.dtype)
+        ds_vals = MicroDataset(basename + '_Values', val_mat, dtype=h5_spec_vals.dtype)
         # Extracting the labels from the original spectroscopic data sets
         sho_inds_labs = h5_spec_inds.attrs['labels'][keep_dim]
         # Creating the dimension slices for the new spectroscopic data sets
@@ -1337,7 +1340,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     Loop until chunk_size is greater than the maximum chunk_mem or the chunk_size is equal to
     that of dimensions
     '''
-    while np.prod(unit_chunks)*data_size <= max_chunk_mem:
+    while np.prod(unit_chunks) * data_size <= max_chunk_mem:
         '''
         Check if all chunk dimensions are greater or equal to the
         actual dimensions.  Exit the loop if true.
@@ -1349,7 +1352,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
         Find the index of the next chunk to be increased and increment it by the base_chunk
         size
         '''
-        ichunk = np.argmax(dimensions/unit_chunks)
+        ichunk = np.argmax(dimensions / unit_chunks)
         unit_chunks[ichunk] += base_chunks[ichunk]
 
     '''
@@ -1469,7 +1472,7 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
     Find how quickly the spectroscopic values are changing in each row 
     and the order of row from fastest changing to slowest.
     """
-    change_count = [len(np.where([row[i] != row[i-1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
+    change_count = [len(np.where([row[i] != row[i - 1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
     change_sort = np.argsort(change_count)[::-1]
 
     """
@@ -1479,7 +1482,7 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
     indices = np.zeros(ds_spec_val_mat.shape[0])
     for jcol in range(1, ds_spec_val_mat.shape[1]):
         this_col = ds_spec_val_mat[change_sort, jcol]
-        last_col = ds_spec_val_mat[change_sort, jcol-1]
+        last_col = ds_spec_val_mat[change_sort, jcol - 1]
 
         """
         Check if current column values are different than those 

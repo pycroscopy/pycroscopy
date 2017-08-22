@@ -14,6 +14,7 @@ else:
     disable_histogram = False
     from numpy_groupies import aggregate_np
 
+
 def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
                    debug=False, *args, **kwargs):
     """
@@ -114,7 +115,7 @@ def __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug=False):
     y_hist = y_hist.flatten()
     y_hist = np.clip(y_hist, min_resp, max_resp)
     y_hist = np.add(y_hist, -min_resp)
-    y_hist = np.dot(y_hist, 1.0/(max_resp - min_resp))
+    y_hist = np.dot(y_hist, 1.0 / (max_resp - min_resp))
     '''
     Discretize y_hist
     '''

@@ -24,6 +24,7 @@ from ...io.io_hdf5 import ioHDF5
 from ...viz import plot_utils
 from ..model import Model
 
+
 def do_fit(single_parm):
     parms = single_parm[0]
     coef_guess_mat = parms[1]
@@ -148,7 +149,8 @@ class Gauss_Fit(object):
         Parameters used for atom position fitting
         'fit_region_size': region to consider when fitting. Should be large enough to see the nearest neighbors.
         'num_nearest_neighbors': the number of nearest neighbors to fit
-        'sigma_guess': starting guess for gaussian standard deviation. Should be about the size of an atom width in pixels.
+        'sigma_guess': starting guess for gaussian standard deviation. Should be about the size of an atom width in
+        pixels.
         'position_range': range that the fitted position can move from initial guess position in pixels
         'max_function_evals': maximum allowed function calls; passed to the least squares fitter
         'fitting_tolerance': target difference between the fit and the data
@@ -262,12 +264,14 @@ class Gauss_Fit(object):
             parm_list = itt.izip(self.guess_parms, itt.repeat(self.fitting_parms))
             self.fitting_results = [do_fit(parm) for parm in parm_list]
 
-        print ('Finalizing datasets...')
-        self.guess_dataset = np.zeros(shape=(self.num_atoms, self.num_nearest_neighbors + 1), dtype=self.atom_coeff_dtype)
+        print('Finalizing datasets...')
+        self.guess_dataset = np.zeros(shape=(self.num_atoms, self.num_nearest_neighbors + 1),
+                                      dtype=self.atom_coeff_dtype)
         self.fit_dataset = np.zeros(shape=self.guess_dataset.shape, dtype=self.guess_dataset.dtype)
 
         for atom_ind, single_atom_results in enumerate(self.fitting_results):
-            types = np.hstack((self.h5_guess['type'][atom_ind], [self.h5_guess['type'][neighbor] for neighbor in self.closest_neighbors_mat[atom_ind]]))
+            types = np.hstack((self.h5_guess['type'][atom_ind],
+                               [self.h5_guess['type'][neighbor] for neighbor in self.closest_neighbors_mat[atom_ind]]))
             atom_data = np.hstack((np.vstack(types), single_atom_results))
             atom_data = [tuple(element) for element in atom_data]
             self.fit_dataset[atom_ind] = atom_data
@@ -510,10 +514,12 @@ class Gauss_Fit(object):
         ds_atom_fits = MicroDataset('Gaussian_Fits', data=self.fit_dataset)
         ds_motif_guesses = MicroDataset('Motif_Guesses', data=self.motif_guess_dataset)
         ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_dataset)
-        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices', data=self.closest_neighbors_mat, dtype=np.uint32)
+        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices',
+                                            data=self.closest_neighbors_mat, dtype=np.uint32)
         dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
         dgrp_atom_finding.attrs = self.fitting_parms
-        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses, ds_motif_fits, ds_nearest_neighbors])
+        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
+                                       ds_motif_fits, ds_nearest_neighbors])
 
         hdf = ioHDF5(self.atom_grp.file)
         h5_atom_refs = hdf.writeData(dgrp_atom_finding)
@@ -521,19 +527,18 @@ class Gauss_Fit(object):
         return self.atom_grp
 
     def fit_motif(self, plot_results=True):
-        '''
+        """
         Parameters
         ----------
-            plot_results: boolean (default = True)
-                Flag to specify whether a result summary should be plotted
+        plot_results: boolean (default = True)
+            Flag to specify whether a result summary should be plotted
 
         Returns
         -------
-            motif_converged_dataset: NxM numpy array of tuples where N is the number of motifs and M is the number
-                of nearest neighbors considered. Each tuple contains the converged parameters for a gaussian fit to
-                an atom in a motif window.
-        '''
-
+        motif_converged_dataset: NxM numpy array of tuples where N is the number of motifs and M is the number
+            of nearest neighbors considered. Each tuple contains the converged parameters for a gaussian fit to
+            an atom in a motif window.
+        """
 
         self.motif_guesses = []
         self.motif_parms = []

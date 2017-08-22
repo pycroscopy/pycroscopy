@@ -283,8 +283,8 @@ def harmonicsPassFilter(num_pts, samp_rate, first_freq, band_width, num_harm, do
 
     if do_plots:
         print(
-        'OnlyKeepHarmonics: samp_rate = %2.1e Hz, first harmonic = %3.2f Hz, %d harmonics w/- %3.2f Hz bands\n' % (
-        samp_rate, first_freq, num_harm, band_width))
+            'OnlyKeepHarmonics: samp_rate = %2.1e Hz, first harmonic = %3.2f Hz, %d harmonics w/- %3.2f Hz bands\n' % (
+                samp_rate, first_freq, num_harm, band_width))
         w_vec = np.arange(-samp_rate / 2.0, samp_rate / 2.0, samp_rate / num_pts)
         fig, ax = plt.subplots(figsize=(5, 5))
         ax.plot(w_vec, harm_filter)

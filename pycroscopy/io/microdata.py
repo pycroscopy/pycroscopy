@@ -156,11 +156,13 @@ class MicroDataset(MicroData):
             
         3. Initializing large primary datasets of known sizes :
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', data=[], maxshape=(1024,16384), dtype=np.float16, chunking=(1,16384), compression='gzip')
+        >>> ds_raw_data = MicroDataset('Raw_Data', data=[], maxshape=(1024,16384), dtype=np.float16,
+        >>>                            chunking=(1,16384), compression='gzip')
                     
         4. Intializing large datasets whose size is unknown in one or more dimensions:
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), chunking=(1,16384), resizable=True,compression='gzip')
+        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
+        >>>                            chunking=(1,16384), resizable=True,compression='gzip')
         """
 
         def _make_iterable(item):

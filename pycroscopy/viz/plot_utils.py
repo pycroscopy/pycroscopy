@@ -365,8 +365,9 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
     return im
 
 
-def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True, plots_on_side=5, x_label='',
-               y_label='', subtitles='Position', title='', central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
+def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
+               plots_on_side=5, x_label='', y_label='', subtitles='Position', title='',
+               central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
     # TODO: Allow multiple excitation waveforms
     """
     Plots loops from multiple datasets from up to 25 evenly spaced positions
@@ -472,7 +473,8 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
             rainbow_plot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], datasets[0][posn, l_resp_ind:r_resp_ind])
         else:
             for dataset, col_val in zip(datasets, line_colors):
-                axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind], color=col_val)
+                axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind],
+                                     color=col_val)
         if h5_pos is not None:
             # print('Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0]))
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)

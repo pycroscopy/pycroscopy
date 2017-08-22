@@ -63,7 +63,10 @@ def SHOestimateGuess(w_vec, resp_vec, num_points=5):
                 a = ((w1**2 - w2**2)*(w1*X2*(X1**2 + Y1**2) - w2*X1*(X2**2 + Y2**2)))/denom
                 b = ((w1**2 - w2**2)*(w1*Y2*(X1**2 + Y1**2) - w2*Y1*(X2**2 + Y2**2)))/denom
                 c = ((w1**2 - w2**2)*(X2*Y1 - X1*Y2))/denom
-                d = (w1**3*(X1**2 + Y1**2) - w1**2*w2*(X1*X2 + Y1*Y2) - w1*w2**2*(X1*X2 + Y1*Y2) + w2**3*(X2**2 + Y2**2))/denom              
+                d = (w1**3*(X1**2 + Y1**2) -
+                     w1**2*w2*(X1*X2 + Y1*Y2) -
+                     w1*w2**2*(X1*X2 + Y1*Y2) +
+                     w2**3*(X2**2 + Y2**2))/denom
     
                 if d>0:
                     a_mat = append(a_mat, [a, b, c, d])
@@ -75,7 +78,9 @@ def SHOestimateGuess(w_vec, resp_vec, num_points=5):
                     
                     H_fit = A_fit*w0_fit**2*exp(1j*phi_fit)/(w_vec ** 2 - 1j * w_vec * w0_fit / Q_fit - w0_fit ** 2)
             
-                    e_vec=append(e_vec, sum((real(H_fit) - real(resp_vec)) ** 2) + sum((imag(H_fit) - imag(resp_vec)) ** 2))
+                    e_vec = append(e_vec,
+                                   sum((real(H_fit) - real(resp_vec)) ** 2) +
+                                   sum((imag(H_fit) - imag(resp_vec)) ** 2))
     if a_mat.size>0:                
         a_mat=a_mat.reshape(-1,4)        
         
