@@ -208,7 +208,8 @@ class MovieTranslator(Translator):
         h5_ronch[:] = mean_ronch / num_files
         self.hdf.flush()
 
-    def downSampRoncVec(self, ronch_vec, binning_factor):
+    @staticmethod
+    def downSampRoncVec(ronch_vec, binning_factor):
         """
         Downsample the image by taking the mean over nearby values
 

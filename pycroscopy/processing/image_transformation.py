@@ -419,8 +419,19 @@ class TranslationTransform(object):
             self.params = np.eye(3)
 
     def estimate(self, src, dst):
-     #evaluate transformation matrix from src, dst
-     # coordinates
+        """
+        Evaluate transformation matrix from src, dst coordinates
+
+        Parameters
+        ----------
+        src
+        dst
+
+        Returns
+        -------
+
+        """
+
         try:
             xs = src[:, 0][0]
             ys = src[:, 1][1]
@@ -437,11 +448,29 @@ class TranslationTransform(object):
 
     @property
     def _inv_matrix(self):
+        """
+
+        Returns
+        -------
+
+        """
         inv_matrix = self.params
-        inv_matrix[0:2,2] = - inv_matrix[0:2,2]
+        inv_matrix[0:2, 2] = - inv_matrix[0:2, 2]
         return inv_matrix
 
-    def _apply_mat(self, coords, matrix):
+    @staticmethod
+    def _apply_mat(coords, matrix):
+        """
+
+        Parameters
+        ----------
+        coords
+        matrix
+
+        Returns
+        -------
+
+        """
         coords = np.array(coords, copy=False, ndmin=2)
 
         x, y = np.transpose(coords)
@@ -645,7 +674,19 @@ class RigidTransform(object):
 
         return True
 
-    def _apply_mat(self, coords, matrix):
+    @staticmethod
+    def _apply_mat(coords, matrix):
+        """
+
+        Parameters
+        ----------
+        coords
+        matrix
+
+        Returns
+        -------
+
+        """
         coords = np.array(coords, copy=False, ndmin=2)
 
         x, y = np.transpose(coords)

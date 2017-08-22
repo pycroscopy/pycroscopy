@@ -330,19 +330,29 @@ class BEPSwindow(QtGui.QMainWindow):
 #          
 #         return win, imv1
 
-    def __setupOneD(self,xlabel,ylabel):
-        '''
+    @staticmethod
+    def __setupOneD(xlabel, ylabel):
+        """
         Creates the needed widgets for plotting 1D data
-        
-        Inputs:
-            xlabel -- list of labels and units to use for x-axis of plots
-            ylabel -- list of labels and units to use for y-axis of plots
-        
-        Outputs:
-            imv1 -- PlotWidget in which the value vs Position will be plotted
-            imv2 -- PlotWidget in which the loops will be plotted
-            imv3 -- PlotWidget in which the timeline will be plotted        
-        '''
+
+        Parameters
+        ----------
+        xlabel : list of str
+            list of labels and units to use for x-axis of plots
+        ylabel : list of str
+            list of labels and units to use for y-axis of plots
+
+        Returns
+        -------
+        imv1 : pyqtgraph.PlotWidget
+            PlotWidget in which the value vs Position will be plotted
+        imv2 : pyqtgraph.PlotWidget
+            PlotWidget in which the loops will be plotted
+        imv3 : pyqtgraph.PlotWidget
+            PlotWidget in which the timeline will be plotted
+
+        """
+
         imv1 = pg.PlotWidget()
         imv2 = pg.PlotWidget()
         imv3 = pg.PlotWidget()
@@ -995,14 +1005,22 @@ class BEPSwindow(QtGui.QMainWindow):
             self.rlabs[3].setText('Phase: {}'.format(rparms['Phase [rad]']))
         
 
-    def __calc_sho(self,p,xvec):
+    @staticmethod
+    def __calc_sho(p, xvec):
+        """
+        Calculates the SHO for the given parameters and frequency vector
+
+        Parameters
+        ----------
+        p
+        xvec
+
+        Returns
+        -------
+
+        """
         from pycroscopy.analysis.utils.be_sho import SHOfunc
-        '''
-        Calculates the SHO for the given parameters and 
-        frequency vector
-        '''
-        
+
         p = [p[name] for name in p.dtype.names]
 
         return SHOfunc(p, xvec)
-        

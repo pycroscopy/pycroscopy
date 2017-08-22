@@ -39,8 +39,8 @@ class TRKPFMTranslator(Translator):
             if '.dat' in file:
                 self.file_list.append(path.join(folder_path, file))
 
-
-    def _parse_spectrogram_size(self, file_handle):
+    @staticmethod
+    def _parse_spectrogram_size(file_handle):
         """
         
         Parameters
@@ -221,7 +221,8 @@ class TRKPFMTranslator(Translator):
 
             h5_main.file.flush()
 
-    def read_file(self, data_length, f):
+    @staticmethod
+    def read_file(data_length, f):
         start_point = 0
         count=0
         count_vals=[]

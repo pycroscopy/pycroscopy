@@ -333,7 +333,8 @@ class OneViewTranslator(Translator):
 
         return cropped_ronc
 
-    def downSampRoncVec(self, ronch_vec, binning_factor):
+    @staticmethod
+    def downSampRoncVec(ronch_vec, binning_factor):
         """
         Downsample the image by taking the mean over nearby values
 

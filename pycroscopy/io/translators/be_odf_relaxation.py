@@ -337,7 +337,8 @@ class BEodfRelaxationTranslator(Translator):
 
         
         
-    def __readOldMatBEvecs(self,file_path):
+    @staticmethod
+    def __readOldMatBEvecs(file_path):
         """
     Returns information about the excitation BE waveform present in the .mat file
     
@@ -360,7 +361,8 @@ class BEodfRelaxationTranslator(Translator):
         bin_w = matread['bin_w']
         dc_amp_vec_full = matread['dc_amp_vec_full']
         FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
-        bin_FFT = np.conjugate(FFT_full[bin_inds]);
+        bin_FFT = np.conjugate(FFT_full[bin_inds])
+
         return (bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full)
         
     def _parse_file_path(self, data_filepath):
@@ -398,7 +400,8 @@ class BEodfRelaxationTranslator(Translator):
         return (basename, path_dict)
         
         
-    def __getParmsFromOldMat(self,file_path):
+    @staticmethod
+    def __getParmsFromOldMat(file_path):
         """
         Formats parameters found in the old parameters .mat file into a dictionary
         as though the dataset had a parms.txt describing it

@@ -1425,7 +1425,8 @@ class BEHistogram():
 
         return hist_mat, hist_labels, hist_indices, hist_index_labels
 
-    def __reshapeHist(self,ds_hist):
+    @staticmethod
+    def __reshapeHist(ds_hist):
         """
         Reshape the histogram matrix into table, and build the associated index table
 

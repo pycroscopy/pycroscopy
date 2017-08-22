@@ -451,7 +451,8 @@ class Gauss_Fit(object):
 
         return atom_ind, coef_guess_mat, fit_region, s1, s2, lb_mat, ub_mat
 
-    def check_data(self, atom_grp):
+    @staticmethod
+    def check_data(atom_grp):
         # some data checks here
         try:
             img = atom_grp['Cropped_Clean_Image']
