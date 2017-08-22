@@ -210,11 +210,13 @@ __Spectroscopic_Values__ structured as (spectroscopic dimensions x time)
 * Optional attributes:
    * Region references based on row names   
    
+### Attributes
+* All datagroups and datasets must be created with the following two __mandatory__ attributes for better traceability:
+   * `time_stamp` : '2017_08_15-22_15_45' (date and time of creation of the datagroup or dataset formatted as 'YYYY_MM_DD-HH_mm_ss' as a string)
+   * `machine_id` : 'mac1234.ornl.gov' (a fully qualified domain name as a string)
+   
 ### Datagroups
 Datagroups in pycroscopy are used to organize datasets in an intuitive manner.
-* All datagroups must be created with the following two attributes for better traceability:
-   * `time_stamp` : '2017_08_15-22_15_45' (date and time of creation of the datagroup formatted as 'YYYY_MM_DD-HH_mm_ss' as a string)
-   * `machine_id` : 'mac1234.ornl.gov' (a fully qualified domain name as a string)
 
 #### Measurement data
 * As mentioned earlier, microscope users may change experimental parameters during measurements. Even if these changes are minor, they can lead to misinterpretation of data if the changes are not handled robustly. To solve this problem, we recommend storing data under datagroups named as __`Measurement_00x`__. Each time the parameters are changed, the dataset is truncated to the point until which data was collected and a new datagroup is created to store the upcoming new measurement data.
@@ -266,19 +268,28 @@ Datagroups in pycroscopy are used to organize datasets in an intuitive manner.
       * `time_stamp` : '2017_08_15-22_15_45'
       * `machine_id` : 'mac1234.ornl.gov'
       * `algorithm`  : 'K-Means'
-   * `Cluster_Indices` (dataset)
-   * `Cluster_Values` (dataset)
-   * `Labels` (dataset)
+   * `Label_Indices` (ancillary spectroscopic dataset)
+   * `Label_Values` (ancillary spectroscopic dataset)
+   * `Labels` (main dataset)
       * Attributes:
          * `quantity` : 'Cluster labels'
          * `units`    : ''
          * `Position_Indicies` : Reference to `Position_Indices` from attribute of `Raw_Data`
          * `Position_Values` : Reference to `Position_Values` from attribute of `Raw_Data`
-         * `Spectrocopic_Indices` : Reference to 
-   * `Mean_Response` (dataset)
-   * `Spectral_Indices` (dataset)
-   * `Spectral_Values` (dataset)
+         * `Spectrocopic_Indices` : Reference to `Label_Indices`
+         * `Spectrocopic_Values` : Reference to `Label_Values`
+   * `Cluster_Indices` (ancillary positions dataset)
+   * `Cluster_Values` (ancillary positions dataset)
+   * `Mean_Response` (main dataset) <- This dataset stores the endmember or mean response for each cluster
+      * Attributes:
+         * `quantity` : copy from the `quantity` attribute in `Raw_Data`
+         * `units`    : copy from the `units` attribute in `Raw_Data`
+         * `Position_Indicies` : Reference to `Cluster_Indices` 
+         * `Position_Values` : Reference to `Cluster_Values`
+         * `Spectrocopic_Indices` : Reference to `Spectrocopic_Indices` from attribute of `Raw_Data`
+         * `Spectrocopic_Values` : Reference to `Spectrocopic_Values` from attribute of `Raw_Data`
+   
+* Note that the spectroscopic datasets that the `Labels` dataset link to are not called `Spectroscopic_Indices` or `Spectroscopic_Values` themselves. They only need to follow the specifications outlined above. The same is true for the position datasets for `Mean_Response`. 
 
-## Pending topics:
-* Region references
-* DATA GROUP NOMENCLATURE AND ATTRIBUTES STANDARDS
+## Advanced topics:
+* `Region references` - These are references to sections of a `main` or `ancillary` dataset that make it easy to access data specfic to a specific portion of the measurement, or each column or row in the ancillary datasets just by their alias (intuitive strings for names). 
