@@ -17,7 +17,7 @@ import multiprocessing as mp
 
 
 class ImageTransformation(object):
-    #TODO: io operations and merging the 2 classes -Oleg
+    # TODO: io operations and merging the 2 classes -Oleg
     # Oleg: reading, shaping data from h5.
     # Figure out storage of features and descriptors as well as reading.
     # Merge all methods from FeatureExtraction and  GeometricTransform.
@@ -25,9 +25,10 @@ class ImageTransformation(object):
 
     pass
 
+
 # TODO: Docstrings following numpy standard.
 
-#### Functions
+# Functions
 def pickle_keypoints(keypoints):
     """
     Function to pickle cv2.sift keypoint objects
@@ -134,7 +135,7 @@ class FeatureExtractorParallel(object):
         if mask:
             def mask_func(x, winSize):
                 x[origin[0] - winSize / 2: origin[0] + winSize / 2,
-                origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
+                  origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
                 x = x - 1
                 return x
 
@@ -270,7 +271,7 @@ class FeatureExtractorSerial(object):
         if mask:
             def mask_func(x, winSize):
                 x[origin[0] - winSize / 2: origin[0] + winSize / 2,
-                origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
+                  origin[1] - winSize / 2: origin[1] + winSize / 2] = 2
                 x = x - 1
                 return x
 
@@ -304,7 +305,7 @@ class FeatureExtractorSerial(object):
         return keypts, desc
 
 
-#TODO: Docstrings following numpy standard.
+# TODO: Docstrings following numpy standard.
 
 # Functions
 def euclidMatch(Matches, keypts1, keypts2, misalign):
@@ -313,8 +314,8 @@ def euclidMatch(Matches, keypts1, keypts2, misalign):
     their descriptors, by the maximum expected misalignment.
     """
     filteredMatches = np.array([])
-    deltaX =(keypts1[Matches[:,0],:][:,0]-keypts2[Matches[:,1],:][:,0])**2
-    deltaY =(keypts1[Matches[:,0],:][:,1]-keypts2[Matches[:,1],:][:,1])**2
+    deltaX = (keypts1[Matches[:, 0], :][:, 0] - keypts2[Matches[:, 1], :][:, 0]) ** 2
+    deltaY = (keypts1[Matches[:, 0], :][:, 1] - keypts2[Matches[:, 1], :][:, 1]) ** 2
     dist = np.apply_along_axis(np.sqrt, 0, deltaX + deltaY)
     filteredMatches = np.where(dist[:] < misalign, True, False)
     return filteredMatches
@@ -359,7 +360,7 @@ def _center_and_normalize_points(points):
                        [0, norm_factor, -norm_factor * centroid[1]],
                        [0, 0, 1]])
 
-    pointsh = np.row_stack([points.T, np.ones((points.shape[0]),)])
+    pointsh = np.row_stack([points.T, np.ones((points.shape[0]), )])
 
     new_pointsh = np.dot(matrix, pointsh).T
 
@@ -393,7 +394,7 @@ class TranslationTransform(object):
 
     """
 
-    def __init__(self, matrix = None, translation = None):
+    def __init__(self, matrix=None, translation=None):
         params = translation
 
         if params and matrix is not None:
@@ -412,24 +413,35 @@ class TranslationTransform(object):
                 [1., 0., 0.],
                 [0., 1., 0.],
                 [0., 0., 1.]
-                ], dtype = 'float32')
+            ], dtype='float32')
             self.params[0:2, 2] = translation
         else:
             # default to an identity transform
             self.params = np.eye(3)
 
     def estimate(self, src, dst):
-     #evaluate transformation matrix from src, dst
-     # coordinates
+        """
+        Evaluate transformation matrix from src, dst coordinates
+
+        Parameters
+        ----------
+        src
+        dst
+
+        Returns
+        -------
+
+        """
+
         try:
             xs = src[:, 0][0]
             ys = src[:, 1][1]
             xd = dst[:, 0][0]
             yd = dst[:, 1][1]
-            S = np.array([[1., 0., xd-xs],
-                          [0., 1., yd-ys],
+            S = np.array([[1., 0., xd - xs],
+                          [0., 1., yd - ys],
                           [0., 0., 1.]
-                          ],dtype = 'float32')
+                          ], dtype='float32')
             self.params = S
             return True
         except IndexError:
@@ -437,11 +449,29 @@ class TranslationTransform(object):
 
     @property
     def _inv_matrix(self):
+        """
+
+        Returns
+        -------
+
+        """
         inv_matrix = self.params
-        inv_matrix[0:2,2] = - inv_matrix[0:2,2]
+        inv_matrix[0:2, 2] = - inv_matrix[0:2, 2]
         return inv_matrix
 
-    def _apply_mat(self, coords, matrix):
+    @staticmethod
+    def _apply_mat(coords, matrix):
+        """
+
+        Parameters
+        ----------
+        coords
+        matrix
+
+        Returns
+        -------
+
+        """
         coords = np.array(coords, copy=False, ndmin=2)
 
         x, y = np.transpose(coords)
@@ -494,7 +524,7 @@ class TranslationTransform(object):
 
         """
 
-        return np.sqrt(np.sum((self(src) - dst)**2, axis=1))
+        return np.sqrt(np.sum((self(src) - dst) ** 2, axis=1))
 
     @property
     def translation(self):
@@ -527,7 +557,7 @@ class RigidTransform(object):
 
     """
 
-    def __init__(self, matrix = None, rotation = None, translation = None):
+    def __init__(self, matrix=None, rotation=None, translation=None):
         params = any(param is not None
                      for param in (rotation, translation))
 
@@ -547,8 +577,8 @@ class RigidTransform(object):
 
             self.params = np.array([
                 [np.cos(rotation), - np.sin(rotation), 0],
-                [np.sin(rotation),   np.cos(rotation), 0],
-                [                 0,                    0, 1]
+                [np.sin(rotation), np.cos(rotation), 0],
+                [0, 0, 1]
             ])
 
             self.params[0:2, 2] = translation
@@ -635,8 +665,8 @@ class RigidTransform(object):
         a0, a1, b0, b1 = - V[-1, :-1] / V[-1, -1]
 
         S = np.array([[a0, -b0, a1],
-                      [b0,  a0, b1],
-                      [ 0,   0,  1]])
+                      [b0, a0, b1],
+                      [0, 0, 1]])
 
         # De-center and de-normalize
         S = np.dot(np.linalg.inv(dst_matrix), np.dot(S, src_matrix))
@@ -645,7 +675,19 @@ class RigidTransform(object):
 
         return True
 
-    def _apply_mat(self, coords, matrix):
+    @staticmethod
+    def _apply_mat(coords, matrix):
+        """
+
+        Parameters
+        ----------
+        coords
+        matrix
+
+        Returns
+        -------
+
+        """
         coords = np.array(coords, copy=False, ndmin=2)
 
         x, y = np.transpose(coords)
@@ -699,8 +741,7 @@ class RigidTransform(object):
 
         """
 
-        return np.sqrt(np.sum((self(src) - dst)**2, axis=1))
-
+        return np.sqrt(np.sum((self(src) - dst) ** 2, axis=1))
 
     @property
     def _inv_matrix(self):
@@ -713,7 +754,6 @@ class RigidTransform(object):
     @property
     def translation(self):
         return self.params[0:2, 2]
-
 
 
 # Class to do geometric transformations. This is a wrapper on scikit-image functionality.
@@ -750,11 +790,11 @@ class geoTransformerParallel(object):
 
         """
         if not isinstance(dataset, h5py.Dataset):
-            warnings.warn( 'Error: Data must be an h5 Dataset object'   )
+            warnings.warn('Error: Data must be an h5 Dataset object')
         else:
             self.data = dataset
             dim = int(np.sqrt(self.data.shape[-1]))
-            self.data = self.data.reshape(-1,dim,dim)
+            self.data = self.data.reshape(-1, dim, dim)
 
     def loadFeatures(self, features):
         """
@@ -804,16 +844,16 @@ class geoTransformerParallel(object):
 
         # start pool of workers
         pool = mp.Pool(processes)
-        print('launching %i kernels...'%(processes))
+        print('launching %i kernels...' % (processes))
 
-        tasks = [ (desc1, desc2) for desc1, desc2 in zip(desc[:],desc[1:]) ]
-        chunk = int(len(desc)/processes)
-        jobs = pool.imap(match, tasks, chunksize = chunk)
+        tasks = [(desc1, desc2) for desc1, desc2 in zip(desc[:], desc[1:])]
+        chunk = int(len(desc) / processes)
+        jobs = pool.imap(match, tasks, chunksize=chunk)
 
         # get matches
         print('Extracting Matches From the Descriptors...')
 
-        matches =[]
+        matches = []
         for j in jobs:
             matches.append(j)
 
@@ -823,10 +863,9 @@ class geoTransformerParallel(object):
 
         # impose maximum_distance misalignment constraints on matches
         filt_matches = []
-        for match, key1, key2 in zip(matches, keypts[:],keypts[1:]):
+        for match, key1, key2 in zip(matches, keypts[:], keypts[1:]):
             filteredMask = euclidMatch(match, key1, key2, maxDis)
             filt_matches.append(match[filteredMask])
-
 
         return matches, filt_matches
 
@@ -857,16 +896,17 @@ class geoTransformerParallel(object):
             output = [robustTrans, inliers]
             return output
 
-         # start pool of workers
-        print('launching %i kernels...'%(processes))
+            # start pool of workers
+
+        print('launching %i kernels...' % (processes))
         pool = mp.Pool(processes)
-        tasks = [ (key1[match[:, 0]], key2[match[:, 1]])
-                    for match, key1, key2 in zip(matches,keypts[:],keypts[1:]) ]
-        chunk = int(len(keypts)/processes)
-        jobs = pool.imap(optimization, tasks, chunksize = chunk)
+        tasks = [(key1[match[:, 0]], key2[match[:, 1]])
+                 for match, key1, key2 in zip(matches, keypts[:], keypts[1:])]
+        chunk = int(len(keypts) / processes)
+        jobs = pool.imap(optimization, tasks, chunksize=chunk)
 
         # get Transforms and inlier matches
-        transforms, trueMatches =[], []
+        transforms, trueMatches = [], []
         print('Extracting Inlier Matches with RANSAC...')
         try:
             for j in jobs:
@@ -881,7 +921,7 @@ class geoTransformerParallel(object):
 
         return transforms, trueMatches
 
-    #TODO: Need parallel version for transforming stack of images.
+    # TODO: Need parallel version for transforming stack of images.
     def applyTransformation(self, transforms, **kwargs):
         """
         This is the method that takes the list of transformation found by findTransformation
@@ -907,14 +947,14 @@ class geoTransformerParallel(object):
         Transformed images, transformations
 
         """
-        dic = ['processors','origin','transformation']
+        dic = ['processors', 'origin', 'transformation']
         for key in kwargs.keys():
             if key not in dic:
-                print('%s is not a parameter of this function' %(str(key)))
+                print('%s is not a parameter of this function' % (str(key)))
 
         processes = kwargs.get('processors', 1)
-        origin = kwargs.get('origin', int(self.data.shape[0]/2))
-        transformation = kwargs.get('transformation','translation')
+        origin = kwargs.get('origin', int(self.data.shape[0] / 2))
+        transformation = kwargs.get('transformation', 'translation')
 
         dset = self.data
         # For now restricting this to just translation... Straightforward to generalize to other transform objects.
@@ -923,7 +963,7 @@ class geoTransformerParallel(object):
             YTrans = np.array([trans.translation[0] for trans in transforms])
             XTrans = np.array([trans.translation[1] for trans in transforms])
             chainL = []
-            for y, x in zip(range(0,YTrans.size+1), range(0,XTrans.size+1)):
+            for y, x in zip(range(0, YTrans.size + 1), range(0, XTrans.size + 1)):
                 if y < origin:
                     ychain = -np.sum(YTrans[y:origin])
                     xchain = -np.sum(XTrans[x:origin])
@@ -938,8 +978,8 @@ class geoTransformerParallel(object):
                 chainL.append([xchain, ychain])
 
             chainTransforms = []
-            for params in  chainL:
-                T = TranslationTransform(translation = params)
+            for params in chainL:
+                T = TranslationTransform(translation=params)
                 chainTransforms.append(T)
 
         # Just need a single function that does boths
@@ -949,7 +989,7 @@ class geoTransformerParallel(object):
             YTrans = np.array([trans.translation[0] for trans in transforms])
             XTrans = np.array([trans.translation[1] for trans in transforms])
             chainL = []
-            for x in range(0,rotTrans.size+1):
+            for x in range(0, rotTrans.size + 1):
                 if x < origin:
                     rotchain = -np.sum(rotTrans[x:origin])
                     ychain = -np.sum(YTrans[x:origin])
@@ -967,40 +1007,39 @@ class geoTransformerParallel(object):
                 chainL.append([rotchain, xchain, ychain])
 
             chainTransforms = []
-            for params in  chainL:
-                T = SimilarityTransform(scale = 1.0, rotation = np.deg2rad(params[0]), translation = (params[1],params[2]))
-#                T = SimilarityTransform(rotation = params, translation = (0,0))
+            for params in chainL:
+                T = SimilarityTransform(scale=1.0, rotation=np.deg2rad(params[0]), translation=(params[1], params[2]))
                 chainTransforms.append(T)
 
         # Use the chain transformations to transform the dataset
         output_shape = dset[0].shape
-#        output_shape = (2048, 2048)
+
+        #        output_shape = (2048, 2048)
         def warping(datum):
-            imp, transform  = datum[0], datum[1]
-            transimp = warp(imp, inverse_map= transform, output_shape = output_shape,
-                            cval = 0, preserve_range = True)
+            imp, transform = datum[0], datum[1]
+            transimp = warp(imp, inverse_map=transform, output_shape=output_shape,
+                            cval=0, preserve_range=True)
             return transimp
 
-#          #start pool of workers
-#         #somehow wrap function crashes when run in parallel! run sequentially for now.
-#        pool = mp.Pool(processes)
-#        print('launching %i kernels...'%(processes))
-#        tasks = [ (imp, transform) for imp, transform in zip(dset, chainTransforms) ]
-#        chunk = int(dset.shape[0]/processes)
-#        jobs = pool.imap(warping, tasks, chunksize = 1)
-#        #close the pool
-#        pool.close()
-#        print('Closing down the kernels... \n')
-#
+        #          #start pool of workers
+        #         #somehow wrap function crashes when run in parallel! run sequentially for now.
+        #        pool = mp.Pool(processes)
+        #        print('launching %i kernels...'%(processes))
+        #        tasks = [ (imp, transform) for imp, transform in zip(dset, chainTransforms) ]
+        #        chunk = int(dset.shape[0]/processes)
+        #        jobs = pool.imap(warping, tasks, chunksize = 1)
+        #        #close the pool
+        #        pool.close()
+        #        print('Closing down the kernels... \n')
+        #
         # get transformed images and pack into 3d np.ndarray
         print('Transforming Images...')
         transImages = np.copy(dset[:])
 
-        for imp, transform, itm in zip( transImages, chainTransforms, range(0,transImages.shape[0])):
+        for imp, transform, itm in zip(transImages, chainTransforms, range(0, transImages.shape[0])):
             transimp = warping([imp, transform])
             transImages[itm] = transimp
-            print('Image #%i'%(itm))
-
+            print('Image #%i' % (itm))
 
         return transImages, chainTransforms
 
@@ -1022,19 +1061,19 @@ class geoTransformerParallel(object):
         processes = kwargs.get('processors', 1)
 
         pool = mp.Pool(processes)
-        print('launching %i kernels...'%(processes))
+        print('launching %i kernels...' % (processes))
 
         def register(images):
             imp1, imp2 = images[0], images[1]
-            shifts, _, _ = register_translation(imp1,imp2)
+            shifts, _, _ = register_translation(imp1, imp2)
             return shifts
 
         dim = int(np.sqrt(self.data.shape[-1]))
-        tasks = [ (imp1, imp2)
-                    for imp1, imp2 in zip(self.data[:], self.data[1:]) ]
+        tasks = [(imp1, imp2)
+                 for imp1, imp2 in zip(self.data[:], self.data[1:])]
 
-        chunk = int((self.data.shape[0] - 1)/processes)
-        jobs = pool.imap(register, tasks, chunksize = chunk)
+        chunk = int((self.data.shape[0] - 1) / processes)
+        jobs = pool.imap(register, tasks, chunksize=chunk)
 
         # get Transforms and inlier matches
         results = []
@@ -1082,11 +1121,11 @@ class geoTransformerSerial(object):
 
         """
         if not isinstance(dataset, h5py.Dataset):
-            warnings.warn( 'Error: Data must be an h5 Dataset object'   )
+            warnings.warn('Error: Data must be an h5 Dataset object')
         else:
             self.data = dataset
             dim = int(np.sqrt(self.data.shape[-1]))
-            self.data = self.data.reshape(-1,dim,dim)
+            self.data = self.data.reshape(-1, dim, dim)
 
     def loadFeatures(self, features):
         """
@@ -1127,7 +1166,6 @@ class geoTransformerSerial(object):
         maxDis = kwargs.get('maximum_distance', np.infty)
         processes = kwargs.get('processes', 2)
 
-
         def match(desc):
             desc1, desc2 = desc[0], desc[1]
             matches = match_descriptors(desc1, desc2, cross_check=True)
@@ -1135,16 +1173,16 @@ class geoTransformerSerial(object):
 
         # start pool of workers
         pool = mp.Pool(processes)
-        print('launching %i kernels...'%(processes))
+        print('launching %i kernels...' % (processes))
 
-        tasks = [ (desc1, desc2) for desc1, desc2 in zip(desc[:],desc[1:]) ]
-        chunk = int(len(desc)/processes)
-        jobs = pool.imap(match, tasks, chunksize = chunk)
+        tasks = [(desc1, desc2) for desc1, desc2 in zip(desc[:], desc[1:])]
+        chunk = int(len(desc) / processes)
+        jobs = pool.imap(match, tasks, chunksize=chunk)
 
         # get matches
         print('Extracting Matches From the Descriptors...')
 
-        matches =[]
+        matches = []
         for j in jobs:
             matches.append(j)
 
@@ -1154,14 +1192,13 @@ class geoTransformerSerial(object):
 
         # impose maximum_distance misalignment constraints on matches
         filt_matches = []
-        for match, key1, key2 in zip(matches, keypts[:],keypts[1:]):
+        for match, key1, key2 in zip(matches, keypts[:], keypts[1:]):
             filteredMask = euclidMatch(match, key1, key2, maxDis)
             filt_matches.append(match[filteredMask])
 
-
         return matches, filt_matches
 
-    #TODO: Need Better Error Handling.
+    # TODO: Need Better Error Handling.
     def findTransformation(self, transform, matches, processes, **kwargs):
         """
         This is a Method that finds the optimal transformation between two images
@@ -1184,16 +1221,16 @@ class geoTransformerSerial(object):
 
         keypts = self.features[0]
 
-        def optimization(Pts):
-            robustTrans, inliers = ransac((Pts[0], Pts[1]), transform, **kwargs)
+        def optimization(pt1, pt2):
+            robustTrans, inliers = ransac((pt1, pt2), transform, **kwargs)
             output = [robustTrans, inliers]
             return output
 
         results = [optimization(key1[match[:, 0]], key2[match[:, 1]])
-                    for match, key1, key2 in zip(matches,keypts[:],keypts[1:])]
+                   for match, key1, key2 in zip(matches, keypts[:], keypts[1:])]
 
         # get Transforms and inlier matches
-        transforms, trueMatches =[], []
+        transforms, trueMatches = [], []
         print('Extracting Inlier Matches with RANSAC...')
         try:
             for res in results:
@@ -1225,14 +1262,14 @@ class geoTransformerSerial(object):
         Transformed images, transformations
 
         """
-        dic = ['processors','origin','transformation']
+        dic = ['processors', 'origin', 'transformation']
         for key in kwargs.keys():
             if key not in dic:
-                print('%s is not a parameter of this function' %(str(key)))
+                print('%s is not a parameter of this function' % (str(key)))
 
         processes = kwargs.get('processors', 1)
-        origin = kwargs.get('origin', int(self.data.shape[0]/2))
-        transformation = kwargs.get('transformation','translation')
+        origin = kwargs.get('origin', int(self.data.shape[0] / 2))
+        transformation = kwargs.get('transformation', 'translation')
 
         dset = self.data
         # For now restricting this to just translation... Straightforward to generalize to other transform objects.
@@ -1241,7 +1278,7 @@ class geoTransformerSerial(object):
             YTrans = np.array([trans.translation[0] for trans in transforms])
             XTrans = np.array([trans.translation[1] for trans in transforms])
             chainL = []
-            for y, x in zip(range(0,YTrans.size+1), range(0,XTrans.size+1)):
+            for y, x in zip(range(0, YTrans.size + 1), range(0, XTrans.size + 1)):
                 if y < origin:
                     ychain = -np.sum(YTrans[y:origin])
                     xchain = -np.sum(XTrans[x:origin])
@@ -1256,8 +1293,8 @@ class geoTransformerSerial(object):
                 chainL.append([xchain, ychain])
 
             chainTransforms = []
-            for params in  chainL:
-                T = TranslationTransform(translation = params)
+            for params in chainL:
+                T = TranslationTransform(translation=params)
                 chainTransforms.append(T)
 
         # Just need a single function that does boths
@@ -1267,7 +1304,7 @@ class geoTransformerSerial(object):
             YTrans = np.array([trans.translation[0] for trans in transforms])
             XTrans = np.array([trans.translation[1] for trans in transforms])
             chainL = []
-            for x in range(0,rotTrans.size+1):
+            for x in range(0, rotTrans.size + 1):
                 if x < origin:
                     rotchain = -np.sum(rotTrans[x:origin])
                     ychain = -np.sum(YTrans[x:origin])
@@ -1285,28 +1322,28 @@ class geoTransformerSerial(object):
                 chainL.append([rotchain, xchain, ychain])
 
             chainTransforms = []
-            for params in  chainL:
-                T = SimilarityTransform(scale = 1.0, rotation = np.deg2rad(params[0]), translation = (params[1],params[2]))
-#                T = SimilarityTransform(rotation = params, translation = (0,0))
+            for params in chainL:
+                T = SimilarityTransform(scale=1.0, rotation=np.deg2rad(params[0]), translation=(params[1], params[2]))
+                #                T = SimilarityTransform(rotation = params, translation = (0,0))
                 chainTransforms.append(T)
 
         # Use the chain transformations to transform the dataset
         output_shape = dset[0].shape
+
         def warping(datum):
-            imp, transform  = datum[0], datum[1]
-            transimp = warp(imp, inverse_map= transform, output_shape = output_shape,
-                            cval = 0, preserve_range = True)
+            imp, transform = datum[0], datum[1]
+            transimp = warp(imp, inverse_map=transform, output_shape=output_shape,
+                            cval=0, preserve_range=True)
             return transimp
 
         # get transformed images and pack into 3d np.ndarray
         print('Transforming Images...')
         transImages = np.copy(dset[:])
 
-        for imp, transform, itm in zip( transImages, chainTransforms, range(0,transImages.shape[0])):
+        for imp, transform, itm in zip(transImages, chainTransforms, range(0, transImages.shape[0])):
             transimp = warping([imp, transform])
             transImages[itm] = transimp
-            print('Image #%i'%(itm))
-
+            print('Image #%i' % (itm))
 
         return transImages, chainTransforms
 
@@ -1328,15 +1365,14 @@ class geoTransformerSerial(object):
         processes = kwargs.get('processors', 1)
 
         pool = mp.Pool(processes)
-        print('launching %i kernels...'%(processes))
+        print('launching %i kernels...' % (processes))
 
         def register(images):
             imp1, imp2 = images[0], images[1]
-            shifts, _, _ = register_translation(imp1,imp2)
+            shifts, _, _ = register_translation(imp1, imp2)
             return shifts
 
         results = [register((imp1, imp2))
-                    for imp1, imp2 in zip(self.data[:], self.data[1:])]
+                   for imp1, imp2 in zip(self.data[:], self.data[1:])]
 
         return results
-

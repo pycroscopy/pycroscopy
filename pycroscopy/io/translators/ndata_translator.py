@@ -33,7 +33,7 @@ class NDataTranslator(Translator):
         super(NDataTranslator, self).__init__(*args, **kwargs)
 
         self.rebin = False
-        self.bin_factor = (1,1,1,1)
+        self.bin_factor = (1, 1, 1, 1)
         self.hdf = None
         self.binning_func = self.__no_bin
         self.bin_func = None
@@ -264,11 +264,11 @@ class NDataTranslator(Translator):
             this_data = self.crop_ronc(this_data)
             scan_size_x, scan_size_y, usize, vsize = this_data.shape
 
-            usize = int(round(1.0*usize / self.bin_factor[-2]))
-            vsize = int(round(1.0*vsize / self.bin_factor[-1]))
+            usize = int(round(1.0 * usize / self.bin_factor[-2]))
+            vsize = int(round(1.0 * vsize / self.bin_factor[-1]))
 
-            num_images = scan_size_x*scan_size_y
-            num_pixels = usize*vsize
+            num_images = scan_size_x * scan_size_y
+            num_pixels = usize * vsize
 
             '''
             Write these attributes to the Measurement group
@@ -354,7 +354,7 @@ class NDataTranslator(Translator):
         crop_method = self.crop_method
 
         if crop_method == 'percent':
-            crop_ammount = np.round(np.atleast_2d(crop_ammount)/100.0*ronc.shape)
+            crop_ammount = np.round(np.atleast_2d(crop_ammount) / 100.0 * ronc.shape)
             crop_ammount = tuple([tuple(row) for row in crop_ammount.astype(np.uint32)])
         elif crop_method == 'absolute':
             if isinstance(crop_ammount, int):
@@ -368,7 +368,7 @@ class NDataTranslator(Translator):
         else:
             raise ValueError('Allowed values of crop_method are percent and absolute.')
 
-        crop_ammount = ((0,), (0,))+crop_ammount
+        crop_ammount = ((0,), (0,)) + crop_ammount
 
         cropped_ronc = crop(ronc, crop_ammount)
 
@@ -377,7 +377,8 @@ class NDataTranslator(Translator):
             return ronc
         return cropped_ronc
 
-    def downSampRoncVec(self, ronch_vec, binning_factor):
+    @staticmethod
+    def downSampRoncVec(ronch_vec, binning_factor):
         """
         Downsample the image by taking the mean over nearby values
 
@@ -496,8 +497,6 @@ class NDataTranslator(Translator):
 
             meas_grp.addChildren([chan_grp])
             root_grp.addChildren([meas_grp])
-
-
 
         # Write the groups to file
         h5_refs = self.hdf.writeData(root_grp)

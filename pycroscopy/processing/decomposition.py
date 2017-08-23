@@ -40,9 +40,9 @@ class Decomposition(object):
         if n_components is not None:
             kwargs['n_components'] = n_components
 
-        allowed_methods = ['FactorAnalysis','FastICA','IncrementalPCA',
-                           'MiniBatchSparsePCA','NMF','PCA','RandomizedPCA',
-                           'SparsePCA','TruncatedSVD']
+        allowed_methods = ['FactorAnalysis', 'FastICA', 'IncrementalPCA',
+                           'MiniBatchSparsePCA', 'NMF', 'PCA', 'RandomizedPCA',
+                           'SparsePCA', 'TruncatedSVD']
 
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
@@ -58,9 +58,8 @@ class Decomposition(object):
         self.method_name = method_name
 
         # figure out the operation that needs need to be performed to convert to real scalar
-        retval = check_dtype(h5_main)
-        self.data_transform_func, self.data_is_complex, self.data_is_compound, \
-        self.data_n_features, self.data_n_samples, self.data_type_mult = retval
+        (self.data_transform_func, self.data_is_complex, self.data_is_compound,
+         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
     def doDecomposition(self):
         """
@@ -85,11 +84,11 @@ class Decomposition(object):
         None
         """
         # perform fit on the real dataset
-        if self.method_name=='NMF':
+        if self.method_name == 'NMF':
             self.estimator.fit(self.data_transform_func(np.abs(self.h5_main)))
         else:
             self.estimator.fit(self.data_transform_func(self.h5_main))
-        
+
     def _transform(self, data=None):
         """
         Transforms the original OR provided dataset with previously computed fit
@@ -98,14 +97,15 @@ class Decomposition(object):
         --------
         data : (optional) HDF5 dataset
             Dataset to apply the transform to. 
-            The number of elements in the first axis of this dataset should match that of the original dataset that was fitted
+            The number of elements in the first axis of this dataset should match that of the original
+            dataset that was fitted
 
         Returns
         ------
         None
         """
         if data is None:
-            if self.method_name=='NMF':
+            if self.method_name == 'NMF':
                 self.projection = self.estimator.transform(self.data_transform_func(np.abs(self.h5_main)))
             else:
                 self.projection = self.estimator.transform(self.data_transform_func(self.h5_main))
@@ -130,9 +130,9 @@ class Decomposition(object):
         h5_labels : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
-        ds_components = MicroDataset('Components', components)# equivalent to V         
-        ds_projections = MicroDataset('Projection', np.float32(projection)) # equivalent of U compound        
-        
+        ds_components = MicroDataset('Components', components)  # equivalent to V
+        ds_projections = MicroDataset('Projection', np.float32(projection))  # equivalent of U compound
+
         decomp_ind_mat = np.transpose(np.atleast_2d(np.arange(components.shape[0])))
 
         ds_decomp_inds = MicroDataset('Decomposition_Indices', np.uint32(decomp_ind_mat))

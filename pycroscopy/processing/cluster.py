@@ -38,7 +38,7 @@ class Cluster(object):
 
         allowed_methods = ['AgglomerativeClustering', 'Birch', 'KMeans',
                            'MiniBatchKMeans', 'SpectralClustering']
-        
+
         # check if h5_main is a valid object - is it a hub?
         if not checkIfMain(h5_main):
             raise TypeError('Supplied dataset is not a pycroscopy main dataset')
@@ -63,9 +63,8 @@ class Cluster(object):
         self.data_slice = (slice(None), comp_slice)
 
         # figure out the operation that needs need to be performed to convert to real scalar
-        retval = check_dtype(h5_main)
-        self.data_transform_func, self.data_is_complex, self.data_is_compound, \
-        self.data_n_features, self.data_n_samples, self.data_type_mult = retval
+        (self.data_transform_func, self.data_is_complex, self.data_is_compound,
+         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
     def do_cluster(self, rearrange_clusters=True):
         """
@@ -161,17 +160,18 @@ class Cluster(object):
             if len(components) == 2:
                 # If only 2 numbers are given, use them as the start and stop of a slice
                 comp_slice = slice(int(components[0]), int(components[1]))
-                num_comps = abs(comp_slice.stop-comp_slice.start)
+                num_comps = abs(comp_slice.stop - comp_slice.start)
             else:
-                #Convert components to an unsigned integer array
+                # Convert components to an unsigned integer array
                 comp_slice = np.uint(components)
                 num_comps = len(comp_slice)
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components
-            num_comps = abs(comp_slice.stop-comp_slice.start)
+            num_comps = abs(comp_slice.stop - comp_slice.start)
         elif components is not None:
-            raise TypeError('Unsupported component type supplied to clean_and_build.  Allowed types are integer, numpy array, list, tuple, and slice.')
+            raise TypeError('Unsupported component type supplied to clean_and_build.  '
+                            'Allowed types are integer, numpy array, list, tuple, and slice.')
 
         return comp_slice, num_comps
 

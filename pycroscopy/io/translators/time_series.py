@@ -23,6 +23,7 @@ class MovieTranslator(Translator):
     """
     Translate Pytchography data from a set of images to an HDF5 file
     """
+
     def __init__(self, *args, **kwargs):
         super(MovieTranslator, self).__init__(*args, **kwargs)
 
@@ -78,7 +79,7 @@ class MovieTranslator(Translator):
             usize = image_parms['SuperScan-Height']
             vsize = image_parms['SuperScan-Width']
             data_type = file_list.dtype.type
-            num_images = file_list.shape[0]-start_image
+            num_images = file_list.shape[0] - start_image
 
         else:
             file_list = self._parse_file_path(image_path, image_type)
@@ -107,7 +108,6 @@ class MovieTranslator(Translator):
             data_type = np.float32
 
         h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32, num_images, image_parms)
-
 
         self._read_data(file_list[start_image:],
                         h5_main, h5_mean_spec, h5_ronch, image_path)
@@ -208,7 +208,8 @@ class MovieTranslator(Translator):
         h5_ronch[:] = mean_ronch / num_files
         self.hdf.flush()
 
-    def downSampRoncVec(self, ronch_vec, binning_factor):
+    @staticmethod
+    def downSampRoncVec(ronch_vec, binning_factor):
         """
         Downsample the image by taking the mean over nearby values
 
@@ -250,11 +251,11 @@ class MovieTranslator(Translator):
             names of all files in directory located at path
         numfiles : unsigned int
             number of files in file_list
-        """    
-        
+        """
+
         # Get all files in directory
         file_list = os.listdir(path)
-        
+
         # If no file type specified, return full list
         if ftype == 'all':
             return file_list
@@ -294,7 +295,7 @@ class MovieTranslator(Translator):
         """
         tmp, parms = read_image(image, get_parms=True)
         size = tmp.shape
-        
+
         return size, tmp.dtype.type, parms
 
     def _setupH5(self, usize, vsize, data_type, num_images, main_parms):
@@ -326,7 +327,7 @@ class MovieTranslator(Translator):
             HDF5 Dateset that the mean over all Spectroscopic steps will be
             written into
         """
-        num_pixels = usize*vsize
+        num_pixels = usize * vsize
 
         root_parms = generate_dummy_main_parms()
         root_parms['data_type'] = 'PtychographyData'
@@ -336,14 +337,14 @@ class MovieTranslator(Translator):
         main_parms['image_size_v'] = vsize
         main_parms['num_pixels'] = num_pixels
         main_parms['translator'] = 'Movie'
-    # Create the hdf5 data Group
+        # Create the hdf5 data Group
         root_grp = MicroDataGroup('/')
         root_grp.attrs = root_parms
         meas_grp = MicroDataGroup('Measurement_000')
         meas_grp.attrs = main_parms
         chan_grp = MicroDataGroup('Channel_000')
-    # Get the Position and Spectroscopic Datasets
-    #     ds_spec_ind, ds_spec_vals = buildspectroscopicdatasets(usize, vsize, num_pixels)
+        # Get the Position and Spectroscopic Datasets
+        #     ds_spec_ind, ds_spec_vals = buildspectroscopicdatasets(usize, vsize, num_pixels)
         ds_spec_ind, ds_spec_vals = build_ind_val_dsets([num_images],
                                                         is_spectral=True,
                                                         labels=['Time'],
@@ -357,7 +358,7 @@ class MovieTranslator(Translator):
                                   data_type(0).itemsize,
                                   unit_chunks=(num_pixels, 1))
 
-    # Allocate space for Main_Data and Pixel averaged Data
+        # Allocate space for Main_Data and Pixel averaged Data
         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pixels, num_images),
                                     chunking=ds_chunking, dtype=data_type, compression='gzip')
         ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
@@ -366,7 +367,7 @@ class MovieTranslator(Translator):
         ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
                                          data=np.zeros(num_images, dtype=np.float32),
                                          dtype=np.float32)
-    # Add datasets as children of Measurement_000 data group
+        # Add datasets as children of Measurement_000 data group
         chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
         meas_grp.addChildren([chan_grp])
@@ -387,7 +388,7 @@ class MovieTranslator(Translator):
         link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
-        
+
         return h5_main, h5_mean_spec, h5_ronch
 
     @staticmethod

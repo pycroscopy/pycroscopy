@@ -39,8 +39,8 @@ class TRKPFMTranslator(Translator):
             if '.dat' in file:
                 self.file_list.append(path.join(folder_path, file))
 
-
-    def _parse_spectrogram_size(self, file_handle):
+    @staticmethod
+    def _parse_spectrogram_size(file_handle):
         """
         
         Parameters
@@ -70,17 +70,16 @@ class TRKPFMTranslator(Translator):
 
             if data_length > 0:
                 data_lengths.append(int(data_length))
-                f.seek(int(data_length-1)*4, 1)
+                f.seek(int(data_length - 1) * 4, 1)
             else:
                 cont_cond = False
 
-        if len(np.unique(np.array(data_lengths)))>1:
+        if len(np.unique(np.array(data_lengths))) > 1:
             print("Unequal data lengths! Cannot continue")
         else:
             print("Equal data lengths")
 
         return data_lengths[0], count
-
 
     def translate(self, parm_path):
         """
@@ -105,10 +104,10 @@ class TRKPFMTranslator(Translator):
         f = open(self.file_list[0], 'rb')
         spectrogram_size, count_vals = self._parse_spectrogram_size(f)
         print("spectrogram size:", spectrogram_size)
-        num_pixels = parm_dict['grid_num_rows']*parm_dict['grid_num_cols']
+        num_pixels = parm_dict['grid_num_rows'] * parm_dict['grid_num_cols']
         print('Number of pixels: ', num_pixels)
         print('Count Values: ', count_vals)
-        if (num_pixels+1) != count_vals:
+        if (num_pixels + 1) != count_vals:
             print("Data size does not match number of pixels expected. Cannot continue")
 
         # Now start creating datasets and populating:
@@ -117,19 +116,19 @@ class TRKPFMTranslator(Translator):
 
         ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([parm_dict['grid_num_rows'],parm_dict['grid_num_cols']],
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets([parm_dict['grid_num_rows'], parm_dict['grid_num_cols']],
                                                      is_spectral=False,
                                                      labels=['X', 'Y'], units=['au', 'au'], verbose=False)
 
         ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=(ds_pos_ind.shape[0], spectrogram_size-5),
-                                   dtype=np.complex64, chunking=(1, spectrogram_size-5), compression='gzip')
+                                   maxshape=(ds_pos_ind.shape[0], spectrogram_size - 5),
+                                   dtype=np.complex64, chunking=(1, spectrogram_size - 5), compression='gzip')
         ds_raw_data.attrs['quantity'] = ['Complex']
 
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
 
-        num_ai_chans = np.int(num_dat_files/2) # Division by 2 due to real/imaginary
+        num_ai_chans = np.int(num_dat_files / 2)  # Division by 2 due to real/imaginary
 
         # technically should change the date, etc.
         spm_data = MicroDataGroup('')
@@ -157,7 +156,7 @@ class TRKPFMTranslator(Translator):
                 chan_grp.attrs = {'Harmonic': 2}
 
             chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                                      ds_raw_data])
+                                  ds_raw_data])
             h5_refs = hdf.writeData(chan_grp, print_log=False)
             h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
             linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
@@ -181,23 +180,23 @@ class TRKPFMTranslator(Translator):
         folder_path : string / unicode
             Absolute path of folder containing the data
         """
-        #Determine number of pixels
+        # Determine number of pixels
         num_pixels = parm_dict['grid_num_rows'] * parm_dict['grid_num_cols']
 
-        #The four files in TRKPFM are for real and imaginary parts for 1st, 2nd harmonic
-        #Create a list of [True,False,True,False] so files can be written to
-        #the appropraite channel
+        # The four files in TRKPFM are for real and imaginary parts for 1st, 2nd harmonic
+        # Create a list of [True,False,True,False] so files can be written to
+        # the appropraite channel
 
-        real_imag = np.zeros(shape=(len(self.file_list),1))
+        real_imag = np.zeros(shape=(len(self.file_list), 1))
         real_imag[::2] = 1
-        real_cond =[]
+        real_cond = []
         for entry in real_imag:
-            if entry>0:
+            if entry > 0:
                 real_cond.append(True)
             else:
                 real_cond.append(False)
 
-        #Scan through all the .dat files available
+        # Scan through all the .dat files available
         for ifile, file_path in enumerate(self.file_list):
             f = open(file_path, 'rb')
             results_p = self.read_file(data_length, f)
@@ -208,26 +207,27 @@ class TRKPFMTranslator(Translator):
             _, ia, ic = np.unique(dall, axis=0, return_index=True, return_inverse=True)
             reprowind = np.setdiff1d(ic, ia)
 
-            if len(reprowind>0):
+            if len(reprowind > 0):
                 dall[reprowind, :] = np.nan
 
-            #Write to the datasets
+            # Write to the datasets
             h5_main = self.raw_datasets[ifile]
 
             if real_cond[ifile]:
-                h5_main[:, :] = dall.reshape(h5_main.shape) + 1j*0
+                h5_main[:, :] = dall.reshape(h5_main.shape) + 1j * 0
             else:
-                h5_main[:, :] += 0 + 1j*dall.reshape(h5_main.shape)
+                h5_main[:, :] += 0 + 1j * dall.reshape(h5_main.shape)
 
             h5_main.file.flush()
 
-    def read_file(self, data_length, f):
+    @staticmethod
+    def read_file(data_length, f):
         start_point = 0
-        count=0
-        count_vals=[]
+        count = 0
+        count_vals = []
         f.seek(start_point * 4, 0)
-        cont_cond=True
-        results_p=[]
+        cont_cond = True
+        results_p = []
         while cont_cond:
             count_vals.append(count)
             count += 1
@@ -239,7 +239,7 @@ class TRKPFMTranslator(Translator):
 
                 s1 = data_vec[3]
                 s2 = data_vec[4]
-                #print('Data_mat and s1,s2:', data_vec1.shape, s1, s2)
+                # print('Data_mat and s1,s2:', data_vec1.shape, s1, s2)
                 data_mat1 = data_vec1.reshape(int(s2), int(s1)).T
                 results_p.append(data_mat1)
 

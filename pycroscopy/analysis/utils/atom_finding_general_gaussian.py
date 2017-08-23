@@ -24,6 +24,7 @@ from ...io.io_hdf5 import ioHDF5
 from ...viz import plot_utils
 from ..model import Model
 
+
 def do_fit(single_parm):
     parms = single_parm[0]
     coef_guess_mat = parms[1]
@@ -43,9 +44,9 @@ def do_fit(single_parm):
 
     coef_fit_mat = np.reshape(plsq.x, (-1, 7))
 
-    #if verbose:
+    # if verbose:
     #    return coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq
-    #else:
+    # else:
     return coef_fit_mat
 
 
@@ -148,7 +149,8 @@ class Gauss_Fit(object):
         Parameters used for atom position fitting
         'fit_region_size': region to consider when fitting. Should be large enough to see the nearest neighbors.
         'num_nearest_neighbors': the number of nearest neighbors to fit
-        'sigma_guess': starting guess for gaussian standard deviation. Should be about the size of an atom width in pixels.
+        'sigma_guess': starting guess for gaussian standard deviation. Should be about the size of an atom width in
+        pixels.
         'position_range': range that the fitted position can move from initial guess position in pixels
         'max_function_evals': maximum allowed function calls; passed to the least squares fitter
         'fitting_tolerance': target difference between the fit and the data
@@ -262,12 +264,14 @@ class Gauss_Fit(object):
             parm_list = itt.izip(self.guess_parms, itt.repeat(self.fitting_parms))
             self.fitting_results = [do_fit(parm) for parm in parm_list]
 
-        print ('Finalizing datasets...')
-        self.guess_dataset = np.zeros(shape=(self.num_atoms, self.num_nearest_neighbors + 1), dtype=self.atom_coeff_dtype)
+        print('Finalizing datasets...')
+        self.guess_dataset = np.zeros(shape=(self.num_atoms, self.num_nearest_neighbors + 1),
+                                      dtype=self.atom_coeff_dtype)
         self.fit_dataset = np.zeros(shape=self.guess_dataset.shape, dtype=self.guess_dataset.dtype)
 
         for atom_ind, single_atom_results in enumerate(self.fitting_results):
-            types = np.hstack((self.h5_guess['type'][atom_ind], [self.h5_guess['type'][neighbor] for neighbor in self.closest_neighbors_mat[atom_ind]]))
+            types = np.hstack((self.h5_guess['type'][atom_ind],
+                               [self.h5_guess['type'][neighbor] for neighbor in self.closest_neighbors_mat[atom_ind]]))
             atom_data = np.hstack((np.vstack(types), single_atom_results))
             atom_data = [tuple(element) for element in atom_data]
             self.fit_dataset[atom_ind] = atom_data
@@ -418,21 +422,21 @@ class Gauss_Fit(object):
                 ub_background.append(item + item * movement_allowance)
 
         # Set up upper and lower bounds:
-        lb_mat = [lb_a,                                                              # amplitude
-                  coef_guess_mat[:, 1] - position_range,                             # x position
-                  coef_guess_mat[:, 2] - position_range,                             # y position
+        lb_mat = [lb_a,  # amplitude
+                  coef_guess_mat[:, 1] - position_range,  # x position
+                  coef_guess_mat[:, 2] - position_range,  # y position
                   [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 3]],  # sigma x
                   [np.max([0, value - value * movement_allowance]) for value in coef_guess_mat[:, 4]],  # sigma y
-                  coef_guess_mat[:, 5] - 2 * 3.14159,                                # theta
-                  lb_background]                                                     # background
+                  coef_guess_mat[:, 5] - 2 * 3.14159,  # theta
+                  lb_background]  # background
 
-        ub_mat = [ub_a,                                                              # amplitude
-                  coef_guess_mat[:, 1] + position_range,                             # x position
-                  coef_guess_mat[:, 2] + position_range,                             # y position
+        ub_mat = [ub_a,  # amplitude
+                  coef_guess_mat[:, 1] + position_range,  # x position
+                  coef_guess_mat[:, 2] + position_range,  # y position
                   coef_guess_mat[:, 3] + coef_guess_mat[:, 3] * movement_allowance,  # sigma x
                   coef_guess_mat[:, 4] + coef_guess_mat[:, 4] * movement_allowance,  # sigma y
-                  coef_guess_mat[:, 5] + 2 * 3.14159,                                # theta
-                  ub_background]                                                     # background
+                  coef_guess_mat[:, 5] + 2 * 3.14159,  # theta
+                  ub_background]  # background
 
         lb_mat = np.transpose(lb_mat)
         ub_mat = np.transpose(ub_mat)
@@ -451,7 +455,8 @@ class Gauss_Fit(object):
 
         return atom_ind, coef_guess_mat, fit_region, s1, s2, lb_mat, ub_mat
 
-    def check_data(self, atom_grp):
+    @staticmethod
+    def check_data(atom_grp):
         # some data checks here
         try:
             img = atom_grp['Cropped_Clean_Image']
@@ -509,10 +514,12 @@ class Gauss_Fit(object):
         ds_atom_fits = MicroDataset('Gaussian_Fits', data=self.fit_dataset)
         ds_motif_guesses = MicroDataset('Motif_Guesses', data=self.motif_guess_dataset)
         ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_dataset)
-        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices', data=self.closest_neighbors_mat, dtype=np.uint32)
+        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices',
+                                            data=self.closest_neighbors_mat, dtype=np.uint32)
         dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
         dgrp_atom_finding.attrs = self.fitting_parms
-        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses, ds_motif_fits, ds_nearest_neighbors])
+        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
+                                       ds_motif_fits, ds_nearest_neighbors])
 
         hdf = ioHDF5(self.atom_grp.file)
         h5_atom_refs = hdf.writeData(dgrp_atom_finding)
@@ -520,19 +527,18 @@ class Gauss_Fit(object):
         return self.atom_grp
 
     def fit_motif(self, plot_results=True):
-        '''
+        """
         Parameters
         ----------
-            plot_results: boolean (default = True)
-                Flag to specify whether a result summary should be plotted
+        plot_results: boolean (default = True)
+            Flag to specify whether a result summary should be plotted
 
         Returns
         -------
-            motif_converged_dataset: NxM numpy array of tuples where N is the number of motifs and M is the number
-                of nearest neighbors considered. Each tuple contains the converged parameters for a gaussian fit to
-                an atom in a motif window.
-        '''
-
+        motif_converged_dataset: NxM numpy array of tuples where N is the number of motifs and M is the number
+            of nearest neighbors considered. Each tuple contains the converged parameters for a gaussian fit to
+            an atom in a motif window.
+        """
 
         self.motif_guesses = []
         self.motif_parms = []
@@ -602,46 +608,3 @@ class Gauss_Fit(object):
             fig.show()
 
         return self.motif_converged_dataset
-
-
-# if __name__=='__main__':
-#     file_name = r"C:\Users\o2d\Documents\pycroscopy\\test_scripts\\testing_gauss_fit\image 04.h5"
-#     folder_path, file_path = os.path.split(file_name)
-#
-#     file_base_name, file_extension = file_name.rsplit('.')
-#     h5_file = h5py.File(file_name, mode='r+')
-#     # look at the data tree in the h5
-#     '''
-#     # define a small function called 'print_tree' to look at the folder tree structure
-#     def print_tree(parent):
-#         print(parent.name)
-#         if isinstance(parent, h5py.Group):
-#             for child in parent:
-#                 print_tree(parent[child])
-#     '''
-#
-#     #print('Datasets and datagroups within the file:')
-#     file_handle = h5_file
-#     #print_tree(file_handle)
-#
-#     cropped_clean_image = h5_file['/Measurement_000/Channel_000/Raw_Data-Windowing_000/Image_Windows-SVD_000/U-Cluster_000/Labels-Atom_Finding_000/Cropped_Clean_Image']
-#     atom_grp = cropped_clean_image.parent
-#     guess_params = atom_grp['Guess_Positions']
-#
-#     num_nearest_neighbors = 4
-#     psf_width = atom_grp.attrs['psf_width']
-#     win_size = atom_grp.attrs['motif_win_size']
-#
-#     fitting_parms = {'fit_region_size': win_size * 0.5,  # region to consider when fitting
-#                      'num_nearest_neighbors': num_nearest_neighbors,
-#                      'sigma_guess': 3, # starting guess for gaussian standard deviation
-#                      'position_range': win_size / 4,# range that the fitted position can go from initial guess position[pixels]
-#                      'max_function_evals': 100,
-#                      'fitting_tolerance': 1E-4,
-#                      'symmetric': True,
-#                      'background': True,
-#                      'movement_allowance': 5.0} # percent of movement allowed (on some parameters)
-#
-#     foo = Gauss_Fit(atom_grp, fitting_parms)
-#
-#

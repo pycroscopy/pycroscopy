@@ -77,7 +77,8 @@ class Optimize(object):
             Number of logical cores to use for computing
         strategy: string
             Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list,
+            run GuessMethods.methods
         options: dict
             Default: Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.

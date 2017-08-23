@@ -34,6 +34,7 @@ atom_dtype = np.dtype({'names': ['x', 'y', 'type'],
 atom_coeff_dtype = np.dtype({'names': ['Amplitude', 'x', 'y', 'Sigma'],
                              'formats': [np.float32, np.float32, np.float32, np.float32]})
 
+
 def multi_gauss_surface_fit(coef_mat, s_mat):
     """
     Evaluates the provided coefficients for N gaussian peaks to generate a 2D matrix
@@ -233,7 +234,7 @@ def fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=None):
     all_atom_guesses = parm_dict['atom_pos_guess']
     t_start = tm.time()
     num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
-    if num_cores>1:
+    if num_cores > 1:
         pool = mp.Pool(processes=num_cores)
         parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
         chunk = int(all_atom_guesses.shape[0] / num_cores)
@@ -316,7 +317,7 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     fitting_results = fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=num_cores)
 
     # Make datasets to write back to file:
-    guess_parms = np.zeros(shape=(num_atoms, num_nearest_neighbors+1), dtype=atom_coeff_dtype)
+    guess_parms = np.zeros(shape=(num_atoms, num_nearest_neighbors + 1), dtype=atom_coeff_dtype)
     fit_parms = np.zeros(shape=guess_parms.shape, dtype=guess_parms.dtype)
 
     for atom_ind, single_atom_results in enumerate(fitting_results):
@@ -381,7 +382,9 @@ def visualize_atom_fit(atom_rough_pos, all_atom_guesses, parm_dict, fitting_parm
     atom_ind = np.argsort(temp_dist)[0]
 
     parm_dict['verbose'] = True
-    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind, parm_dict, fitting_parms))
+    coef_guess_mat, lb_mat, ub_mat, coef_fit_mat, fit_region, s_mat, plsq = fit_atom_pos((atom_ind,
+                                                                                          parm_dict,
+                                                                                          fitting_parms))
 
     print('\tAmplitude\tx position\ty position\tsigma')
     print('-------------------GUESS---------------------')
@@ -500,7 +503,7 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
         axis.imshow(double_cropped_image, interpolation='none', cmap="gray")
         axis.scatter(all_atom_pos[culprits[:, 0], 1], all_atom_pos[culprits[:, 0], 0], color='yellow')
         axis.scatter(all_atom_pos[culprits[:, 1], 1], all_atom_pos[culprits[:, 1], 0], color='red')
-        axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan');
+        axis.scatter(all_atom_pos[good_atom_inds, 1], all_atom_pos[good_atom_inds, 0], color='cyan')
 
     # Now classify the culprit pairs into the correct family
     classifier = KNeighborsClassifier(n_neighbors=num_neighbors)
@@ -531,9 +534,9 @@ def remove_duplicate_labels(atom_labels, psf_width, double_cropped_image, distan
             row_ind = int(np.round(all_atom_pos[atom_ind, 0]))
             col_ind = int(np.round(all_atom_pos[atom_ind, 1]))
             img_section = double_cropped_image[max(0, row_ind - neighbor_size):
-            min(double_cropped_image.shape[0], row_ind + neighbor_size),
-                          max(0, col_ind - neighbor_size):
-                          min(double_cropped_image.shape[1], col_ind + neighbor_size)]
+                                               min(double_cropped_image.shape[0], row_ind + neighbor_size),
+                                               max(0, col_ind - neighbor_size):
+                                               min(double_cropped_image.shape[1], col_ind + neighbor_size)]
             amplitude_pair.append(np.max(img_section))
         # print amplitude_pair
         if amplitude_pair[0] > amplitude_pair[1]:
