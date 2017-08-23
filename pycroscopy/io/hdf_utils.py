@@ -583,7 +583,7 @@ def get_formatted_labels(h5_dset):
         return None
 
 
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False):
+def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False, sort_dims=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -600,6 +600,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         Whether or not to return the dimension labels.  Default False
     verbose : bool, optional
         Whether or not to print debugging statements
+    sort_dims : bool
+        If True, the data is sorted so that the dimensions are in order from fastest to slowest
+        If `get_labels` is also True, the labels are sorted as well.
 
     Returns
     -------
@@ -741,17 +744,22 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     Now we transpose the axes for both the position and spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    swap_axes = np.append(pos_sort.size - 1 - np.argsort(pos_sort),
-                          spec_sort.size - spec_sort - 1 + len(pos_dims))
+    if not sort_dims:
+        swap_axes = np.append(pos_sort.size - 1 - pos_sort,
+                              spec_sort.size - spec_sort - 1 + len(pos_dims))
+    else:
+        swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_dims))
 
     if verbose:
         print('\nAxes will permuted in this order:', swap_axes)
         print('New labels ordering:', all_labels[swap_axes])
 
-    ds_Nd2 = np.transpose(ds_Nd, swap_axes)
+    ds_Nd = np.transpose(ds_Nd, swap_axes)
+
+    results = [ds_Nd, True]
 
     if verbose:
-        print('Dataset now of shape:', ds_Nd2.shape)
+        print('Dataset now of shape:', ds_Nd.shape)
 
     if get_labels:
         '''
@@ -762,15 +770,13 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         else:
             pos_labs = np.array(['' for _ in pos_dims])
         if isinstance(h5_spec, h5py.Dataset):
-            spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
+            spec_labs = get_attr(h5_spec, 'labels')
         else:
             spec_labs = np.array(['' for _ in spec_dims])
 
-        ds_labels = np.hstack([pos_labs, spec_labs])
+        ds_labels = np.hstack([pos_labs[pos_sort[::-1]], spec_labs[spec_sort[::-1]]])
 
-        results = (ds_Nd2, True, ds_labels)
-    else:
-        results = (ds_Nd2, True)
+        results.append(ds_labels[swap_axes])
 
     return results
 
