@@ -7,7 +7,7 @@ Created on Tue Mar 29 16:04:34 2016
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
-from os import path, remove # File Path formatting
+from os import path, remove  # File Path formatting
 
 import h5py
 import numpy as np  # For array operations
@@ -17,14 +17,21 @@ from .translator import Translator  # Because this class extends the abstract Tr
 from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs
 from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset  # The building blocks for defining heirarchical storage in the H5 file
+# The building blocks for defining heirarchical storage in the H5 file
+from ..microdata import MicroDataGroup, MicroDataset
 
 
 class SporcTranslator(Translator):
     """
     Translates G-mode SPORC datasets from .mat files to .h5
     """
-    
+
+    def _read_data(self):
+        pass
+
+    def _parse_file_path(self, input_path):
+        pass
+
     def translate(self, parm_path):
         """
         Basic method that translates .mat data files to a single .h5 file
@@ -39,114 +46,113 @@ class SporcTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
-		
+
         (folder_path, file_name) = path.split(parm_path)
         (file_name, base_name) = path.split(folder_path)
-        h5_path = path.join(folder_path,base_name+'.h5')
-        
+        h5_path = path.join(folder_path, base_name + '.h5')
+
         # Read parameters
         print('reading parameter files')
         parm_dict, excit_wfm, spec_ind_mat = self.__readparms(parm_path)
         parm_dict['data_type'] = 'SPORC'
-        
+
         num_rows = parm_dict['grid_num_rows']
-        num_cols = parm_dict['grid_num_cols'] 
-        num_pix = num_rows*num_cols        
-        
+        num_cols = parm_dict['grid_num_cols']
+        num_pix = num_rows * num_cols
+
         pos_mat = make_position_mat([num_cols, num_rows])
         pos_slices = get_position_slicing(['X', 'Y'], num_pix)
-        
+
         # new data format
         spec_ind_mat = np.transpose(np.float32(spec_ind_mat))
-        
+
         # Now start creating datasets and populating:
         ds_pos_ind = MicroDataset('Position_Indices', np.uint32(pos_mat))
         ds_pos_ind.attrs['labels'] = pos_slices
         ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = ['um','um']
-                
+        ds_pos_val.attrs['units'] = ['um', 'um']
+
         spec_ind_labels = ['x index', 'y index', 'loop index', 'repetition index', 'slope index']
         spec_ind_dict = dict()
         for col_ind, col_name in enumerate(spec_ind_labels):
-            spec_ind_dict[col_name] = (slice(col_ind,col_ind+1), slice(None))
+            spec_ind_dict[col_name] = (slice(col_ind, col_ind + 1), slice(None))
         ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = spec_ind_dict
         ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_ind_mat)
         ds_spec_vals.attrs['labels'] = spec_ind_dict
-        ds_spec_vals.attrs['units'] = ['V','V','','','']
+        ds_spec_vals.attrs['units'] = ['V', 'V', '', '', '']
 
         ds_excit_wfm = MicroDataset('Excitation_Waveform', np.float32(excit_wfm))
-        
-        ds_raw_data = MicroDataset('Raw_Data', data=[], 
-                                  maxshape=(num_pix,len(excit_wfm)), 
-                                dtype=np.float16, chunking=(1,len(excit_wfm)), 
-                                compression='gzip')
-        
+
+        ds_raw_data = MicroDataset('Raw_Data', data=[],
+                                   maxshape=(num_pix, len(excit_wfm)),
+                                   dtype=np.float16, chunking=(1, len(excit_wfm)),
+                                   compression='gzip')
+
         # technically should change the date, etc.
-         
+
         chan_grp = MicroDataGroup('Channel_000')
-        chan_grp.attrs = parm_dict        
+        chan_grp.attrs = parm_dict
         chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                               ds_excit_wfm, ds_raw_data])
-                
+
         global_parms = generate_dummy_main_parms()
-        global_parms['grid_size_x'] = parm_dict['grid_num_cols'];
-        global_parms['grid_size_y'] = parm_dict['grid_num_rows'];
+        global_parms['grid_size_x'] = parm_dict['grid_num_cols']
+        global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         # assuming that the experiment was completed:        
-        global_parms['current_position_x'] = parm_dict['grid_num_cols']-1;
-        global_parms['current_position_y'] = parm_dict['grid_num_rows']-1;
-        global_parms['data_type'] = parm_dict['data_type'] 
+        global_parms['current_position_x'] = parm_dict['grid_num_cols'] - 1
+        global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1
+        global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'SPORC'
-        
+
         meas_grp = MicroDataGroup('Measurement_000')
         meas_grp.addChildren([chan_grp])
         spm_data = MicroDataGroup('')
         spm_data.attrs = global_parms
         spm_data.addChildren([meas_grp])
-        
+
         if path.exists(h5_path):
             remove(h5_path)
-        
+
         # Write everything except for the main data.
         hdf = ioHDF5(h5_path)
-        
+
         h5_refs = hdf.writeData(spm_data)
-                    
+
         h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-            
-        #Now doing linkrefs:
-        aux_ds_names = ['Excitation_Waveform', 'Position_Indices','Position_Values',
-                     'Spectroscopic_Indices','Spectroscopic_Values']
+
+        # Now doing linkrefs:
+        aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
+                        'Spectroscopic_Indices', 'Spectroscopic_Values']
         linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
-        
+
         print('reading raw data now...')
-        
+
         # Now read the raw data files:
         pos_ind = 0
-        for row_ind in range(1, num_rows+1):
-            for col_ind in range(1, num_cols+1):
-                file_path = path.join(folder_path,'result_r'+str(row_ind)+'_c'+str(col_ind)+'.mat')
-                #print('Working on row {} col {}'.format(row_ind,col_ind))
+        for row_ind in range(1, num_rows + 1):
+            for col_ind in range(1, num_cols + 1):
+                file_path = path.join(folder_path, 'result_r' + str(row_ind) + '_c' + str(col_ind) + '.mat')
+                # print('Working on row {} col {}'.format(row_ind,col_ind))
                 if path.exists(file_path):
                     # Load data file
                     pix_data = loadmat(file_path, squeeze_me=True)
                     # Take the inverse FFT on 1st dimension
                     pix_vec = np.fft.ifft(np.fft.ifftshift(pix_data['data']))
                     # Verified with Matlab - no conjugate required here.
-                    h5_main[pos_ind,:] = np.float16(np.real(pix_vec))
-                    hdf.flush() # flush from memory!
+                    h5_main[pos_ind, :] = np.float16(np.real(pix_vec))
+                    hdf.flush()  # flush from memory!
                 else:
                     print('File for row {} col {} not found'.format(row_ind, col_ind))
-                pos_ind +=1
-                if (100.0*(pos_ind)/num_pix)%10 == 0:
-                    print('Finished reading {} % of data'.format(int(100*pos_ind/num_pix)))
+                pos_ind += 1
+                if (100.0 * (pos_ind) / num_pix) % 10 == 0:
+                    print('Finished reading {} % of data'.format(int(100 * pos_ind / num_pix)))
 
         hdf.close()
-        
+
         return h5_path
-        
-        
+
     @staticmethod
     def __readparms(parm_path):
         """
@@ -195,8 +201,8 @@ class SporcTranslator(Translator):
         else:
             # Look for a second parms file that contains these vectors:
             fold, basename = path.split(parm_path)
-            second_path = path.join(fold,'SPORC_wave.mat')
-            h5_sporc_parms = h5py.File(second_path,'r') # Use this for v7.3 and beyond.
+            second_path = path.join(fold, 'SPORC_wave.mat')
+            h5_sporc_parms = h5py.File(second_path, 'r')  # Use this for v7.3 and beyond.
             excit_wfm = np.squeeze(h5_sporc_parms['FORC_vec'].value)
             spec_ind_mat = np.float32(h5_sporc_parms['ind_vecs'].value)
             h5_sporc_parms.close()

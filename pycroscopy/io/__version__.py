@@ -1,4 +1,3 @@
-
-major	=	0
-minor	=	0
-micro	=	1
+major = 0
+minor = 0
+micro = 1

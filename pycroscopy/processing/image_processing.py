@@ -35,6 +35,7 @@ winabsfft32 = np.dtype({'names': ['Image Data', 'FFT Magnitude'],
 wincompfft32 = np.dtype({'names': ['Image Data', 'FFT Real', 'FFT Imag'],
                          'formats': [np.float32, np.float32, np.float32]})
 
+
 class ImageWindow(object):
     """
     This class will handle the reading of a raw image file, creating windows from it, and writing those
@@ -61,19 +62,19 @@ class ImageWindow(object):
         """
         self.h5_file = h5_main.file
         self.hdf = ioHDF5(h5_main.file)
-        
+
         # Ensuring that at least one core is available for use / 2 cores are available for other use
-        max_cores = max(1, cpu_count()-2)
-#         print 'max_cores',max_cores         
-        if cores is not None: 
+        max_cores = max(1, cpu_count() - 2)
+        #         print 'max_cores',max_cores
+        if cores is not None:
             cores = min(round(abs(cores)), max_cores)
         else:
-            cores = max_cores            
-        self.cores = int(cores)        
+            cores = max_cores
+        self.cores = int(cores)
 
-        self.max_memory = min(max_RAM_mb*1024**2, 0.75*getAvailableMem())
+        self.max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * getAvailableMem())
         if self.cores != 1:
-            self.max_memory = int(self.max_memory/2)
+            self.max_memory = int(self.max_memory / 2)
 
         '''
         Initialize class variables to None
@@ -163,30 +164,30 @@ class ImageWindow(object):
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in win_pos_mat]
+        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in win_pos_mat]
 
         '''
         Calculate the size of a given batch that will fit in the available memory
         '''
-        mem_per_win = win_x*win_y*h5_wins.dtype.itemsize
+        mem_per_win = win_x * win_y * h5_wins.dtype.itemsize
         if self.cores is None:
-            free_mem = self.max_memory-image.size*image.itemsize
+            free_mem = self.max_memory - image.size * image.itemsize
         else:
-            free_mem = self.max_memory*2-image.size*image.itemsize
-        batch_size = int(free_mem/mem_per_win)
+            free_mem = self.max_memory * 2 - image.size * image.itemsize
+        batch_size = int(free_mem / mem_per_win)
         batch_slices = gen_batches(n_wins, batch_size)
 
         for ibatch, batch in enumerate(batch_slices):
-            batch_wins = np.zeros([batch.stop-batch.start, win_pix], dtype=win_type)
+            batch_wins = np.zeros([batch.stop - batch.start, win_pix], dtype=win_type)
             '''
             Read each slice and write it to the dataset
             '''
             for islice, this_slice in enumerate(win_slices[batch]):
-                iwin = ibatch*batch_size+islice
-                selected = iwin % np.rint(n_wins/10) == 0
+                iwin = ibatch * batch_size + islice
+                selected = iwin % np.rint(n_wins / 10) == 0
 
                 if selected:
-                    per_done = np.rint(100*iwin/n_wins)
+                    per_done = np.rint(100 * iwin / n_wins)
                     print('Windowing Image...{}% --pixels {}-{}, step # {}'.format(per_done,
                                                                                    (this_slice[0].start,
                                                                                     this_slice[1].start),
@@ -198,9 +199,9 @@ class ImageWindow(object):
 
             h5_wins[batch] = batch_wins
             self.hdf.flush()
-        
+
         self.h5_wins = h5_wins
-        
+
         return h5_wins
 
     @staticmethod
@@ -541,7 +542,7 @@ class ImageWindow(object):
                 warn('You must clean the image before rebuilding it.')
                 return
             h5_win = self.clean_wins
-        
+
         '''
         Get basic windowing information from attributes of 
         h5_win
@@ -551,61 +552,61 @@ class ImageWindow(object):
         win_x = h5_win.parent.attrs['win_x']
         win_y = h5_win.parent.attrs['win_y']
         win_step_x = h5_win.parent.attrs['win_step_x']
-        win_step_y = h5_win.parent.attrs['win_step_x']             
-        
+        win_step_y = h5_win.parent.attrs['win_step_x']
+
         '''
         Calculate the steps taken to create original windows
         '''
-        x_steps = np.arange(0, im_x-win_x+1, win_step_x)
-        y_steps = np.arange(0, im_y-win_y+1, win_step_y)
-        
+        x_steps = np.arange(0, im_x - win_x + 1, win_step_x)
+        y_steps = np.arange(0, im_y - win_y + 1, win_step_y)
+
         '''
         Initialize arrays to hold summed windows and counts for each position
         '''
         counts = np.zeros([im_x, im_y], np.uint8)
         accum = np.zeros([im_x, im_y], np.float32)
-        
+
         nx = len(x_steps)
         ny = len(y_steps)
-        n_wins = nx*ny
-        
+        n_wins = nx * ny
+
         '''
         Create slice object from the positions
         '''
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in np.array([np.tile(x_steps, nx),
-                                                                                   np.repeat(y_steps, ny)]).T]
-        
+        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in np.array([np.tile(x_steps, nx),
+                                                                                       np.repeat(y_steps, ny)]).T]
+
         '''
         Loop over all windows.  Increment counts for window positions and 
         add current window to total.
         '''
         ones = np.ones([win_x, win_y], dtype=counts.dtype)
         for islice, this_slice in enumerate(win_slices):
-            selected = islice%np.rint(n_wins/10) == 0
+            selected = islice % np.rint(n_wins / 10) == 0
             if selected:
-                per_done = np.rint(100*(islice)/(n_wins))
-                print('Reconstructing Image...{}% -- step # {}'.format(per_done,islice))
-            counts[this_slice]+= ones
-    
-            accum[this_slice]+= h5_win[islice].reshape(win_x,win_y)
+                per_done = np.rint(100 * (islice) / (n_wins))
+                print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
+            counts[this_slice] += ones
 
-        clean_image = accum/counts
-        
+            accum[this_slice] += h5_win[islice].reshape(win_x, win_y)
+
+        clean_image = accum / counts
+
         clean_image[np.isnan(clean_image)] = 0
-        
+
         clean_grp = MicroDataGroup('Cleaned_Image', h5_win.parent.name[1:])
 
         ds_clean = MicroDataset('Cleaned_Image', clean_image)
-        
+
         clean_grp.addChildren([ds_clean])
-        
+
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
-        
+
         h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
-    
+
         self.h5_clean = h5_clean
-    
+
         return h5_clean
 
     def clean_and_build(self, h5_win=None, components=None):
@@ -696,7 +697,7 @@ class ImageWindow(object):
         Create slice object from the positions
         '''
         h5_win_pos = h5_win.file[h5_win.attrs['Position_Indices']]
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in h5_win_pos]
+        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in h5_win_pos]
 
         '''
         Loop over all windows.  Increment counts for window positions and
@@ -723,7 +724,7 @@ class ImageWindow(object):
         '''
         Calculate the removed noise and FFTs
         '''
-        removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
+        removed_noise = np.reshape(self.h5_raw, clean_image.shape) - clean_image
 
         fft_clean = np.fft.fft2(clean_image)
         fft_noise = np.fft.fft2(removed_noise)
@@ -839,7 +840,7 @@ class ImageWindow(object):
         Create slice object from the positions
         '''
         ds_win_pos = h5_win.file[h5_win.attrs['Position_Indices']][()]
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y)] for x, y in ds_win_pos]
+        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in ds_win_pos]
         n_wins = ds_win_pos.shape[0]
         '''
         Create a matrix to add when counting.
@@ -851,12 +852,12 @@ class ImageWindow(object):
         '''
         Calculate the size of a given batch that will fit in the available memory
         '''
-        mem_per_win = ds_V.itemsize*ds_V.shape[1]
+        mem_per_win = ds_V.itemsize * ds_V.shape[1]
         if self.cores is None:
-            free_mem = self.max_memory-ds_V.size*ds_V.itemsize
+            free_mem = self.max_memory - ds_V.size * ds_V.itemsize
         else:
-            free_mem = self.max_memory*2-ds_V.size*ds_V.itemsize
-        batch_size = int(free_mem/mem_per_win)
+            free_mem = self.max_memory * 2 - ds_V.size * ds_V.itemsize
+        batch_size = int(free_mem / mem_per_win)
         batch_slices = gen_batches(n_wins, batch_size)
 
         print('Reconstructing in batches of {} windows.'.format(batch_size))
@@ -870,7 +871,7 @@ class ImageWindow(object):
             batch_wins = np.dot(ds_U, ds_V).reshape([-1, win_x, win_y])
             del ds_U
             for islice, this_slice in enumerate(win_slices[batch]):
-                iwin = ibatch*batch_size+islice
+                iwin = ibatch * batch_size + islice
                 if iwin % np.rint(n_wins / 10) == 0:
                     per_done = np.rint(100 * iwin / n_wins)
                     print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
@@ -888,17 +889,17 @@ class ImageWindow(object):
             Renormalize the cleaned image
             '''
             clean_image -= np.min(clean_image)
-            clean_image = clean_image/np.max(clean_image)
-        
+            clean_image = clean_image / np.max(clean_image)
 
         '''
         Calculate the removed noise and FFTs
         '''
-        removed_noise = np.reshape(self.h5_raw, clean_image.shape)-clean_image
+        removed_noise = np.reshape(self.h5_raw, clean_image.shape) - clean_image
         blackman_window_rows = blackman(clean_image.shape[0])
         blackman_window_cols = blackman(clean_image.shape[1])
-        fft_clean = np.fft.fft2(blackman_window_rows[:, np.newaxis]*clean_image*blackman_window_cols[np.newaxis, :])
-        fft_noise = np.fft.fft2(blackman_window_rows[:, np.newaxis]*removed_noise*blackman_window_cols[np.newaxis, :])
+        fft_clean = np.fft.fft2(blackman_window_rows[:, np.newaxis] * clean_image * blackman_window_cols[np.newaxis, :])
+        fft_noise = np.fft.fft2(
+            blackman_window_rows[:, np.newaxis] * removed_noise * blackman_window_cols[np.newaxis, :])
 
         '''
         Create datasets for results, link them properly, and write them to file
@@ -1004,7 +1005,7 @@ class ImageWindow(object):
         Create slice object from the positions
         '''
         ds_win_pos = h5_win.file[h5_win.attrs['Position_Indices']][()]
-        win_slices = [[slice(x, x+win_x), slice(y, y+win_y), slice(None)] for x, y in ds_win_pos]
+        win_slices = [[slice(x, x + win_x), slice(y, y + win_y), slice(None)] for x, y in ds_win_pos]
         n_wins = len(ds_win_pos)
 
         '''
@@ -1024,12 +1025,12 @@ class ImageWindow(object):
         '''
         Calculate the size of a given batch that will fit in the available memory
         '''
-        mem_per_win = ds_V.itemsize*(num_comps+ds_V.size)
+        mem_per_win = ds_V.itemsize * (num_comps + ds_V.size)
         if self.cores is None:
-            free_mem = self.max_memory-ds_V.size*ds_V.itemsize
+            free_mem = self.max_memory - ds_V.size * ds_V.itemsize
         else:
-            free_mem = self.max_memory/2-ds_V.size*ds_V.itemsize
-        batch_size = int(free_mem/mem_per_win)
+            free_mem = self.max_memory / 2 - ds_V.size * ds_V.itemsize
+        batch_size = int(free_mem / mem_per_win)
         if batch_size < 1:
             raise MemoryError('Not enough memory to perform Image Cleaning.')
         batch_slices = gen_batches(n_wins, batch_size)
@@ -1041,7 +1042,7 @@ class ImageWindow(object):
         '''
         for ibatch, batch in enumerate(batch_slices):
             ds_U = h5_U[batch, comp_slice]
-            batch_wins = ds_U[:, None, :]*ds_V[None, :, :]
+            batch_wins = ds_U[:, None, :] * ds_V[None, :, :]
             for islice, this_slice in enumerate(win_slices[batch]):
                 iwin = ibatch * batch_size + islice
                 if iwin % np.rint(n_wins / 10) == 0:
@@ -1063,10 +1064,10 @@ class ImageWindow(object):
         '''
         clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
 
-        clean_chunking = calc_chunks([im_x*im_y, num_comps],
+        clean_chunking = calc_chunks([im_x * im_y, num_comps],
                                      clean_image.dtype.itemsize)
         ds_clean = MicroDataset('Cleaned_Image',
-                                data=clean_image.reshape(im_x*im_y, num_comps),
+                                data=clean_image.reshape(im_x * im_y, num_comps),
                                 chunking=clean_chunking,
                                 compression='gzip')
 
@@ -1155,17 +1156,16 @@ class ImageWindow(object):
             if image_path is None:
                 image_dir, basename = os.path.split(self.h5_file.filename)
                 basename, _ = os.path.splitext(basename)
-                basename = basename+'_clean.'+image_type
+                basename = basename + '_clean.' + image_type
                 image_path = os.path.join(image_dir, basename)
-            
+
             plt.imsave(image_path, image, format=image_type, cmap=cmap)
 
         clean_image = plt.imshow(image, cmap=cmap)
         if show_plots:
             plt.show()
-        
-        return clean_image
 
+        return clean_image
 
     def window_size_extract(self, num_peaks=2, save_plots=True, show_plots=False):
         """
@@ -1201,7 +1201,7 @@ class ImageWindow(object):
             a = p[0]
             s = p[1]
 
-            g = a*np.exp(-(x/s)**2)
+            g = a * np.exp(-(x / s) ** 2)
 
             return g
 
@@ -1211,7 +1211,7 @@ class ImageWindow(object):
             """
             gauss = __gauss_fit(p, x)
 
-            chi2 = ((y-gauss)/y)**2
+            chi2 = ((y - gauss) / y) ** 2
 
             return chi2
 
@@ -1249,7 +1249,7 @@ class ImageWindow(object):
         Perform an fft on the normalize image 
         '''
         im_shape = np.min(image.shape)
-        
+
         def __hamming(data):
             """
             Simple hamming filter
@@ -1258,53 +1258,53 @@ class ImageWindow(object):
             u_vec = np.linspace(0, 1, u)
             v_vec = np.linspace(0, 1, v)
             u_mat, v_mat = np.meshgrid(u_vec, v_vec, indexing='ij')
-            h_filter = np.multiply((1-np.cos(2*np.pi*u_mat)), (1-np.cos(2*np.pi*v_mat)))/4.0
-            
+            h_filter = np.multiply((1 - np.cos(2 * np.pi * u_mat)), (1 - np.cos(2 * np.pi * v_mat))) / 4.0
+
             return np.multiply(data, h_filter)
-        
-        im2 = image-np.mean(image)
+
+        im2 = image - np.mean(image)
         fim = np.fft.fftshift(np.fft.fft2(__hamming(im2)))
-        
-        imrange = np.arange(-im_shape/2, im_shape/2)
+
+        imrange = np.arange(-im_shape / 2, im_shape / 2)
         uu, vv = np.meshgrid(imrange, imrange)
-        
+
         '''
         Find max at each radial distance from the center
         '''
-        r_n = int(im_shape/4)
+        r_n = int(im_shape / 4)
         r_min = 0
-        r_max = im_shape/2
+        r_max = im_shape / 2
         r_vec = np.linspace(r_min, r_max, r_n, dtype=np.float32).transpose()
-        
-        r_mat = np.abs(uu+1j*vv)
-        
+
+        r_mat = np.abs(uu + 1j * vv)
+
         fimabs = np.abs(fim)
-        fimabs_max = np.zeros(r_n-1)
-        
-        for k in range(r_n-1):
+        fimabs_max = np.zeros(r_n - 1)
+
+        for k in range(r_n - 1):
             r1 = r_vec[k]
-            r2 = r_vec[k+1]
-            r_ind = np.where((r_mat >= r1) & (r_mat <= r2) == True)
+            r2 = r_vec[k + 1]
+            r_ind = np.where((r_mat >= r1) and (r_mat <= r2))
             fimabs_max[k] = np.max(fimabs[r_ind])
 
-        r_vec = r_vec[:-1] + (r_max-r_min)/(r_n-1.0)/2.0
-        
+        r_vec = r_vec[:-1] + (r_max - r_min) / (r_n - 1.0) / 2.0
+
         '''
         Find local maxima
         '''
         count = 0
         local_max = []
-        for k in range(1, fimabs_max.size-1):
-            if fimabs_max[k-1] < fimabs_max[k] and fimabs_max[k] > fimabs_max[k+1]:
+        for k in range(1, fimabs_max.size - 1):
+            if fimabs_max[k - 1] < fimabs_max[k] and fimabs_max[k] > fimabs_max[k + 1]:
                 count += 1
                 local_max.append(k)
-        
+
         '''
         Get points corresponding to local maxima
         '''
         r_loc_max_vec = r_vec[local_max]
         fimabs_loc_max_vec = fimabs_max[local_max]
-        
+
         '''
         Remove points below the radius of the tallest peak
         '''
@@ -1314,7 +1314,7 @@ class ImageWindow(object):
 
         '''
         Sort the peaks from largest to smallest
-        ''' 
+        '''
         sort_ind = np.argsort(fimabs_loc_max_vec)[::-1]
         fimabs_sort = fimabs_loc_max_vec[sort_ind]
         r_sort = r_loc_max_vec[sort_ind]
@@ -1330,9 +1330,9 @@ class ImageWindow(object):
 
             window_size = np.int(np.round(window_size * 2))
 
-            gauss_guess = (2*fimabs_sort[0], r_sort[0])
+            gauss_guess = (2 * fimabs_sort[0], r_sort[0])
 
-            psf_width = im_shape/gauss_guess[1]/np.pi
+            psf_width = im_shape / gauss_guess[1] / np.pi
 
             return window_size, psf_width
 
@@ -1341,11 +1341,11 @@ class ImageWindow(object):
         '''
         fimabs_sort = fimabs_sort[:num_peaks]
         r_sort = r_sort[:num_peaks]
-        
+
         '''
         Fit to a gaussian
         '''
-        gauss_guess = (2*np.max(fimabs_sort), r_sort[0])
+        gauss_guess = (2 * np.max(fimabs_sort), r_sort[0])
 
         fit_vec, pcov, info, errmsg, success = leastsq(__gauss_chi,
                                                        gauss_guess,
@@ -1353,7 +1353,7 @@ class ImageWindow(object):
                                                        full_output=1,
                                                        maxfev=250)
 
-        psf_width = im_shape/fit_vec[1]/np.pi
+        psf_width = im_shape / fit_vec[1] / np.pi
 
         if save_plots or show_plots:
             guess_vec = __gauss_fit(gauss_guess, r_vec)
@@ -1361,15 +1361,16 @@ class ImageWindow(object):
             self.__plot_window_fit(r_vec, r_sort, fimabs_max, fimabs_sort,
                                    guess_vec, fit_vec, save_plots, show_plots)
 
-        window_size = im_shape/(r_sort[0]+0.5)
+        window_size = im_shape / (r_sort[0] + 0.5)
 
         window_size = np.clip(window_size, 1, int(im_shape / 6.0))
 
-        window_size = np.int(np.round(window_size*2))
+        window_size = np.int(np.round(window_size * 2))
 
         return window_size, psf_width
 
-    def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit, save_plots=True, show_plots=False):
+    def __plot_window_fit(self, r_vec, r_sort, fft_absimage, fft_abssort, guess, fit,
+                          save_plots=True, show_plots=False):
         """
         Generate a plot showing the quality of the least-squares fit to the peaks of the FFT of the image
 
@@ -1401,7 +1402,7 @@ class ImageWindow(object):
         None
 
         """
-        
+
         fig = plt.figure(figsize=[8, 8], tight_layout=True)
         plt1, = plt.semilogy(r_vec, fft_absimage, label='magnitude')
         plt2, = plt.semilogy(r_sort, fft_abssort, 'ro', label='chosen peaks')
@@ -1416,18 +1417,19 @@ class ImageWindow(object):
         plt.legend(handles=[plt1, plt2, plt3, plt4])
 
         if save_plots:
-            folder,filename = os.path.split(self.hdf.path)
+            folder, filename = os.path.split(self.hdf.path)
             basename, junk = os.path.splitext(filename)
-            
+
             plotname = '_'.join([basename, 'window_fit'])
-            plotpath = os.path.join(folder, plotname+'.png')
-            
+            plotpath = os.path.join(folder, plotname + '.png')
+
             fig.savefig(plotpath, format='png')
-        
+
         if show_plots:
             plt.show(fig)
-            
+
         plt.close(fig)
+
 
 def radially_average_correlation(data_mat, num_r_bin):
     """
@@ -1480,7 +1482,7 @@ def radially_average_correlation(data_mat, num_r_bin):
 
     step = 1 / (num_r_bin * 1.0 - 1)
     for k, r_bin in enumerate(np.linspace(0, 1, num_r_bin)):
-        b = np.where((r_vec < r_bin + step) * (r_vec > r_bin) == True)[0]
+        b = np.where((r_vec < r_bin + step) and (r_vec > r_bin))[0]
 
         if b.size == 0:
             a_rad_avg_vec[k] = np.nan

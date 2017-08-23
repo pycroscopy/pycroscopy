@@ -19,7 +19,7 @@ class MicroData(object):
     """
     Generic class that is extended by the MicroDataGroup and MicroDataset objects
     """
-    
+
     def __init__(self, name, parent):
         '''
         Parameters
@@ -35,12 +35,14 @@ class MicroData(object):
         self.parent = parent
         self.indexed = False
 
+
 class MicroDataGroup(MicroData):
     """
     Holds data that will be converted to a h5.Group by io.ioHDF5
     Note that it can also hold information (e.g. attributes) of an h5.File.
     This is consistent with class hierarchy of HDF5, i.e. h5.File extends h5.Group.
     """
+
     def __init__(self, name, parent='/'):
         """
         Parameters
@@ -59,10 +61,10 @@ class MicroDataGroup(MicroData):
 
         if name != '':
             self.indexed = self.name[-1] == '_'
-        
+
         pass
-    
-    def addChildren(self, children): 
+
+    def addChildren(self, children):
         '''
         Adds Children to the class to make a tree structure.
         
@@ -77,14 +79,14 @@ class MicroDataGroup(MicroData):
         '''
         for child in children:
             if isinstance(child, MicroData):
-                child.parent = self.parent+self.name
+                child.parent = self.parent + self.name
                 self.children.append(child)
             else:
                 warn('Children must be of type MicroData.')
 
     def __str__(self):
         self.showTree()
-            
+
     def showTree(self):
         """
         Return the tree structure given by MicroDataGroup.
@@ -97,17 +99,18 @@ class MicroDataGroup(MicroData):
         -------
         None
         """
+
         def __tree(child, parent):
-            print(parent+'/'+child.name)
+            print(parent + '/' + child.name)
             if isinstance(child, MicroDataGroup):
                 for ch in child.children:
-                    __tree(ch, parent+'/'+child.name)
-        
+                    __tree(ch, parent + '/' + child.name)
+
         # print(self.parent+self.name)
         for child in self.children:
-            __tree(child, self.parent+self.name)
-                    
-    
+            __tree(child, self.parent + self.name)
+
+
 class MicroDataset(MicroData):
     """
     Holds data (i.e. numpy.ndarray) as well as instructions on writing, attributes, etc...
@@ -115,7 +118,7 @@ class MicroDataset(MicroData):
 
     Region references need to be specified using the 'labels' attribute. See example below    
     """
-    
+
     def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, resizable=False,
                  maxshape=None):
         """
@@ -156,11 +159,13 @@ class MicroDataset(MicroData):
             
         3. Initializing large primary datasets of known sizes :
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', data=[], maxshape=(1024,16384), dtype=np.float16, chunking=(1,16384), compression='gzip')
+        >>> ds_raw_data = MicroDataset('Raw_Data', data=[], maxshape=(1024,16384), dtype=np.float16,
+        >>>                            chunking=(1,16384), compression='gzip')
                     
         4. Intializing large datasets whose size is unknown in one or more dimensions:
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), chunking=(1,16384), resizable=True,compression='gzip')
+        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
+        >>>                            chunking=(1,16384), resizable=True,compression='gzip')
         """
 
         def _make_iterable(item):

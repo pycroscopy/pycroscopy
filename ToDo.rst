@@ -39,9 +39,20 @@ Short tutorials on how to use pycroscopy
 
 Longer examples (probably scientific workflows / pipelines)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*	Analysis
-  *	How to use Optimize
-*	Visualization
+Done:
+
+* Data formatting in pycroscopy
+* How to write a Translator
+* How to write (back) to H5
+* Spectral Unmixing with pycroscopy
+* Basic introduction to loading data in pycroscopy
+
+Pending:
+
+* Handling multidimensional (6D) datasets - work in progress
+* Visualizing data (interactively using widgets) - yet to begin
+* How to write your write your own parallel computing function using the (yet to be written) process module
+
 
 Rama's tutorial goal
 ~~~~~~~~~~~~~~~~~~~~
@@ -49,7 +60,7 @@ Rama's tutorial goal
 2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
 3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
 4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
-5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 3.
+5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 
 
 Documentation
 -------------
@@ -102,16 +113,23 @@ We have two kinds of large computational jobs and one kind of large I/O job:
 * Computation
    1. Machine learning and Statistics
    
-      1.1. Either use custom algorithms developed for BEAM
+      1.1. Use custom algorithms developed for BEAM
          * Advantage - Optimized (and tested) for various HPC environments
          * Disadvantages:
             * Need to integarate non-python code
             * We only have a handful of these. NOT future compatible            
-      1.2. Or continue using a single FAT node for these jobs
+      1.2. OR continue using a single FAT node for these jobs
          * Advantages:
             * No optimization required
             * Continue using the same scikit learn packages
          * Disadvantage - Is not optimized for HPC
+       1.3. OR use pbdR / write pbdPy (wrappers around pbdR)
+         * Advantages:
+            * Already optimized / mature project
+            * In-house project (good support) 
+         * Disadvantages:
+            * Dependant on pbdR for implementing new algorithms
+            
    2. Parallel parametric search - analyze subpackage and some user defined functions in processing. Can be extended using:
    
       * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency

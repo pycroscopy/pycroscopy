@@ -37,10 +37,11 @@ class Model(object):
     None
 
     """
+
     def __init__(self, h5_main, variables=['Frequency'], parallel=True):
         """
-        For now, we assume that the guess dataset has not been generated for this dataset but we will relax this requirement
-        after testing the basic components.
+        For now, we assume that the guess dataset has not been generated for this dataset but we will relax this
+        requirement after testing the basic components.
 
         """
         # Checking if dataset is "Main"
@@ -90,7 +91,7 @@ class Model(object):
         if self._maxCpus == 1:
             self._parallel = False
 
-        self._maxMemoryMB = getAvailableMem() / 1024**2 # in Mb
+        self._maxMemoryMB = getAvailableMem() / 1024 ** 2  # in Mb
 
         self._maxDataChunk = int(self._maxMemoryMB / self._maxCpus)
 
@@ -160,7 +161,6 @@ class Model(object):
             if verbose:
                 print('Finished reading all data!')
             self.data = None
-
 
     def _get_guess_chunk(self):
         """
@@ -252,11 +252,11 @@ class Model(object):
 
         """
         warn('Please override the _create_fit_datasets specific to your model')
-        self.fit = None # replace with actual h5 dataset
+        self.fit = None  # replace with actual h5 dataset
         pass
 
     def do_guess(self, processors=None, strategy='wavelet_peaks',
-                 options={"peak_widths": np.array([10, 200]), "peak_step":20}):
+                 options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
         """
 
         Parameters

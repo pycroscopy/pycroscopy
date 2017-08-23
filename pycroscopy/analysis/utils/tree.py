@@ -8,12 +8,14 @@ Created on Wed Aug 31 17:03:29 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 
+
 # TODO: Test and debug node and clusterTree classes for agglomerative clustering etc
 
 class Node(object):
     """
     Basic unit of a tree - a node. Keeps track of its value, labels, parent, children, level in the tree etc.
     """
+
     def __init__(self, name, value=None, parent=None, dist=0, labels=None, children=[], compute_mean=False,
                  verbose=False):
         """
@@ -75,7 +77,7 @@ class Node(object):
             self.num_nodes = 1
             if verbose:
                 print('Parent node:', str(name), 'has', str(self.num_nodes), 'children')
-        if all([len(self.children) > 0, type(value) == type(None), compute_mean]):
+        if all([len(self.children) > 0, value is None, compute_mean]):
             resp = []
             for child in children:
                 if verbose:
@@ -94,6 +96,7 @@ class ClusterTree(object):
     """
     Creates a tree representation from the provided linkage pairing. Useful for clustering
     """
+
     def __init__(self, linkage_pairing, labels, distances=None, centroids=None):
         """
         Parameters

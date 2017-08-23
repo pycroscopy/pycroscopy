@@ -269,7 +269,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     # Get the bias matrix:
     bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
-    bias_mat = np.transpose(bias_mat[spec_step_dim_ind], new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
+    bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
+                            new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
 
     # This is just the visualizer:
     sho_quantity = 'Amplitude [V]'
@@ -363,7 +364,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
     """
-    cmap=get_cmap_object(cmap)
+    cmap = get_cmap_object(cmap)
 
     h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
@@ -487,7 +488,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                      data.shape[0], 0],
                                              interpolation='none'))
-            axes[1].set_title('Phase');
+            axes[1].set_title('Phase')
             axes[0].set_xlabel('Frequency index')
             axes[1].set_xlabel('Frequency index')
             for axis in axes:

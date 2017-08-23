@@ -59,6 +59,7 @@ field_names = ['a_0', 'a_1', 'a_2', 'a_3', 'a_4', 'b_0', 'b_1', 'b_2', 'b_3', 'R
 loop_fit32 = np.dtype({'names': field_names,
                        'formats': [np.float32 for name in field_names]})
 
+
 class BELoopModel(Model):
     """
     Analysis of Band excitation loops using functional fits
@@ -425,7 +426,7 @@ class BELoopModel(Model):
         h5_loop_parm : h5py.Dataset
             Dataset of physical parameters
         """
-        dset_name = h5_loop_fit.name+'_Loop_Parameters'
+        dset_name = h5_loop_fit.name + '_Loop_Parameters'
         h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
                                                   dset_name=dset_name,
                                                   new_attrs={'nuc_threshold': nuc_threshold})
@@ -894,7 +895,7 @@ class BELoopModel(Model):
                                                  self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self.max_pos))
             self.data = self.h5_main[self._start_pos:self._end_pos, self._current_sho_spec_slice]
-        elif self._current_forc < self._num_forcs-1:
+        elif self._current_forc < self._num_forcs - 1:
             # Resest for next FORC
             self._current_forc += 1
 
@@ -927,7 +928,7 @@ class BELoopModel(Model):
                                                  self.sho_spec_inds_per_forc * (self._current_forc + 1))
             self._end_pos = int(min(self.h5_projected_loops.shape[0], self._start_pos + self.max_pos))
             self.data = self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice]
-        elif self._current_forc < self._num_forcs-1:
+        elif self._current_forc < self._num_forcs - 1:
             # Resest for next FORC
             self._current_forc += 1
 
@@ -945,7 +946,7 @@ class BELoopModel(Model):
             self.data = None
 
         guess = self.h5_guess[self._start_pos:self._end_pos,
-                              self._current_met_spec_slice].reshape([-1, 1])
+                self._current_met_spec_slice].reshape([-1, 1])
         self.guess = compound_to_scalar(guess)[:, :-1]
 
     def _create_guess_datasets(self):
@@ -1052,7 +1053,7 @@ class BELoopModel(Model):
             pix_inds = np.where(labels == clust_id)[0]
             temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
             # convert to the appropriate dtype as well:
-            r2 = 1-np.sum(np.abs(loop_fit_results[clust_id][0].fun**2))
+            r2 = 1 - np.sum(np.abs(loop_fit_results[clust_id][0].fun ** 2))
             guess_parms[pix_inds] = realToCompound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
 
         return guess_parms
@@ -1126,6 +1127,7 @@ class LoopOptimize(Optimize):
     """
     Subclass of Optimize with BE Loop specific changes 
     """
+
     def _initiateSolverAndObjFunc(self):
         if self.solver_type in scipy.optimize.__dict__.keys():
             solver = scipy.optimize.__dict__[self.solver_type]

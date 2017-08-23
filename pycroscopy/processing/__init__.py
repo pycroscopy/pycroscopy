@@ -33,13 +33,13 @@ from .cluster import Cluster
 from . import image_processing
 from .image_processing import ImageWindow
 from . import giv_utils
-
-def no_impl(*args,**kwargs):
-    raise NotImplementedError("You need to install Multiprocess package (pip,github) to do a parallel Computation.\n"
-                              "Switching to the serial version. ")
-
 from .feature_extraction import FeatureExtractorParallel, FeatureExtractorSerial
 from .image_transformation import geoTransformerParallel, geoTransformerSerial
+
+
+def no_impl(*args, **kwargs):
+    raise NotImplementedError("You need to install Multiprocess package (pip,github) to do a parallel Computation.\n"
+                              "Switching to the serial version. ")
 
 FeatureExtractor = FeatureExtractorSerial
 geoTransformer = geoTransformerSerial

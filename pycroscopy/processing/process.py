@@ -57,12 +57,12 @@ class Process(object):
             self._maxCpus = psutil.cpu_count() - 2
         else:
             self._maxCpus = 1
-        self._maxMemoryMB = psutil.virtual_memory().available / 1e6 # in MB
+        self._maxMemoryMB = psutil.virtual_memory().available / 1e6  # in MB
 
         self._maxDataChunk = self._maxMemoryMB / self._maxCpus
 
         # Now calculate the number of positions that can be stored in memory in one go.
-        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1]/1e6
+        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1e6
         self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
         print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
 
@@ -113,7 +113,8 @@ class Process(object):
         func
         strategy: string
             Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes'].
+            For updated list, run GuessMethods.methods
         options: dict
             Default {"peaks_widths": np.array([10,200])}}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
@@ -148,7 +149,7 @@ class Process(object):
                 # Reformat the data to the appropriate type and or do additional computation now
 
                 # Write to file
-                self._set_results(is_guess=True)
+                self._set_results()
                 # read the next chunk
                 self._get_data_chunk()
 
@@ -167,4 +168,3 @@ class Process(object):
         # reorder to get one numpy array out
         self.guess = np.hstack(tuple(results))
         print('Completed computing guess. Writing to file.')
-

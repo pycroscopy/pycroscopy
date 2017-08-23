@@ -281,7 +281,8 @@ class BESHOmodel(Model):
             Default None, output of psutil.cpu_count - 2 is used
         strategy: string
             Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run GuessMethods.methods
+            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes']. For updated list, run
+            GuessMethods.methods
         options: dict
             Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
@@ -428,7 +429,8 @@ class BESHOmodel(Model):
             sho_vec['Frequency [Hz]'] = self.freq_vec[peak_inds]  # Frequency
             sho_vec['Quality Factor'] = np.ones_like(comp_vals) * 10  # Quality factor
             # Add something here for the R^2
-            sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms) for sho_parms in sho_vec])
+            sho_vec['R2 Criterion'] = np.array([self.r_square(self.data, self._sho_func, self.freq_vec, sho_parms)
+                                                for sho_parms in sho_vec])
         elif strategy in ['complex_gaussian']:
             for iresult, result in enumerate(results):
                 sho_vec['Amplitude [V]'][iresult] = result[0]

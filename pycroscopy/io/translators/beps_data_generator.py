@@ -26,6 +26,7 @@ class FakeBEPSGenerator(Translator):
     """
 
     """
+
     # TODO: Add other cycle fractions
     # TODO: Add support for other VS_modes
     # TODO: Add support for other field modes
@@ -74,7 +75,7 @@ class FakeBEPSGenerator(Translator):
             images.append(image)
 
         self.N_x, self.N_y = image.shape
-        self.n_pixels = self.N_x*self.N_y
+        self.n_pixels = self.N_x * self.N_y
 
         return images
 
@@ -215,9 +216,9 @@ class FakeBEPSGenerator(Translator):
             self.n_fields = 2
         else:
             self.n_fields = 1
-        self.n_loops = FORC_cycles*FORC_repeats*n_cycles*self.n_fields
-        self.n_sho_bins = n_steps*self.n_loops
-        self.n_spec_bins = n_bins*self.n_sho_bins
+        self.n_loops = FORC_cycles * FORC_repeats * n_cycles * self.n_fields
+        self.n_sho_bins = n_steps * self.n_loops
+        self.n_spec_bins = n_bins * self.n_sho_bins
         self.h5_path = h5_path
         self.image_ext = image_type
 
@@ -238,7 +239,7 @@ class FakeBEPSGenerator(Translator):
 
         images = self._read_data(image_folder)
 
-        data_gen_parms = {'N_x': self.N_x, 'N_y':self.N_y, 'n_steps;:': n_steps,
+        data_gen_parms = {'N_x': self.N_x, 'N_y': self.N_y, 'n_steps;:': n_steps,
                           'n_bins': n_bins, 'start_freq': start_freq,
                           'end_freq': end_freq, 'n_cycles': n_cycles,
                           'forc_cycles': FORC_cycles, 'forc_repeats': FORC_repeats,
@@ -602,9 +603,9 @@ class FakeBEPSGenerator(Translator):
         of_inds = field == 0
         if_inds = field == 1
         # determine how many pixels can be read at once
-        mem_per_pix = vdc_vec.size*np.float32(0).itemsize
-        free_mem = self.max_ram-vdc_vec.size*vdc_vec.dtype.itemsize*6
-        batch_size = int(free_mem/mem_per_pix)
+        mem_per_pix = vdc_vec.size * np.float32(0).itemsize
+        free_mem = self.max_ram - vdc_vec.size * vdc_vec.dtype.itemsize * 6
+        batch_size = int(free_mem / mem_per_pix)
         batches = gen_batches(self.n_pixels, batch_size)
 
         for pix_batch in batches:
@@ -626,10 +627,14 @@ class FakeBEPSGenerator(Translator):
                                                                       np.ones_like(R_mat)]),
                                                            sho32)
 
-            self.h5_sho_guess[pix_batch, :] = realToCompound(np.hstack([amp*get_noise_vec(self.n_sho_bins, amp_noise),
-                                                                        resp*get_noise_vec(self.n_sho_bins, resp_noise),
-                                                                        q_val*get_noise_vec(self.n_sho_bins, q_noise),
-                                                                        phase*get_noise_vec(self.n_sho_bins, phase_noise),
+            self.h5_sho_guess[pix_batch, :] = realToCompound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
+                                                                                            amp_noise),
+                                                                        resp * get_noise_vec(self.n_sho_bins,
+                                                                                             resp_noise),
+                                                                        q_val * get_noise_vec(self.n_sho_bins,
+                                                                                              q_noise),
+                                                                        phase * get_noise_vec(self.n_sho_bins,
+                                                                                              phase_noise),
                                                                         np.ones_like(R_mat)]),
                                                              sho32)
 
@@ -644,9 +649,9 @@ class FakeBEPSGenerator(Translator):
         -------
 
         """
-        mem_per_pix = self.n_sho_bins*self.h5_sho_fit.dtype.itemsize+self.n_spec_bins*self.h5_raw.dtype.itemsize
+        mem_per_pix = self.n_sho_bins * self.h5_sho_fit.dtype.itemsize + self.n_spec_bins * self.h5_raw.dtype.itemsize
         free_mem = self.max_ram
-        batch_size = int(free_mem/mem_per_pix)
+        batch_size = int(free_mem / mem_per_pix)
         batches = gen_batches(self.n_pixels, batch_size)
 
         w_vec = self.h5_spec_vals[get_attr(self.h5_spec_vals, 'Frequency')].squeeze()

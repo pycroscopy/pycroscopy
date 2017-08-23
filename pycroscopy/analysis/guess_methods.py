@@ -21,6 +21,7 @@ class GuessMethods(object):
     input and return the guess parameters. The guess methods here use the keyword arguments to configure the returned
     function.
     """
+
     def __init__(self):
         self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes', 'complex_gaussian']
 
@@ -72,7 +73,7 @@ class GuessMethods(object):
             warn('Error: Please specify "peak_widths" kwarg to use this method')
 
     @staticmethod
-    def absolute_maximum( *args, **kwargs):
+    def absolute_maximum(*args, **kwargs):
         """
         Finds maximum in 1d-array
         Parameters
@@ -84,9 +85,11 @@ class GuessMethods(object):
         -------
         fastpeak: callable function
         """
+
         def fastpeak(vector):
             vec_max = np.argmax(vector)
             return vec_max
+
         return fastpeak
 
     @staticmethod

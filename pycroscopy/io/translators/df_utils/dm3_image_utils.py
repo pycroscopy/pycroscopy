@@ -119,7 +119,7 @@ def save_image(image, file):
     # doesn't work. Do we need a ImageSourceList too?
     # and a DocumentObjectList?
     image = ndarray_to_imagedatadict(image)
-    ret = {}
+    ret = dict()
     ret["ImageList"] = [{"ImageData": image}]
     # I think ImageSource list creates a mapping between ImageSourceIds and Images
     ret["ImageSourceList"] = [{"ClassName": "ImageSource:Simple", "Id": [0], "ImageRef": 0}]

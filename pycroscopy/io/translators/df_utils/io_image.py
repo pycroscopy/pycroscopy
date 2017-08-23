@@ -36,7 +36,7 @@ def read_image(image_path, *args, **kwargs):
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.dm3':
-        kwargs.pop('as_grey',None)
+        kwargs.pop('as_grey', None)
         return read_dm3(image_path, *args, **kwargs)
     elif ext == '.dm4':
         kwargs.pop('as_grey', None)
@@ -78,6 +78,7 @@ def read_dm3(image_path, get_parms=True):
 
     return image, image_parms
 
+
 def unnest_parm_dicts(image_parms, prefix=''):
     """
     Parses the nested image parameter dictionary and converts it to a single
@@ -96,7 +97,7 @@ def unnest_parm_dicts(image_parms, prefix=''):
     for name in image_parms.keys():
         val = image_parms[name]
         # print 'name',name,'val',val
-        name = '-'.join([prefix]+name.split()).strip('-')
+        name = '-'.join([prefix] + name.split()).strip('-')
         if isinstance(val, dict):
             new_parms.update(unnest_parm_dicts(val, name))
         elif isinstance(val, list) and isinstance(val[0], dict):
@@ -106,6 +107,7 @@ def unnest_parm_dicts(image_parms, prefix=''):
             new_parms[name] = try_tag_to_string(val)
 
     return new_parms
+
 
 def read_dm4(file_path, *args, **kwargs):
     """
@@ -153,6 +155,7 @@ def read_dm4(file_path, *args, **kwargs):
 
     return image_array, file_parms
 
+
 def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     """
     Recursive function to trace the dictionary tree of the Image Data
@@ -194,7 +197,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
             continue
         tag_name = '_'.join([base_name, name.replace(' ', '_')])
         if base_name == '':
-            tag_name = 'Root'+tag_name
+            tag_name = 'Root' + tag_name
         tag_data = dm4_file.read_tag_data(tag_dir.named_tags[name])
 
         '''
@@ -209,7 +212,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     for itag, tag in enumerate(tag_dir.unnamed_tags):
         tag_name = '_'.join([base_name, 'Tag_{:03d}'.format(itag)])
         if base_name == '':
-            tag_name = 'Root'+tag_name
+            tag_name = 'Root' + tag_name
 
         tag_data = dm4_file.read_tag_data(tag)
 
@@ -226,7 +229,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
         dir_name = '_'.join([base_name, name.replace(' ', '_')])
         sub_dir = tag_dir.named_subdirs[name]
         if base_name == '':
-            dir_name = 'Root'+dir_name
+            dir_name = 'Root' + dir_name
         sub_parms = parse_dm4_parms(dm4_file, sub_dir, dir_name)
         parm_dict.update(sub_parms)
 
@@ -236,7 +239,7 @@ def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
     for idir, sub_dir in enumerate(tag_dir.unnamed_subdirs):
         dir_name = '_'.join([base_name, 'SubDir_{:03d}'.format(idir)])
         if base_name == '':
-            dir_name = 'Root'+dir_name
+            dir_name = 'Root' + dir_name
         sub_parms = parse_dm4_parms(dm4_file, sub_dir, dir_name)
         parm_dict.update(sub_parms)
 
