@@ -55,6 +55,7 @@ class BEPSndfTranslator(Translator):
 
         """
         # Read the parameter files
+        self.debug = debug
         if debug:
             print('BEndfTranslator: Getting file paths')
 
@@ -313,7 +314,7 @@ class BEPSndfTranslator(Translator):
                            max_mem_mb=self.max_ram,
                            spec_label=self.spec_label,
                            show_plots=show_plots, save_plots=save_plots,
-                           do_histogram=do_histogram)
+                           do_histogram=do_histogram, debug=self.debug)
 
         # Now that everything about this dataset is complete:
         self.dset_index += 1
