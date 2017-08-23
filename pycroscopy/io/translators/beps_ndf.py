@@ -55,6 +55,7 @@ class BEPSndfTranslator(Translator):
 
         """
         # Read the parameter files
+        self.debug = debug
         if debug:
             print('BEndfTranslator: Getting file paths')
 
@@ -313,7 +314,7 @@ class BEPSndfTranslator(Translator):
                            max_mem_mb=self.max_ram,
                            spec_label=self.spec_label,
                            show_plots=show_plots, save_plots=save_plots,
-                           do_histogram=do_histogram)
+                           do_histogram=do_histogram, debug=self.debug)
 
         # Now that everything about this dataset is complete:
         self.dset_index += 1
@@ -453,7 +454,7 @@ class BEPSndfTranslator(Translator):
         
         Chris Smith -- csmith55@utk.edu
         '''
-        max_bins_per_pixel = np.max(pixel_bins.values())
+        max_bins_per_pixel = np.max(list(pixel_bins.values()))
 
         beps_chunks = calc_chunks([num_pix, tot_pts],
                                   np.complex64(0).itemsize,
