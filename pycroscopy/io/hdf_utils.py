@@ -1535,3 +1535,55 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
         ds_spec_inds_mat[change_sort, jcol] = indices
 
     return ds_spec_inds_mat
+
+
+def get_unit_values(h5_spec_ind, h5_spec_val, dim_names=None):
+    """
+    Gets the unit arrays of values that describe the spectroscopic dimensions
+
+    Parameters
+    ----------
+    h5_spec_ind : h5py.Dataset
+        Spectroscopic Indices dataset
+    h5_spec_val : h5py.Dataset
+        Spectroscopic Values dataset
+    dim_names : str, or list of str, Optional
+        Names of the dimensions of interest
+
+    Note - this function can be extended / modified for ancillary position dimensions as well
+
+    Returns
+    -------
+    unit_values : dict
+        Dictionary containing the unit array for each dimension. The name of the dimensions are the keys.
+
+    """
+    # For all dimensions, find where the index = 0
+    # basically, we are indexing all dimensions to 0
+    first_indices = []
+    for dim_ind in range(h5_spec_ind.shape[0]):
+        first_indices.append(h5_spec_ind[dim_ind] == 0)
+    first_indices = np.vstack(first_indices)
+
+    spec_dim_names = get_attr(h5_spec_ind, 'labels')
+    if dim_names is None:
+        dim_names = spec_dim_names
+    elif not isinstance(dim_names, list):
+        dim_names = [dim_names]
+
+    unit_values = dict()
+    for dim_name in dim_names:
+        # Find the row in the spectroscopic indices that corresponds to the dimensions we want to slice:
+        desired_row_ind = np.where(spec_dim_names == dim_name)[0][0]
+
+        # Find indices of all other dimensions
+        remaining_dims = list(range(h5_spec_ind.shape[0]))
+        remaining_dims.remove(desired_row_ind)
+
+        # The intersection of all these indices should give the desired index for the desired row
+        intersections = np.all(first_indices[remaining_dims, :], axis=0)
+
+        # apply this slicing to the values dataset:
+        unit_values[dim_name] = h5_spec_val[desired_row_ind, intersections]
+
+    return unit_values
