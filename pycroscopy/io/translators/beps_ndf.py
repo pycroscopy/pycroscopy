@@ -453,7 +453,7 @@ class BEPSndfTranslator(Translator):
         
         Chris Smith -- csmith55@utk.edu
         '''
-        max_bins_per_pixel = np.max(pixel_bins.values())
+        max_bins_per_pixel = np.max(list(pixel_bins.values()))
 
         beps_chunks = calc_chunks([num_pix, tot_pts],
                                   np.complex64(0).itemsize,
