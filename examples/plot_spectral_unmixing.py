@@ -1,6 +1,6 @@
 """
 =================================================================
-Basic data analysis - Spectral Unmixing, KMeans, PCA, NFINDR etc.
+Spectral Unmixing
 =================================================================
 
 R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`
