@@ -136,7 +136,12 @@ def noiseBandFilter(num_pts, samp_rate, freqs, freq_widths, show_plots=False):
         Target frequencies as unsigned ints    
     freq_widths : 1D array or list
         Width around the target frequency that should be set to 0\n    
-    Note: sampRate, freqs, freq_widths have same units - eg MHz
+    show_plots : bool
+        If True, plots will be displayed during calculation.  Default False
+
+    Note
+    ----
+    sampRate, freqs, freq_widths have same units - eg MHz
     
     Returns
     -------

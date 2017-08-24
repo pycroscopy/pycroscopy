@@ -28,6 +28,7 @@ class Fit_Methods(object):
 
         Parameters
         -----------
+        freq_vector : numpy.ndarray
         args : list or tuple
             SHO parameters=(Amp,w0,Q,phi,vector). vector: 1D np.array of frequency values.
             Amp: amplitude.

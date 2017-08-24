@@ -39,6 +39,8 @@ def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_re
     func : function
         function to be used to bin data_vec.  All functions should take as input data_vec.
         Arguments should be passed properly to func.  This has not been heavily tested.
+    debug : bool, optional
+        If True, extra debugging statements are printed.  Default False
 
     Returns
     -------

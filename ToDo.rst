@@ -46,11 +46,11 @@ Done:
 * How to write (back) to H5
 * Spectral Unmixing with pycroscopy
 * Basic introduction to loading data in pycroscopy
+* Handling multidimensional (6D) datasets
+* Visualizing data (interactively using widgets) (needs some tiny automation in the end)
 
 Pending:
 
-* Handling multidimensional (6D) datasets - work in progress
-* Visualizing data (interactively using widgets) - yet to begin
 * How to write your write your own parallel computing function using the (yet to be written) process module
 
 

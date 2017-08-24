@@ -11,7 +11,7 @@ def apply_select_channel(file_in_h5, img_num, channel_num):
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
     image_path = "/Frame_%04i/Channel_%02i" % (img_num, channel_num)
-    image_path = "%s/Raw_Data" % (image_path)
+    image_path = "%s/Raw_Data" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -34,14 +34,14 @@ def apply_select_channel(file_in_h5, img_num, channel_num):
     posi_ind = main_h5_handle[pos_i_ref]
     posi_ind = posi_ind[pos_i_reg]
 
-    image_path = "/Frame_%04i/Channel_Current/Filter_Step_0000" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current/Filter_Step_0000" % img_num
 
     try:
         main_h5_handle.__delitem__(image_path)
     except:
         temp = 1
 
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path] = img2
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -59,12 +59,12 @@ def apply_select_channel(file_in_h5, img_num, channel_num):
     h5_new_attrs["Parent"] = current_ref
     h5_new_attrs["Parent_Region"] = current_reg
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
 
     path_main = main_h5_handle.get(image_path)
     path_attrs = path_main
 
-    channel_name = "Channel_%02i" % (channel_num)
+    channel_name = "Channel_%02i" % channel_num
     path_main = main_h5_handle.get(image_path)
     path_attrs = path_main.attrs
     path_attrs["Origin"] = current_ref
@@ -80,10 +80,10 @@ def apply_wiener_filter(file_in_h5, img_num, filter_num):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -143,7 +143,7 @@ def apply_wiener_filter(file_in_h5, img_num, filter_num):
     img = abs(img)
     img = np.real(img)
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 2):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -152,7 +152,7 @@ def apply_wiener_filter(file_in_h5, img_num, filter_num):
     except:
         temp = 1
 
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path] = img
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -180,10 +180,10 @@ def apply_gaussian_corr_filter(file_in_h5, img_num, filter_num, gauss_width, gau
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -227,7 +227,7 @@ def apply_gaussian_corr_filter(file_in_h5, img_num, filter_num, gauss_width, gau
                                k2 + y_min:k2 + y_max + 1].reshape([1, gaus.size]))
             new_deconv[k1, k2] = temp[0, 1]
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 2):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -236,7 +236,7 @@ def apply_gaussian_corr_filter(file_in_h5, img_num, filter_num, gauss_width, gau
     except:
         temp = 1
 
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path] = new_deconv
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -276,9 +276,9 @@ def fun_2d_gaussian(x, y, parm):
 
     ang = np.double(parm[5])
 
-    a = ((np.cos(ang) ** 2) / (2 * (x_wid) ** 2)) + ((np.sin(ang) ** 2) / (2 * (y_wid) ** 2))
-    b = -((np.sin(2 * ang)) / (4 * (x_wid) ** 2)) + ((np.sin(2 * ang)) / (4 * (y_wid) ** 2))
-    c = ((np.sin(ang) ** 2) / (2 * (x_wid) ** 2)) + ((np.cos(ang) ** 2) / (2 * (y_wid) ** 2))
+    a = ((np.cos(ang) ** 2) / (2 * x_wid ** 2)) + ((np.sin(ang) ** 2) / (2 * y_wid ** 2))
+    b = -((np.sin(2 * ang)) / (4 * x_wid ** 2)) + ((np.sin(2 * ang)) / (4 * y_wid ** 2))
+    c = ((np.sin(ang) ** 2) / (2 * x_wid ** 2)) + ((np.cos(ang) ** 2) / (2 * y_wid ** 2))
 
     gaussian = amp * (
         np.exp(-((a * (x - x_cent) ** 2) + (2 * b * (x - x_cent) * (y - y_cent)) + (c * (y - y_cent) ** 2))))
@@ -291,10 +291,10 @@ def apply_invert_filter(file_in_h5, img_num, filter_num):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -316,7 +316,7 @@ def apply_invert_filter(file_in_h5, img_num, filter_num):
     img = -img
     img = img + m_img
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 2):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -326,7 +326,7 @@ def apply_invert_filter(file_in_h5, img_num, filter_num):
     except:
         temp = 1
 
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path] = img
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -344,7 +344,7 @@ def apply_invert_filter(file_in_h5, img_num, filter_num):
     h5_new_attrs["Parent"] = current_ref
     h5_new_attrs["Parent_Region"] = current_reg
 
-    main_h5_handle.close
+    main_h5_handle.close()
 
     return 1
 
@@ -353,7 +353,7 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
     import numpy as np
     import h5py as h5
 
-    image_path = "/Frame_%04i/Filtered_Data/Stack_0000" % (img_num)
+    image_path = "/Frame_%04i/Filtered_Data/Stack_0000" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -369,9 +369,11 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
     for k1 in range(-filter_width, filter_width + 1):
         for k2 in range(-filter_width, filter_width + 1):
             mat_large[filter_width - k1:-(filter_width + k1) - 1,
-            filter_width - k2:-(filter_width + k2) - 1] = np.minimum(mat_large[filter_width - k1:-filter_width - k1 - 1,
-                                                                     filter_width - k2:-filter_width - k2 - 1],
-                                                                     h5_image)
+                      filter_width - k2:-(filter_width + k2) - 1] = np.minimum(mat_large[filter_width - k1:
+                                                                                         -filter_width - k1 - 1,
+                                                                                         filter_width - k2:
+                                                                                         -filter_width - k2 - 1],
+                                                                                h5_image)
 
     deconv_mat_temp = mat_large[filter_width:len(mat_larg[1, :]) - filter_width,
                       filter_width:len(mat_larg[:, 1]) - filter_width]
@@ -385,10 +387,10 @@ def apply_binarization_filter(file_in_h5, img_num, filter_num):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -428,7 +430,7 @@ def apply_binarization_filter(file_in_h5, img_num, filter_num):
         time_out[x] = r
         time_out_i[x] = x + 1
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 2):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -437,7 +439,7 @@ def apply_binarization_filter(file_in_h5, img_num, filter_num):
     except:
         temp = 1
 
-    image_path_f = "%s/Filtered_Image" % (image_path)
+    image_path_f = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path_f] = img
     h5_image_new = main_h5_handle.get(image_path_f)
     h5_new_attrs = h5_image_new.attrs
@@ -455,19 +457,19 @@ def apply_binarization_filter(file_in_h5, img_num, filter_num):
     h5_new_attrs["Parent"] = current_ref
     h5_new_attrs["Parent_Region"] = current_reg
 
-    image_path_sv = "%s/Spectroscopic_Values" % (image_path)
+    image_path_sv = "%s/Spectroscopic_Values" % image_path
     main_h5_handle[image_path_sv] = time_out
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_sv_ref = h5_image_new.ref
     new_sv_reg = h5_image_new.regionref[0:len(time_out)]
 
-    image_path_si = "%s/Spectroscopic_Indices" % (image_path)
+    image_path_si = "%s/Spectroscopic_Indices" % image_path
     main_h5_handle[image_path_si] = time_out_i
     h5_image_new = main_h5_handle.get(image_path_si)
     new_si_ref = h5_image_new.ref
     new_si_reg = h5_image_new.regionref[0:len(time_out)]
 
-    image_path_b = "%s/Binary_Matrix" % (image_path)
+    image_path_b = "%s/Binary_Matrix" % image_path
     main_h5_handle[image_path_b] = filter_img
     h5_image_new = main_h5_handle.get(image_path_b)
     h5_new_attrs = h5_image_new.attrs
@@ -495,10 +497,10 @@ def apply_binarization_filter_select(file_in_h5, img_num, filter_num, threshold)
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -532,7 +534,7 @@ def apply_binarization_filter_select(file_in_h5, img_num, filter_num, threshold)
     temp[img > (i_min + (i_diff * r))] = 1
     filter_img = temp[:, 0]
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 2):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
@@ -541,7 +543,7 @@ def apply_binarization_filter_select(file_in_h5, img_num, filter_num, threshold)
     except:
         temp = 1
 
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
     main_h5_handle[image_path] = filter_img
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -571,10 +573,10 @@ def cluster_into_atomic_columns(file_in_h5, img_num, filter_num, dist_val):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for ifilt in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, ifilt)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -604,8 +606,8 @@ def cluster_into_atomic_columns(file_in_h5, img_num, filter_num, dist_val):
 
     centers = cluster_2d_oleg_return_geo_center(img, dist_val)
 
-    image_path_org = "/Frame_%04i/Channel_Current" % (img_num)
-    image_path_new = "/Frame_%04i/Channel_Finished" % (img_num)
+    image_path_org = "/Frame_%04i/Channel_Current" % img_num
+    image_path_new = "/Frame_%04i/Channel_Finished" % img_num
 
     try:
         main_h5_handle.__delitem__(image_path_new)
@@ -627,8 +629,8 @@ def cluster_into_atomic_columns(file_in_h5, img_num, filter_num, dist_val):
     for ifilt in range(0, filter_num + 1):
         image_path_org = "%s/Filter_Step_%04i" % (image_path_org, ifilt)
         image_path_new = "%s/Filter_Step_%04i" % (image_path_new, ifilt)
-        image_path_org_temp = "%s/Filtered_Image" % (image_path_org)
-        image_path_new_temp = "%s/Filtered_Image" % (image_path_new)
+        image_path_org_temp = "%s/Filtered_Image" % image_path_org
+        image_path_new_temp = "%s/Filtered_Image" % image_path_new
 
         h5_image_old = main_h5_handle.get(image_path_org_temp)
         img_old = np.empty(h5_image_old.shape, dtype=h5_image_old.dtype)
@@ -652,10 +654,10 @@ def cluster_into_atomic_columns(file_in_h5, img_num, filter_num, dist_val):
         h5_new_attrs["Number_Of_Variables"] = number_var
 
         for ivar in range(1, number_var + 1):
-            var_name = h5_image_old.attrs.get("Variable_%01i_Name" % (ivar))
-            var_value = h5_image_old.attrs.get("Variable_%01i_Value" % (ivar))
-            h5_new_attrs["Variable_%01i_Name" % (ivar)] = var_name
-            h5_new_attrs["Variable_%01i_Value" % (ivar)] = var_value
+            var_name = h5_image_old.attrs.get("Variable_%01i_Name" % ivar)
+            var_value = h5_image_old.attrs.get("Variable_%01i_Value" % ivar)
+            h5_new_attrs["Variable_%01i_Name" % ivar] = var_name
+            h5_new_attrs["Variable_%01i_Value" % ivar] = var_value
 
         h5_new_attrs["Spectroscopic_Indices"] = sec_i_ref
         h5_new_attrs["Spectroscopic_Indices_Region"] = sec_i_reg
@@ -671,7 +673,7 @@ def cluster_into_atomic_columns(file_in_h5, img_num, filter_num, dist_val):
         parrent_ref = h5_image_new.ref
         parrent_reg = h5_image_new.regionref[0:len(img_old)]
 
-    image_path = "%s/Lattice/Positions" % (image_path_new)
+    image_path = "%s/Lattice/Positions" % image_path_new
     main_h5_handle[image_path] = centers
     h5_image_new = main_h5_handle.get(image_path)
     h5_new_attrs = h5_image_new.attrs
@@ -693,12 +695,12 @@ def cluster_2d_oleg(mat_in, dist_val):
     to_cluster = np.argwhere(mat_in)
     to_cluster = to_cluster.tolist()
 
-    while (len(to_cluster) > 0):
+    while len(to_cluster) > 0:
         clust = []
         final_clust = []
         clust.append(to_cluster[0])
         to_cluster.remove(to_cluster[0])
-        while ((len(clust) > 0) & (len(to_cluster) > 0)):
+        while (len(clust) > 0) & (len(to_cluster) > 0):
             tt[0] = 5000.0 * dist_val
             tt[1] = len(to_cluster)
             t1 = min(tt)
@@ -713,8 +715,8 @@ def cluster_2d_oleg(mat_in, dist_val):
             final_clust.append(clust[0])
             clust.remove(clust[0])
 
-        if (len(clust) > 0):
-            while (len(clust) < 0):
+        if len(clust) > 0:
+            while len(clust) < 0:
                 final_clust.append(clust[0])
                 clust.remove(clust[0])
 
@@ -731,12 +733,12 @@ def cluster_2d_oleg_return_geo_center(mat_in, dist_val):
     to_cluster = np.argwhere(mat_in)
     to_cluster = to_cluster.tolist()
 
-    while (len(to_cluster) > 0):
+    while len(to_cluster) > 0:
         clust = []
         final_clust = []
         clust.append(to_cluster[0])
         to_cluster.remove(to_cluster[0])
-        while ((len(clust) > 0) & (len(to_cluster) > 0)):
+        while (len(clust) > 0) & (len(to_cluster) > 0):
             tt[0] = 5000.0 * dist_val
             tt[1] = len(to_cluster)
             t1 = min(tt)
@@ -751,12 +753,12 @@ def cluster_2d_oleg_return_geo_center(mat_in, dist_val):
             final_clust.append(clust[0])
             clust.remove(clust[0])
 
-        if (len(clust) > 0):
-            while (len(clust) < 0):
+        if len(clust) > 0:
+            while len(clust) < 0:
                 final_clust.append(clust[0])
                 clust.remove(clust[0])
 
-        if (len(final_clust) > 2):
+        if len(final_clust) > 2:
             clusters.append(np.mean(final_clust, 0))
 
     clusters = np.array(clusters)
@@ -770,10 +772,10 @@ def return_img(file_in_h5, img_num, filter_num):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -808,20 +810,20 @@ def return_pos(file_in_h5, img_num):
     import h5py as h5
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Finished" % (img_num)
+    image_path = "/Frame_%04i/Channel_Finished" % img_num
     type_ref = type(main_h5_handle.get(image_path))
     temp = 1
-    x = -1;
+    x = -1
     while temp:
         x = x + 1
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-        image_temp = "%s/Lattice" % (image_path)
+        image_temp = "%s/Lattice" % image_path
         temp_loc = main_h5_handle.get(image_temp)
         if type(temp_loc) == type_ref:
             temp = 0
 
     image_path = image_temp
-    image_path = "%s/Positions" % (image_path)
+    image_path = "%s/Positions" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     pos = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -836,20 +838,20 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
     from scipy import linalg
 
     main_h5_handle = h5.File(file_in_h5, 'r+')
-    image_path = "/Frame_%04i/Channel_Finished" % (img_num)
+    image_path = "/Frame_%04i/Channel_Finished" % img_num
     type_ref = type(main_h5_handle.get(image_path))
     temp = 1
     x = -1
     while temp:
         x = x + 1
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
-        image_temp = "%s/Lattice" % (image_path)
+        image_temp = "%s/Lattice" % image_path
         temp_loc = main_h5_handle.get(image_temp)
         if type(temp_loc) == type_ref:
             temp = 0
 
     pos_path = image_temp
-    image_path = "%s/Positions" % (pos_path)
+    image_path = "%s/Positions" % pos_path
 
     h5_image = main_h5_handle.get(image_path)
     pos = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -857,9 +859,9 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
     current_ref = h5_image.ref
     current_reg = h5_image.regionref[0:len(pos), 0:len(pos[0])]
 
-    image_path = "/Frame_%04i/Channel_Current" % (img_num)
+    image_path = "/Frame_%04i/Channel_Current" % img_num
     image_path = "%s/Filter_Step_%04i" % (image_path, 0)
-    image_path = "%s/Filtered_Image" % (image_path)
+    image_path = "%s/Filtered_Image" % image_path
 
     h5_image = main_h5_handle.get(image_path)
     img2 = np.empty(h5_image.shape, dtype=h5_image.dtype)
@@ -890,7 +892,7 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
                         box_width <= pos[k1, 1].round() <= len(img[0, :]) - box_width):
             sel_vec[k1] = 1
             new_pos.append(pos[k1, :])
-            vector = img[pos[k1, 0] - box_width:pos[k1, 0] + box_width, pos[k1, 1] - box_width:pos[k1, 1] + box_width];
+            vector = img[pos[k1, 0] - box_width:pos[k1, 0] + box_width, pos[k1, 1] - box_width:pos[k1, 1] + box_width]
             img_vectors.append(vector.reshape([(box_width * 2) ** 2]))
 
     new_pos = array(new_pos)
@@ -917,31 +919,31 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
     xy = [xx, yy]
     U = np.reshape(U, [1, len(U) * len(U[0])])
 
-    image_path_sv = "%s/Spectroscopic_Values_01" % (image_path)
+    image_path_sv = "%s/Spectroscopic_Values_01" % image_path
     main_h5_handle[image_path_sv] = [1]
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_sv_ref = h5_image_new.ref
     new_sv_reg = h5_image_new.regionref[0]
 
-    image_path_si = "%s/Spectroscopic_Indices_01" % (image_path)
+    image_path_si = "%s/Spectroscopic_Indices_01" % image_path
     main_h5_handle[image_path_si] = [1]
     h5_image_new = main_h5_handle.get(image_path_si)
     new_si_ref = h5_image_new.ref
     new_si_reg = h5_image_new.regionref[0]
 
-    image_path_sv = "%s/Position_Values_01" % (image_path)
+    image_path_sv = "%s/Position_Values_01" % image_path
     main_h5_handle[image_path_sv] = xy
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_pv_ref = h5_image_new.ref
     new_pv_reg = h5_image_new.regionref[0:1, 0:len(xy[0])]
 
-    image_path_si = "%s/Position_Indices_01" % (image_path)
+    image_path_si = "%s/Position_Indices_01" % image_path
     main_h5_handle[image_path_si] = xy
     h5_image_new = main_h5_handle.get(image_path_si)
     new_pi_ref = h5_image_new.ref
     new_pi_reg = h5_image_new.regionref[0:1, 0:len(xy[0])]
 
-    image_path_b = "%s/Analysis_Data_01_U" % (image_path)
+    image_path_b = "%s/Analysis_Data_01_U" % image_path
     main_h5_handle[image_path_b] = U
     h5_image_new = main_h5_handle.get(image_path_b)
     h5_new_attrs = h5_image_new.attrs
@@ -963,31 +965,31 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
 
     [xy] = np.meshgrid(range(1, len(S) + 1))
 
-    image_path_sv = "%s/Spectroscopic_Values_02" % (image_path)
+    image_path_sv = "%s/Spectroscopic_Values_02" % image_path
     main_h5_handle[image_path_sv] = [1]
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_sv_ref = h5_image_new.ref
     new_sv_reg = h5_image_new.regionref[0]
 
-    image_path_si = "%s/Spectroscopic_Indices_02" % (image_path)
+    image_path_si = "%s/Spectroscopic_Indices_02" % image_path
     main_h5_handle[image_path_si] = [1]
     h5_image_new = main_h5_handle.get(image_path_si)
     new_si_ref = h5_image_new.ref
     new_si_reg = h5_image_new.regionref[0]
 
-    image_path_sv = "%s/Position_Values_02" % (image_path)
+    image_path_sv = "%s/Position_Values_02" % image_path
     main_h5_handle[image_path_sv] = xy
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_pv_ref = h5_image_new.ref
     new_pv_reg = h5_image_new.regionref[0:len(xy)]
 
-    image_path_si = "%s/Position_Indices_02" % (image_path)
+    image_path_si = "%s/Position_Indices_02" % image_path
     main_h5_handle[image_path_si] = xy
     h5_image_new = main_h5_handle.get(image_path_si)
     new_pi_ref = h5_image_new.ref
     new_pi_reg = h5_image_new.regionref[0:len(xy)]
 
-    image_path_b = "%s/Analysis_Data_02_S" % (image_path)
+    image_path_b = "%s/Analysis_Data_02_S" % image_path
     main_h5_handle[image_path_b] = S
     h5_image_new = main_h5_handle.get(image_path_b)
     h5_new_attrs = h5_image_new.attrs
@@ -1013,31 +1015,31 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
     xy = [xx, yy]
     V = np.reshape(U, [1, len(U) * len(U[0])])
 
-    image_path_sv = "%s/Spectroscopic_Values_03" % (image_path)
+    image_path_sv = "%s/Spectroscopic_Values_03" % image_path
     main_h5_handle[image_path_sv] = [1]
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_sv_ref = h5_image_new.ref
     new_sv_reg = h5_image_new.regionref[0]
 
-    image_path_si = "%s/Spectroscopic_Indices_03" % (image_path)
+    image_path_si = "%s/Spectroscopic_Indices_03" % image_path
     main_h5_handle[image_path_si] = [1]
     h5_image_new = main_h5_handle.get(image_path_si)
     new_si_ref = h5_image_new.ref
     new_si_reg = h5_image_new.regionref[0]
 
-    image_path_sv = "%s/Position_Values_03" % (image_path)
+    image_path_sv = "%s/Position_Values_03" % image_path
     main_h5_handle[image_path_sv] = xy
     h5_image_new = main_h5_handle.get(image_path_sv)
     new_pv_ref = h5_image_new.ref
     new_pv_reg = h5_image_new.regionref[0:1, 0:len(xy[0])]
 
-    image_path_si = "%s/Position_Indices_03" % (image_path)
+    image_path_si = "%s/Position_Indices_03" % image_path
     main_h5_handle[image_path_si] = xy
     h5_image_new = main_h5_handle.get(image_path_si)
     new_pi_ref = h5_image_new.ref
     new_pi_reg = h5_image_new.regionref[0:1, 0:len(xy[0])]
 
-    image_path_b = "%s/Analysis_Data_03_V" % (image_path)
+    image_path_b = "%s/Analysis_Data_03_V" % image_path
     main_h5_handle[image_path_b] = V1
     h5_image_new = main_h5_handle.get(image_path_b)
     h5_new_attrs = h5_image_new.attrs

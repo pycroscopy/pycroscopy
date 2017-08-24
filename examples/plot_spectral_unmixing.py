@@ -78,82 +78,44 @@ import pycroscopy as px
 # ==========================================
 # We will begin by downloading the data file from Github, followed by reshaping and decimation of the dataset
 
+data_file_path = 'temp_um.h5'
 # download the data file from Github:
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/NanoIR.txt'
-data_file_path = 'temp.txt'
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 _ = wget.download(url, data_file_path, bar=None)
-#data_file_path = px.io.uiGetFile(filter='Anasys NanoIR text export (*.txt)')
 
-# Load the data from file to memory
-data_mat = np.loadtxt(data_file_path, delimiter ='\t', skiprows =1 )
-print('Data currently of shape:', data_mat.shape)
+hdf = px.ioHDF5(data_file_path)
+h5_file = hdf.file
 
-# Only every fifth column is of interest (position)
-data_mat =  data_mat[:, 1::5]
-
-# The data is structured as [wavelength, position]
-
-# nans cannot be handled in most of these decompositions. So set them to be zero.
-data_mat[np.isnan(data_mat)]=0
-
-# Finally, taking the transpose of the matrix to match [position, wavelength]
-data_mat = data_mat.T
-
-num_pos = data_mat.shape[0]
-spec_pts = data_mat.shape[1]
-print('Data currently of shape:', data_mat.shape)
-
-x_label = 'Spectral dimension'
-y_label = 'Intensity (a.u.)'
-
-#####################################################################################
-# Convert to H5
-# =============
-# Now we will take our numpy array holding the data and use the NumpyTranslator in pycroscopy to
-# write it to an h5 file.
-
-folder_path, file_name = os.path.split(data_file_path)
-file_name = file_name[:-4] + '_'
-
-h5_path = os.path.join(folder_path, file_name + '.h5')
-
-# Use NumpyTranslator to convert the data to h5
-tran = px.io.NumpyTranslator()
-h5_path = tran.translate(h5_path, data_mat, num_pos, 1, scan_height=spec_pts, scan_width=1,
-                         qty_name='Intensity', data_unit='a.u', spec_name=x_label,
-                         spatial_unit='a.u.', data_type='NanoIR')
-
-h5_file = h5py.File(h5_path, mode='r+')
-# See if a tree has been created within the hdf5 file:
+print('Contents of data file:')
+print('----------------------')
 px.hdf_utils.print_tree(h5_file)
+print('----------------------')
 
-#####################################################################################
-# Extracting the data and parameters
-# ==================================
-# All necessary information to understand, plot, analyze, and process the data is present in the H5 file now. Here, we show how to extract some basic parameters to plot the data
+h5_meas_grp = h5_file['Measurement_000']
 
-h5_main = h5_file['Measurement_000/Channel_000/Raw_Data']
-h5_spec_vals = px.hdf_utils.getAuxData(h5_main,'Spectroscopic_Values')[0]
-h5_pos_vals = px.hdf_utils.getAuxData(h5_main,'Position_Values')[0]
-x_label = px.hdf_utils.get_formatted_labels(h5_spec_vals)[0]
-y_label = px.hdf_utils.get_formatted_labels(h5_pos_vals)[0]
-descriptor = px.hdf_utils.get_data_descriptor(h5_main)
+# Extracting some basic parameters:
+num_rows = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_rows')
+num_cols = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_cols')
+
+# Getting a reference to the main dataset:
+h5_main = h5_meas_grp['Channel_000/Raw_Data']
+
+# Extracting the X axis - vector of frequencies
+h5_spec_vals = px.hdf_utils.getAuxData(h5_main,'Spectroscopic_Values')[-1]
+freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
+
+print('Data currently of shape:', h5_main.shape)
+
+x_label = 'Frequency (kHz)'
+y_label = 'Amplitude (a.u.)'
 
 #####################################################################################
 # Visualize the Amplitude Data
 # ============================
-# Note that we are not hard-coding / writing any tick labels / axis labels by hand. All the necessary information was present in the H5 file
+# Note that we are not hard-coding / writing any tick labels / axis labels by hand.
+# All the necessary information was present in the H5 file
 
-fig, axis = plt.subplots(figsize=(8,5))
-px.plot_utils.plot_map(axis, h5_main, cmap='inferno')
-axis.set_title('Raw data - ' + descriptor)
-axis.set_xlabel(x_label)
-axis.set_ylabel(y_label)
-vec = h5_spec_vals[0]
-cur_x_ticks = axis.get_xticks()
-for ind in range(1,len(cur_x_ticks)-1):
-    cur_x_ticks[ind] = h5_spec_vals[0, ind]
-axis.set_xticklabels([str(val) for val in cur_x_ticks]);
+px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
 
 #####################################################################################
 # 1. Singular Value Decomposition (SVD)
@@ -170,23 +132,46 @@ axis.set_xticklabels([str(val) for val in cur_x_ticks]);
 # * V - Eigenvectors sorted by variance in descending order
 # * U - corresponding bundance maps
 # * S - Variance or importance of each of these components
+#
+# Advantage of pycroscopy:
+# ------------------------
+# Notice that we are working with a complex valued dataset. Passing the complex values as is to SVD would result in
+# complex valued eigenvectors / endmembers as well as abundance maps. Complex valued abundance maps are not physical.
+# Thus, one would need to restructure the data such that it is real-valued only.
+#
+# One solution is to stack the real value followed by the magnitude of the imaginary component before passing to SVD.
+# After SVD, the real-valued eigenvectors would need to be treated as the concatenation of the real and imaginary
+# components. So, the eigenvectors would need to be restructured to get back the complex valued eigenvectors.
+#
+# **Pycroscopy handles all these data transformations (both for the source dataset and the eigenvectors)
+# automatically.**  In general, pycroscopy handles compund / complex valued datasets everywhere possible
+#
+# Furthermore, while it is not discussed in this example, pycroscopy also writes back the results from SVD back to
+# the same source h5 file including all relevant links to the source dataset and other ancillary datasets
 
-h5_svd_grp = px.processing.doSVD(h5_main)
+h5_svd_group = px.doSVD(h5_main, num_comps=256)
 
-U = h5_svd_grp['U']
-S = h5_svd_grp['S']
-V = h5_svd_grp['V']
+h5_u = h5_svd_group['U']
+h5_v = h5_svd_group['V']
+h5_s = h5_svd_group['S']
+
+# Since the two spatial dimensions (x, y) have been collapsed to one, we need to reshape the abundance maps:
+abun_maps = np.reshape(h5_u[:,:25], (num_rows, num_cols, -1))
 
 # Visualize the variance / statistical importance of each component:
-px.plot_utils.plotScree(S, title='Note the exponential drop of variance with number of components')
+px.plot_utils.plotScree(h5_s, title='Note the exponential drop of variance with number of components')
 
 # Visualize the eigenvectors:
-px.plot_utils.plot_loops(np.arange(spec_pts), V, x_label=x_label, y_label=y_label, plots_on_side=3,
-                         subtitles='Component', title='SVD Eigenvectors', evenly_spaced=False);
+first_evecs = h5_v[:9, :]
+
+px.plot_utils.plot_loops(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
+                         subtitles='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
+px.plot_utils.plot_loops(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
+                         subtitles='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
 
 # Visualize the abundance maps:
-px.plot_utils.plot_loops(np.arange(num_pos), np.transpose(U), plots_on_side=3,
-                         subtitles='Component', title='SVD Abundances', evenly_spaced=False);
+px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps',
+                             color_bar_mode='single', cmap='inferno')
 
 #####################################################################################
 # 2. KMeans Clustering
@@ -200,25 +185,14 @@ px.plot_utils.plot_loops(np.arange(num_pos), np.transpose(U), plots_on_side=3,
 #
 # Set the number of clusters below
 
-num_comps = 4
+num_clusters = 4
 
-estimators = px.Cluster(h5_main, 'KMeans', num_comps=num_comps)
+estimators = px.Cluster(h5_main, 'KMeans', n_clusters=num_clusters)
 h5_kmeans_grp = estimators.do_cluster(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-fig, axes = plt.subplots(ncols=2, figsize=(18, 8))
-for clust_ind, end_member in enumerate(h5_kmeans_mean_resp):
-    axes[0].plot(end_member+(500*clust_ind), label='Cluster #' + str(clust_ind))
-axes[0].legend(bbox_to_anchor=[1.05, 1.0], fontsize=12)
-axes[0].set_title('K-Means Cluster Centers', fontsize=14)
-axes[0].set_xlabel(x_label, fontsize=14)
-axes[0].set_ylabel(y_label, fontsize=14)
-
-axes[1].plot(h5_kmeans_labels)
-axes[1].set_title('KMeans Labels', fontsize=14)
-axes[1].set_xlabel('Position', fontsize=14)
-axes[1].set_ylabel('Label')
+px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)
@@ -232,20 +206,18 @@ axes[1].set_ylabel('Label')
 
 num_comps = 4
 
-# Make sure the data is non-negative:
-data_mat[h5_main[()] < 0] = 0
+# get the non-negative portion of the dataset
+data_mat = np.abs(h5_main)
 
 model = NMF(n_components=num_comps, init='random', random_state=0)
 model.fit(data_mat)
 
-fig, axis = plt.subplots()
-for comp_ind, end_member in enumerate(model.components_):
-    axis.plot(end_member + comp_ind * 50,
-              label = 'NMF Component #' + str(comp_ind))
+fig, axis = plt.subplots(figsize=(5.5, 5))
+px.plot_utils.plot_line_family(axis, freq_vec, model.components_, label_prefix='NMF Component #')
 axis.set_xlabel(x_label, fontsize=12)
 axis.set_ylabel(y_label, fontsize=12)
 axis.set_title('NMF Components', fontsize=14)
-axis.legend(bbox_to_anchor=[1.0,1.0], fontsize=12);
+axis.legend(bbox_to_anchor=[1.0, 1.0], fontsize=12)
 
 #####################################################################################
 # 4. NFINDR
@@ -278,13 +250,14 @@ axis.legend(bbox_to_anchor=[1.0,1.0], fontsize=12);
 
 num_comps = 4
 
+# get the amplitude component of the dataset
+data_mat = np.abs(h5_main)
+
 nfindr_results = eea.nfindr.NFINDR(data_mat, num_comps) #Find endmembers
 end_members = nfindr_results[0]
 
-fig, axis = plt.subplots()
-for comp_ind, end_member in enumerate(end_members):
-    axis.plot(end_member + comp_ind * 1000,
-              label = 'NFINDR Component #' + str(comp_ind))
+fig, axis = plt.subplots(figsize=(5.5, 5))
+px.plot_utils.plot_line_family(axis, freq_vec, end_members, label_prefix='NFINDR endmember #')
 axis.set_title('NFINDR Endmembers', fontsize=14)
 axis.set_xlabel(x_label, fontsize=12)
 axis.set_ylabel(y_label, fontsize=12)
@@ -295,21 +268,14 @@ fcls = amp.FCLS()
 # Find abundances:
 amap = fcls.map(data_mat[np.newaxis, :, :], end_members)
 
-# Reshaping amap to match those of conventional endmembers
-amap = np.squeeze(amap).T
+# Reshaping amap
+amap = np.reshape(np.squeeze(amap), (num_rows, num_cols, -1))
 
-fig2, axis2 = plt.subplots()
-for comp_ind, abundance in enumerate(amap):
-    axis2.plot(abundance, label = 'NFIND R Component #' + str(comp_ind) )
-axis2.set_title('Abundances', fontsize=14)
-axis2.set_xlabel(x_label, fontsize=12)
-axis2.set_ylabel('Abundance (a. u.)', fontsize=12)
-axis2.legend(bbox_to_anchor=[1.0,1.0], fontsize=12);
+px.plot_utils.plot_map_stack(amap, heading='NFINDR Abundance maps', cmap=plt.cm.inferno,
+                             color_bar_mode='single');
 
 #####################################################################################
 
-# Delete the temporarily downloaded file
-os.remove(data_file_path)
 # Close and delete the h5_file
 h5_file.close()
-os.remove(h5_path)
+os.remove(data_file_path)

@@ -125,8 +125,8 @@ def SHOfastGuess(w_vec, resp_vec, qual_factor=200):
         Quality factor of the SHO peak
 
     Returns
+    -------
     retval : 1D numpy array
-    ---------
         SHO fit parameters arranged as [amplitude, frequency, quality factor, phase]
     """
     amp_vec = abs(resp_vec)

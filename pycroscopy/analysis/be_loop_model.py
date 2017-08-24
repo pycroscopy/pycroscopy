@@ -624,9 +624,9 @@ class BELoopModel(Model):
 
         # step 5: Move the voltage dimension to the first dim
         order_dc_outside_nd = [self._dc_offset_index] + list(range(self._dc_offset_index)) + \
-                              list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
+            list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
         order_dc_offset_reverse = list(range(1, self._dc_offset_index + 1)) + [0] + \
-                                  list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
+            list(range(self._dc_offset_index + 1, len(fit_nd.shape)))
         fit_nd2 = np.transpose(fit_nd, tuple(order_dc_outside_nd))
         dim_names_dc_out = dim_names_orig[order_dc_outside_nd]
         if verbose:
@@ -946,7 +946,7 @@ class BELoopModel(Model):
             self.data = None
 
         guess = self.h5_guess[self._start_pos:self._end_pos,
-                self._current_met_spec_slice].reshape([-1, 1])
+                              self._current_met_spec_slice].reshape([-1, 1])
         self.guess = compound_to_scalar(guess)[:, :-1]
 
     def _create_guess_datasets(self):

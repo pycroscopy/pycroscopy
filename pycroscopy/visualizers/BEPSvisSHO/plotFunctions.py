@@ -10,14 +10,14 @@ from pyqtgraph import QtGui
 
 
 class BEPSwindow(QtGui.QMainWindow):
-    '''
+    """
     Window object that will handle all the plotting
-    '''
+    """
 
     def __init__(self, **kwargs):
-        '''
+        """
         Create the initial window
-        '''
+        """
         super(BEPSwindow, self).__init__()
         winTitle = kwargs.get('winTitle', 'BEPS Visualization')
         self.setWindowTitle(winTitle)
@@ -98,10 +98,10 @@ class BEPSwindow(QtGui.QMainWindow):
     # %%
 
     def setup(self, h5_path=None):
-        '''
-        Call the readData functions from ioFuncs to setup the 
+        """
+        Call the readData functions from ioFuncs to setup the
         arrays for later uses and get the proper parameters
-        '''
+        """
         if not h5_path:
             h5_path = pg.FileDialog.getOpenFileName(caption='Select H5 file',
                                                     filter="H5 file (*.h5)")
@@ -373,26 +373,26 @@ class BEPSwindow(QtGui.QMainWindow):
         return imv1, imv2, imv3
 
     def __setupTwoD(self, xlabel, ylabel):
-        '''
+        """
         Creates the needed widgets for plotting 1D data
-        
+
         Inputs:
             xlabel -- list of labels and units to use for x-axis of plots
             ylabel -- list of labels and units to use for y-axis of plots
-        
+
         Outputs:
             imv1 -- ImageView Widget in which the map will be plotted
             imv2 -- PlotWidget in which the loops will be plotted
             imv3 -- PlotWidget in which the timeline will be plotted
-        
+
         Shared:
-            plt1 -- PlotItem associated with the map to show position axes 
+            plt1 -- PlotItem associated with the map to show position axes
                     and the title
-            roi1 -- The crosshairs roi object that determines the position for 
+            roi1 -- The crosshairs roi object that determines the position for
                     which the loops are plotted in imv2
             roiplt1 -- The box roi object associated with imv1
-            posline -- the 
-        '''
+            posline -- the
+        """
         plt1 = pg.PlotItem()
         imv1 = pg.ImageView(view=plt1)
         imv2 = pg.PlotWidget()
@@ -435,9 +435,9 @@ class BEPSwindow(QtGui.QMainWindow):
         return imv1, imv2, imv3
 
     def __setInitialData(self, data_guess, data_results, xvec, data_main, freq_vec):
-        '''
+        """
         Tell the window what data it should be plotting from
-        '''
+        """
         points = np.arange(len(xvec[0, 0, 0, :]) + 1)
         self.num_bins = len(freq_vec)
 
@@ -465,43 +465,43 @@ class BEPSwindow(QtGui.QMainWindow):
         return
 
     def __setDataOneD(self, data_guess, data_results, xvec, data_main, freq_vec, points):
-        '''
+        """
         Sets the initial data for the case of one spacial dimension
         Inputs:
-            data_guess -- 6D numpy array holding BEPS data.  
+            data_guess -- 6D numpy array holding BEPS data.
                         Indices are:
                         [Field, SHO, Cycle #, UDVS Step, X-Pos, Y-Pos]
 
                     Field:  "In-field" or "Out-of-field" for DC
                             "Forward" or "Reverse" for AC
                     SHO:    SHO parameter to be plotted
-                            Amplitude, Resonance Frequency, Q-factor, Phase, 
+                            Amplitude, Resonance Frequency, Q-factor, Phase,
                             or R^2 value
                     Cycle:  Which cycle should be plotted
                     UDVS:   The UDVS step of the current plot
                     X-Pos:  X position from dataset
                     Y-Pos:  Y position from dataset
 
-                        These indices should be present for all datasets 
+                        These indices should be present for all datasets
                         even if they only have a length of 1
-             
-             xvec -- 4D numpy array containing the values which will be plotted 
+
+             xvec -- 4D numpy array containing the values which will be plotted
                      against
                      Indices are
                      [Variable, Field, Cycle #, UDVS Step]
-                     
-                     As with datamat, all indices must be present no matter 
+
+                     As with datamat, all indices must be present no matter
                      the shape of the actual data
-                     
-                Variable:   The variable to be plotted.  DC voltage or 
+
+                Variable:   The variable to be plotted.  DC voltage or
                             AC amplitude depending on the mode
                 Field:      Same as is datamat
                 Cycle #:    Same as in datamat
                 UDVS Step:  Same as in datamat
-            
-            points -- numpy arrange of UDVS step numbers.  One extra step is 
-                      added at the end to allow for plotting in step mode        
-        '''
+
+            points -- numpy arrange of UDVS step numbers.  One extra step is
+                      added at the end to allow for plotting in step mode
+        """
 
         '''
         Plot Initial data
@@ -550,44 +550,44 @@ class BEPSwindow(QtGui.QMainWindow):
         self.posLine.setBounds([points[0], points[-2]])
 
     def __setDataTwoD(self, data_mat, data_results, xvec, data_main, freq_vec, points):
-        '''
+        """
         Sets the initial data for the case of two spacial dimensions
-        
+
         Inputs:
-            data_guess -- 6D numpy array holding BEPS data.  
+            data_guess -- 6D numpy array holding BEPS data.
                         Indices are:
                         [Field, SHO, Cycle #, UDVS Step, X-Pos, Y-Pos]
 
                     Field:  "In-field" or "Out-of-field" for DC
                             "Forward" or "Reverse" for AC
                     SHO:    SHO parameter to be plotted
-                            Amplitude, Resonance Frequency, Q-factor, Phase, 
+                            Amplitude, Resonance Frequency, Q-factor, Phase,
                             or R^2 value
                     Cycle:  Which cycle should be plotted
                     UDVS:   The UDVS step of the current plot
                     X-Pos:  X position from dataset
                     Y-Pos:  Y position from dataset
 
-                        These indices should be present for all datasets 
+                        These indices should be present for all datasets
                         even if they only have a length of 1
-             
-             xvec -- 4D numpy array containing the values which will be plotted 
+
+             xvec -- 4D numpy array containing the values which will be plotted
                      against
                      Indices are
                      [Variable, Field, Cycle #, UDVS Step]
-                     
-                     As with datamat, all indices must be present no matter 
+
+                     As with datamat, all indices must be present no matter
                      the shape of the actual data
-                     
-                Variable:   The variable to be plotted.  DC voltage or 
+
+                Variable:   The variable to be plotted.  DC voltage or
                             AC amplitude depending on the mode
                 Field:      Same as is datamat
                 Cycle #:    Same as in datamat
                 UDVS Step:  Same as in datamat
-            
-            points -- numpy arrange of UDVS step numbers.  One extra step is 
+
+            points -- numpy arrange of UDVS step numbers.  One extra step is
                       added at the end to allow for plotting in step mode
-        '''
+        """
 
         '''
         Plot Initial data
@@ -637,9 +637,9 @@ class BEPSwindow(QtGui.QMainWindow):
         self.point_roi = self.__getROIpos()
 
     def __getROIpos(self):
-        '''
+        """
         Returns the current position of the ROI selector
-        '''
+        """
         roipos = self.roiPt.pos()
         if self.ndims == 1:
             for i in xrange(1, len(roipos)):
@@ -647,10 +647,10 @@ class BEPSwindow(QtGui.QMainWindow):
         return roipos
 
     def setSignals(self):
-        '''
-        Define the signals to be watched and how they connect to 
+        """
+        Define the signals to be watched and how they connect to
         update functions
-        '''
+        """
         if self.ndims > 1:
             self.roiPt.sigRegionChanged.connect(self.updateROICross)  # Link roi changes to update function
             self.imv1.timeLine.sigPositionChanged.connect(self.updateTimeMap)
@@ -665,9 +665,9 @@ class BEPSwindow(QtGui.QMainWindow):
 
     #     Update functions for interactivity
     def updateCycleList(self):
-        '''
+        """
         Save the current frame
-        '''
+        """
         current_frame = self.sel_frame
 
         '''
@@ -721,9 +721,9 @@ class BEPSwindow(QtGui.QMainWindow):
         self.posLine.setPos(self.sel_frame)
 
     def updatePlotList(self):
-        '''
+        """
         Save the current frame
-        '''
+        """
         current_frame = self.sel_frame
 
         '''
@@ -786,9 +786,9 @@ class BEPSwindow(QtGui.QMainWindow):
         self.posLine.setPos(self.sel_frame)
 
     def updateROIList(self):
-        '''
+        """
         Save the current frame
-        '''
+        """
         current_frame = self.sel_frame
 
         '''
@@ -843,9 +843,9 @@ class BEPSwindow(QtGui.QMainWindow):
         self.posLine.setPos(self.sel_frame)
 
     def updatePartList(self):
-        '''
+        """
         Save the current frame
-        '''
+        """
         current_frame = self.sel_frame
 
         '''
@@ -898,9 +898,9 @@ class BEPSwindow(QtGui.QMainWindow):
         self.posLine.setPos(self.sel_frame)
 
     def updateROICross(self):
-        '''
+        """
         Get the new roi position and update the loop plot accordingly
-        '''
+        """
         self.point_roi = self.__getROIpos()
 
         self.row = int(self.point_roi[0])
@@ -932,17 +932,17 @@ class BEPSwindow(QtGui.QMainWindow):
         self.imv2.setTitle('SHO for Position {}'.format(self.point_roi))
 
     def updateTimeMap(self):
-        '''
+        """
         Get the new frame index from the map and update timeline
-        '''
+        """
         self.sel_frame = self.imv1.currentIndex
 
         self.posLine.setPos(self.sel_frame)
 
     def updateTimeLine(self):
-        '''
-        Get the new frame index from the timeline and update map 
-        '''
+        """
+        Get the new frame index from the timeline and update map
+        """
         self.sel_frame = int(np.floor(self.posLine.value()))
 
         if self.ndims == 1:
@@ -974,9 +974,9 @@ class BEPSwindow(QtGui.QMainWindow):
             self.results_plot.setData(y=self.func(self.results))
 
     def updateParms(self):
-        '''
+        """
         update the values of the parameters printed to the sidebar
-        '''
+        """
         gparms = self.data_guess[self.sel_part,
                                  self.sel_cycle,
                                  self.sel_frame,

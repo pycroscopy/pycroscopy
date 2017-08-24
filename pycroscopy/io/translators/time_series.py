@@ -54,6 +54,9 @@ class MovieTranslator(Translator):
         start_image : int, optional
             Integer denoting which image in the file path should be considered the starting
             point.  Default is 0, start with the first image on the list.
+        image_type : str, optional
+            File extension of images to load.  Used to filter out other files in the same
+            directory.  Default .tif
 
         Returns
         ----------

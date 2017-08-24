@@ -89,7 +89,7 @@ def gauss2d(X, Y, *parms, **kwargs):
     X, Y : the x and y matrix values from the call "X, Y = np.meshgrid(x,y)" where x and y are
         defined by x = np.arange(-width/2,width/2) and y = np.arange(-height/2,height/2). 
 
-    params: List of 7 parameters defining the gaussian.
+    parms: List of 7 parameters defining the gaussian.
         The parameters are [A, x0, y0, sigma_x, sigma_y, theta, background]
             A : amplitude
             x0: x position
@@ -496,8 +496,6 @@ class Gauss_Fit(object):
 
         Parameters
         ----------
-
-            None
 
         Returns
         -------

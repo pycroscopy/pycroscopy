@@ -156,7 +156,7 @@ class Optimize(object):
         self.solver_type = solver_type
         self.solver_options = solver_options
         if self.solver_type not in scipy.optimize.__dict__.keys():
-            warn('Solver %s does not exist!. For additional info see scipy.optimize' % (solver_type))
+            warn('Solver %s does not exist!. For additional info see scipy.optimize' % solver_type)
             sys.exit()
         if obj_func['class'] is None:
             self.obj_func = obj_func['obj_func']

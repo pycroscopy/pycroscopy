@@ -584,7 +584,7 @@ class ImageWindow(object):
         for islice, this_slice in enumerate(win_slices):
             selected = islice % np.rint(n_wins / 10) == 0
             if selected:
-                per_done = np.rint(100 * (islice) / (n_wins))
+                per_done = np.rint(100 * islice / n_wins)
                 print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
             counts[this_slice] += ones
 
@@ -708,7 +708,7 @@ class ImageWindow(object):
 
         for islice, this_slice in enumerate(win_slices):
             if islice % np.rint(n_wins / 10) == 0:
-                per_done = np.rint(100 * (islice) / (n_wins))
+                per_done = np.rint(100 * islice / n_wins)
                 print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
 
             counts[this_slice] += ones

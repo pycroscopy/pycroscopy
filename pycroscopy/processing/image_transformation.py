@@ -160,9 +160,9 @@ class FeatureExtractorParallel(object):
             return keypts, descs
 
         # start pool of workers
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
         pool = mp.Pool(processes)
-        tasks = [(imp) for imp in self.data]
+        tasks = [imp for imp in self.data]
         chunk = int(self.data.shape[0] / processes)
         jobs = pool.imap(detect, tasks, chunksize=chunk)
 
@@ -769,7 +769,6 @@ class geoTransformerParallel(object):
     """
 
     def __init__(self):
-        self.__init__
         self.data = []
         self.features = []
 
@@ -844,7 +843,7 @@ class geoTransformerParallel(object):
 
         # start pool of workers
         pool = mp.Pool(processes)
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
 
         tasks = [(desc1, desc2) for desc1, desc2 in zip(desc[:], desc[1:])]
         chunk = int(len(desc) / processes)
@@ -898,7 +897,7 @@ class geoTransformerParallel(object):
 
             # start pool of workers
 
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
         pool = mp.Pool(processes)
         tasks = [(key1[match[:, 0]], key2[match[:, 1]])
                  for match, key1, key2 in zip(matches, keypts[:], keypts[1:])]
@@ -1039,7 +1038,7 @@ class geoTransformerParallel(object):
         for imp, transform, itm in zip(transImages, chainTransforms, range(0, transImages.shape[0])):
             transimp = warping([imp, transform])
             transImages[itm] = transimp
-            print('Image #%i' % (itm))
+            print('Image #%i' % itm)
 
         return transImages, chainTransforms
 
@@ -1061,7 +1060,7 @@ class geoTransformerParallel(object):
         processes = kwargs.get('processors', 1)
 
         pool = mp.Pool(processes)
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
 
         def register(images):
             imp1, imp2 = images[0], images[1]
@@ -1100,7 +1099,6 @@ class geoTransformerSerial(object):
     """
 
     def __init__(self):
-        self.__init__
         self.data = []
         self.features = []
 
@@ -1173,7 +1171,7 @@ class geoTransformerSerial(object):
 
         # start pool of workers
         pool = mp.Pool(processes)
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
 
         tasks = [(desc1, desc2) for desc1, desc2 in zip(desc[:], desc[1:])]
         chunk = int(len(desc) / processes)
@@ -1343,7 +1341,7 @@ class geoTransformerSerial(object):
         for imp, transform, itm in zip(transImages, chainTransforms, range(0, transImages.shape[0])):
             transimp = warping([imp, transform])
             transImages[itm] = transimp
-            print('Image #%i' % (itm))
+            print('Image #%i' % itm)
 
         return transImages, chainTransforms
 
@@ -1365,7 +1363,7 @@ class geoTransformerSerial(object):
         processes = kwargs.get('processors', 1)
 
         pool = mp.Pool(processes)
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
 
         def register(images):
             imp1, imp2 = images[0], images[1]
