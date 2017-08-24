@@ -64,6 +64,7 @@ Compatibility
 
 Getting Started
 ---------------
+* Follow the instructions above to install pycroscopy
 * See how we use pycroscopy for our scientific research in these `jupyter notebooks <https://github.com/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/>`_. Many of them are linked to journal publications listed below.
 	* Please see the official `jupyter <http://jupyter.org>`_ website for more information about notebooks. This `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_.
 * See our `examples <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html>`_ to get started on using and writing your own pycroscopy functions
@@ -74,13 +75,13 @@ Getting Started
 
 Journal Papers using pycroscopy
 -------------------------------
-1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here 1 <ttps://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/Ptychography.ipynb>`_
+1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here 1 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_
  
-2. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by S. Somnath et al., Nature Communications (2016); jupyter notebook `here 2 <ttps://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/G_mode_filtering.ipynb>`_
+2. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by S. Somnath et al., Nature Communications (2016); jupyter notebook `here 2 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/G_mode_filtering.ipynb>`_
  
-3. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by L. Li et al., Scientific Reports (2017); jupyter notebook `here 3 <ttps://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/STS_LDOS.ipynb>`_
+3. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by L. Li et al., Scientific Reports (2017); jupyter notebook `here 3 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/STS_LDOS.ipynb>`_
  
-4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here 4 <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/BE_Processing.ipynb>`_
+4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here 4 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/BE_Processing.ipynb>`_
 
 5. Many more coming soon....
 
