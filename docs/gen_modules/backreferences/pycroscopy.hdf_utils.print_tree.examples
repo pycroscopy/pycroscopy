@@ -20,3 +20,75 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 .. only:: not html
 
     * :ref:`sphx_glr_auto_examples_load_dataset_example.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_multidimensional_data.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_translator_tutorial_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_translator_tutorial.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_translator_tutorial.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_writing_to_h5.py`
