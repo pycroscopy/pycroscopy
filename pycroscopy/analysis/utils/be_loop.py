@@ -611,7 +611,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                  [geom_centroid[0], hull.min_bound[1]],
                                  [geom_centroid[0], hull.max_bound[1]])
-        if x_pt is None:
+        if x_pt is not None:
             y_intersections.append(x_pt)
 
     '''
@@ -623,7 +623,7 @@ def generate_guess(vdc, pr_vec, show_plots=False):
         x_pt = find_intersection(outline_1[pair], outline_2[pair],
                                  [hull.min_bound[0], geom_centroid[1]],
                                  [hull.max_bound[0], geom_centroid[1]])
-        if x_pt is None:
+        if x_pt is not None:
             x_intersections.append(x_pt)
 
     '''
