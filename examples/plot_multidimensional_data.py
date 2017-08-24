@@ -15,7 +15,7 @@ Introduction
 
 In pycroscopy, all position dimensions of a dataset are collapsed into the first dimension and all other
 (spectroscopic) dimensions are collapsed to the second dimension to form a two dimensional matrix. The ancillary
-matricies, namely the spectroscopic indices and values matrix as well as the position indicies and values matrices
+matrices, namely the spectroscopic indices and values matrix as well as the position indicies and values matrices
 will be essential for reshaping the data back to its original N dimensional form and for slicing multidimensional
 datasets
 
@@ -56,11 +56,13 @@ import pycroscopy as px
 # dimensions in addition to the spectra itself. Hence, this dataet becomes a 2+4 = 6 dimensional dataset
 
 # download the raw data file from Github:
-h5_path = 'temp.h5'
+h5_path = 'temp_3.h5'
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/FORC_BEPS.h5'
 if os.path.exists(h5_path):
     os.remove(h5_path)
 _ = wget.download(url, h5_path, bar=None)
+
+#########################################################################
 
 # Open the file in read-only mode
 h5_file = h5py.File(h5_path, mode='r')
@@ -91,12 +93,12 @@ h5_pos_val = px.hdf_utils.getAuxData(h5_main, 'Position_Values')[0]
 #
 # The position datasets are shaped as [spatial points, dimension] while the spectroscopic datasets are shaped as
 # [dimension, spectral points]. Clearly the first axis of the position dataset and the second axis of the spectroscopic
-# datasets match the correponding sizes of the main dataset.
+# datasets match the corresponding sizes of the main dataset.
 #
 # Again, the sum of the position and spectroscopic dimensions results in the 6 dimensions originally described above.
 #
 # Essentially, there is a unique combination of position and spectroscopic parameters for each cell in the two
-# dimensionam main dataset. The interactive widgets below illustrate this point. The first slider represents the
+# dimensional main dataset. The interactive widgets below illustrate this point. The first slider represents the
 # position dimension while the second represents the spectroscopic dimension. Each position index can be decoded
 # to a set of X and Y indices and values while each spectroscopic index can be decoded into a set of frequency,
 # dc offset, field, and forc parameters
@@ -108,25 +110,26 @@ print('Spectroscopic Datasets of shape:', h5_spec_ind.shape)
 spec_labels = px.hdf_utils.get_formatted_labels(h5_spec_ind)
 pos_labels = px.hdf_utils.get_formatted_labels(h5_pos_ind)
 
+
 def myfun(pos_index, spec_index):
     for dim_ind, dim_name in enumerate(pos_labels):
-        print(dim_name,':',h5_pos_ind[pos_index, dim_ind])
+        print(dim_name, ':', h5_pos_ind[pos_index, dim_ind])
     for dim_ind, dim_name in enumerate(spec_labels):
-        print(dim_name,':',h5_spec_ind[dim_ind, spec_index])
-interact(myfun, pos_index=(0,h5_main.shape[0]-1, 1), spec_index=(0,h5_main.shape[1]-1, 1));
+        print(dim_name, ':', h5_spec_ind[dim_ind, spec_index])
+interact(myfun, pos_index=(0, h5_main.shape[0]-1, 1), spec_index=(0, h5_main.shape[1]-1, 1))
 
 #########################################################################
 # Visualizing the ancillary datasets
 # ==================================
 #
-# The plots below show how the position and spectrocopic dimensions vary. Due to the high dimensionality of the
+# The plots below show how the position and spectroscopic dimensions vary. Due to the high dimensionality of the
 # spectroscopic dimensions, the variation of each dimension has been plotted separately.
 #
 # How we interpret these plots:
 # =============================
 #
 # **Positions**: For each Y index, the X index ramps up from 0 to 4 and repeats. Essentially, this means that for
-# a given Y index, there were multiple measurments (different values of X)
+# a given Y index, there were multiple measurements (different values of X)
 #
 # **Spectroscopic**: The plot for `FORC` shows that the next fastest dimension - `DC offset` was varied 6 times.
 # Correspondingly, the plot for `DC offset` plot shows that this dimension ramps up from 0 to a little less than

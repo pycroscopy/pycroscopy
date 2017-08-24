@@ -78,7 +78,7 @@ import pycroscopy as px
 # ==========================================
 # We will begin by downloading the data file from Github, followed by reshaping and decimation of the dataset
 
-data_file_path = 'temp.h5'
+data_file_path = 'temp_um.h5'
 # download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 _ = wget.download(url, data_file_path, bar=None)
