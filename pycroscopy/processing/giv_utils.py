@@ -180,7 +180,7 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     return results_dict
 
 
-def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
+def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, r_extra_override=None):
     """
     Plots the basic Bayesian Inference results for a specific pixel
 
@@ -192,6 +192,8 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
         Dataset containing the raw / filtered measured current split by pixel
     pix_ind : unsigned int
         Integer index of the desired pixel
+    r_extra_override : float, Optional
+        Default - will not override
 
     Returns
     -------
@@ -209,8 +211,8 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
     except KeyError:
         # Old / incorrect inference model
         r_extra = 0
-
-    r_extra = 220
+    if r_extra_override is not None:
+        r_extra = 220
 
     possibly_rolled_bias = getAuxData(h5_irec, auxDataName=['Spectroscopic_Values'])[0]
     split_directions = h5_bayesian_grp.attrs['split_directions']
