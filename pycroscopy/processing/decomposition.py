@@ -163,7 +163,7 @@ class Decomposition(object):
         h5_decomp_refs = hdf.writeData(decomp_grp)
 
         h5_components = getH5DsetRefs(['Components'], h5_decomp_refs)[0]
-        h5_projections = getH5DsetRefs(['Mean_Response'], h5_decomp_refs)[0]
+        h5_projections = getH5DsetRefs(['Projection'], h5_decomp_refs)[0]
         h5_decomp_inds = getH5DsetRefs(['Decomposition_Indices'], h5_decomp_refs)[0]
         h5_decomp_vals = getH5DsetRefs(['Decomposition_Values'], h5_decomp_refs)[0]
 

@@ -22,7 +22,7 @@ from .df_utils.beps_gen_utils import get_noise_vec, beps_image_folder
 from .df_utils.io_image import read_image, no_bin
 
 
-class FakeDataGenerator(Translator):
+class FakeBEPSGenerator(Translator):
     """
 
     """
@@ -34,7 +34,7 @@ class FakeDataGenerator(Translator):
         """
 
         """
-        super(FakeDataGenerator, self).__init__(*args, **kwargs)
+        super(FakeBEPSGenerator, self).__init__(*args, **kwargs)
         self.N_x = None
         self.N_y = None
         self.n_steps = None
@@ -125,7 +125,7 @@ class FakeDataGenerator(Translator):
 
         return new_file_list
 
-    def translate(self, h5_path, n_steps, n_bins, start_freq, end_freq,
+    def translate(self, h5_path, n_steps=32, n_bins=37, start_freq=300E+3, end_freq=350E+3,
                   data_type='BEPSData', mode='DC modulation mode', field_mode='in and out-of-field',
                   n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4,
                   cycle_frac='full', image_folder=beps_image_folder, bin_factor=None,
@@ -136,14 +136,18 @@ class FakeDataGenerator(Translator):
         ----------
         h5_path : str
             Desired path to write the new HDF5 file
-        n_steps : uint
+        n_steps : uint, optional
             Number of voltage steps
-        n_bins : n_bins
+            Default - 32
+        n_bins : uint, optional
             Number of frequency bins
-        start_freq : float
+            Default - 37
+        start_freq : float, optional
             Starting frequency in Hz
-        end_freq : float
+            Default - 300E+3
+        end_freq : float, optional
             Final freqency in Hz
+            Default - 350E+3
         data_type : str, optional
             Type of data to generate
             Options -  'BEPSData', 'BELineData'

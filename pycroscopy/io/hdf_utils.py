@@ -585,7 +585,7 @@ def get_formatted_labels(h5_dset):
         return None
 
 
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
+def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False, sort_dims=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -598,8 +598,13 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         Position indices corresponding to rows in `h5_main`
     h5_spec : HDF5 Dataset, optional
         Spectroscopic indices corresponding to columns in `h5_main`
-    get_labels : bool
-        Should the labels be returned.  Default False
+    get_labels : bool, optional
+        Whether or not to return the dimension labels.  Default False
+    verbose : bool, optional
+        Whether or not to print debugging statements
+    sort_dims : bool
+        If True, the data is sorted so that the dimensions are in order from fastest to slowest
+        If `get_labels` is also True, the labels are sorted as well.
 
     Returns
     -------
@@ -689,11 +694,26 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     pos_sort = get_sort_order(np.transpose(ds_pos))
     spec_sort = get_sort_order(ds_spec)
 
+    if verbose:
+        print('Position dimensions:', get_attr(h5_pos, 'labels'))
+        print('Position sort order:', pos_sort)
+        print('Spectroscopic Dimensions:', get_attr(h5_spec, 'labels'))
+        print('Spectroscopic sort order:', spec_sort)
+
     '''
     Get the size of each dimension in the sorted order
     '''
     pos_dims = get_dimensionality(np.transpose(ds_pos), pos_sort)
     spec_dims = get_dimensionality(ds_spec, spec_sort)
+
+    if verbose:
+        print('\nPosition dimensions (sort applied):', get_attr(h5_pos, 'labels')[pos_sort])
+        print('Position dimensionality (sort applied):', pos_dims)
+        print('Spectroscopic dimensions (sort applied):', get_attr(h5_spec, 'labels')[spec_sort])
+        print('Spectroscopic dimensionality (sort applied):', spec_dims)
+
+        all_labels = np.hstack((get_attr(h5_pos, 'labels')[pos_sort][::-1],
+                                get_attr(h5_spec, 'labels')[spec_sort][::-1]))
 
     ds_main = h5_main[()]
 
@@ -718,14 +738,30 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
     except:
         raise
 
+    if verbose:
+        print('\nAfter first reshape, labels are', all_labels)
+        print('Data shape is', ds_Nd.shape)
+
     """
     Now we transpose the axes for both the position and spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    swap_axes = np.append(pos_sort.size - 1 - np.argsort(pos_sort),
-                          spec_sort.size - spec_sort - 1 + len(pos_dims))
+    if not sort_dims:
+        swap_axes = np.append(pos_sort.size - 1 - pos_sort,
+                              spec_sort.size - spec_sort - 1 + len(pos_dims))
+    else:
+        swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_dims))
 
-    ds_Nd2 = np.transpose(ds_Nd, swap_axes)
+    if verbose:
+        print('\nAxes will permuted in this order:', swap_axes)
+        print('New labels ordering:', all_labels[swap_axes])
+
+    ds_Nd = np.transpose(ds_Nd, swap_axes)
+
+    results = [ds_Nd, True]
+
+    if verbose:
+        print('Dataset now of shape:', ds_Nd.shape)
 
     if get_labels:
         '''
@@ -736,15 +772,15 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False):
         else:
             pos_labs = np.array(['' for _ in pos_dims])
         if isinstance(h5_spec, h5py.Dataset):
-            spec_labs = get_attr(h5_spec, 'labels')[spec_sort]
+            spec_labs = get_attr(h5_spec, 'labels')
         else:
             spec_labs = np.array(['' for _ in spec_dims])
 
-        ds_labels = np.hstack([pos_labs, spec_labs])
+        ds_labels = np.hstack([pos_labs[pos_sort[::-1]], spec_labs[spec_sort[::-1]]])
 
-        return ds_Nd2, True, ds_labels
-    else:
-        return ds_Nd2, True
+        results.append(ds_labels[swap_axes])
+
+    return results
 
 
 def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
@@ -1513,3 +1549,55 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
         ds_spec_inds_mat[change_sort, jcol] = indices
 
     return ds_spec_inds_mat
+
+
+def get_unit_values(h5_spec_ind, h5_spec_val, dim_names=None):
+    """
+    Gets the unit arrays of values that describe the spectroscopic dimensions
+
+    Parameters
+    ----------
+    h5_spec_ind : h5py.Dataset
+        Spectroscopic Indices dataset
+    h5_spec_val : h5py.Dataset
+        Spectroscopic Values dataset
+    dim_names : str, or list of str, Optional
+        Names of the dimensions of interest
+
+    Note - this function can be extended / modified for ancillary position dimensions as well
+
+    Returns
+    -------
+    unit_values : dict
+        Dictionary containing the unit array for each dimension. The name of the dimensions are the keys.
+
+    """
+    # For all dimensions, find where the index = 0
+    # basically, we are indexing all dimensions to 0
+    first_indices = []
+    for dim_ind in range(h5_spec_ind.shape[0]):
+        first_indices.append(h5_spec_ind[dim_ind] == 0)
+    first_indices = np.vstack(first_indices)
+
+    spec_dim_names = get_attr(h5_spec_ind, 'labels')
+    if dim_names is None:
+        dim_names = spec_dim_names
+    elif not isinstance(dim_names, list):
+        dim_names = [dim_names]
+
+    unit_values = dict()
+    for dim_name in dim_names:
+        # Find the row in the spectroscopic indices that corresponds to the dimensions we want to slice:
+        desired_row_ind = np.where(spec_dim_names == dim_name)[0][0]
+
+        # Find indices of all other dimensions
+        remaining_dims = list(range(h5_spec_ind.shape[0]))
+        remaining_dims.remove(desired_row_ind)
+
+        # The intersection of all these indices should give the desired index for the desired row
+        intersections = np.all(first_indices[remaining_dims, :], axis=0)
+
+        # apply this slicing to the values dataset:
+        unit_values[dim_name] = h5_spec_val[desired_row_ind, intersections]
+
+    return unit_values

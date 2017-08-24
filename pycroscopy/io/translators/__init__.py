@@ -36,11 +36,11 @@ from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator
 from .time_series import MovieTranslator
 from .translator import Translator
-from .beps_data_generator import FakeDataGenerator
+from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 
 __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
-           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeDataGenerator',
+           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
            'LabViewH5Patcher']

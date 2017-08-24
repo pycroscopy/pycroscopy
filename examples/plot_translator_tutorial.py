@@ -1,13 +1,13 @@
 """
 
 ======================================================================================
-Tutorials for Developing Scientific Workflows in Pycroscopy - Part 1: Data Translation
+Tutorial 1: Data Translation
 ======================================================================================
 
 **Suhas Somnath**
 8/8/2017
 
-This set of notebooks will serve as examples for developing and end-to-end workflows for and using pycroscopy.
+This set of tutorials will serve as examples for developing end-to-end workflows for and using pycroscopy.
 
 **In this example, we extract data and parameters from a Scanning Tunnelling Spectroscopy (STS) raw data file, as
 obtained from an Omicron STM, and write these to a pycroscopy compatible data file.**
