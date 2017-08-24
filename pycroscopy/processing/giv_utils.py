@@ -209,6 +209,9 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
     except KeyError:
         # Old / incorrect inference model
         r_extra = 0
+
+    r_extra = 220
+
     possibly_rolled_bias = getAuxData(h5_irec, auxDataName=['Spectroscopic_Values'])[0]
     split_directions = h5_bayesian_grp.attrs['split_directions']
 
@@ -271,7 +274,7 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
 
     colors = [['red', 'orange'], ['blue', 'cyan']]
     syms = [['-', '--', '--'], ['-', ':', ':']]
-    names = ['Forw', 'Rev']
+    names = ['Forward', 'Reverse']
     if not split_directions:
         colors = colors[0]
         syms = syms[0]
@@ -294,54 +297,51 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
     pos_limits = mr_vec + st_dev
     neg_limits = mr_vec - st_dev
 
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(13, 5))
-    fig.subplots_adjust(wspace=3.5)
+    fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
+    # fig.subplots_adjust(wspace=3.5)
 
-    axes[0].set_xlabel('Voltage (V)', fontsize=font_size_2)
-    axes[0].set_ylabel('Resistance (GOhm)', fontsize=font_size_2)
-    axes[0].set_title('R(V), mean C = ' + str(round(np.mean(cap_val) * 1E3, 2)) + 'pF, ' + 'at row ' +
-                      str(pix_pos[0]) + ', col ' + str(pix_pos[1]), fontsize=font_size_2)
+    axes[0].set_ylabel('Resistance (G\Omega)', fontsize=font_size_2)
 
     if split_directions:
         pts_to_plot = [good_forw, good_rev]
     else:
         pts_to_plot = [good_pts]
 
-    for type_ind, pts_list, cols_set, sym_set, set_name in zip(range(len(names)), pts_to_plot,
-                                                               colors, syms, names):
-        axes[0].plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0],
-                     linestyle=sym_set[0], linewidth=2, label='R(V) {}'.format(set_name))
-        axes[0].fill_between(bias_interp[pts_list], pos_limits[pts_list], neg_limits[pts_list],
-                             alpha=0.25, color=cols_set[1],
-                             label='R(V)+-$\sigma$  {}'.format(set_name))
-    axes[0].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0), fontsize=font_size_1)
-    axes[0].set_xlim((-ex_amp, ex_amp))
+    for type_ind, axis, pts_list, cols_set, sym_set, set_name in zip(range(len(names)),
+                                                                     axes[:2], pts_to_plot,
+                                                                     colors, syms, names):
+        axis.set_title('$R(V)$ ' + set_name + ' at Row = ' + str(pix_pos[0]) +
+                       ' Col =' + str(pix_pos[1]), fontsize=font_size_2)
+        axis.plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0],
+                  linestyle=sym_set[0], linewidth=3, label='R(V)')
+        axis.fill_between(bias_interp[pts_list], pos_limits[pts_list], neg_limits[pts_list],
+                          alpha=0.25, color=cols_set[1],
+                          label='R(V)+-$\sigma$')
+        axis.set_xlabel('Voltage (V)', fontsize=font_size_2)
 
-    axes[1].plot(orig_bias, i_meas, 'b', label='I$_{meas}$')
-    axes[1].plot(possibly_rolled_bias, i_recon, 'cyan', linestyle='--', label='I$_{rec}$')
+        axis.legend(loc='upper left', fontsize=font_size_1)
+        axis.set_xlim((-ex_amp, ex_amp))
+
+    # ################### CURRENT PLOT ##########################
+
+    axes[2].plot(orig_bias, i_meas, 'b', linewidth=2, label='I$_{meas}$')
+    axes[2].plot(possibly_rolled_bias, i_recon, 'cyan', linewidth=2, linestyle='--', label='I$_{rec}$')
 
     if split_directions:
-        axes[1].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
-                     'r', label='I$_{Bayes} Forw$')
-        axes[1].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
-                     'orange', label='I$_{Bayes} Rev$')
-        """
-        axes[1].plot(bias_interp[:half_x_ind], (bias_interp / mr_vec)[:half_x_ind], 
-                     'r', label='I$_{Bayes} Forw$')
-        axes[1].plot(bias_interp[half_x_ind:], (bias_interp / mr_vec)[half_x_ind:], 
-                     'orange', label='I$_{Bayes} Rev$')
-        """
+        axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
+                     'r', linewidth=3, label='I$_{Bayes} Forw$')
+        axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
+                     'orange', linewidth=3, label='I$_{Bayes} Rev$')
     else:
         axes[1].plot(orig_bias, i_correct, 'g', label='I$_{Bayes}$')
-        # Incorrect:
-        # axes[1].plot(bias_interp, bias_interp / mr_vec, 'g', label='I$_{Bayes}$')
 
-    axes[1].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)  # loc='best')
-    axes[1].set_xlabel('Voltage(V)', fontsize=font_size_2)
-    axes[1].set_title('Bayesian Inference at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]),
+        # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
+    axes[2].legend(loc='best', fontsize=font_size_1)
+    axes[2].set_xlabel('Voltage(V)', fontsize=font_size_2)
+    axes[2].set_title('$I(V)$ at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]),
                       fontsize=font_size_2)
 
-    axes[1].set_ylabel('Current (nA)', fontsize=font_size_2)
+    axes[2].set_ylabel('Current (nA)', fontsize=font_size_2)
 
     set_tick_font_size(axes, font_size_1)
 
