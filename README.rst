@@ -75,13 +75,13 @@ Getting Started
 
 Journal Papers using pycroscopy
 -------------------------------
-1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here 1 <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/Ptychography.ipynb>`_
+1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here 1 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_
  
-2. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by S. Somnath et al., Nature Communications (2016); jupyter notebook `here 2 <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/G_mode_filtering.ipynb>`_
+2. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by S. Somnath et al., Nature Communications (2016); jupyter notebook `here 2 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/G_mode_filtering.ipynb>`_
  
-3. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by L. Li et al., Scientific Reports (2017); jupyter notebook `here 3 <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/STS_LDOS.ipynb>`_
+3. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by L. Li et al., Scientific Reports (2017); jupyter notebook `here 3 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/STS_LDOS.ipynb>`_
  
-4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here 4 <https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/jupyter_notebooks/BE_Processing.ipynb>`_
+4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here 4 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/BE_Processing.ipynb>`_
 
 5. Many more coming soon....
 
