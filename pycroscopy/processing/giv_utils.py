@@ -18,6 +18,7 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommendCores
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, link_as_main, copyAttributes, linkRefAsAlias
+from ..viz.plot_utils import set_tick_font_size
 
 
 def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
@@ -182,7 +183,7 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
 def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
     """
     Plots the basic Bayesian Inference results for a specific pixel
-    
+
     Parameters
     ----------
     h5_bayesian_grp : h5py.Datagroup reference
@@ -202,6 +203,12 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
     h5_vr = h5_bayesian_grp['vr']
     h5_irec = h5_bayesian_grp['irec']
     h5_cap = h5_bayesian_grp['capacitance']
+    freq = h5_bayesian_grp.attrs['freq']
+    try:
+        r_extra = h5_bayesian_grp['Rextra']  # should be 220 Ohms according to calibration
+    except KeyError:
+        # Old / incorrect inference model
+        r_extra = 0
     possibly_rolled_bias = getAuxData(h5_irec, auxDataName=['Spectroscopic_Values'])[0]
     split_directions = h5_bayesian_grp.attrs['split_directions']
 
@@ -215,11 +222,11 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind):
     cap_val = h5_cap[pix_ind]
 
     return plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
-                                 split_directions, cap_val, pix_pos=h5_pos[pix_ind])
+                                 split_directions, cap_val, freq, r_extra, pix_pos=h5_pos[pix_ind])
 
 
 def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
-                          split_directions, cap_val, pix_pos=[0, 0]):
+                          split_directions, cap_val, freq, r_extra, pix_pos=[0, 0]):
     """
     Plots the basic Bayesian Inference results for a specific pixel
 
@@ -242,7 +249,11 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
     split_directions : Boolean
         Whether or not to compute the forward and reverse portions of the loop separately
     cap_val : float
-        Calculated capacitance
+        Inferred capacitance in nF
+    freq : float
+        Excitation frequency
+    r_extra : float
+        Resistance of extra resistor [Ohms] necessary to get correct resistance values
     pix_pos : list of two numbers
         Pixel row and column positions or values
 
@@ -251,18 +262,30 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
     fig : matplotlib.pyplot figure handle
         Handle to figure
     """
+    font_size_1 = 14
+    font_size_2 = 16
 
     half_x_ind = int(0.5 * bias_interp.size)
 
     ex_amp = np.max(bias_interp)
 
-    colors = [['b', 'r', 'g'], ['violet', 'r', 'g']]
+    colors = [['red', 'orange'], ['blue', 'cyan']]
     syms = [['-', '--', '--'], ['-', ':', ':']]
     names = ['Forw', 'Rev']
     if not split_directions:
         colors = colors[0]
         syms = syms[0]
         names = ['']
+
+    # Need to calculate the correct resistance in the original domain:
+    omega = 2 * np.pi * freq
+    cos_omega_t = np.roll(orig_bias, int(-0.25 * orig_bias.size))
+    mean_cap_val = 0.5 * np.mean(cap_val)  # Not sure why we need the 0.5
+    i_cap = mean_cap_val * omega * cos_omega_t  # * nF -> nA
+    i_extra = r_extra * mean_cap_val * orig_bias  # ohms * nF * V -> nA
+    i_correct = i_meas - i_cap - i_extra
+    i_correct_rolled = np.roll(i_correct, int(-0.25 * orig_bias.size))
+    orig_half_pt = int(0.5 * orig_bias.size)
 
     st_dev = np.sqrt(vr_vec)
     good_pts = np.where(st_dev < 10)[0]
@@ -271,44 +294,57 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
     pos_limits = mr_vec + st_dev
     neg_limits = mr_vec - st_dev
 
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(13, 5))
+    fig.subplots_adjust(wspace=3.5)
 
-    axes[0].set_xlabel('Voltage (V)')
-    axes[0].set_ylabel('Resistance (GOhm)')
+    axes[0].set_xlabel('Voltage (V)', fontsize=font_size_2)
+    axes[0].set_ylabel('Resistance (GOhm)', fontsize=font_size_2)
     axes[0].set_title('R(V), mean C = ' + str(round(np.mean(cap_val) * 1E3, 2)) + 'pF, ' + 'at row ' +
-                      str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+                      str(pix_pos[0]) + ', col ' + str(pix_pos[1]), fontsize=font_size_2)
 
     if split_directions:
         pts_to_plot = [good_forw, good_rev]
     else:
         pts_to_plot = [good_pts]
 
-    for type_ind, pts_list, cols_set, sym_set, set_name in zip(range(len(names)), pts_to_plot, colors, syms, names):
-        axes[0].plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0], linestyle=sym_set[0], linewidth=2,
-                     label='R(V) {}'.format(set_name))
-        axes[0].plot(bias_interp[pts_list], pos_limits[pts_list], cols_set[1], linestyle=sym_set[1],
-                     label='R(V)+$\sigma$ {}'.format(set_name))
-        axes[0].plot(bias_interp[pts_list], neg_limits[pts_list], cols_set[2], linestyle=sym_set[2],
-                     label='R(V)-$\sigma$ {}'.format(set_name))
-
-    axes[0].legend(loc='best')
-    axes[0].set_ylim((0, 20))
+    for type_ind, pts_list, cols_set, sym_set, set_name in zip(range(len(names)), pts_to_plot,
+                                                               colors, syms, names):
+        axes[0].plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0],
+                     linestyle=sym_set[0], linewidth=2, label='R(V) {}'.format(set_name))
+        axes[0].fill_between(bias_interp[pts_list], pos_limits[pts_list], neg_limits[pts_list],
+                             alpha=0.25, color=cols_set[1],
+                             label='R(V)+-$\sigma$  {}'.format(set_name))
+    axes[0].legend(loc='upper left', bbox_to_anchor=(1.0, 1.0), fontsize=font_size_1)
     axes[0].set_xlim((-ex_amp, ex_amp))
 
     axes[1].plot(orig_bias, i_meas, 'b', label='I$_{meas}$')
     axes[1].plot(possibly_rolled_bias, i_recon, 'cyan', linestyle='--', label='I$_{rec}$')
 
     if split_directions:
-        axes[1].plot(bias_interp[:half_x_ind], (bias_interp / mr_vec)[:half_x_ind], 'r', label='I$_{Bayes} Forw$')
-        axes[1].plot(bias_interp[half_x_ind:], (bias_interp / mr_vec)[half_x_ind:], 'orange', label='I$_{Bayes} Rev$')
+        axes[1].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
+                     'r', label='I$_{Bayes} Forw$')
+        axes[1].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
+                     'orange', label='I$_{Bayes} Rev$')
+        """
+        axes[1].plot(bias_interp[:half_x_ind], (bias_interp / mr_vec)[:half_x_ind], 
+                     'r', label='I$_{Bayes} Forw$')
+        axes[1].plot(bias_interp[half_x_ind:], (bias_interp / mr_vec)[half_x_ind:], 
+                     'orange', label='I$_{Bayes} Rev$')
+        """
     else:
-        axes[1].plot(bias_interp, bias_interp / mr_vec, 'g', label='I$_{Bayes}$')
+        axes[1].plot(orig_bias, i_correct, 'g', label='I$_{Bayes}$')
+        # Incorrect:
+        # axes[1].plot(bias_interp, bias_interp / mr_vec, 'g', label='I$_{Bayes}$')
 
-    axes[1].legend(loc='best')
-    axes[1].set_xlabel('Voltage(V)')
-    axes[1].set_title('Bayesian Inference at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]))
+    axes[1].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)  # loc='best')
+    axes[1].set_xlabel('Voltage(V)', fontsize=font_size_2)
+    axes[1].set_title('Bayesian Inference at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]),
+                      fontsize=font_size_2)
 
-    axes[1].set_ylabel('Current (nA)')
+    axes[1].set_ylabel('Current (nA)', fontsize=font_size_2)
+
+    set_tick_font_size(axes, font_size_1)
+
     fig.tight_layout()
 
     return fig
