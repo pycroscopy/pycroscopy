@@ -88,6 +88,7 @@ def unnest_parm_dicts(image_parms, prefix=''):
     Parameters
     ----------
     image_parms : dict
+    prefix : str
 
     Returns
     -------

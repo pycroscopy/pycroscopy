@@ -558,14 +558,14 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
         Loops rearranged as - [component, points]
     x_axis : 1D real numpy array
         The vector to plot against
+    heading : str
+        Title to plot above everything else
+    subtitle : str
+        Subtile to of Figure
     num_comps : int
         Number of components to plot
-    title : String
-        Title to plot above everything else
-    x_label : String
+    x_label : str
         Label for x axis
-    stdevs : int
-        Number of standard deviations to consider for plotting
 
     Returns
     ---------
@@ -601,6 +601,8 @@ def plotScree(scree, title='Scree'):
     -------------
     scree : 1D real numpy array
         The scree vector from SVD
+    title : str
+        Figure title.  Default Scree
 
     Returns
     ---------
@@ -637,6 +639,10 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Number of standard deviations to consider for plotting
     color_bar_mode : String, Optional
         Options are None, single or each. Default None
+    evenly_spaced : bool
+        Default False
+    reverse_dims : Boolean (Optional)
+        Set this to False to accept data structured as [component, rows, cols]
     title : String or list of strings
         The titles for each of the plots.
         If a single string is provided, the plot titles become ['title 01', title 02', ...].
@@ -650,8 +656,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
-    reverse_dims : Boolean (Optional)
-        Set this to False to accept data structured as [component, rows, cols]
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
@@ -1286,7 +1290,6 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     raw_image
     clean_image
     stdevs
-    color_bar_mode
     fig_mult
     fig_args
     heading
@@ -1351,9 +1354,10 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
     plot_maxes = [raw_mean + stdevs * raw_std, clean_mean + stdevs * clean_std, noise_mean + stdevs * noise_std,
                   2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std, 2 * stdevs * fft_clean_std]
 
-    for count, ax, image, title, min, max in zip(range(6), axes_clean, plot_data, plot_names, plot_mins, plot_maxes):
+    for count, ax, image, title, plot_min, plot_max in zip(range(6), axes_clean, plot_data,
+                                                           plot_names, plot_mins, plot_maxes):
         im = plot_map(ax, image, stdevs, **kwargs)
-        im.set_clim(vmin=min, vmax=max)
+        im.set_clim(vmin=plot_min, vmax=plot_max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
         cbar = axes_clean.cbar_axes[count].colorbar(im)
         cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])

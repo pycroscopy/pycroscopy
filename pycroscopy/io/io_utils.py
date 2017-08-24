@@ -23,14 +23,14 @@ def check_ssh():
     return 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
 
 
-def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
+def uiGetFile(file_filter='H5 file (*.h5)', caption='Select File'):
     """
     Presents a File dialog used for selecting the .mat file
     and returns the absolute filepath of the selecte file\n
 
     Parameters
     ----------
-    extension : String or list of strings
+    file_filter : String or list of strings
         file extensions to look for
     caption : (Optional) String
         Title for the file browser window
@@ -51,7 +51,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
             raise
         else:
             app = QtWidgets.QApplication([])
-            path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=filter)[0]
+            path = QtWidgets.QFileDialog.getOpenFileName(caption=caption, filter=file_filter)[0]
             app.closeAllWindows()
             app.exit()
             del app
@@ -66,7 +66,7 @@ def uiGetFile(filter='H5 file (*.h5)', caption='Select File'):
             raise
         else:
             app = QtGui.QApplication([])
-            path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=filter)
+            path = QtGui.QFileDialog.getOpenFileName(caption=caption, filter=file_filter)
             app.exit()
             del app
 
@@ -84,7 +84,6 @@ def getTimeStamp():
 
     Parameters
     ----------
-    None
 
     Returns
     -------
@@ -101,7 +100,6 @@ def getAvailableMem():
 
     Parameters
     ----------
-    None
 
     Returns
     -------

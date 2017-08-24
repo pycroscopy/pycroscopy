@@ -157,9 +157,9 @@ class FeatureExtractorParallel(object):
             return keypts, descs
 
         # start pool of workers
-        print('launching %i kernels...' % (processes))
+        print('launching %i kernels...' % processes)
         pool = mp.Pool(processes)
-        tasks = [(imp) for imp in self.data]
+        tasks = [imp for imp in self.data]
         chunk = int(self.data.shape[0] / processes)
         jobs = pool.imap(detect, tasks, chunksize=chunk)
 

@@ -102,7 +102,7 @@ from pycroscopy.io.translators.omicron_asc import AscTranslator
 # pycroscopy H5 file.
 
 # download the raw data file from Github:
-data_file_path = 'temp.asc'
+data_file_path = 'temp_2.asc'
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.asc'
 if os.path.exists(data_file_path):
     os.remove(data_file_path)

@@ -357,7 +357,7 @@ def dm_read_string(f, outdata=None):
         put_into_file(f, ">" + str(slen) + "s", outdata)
         return header_size
     else:
-        assert(False)
+        assert False
         slen = get_from_file(f, ">L")
         raws = get_from_file(f, ">" + str(slen) + "s")
         if verbose:

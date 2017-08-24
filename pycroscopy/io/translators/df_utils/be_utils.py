@@ -299,7 +299,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     # Generate transfer functions
     F_AO_spectrogram = np.transpose(np.tile(FFT_BE_wave / scaling_factor, [spectrogram_mat.shape[1], 1]))
     # Divide by transfer function
-    spectrogram_mat = spectrogram_mat / (F_AO_spectrogram)
+    spectrogram_mat = spectrogram_mat / F_AO_spectrogram
 
     return spectrogram_mat
 
@@ -341,6 +341,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     do_histogram : Boolean (Optional. Default = False)
         Whether or not to generate hisograms. 
         Caution - Histograms can take a fair amount of time to compute.
+    debug : Boolean, Optional
+        If True, then extra debug statements are printed.
+        Default False
     """
 
     grp = h5_main.parent
@@ -730,7 +733,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Check if more that one unique value
             Append column number to iSpec_var if true
             """
-            if (uvals.size > 1):
+            if uvals.size > 1:
                 iSpec_var = np.append(iSpec_var, int(i))
 
         iSpec_var = np.asarray(iSpec_var, np.int)
@@ -1180,7 +1183,7 @@ BEHistogram Class and Functions
 """
 
 
-class BEHistogram():
+class BEHistogram:
     # TODO: Turn into proper class
     # TODO: Parallelize Histogram generation
     """
@@ -1291,9 +1294,15 @@ class BEHistogram():
 
         Parameters
         ----------
-            h5_path : hdf5 reference to Main_Dataset
+        h5_main : hdf5.Dataset
+        max_response : list
+        min_response : list
+        max_mem_mb : int
+        max_bins : int
+        debug : bool
 
-        Outputs:
+        Returns
+        -------
 
         """
 
@@ -1357,13 +1366,13 @@ class BEHistogram():
         ----------
         h5_main : HDF5 Dataset object
             Dataset to be historammed
-        activ_spec_steps : numpy array
+        active_spec_steps : numpy array
             active spectral steps in the current plot group
         max_response : numpy array
             maximum amplitude at each pixel
         min_response : numpy array
             minimum amplitude at each pixel
-        max_mem : Unsigned integer
+        max_mem_mb : Unsigned integer
             maximum number of Mb allowed for use.  Used to calculate the
             number of pixels to load in a chunk
         max_bins : integer
@@ -1547,7 +1556,7 @@ class BEHistogram():
                 udvs_bins = np.where(x_hist[1] == udvs_step)[0]
                 if debug:
                     print(np.shape(x_hist))
-                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk + 1], (udvs_bins)]
+                data_mat = h5_main[pix_chunks[ichunk]:pix_chunks[ichunk + 1], udvs_bins]
 
                 """
         Get the frequecies that correspond to the current UDVS bins from the total x_hist

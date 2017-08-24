@@ -744,7 +744,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     if h5_main.shape[1] % pts_per_cycle != 0:
         warn('Error in reshaping the provided dataset to pixels. Check points per pixel')
         raise ValueError
-        return
+
     num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
     h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]

@@ -88,7 +88,7 @@ import pycroscopy as px
 # ===========================
 # Download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.asc'
-data_file_path = 'temp.asc'
+data_file_path = 'temp_1.asc'
 if os.path.exists(data_file_path):
     os.remove(data_file_path)
 _ = wget.download(url, data_file_path, bar=None)

@@ -1,8 +1,8 @@
-'''
+"""
 Created on Apr 20, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
-'''
+"""
 
 import sys
 import numpy as np
@@ -15,11 +15,11 @@ from pycroscopy.io.hdf_utils import reshape_to_Ndims
 
 
 def loadDataFunc(filePath, **kwargs):
-    '''
+    """
     Function to load the N-D data from a .mat file
     Output:  N-D numpy data array, Nx2 x-vector array
             array indices are (Step, #rows, #cols, cycle#)
-    '''
+    """
     data = loadmat(filePath)
     data_mat = data['loop_mat']
     data_mat = data_mat[:, :, :, :]
@@ -32,18 +32,18 @@ def loadDataFunc(filePath, **kwargs):
 
 
 def readData(h5_path, dset_name='SHO_Fit_Guess'):
-    '''
+    """
     Reads the hdf5 data file and calls appropriate reader based on data type
     Input:
         h5_path -- the absolute file path to the hdf5 file to be read in.
         dset_name -- the name of the main dataset
-        
+
     Outputs:
         data_mat -- the transformed data read to be plotted
         xvec -- numpy array containing the possible plot data of the slice viewer
         xvec_labs -- numpy array of labels and units for the xvec array
-        
-    '''
+
+    """
 
     hdf = ioHDF5(h5_path)
 
@@ -64,18 +64,18 @@ def readData(h5_path, dset_name='SHO_Fit_Guess'):
 
 
 def readDCData(h5_group):
-    '''
+    """
     Reads the data for DC modulation experiments
-    
+
     Inputs:
-        h5_group -- hdf5 group holding the SHO_Fit Data for the chosen 
+        h5_group -- hdf5 group holding the SHO_Fit Data for the chosen
                     Measurement group
-    
+
     Outputs:
         data_guess -- the transformed data to be plotted
         xvec -- numpy array containing the possible plot data of the slice viewer
         xvec_labs -- numpy array of labels and units for the xvec array
-    '''
+    """
     h5_chan = h5_group['Channel_000']
     h5_main = h5_chan['Raw_Data']
     h5_file = h5_main.file
@@ -212,18 +212,18 @@ def readDCData(h5_group):
 
 
 def readACData(h5_group):
-    '''
+    """
     Reads the data for AC modulation experiments
-    
+
     Inputs:
-        h5_group -- hdf5 group holding the SHO_Fit Data for the chosen 
+        h5_group -- hdf5 group holding the SHO_Fit Data for the chosen
                     Measurement group
-    
+
     Outputs:
         data_guess -- the transformed data to be plotted
         xvec -- numpy array containing the possible plot data of the slice viewer
         xvec_labs -- numpy array of labels and units for the xvec array
-    '''
+    """
     h5_chan = h5_group['Channel_000']
     h5_main = h5_chan['Raw_Data']
     h5_specv = h5_chan['Spectroscopic_Values']
@@ -367,9 +367,9 @@ def getSpectralData(point, data_mat):
 
 
 def __getPos(h5_pos):
-    '''
+    """
     Return the number of rows and columns in the dataset
-    '''
+    """
     num_rows = len(np.unique(h5_pos[:, 0]))
     try:
         num_cols = len(np.unique(h5_pos[:, 1]))
@@ -380,9 +380,9 @@ def __getPos(h5_pos):
 
 
 def __findDataset(h5_file, ds_name):
-    '''
+    """
     Uses visit() to find all datasets with the desired name
-    '''
+    """
     print('Finding all instances of', ds_name)
     ds = []
 
