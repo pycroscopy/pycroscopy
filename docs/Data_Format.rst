@@ -154,9 +154,13 @@ dataset would be structured as:
 Compound Datasets:
 ^^^^^^^^^^^^^^^^^^
 
-pycroscopy actually uses compound datasets a lot more frequently than
-one would think. The need and utility of compound datasets are best
-described with examples:
+There are instances where multiple values are associate with a
+single position and spectroscopic value in a dataset.  In these cases,
+we use the Compound Dataset functionality in HDF5 to store all of the
+values at each point.  This also allows us to access any combination of
+the values without needing to read all of them.  Pycroscopy actually uses
+compound datasets a lot more frequently than one would think. The need
+and utility of compound datasets are best described with examples:
 
 * **Color images**: Each position in these datasets contain three (red,
   blue, green) or four (cyan, black, magenta, yellow) values. One would
@@ -195,10 +199,15 @@ described with examples:
     avoids plots with alternating coefficients that are several orders of
     magnitude larger / smaller than each other.
 
+For more information on compound datasets see the `tutorial
+<https://support.hdfgroup.org/HDF5/Tutor/compound.html>` from the HDF Group
+and the `h5py Datasets documentation
+<http://docs.h5py.org/en/latest/high/dataset.html#reading-writing-data>`
+
 ``Ancillary`` Datasets
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Each main dataset is always accompanied by four ancillary datasets to
+Each ``main`` dataset is always accompanied by four ancillary datasets to
 help make sense of the flattened ``main`` dataset. These are the:
 
 * The ``Position Values`` and ``Position Indices`` describe the index and
@@ -309,11 +318,12 @@ Cycle, Step.
 
 -  Thus, the data at the fourth row and seventh column of the main
    dataset can be explained using these ancillary datasets as data from:
--  X index of 0, with value of 0.0 microns
--  Y index of 1 and value of 2.3 nm
--  where a bias of index 0 and value of -6.5 V was being applied
--  on the first cycle
--  of the second bias waveform step.
+
+   -  X index of 0, with value of 0.0 microns
+   -  Y index of 1 and value of 2.3 nm
+      where a bias of index 0 and value of -6.5 V was being applied
+      on the first cycle
+      of the second bias waveform step.
 -  A simple glance at the shape of these datsets would be enough to
    reveal that the data has two position dimensions (from the second
    axis of the ``Position Indices`` dataset) and three spectroscopic
@@ -346,30 +356,35 @@ format <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`__ since it
 comfortably accomodates the pycroscopy format and offers several
 advantageous features.
 
-Information can be stored in HDF5 files in several ways: \*
-**``Datasets``** allow the storageo of data matricies and these are the
-vessels used for storing the ``main``, ``ancillary``, and any extra data
-matricies \* **``Datagroups``** are similar to folders in conventional
-file systems and can be used to store any number of datasets or
-datagroups themselves \* **``Attributes``** are small pieces of
-information, such as experimental or analytical parameters, that are
-stored in key-value pairs in the same way as dictionaries in python.
-Both datagroups and datasets can store attributes. \* While they are not
-means to store data, **``Links`` or ``references``** can be used to
-provide shortcuts and aliases to datasets and datagroups. This feature
-is especially useful for avoiding duplication of datasets when two
-``main`` datasets use the same ancillary datasets.
+Information can be stored in HDF5 files in several ways:
+* ``Datasets`` allow the storageo of data matricies and these are the
+  vessels used for storing the ``main``, ``ancillary``, and any extra data
+  matricies
+* ``Datagroups`` are similar to folders in conventional
+  file systems and can be used to store any number of datasets or
+  datagroups themselves
+* ``Attributes`` are small pieces of
+  information, such as experimental or analytical parameters, that are
+  stored in key-value pairs in the same way as dictionaries in python.
+  Both datagroups and datasets can store attributes.
+* While they are not
+  means to store data, ``Links`` or ``references`` can be used to
+  provide shortcuts and aliases to datasets and datagroups. This feature
+  is especially useful for avoiding duplication of datasets when two
+  ``main`` datasets use the same ancillary datasets.
 
 Among the `various
 benefits <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`__
-that they offer, HDF5 files: \* are readily compatible with
-high-performance computing facilities \* scale very efficiently from few
-kilobytes to several terabytes \* can be read and modified using any
-language including Python, Matlab, C/C++, Java, Fortran, Igor Pro, etc.
-\* store data in a intuitive and familiar heirarchical / tree-like
-structure that is similar to files and folders in personal computers. \*
-faciliates storage of any number of experimental or analysis parameters
-in addition to regular data.
+that they offer, HDF5 files:
+
+* are readily compatible with high-performance computing facilities
+* scale very efficiently from few kilobytes to several terabytes
+* can be read and modified using any language including Python, Matlab,
+  C/C++, Java, Fortran, Igor Pro, etc.
+* store data in a intuitive and familiar heirarchical / tree-like
+  structure that is similar to files and folders in personal computers.
+* faciliates storage of any number of experimental or analysis parameters
+  in addition to regular data.
 
 Implementation
 --------------
@@ -380,21 +395,27 @@ pycroscopy format in HDF5 files.
 ``Main`` data:
 ~~~~~~~~~~~~~~
 
-**Dataset** structured as (positions x time or spectroscopic values) \*
-``dtype`` : uint8, float32, complex64, compound if necessary, etc. \*
-*Required* attributes: \* ``quantity`` - Single string that explains the
-data. The physical quantity contained in each cell of the dataset – eg –
-'Current' or 'Deflection' \* ``units`` – Single string for units. The
-units for the physical quantity like 'nA', 'V', 'pF', etc. \*
-``Position_Indices`` - Reference to the position indices dataset \*
-``Position_Values`` - Reference to the position values dataset \*
-``Spectroscopic_Indices`` - Reference to the spectroscopic indices
-dataset \* ``Spectroscopic_Values`` - Reference to the spectroscopic
-values dataset \*
-```chunking`` <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__
-: HDF group recommends that chunks be between 100 kB to 1 MB. We
-recommend chunking by whole number of positions since data is more
-likely to be read by position rather than by specific spectral indices.
+**Dataset** structured as (positions x time or spectroscopic values)
+
+* ``dtype`` : uint8, float32, complex64, compound if necessary, etc.
+* *Required* attributes:
+
+  * ``quantity`` - Single string that explains the data. The physical
+    quantity contained in each cell of the dataset – eg –
+    'Current' or 'Deflection'
+  * ``units`` – Single string for units. The units for the physical
+    quantity like 'nA', 'V', 'pF', etc.
+  * ``Position_Indices`` - Reference to the position indices dataset
+  * ``Position_Values`` - Reference to the position values dataset
+  * ``Spectroscopic_Indices`` - Reference to the spectroscopic indices
+    dataset
+  * ``Spectroscopic_Values`` - Reference to the spectroscopic values
+    dataset
+
+* `chunking <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__
+  : HDF group recommends that chunks be between 100 kB to 1 MB. We
+  recommend chunking by whole number of positions since data is more
+  likely to be read by position rather than by specific spectral indices.
 
 Note that we are only storing references to the ancillary datasets. This
 allows multiple ``main`` datasets to share the same ancillary datasets
@@ -403,41 +424,65 @@ without having to duplicate them.
 ``Ancillary`` data:
 ~~~~~~~~~~~~~~~~~~~
 
-**Position\_Indices** structured as (positions x spatial dimensions) \*
-dimensions are arranged in ascending order of rate of change. In other
-words, the fastest changing dimension is in the first column and the
-slowest is in the last or rightmost column. \* ``dtype`` : uint32 \*
-Required attributes: \* ``labels`` - list of strings for the column
-names like ['X', 'Y'] \* ``units`` – list of strings for units like
-['um', 'nm'] \* Optional attributes: \* Region references based on
-column names
+**Position\_Indices** structured as (positions x spatial dimensions)
 
-**Position\_Values** structured as (positions x spatial dimensions) \*
-dimensions are arranged in ascending order of rate of change. In other
-words, the fastest changing dimension is in the first column and the
-slowest is in the last or rightmost column. \* ``dtype`` : float32 \*
-Required attributes: \* ``labels`` - list of strings for the column
-names like ['X', 'Y'] \* ``units`` – list of strings for units like
-['um', 'nm'] \* Optional attributes: \* Region references based on
-column names
+* dimensions are arranged in ascending order of rate of change. In other
+  words, the fastest changing dimension is in the first column and the
+  slowest is in the last or rightmost column.
+* ``dtype`` : uint32
+* Required attributes:
+
+  * ``labels`` - list of strings for the column names like ['X', 'Y']
+  * ``units`` – list of strings for units like ['um', 'nm']
+
+* Optional attributes:
+  * Region references based on column names
+
+**Position\_Values** structured as (positions x spatial dimensions)
+
+* dimensions are arranged in ascending order of rate of change. In other
+  words, the fastest changing dimension is in the first column and the
+  slowest is in the last or rightmost column.
+* ``dtype`` : float32
+* Required attributes:
+
+  * ``labels`` - list of strings for the column names like ['X', 'Y']
+  * ``units`` – list of strings for units like ['um', 'nm']
+
+* Optional attributes:
+  * Region references based on column names
 
 **Spectroscopic\_Indices** structured as (spectroscopic dimensions x
-time) \* dimensions are arranged in ascending order of rate of change.
-In other words, the fastest changing dimension is in the first row and
-the slowest is in the last or lowermost row. \* ``dtype`` : uint32 \*
-Required attributes: \* ``labels`` - list of strings for the column
-names like ['Bias', 'Cycle'] \* ``units`` – list of strings for units
-like ['V', '']. Empty string for dimensionless quantities \* Optional
-attributes: \* Region references based on row names
+time)
+
+* dimensions are arranged in ascending order of rate of change.
+  In other words, the fastest changing dimension is in the first row and
+  the slowest is in the last or lowermost row.
+* ``dtype`` : uint32
+* Required attributes:
+
+  * ``labels`` - list of strings for the column names like ['Bias', 'Cycle']
+  * ``units`` – list of strings for units like ['V', ''].
+    Empty string for dimensionless quantities
+
+* Optional attributes:
+  * Region references based on row names
 
 **Spectroscopic\_Values** structured as (spectroscopic dimensions x
-time) \* dimensions are arranged in ascending order of rate of change.
-In other words, the fastest changing dimension is in the first row and
-the slowest is in the last or lowermost row. \* ``dtype`` : float32 \*
-Required attributes: \* ``labels`` - list of strings for the column
-names like ['Bias', 'Cycle'] \* ``units`` – list of strings for units
-like ['V', '']. Empty string for dimensionless quantities \* Optional
-attributes: \* Region references based on row names
+time)
+
+* dimensions are arranged in ascending order of rate of change.
+  In other words, the fastest changing dimension is in the first row and
+  the slowest is in the last or lowermost row.
+* ``dtype`` : float32
+* Required attributes:
+
+  * ``labels`` - list of strings for the column names like ['Bias', 'Cycle']
+  * ``units`` – list of strings for units like ['V', ''].
+  Empty string for dimensionless quantities
+
+* Optional attributes:
+  * Region references based on row names
 
 Attributes
 ~~~~~~~~~~
@@ -547,64 +592,67 @@ Tool (analysis / processing)
 
 -  In general, the results from tools applied to datasets should be
    stored as:
--  ``Parent_Dataset``
--  ``Parent_Dataset-Tool_Name_000`` (datagroup comtaining results from
-   first run of the ``tool`` on ``Parent_Dataset``)
 
-   -  Attributes:
+    -  ``Parent_Dataset``
+    -  ``Parent_Dataset-Tool_Name_000`` (datagroup comtaining results from
+       first run of the ``tool`` on ``Parent_Dataset``)
 
-      -  ``time_stamp``
-      -  ``machine_id``
-      -  ``algorithm``
-      -  Other tool-relevant attributes
+       -  Attributes:
 
-   -  ``Dataset_Result0``
-   -  ``Dataset_Result1`` ...
+          -  ``time_stamp``
+          -  ``machine_id``
+          -  ``algorithm``
+          -  Other tool-relevant attributes
 
--  ``Parent_Dataset-Tool_Name_001`` (datagroup comtaining results from
-   second run of the ``tool`` on ``Parent_Dataset``)
+       -  ``Dataset_Result0``
+       -  ``Dataset_Result1`` ...
+
+    -  ``Parent_Dataset-Tool_Name_001`` (datagroup comtaining results from
+       second run of the ``tool`` on ``Parent_Dataset``)
+
 -  This methodolody is illustrated with an example of applying
    ``K-Means Clustering`` on the ``Raw_Data`` acquired from a
    mesurement:
--  ``Raw_Data`` (``main`` dataset)
--  ``Raw_Data-Cluster_000`` (datagroup)
--  Attributes:
 
-   -  ``time_stamp`` : '2017\_08\_15-22\_15\_45'
-   -  ``machine_id`` : 'mac1234.ornl.gov'      \* ``algorithm`` :
-      'K-Means'
+    -  ``Raw_Data`` (``main`` dataset)
+    -  ``Raw_Data-Cluster_000`` (datagroup)
+    -  Attributes:
 
--  ``Label_Indices`` (ancillary spectroscopic dataset)
--  ``Label_Values`` (ancillary spectroscopic dataset)
--  ``Labels`` (main dataset)
+       -  ``time_stamp`` : '2017\_08\_15-22\_15\_45'
+       -  ``machine_id`` : 'mac1234.ornl.gov'      \* ``algorithm`` :
+          'K-Means'
 
-   -  Attributes:
+    -  ``Label_Indices`` (ancillary spectroscopic dataset)
+    -  ``Label_Values`` (ancillary spectroscopic dataset)
+    -  ``Labels`` (main dataset)
 
-      -  ``quantity`` : 'Cluster labels'
-      -  ``units`` : ''
-      -  ``Position_Indicies`` : Reference to ``Position_Indices`` from
-         attribute of ``Raw_Data``
-      -  ``Position_Values`` : Reference to ``Position_Values`` from
-         attribute of ``Raw_Data``
-      -  ``Spectrocopic_Indices`` : Reference to ``Label_Indices``
-      -  ``Spectrocopic_Values`` : Reference to ``Label_Values``
+       -  Attributes:
 
--  ``Cluster_Indices`` (ancillary positions dataset)
--  ``Cluster_Values`` (ancillary positions dataset)
--  ``Mean_Response`` (main dataset) <- This dataset stores the endmember
-   or mean response for each cluster
+          -  ``quantity`` : 'Cluster labels'
+          -  ``units`` : ''
+          -  ``Position_Indicies`` : Reference to ``Position_Indices`` from
+             attribute of ``Raw_Data``
+          -  ``Position_Values`` : Reference to ``Position_Values`` from
+             attribute of ``Raw_Data``
+          -  ``Spectrocopic_Indices`` : Reference to ``Label_Indices``
+          -  ``Spectrocopic_Values`` : Reference to ``Label_Values``
 
-   -  Attributes:
+    -  ``Cluster_Indices`` (ancillary positions dataset)
+    -  ``Cluster_Values`` (ancillary positions dataset)
+    -  ``Mean_Response`` (main dataset) <- This dataset stores the endmember
+       or mean response for each cluster
 
-      -  ``quantity`` : copy from the ``quantity`` attribute in
-         ``Raw_Data``
-      -  ``units`` : copy from the ``units`` attribute in ``Raw_Data``
-      -  ``Position_Indicies`` : Reference to ``Cluster_Indices``
-      -  ``Position_Values`` : Reference to ``Cluster_Values``
-      -  ``Spectrocopic_Indices`` : Reference to
-         ``Spectrocopic_Indices`` from attribute of ``Raw_Data``
-      -  ``Spectrocopic_Values`` : Reference to ``Spectrocopic_Values``
-         from attribute of ``Raw_Data``
+       -  Attributes:
+
+          -  ``quantity`` : copy from the ``quantity`` attribute in
+             ``Raw_Data``
+          -  ``units`` : copy from the ``units`` attribute in ``Raw_Data``
+          -  ``Position_Indicies`` : Reference to ``Cluster_Indices``
+          -  ``Position_Values`` : Reference to ``Cluster_Values``
+          -  ``Spectrocopic_Indices`` : Reference to
+             ``Spectrocopic_Indices`` from attribute of ``Raw_Data``
+          -  ``Spectrocopic_Values`` : Reference to ``Spectrocopic_Values``
+             from attribute of ``Raw_Data``
 
 -  Note that the spectroscopic datasets that the ``Labels`` dataset link
    to are not called ``Spectroscopic_Indices`` or
