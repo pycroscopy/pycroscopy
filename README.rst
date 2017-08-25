@@ -1,6 +1,8 @@
 ==========
-pycroscopy
+pycroscopy		|statusimage|
 ==========
+
+.. |statusimage| image:: https://travis-ci.org/pycroscopy/pycroscopy.svg?branch=master
 
 .. contents::
 
