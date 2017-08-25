@@ -19,7 +19,7 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, link_as_main, copyAttributes, copy_main_attributes
 from ..io.io_utils import getTimeStamp
 from ..io.microdata import MicroDataGroup, MicroDataset
-from ..viz.plot_utils import rainbow_plot
+from ..viz.plot_utils import rainbow_plot, set_tick_font_size
 from ..io.translators.utils import build_ind_val_dsets
 
 
@@ -150,17 +150,23 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
         ax_raw = plt.subplot2grid((2, 4), (0, 0), colspan=lhs_colspan)
         ax_filt = plt.subplot2grid((2, 4), (1, 0), colspan=lhs_colspan)
         axes = [ax_raw, ax_filt]
+        set_tick_font_size(axes, 14)
     else:
         fig = None
         axes = None
 
     if show_plots:
         amp = np.abs(fft_pix_data)
-        ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind])
-        ax_raw.semilogy(w_vec[l_ind:r_ind], (composite_filter[l_ind:r_ind] + np.min(amp)) * (np.max(amp) - np.min(amp)))
+        ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind], label='Raw')
+        ax_raw.semilogy(w_vec[l_ind:r_ind],
+                        (composite_filter[l_ind:r_ind] + np.min(amp)) * (np.max(amp) - np.min(amp)),
+                        label='Composite Filter')
         if noise_floor is not None:
-            ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind - l_ind) * noise_floor)
-        ax_raw.set_title('Raw Signal')
+            ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind - l_ind) * noise_floor,
+                            label='Noise Threshold')
+        ax_raw.legend(loc='best', fontsize=14)
+        ax_raw.set_title('Raw Signal', fontsize=16)
+        ax_raw.set_ylabel('Magnitude (a. u.)', fontsize=14)
 
     fft_pix_data *= composite_filter
 
@@ -169,10 +175,11 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
 
     if show_plots:
         ax_filt.semilogy(w_vec[l_ind:r_ind], np.abs(fft_pix_data[l_ind:r_ind]))
-        ax_filt.set_title('Filtered Signal')
-        ax_filt.set_xlabel('Frequency(kHz)')
+        ax_filt.set_title('Filtered Signal', fontsize=16)
+        ax_filt.set_xlabel('Frequency(kHz)', fontsize=14)
+        ax_filt.set_ylabel('Magnitude (a. u.)', fontsize=14)
         if noise_floor is not None:
-            ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
+            ax_filt.set_ylim(bottom=noise_floor * 0.5)  # prevents the noise threshold from messing up plots
 
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(fft_pix_data)))
 
@@ -181,9 +188,10 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
             rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
         else:
             ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
-        ax_loops.set_title('AI vs AO')
-        ax_loops.set_xlabel('Input Bias (V)')
-        ax_loops.set_ylabel('Deflection (mV)')
+        ax_loops.set_title('AI vs AO', fontsize=16)
+        ax_loops.set_xlabel('Input Bias (V)', fontsize=14)
+        ax_loops.set_ylabel('Deflection (mV)', fontsize=14)
+        set_tick_font_size(ax_loops, 14)
         axes.append(ax_loops)
         fig.tight_layout()
     return filt_data, fig, axes
