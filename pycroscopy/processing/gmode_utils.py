@@ -160,10 +160,10 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
         ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind], label='Raw')
         ax_raw.semilogy(w_vec[l_ind:r_ind],
                         (composite_filter[l_ind:r_ind] + np.min(amp)) * (np.max(amp) - np.min(amp)),
-                        label='Composite Filter')
+                        linewidth=3, color='orange', label='Composite Filter')
         if noise_floor is not None:
             ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind - l_ind) * noise_floor,
-                            label='Noise Threshold')
+                            linewidth=2, color='r', label='Noise Threshold')
         ax_raw.legend(loc='best', fontsize=14)
         ax_raw.set_title('Raw Signal', fontsize=16)
         ax_raw.set_ylabel('Magnitude (a. u.)', fontsize=14)
@@ -179,7 +179,7 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
         ax_filt.set_xlabel('Frequency(kHz)', fontsize=14)
         ax_filt.set_ylabel('Magnitude (a. u.)', fontsize=14)
         if noise_floor is not None:
-            ax_filt.set_ylim(bottom=noise_floor * 0.5)  # prevents the noise threshold from messing up plots
+            ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
 
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(fft_pix_data)))
 
