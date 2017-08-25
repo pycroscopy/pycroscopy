@@ -228,7 +228,7 @@ print(labels)
 #########################################################################
 # Now that we have the data in its original N dimensional form, we can easily slice the dataset:
 
-spectrogram = ds_nd[2,3, :, 1, :, 0]
+spectrogram = ds_nd[2, 3, :, :, 1, 0]
 # Now the spectrogram is of order (frequency x DC_Offset).
 spectrogram = spectrogram.T
 # Now the spectrogram is of order (DC_Offset x frequency)
