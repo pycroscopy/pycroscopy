@@ -87,13 +87,19 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
     Get parameters from the dictionary.
     '''
     noise_band_filter = filter_parms.get('band_filt_[Hz]', 1)
+    if noise_band_filter is None:
+        noise_band_filter = 1
     if isinstance(noise_band_filter, Iterable):
         noise_band_filter = noiseBandFilter(num_pts, samp_rate, noise_band_filter[0],
                                             noise_band_filter[1])
         if verbose and isinstance(noise_band_filter, Iterable):
             print('Calculated valid noise_band_filter')
+    else:
+        noise_band_filter = 1
 
     low_pass_filter = filter_parms.get('LPF_cutOff_[Hz]', -1)
+    if low_pass_filter is None:
+        low_pass_filter = 1
     if low_pass_filter > 0:
         low_pass_filter = makeLPF(num_pts, samp_rate, low_pass_filter)
         if verbose and isinstance(low_pass_filter, Iterable):
@@ -107,17 +113,22 @@ def test_filter(resp_wfm, filter_parms, samp_rate, show_plots=True, use_rainbow_
                                               harmonic_filter[1], harmonic_filter[2])
         if verbose and isinstance(harmonic_filter, Iterable):
             print('Calculated valid harmonic filter')
+    else:
+        harmonic_filter = 1
 
     composite_filter = noise_band_filter * low_pass_filter * harmonic_filter
 
     noise_floor = filter_parms.get('noise_threshold', None)
+    if type(noise_floor) not in [float, np.float, np.float16, np.float32, np.float64]:
+        noise_floor = None
+
     fft_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
     if 0 < noise_floor < 1:
         noise_floor = getNoiseFloor(fft_pix_data, noise_floor)[0]
 
     if show_plots:
         l_ind = int(0.5 * num_pts)
-        if type(composite_filter) == np.ndarray:
+        if isinstance(composite_filter, np.ndarray):
             r_ind = np.max(np.where(composite_filter > 0)[0])
         else:
             r_ind = num_pts
