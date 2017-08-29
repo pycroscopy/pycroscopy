@@ -77,10 +77,6 @@ class Model(object):
         verbose : Boolean (Optional)
             Whether or not to print log statements
 
-        Returns
-        -------
-        None
-
         """
 
         if self._parallel:
@@ -139,15 +135,12 @@ class Model(object):
 
     def _get_data_chunk(self, verbose=False):
         """
-        Returns the next chunk of data for the guess or the fit
+        Reads the next chunk of data for the guess or the fit into memory
 
         Parameters
         -----
-        None
-
-        Returns
-        --------
-
+        verbose : bool, optional
+            Whether or not to print log statements
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -182,16 +175,19 @@ class Model(object):
         else:
             self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
 
-    def _set_results(self, is_guess=False):
+    def _set_results(self, is_guess=False, verbose=False):
         """
         Writes the provided guess or fit results into appropriate datasets.
         Given that the guess and fit datasets are relatively small, we should be able to hold them in memory just fine
 
         Parameters
         ---------
-        is_guess : Boolean
+        is_guess : bool, optional
+            Default - False
             Flag that differentiates the guess from the fit
-
+        verbose : bool, optional
+            Default - False
+            Whether or not to print log statements
         """
         statement = 'guess'
 
@@ -203,13 +199,14 @@ class Model(object):
             targ_dset = self.h5_fit
             source_dset = self.fit
 
-        """print('Writing data to positions: {} to {}'.format(self.__start_pos, self._end_pos))
-        targ_dset[self._start_pos:self._end_pos, :] = source_dset"""
+        if verbose:
+            print('Writing data to positions: {} to {}'.format(self.__start_pos, self._end_pos))
         targ_dset[:, :] = source_dset
 
         # flush the file
         self.hdf.flush()
-        print('Finished writing ' + statement + ' results to file!')
+        if verbose:
+            print('Finished writing ' + statement + ' results to file!')
 
     def _create_guess_datasets(self):
         """
@@ -229,9 +226,8 @@ class Model(object):
         None
 
         """
-        warn('Please override the _create_guess_datasets specific to your model')
         self.guess = None  # replace with actual h5 dataset
-        pass
+        raise NotImplementedError('Please override the _create_guess_datasets specific to your model')
 
     def _create_fit_datasets(self):
         """
@@ -251,9 +247,8 @@ class Model(object):
         None
 
         """
-        warn('Please override the _create_fit_datasets specific to your model')
         self.fit = None  # replace with actual h5 dataset
-        pass
+        raise NotImplementedError('Please override the _create_fit_datasets specific to your model')
 
     def do_guess(self, processors=None, strategy='wavelet_peaks',
                  options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
