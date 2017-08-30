@@ -36,6 +36,7 @@ from . import giv_utils
 from .feature_extraction import FeatureExtractorParallel, FeatureExtractorSerial
 from .image_transformation import geoTransformerParallel, geoTransformerSerial
 from . import process
+from .process import Process
 
 
 def no_impl(*args, **kwargs):
@@ -54,5 +55,5 @@ else:
     FeatureExtractor = FeatureExtractorParallel
     geoTransformer = geoTransformerParallel
 
-__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
-           'giv_utils', 'rebuild_svd']
+__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'Process', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
+           'giv_utils', 'rebuild_svd', 'process']
