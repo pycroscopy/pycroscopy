@@ -11,10 +11,41 @@ import psutil
 
 import itertools
 import multiprocessing as mp
-
+import joblib
 from ..io.hdf_utils import checkIfMain
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import recommendCores
+from ..io.io_utils import recommendCores, getAvailableMem
+
+
+def calc_func(some_func, args):
+    """
+
+    Parameters
+    ----------
+    some_func
+    args
+
+    Returns
+    -------
+
+    """
+
+    return some_func(*args)
+
+
+def setup_func(args):
+    """
+
+    Parameters
+    ----------
+    args
+
+    Returns
+    -------
+
+    """
+
+    return calc_func(*args)
 
 
 class Process(object):
@@ -22,7 +53,7 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=None):
+    def __init__(self, h5_main, cores=None, max_mem_mb=None):
         """
         Parameters
         ----------
@@ -32,6 +63,8 @@ class Process(object):
         cores : uint, optional
             Default - None
             How many cores to use for the computation
+        max_mem_mb : uint, optional
+            How much memory to use for the computation.  Default None
         """
 
         # Checking if dataset is "Main"
@@ -42,7 +75,7 @@ class Process(object):
             raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
 
         # Determining the max size of the data that can be put into memory
-        self._set_memory_and_cores(cores=cores)
+        self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
 
         self._start_pos = 0
         self._end_pos = self.h5_main.shape[0]
@@ -50,7 +83,7 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
-    def _set_memory_and_cores(self, cores=None, verbose=False):
+    def _set_memory_and_cores(self, cores=None, mem=None, verbose=False):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -71,7 +104,9 @@ class Process(object):
             cores = int(abs(cores))
             self._cores = min(psutil.cpu_count(), max(1, cores))
 
-        self._max_mem_mb = psutil.virtual_memory().available / 1e6  # in MB
+        _max_mem_mb = getAvailableMem() / 1E6  # in MB
+
+        self._max_mem_mb = min(_max_mem_mb, mem)
 
         max_data_chunk = self._max_mem_mb / self._cores
 
@@ -155,7 +190,7 @@ class Process(object):
         return self.h5_results_grp
 
 
-def parallel_compute(data, func, cores=1, lengthy_computation=False, *args, **kwargs):
+def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kwargs):
     """
     Computes the guess function using multiple cores
 
@@ -188,33 +223,8 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, *args, **kw
     cores = recommendCores(data.shape[0], requested_cores=cores,
                            lengthy_computation=lengthy_computation)
 
-    if cores > 1:
-        # Vectorize tasks
-        if sys.version_info.major == 3:
-            zip_fun = zip
-        else:
-            zip_fun = itertools.izip
-        # tasks = [(vector, kwargs) for vector in data]
-        tasks = zip_fun(data, itertools.repeat(args), itertools.repeat(kwargs))
+    values = [joblib.delayed(func)(x, *args, **kwargs) for x in data]
 
-        chunk = int(data.shape[0] / cores)
-
-        # start pool of workers
-        print('Computing in parallel ... launching %i kernels...' % cores)
-        pool = mp.Pool(processes=cores)
-
-        # Map them across processors
-        jobs = pool.imap(func, tasks, chunksize=chunk)
-
-        # get Results from different processes
-        results = [j for j in jobs]
-
-        # Finished reading the entire data set
-        print('Extracted Results... Closing %i kernels...' % cores)
-        pool.close()
-
-    else:
-        print("Computing serially ...")
-        results = [func(vector, args, kwargs) for vector in data]
+    results = joblib.Parallel(n_jobs=cores)(values)
 
     return results

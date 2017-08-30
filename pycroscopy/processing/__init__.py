@@ -35,6 +35,7 @@ from .image_processing import ImageWindow
 from . import giv_utils
 from .feature_extraction import FeatureExtractorParallel, FeatureExtractorSerial
 from .image_transformation import geoTransformerParallel, geoTransformerSerial
+from . import process
 
 
 def no_impl(*args, **kwargs):
