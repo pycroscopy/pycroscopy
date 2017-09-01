@@ -693,7 +693,7 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
-                   title='Component', heading='Map Stack', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
+                   title='Component', heading='Map Stack', colorbar_label = '', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
     """
     Plots the provided stack of maps
 
@@ -717,6 +717,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if a list of strings (equal to the number of components) are provided, these are used instead.
     heading : String
         ###Insert description here### Default 'Map Stack'
+    colorbar_label : String
+        label for colorbar. Default is an empty string.
     fig_mult : length 2 array_like of uints
         Size multipliers for the figure.  Figure size is calculated as (num_rows*`fig_mult[0]`, num_cols*`fig_mult[1]`).
         Default (4, 4)
@@ -807,11 +809,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                       stdevs=stdevs, **kwargs)
         axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
-            axes202.cbar_axes[count].colorbar(im)
-
+            cb = axes202.cbar_axes[count].colorbar(im)
+            cb.set_label_text(colorbar_label)
     if color_bar_mode is 'single':
-        axes202.cbar_axes[0].colorbar(im)
-
+        cb = axes202.cbar_axes[0].colorbar(im)
+        cb.set_label_text(colorbar_label)
     return fig202, axes202
 
 
