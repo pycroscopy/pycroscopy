@@ -271,7 +271,7 @@ class TRKPFMTranslator(Translator):
         parm_dict = dict()
 
         parm_dict['IO_samp_rate_[Hz]'] = np.uint32(h5_f['IO_rate'][0][0])
-        parm_dict['IO_time'] = np.uint32(h5_f['IO_time'][0][0])
+        parm_dict['IO_time'] = np.float32(h5_f['IO_time'][0][0])
 
         excit_wfm = np.float32(np.squeeze(h5_f['dc_amp_vec']))
 
