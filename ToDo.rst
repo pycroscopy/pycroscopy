@@ -4,8 +4,8 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
+* Simplify and demystify analyis / optimize. Use parallel_compute and joblib
 * Data Generators
-* Parallel framework for Processing - Should be similar to Optimize from Analysis.
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,13 +48,13 @@ Done:
 * Basic introduction to loading data in pycroscopy
 * Handling multidimensional (6D) datasets
 * Visualizing data (interactively using widgets) (needs some tiny automation in the end)
+* How to write your write your own parallel computing function using the process module
 
 Pending:
 
-* How to write your write your own parallel computing function using the (yet to be written) process module
+* How to write your own analysis class
 
-
-Rama's tutorial goal
+Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
 1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
 2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
@@ -65,7 +65,6 @@ Rama's tutorial goal
 Documentation
 -------------
 *	Switch from static examples to dynamic jupyter notebook like examples:
-   * http://sphinx-gallery.readthedocs.io/en/latest/tutorials/plot_notebook.html
    * http://scikit-image.org/docs/dev/auto_examples/ 
    * http://scikit-learn.org/stable/auto_examples/index.html 
    * more complicated analyses -  http://nipy.org/dipy/examples_index.html
@@ -82,11 +81,10 @@ Formatting changes
 
 Notebooks
 ---------
-*	Add new workflows
 *	Direct downloading of notebooks (ipynb an html)
   * nbviewer?
   * Host somewhere other than github?
-*	Investigate using JupyterHub and JupyterLab
+*	Investigate using JupyterLab
 
 Testing
 -------
@@ -99,7 +97,6 @@ Software Engineering
 --------------------
 * Consider releasing bug fixes (to onsite CNMS users) via git instead of rapid pypi releases 
    * example release steps (incl. git tagging): https://github.com/cesium-ml/cesium/blob/master/RELEASE.txt
-* Proper pypi versioning - https://www.python.org/dev/peps/pep-0440/#developmental-releases
 * Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
 * Add requirements.txt
 * Consider facilitating conda installation in addition to pypi
