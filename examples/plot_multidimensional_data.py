@@ -19,7 +19,7 @@ matrices, namely the spectroscopic indices and values matrix as well as the posi
 will be essential for reshaping the data back to its original N dimensional form and for slicing multidimensional
 datasets
 
-We highly recommend reading
+We highly recommend reading about the pycroscopy data format - available in the docs.
 
 """
 
@@ -49,12 +49,12 @@ import pycroscopy as px
 # Load the dataset
 # ================
 #
-# For this example, we will be working with a Band Excitation Polarization Switching (BEPS) First Order Reversal
-# Curve (FORC) dataset acquired from advanced atomic force microscopes. In the much simpler Band Excitation (BE)
+# For this example, we will be working with a Band Excitation Polarization Switching (BEPS)
+# dataset acquired from advanced atomic force microscopes. In the much simpler Band Excitation (BE)
 # imaging datasets, a single spectra is acquired at each location in a two dimensional grid of spatial locations.
 # Thus, BE imaging datasets have two position dimensions (X, Y) and one spectroscopic dimension (frequency - against
-# which the spectra is recorded). The BEPS-FORC dataset used in this example has a spectra for each combination of
-# three other paramaters (DC offset, Field, bias waveform type {FORC}). Thus, this dataset has three new spectral
+# which the spectra is recorded). The BEPS dataset used in this example has a spectra for each combination of
+# three other paramaters (DC offset, Field, and Cycle). Thus, this dataset has three new spectral
 # dimensions in addition to the spectra itself. Hence, this dataet becomes a 2+4 = 6 dimensional dataset
 
 # download the raw data file from Github:
@@ -133,9 +133,11 @@ interact(myfun, pos_index=(0, h5_main.shape[0]-1, 1), spec_index=(0, h5_main.sha
 # **Positions**: For each Y index, the X index ramps up from 0 to 4 and repeats. Essentially, this means that for
 # a given Y index, there were multiple measurements (different values of X)
 #
-# **Spectroscopic**: The plot for `FORC` shows that the next fastest dimension - `DC offset` was varied 6 times.
-# Correspondingly, the plot for `DC offset` plot shows that this dimension ramps up from 0 to a little less than
-# 40 for each `FORC` index. This trend is the same for the faster varying dimensions - `Frequency` and `Field`.
+# **Spectroscopic**: The plot for `Cycle` shows that the next fastest dimension, `DC offset`, was varied twice.
+# Correspondingly, the plot for `DC offset` plot shows that this dimension ramps up from 0 to 63
+# for each `Cycle` index. The same logic can be extended to the faster varying dimensions - `Frequency` and `Field`.
+#
+# Note that the spectroscopic and position dimensions may not be arranged from fastest to slowest.
 
 fig_1, axes = plt.subplots(ncols=2, figsize=(10, 5))
 px.plot_utils.plot_line_family(axes[0], np.arange(h5_pos_ind.shape[0]), h5_pos_ind[()].T,
@@ -169,6 +171,8 @@ for dim_ind, axis, dim_label, dim_array in zip(range(h5_spec_ind.shape[0]), rhs_
 #########################################################################
 
 # A similar version of this function is available in pycroscopy.io.hdf_utils.get_formatted_labels
+
+
 def describe_dimensions(h5_aux):
     for name, unit in zip(px.hdf_utils.get_attr(h5_aux, 'labels'),
                             px.hdf_utils.get_attr(h5_aux, 'units')):
@@ -187,6 +191,8 @@ describe_dimensions(h5_spec_ind)
 # In other words lets assume that data was not sampled over a random subset of points within a grid of points
 
 # The function below has been implemented as pycroscopy.io.hdf_utils.get_dimensionality
+
+
 def get_dim_sizes(ind_dset, is_position=False):
     # ind_dset here is expected to be of the shape [dimension, points] like the spectroscopic indices
     if is_position:
@@ -227,8 +233,7 @@ print(labels)
 
 #########################################################################
 # Now that we have the data in its original N dimensional form, we can easily slice the dataset:
-
-spectrogram = ds_nd[2, 3, :, :, 1, 0]
+spectrogram = ds_nd[2,3, :, 0, :, 1]
 # Now the spectrogram is of order (frequency x DC_Offset).
 spectrogram = spectrogram.T
 # Now the spectrogram is of order (DC_Offset x frequency)
@@ -333,7 +338,8 @@ print('We need to reshape the vector by the tuple:', spectrogram_shape)
 spectrogram2 = np.reshape(np.squeeze(data_vec), spectrogram_shape)
 
 #########################################################################
-# Now that the spectrogram is indeed two dimensional, we can visualize it
+# Now that the spectrogram is indeed two dimensional, we can visualize it. This plot should match the one from the first
+# approach.
 
 # Now the spectrogram is of order (DC_Offset x frequency)
 fig, axis = plt. subplots()
