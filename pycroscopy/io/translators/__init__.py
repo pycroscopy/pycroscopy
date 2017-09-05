@@ -43,4 +43,4 @@ __all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxatio
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
-           'LabViewH5Patcher']
+           'LabViewH5Patcher', 'TRKPFMTranslator']

@@ -179,6 +179,14 @@ pycroscopy.io.hdf_utils
 
 	       <div style='clear:both'></div>
 
+   .. autofunction:: get_data_descriptor
+
+   .. include:: backreferences/pycroscopy.io.hdf_utils.get_data_descriptor.examples
+
+   .. raw:: html
+
+	       <div style='clear:both'></div>
+
    .. autofunction:: get_dimensionality
 
    .. include:: backreferences/pycroscopy.io.hdf_utils.get_dimensionality.examples
@@ -198,6 +206,14 @@ pycroscopy.io.hdf_utils
    .. autofunction:: get_sort_order
 
    .. include:: backreferences/pycroscopy.io.hdf_utils.get_sort_order.examples
+
+   .. raw:: html
+
+	       <div style='clear:both'></div>
+
+   .. autofunction:: get_unit_values
+
+   .. include:: backreferences/pycroscopy.io.hdf_utils.get_unit_values.examples
 
    .. raw:: html
 

@@ -3,9 +3,11 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-================
-Pycroscopy
-================
+==========
+Pycroscopy  |statusimage|
+==========
+
+.. |statusimage| image:: https://travis-ci.org/pycroscopy/pycroscopy.svg?branch=master
 
 Scientific analysis of nanoscale materials imaging data
 =======================================================

@@ -43,6 +43,14 @@ pycroscopy.viz.plot_utils
 
 	       <div style='clear:both'></div>
 
+   .. autofunction:: get_cmap_object
+
+   .. include:: backreferences/pycroscopy.viz.plot_utils.get_cmap_object.examples
+
+   .. raw:: html
+
+	       <div style='clear:both'></div>
+
    .. autofunction:: make_linear_alpha_cmap
 
    .. include:: backreferences/pycroscopy.viz.plot_utils.make_linear_alpha_cmap.examples

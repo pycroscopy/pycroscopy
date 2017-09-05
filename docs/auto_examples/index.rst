@@ -7,26 +7,6 @@ Pycroscopy Gallery
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="The example docstring will be printed as text along with the code of the example. It should con...">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_example_example_thumb.png
-
-        :ref:`sphx_glr_auto_examples_example_example.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/example_example
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="">
 
 .. only:: html
@@ -64,6 +44,86 @@ Pycroscopy Gallery
    :hidden:
 
    /auto_examples/load_dataset_example
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_translator_tutorial_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_translator_tutorial.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_translator_tutorial
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_spectral_unmixing
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_writing_to_h5
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_multidimensional_data
 .. raw:: html
 
     <div style='clear:both'></div>

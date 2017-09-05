@@ -1,0 +1,22 @@
+
+
+Examples using ``pycroscopy.plot_utils.plot_map_stack``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
