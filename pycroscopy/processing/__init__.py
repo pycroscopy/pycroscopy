@@ -21,6 +21,7 @@ Submodules
     svd_utils
 
 """
+from .process import Process, parallel_compute
 from . import fft
 from . import gmode_utils
 from . import proc_utils
@@ -54,4 +55,4 @@ else:
     geoTransformer = geoTransformerParallel
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
-           'giv_utils', 'rebuild_svd']
+           'giv_utils', 'rebuild_svd', 'Process', 'parallel_compute']

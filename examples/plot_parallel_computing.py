@@ -4,6 +4,7 @@ Tutorial 4: Parallel Computing
 =================================================================
 
 **Suhas Somnath, Chris R. Smith**
+
 9/8/2017
 
 
@@ -55,8 +56,8 @@ import pycroscopy as px
 # ================
 # 
 # For this example, we will be working with a Band Excitation Piezoresponse Force Microscopy (BE-PFM) imaging dataset
-# acquired from advanced atomic force microscopes. In this dataset, a spectra was colllected for each position in a two
-#  dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
+# acquired from advanced atomic force microscopes. In this dataset, a spectra was collected for each position in a two
+# dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
 # dimensional matrix in accordance with the pycroscopy data format.
 
 # download the raw data file from Github:
@@ -69,7 +70,7 @@ _ = wget.download(url, h5_path)
 #########################################################################
 
 # Open the file in read-only mode
-h5_file = h5py.File(h5_path, mode='r')
+h5_file = h5py.File(h5_path, mode='r+')
 
 # Get handles to the the raw data along with other datasets and datagroups that contain necessary parameters
 h5_meas_grp = h5_file['Measurement_000']
@@ -231,7 +232,7 @@ def sho_fast_guess(resp_vec, w_vec, qual_factor=200):
 # Testing the function
 # ====================
 # Let's see what the operation on an example spectra returns. The function essentially returns four parameters that can
-#  capture the the shape of the spectra.
+# capture the the shape of the spectra.
 # 
 # A single call to the function does not take substantial time. However, performing the same operation on each of the
 # 16,384 pixels can take substantial time
@@ -283,18 +284,21 @@ print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
 # -----------------------
 #
 # There are several libraries that can utilize multiple CPU cores to perform the same computation in parallel. Popular
-# examples are __`Multiprocessing`__, __`Mutiprocess`__, __`Dask`__, __`Joblib`__ etc. Each of these has their own
-# strengths and weaknesses. An installation of __`Anaconda`__ comes with __`Multiprocessing`__ by default and could be
-# the example of choice. However, in our experience we found __`Joblib`__ to offer the best balance of efficiency,
+# examples are **Multiprocessing**, **Mutiprocess**, **Dask**, **Joblib** etc. Each of these has their own
+# strengths and weaknesses. An installation of **Anaconda** comes with **Multiprocessing** by default and could be
+# the example of choice. However, in our experience we found **Joblib** to offer the best balance of efficiency,
 # simplicity, portabiity, and ease of installation.
 # 
 # For illustrative purposes, we will only be demonstrating how the above serial computation can be made parallel using
-# __`Joblib`__. We only need two lines to perform the parallel computation. The first line sets up the computational
+# **Joblib**. We only need two lines to perform the parallel computation. The first line sets up the computational
 # jobs while the second performs the computation.
 # 
-# Note that the first argument to the function __MUST__ be the data vector itself. The other arguments (parameters),
+# Note that the first argument to the function **MUST** be the data vector itself. The other arguments (parameters),
 # such as the frequency vector in this case, must come after the data argument. This approach allows the specification
 # of both required arguments and optional (keyword) arguments.
+#
+# Parallel computing has been made more accessible via the parallel_compute() function in the `process` module in
+# pycroscopy. The below parallel computation is reduced to a single line with this function.
 
 func = sho_guess
 cores = 4
@@ -334,14 +338,11 @@ print('Parallel and serial computation results matching:',
 # than serial computation since each core will compete with all other cores for rights to read and write to the file(s)
 # and these input/output operations are by far the slowest components of the computation. Instead, it makes sense to
 # read large amounts of data from the necessary files once, perform the computation, and then write to the files once
-# after all the computation is complete. In fact, this is what we automatically do in the __`Analysis`__ and
-# __`Process`__ class in __`pycroscopy`__
+# after all the computation is complete. In fact, this is what we automatically do in the **Analysis** and
+# **Process** class in **pycroscopy**
 #
-# Formalizing parallel computation in pycroscopy
-# ----------------------------------------------
-#
-# Parallel computing has been made more accessible via the parallel_compute() function in the `process` module in
-# pycroscopy. The above parallel computation is reduced to a single line with this function.
+# Process class - Formalizing data processing
+# -------------------------------------------
 #
 # Data processing / analysis typically involves a few basic operations:
 # 1. Reading data from file
@@ -351,10 +352,11 @@ print('Parallel and serial computation results matching:',
 # The Process class in pycroscopy aims to modularize these operations for faster development of standardized,
 # easy-to-debug code. Common operations can be inherited from this class and only the operation-specific functions
 # need to be extended in your class.
+# Please see another example on how to write a Process class
 
 
 #########################################################################
-# Delete the temporarily downloaded file
+# **Delete the temporarily downloaded file**
 
 
 h5_file.close()
