@@ -5,12 +5,10 @@ Created on 7/17/16 10:08 AM
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import numpy as np
 import psutil
 
-import itertools
-import multiprocessing as mp
+import joblib
 
 from ..io.hdf_utils import checkIfMain
 from ..io.io_hdf5 import ioHDF5
@@ -189,29 +187,11 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, *args, **kw
                            lengthy_computation=lengthy_computation)
 
     if cores > 1:
-        # Vectorize tasks
-        if sys.version_info.major == 3:
-            zip_fun = zip
-        else:
-            zip_fun = itertools.izip
-        # tasks = [(vector, kwargs) for vector in data]
-        tasks = zip_fun(data, itertools.repeat(args), itertools.repeat(kwargs))
-
-        chunk = int(data.shape[0] / cores)
-
-        # start pool of workers
-        print('Computing in parallel ... launching %i kernels...' % cores)
-        pool = mp.Pool(processes=cores)
-
-        # Map them across processors
-        jobs = pool.imap(func, tasks, chunksize=chunk)
-
-        # get Results from different processes
-        results = [j for j in jobs]
+        values = [joblib.delayed(func)(x, *args, **kwargs) for x in data]
+        results = joblib.Parallel(n_jobs=cores)(values)
 
         # Finished reading the entire data set
-        print('Extracted Results... Closing %i kernels...' % cores)
-        pool.close()
+        print('Finished parallel computation')
 
     else:
         print("Computing serially ...")
