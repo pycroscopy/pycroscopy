@@ -306,14 +306,25 @@ parallel_results = joblib.Parallel(n_jobs=cores)(values)
 print('Parallel computation took', np.round(time.time()-t_0, 2), ' seconds')
 
 #########################################################################
-# By comparing the run-times for the two cells above, we see that the parallel computation is substantially faster than
+# Compare the results
+# -------------------
+#
+# By comparing the run-times for the two approaches, we see that the parallel computation is substantially faster than
 # the serial computation. Note that the numbers will differ between computers. Also, the computation was performed on
 # a relatively small dataset for illustrative purposes. The benefits of using such parallel computation will be far
 # more apparent for much larger datasets.
 #
-# Parallel computing has been made more accessible via the parallel_compute function in the `process` module in
-# pycroscopy. The above computation is reduced to a single line with this function.
-# 
+# Let's compare the results from both the serial and parallel methods to ensure they give the same results:
+
+row_ind, col_ind = 103, 19
+pix_ind = col_ind + row_ind * num_cols
+print('Parallel and serial computation results matching:',
+      np.all(np.isclose(serial_results[pix_ind], parallel_results[pix_ind])))
+
+#########################################################################
+# Best practices for parallel computing
+# =====================================
+#
 # While it may seem tempting to do everything in parallel, it is important to be aware of some of the trade-offs and
 # best-practices for parallel computing (multiple CPU cores) when compared to traditional serial computing (single
 # CPU core):
@@ -325,17 +336,21 @@ print('Parallel computation took', np.round(time.time()-t_0, 2), ' seconds')
 # read large amounts of data from the necessary files once, perform the computation, and then write to the files once
 # after all the computation is complete. In fact, this is what we automatically do in the __`Analysis`__ and
 # __`Process`__ class in __`pycroscopy`__
-
-#########################################################################
-# Compare the results
-# -------------------
 #
-# Let's compare the results from both the serial and parallel methods to ensure they give the same results:
-
-row_ind, col_ind = 103, 19
-pix_ind = col_ind + row_ind * num_cols
-print('Parallel and serial computation results matching:',
-      np.all(np.isclose(serial_results[pix_ind], parallel_results[pix_ind])))
+# Formalizing parallel computation in pycroscopy
+# ----------------------------------------------
+#
+# Parallel computing has been made more accessible via the parallel_compute() function in the `process` module in
+# pycroscopy. The above parallel computation is reduced to a single line with this function.
+#
+# Data processing / analysis typically involves a few basic operations:
+# 1. Reading data from file
+# 2. Parallel computation
+# 3. Writing results to disk
+#
+# The Process class in pycroscopy aims to modularize these operations for faster development of standardized,
+# easy-to-debug code. Common operations can be inherited from this class and only the operation-specific functions
+# need to be extended in your class.
 
 
 #########################################################################
