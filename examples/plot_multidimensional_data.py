@@ -19,7 +19,7 @@ matrices, namely the spectroscopic indices and values matrix as well as the posi
 will be essential for reshaping the data back to its original N dimensional form and for slicing multidimensional
 datasets
 
-We highly recommend reading
+We highly recommend reading about the pycroscopy data format - available in the docs.
 
 """
 
@@ -171,6 +171,8 @@ for dim_ind, axis, dim_label, dim_array in zip(range(h5_spec_ind.shape[0]), rhs_
 #########################################################################
 
 # A similar version of this function is available in pycroscopy.io.hdf_utils.get_formatted_labels
+
+
 def describe_dimensions(h5_aux):
     for name, unit in zip(px.hdf_utils.get_attr(h5_aux, 'labels'),
                             px.hdf_utils.get_attr(h5_aux, 'units')):
@@ -189,6 +191,8 @@ describe_dimensions(h5_spec_ind)
 # In other words lets assume that data was not sampled over a random subset of points within a grid of points
 
 # The function below has been implemented as pycroscopy.io.hdf_utils.get_dimensionality
+
+
 def get_dim_sizes(ind_dset, is_position=False):
     # ind_dset here is expected to be of the shape [dimension, points] like the spectroscopic indices
     if is_position:
