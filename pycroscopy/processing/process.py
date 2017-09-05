@@ -81,6 +81,7 @@ class Process(object):
             print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
+    @staticmethod
     def _unit_function(*args):
         raise NotImplementedError('Please override the _create_results_datasets specific to your model')
 
