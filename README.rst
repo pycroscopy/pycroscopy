@@ -1,6 +1,8 @@
 ==========
-pycroscopy
+pycroscopy		|statusimage|
 ==========
+
+.. |statusimage| image:: https://travis-ci.org/pycroscopy/pycroscopy.svg?branch=master
 
 .. contents::
 
@@ -9,9 +11,10 @@ What is pycroscopy?
 pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
 
 With  `pycroscopy <https://pycroscopy.github.io/pycroscopy/>`_ we aim to:
-	1. provide a community-developed, open standard for data formatting 
-	2. provide a framework for developing data analysis routines 
-	3. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
+	1. Serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
+	2. provide a community-developed, open standard for data formatting 
+	3. provide a framework for developing data analysis routines 
+	4. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
 
 To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
 
