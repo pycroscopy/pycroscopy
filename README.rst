@@ -75,6 +75,7 @@ Getting Started
 * For more information about our functions and classes, please see our `API <https://pycroscopy.github.io/pycroscopy/pycroscopy.html>`_
 * We have many translators that transform data from popular microscope data formats to pycroscopy compatible .h5 files. We also have `tutorials to get you started on importing your data to pycroscopy <https://pycroscopy.github.io/pycroscopy/auto_examples/plot_translator_tutorial.html#sphx-glr-auto-examples-plot-translator-tutorial-py>`_. 
 * Details regarding the defention, implementation, and guidelines for pycroscopy's `data format <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Data_Format.md>`_ for `HDF5 <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Pycroscopy_Data_Formatting.pdf>`_ are also available. 
+* If you are interested in contributing and are looking for topics we are / will work on, please look at our `To Do <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst>`_ page
 
 Journal Papers using pycroscopy
 -------------------------------
@@ -104,5 +105,3 @@ Contact us
 * Join our slack project at https://pycroscopy.slack.com to discuss about pycroscopy
 * Feel free to get in touch with us at pycroscopy (at) gmail [dot] com
 * If you find any bugs or if you want a feature added to pycroscopy, raise an `issue <https://github.com/pycroscopy/pycroscopy/issues>`_. You will need a free Github account to do this
-* If you would like to help us and are looking for topics we are / will work on, please look at our `To Do <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst>`_ page
-
