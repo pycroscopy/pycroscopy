@@ -1,10 +1,16 @@
 .. contents::
 
+Roadmap / Milestones
+--------------------
+1. Sep 2017 end - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+2. Oct 2017 mid - Multi-node compute capability
+
 New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
 * Simplify and demystify analyis / optimize. Use parallel_compute and joblib
+* multi-node computing capability in parallel_compute
 * Data Generators
 
 External user contributions
