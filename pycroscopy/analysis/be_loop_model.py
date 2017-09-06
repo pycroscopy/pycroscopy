@@ -267,6 +267,8 @@ class BELoopModel(Model):
             self.h5_loop_metrics[self._start_pos:self._end_pos, self._current_met_spec_slice] = metrics_2d
             self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice] = guessed_loops_2
 
+            self.hdf.flush()
+
             '''
             Change the starting position and get the next chunk of data
             '''
@@ -436,6 +438,8 @@ class BELoopModel(Model):
 
         h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
 
+        self.hdf.flush()
+        
         return h5_loop_parameters
 
     def _create_projection_datasets(self):
