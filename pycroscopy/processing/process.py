@@ -117,7 +117,7 @@ class Process(object):
 
     @staticmethod
     def _unit_function(*args):
-        raise NotImplementedError('Please override the _create_results_datasets specific to your model')
+        raise NotImplementedError('Please override the _unit_function specific to your process')
 
     def _read_data_chunk(self, verbose=False):
         """
@@ -149,7 +149,7 @@ class Process(object):
         """
         # Now update the start position
         self._start_pos = self._end_pos
-        raise NotImplementedError('Please override the _set_results specific to your model')
+        raise NotImplementedError('Please override the _set_results specific to your process')
 
     def _create_results_datasets(self):
         """
@@ -157,7 +157,7 @@ class Process(object):
         link the guess dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
         within this function.
         """
-        raise NotImplementedError('Please override the _create_results_datasets specific to your model')
+        raise NotImplementedError('Please override the _create_results_datasets specific to your process')
 
     def compute(self, *args, **kwargs):
         """
@@ -184,7 +184,7 @@ class Process(object):
             self._write_results_chunk()
             self._read_data_chunk()
 
-        print('Completed computing guess. Writing to file.')
+        print('Completed computation on chunk. Writing to file.')
 
         return self.h5_results_grp
 

@@ -70,7 +70,7 @@ _ = wget.download(url, h5_path)
 #########################################################################
 
 # Open the file in read-only mode
-h5_file = h5py.File(h5_path, mode='r+')
+h5_file = h5py.File(h5_path, mode='r')
 
 # Get handles to the the raw data along with other datasets and datagroups that contain necessary parameters
 h5_meas_grp = h5_file['Measurement_000']
