@@ -438,8 +438,8 @@ class BELoopModel(Model):
 
         h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
 
-        self.hdf.flush()
-        
+        h5_loop_fit.file.flush()
+
         return h5_loop_parameters
 
     def _create_projection_datasets(self):
