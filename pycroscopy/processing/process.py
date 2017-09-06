@@ -5,13 +5,11 @@ Created on 7/17/16 10:08 AM
 
 from __future__ import division, print_function, absolute_import
 
-import sys
 import numpy as np
 import psutil
 
-import itertools
-import multiprocessing as mp
 import joblib
+
 from ..io.hdf_utils import checkIfMain
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommendCores, getAvailableMem
@@ -118,6 +116,7 @@ class Process(object):
             print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
+    @staticmethod
     def _unit_function(*args):
         raise NotImplementedError('Please override the _create_results_datasets specific to your model')
 
@@ -223,8 +222,15 @@ def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kw
     cores = recommendCores(data.shape[0], requested_cores=cores,
                            lengthy_computation=lengthy_computation)
 
-    values = [joblib.delayed(func)(x, *args, **kwargs) for x in data]
+    if cores > 1:
+        values = [joblib.delayed(func)(x, *args, **kwargs) for x in data]
+        results = joblib.Parallel(n_jobs=cores)(values)
 
-    results = joblib.Parallel(n_jobs=cores)(values)
+        # Finished reading the entire data set
+        print('Finished parallel computation')
+
+    else:
+        print("Computing serially ...")
+        results = [func(vector, args, kwargs) for vector in data]
 
     return results

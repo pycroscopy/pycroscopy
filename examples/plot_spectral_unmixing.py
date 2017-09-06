@@ -3,11 +3,11 @@
 Spectral Unmixing
 =================================================================
 
-R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`
+S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3`\
 
-* :sup:`1` Center for Nanophase Materials Sciences
-* :sup:`2` Institute for Functional Imaging of Materials
-* :sup:`3` Advanced Data and Workflows Group
+* :sup:`1` Institute for Functional Imaging of Materials
+* :sup:`2` Advanced Data and Workflows Group
+* :sup:`3` Center for Nanophase Materials Sciences
 
 Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
 
@@ -59,24 +59,23 @@ from pysptools.eea import nfindr
 # finally import pycroscopy:
 import pycroscopy as px
 
+"""
+  
+"""
+
 #####################################################################################
 # The Data
 # ========
 #
-# In this example, we will work on **Infrared (IR) Spectra** data obtained from an Anasys Instruments Nano IR
-# as one of the simplest examples of data. This dataset contains a single IR spectra collected at each
-# position on a single line of spatial points. Thus, this two dimensional dataset has one position dimension
-# (lets say X) and one spectral dimension (wavelength).
+# In this example, we will work on a **Band Excitation Piezoresponse Force Microscopy (BE-PFM)** imaging dataset
+# acquired from advanced atomic force microscopes. In this dataset, a spectra was colllected for each position in a two
+#  dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
+# dimensional matrix in accordance with the pycroscopy data format.
 #
-# In the event that the spectra were collected on a 2D grid of spatial locations (two spatial dimensions -
-# X, Y), the resultant three dimensional dataset (X, Y, wavelength) would need to be reshaped to a two
-# dimensional dataset of (position, wavelength) since this is the standard format that is accepted by
-# all statistical analysis, machine learning, spectral unmixing algorithms. The same reshaping of data would
-# need to be performed if there are more than two spectroscopic dimensions.
+# Fortunately, all statistical analysis, machine learning, spectral unmixing algorithms, etc. only accept data that is
+# formatted in the same manner of [position x spectra] in a two dimensional matrix.
 #
-# Working with the specific Nano IR dataset:
-# ==========================================
-# We will begin by downloading the data file from Github, followed by reshaping and decimation of the dataset
+# We will begin by downloading the BE-PFM dataset from Github
 
 data_file_path = 'temp_um.h5'
 # download the data file from Github:
@@ -203,6 +202,9 @@ px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
 # factors (matrices) W and H, given a matrix V, as shown below
 #
 # .. image:: https://upload.wikimedia.org/wikipedia/commons/f/f9/NMF.png
+#
+# Unlike SVD and k-Means that can be applied to complex-valued datasets, NMF only works on non-negative datasets.
+# For illustrative purposes, we will only take the amplitude component of the spectral data
 
 num_comps = 4
 
@@ -247,6 +249,8 @@ axis.legend(bbox_to_anchor=[1.0, 1.0], fontsize=12)
 # hyperspectral data." SPIE's International Symposium on Optical Science, Engineering, and Instrumentation.
 # International Society for Optics and Photonics, 1999.
 # <http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=994814>`_)
+#
+# Yet again, we will only work with the non-negative portion of the data (Amplitude)
 
 num_comps = 4
 

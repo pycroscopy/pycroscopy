@@ -180,7 +180,7 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     return results_dict
 
 
-def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, r_extra_override=None):
+def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, r_extra_override=None, **kwargs):
     """
     Plots the basic Bayesian Inference results for a specific pixel
 
@@ -227,11 +227,11 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, r_extra_overri
     cap_val = h5_cap[pix_ind]
 
     return plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
-                                 split_directions, cap_val, freq, r_extra, pix_pos=h5_pos[pix_ind])
+                                 split_directions, cap_val, freq, r_extra, pix_pos=h5_pos[pix_ind], **kwargs)
 
 
 def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, mr_vec, i_recon, vr_vec,
-                          split_directions, cap_val, freq, r_extra, pix_pos=[0, 0]):
+                          split_directions, cap_val, freq, r_extra, pix_pos=[0, 0], broken_resistance=True, **kwargs):
     """
     Plots the basic Bayesian Inference results for a specific pixel
 
@@ -261,12 +261,15 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
         Resistance of extra resistor [Ohms] necessary to get correct resistance values
     pix_pos : list of two numbers
         Pixel row and column positions or values
+    broken_resistance : bool, Optional
+        Whether or not to break the resistance plots into sections so as to avoid plotting areas with high variance
 
     Returns
     -------
     fig : matplotlib.pyplot figure handle
         Handle to figure
     """
+
     font_size_1 = 14
     font_size_2 = 16
 
@@ -302,7 +305,7 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
     fig, axes = plt.subplots(ncols=3, figsize=(15, 5))
     # fig.subplots_adjust(wspace=3.5)
 
-    axes[0].set_ylabel('Resistance (G\Omega)', fontsize=font_size_2)
+    axes[0].set_ylabel('Resistance (G$\Omega$)', fontsize=font_size_2)
 
     if split_directions:
         pts_to_plot = [good_forw, good_rev]
@@ -314,14 +317,32 @@ def plot_bayesian_results(orig_bias, possibly_rolled_bias, i_meas, bias_interp, 
                                                                      colors, syms, names):
         axis.set_title('$R(V)$ ' + set_name + ' at Row = ' + str(pix_pos[0]) +
                        ' Col =' + str(pix_pos[1]), fontsize=font_size_2)
-        axis.plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0],
-                  linestyle=sym_set[0], linewidth=3, label='R(V)')
-        axis.fill_between(bias_interp[pts_list], pos_limits[pts_list], neg_limits[pts_list],
-                          alpha=0.25, color=cols_set[1],
-                          label='R(V)+-$\sigma$')
+
+        single_plot = not broken_resistance
+        if broken_resistance:
+            diff = np.diff(pts_list)
+            jump_inds = np.argwhere(diff > 4) + 1
+            if jump_inds.size < 1:
+                single_plot = True
+
+        if not single_plot:
+            jump_inds = np.append(np.append(0, jump_inds), pts_list[-1])
+            for ind in range(1, jump_inds.size):
+                cur_range = pts_list[jump_inds[ind - 1]:jump_inds[ind]]
+                axis.plot(bias_interp[cur_range], mr_vec[cur_range], cols_set[0],
+                          linestyle=sym_set[0], linewidth=3)
+                axis.fill_between(bias_interp[cur_range], pos_limits[cur_range], neg_limits[cur_range],
+                                  alpha=0.25, color=cols_set[1])
+                if ind == 1:
+                    axis.legend(['R(V)', 'R(V)+-$\sigma$'], loc='upper left', fontsize=font_size_1)
+        else:
+            axis.plot(bias_interp[pts_list], mr_vec[pts_list], cols_set[0],
+                      linestyle=sym_set[0], linewidth=3, label='R(V)')
+            axis.fill_between(bias_interp[pts_list], pos_limits[pts_list], neg_limits[pts_list],
+                              alpha=0.25, color=cols_set[1], label='R(V)+-$\sigma$')
+            axis.legend(loc='upper left', fontsize=font_size_1)
         axis.set_xlabel('Voltage (V)', fontsize=font_size_2)
 
-        axis.legend(loc='upper left', fontsize=font_size_1)
         axis.set_xlim((-ex_amp, ex_amp))
 
     # ################### CURRENT PLOT ##########################

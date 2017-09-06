@@ -365,6 +365,74 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
     return im
 
 
+def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
+                         x_size=1, y_size=1, num_ticks=4, cbar_label=None,
+                         tick_font_size=14, **kwargs):
+    """
+    Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
+    This is particularly useful to get readily interpretable plots for papers
+
+    Parameters
+    ----------
+    fig : matplotlib.figure object
+        Handle to figure
+    axis : matplotlib.axis object
+        Axis to plot this image onto
+    img : 2D numpy array with real values
+        Data for the image plot
+    show_xy_ticks : bool, Optional, default = True
+        Whether or not to show X, Y ticks
+    show_cbar : bool, optional, default = True
+        Whether or not to show the colorbar
+    x_size : float, optional, default = 1
+        Extent of tick marks in the X axis. This could be something like 1.5 for 1.5 microns
+    y_size : float, optional, default = 1
+        Extent of tick marks in y axis
+    num_ticks : unsigned int, optional, default = 4
+        Number of tick marks on the X and Y axes
+    cbar_label : str, optional, default = None
+        Labels for the colorbar. Use this for something like quantity (units)
+    tick_font_size : unsigned int, optional, default = 14
+        Font size to apply to x, y, colorbar ticks and colorbar label
+    kwargs : dictionary
+        Anything else that will be passed on to plot_map or imshow
+
+    Returns
+    -------
+    im_handle : handle to image plot
+        handle to image plot
+    cbar : handle to color bar
+        handle to color bar
+    """
+    if 'clim' not in kwargs:
+        im_handle = plot_map(axis, img, aspect='auto', **kwargs)
+    else:
+        im_handle = axis.imshow(img, origin='lower', **kwargs)
+
+    if show_xy_ticks:
+        x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
+        y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
+        axis.set_xticks(x_ticks)
+        axis.set_yticks(y_ticks)
+        axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
+        axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
+        set_tick_font_size(axis, tick_font_size)
+    else:
+        axis.set_xticks([])
+        axis.set_yticks([])
+
+    if show_cbar:
+        cbar = fig.colorbar(im_handle, ax=axis)
+        if cbar_label is not None:
+            cbar.set_label(cbar_label, fontsize=tick_font_size)
+        """
+        z_lims = cbar.get_clim()
+        cbar.set_ticks(np.linspace(z_lims[0],z_lims[1], num_ticks))
+        """
+        cbar.ax.tick_params(labelsize=tick_font_size)
+    return im_handle, cbar
+
+
 def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
                plots_on_side=5, x_label='', y_label='', subtitles='Position', title='',
                central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
@@ -625,7 +693,7 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
-                   title='Component', heading='Map Stack', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
+                   title='Component', heading='Map Stack', colorbar_label = '', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
     """
     Plots the provided stack of maps
 
@@ -649,6 +717,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if a list of strings (equal to the number of components) are provided, these are used instead.
     heading : String
         ###Insert description here### Default 'Map Stack'
+    colorbar_label : String
+        label for colorbar. Default is an empty string.
     fig_mult : length 2 array_like of uints
         Size multipliers for the figure.  Figure size is calculated as (num_rows*`fig_mult[0]`, num_cols*`fig_mult[1]`).
         Default (4, 4)
@@ -739,11 +809,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                       stdevs=stdevs, **kwargs)
         axes202[count].set_title(subtitle)
         if color_bar_mode is 'each':
-            axes202.cbar_axes[count].colorbar(im)
-
+            cb = axes202.cbar_axes[count].colorbar(im)
+            cb.set_label_text(colorbar_label)
     if color_bar_mode is 'single':
-        axes202.cbar_axes[0].colorbar(im)
-
+        cb = axes202.cbar_axes[0].colorbar(im)
+        cb.set_label_text(colorbar_label)
     return fig202, axes202
 
 
