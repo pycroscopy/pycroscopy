@@ -7,7 +7,6 @@ from __future__ import division, print_function, absolute_import
 
 import numpy as np
 import psutil
-
 import joblib
 
 from ..io.hdf_utils import checkIfMain
@@ -180,7 +179,8 @@ class Process(object):
         self._read_data_chunk()
         while self.data is not None:
             self._results = parallel_compute(self.data, self._unit_function, cores=self._cores,
-                                             lengthy_computation=False, *args, **kwargs)
+                                             lengthy_computation=False,
+                                             func_args=args, func_kwargs=kwargs)
             self._write_results_chunk()
             self._read_data_chunk()
 
@@ -189,7 +189,7 @@ class Process(object):
         return self.h5_results_grp
 
 
-def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kwargs):
+def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=list(), func_kwargs=dict()):
     """
     Computes the guess function using multiple cores
 
@@ -206,8 +206,9 @@ def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kw
         Whether or not each computation is expected to take substantial time.
         Sometimes the time for adding more cores can outweigh the time per core
         Default - False
-
-    kwargs : dict, optional
+    func_args : list, optional
+        arguments to be passed to the function
+    func_kwargs : dict, optional
         keyword arguments to be passed onto function
 
     Returns
@@ -223,7 +224,7 @@ def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kw
                            lengthy_computation=lengthy_computation)
 
     if cores > 1:
-        values = [joblib.delayed(func)(x, *args, **kwargs) for x in data]
+        values = [joblib.delayed(func)(x, *func_args, **func_kwargs) for x in data]
         results = joblib.Parallel(n_jobs=cores)(values)
 
         # Finished reading the entire data set
@@ -231,6 +232,6 @@ def parallel_compute(data, func, *args, cores=1, lengthy_computation=False, **kw
 
     else:
         print("Computing serially ...")
-        results = [func(vector, args, kwargs) for vector in data]
+        results = [func(vector, *func_args, **func_kwargs) for vector in data]
 
     return results
