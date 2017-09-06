@@ -13,7 +13,6 @@ External user contributions
 * Ondrej Dyck’s atom finding code – written but needs work before fully integrated
 * Nina Wisinger’s processing code (Tselev) – in progress
 * Sabine Neumeyer's cKPFM code
-* Josh Agar's convex hull code
 * Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
 * Port everything from IFIM Matlab -> Python translation exercises
 * Other workflows/functions that already exist as scripts or notebooks
@@ -53,6 +52,7 @@ Done:
 Pending:
 
 * How to write your own analysis class
+* A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
