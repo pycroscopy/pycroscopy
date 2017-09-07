@@ -101,9 +101,9 @@ px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
 # =============
 # We will be guessing the fits for each of these complex-valued spectra to a simple harmonic oscillator as defined in
 # the functions below
-
-
-def sho_function(parms, w_vec):
+ 
+ 
+def SHOfunc(parms, w_vec):
     """
     Generates the SHO response over the given frequency band
 
@@ -117,7 +117,7 @@ def sho_function(parms, w_vec):
     return parms[0] * exp(1j * parms[3]) * parms[1] ** 2 /         (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
 
 
-def sho_guess(resp_vec, w_vec=None, num_points=5):
+def SHOestimateGuess(resp_vec, w_vec=None, num_points=5):
     """
     Generates good initial guesses for fitting
 
@@ -239,9 +239,9 @@ def sho_fast_guess(resp_vec, w_vec, qual_factor=200):
 
 row_ind, col_ind = 103, 19
 resp_vec = h5_main[col_ind + row_ind*num_cols]
-norm_guess_parms = sho_guess(resp_vec, freq_vec)
+norm_guess_parms = px.analysis.be_sho.SHOestimateGuess(resp_vec, freq_vec)
 print('Functional fit returned:', norm_guess_parms)
-norm_resp = sho_function(norm_guess_parms, freq_vec)
+norm_resp = px.analysis.be_sho.SHOfunc(norm_guess_parms, freq_vec)
 
 
 fig, axes = plt.subplots(nrows=2, sharex=True, figsize=(5, 10))
@@ -276,7 +276,7 @@ serial_results = np.zeros((raw_data.shape[0], 4), dtype=np.float)
 # a simple for loop.
 t_0 = time.time()
 for pix_ind in range(raw_data.shape[0]):
-    serial_results[pix_ind] = sho_guess(raw_data[pix_ind], freq_vec)
+    serial_results[pix_ind] = px.analysis.be_sho.SHOestimateGuess(raw_data[pix_ind], freq_vec)
 print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
 
 #########################################################################
@@ -300,7 +300,7 @@ print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
 # Parallel computing has been made more accessible via the parallel_compute() function in the `process` module in
 # pycroscopy. The below parallel computation is reduced to a single line with this function.
 
-func = sho_guess
+func = px.analysis.be_sho.SHOestimateGuess
 cores = 4
 args = freq_vec
 
