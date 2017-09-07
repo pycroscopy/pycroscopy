@@ -50,7 +50,7 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=None, max_mem_mb=None):
+    def __init__(self, h5_main, cores=1, max_mem_mb=1024):
         """
         Parameters
         ----------
@@ -58,10 +58,10 @@ class Process(object):
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
         cores : uint, optional
-            Default - None
+            Default - 1
             How many cores to use for the computation
         max_mem_mb : uint, optional
-            How much memory to use for the computation.  Default None
+            How much memory to use for the computation.  Default 1024 Mb
         """
 
         # Checking if dataset is "Main"
@@ -80,7 +80,7 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
-    def _set_memory_and_cores(self, cores=None, mem=1024, verbose=False):
+    def _set_memory_and_cores(self, cores=1, mem=1024, verbose=False):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -88,7 +88,7 @@ class Process(object):
         Parameters
         ----------
         cores : uint, optional
-            Default - None
+            Default - 1
             How many cores to use for the computation
         mem : uint, optional
             Default - 1024
