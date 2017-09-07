@@ -34,15 +34,12 @@ Short tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Access h5 files
 * Find a specific dataset/group in the file
-* Select data within a dataset in various ways - effectively just examples of hdf_utils functions
-* Slicing and dicing multidimensional datasets
+* Select data within a dataset in various ways
 * micro datasets / microdata groups
-* position and spectroscopic datasets with multidimensional datasets
 * chunking the main dataset
-* Setting up interactive visualizers
 * Links to tutorials on how to use pycharm, Git, 
 
-Longer examples (probably scientific workflows / pipelines)
+Longer examples (via specific scientific usecases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Done:
 
@@ -59,6 +56,7 @@ Pending:
 
 * How to write your own analysis class
 * A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
+* pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
