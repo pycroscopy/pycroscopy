@@ -80,7 +80,7 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
-    def _set_memory_and_cores(self, cores=None, mem=None, verbose=False):
+    def _set_memory_and_cores(self, cores=None, mem=1024, verbose=False):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -90,6 +90,9 @@ class Process(object):
         cores : uint, optional
             Default - None
             How many cores to use for the computation
+        mem : uint, optional
+            Default - 1024
+            The amount a memory in Mb to use in the computation
         verbose : bool, optional
             Whether or not to print log statements
 
