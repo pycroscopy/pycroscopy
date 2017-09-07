@@ -149,7 +149,7 @@ class GuessMethods(object):
 
             def sho_guess(resp_vec):
 
-                guess = SHOestimateGuess(w_vec, resp_vec, num_points)
+                guess = SHOestimateGuess(resp_vec, w_vec, num_points)
 
                 guess = np.hstack([guess, np.array(r_square(resp_vec, SHOfunc, guess, w_vec))])
 
