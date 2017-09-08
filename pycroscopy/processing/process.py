@@ -181,7 +181,7 @@ class Process(object):
 
         self._read_data_chunk()
         while self.data is not None:
-            self._results = parallel_compute(self.data, self._unit_function, cores=self._cores,
+            self._results = parallel_compute(self.data, self._unit_function(), cores=self._cores,
                                              lengthy_computation=False,
                                              func_args=args, func_kwargs=kwargs)
             self._write_results_chunk()
