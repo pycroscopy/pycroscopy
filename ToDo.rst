@@ -1,10 +1,16 @@
 .. contents::
 
+Roadmap / Milestones
+--------------------
+1. Sep 2017 end - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+2. Oct 2017 mid - Multi-node compute capability
+
 New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
 * Simplify and demystify analyis / optimize. Use parallel_compute and joblib
+* multi-node computing capability in parallel_compute
 * Data Generators
 
 External user contributions
@@ -13,7 +19,6 @@ External user contributions
 * Ondrej Dyck’s atom finding code – written but needs work before fully integrated
 * Nina Wisinger’s processing code (Tselev) – in progress
 * Sabine Neumeyer's cKPFM code
-* Josh Agar's convex hull code
 * Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
 * Port everything from IFIM Matlab -> Python translation exercises
 * Other workflows/functions that already exist as scripts or notebooks
@@ -29,15 +34,12 @@ Short tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Access h5 files
 * Find a specific dataset/group in the file
-* Select data within a dataset in various ways - effectively just examples of hdf_utils functions
-* Slicing and dicing multidimensional datasets
+* Select data within a dataset in various ways
 * micro datasets / microdata groups
-* position and spectroscopic datasets with multidimensional datasets
 * chunking the main dataset
-* Setting up interactive visualizers
 * Links to tutorials on how to use pycharm, Git, 
 
-Longer examples (probably scientific workflows / pipelines)
+Longer examples (via specific scientific usecases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Done:
 
@@ -53,6 +55,8 @@ Done:
 Pending:
 
 * How to write your own analysis class
+* A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
+* pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
