@@ -33,17 +33,17 @@ Installation
 
 Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
 
-   1. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
+   0. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
 
-   2. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
+   1. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
 
-   3. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
+   2. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
 
 	.. code:: bash
 
 	   pip install pycroscopy
 
-   4. Enjoy pycroscopy!
+   3. Enjoy pycroscopy!
 
 If you already have pycroscopy installed and want to update to the latest version, use the following command:
 
@@ -69,7 +69,7 @@ Getting Started
 ---------------
 * Follow the instructions above to install pycroscopy
 * See how we use pycroscopy for our scientific research in these `jupyter notebooks <https://github.com/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/>`_. Many of them are linked to journal publications listed below.
-	* Please see the official `jupyter <http://jupyter.org>`_ website for more information about notebooks. This `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_.
+	* Please see the official `jupyter <http://jupyter.org>`_ website for more information about notebooks and consider watching this `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_.
 * See our `examples <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html>`_ to get started on using and writing your own pycroscopy functions
 * Videos and other tutorials are available at the `Institute For Functional Imaging of Materials <http://ifim.ornl.gov/resources.html>`_ 
 * For more information about our functions and classes, please see our `API <https://pycroscopy.github.io/pycroscopy/pycroscopy.html>`_
