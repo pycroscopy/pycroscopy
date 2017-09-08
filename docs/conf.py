@@ -390,6 +390,7 @@ numpydoc_show_class_members = False
 # Sphinx-gallery configuration
 sphinx_gallery_conf = dict(examples_dirs='../examples',
                            gallery_dirs='auto_examples',
+                           filename_pattern=os.path.sep+'tutorial_',
                            reference_urls=dict(pycroscopy=None,
                                                matplotlib='https://matplotlib.org',
                                                numpy='https://docs.scipy.org/doc/numpy',

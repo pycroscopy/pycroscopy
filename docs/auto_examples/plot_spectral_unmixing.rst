@@ -7,11 +7,10 @@
 Spectral Unmixing
 =================================================================
 
-R. K. Vasudevan\ :sup:`1,2`\ , S. Somnath\ :sup:`3`
-
-* :sup:`1` Center for Nanophase Materials Sciences
-* :sup:`2` Institute for Functional Imaging of Materials
-* :sup:`3` Advanced Data and Workflows Group
+S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3`
+* :sup:`1` Institute for Functional Imaging of Materials
+* :sup:`2` Advanced Data and Workflows Group
+* :sup:`3` Center for Nanophase Materials Sciences
 
 Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
 
@@ -67,29 +66,23 @@ of origin, size, complexity) and storing the results back into the same dataset 
     # finally import pycroscopy:
     import pycroscopy as px
 
-
-
-
-
+    """
+  
+    """
 
 
 The Data
 ========
 
-In this example, we will work on **Infrared (IR) Spectra** data obtained from an Anasys Instruments Nano IR
-as one of the simplest examples of data. This dataset contains a single IR spectra collected at each
-position on a single line of spatial points. Thus, this two dimensional dataset has one position dimension
-(lets say X) and one spectral dimension (wavelength).
+In this example, we will work on a **Band Excitation Piezoresponse Force Microscopy (BE-PFM)** imaging dataset
+acquired from advanced atomic force microscopes. In this dataset, a spectra was colllected for each position in a two
+ dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
+dimensional matrix in accordance with the pycroscopy data format.
 
-In the event that the spectra were collected on a 2D grid of spatial locations (two spatial dimensions -
-X, Y), the resultant three dimensional dataset (X, Y, wavelength) would need to be reshaped to a two
-dimensional dataset of (position, wavelength) since this is the standard format that is accepted by
-all statistical analysis, machine learning, spectral unmixing algorithms. The same reshaping of data would
-need to be performed if there are more than two spectroscopic dimensions.
+Fortunately, all statistical analysis, machine learning, spectral unmixing algorithms, etc. only accept data that is
+formatted in the same manner of [position x spectra] in a two dimensional matrix.
 
-Working with the specific Nano IR dataset:
-==========================================
-We will begin by downloading the data file from Github, followed by reshaping and decimation of the dataset
+We will begin by downloading the BE-PFM dataset from Github
 
 
 
@@ -128,41 +121,6 @@ We will begin by downloading the data file from Github, followed by reshaping an
     y_label = 'Amplitude (a.u.)'
 
 
-
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out::
-
-    Contents of data file:
-    ----------------------
-    /
-    Measurement_000
-    Measurement_000/Channel_000
-    Measurement_000/Channel_000/Bin_FFT
-    Measurement_000/Channel_000/Bin_Frequencies
-    Measurement_000/Channel_000/Bin_Indices
-    Measurement_000/Channel_000/Bin_Step
-    Measurement_000/Channel_000/Bin_Wfm_Type
-    Measurement_000/Channel_000/Excitation_Waveform
-    Measurement_000/Channel_000/Noise_Floor
-    Measurement_000/Channel_000/Position_Indices
-    Measurement_000/Channel_000/Position_Values
-    Measurement_000/Channel_000/Raw_Data
-    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000
-    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Bin_Frequencies
-    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Mean_Spectrogram
-    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Spectroscopic_Parameter
-    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Step_Averaged_Response
-    Measurement_000/Channel_000/Spectroscopic_Indices
-    Measurement_000/Channel_000/Spectroscopic_Values
-    Measurement_000/Channel_000/UDVS
-    Measurement_000/Channel_000/UDVS_Indices
-    ----------------------
-    Data currently of shape: (16384, 119)
-
-
 Visualize the Amplitude Data
 ============================
 Note that we are not hard-coding / writing any tick labels / axis labels by hand.
@@ -174,20 +132,6 @@ All the necessary information was present in the H5 file
 
 
     px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
-
-
-
-
-.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_001.png
-    :align: center
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out::
-
-    No position datasets found as attributes of /Measurement_000/Channel_000/Spectroscopic_Values
-    [2K    [2K    <matplotlib.figure.Figure at 0x7f60ced6e9e8>
 
 
 1. Singular Value Decomposition (SVD)
@@ -251,40 +195,6 @@ the same source h5 file including all relevant links to the source dataset and o
                                  color_bar_mode='single', cmap='inferno')
 
 
-
-
-.. rst-class:: sphx-glr-horizontal
-
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_002.png
-            :scale: 47
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_003.png
-            :scale: 47
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_004.png
-            :scale: 47
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_005.png
-            :scale: 47
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out::
-
-    Performing SVD decomposition
-    SVD took 3.25 seconds.  Writing results to file.
-
-
 2. KMeans Clustering
 ====================
 
@@ -311,21 +221,6 @@ Set the number of clusters below
     px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 
-
-
-.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_006.png
-    :align: center
-
-
-.. rst-class:: sphx-glr-script-out
-
- Out::
-
-    Performing clustering on /Measurement_000/Channel_000/Raw_Data.
-    Calculated the Mean Response of each cluster.
-    Writing clustering results to file.
-
-
 3. Non-negative Matrix Factorization (NMF)
 ===========================================
 
@@ -334,6 +229,9 @@ data. It only works on data with positive real values. It operates by approximat
 factors (matrices) W and H, given a matrix V, as shown below
 
 .. image:: https://upload.wikimedia.org/wikipedia/commons/f/f9/NMF.png
+
+Unlike SVD and k-Means that can be applied to complex-valued datasets, NMF only works on non-negative datasets.
+For illustrative purposes, we will only take the amplitude component of the spectral data
 
 
 
@@ -354,14 +252,6 @@ factors (matrices) W and H, given a matrix V, as shown below
     axis.set_ylabel(y_label, fontsize=12)
     axis.set_title('NMF Components', fontsize=14)
     axis.legend(bbox_to_anchor=[1.0, 1.0], fontsize=12)
-
-
-
-
-.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_007.png
-    :align: center
-
-
 
 
 4. NFINDR
@@ -391,6 +281,8 @@ More information can be found in the paper below:
 hyperspectral data." SPIE's International Symposium on Optical Science, Engineering, and Instrumentation.
 International Society for Optics and Photonics, 1999.
 <http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=994814>`_)
+
+Yet again, we will only work with the non-negative portion of the data (Amplitude)
 
 
 
@@ -425,24 +317,6 @@ International Society for Optics and Photonics, 1999.
 
 
 
-
-.. rst-class:: sphx-glr-horizontal
-
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_008.png
-            :scale: 47
-
-    *
-
-      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_009.png
-            :scale: 47
-
-
-
-
-
 .. code-block:: python
 
 
@@ -450,12 +324,7 @@ International Society for Optics and Photonics, 1999.
     h5_file.close()
     os.remove(data_file_path)
 
-
-
-
-
-
-**Total running time of the script:** ( 0 minutes  35.393 seconds)
+**Total running time of the script:** ( 0 minutes  0.000 seconds)
 
 
 

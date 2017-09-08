@@ -9,9 +9,9 @@ Examples using ``pycroscopy.plot_utils.plot_map``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_translator_tutorial_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_01_translator_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_translator_tutorial.py`
+        :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
 
 .. raw:: html
 
@@ -19,4 +19,4 @@ Examples using ``pycroscopy.plot_utils.plot_map``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_translator_tutorial.py`
+    * :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`

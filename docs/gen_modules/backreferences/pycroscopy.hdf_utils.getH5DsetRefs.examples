@@ -9,9 +9,9 @@ Examples using ``pycroscopy.hdf_utils.getH5DsetRefs``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_writing_to_h5_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_02_writing_to_h5_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_writing_to_h5.py`
+        :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
 
 .. raw:: html
 
@@ -19,4 +19,22 @@ Examples using ``pycroscopy.hdf_utils.getH5DsetRefs``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_writing_to_h5.py`
+    * :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath**">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_05_data_processing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorial_05_data_processing.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_tutorial_05_data_processing.py`

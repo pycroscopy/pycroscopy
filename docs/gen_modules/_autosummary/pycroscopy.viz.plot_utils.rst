@@ -194,6 +194,14 @@ pycroscopy.viz.plot_utils
    .. raw:: html
 
 	       <div style='clear:both'></div>
+
+   .. autofunction:: single_img_cbar_plot
+
+   .. include:: backreferences/pycroscopy.viz.plot_utils.single_img_cbar_plot.examples
+
+   .. raw:: html
+
+	       <div style='clear:both'></div>
    
    
 
