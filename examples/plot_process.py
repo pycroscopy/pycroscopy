@@ -28,6 +28,10 @@ essentially deals with careful file reading and writing.
 The majority of the code for this example is based on the BESHOModel Class under pycroscopy.analysis
 """
 
+#########################################################################
+# Import necessary packages
+# =========================
+#
 # Ensure python 3 compatibility:
 from __future__ import division, print_function, absolute_import, unicode_literals
 
@@ -53,10 +57,40 @@ field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]
 sho32 = np.dtype({'names': field_names,
                   'formats': [np.float32 for name in field_names]})
 
+#########################################################################
+# Build the class
+# ===============
+#
+# Every process class consists of the same basic functions:
+# 1. __init__ - instantiates a 'Process' object of this class after validating the inputs
+# 2. _create_results_datasets - creates the HDF5 datasets and datagroups to store the results.
+# 3. _unit_function - this is the operation that will per be performed on each element in the dataset.
+# 4. compute - This function essentially applies the unit function to every single element in the dataset.
+# 5. _write_results_chunk - writes the computed results back to the file
+#
+# Note that:
+# * Only the code specific to this process needs to be implemented. However, the generic portions common to most
+#   Processes will be handled by the Process class.
+# * The other functions such as the sho_function, sho_fast_guess function are all specific to this process. These have
+#   been inherited directly from the BE SHO model.
+# * While the class appears to be large, remember that the majority of it deals with the creation of the datasets to store
+#   the results and the actual function that one would have anyway regardless of serial / parallel computation of the
+#   function. The additional code to turn this operation into a Pycroscopy Process is actually rather minimal. As
+#   described earlier, the goal of the Process class is to modularize and compartmentalize the main sections of the code
+#   in order to facilitate faster and more robust implementation of data processing algorithms.
+
 
 class ShoGuess(px.Process):
 
     def __init__(self, h5_main, cores=None):
+        """
+        Validate the inputs and set some parameters
+
+        Parameters
+        ----------
+        h5_main - dataset to compute on
+        cores - Number of CPU cores to use for computation - Optional
+        """
         super(ShoGuess, self).__init__(h5_main, cores)
 
         # find the frequency vector
@@ -64,6 +98,11 @@ class ShoGuess(px.Process):
         self.freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
     def _create_results_datasets(self):
+        """
+        Creates the datasets an datagroups necessary to store the results.
+        Just as the raw data is stored in the pycroscopy format, the results also need to conform to the same
+        standards. Hence, the create_datasets function can appear to be a little longer than one might expect.
+        """
         h5_spec_inds = px.hdf_utils.getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         h5_spec_vals = px.hdf_utils.getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
@@ -101,11 +140,25 @@ class ShoGuess(px.Process):
         print('Finshed creating datasets')
 
     def compute(self, *args, **kwargs):
-        # here we simply extend the existing compute function and only pass the parameters for the unit function
-        # In this case, the only parameter is the frequency vector.
+        """
+        Apply the unit_function to the entire dataset. Here, we simply extend the existing compute function and only
+        pass the parameters for the unit function. In this case, the only parameter is the frequency vector.
+
+        Parameters
+        ----------
+        args
+        kwargs
+
+        Returns
+        -------
+
+        """
         return super(ShoGuess, self).compute(w_vec=self.freq_vec)
 
     def _write_results_chunk(self):
+        """
+        Write the computed results back to the H5 file
+        """
         # converting from a list to a 2D numpy array
         self._results = np.array(self._results, dtype=np.float32)
         self.h5_guess[:, 0] = px.io_utils.realToCompound(self._results, sho32)
@@ -116,6 +169,7 @@ class ShoGuess(px.Process):
 
     @staticmethod
     def _unit_function():
+
         return px.be_sho.SHOestimateGuess
 
 
@@ -152,6 +206,10 @@ h5_main = h5_meas_grp['Channel_000/Raw_Data']
 h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[-1]
 freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
+########################################################################
+# Use the ShoGuess class, defined earlier, to calculate the four
+# parameters of the complex gaussian.
+
 fitter = ShoGuess(h5_main, cores=1)
 h5_results_grp = fitter.compute()
 h5_guess = h5_results_grp['Guess']
@@ -160,10 +218,14 @@ row_ind, col_ind = 103, 19
 pix_ind = col_ind + row_ind * num_cols
 resp_vec = h5_main[pix_ind]
 norm_guess_parms = h5_guess[pix_ind]
+
 # Converting from compound to real:
 norm_guess_parms = px.io_utils.compound_to_scalar(norm_guess_parms)
 print('Functional fit returned:', norm_guess_parms)
 norm_resp = px.be_sho.SHOfunc(norm_guess_parms, freq_vec)
+
+########################################################################
+# Plot the Amplitude and Phase of the gaussian versus the raw data.
 
 fig, axes = plt.subplots(nrows=2, sharex=True, figsize=(5, 10))
 for axis, func, title in zip(axes.flat, [np.abs, np.angle], ['Amplitude (a.u.)', 'Phase (rad)']):
