@@ -17,10 +17,12 @@ Prerequisites:
 ==============
 
 Before proceeding with this example series, we recommend reading the previous documents to learn more about:
+
 1. Data and file formats
     * Why you should care about data formats
     * Current state of data formats in microscopy
     * Structuring data in pycroscopy
+
 2. HDF5 file format
 
 
