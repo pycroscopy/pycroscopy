@@ -9,7 +9,11 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Simplify and demystify analyis / optimize. Use parallel_compute and joblib
+* A new class (pycro_data?) for simplifying the many data slicing, referencing operations on **main** datasets.
+    * Essentially, the goal is to turn the **main** datasets into powerful python objects that obviate the need for users to dig into ancillary datasets to slice, understand the datasets. Pycroscopy chooses to use a rather generalized representation of data at the cost of simplictiy. This object should bring back the simplicity of accessing the data. 
+    * In the process of enabling greater insight into a dataset, this class would read and analyze ancillary datasets once and reuse this knowledge when the user requests another operation (that most likely also requires references to ancillary datasets etc. anyway).
+    * Nearly all the functionality has been implemented in hdf_utils and some in io_utils. This class can simply reuse these general functions.
+* Simplify and demystify analyis / optimize. Use parallel_compute (joblib instead of multiprocessing)
 * multi-node computing capability in parallel_compute
 * Data Generators
 
