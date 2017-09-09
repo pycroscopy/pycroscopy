@@ -14,6 +14,14 @@ Core development
     * In the process of enabling greater insight into a dataset, this class would read and analyze ancillary datasets once and reuse this knowledge when the user requests another operation (that most likely also requires references to ancillary datasets etc. anyway).
     * Nearly all the functionality has been implemented in hdf_utils and some in io_utils. This class can simply reuse these general functions.
 * Generic visualizer in plot.lly / dash? that can use the pycrodata class
+   * One suggestion is 2 (or more panes). 
+         * Left hand side for positions
+               * 1D lines or 2D images
+               * Ability to select individual pixels, points within a polygon.
+               * What quantity to display for these images? Select one within P fields for compound datasets. Perhaps we need sliders / dropdowns for all spectral dimensions here to for the user to slices?
+         * Right hand side for spectral
+               * 1D spectra or 2D images. 
+               * Users will be asked to slice N-1 or N-2 spectral dimensions
 * Simplify and demystify analyis / optimize. Use parallel_compute (joblib instead of multiprocessing)
 * multi-node computing capability in parallel_compute
 * Data Generators
