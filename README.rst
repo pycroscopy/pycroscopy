@@ -8,7 +8,7 @@ pycroscopy		|statusimage|
 
 What is pycroscopy?
 -------------------
-pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy.
+pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy. pycroscopy uses a data-centric model wherein the raw data collected from the microscope, results fron analysis and processing routines are all written to standardized heirarchical data format (HDF5) files for traceability, reproducability, and prevenance. 
 
 With  `pycroscopy <https://pycroscopy.github.io/pycroscopy/>`_ we aim to:
 	1. Serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
@@ -21,29 +21,29 @@ To learn more about the motivation, general structure, and philosophy of pycrosc
 Package Structure
 -----------------
 The package structure is simple, with 4 main modules:
-   1. `io`: Input/Output from custom & proprietary microscope formats to HDF5.
-   2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.
-   3. `analysis`: Model-dependent analysis of information.
-   4. `viz`: Plotting functions and interactive jupyter widgets to visualize multidimenional data
+   1. **io**: Reading and writing to HDF5 files + translating data from custom & proprietary microscope formats to HDF5.
+   2. **processing**: multivariate statistics, machine Learning, and signal filtering.
+   3. **analysis**: model-dependent analysis of information.
+   4. **viz**: Plotting functions and interactive jupyter widgets to visualize multidimenional data
 
-Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`. 
+Once a user converts their microscope's data format into an HDF5 format, using some of the `Translator` classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`. 
 
 Installation
 ------------
 
 Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
 
-   0. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
+0. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
 
-   1. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
+1. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
 
-   2. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
+2. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
 
-	.. code:: bash
+.. code:: bash
 
 	   pip install pycroscopy
 
-   3. Enjoy pycroscopy!
+3. Enjoy pycroscopy!
 
 If you already have pycroscopy installed and want to update to the latest version, use the following command:
 
