@@ -380,10 +380,14 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     ifreq = int(np.argwhere(spec_labels == 'Frequency'))
     freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
-    try:
-        num_udvs_steps = h5_main.parent.parent.attrs['num_udvs_steps']
-    except KeyError:
-        num_udvs_steps = 1
+
+    num_udvs_steps = h5_main.parent.parent.attrs.get('num_udvs_steps', None)
+
+    if num_udvs_steps is None:
+        num_udvs_steps = h5_main.parent.parent.attrs.get('num_UDVS_steps', None)
+
+    if num_udvs_steps is None:
+        warn('Number of UDVS steps could not be determined.  Will assume single step.')
 
     if len(pos_dims) == 2:
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
