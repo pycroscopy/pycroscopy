@@ -9,11 +9,8 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* A new class (pycro_data?) for simplifying the many data slicing, referencing operations on **main** datasets.
-    * Essentially, the goal is to turn the **main** datasets into powerful python objects that obviate the need for users to dig into ancillary datasets to slice, understand the datasets. Pycroscopy chooses to use a rather generalized representation of data at the cost of simplictiy. This object should bring back the simplicity of accessing the data. 
-    * In the process of enabling greater insight into a dataset, this class would read and analyze ancillary datasets once and reuse this knowledge when the user requests another operation (that most likely also requires references to ancillary datasets etc. anyway).
-    * Nearly all the functionality has been implemented in hdf_utils and some in io_utils. This class can simply reuse these general functions.
-* Generic visualizer in plot.lly / dash? that can use the pycrodata class
+* Finish PycroDataset and test the many data slicing, referencing operations on **main** datasets. Essentially, the goal is to turn the **main** datasets into powerful python objects that obviate the need for users to dig into ancillary datasets to slice, understand the datasets. 
+* Generic visualizer in plot.lly / dash? that can use the PycroDataset class
    * One suggestion is 2 (or more panes). 
          * Left hand side for positions
                * 1D lines or 2D images
@@ -22,7 +19,7 @@ Core development
          * Right hand side for spectral
                * 1D spectra or 2D images. 
                * Users will be asked to slice N-1 or N-2 spectral dimensions
-* Simplify and demystify analyis / optimize. Use parallel_compute (joblib instead of multiprocessing)
+* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
 
@@ -63,11 +60,12 @@ Done:
 * Basic introduction to loading data in pycroscopy
 * Handling multidimensional (6D) datasets
 * Visualizing data (interactively using widgets) (needs some tiny automation in the end)
-* How to write your write your own parallel computing function using the process module
 
 Pending:
 
-* How to write your own analysis class
+* How to write your write your own parallel computing function using the process module - add more documentation
+* How to write your own analysis class based on the (to-be simplified) Model class
+* How to use the PycroDataset object
 * A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
 * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 
