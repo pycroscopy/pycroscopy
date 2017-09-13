@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display
 
-from .plot_utils import plot_loops, plot_map_stack, plot_map, get_cmap_object
+from .plot_utils import plot_loops, plot_map_stack, plot_map, get_cmap_object, single_img_cbar_plot
 from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr
 from ..analysis.utils.be_loop import loop_fit_function
 
@@ -234,7 +234,6 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     h5_sho_spec_inds = getAuxData(h5_sho_dset, 'Spectroscopic_Indices')[0]
     h5_sho_spec_vals = getAuxData(h5_sho_dset, 'Spectroscopic_Values')[0]
     spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
-    # sho_spec_sort = get_sort_order(h5_sho_spec_inds)
     sho_spec_dims = np.array(spec_nd.shape[1:])
     sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
 
@@ -308,10 +307,13 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map = ax_map.imshow(spatial_map.T, cmap=cmap, origin='lower',
-                            interpolation='none')
+    img_map, img_cmap = single_img_cbar_plot(fig, ax_map, spatial_map.T,
+                                             show_xy_ticks=None)
+
+    map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
+    ax_map.set_title(map_title)
     main_vert_line = ax_map.axvline(x=row_ind, color='k')
     main_hor_line = ax_map.axhline(y=col_ind, color='k')
 
@@ -326,6 +328,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         step_ind = kwargs['Bias Step']
         bias_slider.set_xdata((step_ind, step_ind))
         spatial_map = sho_dset_collapsed[:, :, step_ind, 0][sho_quantity]
+        map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
+        ax_map.set_title(map_title)
         img_map.set_data(spatial_map.T)
         spat_mean = np.mean(spatial_map)
         spat_std = np.std(spatial_map)
@@ -392,31 +396,36 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     if len(pos_dims) == 2:
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
-        fig, axes = plt.subplots(ncols=3, figsize=(12, 4))
-        # spatial_img = axes[0].imshow(np.abs(spatial_map), cmap=plt.cm.viridis)
-        spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
-                               cmap=cmap)
-        axes[0].set_aspect(1)
+        fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
+        # spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
+        #                        cmap=cmap)
+        spatial_img, spatial_cbar = single_img_cbar_plot(fig, axes[0], np.abs(spatial_map),
+                                                         x_size=spatial_map.shape[0], y_size=spatial_map.shape[1],
+                                                         cmap=cmap)
+        axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
         main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
 
         if len(spec_dims) > 1:
-            # BEPS
-            amp_img = axes[1].imshow(np.abs(spectrogram), cmap=cmap,
-                                     extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                             spectrogram.shape[0], 0],
-                                     interpolation='none')
-            axes[1].set_ylabel('BE step')
+            amp_img, amp_cbar = single_img_cbar_plot(fig, axes[1], np.abs(spectrogram),
+                                                     cmap=cmap, show_xy_ticks=None,
+                                                     extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
+                                                             0, spectrogram.shape[0]])
 
-            phase_img = axes[2].imshow(np.angle(spectrogram), cmap=cmap,
-                                       extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                               spectrogram.shape[0], 0],
-                                       interpolation='none')
+            phase_img, phase_cbar = single_img_cbar_plot(fig, axes[2], np.angle(spectrogram),
+                                                         cmap=cmap, show_xy_ticks=None,
+                                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
+                                                                 0, spectrogram.shape[0]])
+
             for axis in axes[1:3]:
+                axis.set_ylabel('BE step')
                 axis.axis('tight')
-                axis.set_ylim(0, spectrogram.shape[0])
+                x0, x1 = (freqs_2d[0, 0], freqs_2d[-1, 0])
+                y0, y1 = (0, spectrogram.shape[0])
+                axis.set_aspect(np.abs(x1-x0)/np.abs(y1-y0))
+
         else:
             # BE-Line
             axes[1].set_ylabel('Amplitude (a. u.)')
@@ -470,6 +479,8 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             else:
                 amp_img.set_ydata(np.abs(spectrogram))
                 phase_img.set_ydata(np.angle(spectrogram))
+            amp_cbar.changed()
+            phase_cbar.changed()
             display(fig)
 
         pos_dict = dict()
@@ -576,8 +587,6 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     new_order = list(range(len(pos_dims))) + [len(pos_dims) + spec_step_dim_ind] + rest_loop_dim_order
 
     new_spec_order = np.array(new_order[len(pos_dims):], dtype=np.uint32) - len(pos_dims)
-    # new_spec_dims = loop_spec_dims[new_spec_order]
-    # new_spec_labels = loop_spec_labels[new_spec_order]
 
     # Also reshape the projected loops to Positions-DC_Step-Loop
     final_loop_shape = pos_dims + [loop_spec_dims[spec_step_dim_ind]] + [-1]
@@ -613,10 +622,14 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map = ax_map.imshow(spatial_map.T, cmap=cmap,
-                           origin='lower', interpolation='none')
+    im_map, im_cbar = single_img_cbar_plot(fig, ax_map, spatial_map.T,
+                                           x_size=spatial_map.shape[0],
+                                           y_size=spatial_map.shape[1],
+                                           cmap=cmap)
+
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
+    ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
     main_vert_line = ax_map.axvline(x=col_ind, color='k')
     main_hor_line = ax_map.axhline(y=row_ind, color='k')
 
@@ -640,6 +653,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
         spat_mean = np.mean(spatial_map)
         spat_std = np.std(spatial_map)
         im_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
+        ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
 
         row_ind = kwargs['Y']
         col_ind = kwargs['X']

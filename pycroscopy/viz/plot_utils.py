@@ -17,7 +17,7 @@ import numpy as np
 import scipy
 from scipy.signal import blackman
 from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.axes_grid1 import ImageGrid
+from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
 
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
@@ -360,12 +360,12 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
                      vmax=data_mean + stdevs * data_std,
                      origin=origin,
                      **kwargs)
-    axis.set_aspect('auto')
+    # axis.set_aspect('auto')
 
     return im
 
 
-def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
+def single_img_cbar_plot(fig, axis, img, show_xy_ticks=None, show_cbar=True,
                          x_size=1, y_size=1, num_ticks=4, cbar_label=None,
                          tick_font_size=14, **kwargs):
     """
@@ -380,7 +380,7 @@ def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
         Axis to plot this image onto
     img : 2D numpy array with real values
         Data for the image plot
-    show_xy_ticks : bool, Optional, default = True
+    show_xy_ticks : bool, Optional, default = None, shown unedited
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
@@ -405,11 +405,11 @@ def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
         handle to color bar
     """
     if 'clim' not in kwargs:
-        im_handle = plot_map(axis, img, aspect='auto', **kwargs)
+        im_handle = plot_map(axis, img, **kwargs)
     else:
         im_handle = axis.imshow(img, origin='lower', **kwargs)
 
-    if show_xy_ticks:
+    if show_xy_ticks is True:
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         axis.set_xticks(x_ticks)
@@ -417,12 +417,19 @@ def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
         axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
         axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
         set_tick_font_size(axis, tick_font_size)
-    else:
+    elif show_xy_ticks is False:
         axis.set_xticks([])
         axis.set_yticks([])
+    else:
+        set_tick_font_size(axis, tick_font_size)
 
     if show_cbar:
-        cbar = fig.colorbar(im_handle, ax=axis)
+        # cbar = fig.colorbar(im_handle, ax=axis)
+        # divider = make_axes_locatable(axis)
+        # cax = divider.append_axes('right', size='5%', pad=0.05)
+        # cbar = plt.colorbar(im_handle, cax=cax)
+        cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
+                            fraction=0.046, pad=0.04, use_gridspec=True)
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
         """
@@ -693,7 +700,8 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
-                   title='Component', heading='Map Stack', colorbar_label = '', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
+                   title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
+                   **kwargs):
     """
     Plots the provided stack of maps
 
