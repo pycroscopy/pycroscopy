@@ -2,14 +2,16 @@
 
 Roadmap / Milestones
 --------------------
-1. Sep 2017 end - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-2. Oct 2017 mid - Multi-node compute capability
+1. Mid Sep - better BE notebook + visualization for users
+2. Mid of Oct - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+3. End of Oct - Multi-node compute capability
 
 New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Finish PycroDataset and test the many data slicing, referencing operations on **main** datasets. Essentially, the goal is to turn the **main** datasets into powerful python objects that obviate the need for users to dig into ancillary datasets to slice, understand the datasets. 
+* Finish PycroDataset and test the many data slicing, referencing operations on **main** datasets. 
+   * Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
 * Generic visualizer in plot.lly / dash? that can use the PycroDataset class
    * One suggestion is 2 (or more panes). 
          * Left hand side for positions
@@ -51,22 +53,10 @@ Short tutorials on how to use pycroscopy
 
 Longer examples (via specific scientific usecases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Done:
-
-* Data formatting in pycroscopy
-* How to write a Translator
-* How to write (back) to H5
-* Spectral Unmixing with pycroscopy
-* Basic introduction to loading data in pycroscopy
-* Handling multidimensional (6D) datasets
-* Visualizing data (interactively using widgets) (needs some tiny automation in the end)
-
-Pending:
-
 * How to write your write your own parallel computing function using the process module - add more documentation
-* How to write your own analysis class based on the (to-be simplified) Model class
 * How to use the PycroDataset object
 * A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
+* How to write your own analysis class based on the (to-be simplified) Model class
 * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 
 Rama's (older and more applied / specific) tutorial goals
