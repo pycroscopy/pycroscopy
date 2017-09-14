@@ -66,17 +66,13 @@ Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
 1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
 2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
-3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
+3. Done - After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
 4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
 5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 
 
 Documentation
 -------------
 *	Switch from static examples to dynamic jupyter notebook like examples:
-   * http://scikit-image.org/docs/dev/auto_examples/ 
-   * http://scikit-learn.org/stable/auto_examples/index.html 
-   * more complicated analyses -  http://nipy.org/dipy/examples_index.html
-   * Done for existing documentation
    * Work will be needed after examples are done
 *	Include examples in documentation
 
@@ -84,14 +80,10 @@ Formatting changes
 ------------------
 *	Fix remaining PEP8 problems
 *	Ensure code and documentation is standardized
-*	Switch to standard version formatting
 *	Classes and major Functions should check to see if the results already exist
 
 Notebooks
 ---------
-*	Direct downloading of notebooks (ipynb an html)
-  * nbviewer?
-  * Host somewhere other than github?
 *	Investigate using JupyterLab
 
 Testing
