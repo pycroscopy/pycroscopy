@@ -21,6 +21,9 @@ Core development
          * Right hand side for spectral
                * 1D spectra or 2D images. 
                * Users will be asked to slice N-1 or N-2 spectral dimensions
+* (re)Write at least one existing processing function as a class. 
+    * Josh can redo fft filtering
+    * Rama can redo gIV bayesian inference
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
