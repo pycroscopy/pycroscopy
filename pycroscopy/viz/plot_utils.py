@@ -10,15 +10,16 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import inspect
 from warnings import warn
+import os
 import sys
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.signal import blackman
+import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
-
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
 if sys.version_info.major == 3:
@@ -1448,3 +1449,42 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
             ax.get_xaxis().set_visible(False)
 
     return fig_clean, axes_clean
+
+
+def save_fig_filebox_button(fig, filename):
+    """
+    Create ipython widgets to allow the user to save a figure to the
+    specified file.
+
+    Parameters
+    ----------
+    fig : matplotlib.Figure
+        The figure to be saved.
+    filename : str
+        The filename the figure should be saved to
+
+    Returns
+    -------
+    widget_box : ipywidgets.HBox
+        Widget box holding the text entry and save button
+
+    """
+    filename = os.path.abspath(filename)
+    file_dir, filename = os.path.split(filename)
+
+    name_box = widgets.Text(value=filename,
+                            placeholder='Type something',
+                            description='Output Filename:',
+                            disabled=False)
+    save_button = widgets.Button(description='Save figure')
+
+    def _save_fig(junk):
+        save_path = os.path.join(file_dir, filename)
+        fig.save_fig(save_path)
+        print('Figure saved to "{}".'.format(save_path))
+
+    widget_box = widgets.HBox([name_box, save_button])
+
+    save_button.on_click(_save_fig)
+
+    return widget_box
