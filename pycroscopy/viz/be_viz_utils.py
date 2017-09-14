@@ -12,8 +12,8 @@ from matplotlib import pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display
 
-from .plot_utils import plot_loops, plot_map_stack, plot_map, get_cmap_object, single_img_cbar_plot
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr
+from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button
+from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, get_unit_values
 from ..analysis.utils.be_loop import loop_fit_function
 
 
@@ -352,6 +352,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Bias Step'] = (0, bias_mat.shape[0] - 1, 1)
 
+    display(save_fig_filebox_button(fig, h5_sho_dset.file.filename))
+
     widgets.interact(update_sho_plots, sho_quantity=list(sho_dset_collapsed.dtype.names[:-1]), **slider_dict)
 
 
@@ -448,6 +450,8 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         axes[2].set_xlabel('Frequency (kHz)')
 
         fig.tight_layout()
+
+        display(save_fig_filebox_button(fig, h5_main.file.filename))
 
         def index_unpacker(**kwargs):
             spatial_map = np.abs(np.reshape(h5_main[:, kwargs['spectroscopic']], pos_dims[::-1]))
@@ -646,6 +650,9 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_loop.legend()
     fig.tight_layout()
 
+    display(save_fig_filebox_button(fig, h5_projected_loops.file.filename))
+
+
     def update_loop_plots(loop_field, **kwargs):
         loop_ind = kwargs['Loop Number']
         spatial_map = fit_3d[:, :, loop_ind][loop_field]
@@ -675,3 +682,52 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
         slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Loop Number'] = (0, bias_vec.shape[1] - 1, 1)
     widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), **slider_dict)
+
+
+def jupyter_visualize_parameter_maps(h5_loop_parameters):
+    """
+
+    Parameters
+    ----------
+    h5_loop_parameters
+
+    Returns
+    -------
+
+    """
+    # Get the position and spectroscopic datasets
+    h5_loop_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[-1]
+    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[-1]
+    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[-1]
+
+    pos_dims = get_dimensionality(np.transpose(h5_loop_pos_inds))
+    num_cycles = h5_loop_parameters.shape[1]
+
+    parameter_names = h5_loop_parameters.dtype.names
+
+    parameter_map_stack = np.reshape(h5_loop_parameters[parameter_names[0]],
+                                     [*pos_dims, -1])
+
+    loop_spec_dict = get_unit_values(h5_loop_spec_inds, h5_loop_spec_vals)
+
+    map_titles = list()
+    for icycle in range(num_cycles):
+        title = ' - '.join(['{}: {}'.format(label, value[icycle]) for label, value in loop_spec_dict.items()])
+        map_titles.append(title)
+
+    fig, axes = plot_map_stack(parameter_map_stack, num_comps=num_cycles, color_bar_mode='each',
+                               title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]))
+
+    def update_loop_maps(parameter_name):
+        parameter_map_stack = np.reshape(h5_loop_parameters[parameter_name],
+                                         [*pos_dims, -1])
+        fig.suptitle('Maps of Loop Parameter {}'.format(parameter_name))
+        # Loop over all axes
+        for icycle, ax_cycle in enumerate(axes):
+            image = ax_cycle.get_images()[0]
+            image.set_data(parameter_map_stack[:, :, icycle])
+
+        display(fig)
+
+    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
