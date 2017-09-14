@@ -1475,7 +1475,8 @@ def save_fig_filebox_button(fig, filename):
     name_box = widgets.Text(value=filename,
                             placeholder='Type something',
                             description='Output Filename:',
-                            disabled=False)
+                            disabled=False,
+                            layout={'width': '50%'})
     save_button = widgets.Button(description='Save figure')
 
     def _save_fig(junk):
