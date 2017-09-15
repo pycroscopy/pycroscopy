@@ -706,7 +706,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
     parameter_names = h5_loop_parameters.dtype.names
 
     parameter_map_stack = np.reshape(h5_loop_parameters[parameter_names[0]],
-                                     [*pos_dims, -1])
+                                     [pos_dims[0], pos_dims[1], -1])
 
     loop_spec_dict = get_unit_values(h5_loop_spec_inds, h5_loop_spec_vals)
 
