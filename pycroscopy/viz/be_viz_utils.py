@@ -307,8 +307,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = single_img_cbar_plot(fig, ax_map, spatial_map.T,
-                                             show_xy_ticks=None)
+    img_map, img_cmap = single_img_cbar_plot(ax_map, spatial_map.T, show_xy_ticks=None)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel('X')
@@ -401,9 +400,8 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
         # spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
         #                        cmap=cmap)
-        spatial_img, spatial_cbar = single_img_cbar_plot(fig, axes[0], np.abs(spatial_map),
-                                                         x_size=spatial_map.shape[0], y_size=spatial_map.shape[1],
-                                                         cmap=cmap)
+        spatial_img, spatial_cbar = single_img_cbar_plot(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
+                                                         y_size=spatial_map.shape[1], cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
@@ -411,13 +409,11 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
 
         if len(spec_dims) > 1:
-            amp_img, amp_cbar = single_img_cbar_plot(fig, axes[1], np.abs(spectrogram),
-                                                     cmap=cmap, show_xy_ticks=None,
+            amp_img, amp_cbar = single_img_cbar_plot(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
                                                      extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                              0, spectrogram.shape[0]])
 
-            phase_img, phase_cbar = single_img_cbar_plot(fig, axes[2], np.angle(spectrogram),
-                                                         cmap=cmap, show_xy_ticks=None,
+            phase_img, phase_cbar = single_img_cbar_plot(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
                                                          extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
                                                                  0, spectrogram.shape[0]])
 
@@ -626,10 +622,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map, im_cbar = single_img_cbar_plot(fig, ax_map, spatial_map.T,
-                                           x_size=spatial_map.shape[0],
-                                           y_size=spatial_map.shape[1],
-                                           cmap=cmap)
+    im_map, im_cbar = single_img_cbar_plot(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
+                                           y_size=spatial_map.shape[1], cmap=cmap)
 
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
@@ -686,18 +680,20 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
 def jupyter_visualize_parameter_maps(h5_loop_parameters):
     """
+    Interactive plot of the spatial maps of the loop parameters for all cycles.
 
     Parameters
     ----------
-    h5_loop_parameters
+    h5_loop_parameters : h5py.Dataset
+        The dataset containing the loop parameters to be visualized
 
     Returns
     -------
+    None
 
     """
     # Get the position and spectroscopic datasets
     h5_loop_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[-1]
-    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[-1]
     h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[-1]
 
     pos_dims = get_dimensionality(np.transpose(h5_loop_pos_inds))
@@ -708,12 +704,15 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
     parameter_map_stack = np.reshape(h5_loop_parameters[parameter_names[0]],
                                      [pos_dims[0], pos_dims[1], -1])
 
-    loop_spec_dict = get_unit_values(h5_loop_spec_inds, h5_loop_spec_vals)
+    loop_spec_labs = get_attr(h5_loop_spec_vals, 'labels')
 
     map_titles = list()
     for icycle in range(num_cycles):
-        title = ' - '.join(['{}: {}'.format(label, value[icycle]) for label, value in loop_spec_dict.items()])
-        map_titles.append(title)
+        title_list = list()
+        for label in loop_spec_labs:
+            val = h5_loop_spec_vals[get_attr(h5_loop_spec_vals, label)].squeeze()[icycle]
+            title_list.append('{}: {}'.format(label, val))
+        map_titles.append(' - '.join(title_list))
 
     fig, axes = plot_map_stack(parameter_map_stack, num_comps=num_cycles, color_bar_mode='each',
                                title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]))
@@ -726,8 +725,12 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
         for icycle, ax_cycle in enumerate(axes):
             image = ax_cycle.get_images()[0]
             image.set_data(parameter_map_stack[:, :, icycle])
+            image.set_clim(vmin=np.min(parameter_map_stack[:, :, icycle]),
+                           vmax=np.max(parameter_map_stack[:, :, icycle]))
 
         display(fig)
 
     display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
+
+
