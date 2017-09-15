@@ -720,7 +720,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
 
     def update_loop_maps(parameter_name):
         parameter_map_stack = np.reshape(h5_loop_parameters[parameter_name],
-                                         [*pos_dims, -1])
+                                         [pos_dims[0], pos_dims[1], -1])
         fig.suptitle('Maps of Loop Parameter {}'.format(parameter_name))
         # Loop over all axes
         for icycle, ax_cycle in enumerate(axes):
