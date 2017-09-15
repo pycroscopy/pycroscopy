@@ -333,7 +333,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
-def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
+def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
     """
     Plots a 2d map with a tight z axis, with or without color bars.
     Note that the direction of the y axis is flipped if the color bar is required
@@ -344,8 +344,8 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
         Axis to plot this map onto
     data : 2D real numpy array
         Data to be plotted
-    stdevs : unsigned int (Optional. Default = 2)
-        Number of standard deviations to consider for plotting
+    stdevs : unsigned int (Optional. Default = None)
+        Number of standard deviations to consider for plotting.  If None, full range is plotted.
     origin : str
         Where should the origin of the image data be located.  'lower' sets the origin to the
         bottom left, 'upper' sets it to the upper left.
@@ -354,29 +354,32 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
     Returns
     -------
     """
-    data_mean = np.mean(data)
-    data_std = np.std(data)
+    if stdevs is not None:
+        data_mean = np.mean(data)
+        data_std = np.std(data)
+        plt_min = data_mean - stdevs * data_std
+        plt_max = data_mean + stdevs * data_std
+    else:
+        plt_min = np.min(data)
+        plt_max = np.max(data)
+
     im = axis.imshow(data, interpolation='none',
-                     vmin=data_mean - stdevs * data_std,
-                     vmax=data_mean + stdevs * data_std,
+                     vmin=plt_min,
+                     vmax=plt_max,
                      origin=origin,
                      **kwargs)
-    # axis.set_aspect('auto')
 
     return im
 
 
-def single_img_cbar_plot(fig, axis, img, show_xy_ticks=None, show_cbar=True,
-                         x_size=1, y_size=1, num_ticks=4, cbar_label=None,
-                         tick_font_size=14, **kwargs):
+def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
+                         cbar_label=None, tick_font_size=14, **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
 
     Parameters
     ----------
-    fig : matplotlib.figure object
-        Handle to figure
     axis : matplotlib.axis object
         Axis to plot this image onto
     img : 2D numpy array with real values
@@ -1488,4 +1491,4 @@ def save_fig_filebox_button(fig, filename):
 
     save_button.on_click(_save_fig)
 
-    return widget_box
+    # return widget_box
