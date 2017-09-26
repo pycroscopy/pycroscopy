@@ -1491,4 +1491,4 @@ def save_fig_filebox_button(fig, filename):
 
     save_button.on_click(_save_fig)
 
-    # return widget_box
+    return widget_box

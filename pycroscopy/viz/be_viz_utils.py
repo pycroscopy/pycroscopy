@@ -12,9 +12,12 @@ from matplotlib import pyplot as plt
 import ipywidgets as widgets
 from IPython.display import display
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, get_unit_values
+from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button, \
+    set_tick_font_size
+from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
+    get_unit_values, get_source_dataset, get_formatted_labels
 from ..analysis.utils.be_loop import loop_fit_function
+from ..analysis.utils.be_sho import SHOfunc
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -388,6 +391,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
     num_udvs_steps = h5_main.parent.parent.attrs.get('num_udvs_steps', None)
 
+    # New version of aquisition software renamed num_udvs_steps to num_UDVS_steps
     if num_udvs_steps is None:
         num_udvs_steps = h5_main.parent.parent.attrs.get('num_UDVS_steps', None)
 
@@ -733,4 +737,513 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
     display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
 
+
+def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters):
+    """
+
+    Parameters
+    ----------
+    h5_loop_parameters
+
+    Returns
+    -------
+
+    """
+
+    # Find the precursor datasets used to calculate these parameters
+    h5_loop_grp = h5_loop_parameters.parent
+    h5_loop_projections = h5_loop_grp['Projected_Loops']
+    h5_loop_fit = h5_loop_grp['Fit']
+    h5_loop_guess = h5_loop_grp['Guess']
+
+    h5_sho_grp = h5_loop_grp.parent
+    h5_sho_fit = h5_sho_grp['Fit']
+    h5_sho_guess = h5_sho_grp['Guess']
+
+
+    h5_main = get_source_dataset(h5_sho_grp)
+
+    # Now get the needed ancillary datasets for each main dataset
+    h5_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[0]
+    h5_pos_vals = getAuxData(h5_loop_parameters, 'Position_Values')[0]
+    pos_order = get_sort_order(np.transpose(h5_pos_inds))
+    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_order)
+    pos_labs = get_attr(h5_pos_inds, 'labels')
+
+    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[0]
+    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[0]
+    loop_spec_order = get_sort_order(h5_loop_spec_inds)
+    loop_spec_dims = get_dimensionality(h5_loop_spec_inds, loop_spec_order)
+    loop_spec_labs = get_attr(h5_loop_spec_inds, 'labels')
+
+    h5_sho_spec_inds = getAuxData(h5_sho_fit, 'Spectroscopic_Indices')[0]
+    h5_sho_spec_vals = getAuxData(h5_sho_fit, 'Spectroscopic_Values')[0]
+    sho_spec_order = get_sort_order(h5_sho_spec_inds)
+    sho_spec_dims = get_dimensionality(h5_sho_spec_inds, sho_spec_order)
+    sho_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
+
+    h5_main_spec_inds = getAuxData(h5_main, 'Spectroscopic_Indices')[0]
+    h5_main_spec_vals = getAuxData(h5_main, 'Spectroscopic_Values')[0]
+    main_spec_order = get_sort_order(h5_main_spec_inds)
+    main_spec_dims = get_dimensionality(h5_main_spec_inds, main_spec_order)
+    main_spec_labs = get_attr(h5_main_spec_inds, 'labels')
+
+    '''
+    Select the initial plotting slices
+    '''
+    loop_parameter_names = h5_loop_parameters.dtype.names
+    loop_num_cycles = h5_loop_parameters.shape[1]
+    loop_parameter_spec_labs = get_attr(h5_loop_spec_vals, 'labels')
+    sho_bias_dim = np.argwhere(sho_spec_labs[sho_spec_order] == 'DC_Offset').squeeze()
+    steps_per_loop = sho_spec_dims[sho_bias_dim]
+    main_bias_dim = np.argwhere(main_spec_labs[main_spec_order] == 'DC_Offset').squeeze()
+
+    selected_loop_parm = loop_parameter_names[0]
+    selected_loop_cycle = 0
+    selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+    selected_loop_pos = int(pos_dims[0]/2), int(pos_dims[1]/2)
+    selected_step = int(steps_per_loop/2)
+
+    '''
+    Get the bias vector to be plotted against
+    '''
+    loop_bias_vec = h5_sho_spec_vals[get_attr(h5_sho_spec_vals, 'DC_Offset')].squeeze()
+    shift_ind = int(-1 * steps_per_loop / 4)
+    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims)
+    loop_bias_vec = np.moveaxis(loop_bias_vec, sho_bias_dim, 0).reshape(sho_spec_dims[sho_bias_dim], -1)
+    loop_bias_vec = np.roll(loop_bias_vec.reshape(steps_per_loop, -1), shift_ind, axis=0)
+
+    '''
+    Get the frequency vector to be plotted against
+    '''
+    full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
+    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec = full_w_vec.squeeze()
+
+    '''
+    Define functions to get the data
+    '''
+    def _get_loop_map(selected_loop_parm, selected_loop_cycle):
+        # Build the map of the chosen loop parameter
+        loop_parameter_map = np.reshape(h5_loop_parameters[selected_loop_parm, :, selected_loop_cycle],
+                                        [pos_dims[0], pos_dims[1]])
+
+        # Also create the title string for the map
+        loop_map_title = list()
+        for label in loop_parameter_spec_labs:
+            val = h5_loop_spec_vals[get_attr(h5_loop_spec_vals, label)].squeeze()[selected_loop_cycle]
+            loop_map_title.append('{}: {}'.format(label, val))
+
+        return loop_parameter_map, loop_map_title
+
+    def _get_loops(selected_loop_cycle, selected_loop_pos):
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+        # Now build the loop plot for the selected position in the loop map
+        selected_loop_bias_vec = loop_bias_vec[:, selected_loop_cycle]
+
+        pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
+
+        loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
+        loop_proj_vec = np.moveaxis(loop_proj_vec, sho_bias_dim, -1)[selected_loop_ndims]
+        loop_proj_vec = np.roll(loop_proj_vec, shift_ind)
+        loop_guess_vec = loop_fit_function(selected_loop_bias_vec,
+                                           h5_loop_guess[pos_ind, selected_loop_cycle].tolist())
+        loop_fit_vec = loop_fit_function(selected_loop_bias_vec,
+                                           h5_loop_fit[pos_ind, selected_loop_cycle].tolist())
+
+        return selected_loop_bias_vec, loop_proj_vec, loop_guess_vec, loop_fit_vec
+
+    def _get_sho(selected_loop_pos, selected_step, selected_loop_cycle):
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+        # get the SHO Guess and Fit and Raw Data for the selected position, cycle, and step
+        pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
+
+        # Get the frequency vector for the selected step
+        w_vec = np.moveaxis(full_w_vec, main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+
+        # Get the slice of the sho guess and fit
+        sho_guess = h5_sho_guess[pos_ind].reshape(sho_spec_dims[::-1])
+        sho_guess = np.moveaxis(sho_guess, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_guess = SHOfunc(sho_guess, w_vec)
+        sho_fit = h5_sho_fit[pos_ind].reshape(sho_spec_dims[::-1])
+        sho_fit = np.moveaxis(sho_fit, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_fit = SHOfunc(sho_fit, w_vec)
+
+        # Get the slice of the Raw Data
+        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec = np.moveaxis(raw_data_vec.squeeze(),
+                                   main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+
+        return w_vec, sho_guess, sho_fit, raw_data_vec
+
+    '''
+    Get the starting values
+    '''
+    loop_parm_map, loop_map_title = _get_loop_map(selected_loop_parm, selected_loop_cycle)
+    current_loop_bias_vec, current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec = \
+        _get_loops(selected_loop_cycle, selected_loop_pos)
+    current_w_vec, current_sho_guess, current_sho_fit, current_raw_data = _get_sho(selected_loop_pos,
+                                                                                   selected_step,
+                                                                                   selected_loop_cycle)
+
+    '''
+    Build the figure
+    '''
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(17, 17))
+
+    ax_loop_map = axes.flatten()[0]
+    ax_loop_pgf = axes.flatten()[1]
+    ax_sho_amp = axes.flatten()[2]
+    ax_sho_phase = axes.flatten()[3]
+
+    # Plot the map of the loop parameters
+    plt_loop_map = single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    loop_vert_line = ax_loop_map.axvline(x=pos_dims[0], color='k')
+    loop_horz_line = ax_loop_map.axhline(y=pos_dims[1], color='k')
+    ax_loop_map.set_title(loop_map_title)
+
+    # Plot the Loops
+    plt_loop_proj = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_proj_vec, 'k', label='Loop Projection')
+    plt_loop_guess = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_guess_vec, 'g', label='Loop Guess')
+    plt_loop_fit = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_fit_vec, 'r--', label='Loop Fit')
+    ax_loop_pgf.legend()
+
+    # Plot the amplitude of the SHO Guess, SHO Fit, and Raw Data
+    plt_raw_data_amp = ax_sho_amp.plot(current_w_vec, np.abs(current_raw_data), 'k', label='Raw Data')
+    plt_sho_guess_amp = ax_sho_amp.plot(current_w_vec, np.abs(current_sho_guess), 'g', label='SHO Guess')
+    plt_sho_fit_amp = ax_sho_amp.plot(current_w_vec, np.abs(current_sho_fit), 'r--', label='SHO Fit')
+    ax_sho_amp.legend()
+
+    # Plot the phase of the SHO Guess, SHO Fit, and Raw Data
+    plt_raw_data_phase = ax_sho_phase.plot(current_w_vec, np.angle(current_raw_data), 'k', label='Raw Data')
+    plt_sho_guess_phase = ax_sho_phase.plot(current_w_vec, np.angle(current_sho_guess), 'g', label='SHO Guess')
+    plt_sho_fit_phase = ax_sho_phase.plot(current_w_vec, np.angle(current_sho_fit), 'r--', label='SHO Fit')
+    ax_sho_phase.legend()
+
+    fig.tight_layout()
+
+    def _update_loop_map(parameter_name, selected_cycle):
+        loop_parm_map, loop_map_title = _get_loop_map(parameter_name, selected_cycle)
+        plt_loop_map.set_data(loop_parm_map)
+        ax_loop_map.set_title(loop_map_title)
+
+    def _update_crosshairs(x_pos, y_pos):
+        loop_vert_line.set_xdata(x_pos)
+        loop_horz_line.set_ydata(y_pos)
+
+    def _update_loop_plots(selected_loop_cycle, x_pos, y_pos):
+        current_loop_bias_vec, current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec = \
+            _get_loops(selected_loop_cycle, [x_pos, y_pos])
+
+        # Update the bias vectors
+        plt_loop_proj.set_xdata(current_loop_bias_vec)
+        plt_loop_guess.set_xdata(current_loop_bias_vec)
+        plt_loop_fit.set_xdata(current_loop_bias_vec)
+
+        # Update the ploted data
+        plt_loop_proj.set_xdata(current_loop_proj_vec)
+        plt_loop_guess.set_xdata(current_loop_guess_vec)
+        plt_loop_fit.set_xdata(current_loop_fit_vec)
+
+    def _update_sho_plots(selected_loop_cycle, x_pos, y_pos, selected_step):
+        current_w_vec, current_sho_guess, current_sho_fit, current_raw_data = _get_sho([x_pos, y_pos],
+                                                                                       selected_step,
+                                                                                       selected_loop_cycle)
+        # Update x-date with new w_vec
+        plt_raw_data_amp.set_xdata(current_w_vec)
+        plt_raw_data_phase.set_xdata(current_w_vec)
+        plt_sho_guess_amp.set_xdata(current_w_vec)
+        plt_sho_guess_phase.set_xdata(current_w_vec)
+        plt_sho_fit_amp.set_xdata(current_w_vec)
+        plt_sho_fit_phase.set_xdata(current_w_vec)
+
+        # Update the y-data
+        plt_raw_data_amp.set_ydata(np.amp(current_raw_data))
+        plt_raw_data_phase.set_ydata(np.angle(current_raw_data))
+        plt_sho_guess_amp.set_ydata(np.amp(current_sho_guess))
+        plt_sho_guess_phase.set_ydata(np.angle(current_sho_guess))
+        plt_sho_fit_amp.set_ydata(np.amp(current_sho_fit))
+        plt_sho_fit_phase.set_ydata(np.angle(current_sho_fit))
+
+
+    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    display(fig)
+    x_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[0]), step=pos_dims[0]/100, value=selected_loop_pos[0])
+    y_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[1]), step=pos_dims[1] / 100, value=selected_loop_pos[1])
+    loop_cycle_widget = widgets.IntSlider(min=0, max=loop_num_cycles, step=1, value=selected_loop_cycle)
+    spec_step_widget = widgets.IntSlider(min=0, max=steps_per_loop, step=1, value=selected_step)
+    widgets.interact(_update_loop_map,
+                     parameter_name=list(loop_parameter_names),
+                     selected_cycle=loop_cycle_widget)
+    widgets.interact(_update_crosshairs,
+                     x_pos=x_pos_widget, y_pos=y_pos_widget)
+    widgets.interact(_update_loop_plots,
+                     selected_loop_cycle=loop_cycle_widget,
+                     x_pos=x_pos_widget, y_pos=y_pos_widget)
+    widgets.interact(_update_sho_plots,
+                     selected_loop_cycle=loop_cycle_widget,
+                     x_pos=x_pos_widget, y_pos=y_pos_widget,
+                     selected_step=spec_step_widget)
+
+
+def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
+                                 selected_loop_pos=[0,0], selected_step=0, tick_font_size=14):
+    """
+
+    Parameters
+    ----------
+    h5_loop_parameters
+
+    Returns
+    -------
+
+    """
+
+    # Find the precursor datasets used to calculate these parameters
+    h5_loop_grp = h5_loop_parameters.parent
+    h5_loop_projections = h5_loop_grp['Projected_Loops']
+    h5_loop_fit = h5_loop_grp['Fit']
+    h5_loop_guess = h5_loop_grp['Guess']
+
+    h5_sho_grp = h5_loop_grp.parent
+    h5_sho_fit = h5_sho_grp['Fit']
+    h5_sho_guess = h5_sho_grp['Guess']
+
+
+    h5_main = get_source_dataset(h5_sho_grp)
+
+    # Now get the needed ancillary datasets for each main dataset
+    h5_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[0]
+    h5_pos_vals = getAuxData(h5_loop_parameters, 'Position_Values')[0]
+    pos_order = get_sort_order(np.transpose(h5_pos_inds))
+    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_order)
+    pos_labs = get_attr(h5_pos_inds, 'labels')
+
+    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[0]
+    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[0]
+    loop_spec_order = get_sort_order(h5_loop_spec_inds)
+    loop_spec_dims = get_dimensionality(h5_loop_spec_inds, loop_spec_order)
+    loop_spec_labs = get_attr(h5_loop_spec_inds, 'labels')
+
+    h5_sho_spec_inds = getAuxData(h5_sho_fit, 'Spectroscopic_Indices')[0]
+    h5_sho_spec_vals = getAuxData(h5_sho_fit, 'Spectroscopic_Values')[0]
+    sho_spec_order = get_sort_order(h5_sho_spec_inds)
+    sho_spec_dims = get_dimensionality(h5_sho_spec_inds, sho_spec_order)
+    sho_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
+
+    h5_main_spec_inds = getAuxData(h5_main, 'Spectroscopic_Indices')[0]
+    h5_main_spec_vals = getAuxData(h5_main, 'Spectroscopic_Values')[0]
+    main_spec_order = get_sort_order(h5_main_spec_inds)
+    main_spec_dims = get_dimensionality(h5_main_spec_inds, main_spec_order)
+    main_spec_labs = get_attr(h5_main_spec_inds, 'labels')
+
+    '''
+    Select the initial plotting slices
+    '''
+    loop_parameter_names = h5_loop_parameters.dtype.names
+    loop_num_cycles = h5_loop_parameters.shape[1]
+    loop_parameter_spec_labs = get_attr(h5_loop_spec_vals, 'labels')
+    sho_bias_dim = np.argwhere(sho_spec_labs[sho_spec_order] == 'DC_Offset').squeeze()
+    steps_per_loop = sho_spec_dims[sho_bias_dim]
+    main_bias_dim = np.argwhere(main_spec_labs[main_spec_order] == 'DC_Offset').squeeze()
+
+    if selected_loop_parm is None:
+        selected_loop_parm = loop_parameter_names[0]
+    selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+
+    '''
+    Get the bias vector to be plotted against
+    '''
+    loop_bias_vec = h5_sho_spec_vals[get_attr(h5_sho_spec_vals, 'DC_Offset')].squeeze()
+    shift_ind = int(-1 * steps_per_loop / 4)
+    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims)
+    loop_bias_vec = np.moveaxis(loop_bias_vec, sho_bias_dim, 0).reshape(sho_spec_dims[sho_bias_dim], -1)
+    loop_bias_vec = np.roll(loop_bias_vec.reshape(steps_per_loop, -1), shift_ind, axis=0)
+
+    '''
+    Get the frequency vector to be plotted against
+    '''
+    full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
+    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec = full_w_vec.squeeze()
+
+    '''
+    Define functions to get the data
+    '''
+    def _get_loop_map(selected_loop_parm, selected_loop_cycle):
+        # Build the map of the chosen loop parameter
+        loop_parameter_map = np.reshape(h5_loop_parameters[selected_loop_parm, :, selected_loop_cycle],
+                                        [pos_dims[0], pos_dims[1]])
+
+        # Also create the title string for the map
+        loop_map_title = list()
+        for label in loop_parameter_spec_labs:
+            val = h5_loop_spec_vals[get_attr(h5_loop_spec_vals, label)].squeeze()[selected_loop_cycle]
+            loop_map_title.append('{}: {}'.format(label, val))
+
+        loop_map_title = ' - '.join(loop_map_title)
+
+        return loop_parameter_map, loop_map_title
+
+    def _get_loops(selected_loop_cycle, selected_loop_pos):
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+        # Now build the loop plot for the selected position in the loop map
+        selected_loop_bias_vec = loop_bias_vec[:, selected_loop_cycle]
+
+        pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
+
+        loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
+        loop_proj_vec = np.moveaxis(loop_proj_vec, sho_bias_dim, -1)[selected_loop_ndims]
+        loop_proj_vec = np.roll(loop_proj_vec, shift_ind)
+        loop_guess_vec = loop_fit_function(selected_loop_bias_vec,
+                                           h5_loop_guess[pos_ind, selected_loop_cycle].tolist())
+        loop_fit_vec = loop_fit_function(selected_loop_bias_vec,
+                                           h5_loop_fit[pos_ind, selected_loop_cycle].tolist())
+
+        return selected_loop_bias_vec, loop_proj_vec, loop_guess_vec, loop_fit_vec
+
+    def _get_sho(selected_loop_pos, selected_step, selected_loop_cycle):
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
+        # get the SHO Guess and Fit and Raw Data for the selected position, cycle, and step
+        pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
+
+        # Get the frequency vector for the selected step
+        w_vec = np.moveaxis(full_w_vec, main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+
+        # Get the slice of the sho guess and fit
+        sho_guess = h5_sho_guess[pos_ind].reshape(sho_spec_dims[::-1])
+        sho_guess = np.moveaxis(sho_guess, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_guess = SHOfunc(sho_guess, w_vec)
+        sho_fit = h5_sho_fit[pos_ind].reshape(sho_spec_dims[::-1])
+        sho_fit = np.moveaxis(sho_fit, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_fit = SHOfunc(sho_fit, w_vec)
+
+        # Get the slice of the Raw Data
+        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec = np.moveaxis(raw_data_vec.squeeze(),
+                                   main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+
+        return w_vec, sho_guess, sho_fit, raw_data_vec
+
+    '''
+    Get the starting values
+    '''
+    loop_parm_map, loop_map_title = _get_loop_map(selected_loop_parm, selected_loop_cycle)
+    current_loop_bias_vec, current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec = \
+        _get_loops(selected_loop_cycle, selected_loop_pos)
+    current_w_vec, current_sho_guess, current_sho_fit, current_raw_data = _get_sho(selected_loop_pos,
+                                                                                   selected_step,
+                                                                                   selected_loop_cycle)
+
+    '''
+    Build the figure
+    '''
+    fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(17, 17))
+
+    ax_loop_map = axes.flatten()[0]
+    ax_loop_pgf = axes.flatten()[1]
+    ax_sho_amp = axes.flatten()[2]
+    ax_sho_phase = axes.flatten()[3]
+
+    # Plot the map of the loop parameters
+    single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    ax_loop_map.axvline(x=selected_loop_pos[0], color='k')
+    ax_loop_map.axhline(y=selected_loop_pos[1], color='k')
+    ax_loop_map.set_title(loop_map_title)
+    ax_loop_map.set_xlabel('X Position')
+    ax_loop_map.set_ylabel('Y Position')
+
+    # Plot the Loops
+    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_proj_vec, 'k', label='Loop Projection')
+    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_guess_vec, 'g', label='Loop Guess')
+    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_fit_vec, 'r--', label='Loop Fit')
+    ax_loop_pgf.legend()
+    loop_pgf_title = ' - '.join(['Position: ({}, {})'.format(selected_loop_pos[0], selected_loop_pos[1]),
+                                 loop_map_title])
+    ax_loop_pgf.set_title(loop_pgf_title)
+    ax_loop_pgf.set_ylabel('PR (a.u.)')
+    ax_loop_pgf.set_xlabel('V_DC (V)')
+    ax_loop_pgf.axis('tight')
+
+    # Plot the amplitude of the SHO Guess, SHO Fit, and Raw Data
+    ax_sho_amp.plot(current_w_vec, np.abs(current_raw_data), 'k*', label='Raw Data Amplitude')
+    ax_sho_amp.plot(current_w_vec, np.abs(current_sho_guess), 'g', label='SHO Guess Amplitude')
+    ax_sho_amp.plot(current_w_vec, np.abs(current_sho_fit), 'r:', label='SHO Fit Amplitude')
+    ax_sho_amp.legend()
+    sho_title = ' - '.join(['Bias Step: {}'.format(selected_step), loop_pgf_title])
+    ax_sho_amp.set_title(sho_title)
+    ax_sho_amp.set_ylabel('Amplitude (V)')
+    ax_sho_amp.set_xlabel('Frequency (Hz)')
+    ax_sho_amp.axis('tight')
+
+    # Plot the phase of the SHO Guess, SHO Fit, and Raw Data
+    ax_sho_phase.plot(current_w_vec, np.angle(current_raw_data), 'k*', label='Raw Data Phase')
+    ax_sho_phase.plot(current_w_vec, np.angle(current_sho_guess), 'g', label='SHO Guess Phase')
+    ax_sho_phase.plot(current_w_vec, np.angle(current_sho_fit), 'r:', label='SHO Fit Phase')
+    ax_sho_phase.legend()
+    ax_sho_phase.set_title(sho_title)
+    ax_sho_phase.set_ylabel('Amplitude (V)')
+    ax_sho_phase.set_xlabel('Frequency (Hz)')
+    ax_sho_phase.axis('tight')
+
+    for axis in [ax_loop_pgf, ax_sho_amp, ax_sho_phase]:
+        set_tick_font_size(axis, tick_font_size)
+        axis.ticklabel_format(axis='both', style='sci', scilimits=(-2,2))
+
+
+    return fig
+
+def export_fig_data(fig, basename='junk', ext='.dat', include_images=False):
+    """
+
+    Parameters
+    ----------
+    fig
+    basename
+    include_images
+
+    Returns
+    -------
+
+    """
+    # Get the data from the figure
+    axes = fig.get_axes()
+    axes_dict = dict()
+    for ax in axes:
+        ax_dict = dict()
+
+        ims = ax.get_images()
+        if len(ims) != 0 and include_images:
+            im_dict = dict()
+
+            for im in ims:
+                im_dict[im.get_label()] = im.get_array().data
+
+            ax_dict['Images'] = im_dict
+
+        lines = ax.get_lines()
+        if len(lines) != 0:
+            line_dict = dict()
+
+            xlab = ax.get_xlabel()
+            ylab = ax.get_ylabel()
+
+            if xlab == '':
+                xlab = 'X Data'
+            if ylab == '':
+                ylab = 'Y Data'
+
+            for line in lines:
+                line_dict[line.get_label()] = {xlab: line.get_xdata(),
+                                               ylab: line.get_ydata()}
+
+            ax_dict['Lines'] = line_dict
+
+        if ax_dict != dict():
+            axes_dict[ax.get_title()] = ax_dict
+
+    basename = os.path.abspath(basename)
+    folder, _ = os.path.split(basename)
+
+    # Export the data to text files
 
