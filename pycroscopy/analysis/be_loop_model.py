@@ -77,6 +77,11 @@ class BELoopModel(Model):
     Returns
     -------
     None
+
+    Notes
+    -----
+    Quantitative mapping of switching behavior in piezoresponse force microscopy, Stephen Jesse, Ho Nyung Lee,
+    and Sergei V. Kalinin, Review of Scientific Instruments 77, 073702 (2006); doi: http://dx.doi.org/10.1063/1.2214699
     
     """
 
