@@ -1492,3 +1492,56 @@ def save_fig_filebox_button(fig, filename):
     save_button.on_click(_save_fig)
 
     return widget_box
+
+
+def export_fig_data(fig, basename='junk', ext='.dat', include_images=False):
+    """
+
+    Parameters
+    ----------
+    fig
+    basename
+    include_images
+
+    Returns
+    -------
+
+    """
+    # Get the data from the figure
+    axes = fig.get_axes()
+    axes_dict = dict()
+    for ax in axes:
+        ax_dict = dict()
+
+        ims = ax.get_images()
+        if len(ims) != 0 and include_images:
+            im_dict = dict()
+
+            for im in ims:
+                im_dict[im.get_label()] = im.get_array().data
+
+            ax_dict['Images'] = im_dict
+
+        lines = ax.get_lines()
+        if len(lines) != 0:
+            line_dict = dict()
+
+            xlab = ax.get_xlabel()
+            ylab = ax.get_ylabel()
+
+            if xlab == '':
+                xlab = 'X Data'
+            if ylab == '':
+                ylab = 'Y Data'
+
+            for line in lines:
+                line_dict[line.get_label()] = {xlab: line.get_xdata(),
+                                               ylab: line.get_ydata()}
+
+            ax_dict['Lines'] = line_dict
+
+        if ax_dict != dict():
+            axes_dict[ax.get_title()] = ax_dict
+
+    basename = os.path.abspath(basename)
+    folder, _ = os.path.split(basename)
