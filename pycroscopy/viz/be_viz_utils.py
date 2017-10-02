@@ -5,19 +5,21 @@ Created on Thu Jan 05 13:29:12 2017
 @author: Suhas Somnath, Chris R. Smith
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
+
 import os
 from warnings import warn
-import numpy as np
-from matplotlib import pyplot as plt
+
 import ipywidgets as widgets
+import numpy as np
 from IPython.display import display
+from matplotlib import pyplot as plt
 
 from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button, \
     set_tick_font_size
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
-    get_unit_values, get_source_dataset, get_formatted_labels
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
+from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
+    get_source_dataset
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -298,8 +300,6 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     resp_vec = sho_dset_collapsed[row_ind, col_ind, :, :]
     resp_vec = resp_func(resp_vec)
 
-    # bias_vec = bias_mat[:, loop_ind]
-
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
     ax_map = plt.subplot2grid((3, 2), (1, 0), rowspan=2)
@@ -316,8 +316,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
     ax_map.set_title(map_title)
-    main_vert_line = ax_map.axvline(x=row_ind, color='k')
-    main_hor_line = ax_map.axhline(y=col_ind, color='k')
+    crosshair = ax_map.plot(row_ind, col_ind, 'k+')[0]
 
     ax_loop.axvline(x=0, color='gray', linestyle='--')
     ax_loop.axhline(y=0, color='gray', linestyle='--')
@@ -325,6 +324,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_loop.set_xlabel(step_chan.replace('_', ' ') + ' (V)')
     ax_loop.set_ylabel(resp_label)
     fig.tight_layout()
+
+    plt.show()
 
     def update_sho_plots(sho_quantity, **kwargs):
         step_ind = kwargs['Bias Step']
@@ -337,27 +338,37 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         spat_std = np.std(spatial_map)
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
-        row_ind = kwargs['Y']
-        col_ind = kwargs['X']
-        main_vert_line.set_xdata((kwargs['X'], kwargs['X']))
-        main_hor_line.set_ydata((kwargs['Y'], kwargs['Y']))
+    def pos_picker(event):
+        if not img_map.axes.in_axes(event):
+            return
 
-        resp_vec = sho_dset_collapsed[col_ind, row_ind, :, :]
+        xdata = int(round(event.xdata))
+        ydata = int(round(event.ydata))
+        current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
+
+        pos_dim_vals = list(range(len(pos_labels)))
+
+        for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
+            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
+
+        crosshair.set_xdata(xdata)
+        crosshair.set_ydata(ydata)
+
+        resp_vec = sho_dset_collapsed[xdata, ydata, :, :]
         resp_vec = resp_func(resp_vec)
         for line_handle, data in zip(line_handles, np.transpose(resp_vec)):
             line_handle.set_ydata(data)
         ax_loop.set_ylim([np.min(resp_vec), np.max(resp_vec)])
-        display(fig)
+
+        fig.canvas.draw()
 
     slider_dict = dict()
-    for pos_dim_ind, dim_name in enumerate(pos_labels):
-        slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Bias Step'] = (0, bias_mat.shape[0] - 1, 1)
 
+    cid = img_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
+
     display(save_fig_filebox_button(fig, h5_sho_dset.file.filename))
-
     widgets.interact(update_sho_plots, sho_quantity=list(sho_dset_collapsed.dtype.names[:-1]), **slider_dict)
-
 
 def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     """
@@ -402,15 +413,13 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
-        # spatial_img = plot_map(axes[0], np.abs(spatial_map), origin='lower',
-        #                        cmap=cmap)
         spatial_img, spatial_cbar = single_img_cbar_plot(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
                                                          y_size=spatial_map.shape[1], cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
-        main_vert_line = axes[0].axvline(x=int(0.5 * spatial_map.shape[1]), color='k')
-        main_hor_line = axes[0].axhline(y=int(0.5 * spatial_map.shape[0]), color='k')
+
+        crosshair = axes[0].plot(int(0.5 * spatial_map.shape[0]), int(0.5 * spatial_map.shape[1]), 'k+')[0]
 
         if len(spec_dims) > 1:
             amp_img, amp_cbar = single_img_cbar_plot(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
@@ -443,18 +452,21 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             axes[1].set_ylim([0, amp_mean + st_devs * amp_std])
             axes[2].set_ylim([-np.pi, np.pi])
 
-        axes[1].set_title('Amplitude')
+        axes[1].set_title('Amplitude - Position ({},{})'.format(int(0.5 * spatial_map.shape[0]),
+                                                                int(0.5 * spatial_map.shape[0])))
         axes[1].set_xlabel('Frequency (kHz)')
 
-        axes[2].set_title('Phase')
+        axes[2].set_title('Phase - Position ({},{})'.format(int(0.5 * spatial_map.shape[0]),
+                                                                int(0.5 * spatial_map.shape[0])))
         axes[2].set_xlabel('Frequency (kHz)')
 
         fig.tight_layout()
 
+        plt.show()
         display(save_fig_filebox_button(fig, h5_main.file.filename))
 
-        def index_unpacker(**kwargs):
-            spatial_map = np.abs(np.reshape(h5_main[:, kwargs['spectroscopic']], pos_dims[::-1]))
+        def index_unpacker(step):
+            spatial_map = np.abs(np.reshape(h5_main[:, step], pos_dims[::-1]))
             spatial_img.set_data(spatial_map)
             spat_mean = np.mean(spatial_map)
             spat_std = np.std(spatial_map)
@@ -462,15 +474,28 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
             spec_heading = ''
             for dim_ind, dim_name in enumerate(spec_labels):
-                spec_heading += dim_name + ': ' + str(h5_spec_vals[dim_ind, kwargs['spectroscopic']]) + ', '
+                spec_heading += dim_name + ': ' + str(h5_spec_vals[dim_ind, step]) + ', '
             axes[0].set_title(spec_heading[:-2])
+            fig.canvas.draw()
+
+        def pos_picker(event):
+            if not spatial_img.axes.in_axes(event):
+                return
+
+            xdata = int(round(event.xdata))
+            ydata = int(round(event.ydata))
+            current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
 
             pos_dim_vals = list(range(len(pos_labels)))
-            for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
-                pos_dim_vals[pos_dim_ind] = kwargs[pos_dim_name]
 
-            main_vert_line.set_xdata((kwargs['X'], kwargs['X']))
-            main_hor_line.set_ydata((kwargs['Y'], kwargs['Y']))
+            for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
+                pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
+
+            crosshair.set_xdata(xdata)
+            crosshair.set_ydata(ydata)
+
+            axes[1].set_title('Amplitude - Position ({},{})'.format(xdata,ydata))
+            axes[2].set_title('Phase - Position ({},{})'.format(xdata, ydata))
 
             pix_ind = pos_dim_vals[0]
             for pos_dim_ind in range(1, len(pos_labels)):
@@ -485,14 +510,13 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
                 phase_img.set_ydata(np.angle(spectrogram))
             amp_cbar.changed()
             phase_cbar.changed()
-            display(fig)
 
-        pos_dict = dict()
-        for pos_dim_ind, dim_name in enumerate(pos_labels):
-            pos_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
-        pos_dict['spectroscopic'] = (0, h5_main.shape[1] - 1, 1)
+            fig.canvas.draw()
 
-        widgets.interact(index_unpacker, **pos_dict)
+        cid = spatial_img.figure.canvas.mpl_connect('button_press_event', pos_picker)
+        widgets.interact(index_unpacker, step=(0, h5_main.shape[1] - 1, 1))
+        plt.show()
+
     else:
         def plot_spectrogram(data, freq_vals):
             fig, axes = plt.subplots(ncols=2, figsize=(9, 5), sharey=True)
@@ -535,7 +559,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             pos_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
 
         widgets.interact(position_unpacker, **pos_dict)
-
+        display(fig)
 
 def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit, step_chan='DC_Offset', cmap=None):
     """
@@ -632,8 +656,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
     ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
-    main_vert_line = ax_map.axvline(x=col_ind, color='k')
-    main_hor_line = ax_map.axhline(y=row_ind, color='k')
+    crosshair = ax_map.plot(row_ind, col_ind, 'k+')[0]
 
     ax_loop.plot(bias_data, proj_data, 'k', label='Projection')
     ax_loop.plot(bias_data, guess_data, 'g', label='Guess')
@@ -648,6 +671,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_loop.legend()
     fig.tight_layout()
 
+    plt.show()
+
     display(save_fig_filebox_button(fig, h5_projected_loops.file.filename))
 
 
@@ -660,29 +685,43 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
         im_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
         ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
 
-        row_ind = kwargs['Y']
-        col_ind = kwargs['X']
-        main_vert_line.set_xdata((kwargs['X'], kwargs['X']))
-        main_hor_line.set_ydata((kwargs['Y'], kwargs['Y']))
+        fig.canvas.draw()
 
-        proj_data = proj_nd_shifted[col_ind, row_ind, :, loop_ind]
+    def pos_picker(event):
+        if not im_map.axes.in_axes(event):
+            return
+
+        xdata = int(round(event.xdata))
+        ydata = int(round(event.ydata))
+        current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
+
+        pos_dim_vals = list(range(len(pos_labels)))
+
+        for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
+            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
+
+        crosshair.set_xdata(xdata)
+        crosshair.set_ydata(ydata)
+
+        proj_data = proj_nd_shifted[xdata, ydata, :, loop_ind]
         bias_data = bias_shifted[:, loop_ind]
-        guess_data = loop_fit_function(bias_data, np.array(list(guess_3d[col_ind, row_ind, loop_ind])))
-        fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[col_ind, row_ind, loop_ind])))
+        guess_data = loop_fit_function(bias_data, np.array(list(guess_3d[xdata, ydata, loop_ind])))
+        fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[xdata, ydata, loop_ind])))
         for line_handle, data in zip(line_handles, [proj_data, guess_data, fit_data]):
             line_handle.set_ydata(data)
         ax_loop.set_ylim([np.min([proj_data, guess_data, fit_data]), np.max([proj_data, guess_data, fit_data])])
-        ax_loop.set_title('Position ({},{})'.format(col_ind, row_ind))
-        display(fig)
+        ax_loop.set_title('Position ({},{})'.format(xdata, ydata))
+
+        fig.canvas.draw()
+
+    cid = im_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
     slider_dict = dict()
-    for pos_dim_ind, dim_name in enumerate(pos_labels):
-        slider_dict[dim_name] = (0, pos_dims[pos_dim_ind] - 1, 1)
     slider_dict['Loop Number'] = (0, bias_vec.shape[1] - 1, 1)
     widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), **slider_dict)
 
 
-def jupyter_visualize_parameter_maps(h5_loop_parameters):
+def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     """
     Interactive plot of the spatial maps of the loop parameters for all cycles.
 
@@ -710,6 +749,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
 
     loop_spec_labs = get_attr(h5_loop_spec_vals, 'labels')
 
+    kwargs.update({'cmap': get_cmap_object(cmap)})
+
     map_titles = list()
     for icycle in range(num_cycles):
         title_list = list()
@@ -719,7 +760,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
         map_titles.append(' - '.join(title_list))
 
     fig, axes = plot_map_stack(parameter_map_stack, num_comps=num_cycles, color_bar_mode='each',
-                               title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]))
+                               title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]),
+                               **kwargs)
 
     def update_loop_maps(parameter_name):
         parameter_map_stack = np.reshape(h5_loop_parameters[parameter_name],
@@ -732,13 +774,15 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters):
             image.set_clim(vmin=np.min(parameter_map_stack[:, :, icycle]),
                            vmax=np.max(parameter_map_stack[:, :, icycle]))
 
-        display(fig)
+        fig.canvas.draw()
+
+    plt.show()
 
     display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
 
 
-def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters):
+def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     """
 
     Parameters
@@ -886,6 +930,8 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters):
                                                                                    selected_step,
                                                                                    selected_loop_cycle)
 
+    cmap = get_cmap_object(cmap)
+
     '''
     Build the figure
     '''
@@ -897,7 +943,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters):
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    plt_loop_map = single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    plt_loop_map = single_img_cbar_plot(ax_loop_map, loop_parm_map, cmap=cmap)
     loop_vert_line = ax_loop_map.axvline(x=pos_dims[0], color='k')
     loop_horz_line = ax_loop_map.axhline(y=pos_dims[1], color='k')
     ax_loop_map.set_title(loop_map_title)
@@ -1146,17 +1192,16 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    single_img_cbar_plot(ax_loop_map, loop_parm_map)
-    ax_loop_map.axvline(x=selected_loop_pos[0], color='k')
-    ax_loop_map.axhline(y=selected_loop_pos[1], color='k')
+    loop_map, loop_map_cbar = single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    crosshair = ax_loop_map.plot(selected_loop_pos[0], selected_loop_pos[1], 'k+')[0]
     ax_loop_map.set_title(loop_map_title)
     ax_loop_map.set_xlabel('X Position')
     ax_loop_map.set_ylabel('Y Position')
 
     # Plot the Loops
-    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_proj_vec, 'k', label='Loop Projection')
-    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_guess_vec, 'g', label='Loop Guess')
-    ax_loop_pgf.plot(current_loop_bias_vec, current_loop_fit_vec, 'r--', label='Loop Fit')
+    loop_proj_plot = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_proj_vec, 'k', label='Loop Projection')[0]
+    loop_guess_plot = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_guess_vec, 'g', label='Loop Guess')[0]
+    loop_fit_plot = ax_loop_pgf.plot(current_loop_bias_vec, current_loop_fit_vec, 'r--', label='Loop Fit')[0]
     ax_loop_pgf.legend()
     loop_pgf_title = ' - '.join(['Position: ({}, {})'.format(selected_loop_pos[0], selected_loop_pos[1]),
                                  loop_map_title])
@@ -1166,9 +1211,9 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ax_loop_pgf.axis('tight')
 
     # Plot the amplitude of the SHO Guess, SHO Fit, and Raw Data
-    ax_sho_amp.plot(current_w_vec, np.abs(current_raw_data), 'k*', label='Raw Data Amplitude')
-    ax_sho_amp.plot(current_w_vec, np.abs(current_sho_guess), 'g', label='SHO Guess Amplitude')
-    ax_sho_amp.plot(current_w_vec, np.abs(current_sho_fit), 'r:', label='SHO Fit Amplitude')
+    raw_amp_plot = ax_sho_amp.plot(current_w_vec, np.abs(current_raw_data), 'k*', label='Raw Data Amplitude')[0]
+    guess_amp_plot = ax_sho_amp.plot(current_w_vec, np.abs(current_sho_guess), 'g', label='SHO Guess Amplitude')[0]
+    fit_amp_plot = ax_sho_amp.plot(current_w_vec, np.abs(current_sho_fit), 'r:', label='SHO Fit Amplitude')[0]
     ax_sho_amp.legend()
     sho_title = ' - '.join(['Bias Step: {}'.format(selected_step), loop_pgf_title])
     ax_sho_amp.set_title(sho_title)
@@ -1177,9 +1222,9 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ax_sho_amp.axis('tight')
 
     # Plot the phase of the SHO Guess, SHO Fit, and Raw Data
-    ax_sho_phase.plot(current_w_vec, np.angle(current_raw_data), 'k*', label='Raw Data Phase')
-    ax_sho_phase.plot(current_w_vec, np.angle(current_sho_guess), 'g', label='SHO Guess Phase')
-    ax_sho_phase.plot(current_w_vec, np.angle(current_sho_fit), 'r:', label='SHO Fit Phase')
+    raw_phase_plot = ax_sho_phase.plot(current_w_vec, np.angle(current_raw_data), 'k*', label='Raw Data Phase')[0]
+    guess_phase_plot = ax_sho_phase.plot(current_w_vec, np.angle(current_sho_guess), 'g', label='SHO Guess Phase')[0]
+    fit_phase_plot = ax_sho_phase.plot(current_w_vec, np.angle(current_sho_fit), 'r:', label='SHO Fit Phase')[0]
     ax_sho_phase.legend()
     ax_sho_phase.set_title(sho_title)
     ax_sho_phase.set_ylabel('Amplitude (V)')
@@ -1188,62 +1233,124 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
     for axis in [ax_loop_pgf, ax_sho_amp, ax_sho_phase]:
         set_tick_font_size(axis, tick_font_size)
-        axis.ticklabel_format(axis='both', style='sci', scilimits=(-2,2))
+        axis.ticklabel_format(axis='both', style='sci', scilimits=(-2, 2))
 
+    plt.show()
 
-    return fig
+    # Make some widgets now so we can reference them in updates
+    loop_parm_widget = widgets.Dropdown(options=loop_parameter_names, value=selected_loop_parm)
+    loop_cycle_widget = widgets.IntSlider(min=0, max=loop_num_cycles - 1, step=1, value=selected_loop_cycle)
+    spec_step_widget = widgets.IntSlider(min=0, max=steps_per_loop - 1, step=1, value=selected_step)
 
-def export_fig_data(fig, basename='junk', ext='.dat', include_images=False):
-    """
+    def _update_loop_plots(selected_loop_cycle, xdata, ydata):
+        # Get new data
+        current_loop_bias_vec, current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec = \
+            _get_loops(selected_loop_cycle, (xdata, ydata))
 
-    Parameters
-    ----------
-    fig
-    basename
-    include_images
+        # Update loop plots
+        loop_proj_plot.set_xdata(current_loop_bias_vec)
+        loop_proj_plot.set_ydata(current_loop_proj_vec)
+        loop_guess_plot.set_xdata(current_loop_bias_vec)
+        loop_guess_plot.set_ydata(current_loop_guess_vec)
+        loop_fit_plot.set_xdata(current_loop_bias_vec)
+        loop_fit_plot.set_ydata(current_loop_fit_vec)
+        loop_map_title = ax_loop_map.get_title()
+        loop_pgf_title = ' - '.join(['Position: ({}, {})'.format(xdata, ydata),
+                                     loop_map_title])
+        ax_loop_pgf.set_title(loop_pgf_title)
+        loop_min = np.min([current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec])
+        loop_max = np.max([current_loop_proj_vec, current_loop_guess_vec, current_loop_fit_vec])
+        loop_min *= (1 - np.sign(loop_min) * 0.5)
+        loop_max *= (1 + np.sign(loop_max) * 0.5)
 
-    Returns
-    -------
+        ax_loop_pgf.set_ylim([loop_min, loop_max])
 
-    """
-    # Get the data from the figure
-    axes = fig.get_axes()
-    axes_dict = dict()
-    for ax in axes:
-        ax_dict = dict()
+    def _update_sho_plots(selected_loop_cycle, selected_step, xdata, ydata):
+        # Get the updated data
+        current_w_vec, current_sho_guess, current_sho_fit, current_raw_data = _get_sho((xdata, ydata),
+                                                                                       selected_step,
+                                                                                       selected_loop_cycle)
+        # Update SHO/Raw plots
+        loop_pgf_title = ax_loop_pgf.get_title()
+        sho_title = ' - '.join(['Bias Step: {}'.format(selected_step), loop_pgf_title])
+        raw_amp_plot.set_xdata(current_w_vec)
+        raw_amp_plot.set_ydata(np.abs(current_raw_data))
+        guess_amp_plot.set_xdata(current_w_vec)
+        guess_amp_plot.set_ydata(np.abs(current_sho_guess))
+        fit_amp_plot.set_xdata(current_w_vec)
+        fit_amp_plot.set_ydata(np.abs(current_sho_fit))
+        ax_sho_amp.set_title(sho_title)
+        ax_sho_amp.set_ylim([np.min(np.abs([current_raw_data, current_sho_guess, current_sho_fit])) * 0.95,
+                             np.max(np.abs([current_raw_data, current_sho_guess, current_sho_fit])) * 1.05])
 
-        ims = ax.get_images()
-        if len(ims) != 0 and include_images:
-            im_dict = dict()
+        raw_phase_plot.set_xdata(current_w_vec)
+        raw_phase_plot.set_ydata(np.angle(current_raw_data))
+        guess_phase_plot.set_xdata(current_w_vec)
+        guess_phase_plot.set_ydata(np.angle(current_sho_guess))
+        fit_phase_plot.set_xdata(current_w_vec)
+        fit_phase_plot.set_ydata(np.angle(current_sho_fit))
+        ax_sho_phase.set_title(sho_title)
 
-            for im in ims:
-                im_dict[im.get_label()] = im.get_array().data
+    def pos_picker(event):
+        # Allow for picking a new position.
+        if not ax_loop_map.axes.in_axes(event):
+            return
 
-            ax_dict['Images'] = im_dict
+        selected_loop_cycle = loop_cycle_widget.value
+        selected_step = spec_step_widget.value
 
-        lines = ax.get_lines()
-        if len(lines) != 0:
-            line_dict = dict()
+        xdata = int(round(event.xdata))
+        ydata = int(round(event.ydata))
+        current_pos = {pos_labs[0]: xdata, pos_labs[1]: ydata}
 
-            xlab = ax.get_xlabel()
-            ylab = ax.get_ylabel()
+        pos_dim_vals = list(range(len(pos_labs)))
 
-            if xlab == '':
-                xlab = 'X Data'
-            if ylab == '':
-                ylab = 'Y Data'
+        for pos_dim_ind, pos_dim_name in enumerate(pos_labs):
+            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
 
-            for line in lines:
-                line_dict[line.get_label()] = {xlab: line.get_xdata(),
-                                               ylab: line.get_ydata()}
+        crosshair.set_xdata(xdata)
+        crosshair.set_ydata(ydata)
 
-            ax_dict['Lines'] = line_dict
+        _update_loop_plots(selected_loop_cycle, xdata, ydata)
+        _update_sho_plots(selected_loop_cycle, selected_step, xdata, ydata)
 
-        if ax_dict != dict():
-            axes_dict[ax.get_title()] = ax_dict
+        fig.canvas.draw()
 
-    basename = os.path.abspath(basename)
-    folder, _ = os.path.split(basename)
+    def _update_loop_parm(selected_loop_parm):
+        loop_parm_map, loop_map_title = _get_loop_map(selected_loop_parm, loop_cycle_widget.value)
+        loop_map.set_data(loop_parm_map)
+        loop_map.set_clim(vmin=np.min(loop_parm_map), vmax=np.max(loop_parm_map))
+        ax_loop_map.set_title(loop_map_title)
 
-    # Export the data to text files
+        fig.canvas.draw()
 
+    def _update_loop_cycle(selected_loop_cycle):
+        selected_step = spec_step_widget.value
+        xdata, ydata = crosshair.get_xydata().flatten().astype('int')
+
+        # Update the loop map
+        loop_parm_map, loop_map_title = _get_loop_map(loop_parm_widget.value, selected_loop_cycle)
+        loop_map.set_data(loop_parm_map)
+        loop_map.set_clim(vmin=np.min(loop_parm_map), vmax=np.max(loop_parm_map))
+        ax_loop_map.set_title(loop_map_title)
+
+        # Update the linet plots
+        _update_loop_plots(selected_loop_cycle, xdata, ydata)
+        _update_sho_plots(selected_loop_cycle, selected_step, xdata, ydata)
+
+        fig.canvas.draw()
+
+    def _update_spec_step(selected_step):
+        selected_loop_cycle = loop_cycle_widget.value
+        xdata, ydata = crosshair.get_xydata().flatten().astype('int')
+
+        _update_sho_plots(selected_loop_cycle, selected_step, xdata, ydata)
+
+        fig.canvas.draw()
+
+    cid = loop_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
+
+    display(save_fig_filebox_button(fig, h5_loop_projections.file.filename))
+    widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
+    widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
+    widgets.interact(_update_spec_step, selected_step=spec_step_widget)
