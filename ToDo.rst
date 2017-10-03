@@ -75,6 +75,7 @@ Documentation
 *	Switch from static examples to dynamic jupyter notebook like examples:
    * Work will be needed after examples are done
 *	Include examples in documentation
+* Links to references for all functions and methods used in our workflows.
 
 Formatting changes
 ------------------
