@@ -628,8 +628,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     generate dummy values for them.
 
     """
-    pos_labs = None
-    spec_labs = None
+    pos_labs = np.array(['Positions'])
+    spec_labs = np.array(['Spectral_Step'])
     if h5_pos is None:
         """
         Get the Position datasets from the references if possible
@@ -643,14 +643,14 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
                 print('No position datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
+                    pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
                 else:
                     ds_pos = np.array(0, dtype=np.uint8).reshape(-1, 1)
-                pos_labs = np.array(['Positions'])
             except:
                 raise
         else:
             ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
-            pos_labs = np.array(['Positions'])
+            pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     elif isinstance(h5_pos, h5py.Dataset):
         """
     Position Indices dataset was provided
@@ -659,6 +659,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         pos_labs = get_attr(h5_pos, 'labels')
     elif isinstance(h5_pos, np.ndarray):
         ds_pos = h5_pos
+        pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
 
@@ -677,13 +678,14 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
                 print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+                    spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
                 else:
                     ds_spec = np.array(0, dtype=np.uint8).reshape([1, 1])
-                spec_labs = np.array(['Spectral_Step'])
             except:
                 raise
         else:
             ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+            spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
 
     elif isinstance(h5_spec, h5py.Dataset):
         """
@@ -693,6 +695,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         spec_labs = get_attr(h5_spec, 'labels')
     elif isinstance(h5_spec, np.ndarray):
         ds_spec = h5_spec
+        spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
