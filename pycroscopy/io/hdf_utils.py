@@ -12,6 +12,7 @@ import h5py
 from warnings import warn
 import numpy as np
 from .microdata import MicroDataset
+from .pycro_data import PycroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
@@ -71,7 +72,7 @@ def get_all_main(parent, verbose=False):
             if ismain:
                 if verbose:
                     print(name, 'is a `Main` dataset.')
-                main_list.append(obj)
+                main_list.append(PycroDataset(obj))
 
     if verbose:
         print('Checking the group {} for `Main` datasets.'.format(parent.name))
@@ -102,7 +103,7 @@ def getDataSet(h5_parent, data_name):
 
         def findData(name, obj):
             if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
-                data_list.append(obj)
+                data_list.append(PycroDataset(obj))
 
         h5_parent.visititems(findData)
         return data_list
@@ -135,7 +136,7 @@ def getAuxData(parent_data, auxDataName=None):
         for auxName in auxDataName:
             ref = parent_data.attrs[auxName]
             if isinstance(ref, h5py.Reference) and isinstance(file_ref[ref], h5py.Dataset):
-                data_list.append(file_ref[ref])
+                data_list.append(PycroDataset(file_ref[ref]))
     except KeyError:
         warn('%s is not an attribute of %s'
              % (str(auxName), parent_data.name))
@@ -231,7 +232,7 @@ def getH5DsetRefs(ds_names, h5_refs):
     for ds_name in ds_names:
         for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
-                aux_dset.append(dset)
+                aux_dset.append(PycroDataset(dset))
     return aux_dset
 
 
@@ -269,7 +270,7 @@ def findDataset(h5_group, ds_name):
 
     def __find_name(name, obj):
         if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
-            ds.append([name, obj])
+            ds.append([name, PycroDataset(obj)])
         return
 
     h5_group.visititems(__find_name)
@@ -982,7 +983,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
 
-    return h5_new_dset
+    return PycroDataset(h5_new_dset)
 
 
 def copyAttributes(source, dest, skip_refs=True):
@@ -1630,4 +1631,4 @@ def get_source_dataset(h5_group):
     """
     h5_parent_group = h5_group.parent
     h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
-    return h5_source
+    return PycroDataset(h5_source)
