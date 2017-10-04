@@ -6,13 +6,11 @@ Created on Tue Nov  3 21:14:25 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
 import sys
 import h5py
 from warnings import warn
 import numpy as np
 from .microdata import MicroDataset
-from .pycro_data import PycroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
            'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
@@ -60,6 +58,8 @@ def get_all_main(parent, verbose=False):
         The datasets found in the file that meet the 'Main Data' criteria.
 
     """
+    from .pycro_data import PycroDataset
+
     main_list = list()
 
     def __check(name, obj):
@@ -98,12 +98,19 @@ def getDataSet(h5_parent, data_name):
     -------
     list of h5py.Reference of the dataset.
     """
+    from .pycro_data import PycroDataset
+
     if isinstance(h5_parent, h5py.File) or isinstance(h5_parent, h5py.Group):
         data_list = []
 
         def findData(name, obj):
             if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
-                data_list.append(PycroDataset(obj))
+                try:
+                    data_list.append(PycroDataset(obj))
+                except TypeError:
+                    data_list.append(obj)
+                except:
+                    raise
 
         h5_parent.visititems(findData)
         return data_list
@@ -136,7 +143,7 @@ def getAuxData(parent_data, auxDataName=None):
         for auxName in auxDataName:
             ref = parent_data.attrs[auxName]
             if isinstance(ref, h5py.Reference) and isinstance(file_ref[ref], h5py.Dataset):
-                data_list.append(PycroDataset(file_ref[ref]))
+                data_list.append(file_ref[ref])
     except KeyError:
         warn('%s is not an attribute of %s'
              % (str(auxName), parent_data.name))
@@ -228,6 +235,8 @@ def getH5DsetRefs(ds_names, h5_refs):
     aux_dset : List of HDF5 dataset references
         Corresponding references
     """
+    from .pycro_data import PycroDataset
+
     aux_dset = []
     for ds_name in ds_names:
         for dset in h5_refs:
@@ -265,6 +274,8 @@ def findDataset(h5_group, ds_name):
     """
     Uses visit() to find all datasets with the desired name
     """
+    from .pycro_data import PycroDataset
+
     # print 'Finding all instances of', ds_name
     ds = []
 
@@ -963,6 +974,8 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
+    from .pycro_data import PycroDataset
+
     h5_group = source_dset.parent
     try:
         # Check if the dataset already exists
@@ -1629,6 +1642,8 @@ def get_source_dataset(h5_group):
     h5_source : h5py.Dataset
 
     """
+    from .pycro_data import PycroDataset
+
     h5_parent_group = h5_group.parent
     h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
     return PycroDataset(h5_source)

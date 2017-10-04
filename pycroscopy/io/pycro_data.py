@@ -10,7 +10,7 @@ import h5py
 import six
 from warnings import warn
 import numpy as np
-from .hdf_utils import checkIfMain, getAuxData, get_attr, get_data_descriptor, get_formatted_labels, \
+from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
 
 
@@ -73,10 +73,14 @@ class PycroDataset(h5py.Dataset):
 
         # User accessible properties
         # The required Position and Spectroscopic datasets
-        self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
-        self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
-        self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
-        self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
+        # self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
+        # self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
+        # self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
+        # self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
+        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_spec_inds = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_pos_vals = self.file[self.attrs['Position_Values']]
+        self.h5_pos_inds = self.file[self.attrs['Position_Indices']]
 
         # The dimension labels
         self.__pos_dim_labels = get_attr(self.h5_pos_inds, 'labels')
@@ -152,18 +156,18 @@ class PycroDataset(h5py.Dataset):
         if self.__sort_dims:
             self.pos_dim_labels = self.__pos_dim_labels[self.__pos_sort_order].tolist()
             self.spec_dim_labels = self.__spec_dim_labels[self.__spec_sort_order].tolist()
-            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order].tolist()
-            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order].tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order]
+            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order]
             self.n_dim_labels = self.__n_dim_labs[self.__n_dim_sort_order].tolist()
-            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order].tolist()
+            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order]
 
         else:
             self.pos_dim_labels = self.__pos_dim_labels.tolist()
             self.spec_dim_labels = self.__spec_dim_labels.tolist()
-            self.pos_dim_sizes = self.__pos_dim_sizes.tolist()
-            self.spec_dim_sizes = self.__spec_dim_sizes.tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes
+            self.spec_dim_sizes = self.__spec_dim_sizes
             self.n_dim_labels = self.__n_dim_labs.tolist()
-            self.n_dim_sizes = self.__n_dim_sizes.tolist()
+            self.n_dim_sizes = self.__n_dim_sizes
 
     def get_pos_values(self, dim_name):
         """
