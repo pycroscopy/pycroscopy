@@ -29,18 +29,40 @@ class PycroDataset(h5py.Dataset):
 
         Methods
         -------
+        self.get_current_sorting
+        self.toggle_sorting
+        self.get_pos_values
+        self.get_spec_values
+        self.get_n_dim_form
+        self.slice
 
 
         Attributes
         ----------
-        h5_spec_vals : h5py.Dataset
+        self.h5_spec_vals : h5py.Dataset
             Associated Spectroscopic Values dataset
-        h5_spec_inds : h5py.Dataset
+        self.h5_spec_inds : h5py.Dataset
             Associated Spectroscopic Indices dataset
-        h5_pos_vals : h5py.Dataset
+        self.h5_pos_vals : h5py.Dataset
             Associated Position Values dataset
-        h5_pos_inds : h5py.Dataset
+        self.h5_pos_inds : h5py.Dataset
             Associated Position Indices dataset
+        self.pos_dim_labels : list of str
+            The labels for the position dimensions.
+        self.spec_dim_labels : list of str
+            The labels for the spectroscopic dimensions.
+        self.n_dim_labels : list of str
+            The labels for the n-dimensional dataset.
+        self.pos_dim_sizes : list of int
+            A list of the sizes of each position dimension.
+        self.spec_dim_sizes : list of int
+            A list of the sizes of each spectroscopic dimension.
+        self.n_dim_sizes : list of int
+            A list of the sizes of each dimension.
+
+        Notes
+        -----
+        The order of all labels and sizes attributes is determined by the current value of `sort_dims`.
 
         """
 
@@ -82,6 +104,8 @@ class PycroDataset(h5py.Dataset):
         # Should the dimensions be sorted from fastest to slowest
         self.__sort_dims = sort_dims
 
+        self.__set_labels_and_sizes()
+
     def __eq__(self, other):
         if isinstance(other, PycroDataset):
             if isinstance(other, h5py.Dataset):
@@ -115,49 +139,67 @@ class PycroDataset(h5py.Dataset):
 
         return '\n'.join([h5_str, pycro_str])
 
-    def pos_dim_labels(self):
-        if self.__sort_dims:
-            return self.__pos_dim_labels[self.__pos_sort_order].tolist()
-        else:
-            return self.__pos_dim_labels.tolist()
+    def __set_labels_and_sizes(self):
+        """
+        Sets the labels and sizes attributes to the correct values based on
+        the value of `self.__sort_dims`
 
-    def spec_dim_labels(self):
-        if self.__sort_dims:
-            return self.__spec_dim_labels[self.__spec_sort_order].tolist()
-        else:
-            return self.__spec_dim_labels.tolist()
+        Returns
+        -------
+        None
 
-    def pos_dim_sizes(self):
+        """
         if self.__sort_dims:
-            return self.__pos_dim_sizes[self.__pos_sort_order].tolist()
-        else:
-            return self.__pos_dim_sizes.tolist()
+            self.pos_dim_labels = self.__pos_dim_labels[self.__pos_sort_order].tolist()
+            self.spec_dim_labels = self.__spec_dim_labels[self.__spec_sort_order].tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order].tolist()
+            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order].tolist()
+            self.n_dim_labels = self.__n_dim_labs[self.__n_dim_sort_order].tolist()
+            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order].tolist()
 
-    def spec_dim_sizes(self):
-        if self.__sort_dims:
-            return self.__spec_dim_sizes[self.__spec_sort_order].tolist()
         else:
-            return self.__spec_dim_sizes.tolist()
-
-    def n_dim_labels(self):
-        if self.__sort_dims:
-            return self.__n_dim_labs[self.__n_dim_sort_order].tolist()
-        else:
-            return self.__n_dim_labs.tolist()
-
-    def n_dim_sizes(self):
-        if self.__sort_dims:
-            return self.__n_dim_sizes[self.__n_dim_sort_order].tolist()
-        else:
-            return self.__n_dim_sizes.tolist()
+            self.pos_dim_labels = self.__pos_dim_labels.tolist()
+            self.spec_dim_labels = self.__spec_dim_labels.tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes.tolist()
+            self.spec_dim_sizes = self.__spec_dim_sizes.tolist()
+            self.n_dim_labels = self.__n_dim_labs.tolist()
+            self.n_dim_sizes = self.__n_dim_sizes.tolist()
 
     def get_pos_values(self, dim_name):
+        """
+        Extract the values for the specified position dimension
+
+        Parameters
+        ----------
+        dim_name : str
+            Name of one of the dimensions in `self.pos_dim_labels`
+
+        Returns
+        -------
+        dim_values : numpy.ndarray
+            Array containing the unit values of the dimension `dim_name`
+
+        """
         return get_unit_values(self.h5_pos_inds, self.h5_pos_vals)[dim_name]
 
     def get_spec_values(self, dim_name):
+        """
+        Extract the values for the specified spectroscopic dimension
+
+        Parameters
+        ----------
+        dim_name : str
+            Name of one of the dimensions in `self.spec_dim_labels`
+
+        Returns
+        -------
+        dim_values : numpy.ndarray
+            Array containing the unit values of the dimension `dim_name`
+
+        """
         return get_unit_values(self.h5_spec_inds, self.h5_spec_vals)[dim_name]
 
-    def current_sorting(self):
+    def get_current_sorting(self):
         """
         Prints the current sorting method.
 
@@ -169,7 +211,7 @@ class PycroDataset(h5py.Dataset):
 
     def toggle_sorting(self):
         """
-        Toggles between sorting from fastest changing dimension to slowest and sorting based on the
+        Toggles between sorting from the fastest changing dimension to the slowest and sorting based on the
         order of the labels
 
         """
@@ -182,6 +224,8 @@ class PycroDataset(h5py.Dataset):
             self.__n_dim_data = np.transpose(self.__n_dim_data, nd_sort)
 
         self.__sort_dims = not self.__sort_dims
+
+        self.__set_labels_and_sizes()
 
     def get_n_dim_form(self):
         """
