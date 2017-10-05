@@ -236,12 +236,16 @@ def getH5DsetRefs(ds_names, h5_refs):
         Corresponding references
     """
     from .pycro_data import PycroDataset
-
     aux_dset = []
     for ds_name in ds_names:
         for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
-                aux_dset.append(PycroDataset(dset))
+                try:
+                    aux_dset.append(PycroDataset(dset))
+                except TypeError:
+                    aux_dset.append(dset)
+                except:
+                    raise
     return aux_dset
 
 
@@ -281,7 +285,12 @@ def findDataset(h5_group, ds_name):
 
     def __find_name(name, obj):
         if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
-            ds.append([name, PycroDataset(obj)])
+            try:
+                ds.append([name, PycroDataset(obj)])
+            except TypeError:
+                ds.append([name, obj])
+            except:
+                raise
         return
 
     h5_group.visititems(__find_name)
