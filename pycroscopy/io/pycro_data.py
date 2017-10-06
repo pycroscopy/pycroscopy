@@ -272,16 +272,10 @@ class PycroDataset(h5py.Dataset):
             Informs the user as to how the data_slice has been shaped.
 
         """
-        # Ensure that the n_dimensional data exists
-        if self.__n_dim_data is None:
-            warn('N-dimensional form of the dataset has not yet been extracted.  '
-                 'This will be done before slicing.')
-            _ = self.get_n_dim_form()
-
         # Create default slices that include the entire dimension
         n_dim_slices = dict()
         n_dim_slices_sizes = dict()
-        for dim_lab, dim_size in zip(self.n_dim_labels(), self.n_dim_sizes()):
+        for dim_lab, dim_size in zip(self.n_dim_labels, self.n_dim_sizes):
             n_dim_slices[dim_lab] = list(range(dim_size))
             n_dim_slices_sizes[dim_lab] = len(n_dim_slices[dim_lab])
 
@@ -311,7 +305,6 @@ class PycroDataset(h5py.Dataset):
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
-        # TODO: More elegant slicing method for PycroDataset objects
         for pos_ind, pos_lab in enumerate(self.__pos_dim_labels):
             n_dim_slices[pos_lab] = np.isin(self.h5_pos_inds[:, pos_ind], n_dim_slices[pos_lab])
             if pos_ind == 0:
@@ -332,9 +325,9 @@ class PycroDataset(h5py.Dataset):
 
         if len(np.argwhere(pos_slice)) <= len(np.argwhere(spec_slice)):
             # Fewer final positions that spectra (Most common case)
-            data_slice = self[pos_slice, :][:, spec_slice]
+            data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
         else:
-            data_slice = self[spec_slice, :][:, pos_slice]
+            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
 
         data_slice, success = reshape_to_Ndims(data_slice,
                                                h5_pos=self.h5_pos_inds[pos_slice, :],
