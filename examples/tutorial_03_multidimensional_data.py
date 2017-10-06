@@ -218,45 +218,29 @@ print('Positions:', pos_dim_sizes, '\nSpectroscopic:', spec_dim_sizes)
 # Let's assume that we are interested in visualizing the spectrograms at the first field of the second cycle at
 # position - row:3 and column 2. There are two ways of accessing the data:
 #
-# 1. The easier method - reshape the data to N dimensions and slice the dataset
+# 1. The hard method - find the spectroscopic and position indices of interest and slice the 2D dataset
 #
-#     * This approach, while trivial, may not be suitable for large datasets which may or may not fit in memory
+# 2. The easier method - reshape the data to N dimensions and slice the dataset
 #
-# 2. The harder method - find the spectroscopic and position indices of interest and slice the 2D dataset
+# * This approach, while easy, may not be suitable for large datasets which may or may not fit in memory
 #
-# Approach 1 - N-dimensional form
-# -------------------------------
-# We will use convenient pycroscopy function that safely reshapes the data to its N dimensional form with a single
-# line. Note that while this approach appears simple on the surface, there are a fair number of lines of code that
-# make up this function.
-
-ds_nd, success, labels = px.hdf_utils.reshape_to_Ndims(h5_main, get_labels=True)
-print('Shape of the N-dimensional dataset:', ds_nd.shape)
-print(labels)
+# 3. The easiest method - use the PycroDataset class to slice the data
+#
+# * This method will only work for ``main`` datasets.  We recommend using method 2 for slicing all others.
+#
 
 #########################################################################
-# Now that we have the data in its original N dimensional form, we can easily slice the dataset:
-spectrogram = ds_nd[2, 3, :, 0, :, 1]
-# Now the spectrogram is of order (frequency x DC_Offset).
-spectrogram = spectrogram.T
-# Now the spectrogram is of order (DC_Offset x frequency)
-fig, axis = plt. subplots()
-axis.imshow(np.abs(spectrogram), origin='lower')
-axis.set_xlabel('Frequency Index')
-axis.set_ylabel('DC Offset Index')
-axis.set_title('Spectrogram Amplitude');
-
-#########################################################################
-# Approach 2 - slicing the 2D matrix
+# Approach 1 - slicing the 2D matrix
 # ----------------------------------
 #
-# This approach is more hands-on and requires that we be very careful with the indexing and slicing. Nonetheless,
+# This approach is hands-on and requires that we be very careful with the indexing and slicing. Nonetheless,
 # the process is actually fairly intuitive. We rely entirely upon the spectroscopic and position ancillary datasets
 # to find the indices for slicing the dataset. Unlike the main dataset, the ancillary datasets are very small and
 # can be stored easily in memory. Once the slicing indices are calculated, we __only read the desired portion of
 # `main` data to memory__. Thus the amount of data loaded into memory is only the amount that we absolutely need.
 # __This is the only approach that can be applied to slice very large datasets without ovwhelming memory overheads__.
 # The comments for each line explain the entire process comprehensively
+#
 
 # Get only the spectroscopic dimension names:
 spec_dim_names = px.hdf_utils.get_attr(h5_spec_ind, 'labels')
@@ -338,12 +322,35 @@ else:
 print('We need to reshape the vector by the tuple:', spectrogram_shape)
 
 # Reshaping from 1D to 2D:
-spectrogram2 = np.reshape(np.squeeze(data_vec), spectrogram_shape)
+spectrogram = np.reshape(np.squeeze(data_vec), spectrogram_shape)
 
 #########################################################################
 # Now that the spectrogram is indeed two dimensional, we can visualize it. This plot should match the one from the first
 # approach.
 
+# Now the spectrogram is of order (DC_Offset x frequency)
+fig, axis = plt. subplots()
+axis.imshow(np.abs(spectrogram), origin='lower')
+axis.set_xlabel('Frequency Index')
+axis.set_ylabel('DC Offset Index')
+axis.set_title('Spectrogram Amplitude')
+
+#########################################################################
+# Approach 2 - N-dimensional form
+# -------------------------------
+# We will use convenient pycroscopy function that safely reshapes the data to its N dimensional form with a single
+# line. Note that while this approach appears simple on the surface, there are a fair number of lines of code that
+# make up this function.
+
+ds_nd, success, labels = px.hdf_utils.reshape_to_Ndims(h5_main, get_labels=True)
+print('Shape of the N-dimensional dataset:', ds_nd.shape)
+print(labels)
+
+#########################################################################
+# Now that we have the data in its original N dimensional form, we can easily slice the dataset:
+spectrogram2 = ds_nd[2, 3, :, :, 0, 1]
+# Now the spectrogram is of order (frequency x DC_Offset).
+spectrogram2 = spectrogram2.T
 # Now the spectrogram is of order (DC_Offset x frequency)
 fig, axis = plt. subplots()
 axis.imshow(np.abs(spectrogram2), origin='lower')
@@ -352,6 +359,46 @@ axis.set_ylabel('DC Offset Index')
 axis.set_title('Spectrogram Amplitude');
 
 #########################################################################
+# Approach 3 - Using the PycroDataset
+# -----------------------------------
+# We will use the new PycroDataset class to create an N dimensional slice  directly from the two dimensional
+# data in the file.
+#
+
+# First we convert from an HDF5 Dataset to a PycroDataset
+pd_main = px.PycroDataset(h5_main)
+print(pd_main.shape)
+
+#########################################################################
+# As you can see, the data is still two dimensional.  The PycroDataset has several attributes that will help with
+# the slicing.
+#
+
+# Let's check the names and sizes of each dimension
+print(pd_main.n_dim_labels)
+print(pd_main.n_dim_sizes)
+
+#########################################################################
+# With this information, we can now get our data slice.
+#
+slice_dict = dict(X=[2], Y=[3], Field=[0], Cycle=[1])
+
+nd_spec, success = pd_main.slice(**slice_dict)
+print(success)
+print(nd_spec.shape)
+
+#########################################################################
+# The slice is returned already in the N dimensional form.  We just need to remove all the
+# dimensions with length one, transpose it like in method 2, and plot.
+#
+spectrogram3 = nd_spec.squeeze().T
+
+# Now the spectrogram is of order (DC_Offset x frequency)
+fig, axis = plt. subplots()
+axis.imshow(np.abs(spectrogram3), origin='lower')
+axis.set_xlabel('Frequency Index')
+axis.set_ylabel('DC Offset Index')
+axis.set_title('Spectrogram Amplitude');
 
 # Close and delete the h5_file
 h5_file.close()

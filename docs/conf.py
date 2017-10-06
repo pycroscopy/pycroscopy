@@ -400,12 +400,13 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
                        }
 
 #
-numpydoc_show_class_members = False
 
 # -------------------------------------------------
+# from sphinx_gallery.sorting import ExampleTitleSortKey #Can't use until next release of sphinx-gallery
 # Sphinx-gallery configuration
 sphinx_gallery_conf = dict(examples_dirs='../examples',
                            gallery_dirs='auto_examples',
+                           # within_subsection_order=ExampleTitleSortKey,
                            filename_pattern=os.path.sep+'tutorial_',
                            reference_url=dict(pycroscopy=None,
                                               matplotlib='https://matplotlib.org',
