@@ -134,7 +134,7 @@ class Cluster(object):
 
         Parameters
         ----------
-        components : {int, iterable of ints, slice, or None}
+        components : {int, array-like of ints, slice, or None}
             Input Options
             integer: Components less than the input will be kept
             length 2 iterable of integers: Integers define start and stop of component slice to retain
@@ -142,11 +142,9 @@ class Cluster(object):
             None: All components will be used
         Returns
         -------
-        comp_slice : slice or numpy array of uints
+        comp_slice : slice or numpy.ndarray of uints
             Slice or array specifying which components should be kept
         """
-
-        comp_slice = slice(None)
 
         if components is None:
             num_comps = self.h5_main.shape[1]
@@ -169,7 +167,7 @@ class Cluster(object):
             # Components is already a slice
             comp_slice = components
             num_comps = abs(comp_slice.stop - comp_slice.start)
-        elif components is not None:
+        else:
             raise TypeError('Unsupported component type supplied to clean_and_build.  '
                             'Allowed types are integer, numpy array, list, tuple, and slice.')
 
