@@ -217,8 +217,11 @@ print('Positions:', pos_dim_sizes, '\nSpectroscopic:', spec_dim_sizes)
 #
 # Let's assume that we are interested in visualizing the spectrograms at the first field of the second cycle at
 # position - row:3 and column 2. There are two ways of accessing the data:
+#
 # 1. The easier method - reshape the data to N dimensions and slice the dataset
+#
 #     * This approach, while trivial, may not be suitable for large datasets which may or may not fit in memory
+#
 # 2. The harder method - find the spectroscopic and position indices of interest and slice the 2D dataset
 #
 # Approach 1 - N-dimensional form
@@ -233,7 +236,7 @@ print(labels)
 
 #########################################################################
 # Now that we have the data in its original N dimensional form, we can easily slice the dataset:
-spectrogram = ds_nd[2,3, :, 0, :, 1]
+spectrogram = ds_nd[2, 3, :, 0, :, 1]
 # Now the spectrogram is of order (frequency x DC_Offset).
 spectrogram = spectrogram.T
 # Now the spectrogram is of order (DC_Offset x frequency)

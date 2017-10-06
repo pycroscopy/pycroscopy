@@ -216,7 +216,7 @@ h5_path = tran.translate(h5_path, raw_data_2d, num_rows, num_cols,
 # * Steps 1-3 would be performed anyway in order to begin data analysis
 # * The actual pycroscopy translation step are reduced to just 3-4 lines in step 4.
 # * While this approach is feasible and encouraged for simple and small data, it may be necessary to use lower level
-# calls to write efficient translators
+#   calls to write efficient translators
 #
 # Verifying the newly written H5 file:
 # ====================================
