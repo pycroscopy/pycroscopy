@@ -679,7 +679,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         ds_pos = h5_pos[()]
         pos_labs = get_attr(h5_pos, 'labels')
     elif isinstance(h5_pos, np.ndarray):
-        ds_pos = h5_pos
+        ds_pos = np.atleast_2d(h5_pos)
         pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
