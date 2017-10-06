@@ -1,5 +1,5 @@
-pycroscopy package
-==================
+Pycroscopy API Reference
+========================
 
 0. Description
 --------------
@@ -17,16 +17,20 @@ The package structure is simple, with 4 main modules:
 
 Once a user converts their microscope's data format into an HDF5 format, by simply extending some of the classes in `io`, the user gains access to the rest of the utilities present in `pycroscopy.*`.
 
-
-2. Pycroscopy Modules
----------------------
 .. currentmodule:: pycroscopy
 
+.. automodule:: pycroscopy
+    :no-members:
+    :no-inherited-members:
+
+:py:mod:`pycroscopy`:
+
 .. autosummary::
-    :toctree: gen_modules/
+    :toctree: _autosummary/
     :template: module.rst
 
-    analysis
-    io
-    processing
-    viz
+    pycroscopy.analysis
+    pycroscopy.io
+    pycroscopy.processing
+    pycroscopy.tests
+    pycroscopy.viz

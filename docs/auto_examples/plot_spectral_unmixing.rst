@@ -28,8 +28,8 @@ Software Prerequisites:
 * **cvxopt** for fully constrained least squares fitting
     * install in a terminal via **`conda install -c https://conda.anaconda.org/omnia cvxopt`**
 * **pycroscopy** : Though pycroscopy is mainly used here for plotting purposes only, it's true capabilities
-are realized through the ability to seamlessly perform these analyses on any imaging dataset (regardless
-of origin, size, complexity) and storing the results back into the same dataset among other things
+  are realized through the ability to seamlessly perform these analyses on any imaging dataset (regardless
+  of origin, size, complexity) and storing the results back into the same dataset among other things
 
 
 
@@ -76,13 +76,14 @@ The Data
 
 In this example, we will work on a **Band Excitation Piezoresponse Force Microscopy (BE-PFM)** imaging dataset
 acquired from advanced atomic force microscopes. In this dataset, a spectra was colllected for each position in a two
- dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
+dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
 dimensional matrix in accordance with the pycroscopy data format.
 
 Fortunately, all statistical analysis, machine learning, spectral unmixing algorithms, etc. only accept data that is
 formatted in the same manner of [position x spectra] in a two dimensional matrix.
 
 We will begin by downloading the BE-PFM dataset from Github
+
 
 
 

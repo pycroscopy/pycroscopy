@@ -69,6 +69,7 @@ sho32 = np.dtype({'names': field_names,
 # 5. _write_results_chunk - writes the computed results back to the file
 #
 # Note that:
+#
 # * Only the code specific to this process needs to be implemented. However, the generic portions common to most
 #   Processes will be handled by the Process class.
 # * The other functions such as the sho_function, sho_fast_guess function are all specific to this process. These have
@@ -78,7 +79,7 @@ sho32 = np.dtype({'names': field_names,
 #   function. The additional code to turn this operation into a Pycroscopy Process is actually rather minimal. As
 #   described earlier, the goal of the Process class is to modularize and compartmentalize the main sections of the code
 #   in order to facilitate faster and more robust implementation of data processing algorithms.
-
+#
 
 class ShoGuess(px.Process):
 

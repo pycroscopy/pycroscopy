@@ -21,10 +21,12 @@ Prerequisites:
 ==============
 
 Before proceeding with this example series, we recommend reading the previous documents to learn more about:
+
 1. Data and file formats
     * Why you should care about data formats
     * Current state of data formats in microscopy
     * Structuring data in pycroscopy
+
 2. HDF5 file format
 
 
@@ -232,20 +234,20 @@ The parameters in these files are present in the first few lines of the file
 
  Out::
 
-    x-offset :       -967.807
-    value-unit :     nA
-    y-length :       29.7595
-    z-points :       500
-    z-range :        2000000000
-    z-unit :         nV
-    x-pixels :       100
-    y-pixels :       100
     z-section :      491
+    x-pixels :       100
     voidpixels :     0
+    y-length :       29.7595
+    value-unit :     nA
+    x-offset :       -967.807
     z-offset :       1116.49
+    x-length :       29.7595
     y-offset :       -781.441
     scanspeed :      59519000000
-    x-length :       29.7595
+    z-points :       500
+    z-range :        2000000000
+    y-pixels :       100
+    z-unit :         nV
 
 
 3.a Prepare to read the data
@@ -348,7 +350,7 @@ Notes on pycroscopy translation
 * Steps 1-3 would be performed anyway in order to begin data analysis
 * The actual pycroscopy translation step are reduced to just 3-4 lines in step 4.
 * While this approach is feasible and encouraged for simple and small data, it may be necessary to use lower level
-calls to write efficient translators
+  calls to write efficient translators
 
 Verifying the newly written H5 file:
 ====================================
@@ -401,7 +403,7 @@ Verifying the newly written H5 file:
     Measurement_000/Channel_000/Spectroscopic_Values
 
 
-**Total running time of the script:** ( 0 minutes  22.908 seconds)
+**Total running time of the script:** ( 0 minutes  20.111 seconds)
 
 
 
