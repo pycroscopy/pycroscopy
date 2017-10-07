@@ -132,15 +132,17 @@ dataset would be structured as:
 | iN-1, j0   | iN-1, j1   | iN-1, j2   | ....   | iN-1, jP-1   | iN-1, jP-1   |
 +------------+------------+------------+--------+--------------+--------------+
 
-    * If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P.
-      The data is still saved as a long (2*P) 1D array at each location. The number of spectroscopic dimensions
-      would change from just ['Voltage'] to ['Voltage', 'Cycle'] where the second spectroscopic dimension would
-      account for repetitions of this bias sweep.
-        * **The spectroscopic data would be stored as it would be recorded as volt_0-cycle_0, volt_1-cycle_0.....
-          volt_P-1-cycle_0, volt_0-cycle_1.....volt_P-1-cycle-1. Just like the positions**
-    * Now, if the bias was swept thrice from -1 to +1V and then thrice again from -2 to 2V, the data bacomes
-      N x 2 * 3 P. The data now has two position dimensions (X, Y) and three spectrosocpic dimensions ['Voltage',
-      'Cycle', 'Step']. The data is still saved as a (P * 2 * 3) 1D array at each location.
+* If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P.
+  The data is still saved as a long (2*P) 1D array at each location. The number of spectroscopic dimensions
+  would change from just ['Voltage'] to ['Voltage', 'Cycle'] where the second spectroscopic dimension would
+  account for repetitions of this bias sweep.
+
+  * **The spectroscopic data would be stored as it would be recorded as volt_0-cycle_0, volt_1-cycle_0.....
+    volt_P-1-cycle_0, volt_0-cycle_1.....volt_P-1-cycle-1. Just like the positions**
+
+* Now, if the bias was swept thrice from -1 to +1V and then thrice again from -2 to 2V, the data bacomes
+  N x 2 * 3 P. The data now has two position dimensions (X, Y) and three spectrosocpic dimensions ['Voltage',
+  'Cycle', 'Step']. The data is still saved as a (P * 2 * 3) 1D array at each location.
 
 -  A collection of ``k`` chosen spectra would also be considered
    ``main`` datasets since the data is still structured as
@@ -357,24 +359,18 @@ comfortably accomodates the pycroscopy format and offers several
 advantageous features.
 
 Information can be stored in HDF5 files in several ways:
-* ``Datasets`` allow the storageo of data matricies and these are the
-  vessels used for storing the ``main``, ``ancillary``, and any extra data
-  matricies
-* ``Datagroups`` are similar to folders in conventional
-  file systems and can be used to store any number of datasets or
-  datagroups themselves
-* ``Attributes`` are small pieces of
-  information, such as experimental or analytical parameters, that are
-  stored in key-value pairs in the same way as dictionaries in python.
-  Both datagroups and datasets can store attributes.
-* While they are not
-  means to store data, ``Links`` or ``references`` can be used to
-  provide shortcuts and aliases to datasets and datagroups. This feature
-  is especially useful for avoiding duplication of datasets when two
-  ``main`` datasets use the same ancillary datasets.
 
-Among the `various
-benefits <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`__
+* ``Datasets`` allow the storageo of data matricies and these are the vessels used for storing the ``main``,
+  ``ancillary``, and any extra data matricies
+* ``Datagroups`` are similar to folders in conventional file systems and can be used to store any number of datasets or
+  datagroups themselves
+* ``Attributes`` are small pieces of information, such as experimental or analytical parameters, that are stored in
+  key-value pairs in the same way as dictionaries in python.  Both datagroups and datasets can store attributes.
+* While they are not means to store data, ``Links`` or ``references`` can be used to provide shortcuts and aliases to
+  datasets and datagroups. This feature is especially useful for avoiding duplication of datasets when two ``main``
+  datasets use the same ancillary datasets.
+
+Among the `various benefits <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`__
 that they offer, HDF5 files:
 
 * are readily compatible with high-performance computing facilities
@@ -479,9 +475,10 @@ time)
 
   * ``labels`` - list of strings for the column names like ['Bias', 'Cycle']
   * ``units`` – list of strings for units like ['V', ''].
-  Empty string for dimensionless quantities
+    Empty string for dimensionless quantities
 
 * Optional attributes:
+
   * Region references based on row names
 
 Attributes
@@ -557,7 +554,7 @@ Measurement data
 
    -  Datasets common to Channel\_000 and Channel\_001
 
--  ....
+-  ...
 
 Tool (analysis / processing)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

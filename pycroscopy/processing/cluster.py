@@ -3,6 +3,7 @@
 Created on Tue Jan 05 07:55:56 2016
 
 @author: Suhas Somnath, Chris Smith
+
 """
 from __future__ import division, print_function, absolute_import
 import numpy as np
@@ -19,6 +20,7 @@ from ..io.microdata import MicroDataGroup, MicroDataset
 class Cluster(object):
     """
     Pycroscopy wrapper around the sklearn.cluster classes.
+
     """
 
     def __init__(self, h5_main, method_name, num_comps=None, *args, **kwargs):
@@ -26,14 +28,15 @@ class Cluster(object):
         Constructs the Cluster object
 
         Parameters
-        ------------
+        ----------
         h5_main : HDF5 dataset object
             Main dataset with ancillary spectroscopic, position indices and values datasets
         method_name : string / unicode
             Name of the sklearn.cluster estimator
         num_comps : (optional) unsigned int
             Number of features / spectroscopic indices to be used to cluster the data. Default = all
-        *args and **kwargs : arguments to be passed to the estimator
+        args and kwargs : arguments to be passed to the estimator
+
         """
 
         allowed_methods = ['AgglomerativeClustering', 'Birch', 'KMeans',
@@ -134,7 +137,7 @@ class Cluster(object):
 
         Parameters
         ----------
-        components : {int, iterable of ints, slice, or None}
+        components : {int, array-like of ints, slice, or None}
             Input Options
             integer: Components less than the input will be kept
             length 2 iterable of integers: Integers define start and stop of component slice to retain
@@ -142,11 +145,9 @@ class Cluster(object):
             None: All components will be used
         Returns
         -------
-        comp_slice : slice or numpy array of uints
+        comp_slice : slice or numpy.ndarray of uints
             Slice or array specifying which components should be kept
         """
-
-        comp_slice = slice(None)
 
         if components is None:
             num_comps = self.h5_main.shape[1]
@@ -169,7 +170,7 @@ class Cluster(object):
             # Components is already a slice
             comp_slice = components
             num_comps = abs(comp_slice.stop - comp_slice.start)
-        elif components is not None:
+        else:
             raise TypeError('Unsupported component type supplied to clean_and_build.  '
                             'Allowed types are integer, numpy array, list, tuple, and slice.')
 

@@ -6,7 +6,6 @@ Created on Tue Nov  3 21:14:25 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
 import sys
 import h5py
 from warnings import warn
@@ -59,6 +58,8 @@ def get_all_main(parent, verbose=False):
         The datasets found in the file that meet the 'Main Data' criteria.
 
     """
+    from .pycro_data import PycroDataset
+
     main_list = list()
 
     def __check(name, obj):
@@ -71,7 +72,7 @@ def get_all_main(parent, verbose=False):
             if ismain:
                 if verbose:
                     print(name, 'is a `Main` dataset.')
-                main_list.append(obj)
+                main_list.append(PycroDataset(obj))
 
     if verbose:
         print('Checking the group {} for `Main` datasets.'.format(parent.name))
@@ -97,12 +98,19 @@ def getDataSet(h5_parent, data_name):
     -------
     list of h5py.Reference of the dataset.
     """
+    from .pycro_data import PycroDataset
+
     if isinstance(h5_parent, h5py.File) or isinstance(h5_parent, h5py.Group):
         data_list = []
 
         def findData(name, obj):
             if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
-                data_list.append(obj)
+                try:
+                    data_list.append(PycroDataset(obj))
+                except TypeError:
+                    data_list.append(obj)
+                except:
+                    raise
 
         h5_parent.visititems(findData)
         return data_list
@@ -227,11 +235,17 @@ def getH5DsetRefs(ds_names, h5_refs):
     aux_dset : List of HDF5 dataset references
         Corresponding references
     """
+    from .pycro_data import PycroDataset
     aux_dset = []
     for ds_name in ds_names:
         for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
-                aux_dset.append(dset)
+                try:
+                    aux_dset.append(PycroDataset(dset))
+                except TypeError:
+                    aux_dset.append(dset)
+                except:
+                    raise
     return aux_dset
 
 
@@ -264,12 +278,19 @@ def findDataset(h5_group, ds_name):
     """
     Uses visit() to find all datasets with the desired name
     """
+    from .pycro_data import PycroDataset
+
     # print 'Finding all instances of', ds_name
     ds = []
 
     def __find_name(name, obj):
         if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
-            ds.append([name, obj])
+            try:
+                ds.append([name, PycroDataset(obj)])
+            except TypeError:
+                ds.append([name, obj])
+            except:
+                raise
         return
 
     h5_group.visititems(__find_name)
@@ -604,6 +625,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         Whether or not to print debugging statements
     sort_dims : bool
         If True, the data is sorted so that the dimensions are in order from fastest to slowest
+        If False, the data is kept in the original order
         If `get_labels` is also True, the labels are sorted as well.
 
     Returns
@@ -627,7 +649,8 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     generate dummy values for them.
 
     """
-
+    pos_labs = np.array(['Positions'])
+    spec_labs = np.array(['Spectral_Step'])
     if h5_pos is None:
         """
         Get the Position datasets from the references if possible
@@ -636,23 +659,28 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
             try:
                 h5_pos = h5_main.file[h5_main.attrs['Position_Indices']]
                 ds_pos = h5_pos[()]
+                pos_labs = get_attr(h5_pos, 'labels')
             except KeyError:
                 print('No position datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
+                    pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
                 else:
                     ds_pos = np.array(0, dtype=np.uint8).reshape(-1, 1)
             except:
                 raise
         else:
             ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
+            pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     elif isinstance(h5_pos, h5py.Dataset):
         """
     Position Indices dataset was provided
         """
         ds_pos = h5_pos[()]
+        pos_labs = get_attr(h5_pos, 'labels')
     elif isinstance(h5_pos, np.ndarray):
-        ds_pos = h5_pos
+        ds_pos = np.atleast_2d(h5_pos)
+        pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
 
@@ -666,25 +694,29 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
             try:
                 h5_spec = h5_main.file[h5_main.attrs['Spectroscopic_Indices']]
                 ds_spec = h5_spec[()]
+                spec_labs = get_attr(h5_spec, 'labels')
             except KeyError:
                 print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
                     ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+                    spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
                 else:
                     ds_spec = np.array(0, dtype=np.uint8).reshape([1, 1])
             except:
                 raise
         else:
             ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+            spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
 
     elif isinstance(h5_spec, h5py.Dataset):
         """
     Spectroscopic Indices dataset was provided
         """
         ds_spec = h5_spec[()]
-
+        spec_labs = get_attr(h5_spec, 'labels')
     elif isinstance(h5_spec, np.ndarray):
         ds_spec = h5_spec
+        spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
@@ -695,9 +727,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     spec_sort = get_sort_order(ds_spec)
 
     if verbose:
-        print('Position dimensions:', get_attr(h5_pos, 'labels'))
+        print('Position dimensions:', pos_labs)
         print('Position sort order:', pos_sort)
-        print('Spectroscopic Dimensions:', get_attr(h5_spec, 'labels'))
+        print('Spectroscopic Dimensions:', spec_labs)
         print('Spectroscopic sort order:', spec_sort)
 
     '''
@@ -707,13 +739,10 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     spec_dims = get_dimensionality(ds_spec, spec_sort)
 
     if verbose:
-        print('\nPosition dimensions (sort applied):', get_attr(h5_pos, 'labels')[pos_sort])
+        print('\nPosition dimensions (sort applied):', pos_labs[pos_sort])
         print('Position dimensionality (sort applied):', pos_dims)
-        print('Spectroscopic dimensions (sort applied):', get_attr(h5_spec, 'labels')[spec_sort])
+        print('Spectroscopic dimensions (sort applied):', spec_labs[spec_sort])
         print('Spectroscopic dimensionality (sort applied):', spec_dims)
-
-        all_labels = np.hstack((get_attr(h5_pos, 'labels')[pos_sort][::-1],
-                                get_attr(h5_spec, 'labels')[spec_sort][::-1]))
 
     ds_main = h5_main[()]
 
@@ -725,6 +754,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     """
     try:
         ds_Nd = np.reshape(ds_main, pos_dims[::-1] + spec_dims[::-1])
+
     except ValueError:
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
         try:
@@ -737,6 +767,9 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
             raise
     except:
         raise
+
+    all_labels = np.hstack((pos_labs[pos_sort][::-1],
+                            spec_labs[spec_sort][::-1]))
 
     if verbose:
         print('\nAfter first reshape, labels are', all_labels)
@@ -950,6 +983,8 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
+    from .pycro_data import PycroDataset
+
     h5_group = source_dset.parent
     try:
         # Check if the dataset already exists
@@ -970,7 +1005,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
 
-    return h5_new_dset
+    return PycroDataset(h5_new_dset)
 
 
 def copyAttributes(source, dest, skip_refs=True):
@@ -1601,3 +1636,23 @@ def get_unit_values(h5_spec_ind, h5_spec_val, dim_names=None):
         unit_values[dim_name] = h5_spec_val[desired_row_ind, intersections]
 
     return unit_values
+
+def get_source_dataset(h5_group):
+    """
+    Find the name of the source dataset used to create the input `h5_group`
+
+    Parameters
+    ----------
+    h5_group : h5py.Datagroup
+        Child group whose source dataset will be returned
+
+    Returns
+    -------
+    h5_source : h5py.Dataset
+
+    """
+    from .pycro_data import PycroDataset
+
+    h5_parent_group = h5_group.parent
+    h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
+    return PycroDataset(h5_source)

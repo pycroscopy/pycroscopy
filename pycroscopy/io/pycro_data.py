@@ -10,13 +10,61 @@ import h5py
 import six
 from warnings import warn
 import numpy as np
-from .hdf_utils import checkIfMain, getAuxData, get_attr, get_data_descriptor, get_formatted_labels, \
+from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
 
 
 class PycroDataset(h5py.Dataset):
 
     def __init__(self, h5_ref, sort_dims=False):
+        """
+        New data object that extends the h5py.Dataset.
+
+        Parameters
+        ----------
+        h5_ref : hdf5.Dataset
+            The base dataset to be extended
+        sort_dims : bool
+            Should the dimensions be sorted internally from fastest changing to slowest.
+
+        Methods
+        -------
+        self.get_current_sorting
+        self.toggle_sorting
+        self.get_pos_values
+        self.get_spec_values
+        self.get_n_dim_form
+        self.slice
+
+
+        Attributes
+        ----------
+        self.h5_spec_vals : h5py.Dataset
+            Associated Spectroscopic Values dataset
+        self.h5_spec_inds : h5py.Dataset
+            Associated Spectroscopic Indices dataset
+        self.h5_pos_vals : h5py.Dataset
+            Associated Position Values dataset
+        self.h5_pos_inds : h5py.Dataset
+            Associated Position Indices dataset
+        self.pos_dim_labels : list of str
+            The labels for the position dimensions.
+        self.spec_dim_labels : list of str
+            The labels for the spectroscopic dimensions.
+        self.n_dim_labels : list of str
+            The labels for the n-dimensional dataset.
+        self.pos_dim_sizes : list of int
+            A list of the sizes of each position dimension.
+        self.spec_dim_sizes : list of int
+            A list of the sizes of each spectroscopic dimension.
+        self.n_dim_sizes : list of int
+            A list of the sizes of each dimension.
+
+        Notes
+        -----
+        The order of all labels and sizes attributes is determined by the current value of `sort_dims`.
+
+        """
 
         if not checkIfMain(h5_ref):
             raise TypeError('Supply a h5py.Dataset object that is a pycroscopy main dataset')
@@ -25,10 +73,14 @@ class PycroDataset(h5py.Dataset):
 
         # User accessible properties
         # The required Position and Spectroscopic datasets
-        self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
-        self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
-        self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
-        self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
+        # self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
+        # self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
+        # self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
+        # self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
+        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_spec_inds = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_pos_vals = self.file[self.attrs['Position_Values']]
+        self.h5_pos_inds = self.file[self.attrs['Position_Indices']]
 
         # The dimension labels
         self.__pos_dim_labels = get_attr(self.h5_pos_inds, 'labels')
@@ -55,6 +107,8 @@ class PycroDataset(h5py.Dataset):
 
         # Should the dimensions be sorted from fastest to slowest
         self.__sort_dims = sort_dims
+
+        self.__set_labels_and_sizes()
 
     def __eq__(self, other):
         if isinstance(other, PycroDataset):
@@ -89,55 +143,82 @@ class PycroDataset(h5py.Dataset):
 
         return '\n'.join([h5_str, pycro_str])
 
-    def pos_dim_labels(self):
-        if self.__sort_dims:
-            return self.__pos_dim_labels[self.__pos_sort_order].tolist()
-        else:
-            return self.__pos_dim_labels.tolist()
+    def __set_labels_and_sizes(self):
+        """
+        Sets the labels and sizes attributes to the correct values based on
+        the value of `self.__sort_dims`
 
-    def spec_dim_labels(self):
-        if self.__sort_dims:
-            return self.__spec_dim_labels[self.__spec_sort_order].tolist()
-        else:
-            return self.__spec_dim_labels.tolist()
+        Returns
+        -------
+        None
 
-    def pos_dim_sizes(self):
+        """
         if self.__sort_dims:
-            return self.__pos_dim_sizes[self.__pos_sort_order].tolist()
-        else:
-            return self.__pos_dim_sizes.tolist()
+            self.pos_dim_labels = self.__pos_dim_labels[self.__pos_sort_order].tolist()
+            self.spec_dim_labels = self.__spec_dim_labels[self.__spec_sort_order].tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order]
+            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order]
+            self.n_dim_labels = self.__n_dim_labs[self.__n_dim_sort_order].tolist()
+            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order]
 
-    def spec_dim_sizes(self):
-        if self.__sort_dims:
-            return self.__spec_dim_sizes[self.__spec_sort_order].tolist()
         else:
-            return self.__spec_dim_sizes.tolist()
-
-    def n_dim_labels(self):
-        if self.__sort_dims:
-            return self.__n_dim_labs[self.__n_dim_sort_order].tolist()
-        else:
-            return self.__n_dim_labs.tolist()
-
-    def n_dim_sizes(self):
-        if self.__sort_dims:
-            return self.__n_dim_sizes[self.__n_dim_sort_order].tolist()
-        else:
-            return self.__n_dim_sizes.tolist()
+            self.pos_dim_labels = self.__pos_dim_labels.tolist()
+            self.spec_dim_labels = self.__spec_dim_labels.tolist()
+            self.pos_dim_sizes = self.__pos_dim_sizes
+            self.spec_dim_sizes = self.__spec_dim_sizes
+            self.n_dim_labels = self.__n_dim_labs.tolist()
+            self.n_dim_sizes = self.__n_dim_sizes
 
     def get_pos_values(self, dim_name):
+        """
+        Extract the values for the specified position dimension
+
+        Parameters
+        ----------
+        dim_name : str
+            Name of one of the dimensions in `self.pos_dim_labels`
+
+        Returns
+        -------
+        dim_values : numpy.ndarray
+            Array containing the unit values of the dimension `dim_name`
+
+        """
         return get_unit_values(self.h5_pos_inds, self.h5_pos_vals)[dim_name]
 
     def get_spec_values(self, dim_name):
+        """
+        Extract the values for the specified spectroscopic dimension
+
+        Parameters
+        ----------
+        dim_name : str
+            Name of one of the dimensions in `self.spec_dim_labels`
+
+        Returns
+        -------
+        dim_values : numpy.ndarray
+            Array containing the unit values of the dimension `dim_name`
+
+        """
         return get_unit_values(self.h5_spec_inds, self.h5_spec_vals)[dim_name]
 
-    def current_sorting(self):
+    def get_current_sorting(self):
+        """
+        Prints the current sorting method.
+
+        """
         if self.__sort_dims:
             print('Data dimensions are sorted in order from fastest changing dimension to slowest.')
         else:
             print('Data dimensions are in the order they occur in the file.')
 
     def toggle_sorting(self):
+        """
+        Toggles between sorting from the fastest changing dimension to the slowest and sorting based on the
+        order of the labels
+
+        """
         if self.__n_dim_data is not None:
             if self.__sort_dims:
                 nd_sort = self.__pos_sort_order[::-1] + self.__spec_sort_order[::-1]
@@ -148,7 +229,18 @@ class PycroDataset(h5py.Dataset):
 
         self.__sort_dims = not self.__sort_dims
 
+        self.__set_labels_and_sizes()
+
     def get_n_dim_form(self):
+        """
+        Reshapes the dataset to an N-dimensional array
+
+        Returns
+        -------
+        n_dim_data : numpy.ndarray
+            N-dimensional form of the dataset
+
+        """
 
         n_dim_data, success = reshape_to_Ndims(self, sort_dims=self.__sort_dims)
 
@@ -159,37 +251,46 @@ class PycroDataset(h5py.Dataset):
 
         return self.__n_dim_data
 
-    def slice(self, **kwargs):
+    def slice(self, **slice_dict):
         """
+        Slice the dataset based on an input dictionary of 'str': slice pairs.
+        Each string should correspond to a dimension label.  The slices can be
+        array-likes or slice objects.
 
         Parameters
         ----------
-        kwargs
+        slice_dict : dict
+            Dictionary of array-likes.
 
         Returns
         -------
+        data_slice : numpy.ndarray
+            Slice of the dataset.  Dataset has been reshaped to N-dimensions if `success` is True, only
+            by Position dimensions if `success` is 'Positions', or not reshape at all if `success`
+            is False.
+        success : str or bool
+            Informs the user as to how the data_slice has been shaped.
 
         """
-        # Ensure that the n_dimensional data exists
-        if self.__n_dim_data is None:
-            warn('N-dimensional form of the dataset has not yet been extracted.  '
-                 'This will be done before slicing.')
-            _ = self.get_n_dim_form()
-
         # Create default slices that include the entire dimension
-        n_dim_slices = [slice(None) for _ in self.__n_dim_labs]
+        n_dim_slices = dict()
+        n_dim_slices_sizes = dict()
+        for dim_lab, dim_size in zip(self.n_dim_labels, self.n_dim_sizes):
+            n_dim_slices[dim_lab] = list(range(dim_size))
+            n_dim_slices_sizes[dim_lab] = len(n_dim_slices[dim_lab])
 
         # Loop over all the keyword arguments and create slices for each.
-        for key, val in kwargs.items():
+        for key, val in slice_dict.items():
             # Make sure the dimension is valid
             if key not in self.__n_dim_labs:
-
                 raise KeyError('Cannot slice on dimension {}.  '
                                'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
 
             # Check the value and convert to a slice object if possible.
             # Use a list if not.
-            if isinstance(val, slice) or isinstance(val, list):
+            if isinstance(val, slice):
+                val = n_dim_slices[key][val]
+            elif isinstance(val, list):
                 pass
             elif isinstance(val, np.ndarray):
                 val = val.flatten().tolist()
@@ -198,22 +299,38 @@ class PycroDataset(h5py.Dataset):
             else:
                 raise TypeError('The slices must be array-likes or slice objects.')
 
-            idim = self.n_dim_labels().index(key)
+            n_dim_slices[key] = val
 
-            n_dim_slices[idim] = val
+            n_dim_slices_sizes[key] = len(val)
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
-        # TODO: More elegant slicing method for PycroDataset objects
-        data_slice = self.__n_dim_data[n_dim_slices[0]]
+        for pos_ind, pos_lab in enumerate(self.__pos_dim_labels):
+            n_dim_slices[pos_lab] = np.isin(self.h5_pos_inds[:, pos_ind], n_dim_slices[pos_lab])
+            if pos_ind == 0:
+                pos_slice = n_dim_slices[pos_lab]
+            else:
+                pos_slice = np.logical_and(pos_slice, n_dim_slices[pos_lab])
 
-        for idim, this_slice in enumerate(n_dim_slices[1:]):
-            idim += 1
-            print(idim, this_slice)
-            base_slice = [slice(None) for _ in self.__n_dim_labs]
+        pos_slice = np.argwhere(pos_slice)
 
-            base_slice[idim] = this_slice
-            print(base_slice)
-            data_slice = data_slice[base_slice]
+        for spec_ind, spec_lab in enumerate(self.__spec_dim_labels):
+            n_dim_slices[spec_lab] = np.isin(self.h5_spec_inds[spec_ind], n_dim_slices[spec_lab])
+            if spec_ind == 0:
+                spec_slice = n_dim_slices[spec_lab]
+            else:
+                spec_slice = np.logical_and(spec_slice, n_dim_slices[spec_lab])
 
-        return data_slice
+        spec_slice = np.argwhere(spec_slice)
+
+        if len(np.argwhere(pos_slice)) <= len(np.argwhere(spec_slice)):
+            # Fewer final positions that spectra (Most common case)
+            data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
+        else:
+            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
+
+        data_slice, success = reshape_to_Ndims(data_slice,
+                                               h5_pos=self.h5_pos_inds[pos_slice, :],
+                                               h5_spec=self.h5_spec_inds[:, spec_slice])
+
+        return data_slice, success

@@ -57,17 +57,21 @@ Why bother with Microdata and ioHDF5?
 =====================================
 
 * These classes simplify the process of writing to H5 files considerably. The programmer only needs to construct
-the tree structure with simple python objects such as dictionaries for parameters, numpy datasets for storing data, etc.
+  the tree structure with simple python objects such as dictionaries for parameters, numpy datasets for storing data, etc.
 * It is easy to corrupt H5 files. ioHDF5 uses defensive programming strategies to solve these problems.
 
 Translation can be challenging in many cases:
+
 * It may not be possible to read the entire data from the raw data file to memory as we did in the tutorial on
-Translation
+  Translation
+
     * ioHDF5 allows the general tree structure and the attributes to be written before the data is populated.
+
 * Sometimes, the raw data files do not come with sufficient parameters that describe the size and shape of the data.
-This makes it challenging to prepare the H5 file.
+  This makes it challenging to prepare the H5 file.
+
     * ioHDF5 allows dataets to be dataFile I/O is expensive and we don't want to read the same raw data files multiple
-    times
+      times
 
 """
 
@@ -224,18 +228,22 @@ px.plot_utils.plot_cluster_results_together(np.reshape(labels, (num_rows, num_co
 #
 # Identifying the ancillary datasets:
 # ===================================
+#
 # * `centroids`:
+#
 #     * Spectroscopic Indices and Values: Since the `source` dataset and the `centroids` datasets both contain the
-# same spectral information, the `centroids` dataset can simply reuse the ancillary spectroscopic datasets used by
-# the `source` dataset.
+#       same spectral information, the `centroids` dataset can simply reuse the ancillary spectroscopic datasets used by
+#       the `source` dataset.
 #     * Position Indices and Values: The `centroids` dataset has `k` instances while the `source` dataset has `P`,
-# so we need to create a new position indicies and a new position values dataset for `centroids`
+#       so we need to create a new position indicies and a new position values dataset for `centroids`
+#
 # * `labels`:
+#
 #     * Spectroscopic Indices and Values: Unlike the `source` dataset that has spectra of length `S`, this dataset
-# only has a single value (cluster index) at each location. Consequently, `labels` needs two new ancilary datasets
+#       only has a single value (cluster index) at each location. Consequently, `labels` needs two new ancilary datasets
 #     * Position Indices and Values: Since both `source` and `labels` have the same number of positions and the
-# positions mean the same quantities for both datasets, we can simply reuse the ancillary dataset from `source`
-# for `labels`
+#       positions mean the same quantities for both datasets, we can simply reuse the ancillary dataset from `source`
+#       for `labels`
 #
 
 ###############################################################################
@@ -244,10 +252,11 @@ px.plot_utils.plot_cluster_results_together(np.reshape(labels, (num_rows, num_co
 #
 # 1. Since `labels` is a main dataset, it needs to be two dimensional matrix of size `P x 1`
 # 2. The `Spectroscopic` ancillary datasets for `labels` need to be of the form `dimension x points`. Since the
-# spectroscopic axis of `labels` is only one deep, `labels` has only one spectroscopic dimension which itself has
-# just one point. Thus the `Spectroscopic` matrix should be of size `1 x 1`
+#    spectroscopic axis of `labels` is only one deep, `labels` has only one spectroscopic dimension which itself has
+#    just one point. Thus the `Spectroscopic` matrix should be of size `1 x 1`
 # 3. The `centroids` matrix is already of the form: `position x spectra`, so it does not need any reshaping
 # 4. The `Position` ancillary datasets for `centroids` need to be of the form `points x dimensions` as well.
+#
 # In this case, `centroids` has `k` positions all in one dimension. Thus the matrix needs to be reshaped to `k x 1`
 
 ds_labels_spec_inds, ds_labels_spec_vals = px.io.translators.utils.build_ind_val_dsets([1], labels=['Label'])
@@ -382,11 +391,12 @@ px.hdf_utils.checkAndLinkAncillary(h5_centroids,
 ###############################################################################
 # Why bother with all this?
 # =========================
+#
 # * Though long, this simple file writing procedure needs to be written once for a given data analysis / processing tool
 # * The general nature of this Clustering algorithm facilitates the application to several other datasets
-# regardless of their origin
+#   regardless of their origin
 # * Once the data is written in the pycroscopy format, it is possible to apply other data analytics operations
-# to the datasets with a single line
+#   to the datasets with a single line
 # * Generalized versions of visualization algorithms can be written to visualize clustering results quickly.
 #
 # Here is an example of very quick visualization with effectively just a single parameter - the group containing

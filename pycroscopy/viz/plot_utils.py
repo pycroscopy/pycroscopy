@@ -10,15 +10,16 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import inspect
 from warnings import warn
+import os
 import sys
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.signal import blackman
+import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.axes_grid1 import ImageGrid
-
+from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
 if sys.version_info.major == 3:
@@ -332,7 +333,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
 
-def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
+def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
     """
     Plots a 2d map with a tight z axis, with or without color bars.
     Note that the direction of the y axis is flipped if the color bar is required
@@ -343,8 +344,8 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
         Axis to plot this map onto
     data : 2D real numpy array
         Data to be plotted
-    stdevs : unsigned int (Optional. Default = 2)
-        Number of standard deviations to consider for plotting
+    stdevs : unsigned int (Optional. Default = None)
+        Number of standard deviations to consider for plotting.  If None, full range is plotted.
     origin : str
         Where should the origin of the image data be located.  'lower' sets the origin to the
         bottom left, 'upper' sets it to the upper left.
@@ -353,34 +354,37 @@ def plot_map(axis, data, stdevs=2, origin='lower', **kwargs):
     Returns
     -------
     """
-    data_mean = np.mean(data)
-    data_std = np.std(data)
+    if stdevs is not None:
+        data_mean = np.mean(data)
+        data_std = np.std(data)
+        plt_min = data_mean - stdevs * data_std
+        plt_max = data_mean + stdevs * data_std
+    else:
+        plt_min = np.min(data)
+        plt_max = np.max(data)
+
     im = axis.imshow(data, interpolation='none',
-                     vmin=data_mean - stdevs * data_std,
-                     vmax=data_mean + stdevs * data_std,
+                     vmin=plt_min,
+                     vmax=plt_max,
                      origin=origin,
                      **kwargs)
-    axis.set_aspect('auto')
 
     return im
 
 
-def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
-                         x_size=1, y_size=1, num_ticks=4, cbar_label=None,
-                         tick_font_size=14, **kwargs):
+def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
+                         cbar_label=None, tick_font_size=14, **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
 
     Parameters
     ----------
-    fig : matplotlib.figure object
-        Handle to figure
     axis : matplotlib.axis object
         Axis to plot this image onto
     img : 2D numpy array with real values
         Data for the image plot
-    show_xy_ticks : bool, Optional, default = True
+    show_xy_ticks : bool, Optional, default = None, shown unedited
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
@@ -405,11 +409,11 @@ def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
         handle to color bar
     """
     if 'clim' not in kwargs:
-        im_handle = plot_map(axis, img, aspect='auto', **kwargs)
+        im_handle = plot_map(axis, img, **kwargs)
     else:
         im_handle = axis.imshow(img, origin='lower', **kwargs)
 
-    if show_xy_ticks:
+    if show_xy_ticks is True:
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         axis.set_xticks(x_ticks)
@@ -417,12 +421,19 @@ def single_img_cbar_plot(fig, axis, img, show_xy_ticks=True, show_cbar=True,
         axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
         axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
         set_tick_font_size(axis, tick_font_size)
-    else:
+    elif show_xy_ticks is False:
         axis.set_xticks([])
         axis.set_yticks([])
+    else:
+        set_tick_font_size(axis, tick_font_size)
 
     if show_cbar:
-        cbar = fig.colorbar(im_handle, ax=axis)
+        # cbar = fig.colorbar(im_handle, ax=axis)
+        # divider = make_axes_locatable(axis)
+        # cax = divider.append_axes('right', size='5%', pad=0.05)
+        # cbar = plt.colorbar(im_handle, cax=cax)
+        cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
+                            fraction=0.046, pad=0.04, use_gridspec=True)
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
         """
@@ -693,7 +704,8 @@ def plotScree(scree, title='Scree'):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
-                   title='Component', heading='Map Stack', colorbar_label = '', fig_mult=(4, 4), pad_mult=(0.1, 0.07), **kwargs):
+                   title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
+                   **kwargs):
     """
     Plots the provided stack of maps
 
@@ -1440,3 +1452,168 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
             ax.get_xaxis().set_visible(False)
 
     return fig_clean, axes_clean
+
+
+def save_fig_filebox_button(fig, filename):
+    """
+    Create ipython widgets to allow the user to save a figure to the
+    specified file.
+
+    Parameters
+    ----------
+    fig : matplotlib.Figure
+        The figure to be saved.
+    filename : str
+        The filename the figure should be saved to
+
+    Returns
+    -------
+    widget_box : ipywidgets.HBox
+        Widget box holding the text entry and save button
+
+    """
+    filename = os.path.abspath(filename)
+    file_dir, filename = os.path.split(filename)
+
+    name_box = widgets.Text(value=filename,
+                            placeholder='Type something',
+                            description='Output Filename:',
+                            disabled=False,
+                            layout={'width': '50%'})
+    save_button = widgets.Button(description='Save figure')
+
+    def _save_fig():
+        save_path = os.path.join(file_dir, filename)
+        fig.save_fig(save_path, dpi='figure')
+        print('Figure saved to "{}".'.format(save_path))
+
+    widget_box = widgets.HBox([name_box, save_button])
+
+    save_button.on_click(_save_fig)
+
+    return widget_box
+
+
+def export_fig_data(fig, filename, include_images=False):
+    """
+    Export the data of all plots in the figure `fig` to a plain text file.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        The figure containing the data to be exported
+    filename : str
+        The filename of the output text file
+    include_images : bool
+        Should images in the figure also be exported
+
+    Returns
+    -------
+
+    """
+    # Get the data from the figure
+    axes = fig.get_axes()
+    axes_dict = dict()
+    for ax in axes:
+        ax_dict = dict()
+
+        ims = ax.get_images()
+        if len(ims) != 0 and include_images:
+            im_dict = dict()
+
+            for im in ims:
+                # Image data
+                im_lab = im.get_label()
+                im_dict[im_lab] = im.get_array().data
+
+                # X-Axis
+                x_ax = ax.get_xaxis()
+                x_lab = x_ax.label.get_label()
+                if x_lab == '':
+                    x_lab = 'X'
+
+                im_dict[im_lab + x_lab] = x_ax.get_data_interval()
+
+                # Y-Axis
+                y_ax = ax.get_yaxis()
+                y_lab = y_ax.label.get_label()
+                if y_lab == '':
+                    y_lab = 'Y'
+
+                im_dict[im_lab + y_lab] = y_ax.get_data_interval()
+
+            ax_dict['Images'] = im_dict
+
+        lines = ax.get_lines()
+        if len(lines) != 0:
+            line_dict = dict()
+
+            xlab = ax.get_xlabel()
+            ylab = ax.get_ylabel()
+
+            if xlab == '':
+                xlab = 'X Data'
+            if ylab == '':
+                ylab = 'Y Data'
+
+            for line in lines:
+                line_dict[line.get_label()] = {xlab: line.get_xdata(),
+                                               ylab: line.get_ydata()}
+
+            ax_dict['Lines'] = line_dict
+
+        if ax_dict != dict():
+            axes_dict[ax.get_title()] = ax_dict
+
+    '''
+    Now that we have the data from the figure, we need to write it to file.
+    '''
+
+    filename = os.path.abspath(filename)
+    basename, ext = os.path.splitext(filename)
+    folder, _ = os.path.split(basename)
+
+    spacer = r'**********************************************\n'
+
+    data_file = open(filename, 'w')
+
+    data_file.write(fig.get_label() + '\n')
+    data_file.write('\n')
+
+    for ax_lab, ax in axes_dict.items():
+        data_file.write('Axis: {} \n'.format(ax_lab))
+
+        for im_lab, im in ax['Images'].items():
+            data_file.write('Image: {} \n'.format(im_lab))
+            data_file.write('\n')
+            im_data = im.pop('data')
+            for row in im_data:
+                row.tofile(data_file, sep='\t', format='%s')
+                data_file.write('\n')
+            data_file.write('\n')
+
+            for key, val in im.items():
+                data_file.write(key + '\n')
+
+                val.tofile(data_file, sep='\n', format='%s')
+                data_file.write('\n')
+
+            data_file.write(spacer)
+
+        for line_lab, line_dict in ax['Lines'].items():
+            data_file.write('Line: {} \n'.format(line_lab))
+            data_file.write('\n')
+
+            dim1, dim2 = line_dict.keys()
+
+            data_file.write('{} \t {} \n'.format(dim1, dim2))
+            for val1, val2 in zip(line_dict[dim1], line_dict[dim2]):
+                data_file.write('{} \t {} \n'.format(str(val1), str(val2)))
+
+            data_file.write(spacer)
+
+        data_file.write(spacer)
+
+    data_file.close()
+
+    return

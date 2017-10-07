@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-==========
+=========================
 Pycroscopy  |statusimage|
-==========
+=========================
 
 .. |statusimage| image:: https://travis-ci.org/pycroscopy/pycroscopy.svg?branch=master
 
@@ -83,24 +83,26 @@ As we see it, there are a few  opportunities in microscopy / imaging and materia
 How?
 -----------------
 * pycroscopy uses an **instrument agnostic data structure** that facilitates the storage of data, regardless
- of dimensionality (conventional 2D images to 9D multispectral SPM datasets) or instrument of origin (AFMs,
- STMs, STEMs, TOF SIMS, and many more). This general defenition of data allows us to write a single and
- generalized version of analysis and processing functions that can be applied to any kind of data.
+  of dimensionality (conventional 2D images to 9D multispectral SPM datasets) or instrument of origin (AFMs,
+  STMs, STEMs, TOF SIMS, and many more). This general defenition of data allows us to write a single and
+  generalized version of analysis and processing functions that can be applied to any kind of data.
 * The data is stored in `heirarchical
-data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
-files which:
-   * Allow easy and open acceess to data from any programming language.
-   * Accomodate datasets ranging from kilobytes (kB) to petabytes (pB)
-   * Are readily compaible with supercomputers and support parallel I/O
-   * Allows storage of relevant parameters along with data for improved traceability and reproducability of
-   analysis
+  data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
+  files which:
+
+  * Allow easy and open acceess to data from any programming language.
+  * Accomodate datasets ranging from kilobytes (kB) to petabytes (pB)
+  * Are readily compaible with supercomputers and support parallel I/O
+  * Allows storage of relevant parameters along with data for improved traceability and reproducability of
+    analysis
 * Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
-that are interactive and portable web applications containing, text, images, code / scripts, and text-based
-and graphical results
+  that are interactive and portable web applications containing, text, images, code / scripts, and text-based
+  and graphical results
 * Once a user converts their microscope's data format into a HDF5 format, by simply extending some of the
-classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
-   * (On a High Performance Computing Platform if she/he is a CNMS user!   Sign up
-`here <https://www.ornl.gov/facility/cnms/subpage/user-program-overview>`_!)
+  classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
+
+  * (On a High Performance Computing Platform if she/he is a CNMS user!   Sign up
+    `here <https://www.ornl.gov/facility/cnms/subpage/user-program-overview>`_!)
 
 
 Acknowledgements

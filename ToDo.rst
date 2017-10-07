@@ -2,18 +2,17 @@
 
 Roadmap / Milestones
 --------------------
-1. Sep 2017 end - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-2. Oct 2017 mid - Multi-node compute capability
+1. Mid Sep - better BE notebook + visualization for users
+2. Mid of Oct - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+3. End of Oct - Multi-node compute capability
 
 New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* A new class (pycro_data?) for simplifying the many data slicing, referencing operations on **main** datasets.
-    * Essentially, the goal is to turn the **main** datasets into powerful python objects that obviate the need for users to dig into ancillary datasets to slice, understand the datasets. Pycroscopy chooses to use a rather generalized representation of data at the cost of simplictiy. This object should bring back the simplicity of accessing the data. 
-    * In the process of enabling greater insight into a dataset, this class would read and analyze ancillary datasets once and reuse this knowledge when the user requests another operation (that most likely also requires references to ancillary datasets etc. anyway).
-    * Nearly all the functionality has been implemented in hdf_utils and some in io_utils. This class can simply reuse these general functions.
-* Generic visualizer in plot.lly / dash? that can use the pycrodata class
+* Finish PycroDataset and test the many data slicing, referencing operations on **main** datasets. 
+   * Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
+* Generic visualizer in plot.lly / dash? that can use the PycroDataset class
    * One suggestion is 2 (or more panes). 
          * Left hand side for positions
                * 1D lines or 2D images
@@ -22,7 +21,10 @@ Core development
          * Right hand side for spectral
                * 1D spectra or 2D images. 
                * Users will be asked to slice N-1 or N-2 spectral dimensions
-* Simplify and demystify analyis / optimize. Use parallel_compute (joblib instead of multiprocessing)
+* (re)Write at least one existing processing function as a class. 
+    * Josh can redo fft filtering
+    * Rama can redo gIV bayesian inference
+* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
 
@@ -54,53 +56,35 @@ Short tutorials on how to use pycroscopy
 
 Longer examples (via specific scientific usecases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Done:
-
-* Data formatting in pycroscopy
-* How to write a Translator
-* How to write (back) to H5
-* Spectral Unmixing with pycroscopy
-* Basic introduction to loading data in pycroscopy
-* Handling multidimensional (6D) datasets
-* Visualizing data (interactively using widgets) (needs some tiny automation in the end)
-* How to write your write your own parallel computing function using the process module
-
-Pending:
-
-* How to write your own analysis class
+* How to write your write your own parallel computing function using the process module - add more documentation
+* How to use the PycroDataset object
 * A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
+* How to write your own analysis class based on the (to-be simplified) Model class
 * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
 1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
 2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
-3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
+3. Done - After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
 4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
 5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 
 
 Documentation
 -------------
 *	Switch from static examples to dynamic jupyter notebook like examples:
-   * http://scikit-image.org/docs/dev/auto_examples/ 
-   * http://scikit-learn.org/stable/auto_examples/index.html 
-   * more complicated analyses -  http://nipy.org/dipy/examples_index.html
-   * Done for existing documentation
    * Work will be needed after examples are done
 *	Include examples in documentation
+* Links to references for all functions and methods used in our workflows.
 
 Formatting changes
 ------------------
 *	Fix remaining PEP8 problems
 *	Ensure code and documentation is standardized
-*	Switch to standard version formatting
 *	Classes and major Functions should check to see if the results already exist
 
 Notebooks
 ---------
-*	Direct downloading of notebooks (ipynb an html)
-  * nbviewer?
-  * Host somewhere other than github?
 *	Investigate using JupyterLab
 
 Testing
