@@ -11,6 +11,7 @@ import psutil
 import scipy
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
+from ..io.pycro_data import PycroDataset
 from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem, recommendCores
@@ -44,7 +45,11 @@ class Model(object):
         requirement after testing the basic components.
 
         """
-        # Checking if dataset is "Main"
+
+        if not isinstance(h5_main, PycroDataset):
+            h5_main = PycroDataset(h5_main)
+
+        # Checking if dataset has the proper dimensions for the model to run.
         if self._is_legal(h5_main, variables):
             self.h5_main = h5_main
             self.hdf = ioHDF5(self.h5_main.file)
@@ -104,7 +109,7 @@ class Model(object):
 
         Parameters
         ----
-        h5_main : h5py.Dataset instance
+        h5_main : PycroDataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
 
@@ -117,21 +122,7 @@ class Model(object):
             Whether or not this dataset satisfies the necessary conditions for analysis
 
         """
-
-        # Check if h5_main is a "Main" dataset
-        cond_A = checkIfMain(h5_main)
-
-        # Check if variables are in the attributes of spectroscopic indices
-        h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        # assert isinstance(h5_spec_vals, list)
-        cond_B = set(variables).issubset(set(h5_spec_vals.attrs.keys()))
-
-        if cond_A and cond_B:
-            legal = True
-        else:
-            legal = False
-
-        return legal
+        return np.all(np.isin(variables, h5_main.spec_dim_labels))
 
     def _get_data_chunk(self, verbose=False):
         """
