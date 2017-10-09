@@ -983,8 +983,6 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
-    from .pycro_data import PycroDataset
-
     h5_group = source_dset.parent
     try:
         # Check if the dataset already exists
@@ -1005,7 +1003,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
 
-    return PycroDataset(h5_new_dset)
+    return h5_new_dset
 
 
 def copyAttributes(source, dest, skip_refs=True):
