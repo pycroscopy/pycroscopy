@@ -74,11 +74,7 @@ class PycroDataset(h5py.Dataset):
 
         # User accessible properties
         # The required Position and Spectroscopic datasets
-        # self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
-        # self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
-        # self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
-        # self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
-        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Values']]
         self.h5_spec_inds = self.file[self.attrs['Spectroscopic_Indices']]
         self.h5_pos_vals = self.file[self.attrs['Position_Values']]
         self.h5_pos_inds = self.file[self.attrs['Position_Indices']]
