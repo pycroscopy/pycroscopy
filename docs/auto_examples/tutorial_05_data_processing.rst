@@ -82,6 +82,7 @@ Every process class consists of the same basic functions:
 5. _write_results_chunk - writes the computed results back to the file
 
 Note that:
+
 * Only the code specific to this process needs to be implemented. However, the generic portions common to most
   Processes will be handled by the Process class.
 * The other functions such as the sho_function, sho_fast_guess function are all specific to this process. These have
@@ -94,8 +95,8 @@ Note that:
 
 
 
-.. code-block:: python
 
+.. code-block:: python
 
 
     class ShoGuess(px.Process):
@@ -326,7 +327,7 @@ Plot the Amplitude and Phase of the gaussian versus the raw data.
 
 
 
-**Total running time of the script:** ( 0 minutes  54.344 seconds)
+**Total running time of the script:** ( 0 minutes  45.265 seconds)
 
 
 

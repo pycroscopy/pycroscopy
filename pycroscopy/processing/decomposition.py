@@ -34,7 +34,8 @@ class Decomposition(object):
             Name of the sklearn.cluster estimator
         n_components : (Optional) unsigned int
             Number of components for decomposition
-        *args and **kwargs : arguments to be passed to the estimator
+        args and kwargs : arguments to be passed to the estimator
+
         """
 
         if n_components is not None:
@@ -103,6 +104,7 @@ class Decomposition(object):
         Returns
         ------
         None
+
         """
         if data is None:
             if self.method_name == 'NMF':

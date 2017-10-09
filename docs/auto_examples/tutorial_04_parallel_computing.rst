@@ -152,7 +152,8 @@ Visualize the spectra at each of the locations using the interactive jupyter wid
 
     No position datasets found as attributes of /Measurement_000/Channel_000/Spectroscopic_Values
     A Jupyter Widget
-    [2K    [2K    <matplotlib.figure.Figure at 0x7fbefcf096a0>
+    A Jupyter Widget
+    [2K    [2K
 
 
 The operation
@@ -379,7 +380,7 @@ a simple for loop.
 
  Out::
 
-    Serial computation took 40.08  seconds
+    Serial computation took 26.04  seconds
 
 
 2. Parallel Computation
@@ -424,7 +425,7 @@ pycroscopy. The below parallel computation is reduced to a single line with this
 
  Out::
 
-    Parallel computation took 25.78  seconds
+    Parallel computation took 15.37  seconds
 
 
 Compare the results
@@ -503,7 +504,7 @@ Please see another example on how to write a Process class
 
 
 
-**Total running time of the script:** ( 1 minutes  17.787 seconds)
+**Total running time of the script:** ( 0 minutes  48.709 seconds)
 
 
 

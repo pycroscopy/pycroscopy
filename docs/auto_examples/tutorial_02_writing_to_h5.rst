@@ -61,17 +61,21 @@ Why bother with Microdata and ioHDF5?
 =====================================
 
 * These classes simplify the process of writing to H5 files considerably. The programmer only needs to construct
-the tree structure with simple python objects such as dictionaries for parameters, numpy datasets for storing data, etc.
+  the tree structure with simple python objects such as dictionaries for parameters, numpy datasets for storing data, etc.
 * It is easy to corrupt H5 files. ioHDF5 uses defensive programming strategies to solve these problems.
 
 Translation can be challenging in many cases:
+
 * It may not be possible to read the entire data from the raw data file to memory as we did in the tutorial on
-Translation
+  Translation
+
     * ioHDF5 allows the general tree structure and the attributes to be written before the data is populated.
+
 * Sometimes, the raw data files do not come with sufficient parameters that describe the size and shape of the data.
-This makes it challenging to prepare the H5 file.
+  This makes it challenging to prepare the H5 file.
+
     * ioHDF5 allows dataets to be dataFile I/O is expensive and we don't want to read the same raw data files multiple
-    times
+      times
 
 
 
@@ -311,18 +315,22 @@ Here, we will refer to the dataset on which K-means was performed as the **`sour
 
 Identifying the ancillary datasets:
 ===================================
+
 * `centroids`:
+
     * Spectroscopic Indices and Values: Since the `source` dataset and the `centroids` datasets both contain the
-same spectral information, the `centroids` dataset can simply reuse the ancillary spectroscopic datasets used by
-the `source` dataset.
+      same spectral information, the `centroids` dataset can simply reuse the ancillary spectroscopic datasets used by
+      the `source` dataset.
     * Position Indices and Values: The `centroids` dataset has `k` instances while the `source` dataset has `P`,
-so we need to create a new position indicies and a new position values dataset for `centroids`
+      so we need to create a new position indicies and a new position values dataset for `centroids`
+
 * `labels`:
+
     * Spectroscopic Indices and Values: Unlike the `source` dataset that has spectra of length `S`, this dataset
-only has a single value (cluster index) at each location. Consequently, `labels` needs two new ancilary datasets
+      only has a single value (cluster index) at each location. Consequently, `labels` needs two new ancilary datasets
     * Position Indices and Values: Since both `source` and `labels` have the same number of positions and the
-positions mean the same quantities for both datasets, we can simply reuse the ancillary dataset from `source`
-for `labels`
+      positions mean the same quantities for both datasets, we can simply reuse the ancillary dataset from `source`
+      for `labels`
 
 
 
@@ -331,10 +339,11 @@ Reshape the matricies to the correct dimensions
 
 1. Since `labels` is a main dataset, it needs to be two dimensional matrix of size `P x 1`
 2. The `Spectroscopic` ancillary datasets for `labels` need to be of the form `dimension x points`. Since the
-spectroscopic axis of `labels` is only one deep, `labels` has only one spectroscopic dimension which itself has
-just one point. Thus the `Spectroscopic` matrix should be of size `1 x 1`
+   spectroscopic axis of `labels` is only one deep, `labels` has only one spectroscopic dimension which itself has
+   just one point. Thus the `Spectroscopic` matrix should be of size `1 x 1`
 3. The `centroids` matrix is already of the form: `position x spectra`, so it does not need any reshaping
 4. The `Position` ancillary datasets for `centroids` need to be of the form `points x dimensions` as well.
+
 In this case, `centroids` has `k` positions all in one dimension. Thus the matrix needs to be reshaped to `k x 1`
 
 
@@ -473,22 +482,22 @@ operation being performed on the same dataset. The index will then be updated ac
     Measurement_000/Channel_000Raw_Data-Cluster_/Label_Spectroscopic_Values
 
     Writing the following attrbutes to the group:
-    num_samples : 10000
-    n_clusters : 9
-    max_iter : 300
-    copy_x : True
-    cluster_algorithm : KMeans
-    machine_id : challtdow-ThinkPad-T530
-    precompute_distances : auto
-    tol : 0.0001
-    random_state : None
-    init : k-means++
-    n_init : 10
-    timestamp : 2017_09_08-09_44_47
+    timestamp : 2017_10_06-10_17_33
     n_jobs : 1
-    num_clusters : 9
+    n_clusters : 9
+    machine_id : challtdow-ThinkPad-T530
     algorithm : auto
     verbose : 0
+    precompute_distances : auto
+    num_samples : 10000
+    max_iter : 300
+    copy_x : True
+    n_init : 10
+    init : k-means++
+    num_clusters : 9
+    tol : 0.0001
+    cluster_algorithm : KMeans
+    random_state : None
 
 
 Write to H5 and access the written objects
@@ -519,35 +528,35 @@ Once the tree is prepared (previous cell), ioHDF5 will handle all the file writi
  Out::
 
     Created group /Measurement_000/Channel_000/Raw_Data-Cluster_000
-    Writing attribute: num_samples with value: 10000
-    Writing attribute: n_clusters with value: 9
-    Writing attribute: max_iter with value: 300
-    Writing attribute: copy_x with value: True
-    Writing attribute: cluster_algorithm with value: KMeans
-    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
-    Writing attribute: precompute_distances with value: auto
-    Writing attribute: tol with value: 0.0001
-    Writing attribute: init with value: k-means++
-    Writing attribute: n_init with value: 10
-    Writing attribute: timestamp with value: 2017_09_08-09_44_47
+    Writing attribute: timestamp with value: 2017_10_06-10_17_33
     Writing attribute: n_jobs with value: 1
-    Writing attribute: num_clusters with value: 9
+    Writing attribute: n_clusters with value: 9
+    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
     Writing attribute: algorithm with value: auto
     Writing attribute: verbose with value: 0
+    Writing attribute: precompute_distances with value: auto
+    Writing attribute: num_samples with value: 10000
+    Writing attribute: max_iter with value: 300
+    Writing attribute: copy_x with value: True
+    Writing attribute: n_init with value: 10
+    Writing attribute: init with value: k-means++
+    Writing attribute: num_clusters with value: 9
+    Writing attribute: tol with value: 0.0001
+    Writing attribute: cluster_algorithm with value: KMeans
     Wrote attributes to group: Raw_Data-Cluster_000 
 
     Created Dataset /Measurement_000/Channel_000/Raw_Data-Cluster_000/Labels
-    Writing attribute: units with value: a. u.
-    Wrote Attributes of Dataset Labels 
-
     Writing attribute: quantity with value: Cluster ID
     Wrote Attributes of Dataset Labels 
 
+    Writing attribute: units with value: a. u.
+    Wrote Attributes of Dataset Labels 
+
     Created Dataset /Measurement_000/Channel_000/Raw_Data-Cluster_000/Mean_Response
-    Writing attribute: units with value: nA
+    Writing attribute: quantity with value: Current
     Wrote Attributes of Dataset Mean_Response 
 
-    Writing attribute: quantity with value: Current
+    Writing attribute: units with value: nA
     Wrote Attributes of Dataset Mean_Response 
 
     Created Dataset /Measurement_000/Channel_000/Raw_Data-Cluster_000/Cluster_Indices
@@ -651,11 +660,12 @@ rather easy by a few pycroscopy functions.
 
 Why bother with all this?
 =========================
+
 * Though long, this simple file writing procedure needs to be written once for a given data analysis / processing tool
 * The general nature of this Clustering algorithm facilitates the application to several other datasets
-regardless of their origin
+  regardless of their origin
 * Once the data is written in the pycroscopy format, it is possible to apply other data analytics operations
-to the datasets with a single line
+  to the datasets with a single line
 * Generalized versions of visualization algorithms can be written to visualize clustering results quickly.
 
 Here is an example of very quick visualization with effectively just a single parameter - the group containing
@@ -696,7 +706,7 @@ Deletes the temporary files created in the example
 
 
 
-**Total running time of the script:** ( 0 minutes  43.070 seconds)
+**Total running time of the script:** ( 0 minutes  42.728 seconds)
 
 
 

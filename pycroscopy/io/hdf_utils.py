@@ -6,7 +6,6 @@ Created on Tue Nov  3 21:14:25 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
 import sys
 import h5py
 from warnings import warn
@@ -59,6 +58,8 @@ def get_all_main(parent, verbose=False):
         The datasets found in the file that meet the 'Main Data' criteria.
 
     """
+    from .pycro_data import PycroDataset
+
     main_list = list()
 
     def __check(name, obj):
@@ -71,7 +72,7 @@ def get_all_main(parent, verbose=False):
             if ismain:
                 if verbose:
                     print(name, 'is a `Main` dataset.')
-                main_list.append(obj)
+                main_list.append(PycroDataset(obj))
 
     if verbose:
         print('Checking the group {} for `Main` datasets.'.format(parent.name))
@@ -97,12 +98,19 @@ def getDataSet(h5_parent, data_name):
     -------
     list of h5py.Reference of the dataset.
     """
+    from .pycro_data import PycroDataset
+
     if isinstance(h5_parent, h5py.File) or isinstance(h5_parent, h5py.Group):
         data_list = []
 
         def findData(name, obj):
             if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
-                data_list.append(obj)
+                try:
+                    data_list.append(PycroDataset(obj))
+                except TypeError:
+                    data_list.append(obj)
+                except:
+                    raise
 
         h5_parent.visititems(findData)
         return data_list
@@ -227,11 +235,17 @@ def getH5DsetRefs(ds_names, h5_refs):
     aux_dset : List of HDF5 dataset references
         Corresponding references
     """
+    from .pycro_data import PycroDataset
     aux_dset = []
     for ds_name in ds_names:
         for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
-                aux_dset.append(dset)
+                try:
+                    aux_dset.append(PycroDataset(dset))
+                except TypeError:
+                    aux_dset.append(dset)
+                except:
+                    raise
     return aux_dset
 
 
@@ -264,12 +278,19 @@ def findDataset(h5_group, ds_name):
     """
     Uses visit() to find all datasets with the desired name
     """
+    from .pycro_data import PycroDataset
+
     # print 'Finding all instances of', ds_name
     ds = []
 
     def __find_name(name, obj):
         if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
-            ds.append([name, obj])
+            try:
+                ds.append([name, PycroDataset(obj)])
+            except TypeError:
+                ds.append([name, obj])
+            except:
+                raise
         return
 
     h5_group.visititems(__find_name)
@@ -658,7 +679,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         ds_pos = h5_pos[()]
         pos_labs = get_attr(h5_pos, 'labels')
     elif isinstance(h5_pos, np.ndarray):
-        ds_pos = h5_pos
+        ds_pos = np.atleast_2d(h5_pos)
         pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     else:
         raise TypeError('Position Indices must be either h5py.Dataset or None')
@@ -962,6 +983,8 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
+    from .pycro_data import PycroDataset
+
     h5_group = source_dset.parent
     try:
         # Check if the dataset already exists
@@ -982,7 +1005,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
 
-    return h5_new_dset
+    return PycroDataset(h5_new_dset)
 
 
 def copyAttributes(source, dest, skip_refs=True):
@@ -1628,6 +1651,8 @@ def get_source_dataset(h5_group):
     h5_source : h5py.Dataset
 
     """
+    from .pycro_data import PycroDataset
+
     h5_parent_group = h5_group.parent
     h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
-    return h5_source
+    return PycroDataset(h5_source)

@@ -25,6 +25,9 @@ from .io_hdf5 import ioHDF5
 from .io_utils import *
 from .microdata import MicroDataset, MicroDataGroup
 from .translators import *
+from . import pycro_data
+from .pycro_data import PycroDataset
 
-__all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'be_hdf_utils', 'hdf_utils', 'io_utils', 'microdata']
+__all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'PycroDataset','be_hdf_utils', 'hdf_utils', 'io_utils',
+           'microdata']
 __all__ += translators.__all__
