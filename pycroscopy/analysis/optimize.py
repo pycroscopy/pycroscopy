@@ -8,6 +8,7 @@ from warnings import warn
 import numpy as np
 import sys
 import multiprocessing as mp
+import joblib
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 import scipy
@@ -96,39 +97,30 @@ class Optimize(object):
         self.options = options
         gm = GuessMethods()
         if strategy in gm.methods:
-            # func = gm.__getattribute__(strategy)(**options)
-            results = list()
-            if self._parallel:
+            func = gm.__getattribute__(strategy)#(**options)
                 # start pool of workers
+            if processors > 1:
                 print('Computing Jobs In parallel ... launching %i kernels...' % processors)
-                pool = mp.Pool(processors)
-                # Vectorize tasks
-                tasks = [(vector, self) for vector in self.data]
-                chunk = int(self.data.shape[0] / processors)
-                # Map them across processors
-                jobs = pool.imap(targetFuncGuess, tasks, chunksize=chunk)
-                # get Results from different processes
-                results = [j for j in jobs]
-                print('Extracted Results...')
-                # Finished reading the entire data set
-                print('closing %i kernels...' % processors)
-                pool.close()
-                return results
-
             else:
                 print("Computing Guesses In Serial ...")
-                results = [targetFuncGuess((vector, self)) for vector in self.data]
-                return results
+
+            values = [joblib.delayed(func)(x, **options) for x in self.data]
+            results = joblib.Parallel(n_jobs=processors)(values)
+
+            return results
         else:
             warn('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' % strategy)
 
-    def _initiateSolverAndObjFunc(self):
-        if self.solver_type in scipy.optimize.__dict__.keys():
-            solver = scipy.optimize.__dict__[self.solver_type]
-        if self.obj_func is None:
-            fm = Fit_Methods()
-            func = fm.__getattribute__(self.obj_func_name)(self.obj_func_xvals)
-        return solver, self.solver_options, func
+    def _initiateSolverAndObjFunc(self, obj_func):
+        fm = Fit_Methods()
+
+        if obj_func['class'] is None:
+            self.obj_func = obj_func['obj_func']
+        else:
+            self.obj_func_name = obj_func.pop('obj_func')
+            self.obj_func = fm.__getattribute__(self.obj_func_name)
+            self.obj_func_class = obj_func.pop('class')
+            self.obj_func_args = obj_func.values()
 
     def computeFit(self, processors=1, solver_type='least_squares', solver_options={},
                    obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
@@ -158,32 +150,40 @@ class Optimize(object):
         if self.solver_type not in scipy.optimize.__dict__.keys():
             warn('Solver %s does not exist!. For additional info see scipy.optimize' % solver_type)
             sys.exit()
-        if obj_func['class'] is None:
-            self.obj_func = obj_func['obj_func']
-        else:
-            self.obj_func_xvals = obj_func['xvals']
-            self.obj_func = None
-            self.obj_func_name = obj_func['obj_func']
-            self.obj_func_class = obj_func['class']
 
-        if self._parallel:
-            # start pool of workers
+        self._initiateSolverAndObjFunc(obj_func)
+
+        if processors > 1:
             print('Computing Jobs In parallel ... launching %i kernels...' % processors)
-            pool = mp.Pool(processors)
-            # Vectorize tasks
-            tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
-            chunk = int(self.data.shape[0] / processors)
-            # Map them across processors
-            jobs = pool.imap(targetFuncFit, tasks, chunksize=chunk)
-            # get Results from different processes
-            results = [j for j in jobs]
-            # Finished reading the entire data set
-            print('closing %i kernels...' % processors)
-            pool.close()
-            return results
-
         else:
-            print("Computing Fits In Serial ...")
-            tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
-            results = [targetFuncFit(task) for task in tasks]
-            return results
+            print("Computing Guesses In Serial ...")
+
+        solver = scipy.optimize.__dict__[self.solver_type]
+        values = [joblib.delayed(solver)(self.obj_func, guess,
+                                         args=[vector, *self.obj_func_args],
+                                         **solver_options) for vector, guess in zip(self.data, self.guess)]
+        results = joblib.Parallel(n_jobs=processors)(values)
+
+        return results
+
+        # if self._parallel:
+        #     # start pool of workers
+        #     print('Computing Jobs In parallel ... launching %i kernels...' % processors)
+        #     pool = mp.Pool(processors)
+        #     # Vectorize tasks
+        #     tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
+        #     chunk = int(self.data.shape[0] / processors)
+        #     # Map them across processors
+        #     jobs = pool.imap(targetFuncFit, tasks, chunksize=chunk)
+        #     # get Results from different processes
+        #     results = [j for j in jobs]
+        #     # Finished reading the entire data set
+        #     print('closing %i kernels...' % processors)
+        #     pool.close()
+        #     return results
+        #
+        # else:
+        #     print("Computing Fits In Serial ...")
+        #     tasks = [(vector, guess, self) for vector, guess in zip(self.data, self.guess)]
+        #     results = [targetFuncFit(task) for task in tasks]
+        #     return results

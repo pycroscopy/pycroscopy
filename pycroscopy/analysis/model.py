@@ -350,8 +350,9 @@ class Model(object):
         self._get_guess_chunk()
         self._get_data_chunk()
         results = list()
+        obj_func_name = obj_func['obj_func']
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
-        legit_obj_func = obj_func['obj_func'] in Fit_Methods().methods
+        legit_obj_func = obj_func_name in Fit_Methods().methods
         if legit_solver and legit_obj_func:
             print("Using solver %s and objective function %s to fit your data\n" % (solver_type, obj_func['obj_func']))
             while self.data is not None:
@@ -359,7 +360,7 @@ class Model(object):
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
                                       obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
-                results.append(self._reformat_results(temp, obj_func['obj_func']))
+                results.append(self._reformat_results(temp, obj_func_name))
                 self._get_guess_chunk()
                 self._get_data_chunk()
 
