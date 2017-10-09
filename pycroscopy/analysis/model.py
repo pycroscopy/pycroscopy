@@ -12,7 +12,6 @@ import scipy
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..io.pycro_data import PycroDataset
-from ..io.hdf_utils import checkIfMain, getAuxData
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem, recommendCores
 from .optimize import Optimize
