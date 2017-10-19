@@ -117,9 +117,9 @@ class Optimize(object):
         if obj_func['class'] is None:
             self.obj_func = obj_func['obj_func']
         else:
-            self.obj_func_name = obj_func.pop('obj_func')
+            self.obj_func_name = obj_func.get('obj_func')
             self.obj_func = fm.__getattribute__(self.obj_func_name)
-            self.obj_func_class = obj_func.pop('class')
+            self.obj_func_class = obj_func.get('class')
             self.obj_func_args = obj_func.values()
 
     def computeFit(self, processors=1, solver_type='least_squares', solver_options={},
