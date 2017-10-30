@@ -21,7 +21,7 @@ from ..io.hdf_utils import getH5DsetRefs, getAuxData, link_as_main, copyAttribut
 from ..viz.plot_utils import set_tick_font_size
 
 
-def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
+def do_bayesian_inference(bias, i_meas, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
                           num_samples=2E3, show_plots=False, econ=False):
     """
     this function accepts a Voltage vector and current vector
@@ -31,9 +31,9 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
 
     Parameters
     ----------
-    V : 1D array or list
+    bias : 1D array or list
         voltage values
-    IV_point : 1D array or list
+    i_meas : 1D array or list
         current values, should be in nA
     freq : float
         frequency of applied waveform
@@ -76,25 +76,25 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
 
     # Organize, set up the problem
     t_max = 1. / freq
-    t = np.linspace(0, t_max, len(V))
+    t = np.linspace(0, t_max, len(bias))
     dt = t[2] - t[1]
-    dv = np.diff(V) / dt
+    dv = np.diff(bias) / dt
     dv = np.append(dv, dv[-1])
-    max_volts = max(V)
+    max_volts = max(bias)
     # num_x_steps = int(round(2 * round(max_volts / dx, 1) + 1, 0))
     x = np.linspace(-max_volts, max_volts, num_x_steps)
     dx = x[1] - x[0]
     # M = len(x)
-    num_volt_points = len(V)
+    num_volt_points = len(bias)
 
     # Build A
     A = np.zeros(shape=(num_volt_points, num_x_steps + 1))
     for j in range(num_volt_points):
-        ix = int(round(np.floor((V[j] + max_volts) / dx) + 1))
+        ix = int(round(np.floor((bias[j] + max_volts) / dx) + 1))
         ix = min(ix, len(x)-1)
         ix = max(ix, 1)
-        A[j, ix] = V[j] * (V[j] - x[ix - 1]) / (x[ix] - x[ix - 1])
-        A[j, ix - 1] = V[j] * (1. - (V[j] - x[ix - 1]) / (x[ix] - x[ix - 1]))
+        A[j, ix] = bias[j] * (bias[j] - x[ix - 1]) / (x[ix] - x[ix - 1])
+        A[j, ix - 1] = bias[j] * (1. - (bias[j] - x[ix - 1]) / (x[ix] - x[ix - 1]))
 
     A[:, num_x_steps] = dv
 
@@ -119,7 +119,7 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
     P0[num_x_steps, num_x_steps] = 1. / sigmaC ** 2
 
     Sigma = np.linalg.inv(np.dot(A.T, np.dot(O, A)) + P0)
-    m = np.dot(Sigma, (np.dot(A.T, np.dot(O, IV_point)) + np.dot(P0, m0)))
+    m = np.dot(Sigma, (np.dot(A.T, np.dot(O, i_meas)) + np.dot(P0, m0)))
 
     # Reconstructed current
     Irec = np.dot(A, m)  # This includes the capacitance
@@ -156,15 +156,15 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
         plt.xlim((-max_volts, max_volts))
 
         plt.figure(102)
-        plt.plot(V, IV_point)
+        plt.plot(bias, i_meas)
         plt.plot(x, x / mR)
         plt.xlabel('Voltage')
         plt.ylabel('Current')
         plt.legend(('measured current', 'reconstructed I (no C)'), loc='best')
 
         plt.figure(103)
-        plt.plot(V, Irec)
-        plt.plot(V, IV_point)
+        plt.plot(bias, Irec)
+        plt.plot(bias, i_meas)
         plt.legend(('I$_{rec}$', 'I$_{true}$'), loc='best')
 
         plt.figure(104)
@@ -178,6 +178,105 @@ def do_bayesian_inference(V, IV_point, freq, num_x_steps=251, gam=0.03, e=10.0, 
         print("The value of the capacitance is ", str(round(m[-1] * 1E3, 2)) + "pF")
 
     return results_dict
+
+
+def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_steps=500, show_plots=False, **kwargs):
+    """
+    Performs Bayesian Inference on a single I-V curve.
+
+    The excitation waveform must be a single period of a sine wave.
+    This algorithm splits the curve into the forward and reverse sections, performs inference on each of the sections,
+    stitches the results back again, and corrects the resistance which is not handled in the main bayesian function.
+
+    Parameters
+    ----------
+    i_meas : array-like
+        Current corresponding to a single period of sinusoidal excitation bias
+    excit_wfm : array-like
+        Single period of the sinusoidal excitation waveform
+    ex_freq : float
+        Frequency of the excitation waveform
+    r_extra : float (Optional, default = 220 [Ohms])
+        Extra resistance in the RC circuit that will provide correct current and resistance values
+    num_x_steps : uint (Optional, default = 500)
+        Number of steps for the inferred results. Note: this may be different from what is specified.
+    show_plots : Boolean (Optional, Default = False)
+        Whether or not to show plots
+    kwargs : dict
+        Other parameters that will be passed on to the do_bayesian_inference function
+
+    Returns
+    -------
+    capacitance : array-like - 2 elements
+        Capacitance on the forward and reverse sections
+    triangular_bias : array-like
+        Interpolated bias from bayesian inference of length num_x_steps
+    resistance : array-like
+        Resistance of sample infered by Bayesian Inference of length num_x_steps
+    variance : array-like
+        Variance of the inferred resistance of length num_x_steps
+    i_corr_sine : array-like
+        Measured current with the capacitance correctly subtracted.
+    """
+    roll_val = -0.25
+    num_v_steps = excit_wfm.size
+    cos_omega_t = np.roll(excit_wfm, int(num_v_steps * roll_val))
+    y_val = np.roll(i_meas, int(num_v_steps * roll_val))
+    half_x_steps = num_x_steps // 2
+    forw_results = do_bayesian_inference(cos_omega_t[:int(0.5 * num_v_steps)], y_val[:int(0.5 * num_v_steps)],
+                                         ex_freq, num_x_steps=half_x_steps,
+                                         econ=True, show_plots=show_plots, **kwargs)
+    rev_results = do_bayesian_inference(cos_omega_t[int(0.5 * num_v_steps):], y_val[int(0.5 * num_v_steps):],
+                                        ex_freq, num_x_steps=half_x_steps,
+                                        econ=True, show_plots=show_plots, **kwargs)
+    # putting the split inference together:
+    full_results = dict()
+    for item in ['Irec', 'cValue']:
+        full_results[item] = np.hstack((forw_results[item], rev_results[item]))
+        # print(item, full_results[item].shape)
+
+    # Rolling back Irec - (this is the only one in cosine):
+    # A wasteful quantity since it is a duplicate of i_meas
+    full_results['Irec'] = np.roll(full_results['Irec'], int(num_v_steps * roll_val * -1))
+
+    # Capacitance is always doubled - halve it now:
+    full_results['cValue'] *= 0.5
+    cap_val = np.mean(full_results['cValue'])
+
+    # Compensating the resistance..
+    omega = 2 * np.pi * ex_freq
+    i_meas = i_meas  # from nA to A
+    i_cap = cap_val * omega * cos_omega_t  # from nF to F
+    i_extra = r_extra * cap_val * excit_wfm  # from nF to F, ohms to ohms (1)
+    i_corr_sine = i_meas - i_cap - i_extra
+
+    # It is a lot simpler to correct the bayesian current,
+    # since the capacitance contribution has already been removed, and
+    # i_extra when plotted against bias is just a straight line!
+    """i_extra = r_extra * cap_val * forw_results['x']
+    i_forw = (forw_results['x']/forw_results['mR']) - i_extra
+    i_rev = (rev_results['x']/rev_results['mR']) - i_extra"""
+
+    # Now also correct the inferred resistance
+    forw_results['mR'] = forw_results['mR'] / (1 - (forw_results['mR'] * r_extra * cap_val))
+    rev_results['mR'] = rev_results['mR'] / (1 - (rev_results['mR'] * r_extra * cap_val))
+
+    # by default Bayesian inference will sort bias in ascending order
+    for item in ['x', 'mR', 'vR']:
+        full_results[item] = np.hstack((forw_results[item], np.flipud(rev_results[item])))
+        # print(item, full_results[item].shape)
+
+    # Plot to make sure things are indeed correct:
+    if show_plots:
+        fig, axis = plt.subplots()
+        axis.plot(excit_wfm, i_meas, label='Meas')
+        axis.plot(excit_wfm, full_results['Irec'], label='Rec')
+        axis.plot(full_results['x'], full_results['x'] / full_results['mR'], label='Bayes orig')
+        axis.plot(excit_wfm, i_corr_sine, label='Sine corr')
+        axis.legend()
+
+    return full_results['cValue'], full_results['x'], full_results['mR'], \
+           full_results['vR'], i_corr_sine
 
 
 def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, r_extra_override=None, **kwargs):
