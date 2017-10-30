@@ -22,7 +22,7 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})
 
 
-class GIVbayesian(Process):
+class GIVBayesian(Process):
     def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, verbose=False,
                  cores=1, max_mem_mb=1024, **kwargs):
         """

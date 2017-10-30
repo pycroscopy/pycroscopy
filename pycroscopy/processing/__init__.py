@@ -38,6 +38,7 @@ from .feature_extraction import FeatureExtractorParallel, FeatureExtractorSerial
 from .image_transformation import geoTransformerParallel, geoTransformerSerial
 from . import process
 from .process import Process
+from .giv_bayesian import GIVBayesian
 
 
 def no_impl(*args, **kwargs):
@@ -57,4 +58,4 @@ else:
     geoTransformer = geoTransformerParallel
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
-           'giv_utils', 'rebuild_svd', 'Process', 'parallel_compute']
+           'giv_utils', 'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'GIVBayesian']
