@@ -13,9 +13,7 @@ import numpy as np
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
 from ..io.io_utils import recommendCores
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
-    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
-    get_attr, copyAttributes, link_as_main
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .giv_utils import do_bayesian_inference
@@ -151,6 +149,9 @@ class GIVbayesian(Process):
 
     def _write_results_chunk(self):
         # DON'T update positions here
+
+        if self.verbose:
+            print('Started accumulating all results')
         num_pixels = len(self.forward_results)
         cap_mat = np.zeros((num_pixels, 2), dtype=np.float32)
         r_inf_mat = np.zeros((num_pixels, self.num_x_steps), dtype=np.float32)
@@ -181,15 +182,26 @@ class GIVbayesian(Process):
             # by default Bayesian inference will sort bias in ascending order
             for item in ['x', 'mR', 'vR']:
                 full_results[item] = np.hstack((forw_results[item], np.flipud(rev_results[item])))
-                # print(item, full_results[item].shape)
 
             i_cor_sin_mat[pix_ind] = i_corr_sine
             cap_mat[pix_ind] = full_results['cValue']
             r_inf_mat[pix_ind] = full_results['mR']
             r_var_mat[pix_ind] = full_results['vR']
 
-        self.triang_bias = full_results['x']
+        if self._start_pos == 0:
+            pass
+            #self.h5_new_spec_vals[0, :] = full_results['x']  # Technically this needs to only be done once
+
         # Now write to h5 files:
+        if self.verbose:
+            print('Finished accumulating results. Writing to h5')
+
+        #self.hdf.flush()
+
+        if self.verbose:
+            print('Finished writing to h5')
+
+        return i_cor_sin_mat, cap_mat, r_inf_mat, r_var_mat, full_results['x']
 
     @staticmethod
     def _unit_function():
@@ -209,48 +221,38 @@ class GIVbayesian(Process):
 
         """
         # self._create_results_datasets()
+        self._max_pos_per_read = 5  # Need a better way of figuring out a more appropriate estimate
 
-        # I am NOT convinced that this needs to be done. Just pass bias as an argument
         half_v_steps = self.single_ao.size // 2
-        parm_dict_forw = self.parm_dict.copy()
-        parm_dict_forw['V'] = self.rolled_bias[:half_v_steps]
-        parm_dict_rev = self.parm_dict.copy()
-        parm_dict_rev['V'] = self.rolled_bias[half_v_steps:]
 
-        max_pos_per_chunk = 5  # Need a better way of figuring out a more appropriate estimate
+        # remove additional parm and halve the x points
+        bayes_parms = self.parm_dict.copy()
+        bayes_parms['num_x_steps'] = self.num_x_steps // 2
+        bayes_parms['econ'] = True
+        del(bayes_parms['freq'])
 
-        start_pix = 0
         time_per_pix = 0
-        x_vec = None
 
         num_pos = self.h5_main.shape[0]
 
-        while start_pix < 1:  # num_pos:
-
-            last_pix = min(start_pix + max_pos_per_chunk, num_pos)
-            print('Working on pixels {} to {} of {}'.format(start_pix, last_pix, num_pos))
+        self._read_data_chunk()
+        while self.data is not None:
 
             t_start = tm.time()
 
-            # first load the results to memory and then roll them
-            rolled_raw_data = np.roll(self.h5_main[start_pix: last_pix], self.roll_pts, axis=1)
+            # first roll the data
+            rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
 
-            forward_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference, cores=1,
-                                               lengthy_computation=True,
-                                               func_kwargs=self.parm_dict_forw)
-            """
-            do_bayesian_inference(y_val[:int(0.5*num_v_steps)], cos_omega_t[:int(0.5*num_v_steps)], 
-                                                            ex_freq, num_x_steps=half_x_steps,
-                                                            econ=True, show_plots=show_plots, **kwargs)
+            self.forward_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference, cores=1,
+                                                    func_args=[self.rolled_bias[:half_v_steps], self.ex_freq],
+                                                    func_kwargs=bayes_parms)
 
-            forward_results = __process_chunk(rolled_raw_data[:, :self.half_v_steps], self.parm_dict_forw,
-                                              current_num_cores,
-                                              gain)
             if self.verbose:
-                print('Finished processing forward loops')
-            reverse_results = __process_chunk(rolled_raw_data[:, self.half_v_steps:], self.parm_dict_rev,
-                                              current_num_cores,
-                                              gain)
+                print('Finished processing forward sections. Now working on reverse sections....')
+
+            self.reverse_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference, cores=1,
+                                                    func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
+                                                    func_kwargs=bayes_parms)
             if self.verbose:
                 print('Finished processing reverse loops')
 
@@ -258,51 +260,16 @@ class GIVbayesian(Process):
 
             if self.verbose:
                 print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / max_pos_per_chunk))
-            if start_pix == 0:
-                time_per_pix = tot_time / last_pix  # in seconds
+                                                                                     tot_time / self._max_pos_per_read))
+            if self._start_pos == 0:
+                time_per_pix = tot_time / self._end_pos  # in seconds
             else:
-                print('Time remaining: {} hours'.format(np.round((num_pos - last_pix) * time_per_pix / 3600, 2)))
-            """
+                print('Time remaining: {} hours'.format(np.round((num_pos - self._end_pos) * time_per_pix / 3600, 2)))
 
-            """
-            if self.verbose:
-                print('Started accumulating all results')
-            chunk_pos = last_pix - start_pix
-            cap_vec = np.zeros(shape=(chunk_pos, 2), dtype=np.float32)
-            vr_mat = np.zeros(shape=(chunk_pos, self.num_x_steps), dtype=np.float32)
-            mr_mat = np.zeros(shape=(chunk_pos, self.num_x_steps), dtype=np.float32)
-            irec_mat = np.zeros(shape=(chunk_pos, self.single_ao.size), dtype=np.float32)
+            temp = self._write_results_chunk()
 
-            # filling in all the results:
-            x_vec = np.hstack((forward_results[0]['x'], reverse_results[0]['x']))
-            for pix_ind, forw_results, rev_results in zip(range(chunk_pos), forward_results, reverse_results):
-                vr_mat[pix_ind] = np.hstack((forw_results['vR'], rev_results['vR']))
-                mr_mat[pix_ind] = np.hstack((forw_results['mR'], rev_results['mR']))
-                irec_mat[pix_ind] = np.hstack((forw_results['Irec'], rev_results['Irec']))
-                cap_vec[pix_ind] = np.hstack((forw_results['cValue'], rev_results['cValue']))
-
-            t_accum_end = tm.time()
-
-            if self.verbose:
-                print('Finished accumulating results')
-                print('Writing to h5')
-
-            for h5_dset, np_array in zip([self.h5_cap, self.h5_vr, self.h5_mr, self.h5_irec],
-                                         [cap_vec, vr_mat, mr_mat, irec_mat]):
-                h5_dset[start_pix: last_pix] = np_array
-
-            if self.verbose:
-                print('Finished writing to file in {} sec'.format(np.round(tm.time() - t_accum_end)))
-
-            self.hdf.flush()
-            """
-            start_pix = last_pix
-        """
-        self.h5_new_spec_vals[0, :] = x_vec  # Technically this needs to only be done once
-        """
         if self.verbose:
             print('Finished processing the dataset completely')
 
         # return self.h5_cap.parent
-        return forward_results
+        return temp
