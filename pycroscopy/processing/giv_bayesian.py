@@ -12,7 +12,7 @@ import time as tm
 import numpy as np
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.io_utils import recommendCores
+from ..io.io_utils import realToCompound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
@@ -37,7 +37,7 @@ class GIVbayesian(Process):
         max_mem_mb : uint, optional
             How much memory to use for the computation.  Default 1024 Mb
         """
-        super(GIVbayesian, self).__init__(h5_main, cores=cores)  # , max_mem_mb=max_mem_mb)
+        super(GIVbayesian, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose)
         self.verbose = verbose
         self.gain = gain
         self.ex_freq = ex_freq
@@ -79,7 +79,7 @@ class GIVbayesian(Process):
         cap_shape = (num_pos, 1)
         ds_cap = MicroDataset('Capacitance', data=[], maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
                               compression='gzip')
-        ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'nF'}
+        ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'pF'}
         ds_cap_spec_inds, ds_cap_spec_vals = build_ind_val_dsets([1], is_spectral=True,
                                                                  labels=['Direction'], units=[''], verbose=self.verbose)
         # the names of these datasets will clash with the ones created above. Change names manually:
@@ -117,8 +117,9 @@ class GIVbayesian(Process):
         h5_cap_spec_inds = getH5DsetRefs(['Spectroscopic_Indices_Cap'], h5_refs)[0]
         self.h5_cap = getH5DsetRefs(['Capacitance'], h5_refs)[0]
         self.h5_variance = getH5DsetRefs(['R_variance'], h5_refs)[0]
-        self.h5_resistabce = getH5DsetRefs(['Resistance'], h5_refs)[0]
+        self.h5_resistance = getH5DsetRefs(['Resistance'], h5_refs)[0]
         self.h5_i_corrected = getH5DsetRefs(['Corrected_Current'], h5_refs)[0]
+        self.h5_results_grp = self.h5_cap.parent
 
         if self.verbose:
             print('Finished making room for the datasets. Now linking them')
@@ -134,7 +135,7 @@ class GIVbayesian(Process):
         copyAttributes(self.h5_main, self.h5_i_corrected, skip_refs=False)
 
         # The resistance datasets get new spec datasets but reuse the old pos datasets:
-        for new_dset in [self.h5_resistabce, self.h5_variance]:
+        for new_dset in [self.h5_resistance, self.h5_variance]:
             link_as_main(new_dset, h5_pos_inds, h5_pos_vals, h5_new_spec_inds, self.h5_new_spec_vals)
 
         if self.verbose:
@@ -148,7 +149,6 @@ class GIVbayesian(Process):
     """
 
     def _write_results_chunk(self):
-        # DON'T update positions here
 
         if self.verbose:
             print('Started accumulating all results')
@@ -184,24 +184,27 @@ class GIVbayesian(Process):
                 full_results[item] = np.hstack((forw_results[item], np.flipud(rev_results[item])))
 
             i_cor_sin_mat[pix_ind] = i_corr_sine
-            cap_mat[pix_ind] = full_results['cValue']
+            cap_mat[pix_ind] = full_results['cValue'] * 1000  # convert from nF to pF
             r_inf_mat[pix_ind] = full_results['mR']
             r_var_mat[pix_ind] = full_results['vR']
-
-        if self._start_pos == 0:
-            pass
-            #self.h5_new_spec_vals[0, :] = full_results['x']  # Technically this needs to only be done once
 
         # Now write to h5 files:
         if self.verbose:
             print('Finished accumulating results. Writing to h5')
 
-        #self.hdf.flush()
+        if self._start_pos == 0:
+            self.h5_new_spec_vals[0, :] = full_results['x']  # Technically this needs to only be done once
 
-        if self.verbose:
-            print('Finished writing to h5')
+        pos_slice = slice(self._start_pos, self._end_pos)
+        self.h5_cap[pos_slice] = np.atleast_2d(realToCompound(cap_mat, cap_dtype)).T
+        self.h5_variance[pos_slice] = r_var_mat
+        self.h5_resistance[pos_slice] = r_inf_mat
+        self.h5_i_corrected[pos_slice] = i_cor_sin_mat
 
-        return i_cor_sin_mat, cap_mat, r_inf_mat, r_var_mat, full_results['x']
+        self.hdf.flush()
+
+        # Now update the start position
+        self._start_pos = self._end_pos
 
     @staticmethod
     def _unit_function():
@@ -220,8 +223,9 @@ class GIVbayesian(Process):
         -------
 
         """
-        # self._create_results_datasets()
-        self._max_pos_per_read = 5  # Need a better way of figuring out a more appropriate estimate
+        self._create_results_datasets()
+
+        self._max_pos_per_read = 100  # Need a better way of figuring out a more appropriate estimate
 
         half_v_steps = self.single_ao.size // 2
 
@@ -243,14 +247,16 @@ class GIVbayesian(Process):
             # first roll the data
             rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
 
-            self.forward_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference, cores=1,
+            self.forward_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference,
+                                                    cores=self._cores,
                                                     func_args=[self.rolled_bias[:half_v_steps], self.ex_freq],
                                                     func_kwargs=bayes_parms)
 
             if self.verbose:
                 print('Finished processing forward sections. Now working on reverse sections....')
 
-            self.reverse_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference, cores=1,
+            self.reverse_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
+                                                    cores=self._cores,
                                                     func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
                                                     func_kwargs=bayes_parms)
             if self.verbose:
@@ -266,10 +272,11 @@ class GIVbayesian(Process):
             else:
                 print('Time remaining: {} hours'.format(np.round((num_pos - self._end_pos) * time_per_pix / 3600, 2)))
 
-            temp = self._write_results_chunk()
+            self._write_results_chunk()
+            self._read_data_chunk()
 
         if self.verbose:
             print('Finished processing the dataset completely')
 
         # return self.h5_cap.parent
-        return temp
+        return self.h5_results_grp
