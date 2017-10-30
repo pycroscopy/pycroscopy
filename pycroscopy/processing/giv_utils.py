@@ -21,7 +21,7 @@ from ..io.hdf_utils import getH5DsetRefs, getAuxData, link_as_main, copyAttribut
 from ..viz.plot_utils import set_tick_font_size
 
 
-def do_bayesian_inference(bias, i_meas, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
+def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
                           num_samples=2E3, show_plots=False, econ=False):
     """
     this function accepts a Voltage vector and current vector
@@ -31,10 +31,10 @@ def do_bayesian_inference(bias, i_meas, freq, num_x_steps=251, gam=0.03, e=10.0,
 
     Parameters
     ----------
-    bias : 1D array or list
-        voltage values
     i_meas : 1D array or list
         current values, should be in nA
+    bias : 1D array or list
+        voltage values
     freq : float
         frequency of applied waveform
     num_x_steps : unsigned int (Optional, Default = 251)
@@ -223,10 +223,10 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
     cos_omega_t = np.roll(excit_wfm, int(num_v_steps * roll_val))
     y_val = np.roll(i_meas, int(num_v_steps * roll_val))
     half_x_steps = num_x_steps // 2
-    forw_results = do_bayesian_inference(cos_omega_t[:int(0.5 * num_v_steps)], y_val[:int(0.5 * num_v_steps)],
+    forw_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)], cos_omega_t[:int(0.5 * num_v_steps)],
                                          ex_freq, num_x_steps=half_x_steps,
                                          econ=True, show_plots=show_plots, **kwargs)
-    rev_results = do_bayesian_inference(cos_omega_t[int(0.5 * num_v_steps):], y_val[int(0.5 * num_v_steps):],
+    rev_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
                                         ex_freq, num_x_steps=half_x_steps,
                                         econ=True, show_plots=show_plots, **kwargs)
     # putting the split inference together:
@@ -488,7 +488,7 @@ def bayesian_inference_unit(single_parm):
     """
     iv_point = single_parm[0]
     parm_dict = dict(single_parm[1])
-    return do_bayesian_inference(parm_dict['volt_vec'], iv_point, parm_dict['freq'],
+    return do_bayesian_inference(iv_point, parm_dict['volt_vec'], parm_dict['freq'],
                                  num_x_steps=parm_dict['num_x_steps'], gam=parm_dict['gam'], e=parm_dict['e'],
                                  sigma=parm_dict['sigma'], sigmaC=parm_dict['sigmaC'],
                                  num_samples=parm_dict['num_samples'], show_plots=False, econ=True)
