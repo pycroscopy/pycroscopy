@@ -37,7 +37,7 @@ class GIVBayesian(Process):
         max_mem_mb : uint, optional
             How much memory to use for the computation.  Default 1024 Mb
         """
-        super(GIVbayesian, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose)
+        super(GIVBayesian, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose)
         self.verbose = verbose
         self.gain = gain
         self.ex_freq = ex_freq
@@ -144,7 +144,7 @@ class GIVBayesian(Process):
     """         
     # inherit the read data function. Rolling can be performed at compute 
     def _read_data_chunk(self, verbose=False):
-        data_chunk = super(GIVbayesian, self)._read_data_chunk(verbose=self.verbose)
+        data_chunk = super(GIVBayesian, self)._read_data_chunk(verbose=self.verbose)
         rolled_raw_data = np.roll(data_chunk, ???)
     """
 
