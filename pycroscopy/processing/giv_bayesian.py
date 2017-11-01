@@ -24,7 +24,7 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
 
 class GIVBayesian(Process):
     def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, verbose=False,
-                 cores=1, max_mem_mb=1024, **kwargs):
+                 cores=None, max_mem_mb=1024, **kwargs):
         """
         Parameters
         ----------
@@ -60,6 +60,23 @@ class GIVBayesian(Process):
         roll_cyc_fract = -0.25
         self.roll_pts = int(self.single_ao.size * roll_cyc_fract)
         self.rolled_bias = np.roll(self.single_ao, self.roll_pts)
+
+    def _set_memory_and_cores(self, cores=1, mem=1024):
+        """
+        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
+        number of cores to be used by analysis methods.
+
+        Parameters
+        ----------
+        cores : uint, optional
+            Default - 1
+            How many cores to use for the computation
+        mem : uint, optional
+            Default - 1024
+            The amount a memory in Mb to use in the computation
+        """
+        super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
+        self._max_pos_per_read = 1024  # Need a better way of figuring out a more appropriate estimate
 
     def _create_results_datasets(self):
         """
@@ -102,7 +119,7 @@ class GIVBayesian(Process):
         bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
                                ds_cap_spec_inds, ds_cap_spec_vals])
         bayes_grp.attrs = {'split_directions': True, 'algorithm_author': 'Kody J. Law',
-                           'r_extra': self.r_extra}
+                           'r_extra': self.r_extra, 'last_pixel': 0}
         bayes_grp.attrs.update(self.bayesian_parms)
 
         if self.verbose:
@@ -140,13 +157,6 @@ class GIVBayesian(Process):
 
         if self.verbose:
             print('Finished linking all datasets!')
-
-    """         
-    # inherit the read data function. Rolling can be performed at compute 
-    def _read_data_chunk(self, verbose=False):
-        data_chunk = super(GIVBayesian, self)._read_data_chunk(verbose=self.verbose)
-        rolled_raw_data = np.roll(data_chunk, ???)
-    """
 
     def _write_results_chunk(self):
 
@@ -201,6 +211,9 @@ class GIVBayesian(Process):
         self.h5_resistance[pos_slice] = r_inf_mat
         self.h5_i_corrected[pos_slice] = i_cor_sin_mat
 
+        # Leaving in this provision that will allow restarting of processes
+        self.h5_results_grp['last_pixel'] = self._end_pos
+
         self.hdf.flush()
 
         # Now update the start position
@@ -224,8 +237,6 @@ class GIVBayesian(Process):
 
         """
         self._create_results_datasets()
-
-        self._max_pos_per_read = 100  # Need a better way of figuring out a more appropriate estimate
 
         half_v_steps = self.single_ao.size // 2
 
