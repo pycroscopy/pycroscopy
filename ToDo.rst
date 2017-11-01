@@ -36,94 +36,104 @@ External user contributions
 * Port everything from IFIM Matlab -> Python translation exercises
 * Other workflows/functions that already exist as scripts or notebooks
 
-Plotting updates
-----------------
-* global control on larger fonts etc. using rcParams. See - https://matplotlib.org/users/customizing.html
+GUI
+----
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
 
-Revise existing functions
-~~~~~~~~~~~~~~~~~~~~~~~~~
-Define default font sizes that will be adopted in all functions wherever applicable.
-label_fontsize=16
-tick_fontsize=14
-title_fontsize=18
-Override wherever necessary.
+Plot Utils
+----------
 
-_add_loop_parameters - is BE specific and should be moved out of plot_utils
+* Define default font sizes that will be adopted in all functions wherever applicable using rcParams. See - https://matplotlib.org/users/customizing.html
 
-rainbow_plot - 
-1. pop cmap from kwargs instead of specifying camp as a separate argument. 
-2. Rename parameters from ax to axis, ao_vec to x_values, ai_vec to y_values. 
-3. Use same methodology from single_img_cbar_plot to add color bar. You will need to expect the figure handle as well for this.
+  * label_fontsize=16
+  * tick_fontsize=14
+  * title_fontsize=18
+  * Override wherever necessary.
+* _add_loop_parameters - is BE specific and should be moved out of plot_utils
 
-plot_line_family - 
-1. Rename x_axis parameter to something more sensible like x_values
-2. Remove c map as one of the arguments. It should come from kwargs
-3. Optional color bar (don’t show legend in this case)
+* rainbow_plot - 
 
-plot_map -combine this with single_img_cbar_plot
+  1. pop cmap from kwargs instead of specifying camp as a separate argument. 
+  2. Rename parameters from ax to axis, ao_vec to x_values, ai_vec to y_values. 
+  3. Use same methodology from single_img_cbar_plot to add color bar. You will need to expect the figure handle as well for this.
 
-single_img_cbar_plot - 
-1. Combine with plot_map
-2. allow the tick labels to be specified instead of just the x_size and y_size. 
-3. Rename this function to something more sensible
-4. Color bar should be shown by default
+* plot_line_family - 
 
-It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
+  1. Rename x_axis parameter to something more sensible like x_values
+  2. Remove c map as one of the arguments. It should come from kwargs
+  3. Optional color bar (don’t show legend in this case)
 
-plot_loops - 
-1. Allow excitation_waveform to also be a list - this will allow different x resolutions for each line family. 
-2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
-3. Enable use of kwargs - to specify line widths etc.
-4. Ensure that the title is not crammed somewhere behind the subtitles
+* plot_map -combine this with single_img_cbar_plot
 
-Plot_complex_map_stack - 
-1. allow kwargs. 
-2. Use plot_map 
-3. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-4. Remove map as a kwarg
-5. Show color bars
-6. Possibly allow horizontal / vertical configurations? (Optional)
+* single_img_cbar_plot - It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
 
-plot_complex_loop_stack - 
-1. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-2. Allow individual plots sizes to be specified
-3. Allow **kwargs and pass two plot functions
+  1. Combine with plot_map
+  2. allow the tick labels to be specified instead of just the x_size and y_size. 
+  3. Rename this function to something more sensible
+  4. Color bar should be shown by default
 
-plotScree - 
-1. rename to plot_scree
-2. Use **kwargs on the plot function
+* plot_loops
 
-plot_map_stack:
-1. Do something about the super title getting hidden behind the subtitles
-2. Respect tick, x label, y label, title, etc font sizes
-3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-4. See all other changes that were made for the image cleaning paper
+  1. Allow excitation_waveform to also be a list - this will allow different x resolutions for each line family. 
+  2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
+  3. Enable use of kwargs - to specify line widths etc.
+  4. Ensure that the title is not crammed somewhere behind the subtitles
 
-plot_cluster_results_together
-1. Use plot_map and its cleaner color bar option
-2. Respect font sizes
-3. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
-4. See mode IV paper to see other changes
+* Plot_complex_map_stack
 
-plot_cluster_results_separate
-1. Use same guidelines as above
+  1. allow kwargs. 
+  2. Use plot_map 
+  3. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
+  4. Remove map as a kwarg
+  5. Show color bars
+  6. Possibly allow horizontal / vertical configurations? (Optional)
 
-plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
+* plot_complex_loop_stack
 
-plot_1d_spectrum
-1. Respect font sizes
-2. Do not save figure here. This should be done in the place where this function is called
-3. Use **kwargs and pass to the plot functions
-4. Title should be optional
+  1. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
+  2. Allow individual plots sizes to be specified
+  3. Allow **kwargs and pass two plot functions
 
-plot_2d_spectrogram
-1. Respect font sizes
-2. Use plot_map - show color bar
-3. Don’t allow specification of figure_path here. Save elsewhere
+* plotScree
 
-plot_histograms - not used frequently. Can be ignored for this pass
+  1. rename to plot_scree
+  2. Use **kwargs on the plot function
+
+* plot_map_stack:
+
+  1. Do something about the super title getting hidden behind the subtitles
+  2. Respect tick, x label, y label, title, etc font sizes
+  3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  4. See all other changes that were made for the image cleaning paper
+
+* plot_cluster_results_together
+
+  1. Use plot_map and its cleaner color bar option
+  2. Respect font sizes
+  3. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
+  4. See mode IV paper to see other changes
+
+* plot_cluster_results_separate
+  
+  1. Use same guidelines as above
+
+* plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
+
+* plot_1d_spectrum
+
+  1. Respect font sizes
+  2. Do not save figure here. This should be done in the place where this function is called
+  3. Use **kwargs and pass to the plot functions
+  4. Title should be optional
+
+* plot_2d_spectrogram
+
+  1. Respect font sizes
+  2. Use plot_map - show color bar
+  3. Don’t allow specification of figure_path here. Save elsewhere
+
+* plot_histograms - not used frequently. Can be ignored for this pass
 
 Examples / Tutorials
 --------------------
