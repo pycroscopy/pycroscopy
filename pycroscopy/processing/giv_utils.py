@@ -354,7 +354,7 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, **kwargs):
 
 
 def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistance, r_variance,
-                          pix_pos=[0, 0], broken_resistance=True, r_max=None, **kwargs):
+                          pix_pos=[0, 0], broken_resistance=True, r_max=None, res_scatter=False, **kwargs):
     """
     Plots the basic Bayesian Inference results for a specific pixel
     Parameters
@@ -377,6 +377,8 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
         Whether or not to break the resistance plots into sections so as to avoid plotting areas with high variance
     r_max : float, Optional
         Maximum value of resistance to plot
+    res_scatter : bool, Optional
+        Use scatter instead of line plots for resistance
     Returns
     -------
     fig : matplotlib.pyplot figure handle
@@ -416,6 +418,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
 
     axes[0].set_ylabel('Resistance (G$\Omega$)', fontsize=font_size_2)
 
+
     pts_to_plot = [good_forw, good_rev]
 
     for type_ind, axis, pts_list, cols_set, sym_set, set_name in zip(range(len(names)),
@@ -427,7 +430,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
         single_plot = not broken_resistance
         if broken_resistance:
             diff = np.diff(pts_list)
-            jump_inds = np.argwhere(diff > 3) + 1
+            jump_inds = np.argwhere(diff > 4) + 1
             if jump_inds.size < 1:
                 single_plot = True
 
@@ -435,15 +438,23 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
             jump_inds = np.append(np.append(0, jump_inds), pts_list[-1])
             for ind in range(1, jump_inds.size):
                 cur_range = pts_list[jump_inds[ind - 1]:jump_inds[ind]]
-                axis.plot(bias_triang[cur_range], resistance[cur_range], cols_set[0],
-                          linestyle=sym_set[0], linewidth=3)
+                if res_scatter:
+                    axis.scatter(bias_triang[cur_range], resistance[cur_range],
+                                 color=cols_set[0], s=30)
+                else:
+                    axis.plot(bias_triang[cur_range], resistance[cur_range], cols_set[0],
+                              linestyle=sym_set[0], linewidth=3)
                 axis.fill_between(bias_triang[cur_range], pos_limits[cur_range], neg_limits[cur_range],
                                   alpha=0.25, color=cols_set[1])
                 if ind == 1:
                     axis.legend(['R(V)', 'R(V)+-$\sigma$'], loc='best', fontsize=font_size_1)
         else:
-            axis.plot(bias_triang[pts_list], resistance[pts_list], cols_set[0],
-                      linestyle=sym_set[0], linewidth=3, label='R(V)')
+            if res_scatter:
+                axis.scatter(bias_triang[pts_list], resistance[pts_list],
+                             color=cols_set[0], s=30)
+            else:
+                axis.plot(bias_triang[pts_list], resistance[pts_list], cols_set[0],
+                          linestyle=sym_set[0], linewidth=3, label='R(V)')
             axis.fill_between(bias_triang[pts_list], pos_limits[pts_list], neg_limits[pts_list],
                               alpha=0.25, color=cols_set[1], label='R(V)+-$\sigma$')
             axis.legend(loc='upper left', fontsize=font_size_1)
@@ -459,7 +470,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
     axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
                  'orange', linewidth=3, label='I$_{Bayes} Rev$')
 
-    # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
+        # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
     axes[2].legend(loc='best', fontsize=font_size_1)
     axes[2].set_xlabel('Voltage(V)', fontsize=font_size_2)
     axes[2].set_title('$I(V)$ at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]),
