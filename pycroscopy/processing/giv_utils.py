@@ -466,9 +466,9 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
 
     axes[2].plot(bias_sine, i_meas, 'green', linewidth=3, label='I$_{meas}$')
     axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
-                 'orange', linewidth=3, label='I$_{Bayes} Forw$')
+                 'blue', linewidth=3, label='I$_{Bayes} Forw$')
     axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
-                 'r', linewidth=3, label='I$_{Bayes} Rev$')
+                 'red', linewidth=3, label='I$_{Bayes} Rev$')
 
         # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
     axes[2].legend(loc='best', fontsize=font_size_1)
