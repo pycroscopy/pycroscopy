@@ -218,10 +218,10 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
     cos_omega_t = np.roll(excit_wfm, int(num_v_steps * roll_val))
     y_val = np.roll(i_meas, int(num_v_steps * roll_val))
     half_x_steps = num_x_steps // 2
-    forw_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)], cos_omega_t[:int(0.5 * num_v_steps)],
+    rev_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)], cos_omega_t[:int(0.5 * num_v_steps)],
                                          ex_freq, num_x_steps=half_x_steps,
                                          econ=True, show_plots=False, **kwargs)
-    rev_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
+    forw_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
                                         ex_freq, num_x_steps=half_x_steps,
                                         econ=True, show_plots=False, **kwargs)
     # putting the split inference together:

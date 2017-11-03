@@ -258,7 +258,7 @@ class GIVBayesian(Process):
             # first roll the data
             rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
 
-            self.forward_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference,
+            self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference,
                                                     cores=self._cores,
                                                     func_args=[self.rolled_bias[:half_v_steps], self.ex_freq],
                                                     func_kwargs=bayes_parms)
@@ -266,7 +266,7 @@ class GIVBayesian(Process):
             if self.verbose:
                 print('Finished processing forward sections. Now working on reverse sections....')
 
-            self.reverse_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
+            self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
                                                     cores=self._cores,
                                                     func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
                                                     func_kwargs=bayes_parms)
