@@ -13,14 +13,26 @@ from warnings import warn
 import os
 import sys
 import h5py
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.signal import blackman
 import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
+from mpl_toolkits.axes_grid1 import ImageGrid
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
+
+# mpl.rcParams.keys()  # gets all allowable keys
+mpl.rc('figure', figsize=(5,5))
+mpl.rc('lines', linewidth=2)
+mpl.rc('axes', labelsize=16, titlesize=16)
+mpl.rc('figure', titlesize=20)
+mpl.rc('font', size=14) # global font size
+mpl.rc('legend', fontsize=16, fancybox=True)
+mpl.rc('xtick.major', size=6)
+mpl.rc('xtick.minor', size=4)
+# mpl.rcParams['xtick.major.size'] = 6
 
 if sys.version_info.major == 3:
     unicode = str
@@ -569,7 +581,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     if len(datasets) > 1:
         axes_lin[count].legend(dataset_names, loc='best')
     if title:
-        fig.suptitle(title, fontsize=14)
+        fig.suptitle(title, fontsize=14, y=1.05)
     plt.tight_layout()
     return fig, axes
 
@@ -813,7 +825,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
     fig202.canvas.set_window_title(heading)
-    fig202.suptitle(heading, fontsize=16)
+    fig202.suptitle(heading, fontsize=16+(p_rows+ p_cols), y=0.9)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],
