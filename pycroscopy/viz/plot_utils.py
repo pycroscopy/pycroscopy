@@ -411,7 +411,7 @@ def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
     return im
 
 
-def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
+def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
                          cbar_label=None, tick_font_size=14, **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
