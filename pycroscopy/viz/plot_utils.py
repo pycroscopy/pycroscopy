@@ -72,9 +72,9 @@ def set_tick_font_size(axes, font_size):
         __set_axis_tick(axes)
 
 
-def cbar_for_line_family(vmin, vmax, cmap=None):
+def make_scalar_mappable(vmin, vmax, cmap=None):
     """
-    Creates a scalar mappable object that can be used to create a color bar for non-image (e.g. - line) plots
+    Creates a scalar mappable object that can be used to create a colorbar for non-image (e.g. - line) plots
 
     Parameters
     ----------
