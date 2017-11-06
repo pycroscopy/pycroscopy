@@ -39,27 +39,6 @@ if sys.version_info.major == 3:
 
 default_cmap = plt.cm.viridis
 
-
-def get_cmap_object(cmap):
-    """
-    Get the matplotlib.colors.LinearSegmentedColormap object regardless of the input
-
-    Parameters
-    ----------
-    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
-        Requested color map
-    Returns
-    -------
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Requested / Default colormap object
-    """
-    if cmap is None:
-        return default_cmap
-    elif isinstance(cmap, str):
-        return plt.get_cmap(cmap)
-    return cmap
-
-
 def set_tick_font_size(axes, font_size):
     """
     Sets the font size of the ticks in the provided axes
@@ -91,6 +70,54 @@ def set_tick_font_size(axes, font_size):
             __set_axis_tick(axis)
     else:
         __set_axis_tick(axes)
+
+
+def cbar_for_line_family(vmin, vmax, cmap=None):
+    """
+    Creates a scalar mappable object that can be used to create a color bar for non-image (e.g. - line) plots
+
+    Parameters
+    ----------
+    vmin : float
+        Minimum value for colorbar
+    vmax : float
+        Maximum value for colorbar
+    cmap : colormap object
+        Colormap object to use
+
+    Returns
+    -------
+    sm : matplotlib.pyplot.cm.ScalarMappable object
+        The object that can used to create a colorbar via plt.colorbar(sm)
+    """
+    if cmap is None:
+        cmap = default_cmap
+
+    sm = plt.cm.ScalarMappable(cmap=cmap,
+                               norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    # fake up the array of the scalar mappable
+    sm._A = []
+    return sm
+
+
+def get_cmap_object(cmap):
+    """
+    Get the matplotlib.colors.LinearSegmentedColormap object regardless of the input
+
+    Parameters
+    ----------
+    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
+        Requested color map
+    Returns
+    -------
+    cmap : matplotlib.colors.LinearSegmentedColormap object
+        Requested / Default colormap object
+    """
+    if cmap is None:
+        return default_cmap
+    elif isinstance(cmap, str):
+        return plt.get_cmap(cmap)
+    return cmap
 
 
 def cmap_jet_white_center():
@@ -439,6 +466,7 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1
     else:
         set_tick_font_size(axis, tick_font_size)
 
+    cbar = None
     if show_cbar:
         # cbar = fig.colorbar(im_handle, ax=axis)
         # divider = make_axes_locatable(axis)
