@@ -219,11 +219,11 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
     y_val = np.roll(i_meas, int(num_v_steps * roll_val))
     half_x_steps = num_x_steps // 2
     rev_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)], cos_omega_t[:int(0.5 * num_v_steps)],
-                                         ex_freq, num_x_steps=half_x_steps,
-                                         econ=True, show_plots=False, **kwargs)
-    forw_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
                                         ex_freq, num_x_steps=half_x_steps,
                                         econ=True, show_plots=False, **kwargs)
+    forw_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
+                                         ex_freq, num_x_steps=half_x_steps,
+                                         econ=True, show_plots=False, **kwargs)
     # putting the split inference together:
     full_results = dict()
     for item in ['Irec', 'cValue']:
@@ -470,7 +470,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
     axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
                  'red', linewidth=3, label='I$_{Bayes} Rev$')
 
-        # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
+    # axes[2].legend(loc='upper right', bbox_to_anchor=(-.1, 0.30), fontsize=font_size_1)
     axes[2].legend(loc='best', fontsize=font_size_1)
     axes[2].set_xlabel('Voltage(V)', fontsize=font_size_2)
     axes[2].set_title('$I(V)$ at row ' + str(pix_pos[0]) + ', col ' + str(pix_pos[1]),
