@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 25 11:48:53 2016
+Created on Thu Nov 02 11:48:53 2017
 
-@author: Suhas Somnath, Chris R. Smith, Rama K. Vasudevan
+@author: Suhas Somnath
 
 """
 
