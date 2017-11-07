@@ -237,7 +237,7 @@ class SignalFilter(Process):
             if self._start_pos == 0:
                 time_per_pix = tot_time / self._end_pos  # in seconds
             else:
-                print('Time remaining: {} hours'.format(np.round((num_pos - self._end_pos) * time_per_pix / 3600, 2)))
+                print('Time remaining: {} mins'.format(np.round((num_pos - self._end_pos) * time_per_pix / 60, 2)))
 
             self._write_results_chunk()
             self._read_data_chunk()
