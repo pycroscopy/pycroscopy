@@ -51,7 +51,7 @@ def getNoiseFloor(fft_data, tolerance):
         
     Returns
     -------
-    noise_floor : 1D real numpy array 
+    noise_floor : 1D array-like
         One value per channel / repetition
 
     """
@@ -59,30 +59,28 @@ def getNoiseFloor(fft_data, tolerance):
     fft_data = np.atleast_2d(fft_data)
     # Noise calculated on the second axis
 
-    noise_floor = np.zeros(fft_data.shape[0])
+    noise_floor = []
 
-    for chan in range(fft_data.shape[0]):
+    fft_data = np.abs(fft_data)
+    num_pts = fft_data.shape[1]
 
-        amp = np.abs(fft_data[chan, :])
-        num_pts = amp.size
-        temp = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
-        threshold = np.sqrt((2 * temp ** 2) * (-np.log(tolerance)))
+    for amp in fft_data:
 
-        bdiff = 1
-        b_vec = list([temp])
-        # b_vec.append(temp)
-        n_b_vec = 1
+        prev_val = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
+        threshold = np.sqrt((2 * prev_val ** 2) * (-np.log(tolerance)))
 
-        while (bdiff > 10 ** -2) and n_b_vec < 50:
+        residual = 1
+        iterations = 1
+
+        while (residual > 10 ** -2) and iterations < 50:
             amp[amp > threshold] = 0
-            temp = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
-            b_vec.append(temp)
-            bdiff = abs(b_vec[1] - b_vec[0])
-            threshold = np.sqrt((2 * temp ** 2) * (-np.log(tolerance)))
-            del b_vec[0]
-            n_b_vec += 1
+            new_val = np.sqrt(np.sum(amp ** 2) / (2 * num_pts))
+            residual = np.abs(new_val - prev_val)
+            threshold = np.sqrt((2 * new_val ** 2) * (-np.log(tolerance)))
+            prev_val = new_val
+            iterations += 1
 
-        noise_floor[chan] = threshold
+        noise_floor.append(threshold)
 
     return noise_floor
 
