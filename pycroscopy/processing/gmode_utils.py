@@ -55,7 +55,6 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         handles to the axes in the plotted figure if requested, else None
     """
 
-
     show_loops = excit_wfm is not None and show_plots
 
     if frequency_filters is None and noise_threshold is None:
@@ -64,7 +63,6 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
     if noise_threshold is not None:
         if noise_threshold >= 1 or noise_threshold <= 0:
             raise ValueError('Noise threshold must be within (0 1)')
-        noise_floor = getNoiseFloor(resp_wfm, noise_threshold)[0]
 
     samp_rate = 1
     composite_filter = 1
@@ -80,6 +78,9 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
     num_pts = resp_wfm.size
 
     fft_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
+
+    if noise_threshold is not None:
+        noise_floor = getNoiseFloor(fft_pix_data, noise_threshold)[0]
 
     if show_plots:
         l_ind = int(0.5 * num_pts)
