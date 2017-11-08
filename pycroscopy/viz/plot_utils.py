@@ -13,40 +13,31 @@ from warnings import warn
 import os
 import sys
 import h5py
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.signal import blackman
 import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
-from mpl_toolkits.axes_grid1 import ImageGrid, make_axes_locatable
+from mpl_toolkits.axes_grid1 import ImageGrid
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
+
+# mpl.rcParams.keys()  # gets all allowable keys
+mpl.rc('figure', figsize=(5,5))
+mpl.rc('lines', linewidth=2)
+mpl.rc('axes', labelsize=16, titlesize=16)
+mpl.rc('figure', titlesize=20)
+mpl.rc('font', size=14) # global font size
+mpl.rc('legend', fontsize=16, fancybox=True)
+mpl.rc('xtick.major', size=6)
+mpl.rc('xtick.minor', size=4)
+# mpl.rcParams['xtick.major.size'] = 6
 
 if sys.version_info.major == 3:
     unicode = str
 
 default_cmap = plt.cm.viridis
-
-
-def get_cmap_object(cmap):
-    """
-    Get the matplotlib.colors.LinearSegmentedColormap object regardless of the input
-
-    Parameters
-    ----------
-    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
-        Requested color map
-    Returns
-    -------
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Requested / Default colormap object
-    """
-    if cmap is None:
-        return default_cmap
-    elif isinstance(cmap, str):
-        return plt.get_cmap(cmap)
-    return cmap
-
 
 def set_tick_font_size(axes, font_size):
     """
@@ -79,6 +70,54 @@ def set_tick_font_size(axes, font_size):
             __set_axis_tick(axis)
     else:
         __set_axis_tick(axes)
+
+
+def make_scalar_mappable(vmin, vmax, cmap=None):
+    """
+    Creates a scalar mappable object that can be used to create a colorbar for non-image (e.g. - line) plots
+
+    Parameters
+    ----------
+    vmin : float
+        Minimum value for colorbar
+    vmax : float
+        Maximum value for colorbar
+    cmap : colormap object
+        Colormap object to use
+
+    Returns
+    -------
+    sm : matplotlib.pyplot.cm.ScalarMappable object
+        The object that can used to create a colorbar via plt.colorbar(sm)
+    """
+    if cmap is None:
+        cmap = default_cmap
+
+    sm = plt.cm.ScalarMappable(cmap=cmap,
+                               norm=plt.Normalize(vmin=vmin, vmax=vmax))
+    # fake up the array of the scalar mappable
+    sm._A = []
+    return sm
+
+
+def get_cmap_object(cmap):
+    """
+    Get the matplotlib.colors.LinearSegmentedColormap object regardless of the input
+
+    Parameters
+    ----------
+    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
+        Requested color map
+    Returns
+    -------
+    cmap : matplotlib.colors.LinearSegmentedColormap object
+        Requested / Default colormap object
+    """
+    if cmap is None:
+        return default_cmap
+    elif isinstance(cmap, str):
+        return plt.get_cmap(cmap)
+    return cmap
 
 
 def cmap_jet_white_center():
@@ -372,7 +411,7 @@ def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
     return im
 
 
-def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
+def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
                          cbar_label=None, tick_font_size=14, **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
@@ -427,6 +466,7 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=None, show_cbar=True, x_size=1
     else:
         set_tick_font_size(axis, tick_font_size)
 
+    cbar = None
     if show_cbar:
         # cbar = fig.colorbar(im_handle, ax=axis)
         # divider = make_axes_locatable(axis)
@@ -569,7 +609,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     if len(datasets) > 1:
         axes_lin[count].legend(dataset_names, loc='best')
     if title:
-        fig.suptitle(title, fontsize=14)
+        fig.suptitle(title, fontsize=14, y=1.05)
     plt.tight_layout()
     return fig, axes
 
@@ -813,7 +853,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
     fig202.canvas.set_window_title(heading)
-    fig202.suptitle(heading, fontsize=16)
+    fig202.suptitle(heading, fontsize=16+(p_rows+ p_cols), y=0.9)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],

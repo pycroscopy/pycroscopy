@@ -50,7 +50,7 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=1, max_mem_mb=1024, verbose=False):
+    def __init__(self, h5_main, cores=None, max_mem_mb=1024, verbose=False):
         """
         Parameters
         ----------
@@ -58,7 +58,7 @@ class Process(object):
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
         cores : uint, optional
-            Default - 1
+            Default - all available cores - 2
             How many cores to use for the computation
         max_mem_mb : uint, optional
             How much memory to use for the computation.  Default 1024 Mb
@@ -101,9 +101,6 @@ class Process(object):
         mem : uint, optional
             Default - 1024
             The amount a memory in Mb to use in the computation
-        verbose : bool, optional
-            Whether or not to print log statements
-
         """
 
         if cores is None:
@@ -169,6 +166,13 @@ class Process(object):
         within this function.
         """
         raise NotImplementedError('Please override the _create_results_datasets specific to your process')
+
+    def _get_existing_datasets(self):
+        """
+        The purpose of this function is to allow processes to resume from partly computed results
+
+        """
+        raise NotImplementedError('Please override the _get_existing_datasets specific to your process')
 
     def compute(self, *args, **kwargs):
         """
