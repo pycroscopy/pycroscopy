@@ -17,9 +17,8 @@ from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot, set_tick_font_size
 from ..io.translators.utils import build_ind_val_dsets
 
-
-# TODO: Use filter_parms as a kwargs instead of a required input
 # TODO: Phase rotation not implemented correctly. Find and use excitation frequency
+
 
 ###############################################################################
 
