@@ -158,7 +158,7 @@ def build_composite_freq_filter(frequency_filters):
     if not isinstance(frequency_filters, Iterable):
         frequency_filters = [frequency_filters]
 
-    comp_filter = frequency_filters[0].value
+    comp_filter = np.float32(frequency_filters[0].value)
 
     for ind in range(1, len(frequency_filters)):
         comp_filter *= frequency_filters[ind].value
