@@ -160,7 +160,7 @@ class Optimize(object):
 
         solver = scipy.optimize.__dict__[self.solver_type]
         values = [joblib.delayed(solver)(self.obj_func, guess,
-                                         args=[vector, *self.obj_func_args],
+                                         args=[vector]+list(self.obj_func_args),
                                          **solver_options) for vector, guess in zip(self.data, self.guess)]
         results = joblib.Parallel(n_jobs=processors)(values)
 
