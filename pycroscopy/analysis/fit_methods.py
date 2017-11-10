@@ -44,7 +44,6 @@ class Fit_Methods(object):
 
         if guess.size < 4:
             raise ValueError('Error: The Single Harmonic Oscillator requires 4 parameter guesses!')
-        # data_vec, guess = args
         data_mean = np.mean(data_vec)
 
         Amp, w_0, Q, phi = guess[:4]

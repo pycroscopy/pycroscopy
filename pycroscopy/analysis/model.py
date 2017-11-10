@@ -358,7 +358,7 @@ class Model(object):
             while self.data is not None:
                 opt = Optimize(data=self.data, guess=self.guess, parallel=self._parallel)
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                                      obj_func=obj_func)
+                                      obj_func=obj_func.copy())
                 # TODO: need a different .reformatResults to process fitting results
                 results.append(self._reformat_results(temp, obj_func_name))
                 self._get_guess_chunk()
