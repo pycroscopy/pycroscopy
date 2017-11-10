@@ -364,6 +364,7 @@ class Model(object):
                 self._get_guess_chunk()
                 self._get_data_chunk()
 
+            print('Completed computing fit. Writing to file.')
             self.fit = np.hstack(tuple(results))
             self._set_results()
 
