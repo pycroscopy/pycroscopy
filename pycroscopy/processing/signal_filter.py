@@ -13,15 +13,15 @@ import numpy as np
 from collections import Iterable
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, print_tree
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
 
 
 class SignalFilter(Process):
-
-    def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True, write_condensed=False,
+    def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True,
+                 write_condensed=False,
                  num_pix=1, phase_rad=0, verbose=False, cores=None, max_mem_mb=1024, **kwargs):
 
         super(SignalFilter, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose, **kwargs)
@@ -59,7 +59,6 @@ class SignalFilter(Process):
         self.write_filtered = write_filtered
         self.write_condensed = write_condensed
 
-
     def _create_results_datasets(self):
         """
         Process specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
@@ -74,14 +73,22 @@ class SignalFilter(Process):
             for filter in self.frequency_filters:
                 filter_parms.update(filter.get_parms())
         filter_parms['algorithm'] = 'GmodeUtils-Parallel'
+        filter_parms['last_pixel'] = 0
         grp_filt.attrs = filter_parms
+
         if isinstance(self.composite_filter, np.ndarray):
             ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
             grp_filt.addChildren([ds_comp_filt])
+
         if self.noise_threshold is not None:
             ds_noise_floors = MicroDataset('Noise_Floors',
-                                           data=np.zeros(shape=self.num_effective_pix, dtype=np.float32))
-            grp_filt.addChildren([ds_noise_floors])
+                                           data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
+            ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets([1], is_spectral=True,
+                                                                         labels=['arb'], units=[''],
+                                                                         verbose=self.verbose)
+            ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
+            ds_noise_spec_vals.name = 'Noise_Spectral_Values'
+            grp_filt.addChildren([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
 
         if self.write_filtered:
             ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
@@ -97,9 +104,11 @@ class SignalFilter(Process):
             self.hot_inds = np.where(self.composite_filter > 0)[0]
             self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
             ds_spec_inds, ds_spec_vals = build_ind_val_dsets([int(0.5 * len(self.hot_inds))], is_spectral=True,
-                                                             labels=['hot_frequencies'], units=[''], verbose=False)
+                                                             labels=['hot_frequencies'], units=[''],
+                                                             verbose=self.verbose)
             ds_spec_vals.data = np.atleast_2d(self.hot_inds)  # The data generated above varies linearly. Override.
-            ds_cond_data = MicroDataset('Condensed_Data', data=[], maxshape=(self.num_effective_pix, len(self.hot_inds)),
+            ds_cond_data = MicroDataset('Condensed_Data', data=[],
+                                        maxshape=(self.num_effective_pix, len(self.hot_inds)),
                                         dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
             grp_filt.addChildren([ds_spec_inds, ds_spec_vals, ds_cond_data])
             if self.num_effective_pix > 1:
@@ -110,17 +119,24 @@ class SignalFilter(Process):
                                                                 for dim_ind in range(h5_pos_inds.shape[1])],
                                                                is_spectral=False,
                                                                labels=h5_pos_inds.attrs['labels'],
-                                                               units=h5_pos_inds.attrs['units'], verbose=False)
+                                                               units=h5_pos_inds.attrs['units'], verbose=self.verbose)
                 h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
                 grp_filt.addChildren([ds_pos_inds, ds_pos_vals])
 
+        if self.verbose:
+            grp_filt.showTree()
         hdf = ioHDF5(self.h5_main.file)
-        h5_filt_refs = hdf.writeData(grp_filt)
+        h5_filt_refs = hdf.writeData(grp_filt, print_log=self.verbose)
+
         if isinstance(self.composite_filter, np.ndarray):
             h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
+
         if self.noise_threshold is not None:
             self.h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
             self.h5_results_grp = self.h5_noise_floors.parent
+            link_as_main(self.h5_noise_floors, h5_pos_inds, h5_pos_vals,
+                         getH5DsetRefs(['Noise_Spectral_Indices'], h5_filt_refs)[0],
+                         getH5DsetRefs(['Noise_Spectral_Values'], h5_filt_refs)[0])
 
         # Now need to link appropriately:
         if self.write_filtered:
@@ -129,8 +145,6 @@ class SignalFilter(Process):
             copyAttributes(self.h5_main, self.h5_filtered, skip_refs=False)
             if isinstance(self.composite_filter, np.ndarray):
                 linkRefs(self.h5_filtered, [h5_comp_filt])
-            if self.noise_threshold is not None:
-                linkRefs(self.h5_filtered, [self.h5_noise_floors])
 
             """link_as_main(self.h5_filtered, h5_pos_inds, h5_pos_vals,
                          getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
@@ -159,14 +173,17 @@ class SignalFilter(Process):
         if self.write_condensed:
             self.h5_condensed[pos_slice] = self.condensed_data
         if self.noise_threshold is not None:
-            self.h5_noise_floors[pos_slice] = self.noise_floors
+            self.h5_noise_floors[pos_slice] = np.atleast_2d(self.noise_floors)
         if self.write_filtered:
             self.h5_filtered[pos_slice] = self.filtered_data
 
         # Leaving in this provision that will allow restarting of processes
-        self.h5_results_grp['last_pixel'] = self._end_pos
+        self.h5_results_grp.attrs['last_pixel'] = self._end_pos
 
         self.hdf.flush()
+
+        if self.verbose:
+            print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
         # Now update the start position
         self._start_pos = self._end_pos
@@ -212,7 +229,7 @@ class SignalFilter(Process):
 
             if self.noise_threshold is not None:
                 # apply thresholding
-                self.data[self.data < np.tile(np.atleast_2d(self.noise_floors).T, self.noise_floors.shape[1])] = 1E-16
+                self.data[self.data < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
                 pass
 
             if self.write_condensed:
