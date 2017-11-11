@@ -12,6 +12,7 @@ from warnings import warn
 import numpy as np
 from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
+from .io_utils import transformToReal
 
 
 class PycroDataset(h5py.Dataset):
@@ -73,11 +74,7 @@ class PycroDataset(h5py.Dataset):
 
         # User accessible properties
         # The required Position and Spectroscopic datasets
-        # self.h5_spec_vals = getAuxData(h5_ref, 'Spectroscopic_Values')[-1]
-        # self.h5_spec_inds = getAuxData(h5_ref, 'Spectroscopic_Indices')[-1]
-        # self.h5_pos_vals = getAuxData(h5_ref, 'Position_Values')[-1]
-        # self.h5_pos_inds = getAuxData(h5_ref, 'Position_Indices')[-1]
-        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Indices']]
+        self.h5_spec_vals = self.file[self.attrs['Spectroscopic_Values']]
         self.h5_spec_inds = self.file[self.attrs['Spectroscopic_Indices']]
         self.h5_pos_vals = self.file[self.attrs['Position_Values']]
         self.h5_pos_inds = self.file[self.attrs['Position_Indices']]
@@ -231,7 +228,7 @@ class PycroDataset(h5py.Dataset):
 
         self.__set_labels_and_sizes()
 
-    def get_n_dim_form(self):
+    def get_n_dim_form(self, as_scalar=False):
         """
         Reshapes the dataset to an N-dimensional array
 
@@ -247,11 +244,14 @@ class PycroDataset(h5py.Dataset):
         if success is not True:
             raise ValueError('Unable to reshape data to N-dimensional form.')
 
-        self.__n_dim_data = n_dim_data
+        if as_scalar:
+            self.__n_dim_data = transformToReal(n_dim_data)
+        else:
+            self.__n_dim_data = n_dim_data
 
         return self.__n_dim_data
 
-    def slice(self, **slice_dict):
+    def slice(self, as_scalar=False, slice_dict=dict()):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -259,6 +259,8 @@ class PycroDataset(h5py.Dataset):
 
         Parameters
         ----------
+        as_scalar : bool
+            Should the data be returned as scalar values only.
         slice_dict : dict
             Dictionary of array-likes.
 
@@ -333,4 +335,7 @@ class PycroDataset(h5py.Dataset):
                                                h5_pos=self.h5_pos_inds[pos_slice, :],
                                                h5_spec=self.h5_spec_inds[:, spec_slice])
 
-        return data_slice, success
+        if as_scalar:
+            return transformToReal(data_slice), success
+        else:
+            return data_slice, success

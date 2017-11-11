@@ -2,9 +2,9 @@
 
 Roadmap / Milestones
 --------------------
-1. Mid Sep - better BE notebook + visualization for users
-2. Mid of Oct - Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-3. End of Oct - Multi-node compute capability
+1. better BE notebook + visualization for users
+2. Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+3. Multi-node compute capability
 
 New features
 ------------
@@ -21,9 +21,7 @@ Core development
          * Right hand side for spectral
                * 1D spectra or 2D images. 
                * Users will be asked to slice N-1 or N-2 spectral dimensions
-* (re)Write at least one existing processing function as a class. 
-    * Josh can redo fft filtering
-    * Rama can redo gIV bayesian inference
+* Rewrite fft filtering as a Process class. 
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
@@ -38,10 +36,104 @@ External user contributions
 * Port everything from IFIM Matlab -> Python translation exercises
 * Other workflows/functions that already exist as scripts or notebooks
 
-Plotting updates
-----------------
+GUI
+----
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
+
+Plot Utils
+----------
+
+* Define default font sizes that will be adopted in all functions wherever applicable using rcParams. See - https://matplotlib.org/users/customizing.html
+
+  * label_fontsize=16
+  * tick_fontsize=14
+  * title_fontsize=18
+  * Override wherever necessary.
+* _add_loop_parameters - is BE specific and should be moved out of plot_utils
+
+* rainbow_plot - 
+
+  1. pop cmap from kwargs instead of specifying camp as a separate argument. 
+  2. Rename parameters from ax to axis, ao_vec to x_values, ai_vec to y_values. 
+  3. Use same methodology from single_img_cbar_plot to add color bar. You will need to expect the figure handle as well for this.
+
+* plot_line_family - 
+
+  1. Rename x_axis parameter to something more sensible like x_values
+  2. Remove c map as one of the arguments. It should come from kwargs
+  3. Optional color bar (don’t show legend in this case)
+
+* plot_map -combine this with single_img_cbar_plot
+
+* single_img_cbar_plot - It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
+
+  1. Combine with plot_map
+  2. allow the tick labels to be specified instead of just the x_size and y_size. 
+  3. Rename this function to something more sensible
+  4. Color bar should be shown by default
+
+* plot_loops
+
+  1. Allow excitation_waveform to also be a list - this will allow different x resolutions for each line family. 
+  2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
+  3. Enable use of kwargs - to specify line widths etc.
+  4. Ensure that the title is not crammed somewhere behind the subtitles
+
+* Plot_complex_map_stack
+
+  1. allow kwargs. 
+  2. Use plot_map 
+  3. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
+  4. Remove map as a kwarg
+  5. Show color bars
+  6. Possibly allow horizontal / vertical configurations? (Optional)
+
+* plot_complex_loop_stack
+
+  1. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
+  2. Allow individual plots sizes to be specified
+  3. Allow **kwargs and pass two plot functions
+
+* plotScree
+
+  1. rename to plot_scree
+  2. Use **kwargs on the plot function
+
+* plot_map_stack:
+
+  1. Do something about the super title getting hidden behind the subtitles
+  2. Respect tick, x label, y label, title, etc font sizes
+  3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  4. See all other changes that were made for the image cleaning paper
+
+* plot_cluster_results_together
+
+  1. Use plot_map and its cleaner color bar option
+  2. Respect font sizes
+  3. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
+  4. See mode IV paper to see other changes
+
+* plot_cluster_results_separate
+  
+  1. Use same guidelines as above
+
+* plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
+
+* plot_1d_spectrum
+
+  1. Respect font sizes
+  2. Do not save figure here. This should be done in the place where this function is called
+  3. Use **kwargs and pass to the plot functions
+  4. Title should be optional
+
+* plot_2d_spectrogram
+
+  1. Respect font sizes
+  2. Use plot_map - show color bar
+  3. Don’t allow specification of figure_path here. Save elsewhere
+
+* plot_histograms - not used frequently. Can be ignored for this pass
 
 Examples / Tutorials
 --------------------
@@ -57,7 +149,6 @@ Short tutorials on how to use pycroscopy
 Longer examples (via specific scientific usecases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * How to write your write your own parallel computing function using the process module - add more documentation
-* How to use the PycroDataset object
 * A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
 * How to write your own analysis class based on the (to-be simplified) Model class
 * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules

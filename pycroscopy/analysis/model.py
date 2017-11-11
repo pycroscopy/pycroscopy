@@ -11,7 +11,7 @@ import psutil
 import scipy
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
-from ..io.hdf_utils import checkIfMain, getAuxData
+from ..io.pycro_data import PycroDataset
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem, recommendCores
 from .optimize import Optimize
@@ -44,7 +44,11 @@ class Model(object):
         requirement after testing the basic components.
 
         """
-        # Checking if dataset is "Main"
+
+        if not isinstance(h5_main, PycroDataset):
+            h5_main = PycroDataset(h5_main)
+
+        # Checking if dataset has the proper dimensions for the model to run.
         if self._is_legal(h5_main, variables):
             self.h5_main = h5_main
             self.hdf = ioHDF5(self.h5_main.file)
@@ -104,7 +108,7 @@ class Model(object):
 
         Parameters
         ----
-        h5_main : h5py.Dataset instance
+        h5_main : PycroDataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
 
@@ -117,21 +121,7 @@ class Model(object):
             Whether or not this dataset satisfies the necessary conditions for analysis
 
         """
-
-        # Check if h5_main is a "Main" dataset
-        cond_A = checkIfMain(h5_main)
-
-        # Check if variables are in the attributes of spectroscopic indices
-        h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        # assert isinstance(h5_spec_vals, list)
-        cond_B = set(variables).issubset(set(h5_spec_vals.attrs.keys()))
-
-        if cond_A and cond_B:
-            legal = True
-        else:
-            legal = False
-
-        return legal
+        return np.all(np.isin(variables, h5_main.spec_dim_labels))
 
     def _get_data_chunk(self, verbose=False):
         """
@@ -360,8 +350,9 @@ class Model(object):
         self._get_guess_chunk()
         self._get_data_chunk()
         results = list()
+        obj_func_name = obj_func['obj_func']
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
-        legit_obj_func = obj_func['obj_func'] in Fit_Methods().methods
+        legit_obj_func = obj_func_name in Fit_Methods().methods
         if legit_solver and legit_obj_func:
             print("Using solver %s and objective function %s to fit your data\n" % (solver_type, obj_func['obj_func']))
             while self.data is not None:
@@ -369,7 +360,7 @@ class Model(object):
                 temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
                                       obj_func=obj_func)
                 # TODO: need a different .reformatResults to process fitting results
-                results.append(self._reformat_results(temp, obj_func['obj_func']))
+                results.append(self._reformat_results(temp, obj_func_name))
                 self._get_guess_chunk()
                 self._get_data_chunk()
 

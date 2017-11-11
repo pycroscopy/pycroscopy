@@ -7,9 +7,10 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from warnings import warn
 import numpy as np
 from .model import Model
+from ..io.pycro_data import PycroDataset
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
-            copyAttributes, get_attr
+            create_empty_dataset
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 '''
@@ -57,8 +58,8 @@ class BESHOmodel(Model):
         """
         # Create all the ancilliary datasets, allocate space.....
 
-        h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-        h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        h5_spec_inds = self.h5_main.h5_spec_inds
+        h5_spec_vals = self.h5_main.h5_spec_vals
 
         self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
@@ -72,7 +73,7 @@ class BESHOmodel(Model):
                                 maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
 
-        not_freq = get_attr(h5_spec_inds, 'labels') != 'Frequency'
+        not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
 
         ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
 
@@ -101,6 +102,8 @@ class BESHOmodel(Model):
 
         copyRegionRefs(self.h5_main, self.h5_guess)
 
+        self.h5_guess = PycroDataset(self.h5_guess)
+
     def _create_fit_datasets(self):
         """
         Creates the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
@@ -114,7 +117,7 @@ class BESHOmodel(Model):
             return
 
         if self.step_start_inds is None:
-            h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+            h5_spec_inds = self.h5_main.h5_spec_inds
             self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
 
         if self.num_udvs_steps is None:
@@ -124,24 +127,11 @@ class BESHOmodel(Model):
             self._get_frequency_vector()
 
         h5_sho_grp = self.h5_guess.parent
+        h5_sho_grp.attrs['SHO_fit_method'] = "pycroscopy BESHO"
 
-        sho_grp = MicroDataGroup(h5_sho_grp.name.split('/')[-1],
-                                 h5_sho_grp.parent.name[1:])
-
-        # dataset size is same as guess size
-        ds_result = MicroDataset('Fit', data=[], maxshape=(self.h5_guess.shape[0], self.h5_guess.shape[1]),
-                                 chunking=self.h5_guess.chunks, dtype=sho32)
-        sho_grp.addChildren([ds_result])
-        sho_grp.attrs['SHO_fit_method'] = "pycroscopy BESHO"
-
-        h5_sho_grp_refs = self.hdf.writeData(sho_grp)
-
-        self.h5_fit = getH5DsetRefs(['Fit'], h5_sho_grp_refs)[0]
-
-        '''
-        Copy attributes of the fit guess
-        '''
-        copyAttributes(self.h5_guess, self.h5_fit, skip_refs=False)
+        # Create the fit dataset as an empty dataset of the same size and dtype as the guess.
+        # Also automatically links in the ancillary datasets.
+        self.h5_fit = PycroDataset(create_empty_dataset(self.h5_guess, dtype=sho32, dset_name='Fit'))
 
     def _get_frequency_vector(self):
         """
@@ -149,8 +139,8 @@ class BESHOmodel(Model):
         This assumes that the data is reshape-able.
         
         """
-        h5_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        freq_dim = np.argwhere(get_attr(h5_spec_vals, 'labels') == 'Frequency').squeeze()
+        h5_spec_vals = self.h5_main.h5_spec_vals
+        freq_dim = np.argwhere('Frequency' == np.array(self.h5_main.spec_dim_labels)).squeeze()
 
         if len(self.step_start_inds) == 1:  # BE-Line
             end_ind = h5_spec_vals.shape[1]
@@ -252,7 +242,7 @@ class BESHOmodel(Model):
         h5_guess : h5py.Dataset
             Dataset object containing the guesses
         """
-        h5_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        h5_spec_inds = self.h5_main.h5_spec_inds
 
         self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)

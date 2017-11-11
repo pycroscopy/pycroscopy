@@ -26,21 +26,20 @@ class GuessMethods(object):
         self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes', 'complex_gaussian']
 
     @staticmethod
-    def wavelet_peaks(*args, **kwargs):
+    def wavelet_peaks(vector, *args, **kwargs):
         """
-        This is a wrapper over scipy.signal.find_peaks_cwt() that finds peaks in the data using wavelet convolution.
+        This is the function that will be mapped by multiprocess. This is a wrapper around the scipy function.
+        It uses a parameter - wavelet_widths that is configured outside this function.
 
         Parameters
         ----------
-        args: dictionary
-            List of optional parameters for this function - not used.
-
-        kwargs: dictionary
-            Passed to find_peaks_cwt().
+        vector : 1D numpy array
+            Feature vector containing peaks
 
         Returns
         -------
-        wpeaks: callable function.
+        peak_indices : list
+            List of indices of peaks within the prescribed peak widths
         """
         try:
             peak_width_bounds = kwargs.get('peak_widths')
@@ -50,47 +49,29 @@ class GuessMethods(object):
             # The below numpy array is used to configure the returned function wpeaks
             wavelet_widths = np.linspace(peak_width_bounds[0], peak_width_bounds[1], peak_width_step)
 
-            def wpeaks(vector):
-                """
-                This is the function that will be mapped by multiprocess. This is a wrapper around the scipy function.
-                It uses a parameter - wavelet_widths that is configured outside this function.
+            peak_indices = find_peaks_cwt(np.abs(vector), wavelet_widths, **kwargs)
 
-                Parameters
-                ----------
-                vector : 1D numpy array
-                    Feature vector containing peaks
+            return peak_indices
 
-                Returns
-                -------
-                peak_indices : list
-                    List of indices of peaks within the prescribed peak widths
-                """
-                peak_indices = find_peaks_cwt(np.abs(vector), wavelet_widths, **kwargs)
-                return peak_indices
-
-            return wpeaks
         except KeyError:
             warn('Error: Please specify "peak_widths" kwarg to use this method')
 
     @staticmethod
-    def absolute_maximum(*args, **kwargs):
+    def absolute_maximum(vector):
         """
         Finds maximum in 1d-array
         Parameters
         ----------
-        args
-        kwargs
+        vector : numpy.ndarray
 
         Returns
         -------
         fastpeak: callable function
         """
 
-        def fastpeak(vector):
-            vec_max = np.argmax(vector)
-            return vec_max
+        vec_max = np.argmax(vector)
+        return vec_max
 
-        return fastpeak
 
     @staticmethod
     def relative_maximum(*args, **kwargs):
@@ -125,13 +106,15 @@ class GuessMethods(object):
         pass
 
     @staticmethod
-    def complex_gaussian(*args, **kwargs):
+    def complex_gaussian(resp_vec, *args, **kwargs):
         """
         Sets up the needed parameters for the analytic approximation for the
         Gaussian fit of complex data.
 
         Parameters
         ----------
+        resp_vec : numpy.ndarray
+            Data vector to be fit.
         args: numpy arrays.
 
         kwargs: Passed to SHOEstimateFit().
@@ -141,23 +124,14 @@ class GuessMethods(object):
         sho_guess: callable function.
 
         """
-        try:
-            w_vec = kwargs.pop('frequencies')
-            # lower_bounds = kwargs.pop('lower_bounds', [0, np.min(w_vec), -1e5, -np.pi])
-            # upper_bounds = kwargs.pop('upper_bounds', [1e5, np.max(w_vec), 1e5, np.pi])
-            num_points = kwargs.pop('num_points', 5)
+        w_vec = kwargs.pop('frequencies')
+        num_points = kwargs.pop('num_points', 5)
 
-            def sho_guess(resp_vec):
+        guess = SHOestimateGuess(resp_vec, w_vec, num_points)
 
-                guess = SHOestimateGuess(resp_vec, w_vec, num_points)
+        guess = np.hstack([guess, np.array(r_square(resp_vec, SHOfunc, guess, w_vec))])
 
-                guess = np.hstack([guess, np.array(r_square(resp_vec, SHOfunc, guess, w_vec))])
-
-                return guess
-
-            return sho_guess
-        except KeyError:
-            warn('Error: Please specify "peak_widths" kwarg to use this method')
+        return guess
 
 
 def r_square(data_vec, func, *args, **kwargs):

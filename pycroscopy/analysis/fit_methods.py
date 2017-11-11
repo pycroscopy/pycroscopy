@@ -22,7 +22,7 @@ class Fit_Methods(object):
         self.methods = ['SHO']
 
     @staticmethod
-    def SHO(freq_vector, *args):
+    def SHO(guess, data_vec, freq_vector, *args):
         """
         Generates the single Harmonic Oscillator response over the given vector
 
@@ -42,23 +42,20 @@ class Fit_Methods(object):
         SHO_func: callable function.
         """
 
-        def SHOFunc(guess, data_vec):
-            if guess.size < 4:
-                raise ValueError('Error: The Single Harmonic Oscillator requires 4 parameter guesses!')
-            # data_vec, guess = args
-            data_mean = np.mean(data_vec)
+        if guess.size < 4:
+            raise ValueError('Error: The Single Harmonic Oscillator requires 4 parameter guesses!')
+        # data_vec, guess = args
+        data_mean = np.mean(data_vec)
 
-            Amp, w_0, Q, phi = guess[:4]
-            func = Amp * np.exp(1.j * phi) * w_0 ** 2 / (freq_vector ** 2 - 1j * freq_vector * w_0 / Q - w_0 ** 2)
+        Amp, w_0, Q, phi = guess[:4]
+        func = Amp * np.exp(1.j * phi) * w_0 ** 2 / (freq_vector ** 2 - 1j * freq_vector * w_0 / Q - w_0 ** 2)
 
-            ss_tot = sum(abs(data_vec - data_mean) ** 2)
-            ss_res = sum(abs(data_vec - func) ** 2)
+        ss_tot = sum(abs(data_vec - data_mean) ** 2)
+        ss_res = sum(abs(data_vec - func) ** 2)
 
-            r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-            return 1-r_squared
-
-        return SHOFunc
+        return 1-r_squared
 
 
 class BE_Fit_Methods(object):
@@ -69,9 +66,9 @@ class BE_Fit_Methods(object):
         self.methods = ['BE_LOOP']
 
     @staticmethod
-    def BE_LOOP(dc_vec, *args):
+    def BE_LOOP(coef_vec, data_vec, dc_vec, *args):
         """
-        
+
         Parameters
         ----------
         dc_vec : numpy.ndarray
@@ -82,22 +79,52 @@ class BE_Fit_Methods(object):
         -------
 
         """
-        def loop_func(coef_vec, data_vec):
-            if coef_vec.size < 9:
-                raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
 
-            data_mean = np.mean(data_vec)
+        if coef_vec.size < 9:
+            raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
 
-            func = loop_fit_function(dc_vec, coef_vec)
+        data_mean = np.mean(data_vec)
 
-            ss_tot = sum(abs(data_vec - data_mean) ** 2)
-            ss_res = sum(abs(data_vec - func) ** 2)
+        func = loop_fit_function(dc_vec, coef_vec)
 
-            r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+        ss_tot = sum(abs(data_vec - data_mean) ** 2)
+        ss_res = sum(abs(data_vec - func) ** 2)
 
-            return 1 - r_squared
+        r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
-        return loop_func
+        return 1 - r_squared
+
+
+    # @staticmethod
+    # def BE_LOOP(dc_vec, *args):
+    #     """
+    #
+    #     Parameters
+    #     ----------
+    #     dc_vec : numpy.ndarray
+    #         The DC offset vector
+    #     args : list
+    #
+    #     Returns
+    #     -------
+    #
+    #     """
+    #     def loop_func(coef_vec, data_vec):
+    #         if coef_vec.size < 9:
+    #             raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
+    #
+    #         data_mean = np.mean(data_vec)
+    #
+    #         func = loop_fit_function(dc_vec, coef_vec)
+    #
+    #         ss_tot = sum(abs(data_vec - data_mean) ** 2)
+    #         ss_res = sum(abs(data_vec - func) ** 2)
+    #
+    #         r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+    #
+    #         return 1 - r_squared
+    #
+    #     return loop_func
 
 
 class forc_iv_fit_methods(Fit_Methods):

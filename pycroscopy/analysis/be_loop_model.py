@@ -1137,10 +1137,13 @@ class LoopOptimize(Optimize):
     Subclass of Optimize with BE Loop specific changes 
     """
 
-    def _initiateSolverAndObjFunc(self):
-        if self.solver_type in scipy.optimize.__dict__.keys():
-            solver = scipy.optimize.__dict__[self.solver_type]
-        if self.obj_func is None:
-            fm = BE_Fit_Methods()
-            func = fm.__getattribute__(self.obj_func_name)(self.obj_func_xvals)
-        return solver, self.solver_options, func
+    def _initiateSolverAndObjFunc(self, obj_func):
+        fm = BE_Fit_Methods()
+
+        if obj_func['class'] is None:
+            self.obj_func = obj_func['obj_func']
+        else:
+            self.obj_func_name = obj_func.pop('obj_func')
+            self.obj_func = fm.__getattribute__(self.obj_func_name)
+            self.obj_func_class = obj_func.pop('class')
+            self.obj_func_args = obj_func.values()
