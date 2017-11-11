@@ -50,7 +50,7 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=None, max_mem_mb=1024, verbose=False):
+    def __init__(self, h5_main, cores=None, max_mem_mb=4*1024, verbose=False):
         """
         Parameters
         ----------
@@ -76,17 +76,18 @@ class Process(object):
         else:
             raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
 
-        # Determining the max size of the data that can be put into memory
         self.verbose = verbose
-        self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
+        self._max_pos_per_read = None
+        self._max_mem_mb = None
 
         self._start_pos = 0
         self._end_pos = self.h5_main.shape[0]
-        self._max_pos_per_read = None
 
         self._results = None
         self.h5_results_grp = None
 
+        # Determining the max size of the data that can be put into memory
+        self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
