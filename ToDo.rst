@@ -1,31 +1,16 @@
 .. contents::
 
-Roadmap / Milestones
+Short-term goals
 --------------------
-1. better BE notebook + visualization for users
-2. Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-3. Multi-node compute capability
+* More documentation to help users / developers + PAPER
+* Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+* Multi-node compute capability
 
-New features
-------------
-Core development
-~~~~~~~~~~~~~~~~
-* Rewrite fft filtering as a Process class - in progress - see cades_dev
-* Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
-* Generic visualizer in plot.lly / dash? that can use the PycroDataset class
-   * One suggestion is 2 (or more panes). 
-         * Left hand side for positions
-               * 1D lines or 2D images
-               * Ability to select individual pixels, points within a polygon.
-               * What quantity to display for these images? Select one within P fields for compound datasets. Perhaps we need sliders / dropdowns for all spectral dimensions here to for the user to slices?
-         * Right hand side for spectral
-               * 1D spectra or 2D images. 
-               * Users will be asked to slice N-1 or N-2 spectral dimensions
-* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
-* multi-node computing capability in parallel_compute
-* Data Generators
+Documentation
+-------------
+*	Include examples in documentation
+* Links to references for all functions and methods used in our workflows.
 
---------------------
 Short tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Access h5 files
@@ -43,32 +28,36 @@ Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
 1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
 2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
-3. Done - After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
+3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
 4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
 5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number 
 
-Documentation
--------------
-*	Include examples in documentation
-* Links to references for all functions and methods used in our workflows.
-
-External user contributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Li Xin classification code 
-* Ondrej Dyck’s atom finding code – written but needs work before fully integrated
-* Nina Wisinger’s processing code (Tselev) – in progress
-* Sabine Neumeyer's cKPFM code
-* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
-* Port everything from IFIM Matlab -> Python translation exercises
-* Other workflows/functions that already exist as scripts or notebooks
+New features
+------------
+Core development
+~~~~~~~~~~~~~~~~
+* Consider implementing doSVD as a Process. Maybe the Decomposition and Cluster classes could extend Process?
+* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
+* multi-node computing capability in parallel_compute
+* Data Generators
 
 GUI
-----
+~~~~~~~~~~~
+* Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
+* Generic visualizer in plot.lly / dash? that can use the PycroDataset class
+   * One suggestion is 2 (or more panes). 
+         * Left hand side for positions
+               * 1D lines or 2D images
+               * Ability to select individual pixels, points within a polygon.
+               * What quantity to display for these images? Select one within P fields for compound datasets. Perhaps we need sliders / dropdowns for all spectral dimensions here to for the user to slices?
+         * Right hand side for spectral
+               * 1D spectra or 2D images. 
+               * Users will be asked to slice N-1 or N-2 spectral dimensions
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
 
 Plot Utils
-----------
+~~~~~~~~~
 * _add_loop_parameters - is BE specific and should be moved out of plot_utils
 
 * rainbow_plot - 
@@ -154,6 +143,16 @@ Plot Utils
 
 * plot_histograms - not used frequently. Can be ignored for this pass
 Examples / Tutorials
+
+External user contributions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Li Xin classification code 
+* Ondrej Dyck’s atom finding code – written but needs work before fully integrated
+* Nina Wisinger’s processing code (Tselev) – in progress
+* Sabine Neumeyer's cKPFM code
+* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
+* Port everything from IFIM Matlab -> Python translation exercises
+* Other workflows/functions that already exist as scripts or notebooks
 
 Formatting changes
 ------------------
