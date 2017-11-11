@@ -274,7 +274,7 @@ class GIVBayesian(Process):
             if self.verbose:
                 print('Finished processing reverse loops')
 
-            tot_time = np.round(tm.time() - t_start)
+            tot_time = np.round(tm.time() - t_start, decimals=2)
 
             if self.verbose:
                 print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,

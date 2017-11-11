@@ -13,7 +13,7 @@ import numpy as np
 from collections import Iterable
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, print_tree
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
@@ -21,10 +21,9 @@ from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_fil
 
 class SignalFilter(Process):
     def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True,
-                 write_condensed=False,
-                 num_pix=1, phase_rad=0, verbose=False, cores=None, max_mem_mb=1024, **kwargs):
+                 write_condensed=False, num_pix=1, phase_rad=0,  **kwargs):
 
-        super(SignalFilter, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose, **kwargs)
+        super(SignalFilter, self).__init__(h5_main, **kwargs)
 
         if frequency_filters is None and noise_threshold is None:
             raise ValueError('Need to specify at least some noise thresholding / frequency filter')
@@ -59,6 +58,37 @@ class SignalFilter(Process):
         self.write_filtered = write_filtered
         self.write_condensed = write_condensed
 
+        self.data = None
+        self.filtered_data = None
+        self.condensed_data = None
+        self.h5_filtered = None
+        self.h5_condensed = None
+        self.h5_noise_floors = None
+
+    def _set_memory_and_cores(self, cores=1, mem=1024):
+        """
+        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
+        number of cores to be used by analysis methods.
+
+        Parameters
+        ----------
+        cores : uint, optional
+            Default - 1
+            How many cores to use for the computation
+        mem : uint, optional
+            Default - 1024
+            The amount a memory in Mb to use in the computation
+        """
+        super(SignalFilter, self)._set_memory_and_cores(cores=cores, mem=mem)
+        """
+        Remember that the default number of pixels corresponds to only the raw data that can be held in memory
+        In the case of signal filtering, the datasets that will occupy space are:
+        1. Raw, 2. filtered (real + freq space copies), 3. Condensed (substantially lesser space)
+        The actual scaling of memory depends on options:
+        """
+        scaling_factor = 1 + 2*self.write_filtered + 0.25*self.write_condensed
+        self._max_pos_per_read = int(self._max_pos_per_read / scaling_factor)
+
     def _create_results_datasets(self):
         """
         Process specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
@@ -72,7 +102,7 @@ class SignalFilter(Process):
         if self.frequency_filters is not None:
             for filter in self.frequency_filters:
                 filter_parms.update(filter.get_parms())
-        filter_parms['algorithm'] = 'GmodeUtils-Parallel'
+        filter_parms['algorithm'] = 'pycroscopy_SignalFilter'
         filter_parms['last_pixel'] = 0
         grp_filt.attrs = filter_parms
 
@@ -193,18 +223,6 @@ class SignalFilter(Process):
         return getNoiseFloor
 
     def compute(self, *args, **kwargs):
-        """
-
-        Parameters
-        ----------
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
-
-        Returns
-        -------
-
-        """
         self._create_results_datasets()
 
         time_per_pix = 0
@@ -230,12 +248,10 @@ class SignalFilter(Process):
             if self.noise_threshold is not None:
                 # apply thresholding
                 self.data[self.data < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
-                pass
 
             if self.write_condensed:
                 # set self.condensed_data here
                 self.condensed_data = self.data[:, self.hot_inds]
-                pass
 
             if self.write_filtered:
                 # take inverse FFT
@@ -244,13 +260,12 @@ class SignalFilter(Process):
                     # do np.roll on data
                     # self.data = np.roll(self.data, 0, axis=1)
                     pass
-                pass
 
-            tot_time = np.round(tm.time() - t_start)
+            tot_time = np.round(tm.time() - t_start, decimals=2)
 
             if self.verbose:
                 print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / self._max_pos_per_read))
+                                                                                     tot_time / self.data.shape[0]))
             if self._start_pos == 0:
                 time_per_pix = tot_time / self._end_pos  # in seconds
             else:
