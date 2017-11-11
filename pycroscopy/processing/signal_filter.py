@@ -17,11 +17,38 @@ from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_ma
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
+# TODO: implement phase compensation
 
 
 class SignalFilter(Process):
     def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True,
                  write_condensed=False, num_pix=1, phase_rad=0,  **kwargs):
+        """
+        Filters the entire h5 dataset with the given filtering parameters.
+
+        Parameters
+        ----------
+        h5_main : h5py.Dataset object
+            Dataset to process
+        frequency_filters : (Optional) single or list of pycroscopy.fft.FrequencyFilter objects
+            Frequency (vertical) filters to apply to signal
+        noise_threshold : (Optional) float. Default - None
+            Noise tolerance to apply to data. Value must be within (0, 1)
+        write_filtered : (Optional) bool. Default - True
+            Whether or not to write the filtered data to file
+        write_condensed : Optional) bool. Default - False
+            Whether or not to write the condensed data in frequency space to file. Use this for datasets that are very
+            large but sparse in frequency space.
+        num_pix : (Optional) uint. Default - 1
+            Number of pixels to use for filtering. More pixels means a lower noise floor and the ability to pick up
+            weaker signals. Use only if absolutely necessary. This value must be a divisor of the number of pixels in
+            the dataset
+        phase_rad : (Optional). float
+            Degrees by which the output is rotated with respect to the input to compensate for phase lag.
+            This feature has NOT yet been implemented.
+        kwargs : (Optional). dictionary
+            Please see Process class for additional inputs
+        """
 
         super(SignalFilter, self).__init__(h5_main, **kwargs)
 
@@ -61,6 +88,7 @@ class SignalFilter(Process):
         self.data = None
         self.filtered_data = None
         self.condensed_data = None
+        self.noise_floors = None
         self.h5_filtered = None
         self.h5_condensed = None
         self.h5_noise_floors = None
@@ -91,9 +119,7 @@ class SignalFilter(Process):
 
     def _create_results_datasets(self):
         """
-        Process specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
-        link the guess dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
-        within this function.
+        Creates all the datasets necessary for holding all parameters + data.
         """
 
         grp_name = self.h5_main.name.split('/')[-1] + '-FFT_Filtering_'
@@ -197,6 +223,9 @@ class SignalFilter(Process):
                          getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
 
     def _write_results_chunk(self):
+        """
+        Writes data chunks back to the file
+        """
 
         pos_slice = slice(self._start_pos, self._end_pos)
 
@@ -223,6 +252,18 @@ class SignalFilter(Process):
         return getNoiseFloor
 
     def compute(self, *args, **kwargs):
+        """
+        Creates placeholders for the results, applies the filers to the data, and writes the output to the file.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        h5_results_grp : h5py.Datagroup object
+            Datagroup containing all the results
+        """
         self._create_results_datasets()
 
         time_per_pix = 0
@@ -277,5 +318,4 @@ class SignalFilter(Process):
         if self.verbose:
             print('Finished processing the dataset completely')
 
-        # return self.h5_cap.parent
         return self.h5_results_grp
