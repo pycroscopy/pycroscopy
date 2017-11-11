@@ -23,8 +23,7 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
 
 
 class GIVBayesian(Process):
-    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, verbose=False,
-                 cores=None, max_mem_mb=1024, **kwargs):
+    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, **kwargs):
         """
         Parameters
         ----------
@@ -37,15 +36,14 @@ class GIVBayesian(Process):
         max_mem_mb : uint, optional
             How much memory to use for the computation.  Default 1024 Mb
         """
-        super(GIVBayesian, self).__init__(h5_main, cores=cores, max_mem_mb=max_mem_mb, verbose=verbose)
-        self.verbose = verbose
+        super(GIVBayesian, self).__init__(h5_main, **kwargs)
         self.gain = gain
         self.ex_freq = ex_freq
         self.r_extra = r_extra
         self.num_x_steps = int(num_x_steps)
         if self.num_x_steps % 4 == 0:
             self.num_x_steps = ((self.num_x_steps // 2) + 1) * 2
-        if verbose:
+        if self.verbose:
             print('ensuring that half steps should be odd, num_x_steps is now', self.num_x_steps)
 
         # take these from kwargs
@@ -76,7 +74,10 @@ class GIVBayesian(Process):
             The amount a memory in Mb to use in the computation
         """
         super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
-        self._max_pos_per_read = 1024  # Need a better way of figuring out a more appropriate estimate
+        # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
+        # In the case of simplified Bayeisan inference, four (roughly) equally sized datasets need to be held in memory:
+        # raw, compensated current, resistance, variance
+        self._max_pos_per_read *= 0.25
 
     def _create_results_datasets(self):
         """
