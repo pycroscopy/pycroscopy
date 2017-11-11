@@ -20,21 +20,28 @@ from .giv_utils import do_bayesian_inference
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})
+# TODO : Take lesser used bayesian inference params from kwargs if provided
 
 
 class GIVBayesian(Process):
     def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, **kwargs):
         """
+        Applies Bayesian Inference to General Mode IV (G-IV) data to extract the true current
+
         Parameters
         ----------
-        h5_main : h5py.Dataset instance
-            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-            indices and values, and position indices and values datasets.
-        cores : uint, optional
-            Default - 1
-            How many cores to use for the computation
-        max_mem_mb : uint, optional
-            How much memory to use for the computation.  Default 1024 Mb
+        h5_main : h5py.Dataset object
+            Dataset to process
+        ex_freq : float
+            Frequency of the excitation waveform
+        gain : uint
+            Gain setting on current amplifier (typically 7-9)
+        num_x_steps : uint (Optional, default = 500)
+            Number of steps for the inferred results. Note: this may be end up being slightly different from specified.
+        r_extra : float (Optional, default = 220 [Ohms])
+            Extra resistance in the RC circuit that will provide correct current and resistance values
+        kwargs : dict
+            Other parameters specific to the Process class and nuanced bayesian_inference parameters
         """
         super(GIVBayesian, self).__init__(h5_main, **kwargs)
         self.gain = gain
@@ -81,9 +88,7 @@ class GIVBayesian(Process):
 
     def _create_results_datasets(self):
         """
-        Process specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
-        link the guess dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
-        within this function.
+        Creates hdf5 datasets and datagroups to hold the resutls
         """
         # create all h5 datasets here:
         num_pos = self.h5_main.shape[0]
@@ -160,6 +165,9 @@ class GIVBayesian(Process):
             print('Finished linking all datasets!')
 
     def _write_results_chunk(self):
+        """
+        Writes data chunks back to the h5 file
+        """
 
         if self.verbose:
             print('Started accumulating all results')
@@ -226,16 +234,16 @@ class GIVBayesian(Process):
 
     def compute(self, *args, **kwargs):
         """
+        Creates placeholders for the results, applies the inference to the data, and writes the output to the file.
 
         Parameters
         ----------
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
+        None
 
         Returns
         -------
-
+        h5_results_grp : h5py.Datagroup object
+            Datagroup containing all the results
         """
         self._create_results_datasets()
 
@@ -290,5 +298,4 @@ class GIVBayesian(Process):
         if self.verbose:
             print('Finished processing the dataset completely')
 
-        # return self.h5_cap.parent
         return self.h5_results_grp
