@@ -14,14 +14,13 @@ from ..io.hdf_utils import getAuxData
 from ..viz.plot_utils import set_tick_font_size
 
 
-def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
+def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, r_extra=110, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
                           num_samples=2E3, show_plots=False, econ=False):
     """
     this function accepts a Voltage vector and current vector
     and returns a Bayesian inferred result for R(V) and capacitance
     Used for solving the situation I = V/R(V) + CdV/dt
     to recover R(V) and C, where C is constant.
-
     Parameters
     ----------
     i_meas : 1D array or list
@@ -32,6 +31,8 @@ def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0,
         frequency of applied waveform
     num_x_steps : unsigned int (Optional, Default = 251)
         Number of steps in x vector (interpolating V)
+    r_extra : float (Optional, default = 220 [Ohms])
+        Extra resistance in the RC circuit that will provide correct current and resistance values
     gam : float (Optional, Default = 0.03)
         gamma value for reconstruction
     e : float (Optional, Default = 10.0)
@@ -46,7 +47,6 @@ def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0,
         Whether or not to show plots
     econ : Boolean (Optional, Default = False)
         Whether or not extra datasets are returned. Turn this on when running on multiple datasets
-
     Returns
     -------
     results_dict : Dictionary
@@ -60,9 +60,7 @@ def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0,
         'cValue' : float.  Capacitance value
         'm2R' : Ask Kody
         'SI' : Ask Kody
-
     Written by Kody J. Law (Matlab) and translated to Python by Rama K. Vasudevan
-
     """
     num_samples = int(num_samples)
     num_x_steps = int(num_x_steps)
@@ -86,12 +84,12 @@ def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0,
     A = np.zeros(shape=(num_volt_points, num_x_steps + 1))
     for j in range(num_volt_points):
         ix = int(round(np.floor((bias[j] + max_volts) / dx) + 1))
-        ix = min(ix, len(x)-1)
+        ix = min(ix, len(x) - 1)
         ix = max(ix, 1)
         A[j, ix] = bias[j] * (bias[j] - x[ix - 1]) / (x[ix] - x[ix - 1])
         A[j, ix - 1] = bias[j] * (1. - (bias[j] - x[ix - 1]) / (x[ix] - x[ix - 1]))
 
-    A[:, num_x_steps] = dv
+    A[:, num_x_steps] = dv + r_extra * bias
 
     # generate simulated observations
     Lapt = (-1. * np.diag((t[:-1]) ** 0, -1) - np.diag(t[:-1] ** 0, 1) + 2. * np.diag(t ** 0, 0)) / dt / dt
@@ -175,7 +173,7 @@ def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, gam=0.03, e=10.0,
     return results_dict
 
 
-def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_steps=500, show_plots=False,
+def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=110, num_x_steps=500, show_plots=False,
                                  r_max=None, **kwargs):
     """
     Performs Bayesian Inference on a single I-V curve.
@@ -202,67 +200,67 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
         Other parameters that will be passed on to the do_bayesian_inference function
     Returns
     -------
-    capacitance : array-like - 2 elements
-        Capacitance on the forward and reverse sections
-    triangular_bias : array-like
-        Interpolated bias from bayesian inference of length num_x_steps
-    resistance : array-like
-        Resistance of sample infered by Bayesian Inference of length num_x_steps
-    variance : array-like
-        Variance of the inferred resistance of length num_x_steps
-    i_corr_sine : array-like
-        Measured current with the capacitance correctly subtracted.
+    results : dictionary
+        Dictionary iterms are
+        'cValue' : array-like - 2 elements
+            Capacitance on the forward and reverse sections
+        'x' : array-like
+            Interpolated bias from bayesian inference of length num_x_steps
+        'mR' : array-like
+            Resistance of sample infered by Bayesian Inference of length num_x_steps
+        'vR' : array-like
+            Variance of the inferred resistance of length num_x_steps
+        'IcorrSine' : array-like
+            Measured current with the capacitance correctly subtracted.
+        'Irec' : array-like
+            Current reconstructed via Bayesian Inference
     """
     roll_val = -0.25
     num_v_steps = excit_wfm.size
     cos_omega_t = np.roll(excit_wfm, int(num_v_steps * roll_val))
     y_val = np.roll(i_meas, int(num_v_steps * roll_val))
     half_x_steps = num_x_steps // 2
-    rev_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)], cos_omega_t[:int(0.5 * num_v_steps)],
+    rev_results = do_bayesian_inference(y_val[:int(0.5 * num_v_steps)] * -1,
+                                        cos_omega_t[:int(0.5 * num_v_steps)] * -1,
                                         ex_freq, num_x_steps=half_x_steps,
-                                        econ=True, show_plots=False, **kwargs)
+                                        econ=True, show_plots=False, r_extra=r_extra, **kwargs)
     forw_results = do_bayesian_inference(y_val[int(0.5 * num_v_steps):], cos_omega_t[int(0.5 * num_v_steps):],
                                          ex_freq, num_x_steps=half_x_steps,
-                                         econ=True, show_plots=False, **kwargs)
+                                         econ=True, show_plots=False, r_extra=r_extra, **kwargs)
+
     # putting the split inference together:
     full_results = dict()
     for item in ['Irec', 'cValue']:
         full_results[item] = np.hstack((forw_results[item], rev_results[item]))
-        # print(item, full_results[item].shape)
-
-    # Rolling back Irec - (this is the only one in cosine):
-    # A wasteful quantity since it is a duplicate of i_meas
-    # full_results['Irec'] = np.roll(full_results['Irec'], int(num_v_steps * roll_val * -1))
 
     # Capacitance is always doubled - halve it now:
     full_results['cValue'] *= 0.5
     cap_val = np.mean(full_results['cValue'])
 
     # Compensating the resistance..
-    omega = 2 * np.pi * ex_freq
+    # omega = 2 * np.pi * ex_freq
+    """t_max = 1. / ex_freq
+    t = np.linspace(0, t_max, len(excit_wfm))
+    dt = t[2] - t[1]"""
+    # dt = period time / points per period
+    dt = 1 / (ex_freq * excit_wfm.size)
+    dv = np.diff(excit_wfm) / dt
+    dv = np.append(dv, dv[-1])
     i_meas = i_meas  # from nA to A
-    i_cap = cap_val * omega * cos_omega_t  # from nF to F
-    i_extra = r_extra * cap_val * excit_wfm  # from nF to F, ohms to ohms (1)
+    i_cap = cap_val * dv  # from nF to F
+    i_extra = r_extra * 2 * cap_val * excit_wfm  # from nF to F, ohms to ohms (1)
     i_corr_sine = i_meas - i_cap - i_extra
-
-    # It is a lot simpler to correct the bayesian current,
-    # since the capacitance contribution has already been removed, and
-    # i_extra when plotted against bias is just a straight line!
-    """i_extra = r_extra * cap_val * forw_results['x']
-    i_forw = (forw_results['x']/forw_results['mR']) - i_extra
-    i_rev = (rev_results['x']/rev_results['mR']) - i_extra"""
-
-    # Now also correct the inferred resistance
-    # old_resistance = np.hstack((forw_results['mR'], np.flipud(rev_results['mR'])))
-    old_r_forw = forw_results['mR']
-    old_r_rev = rev_results['mR']
-    forw_results['mR'] = forw_results['mR'] / (1 - (forw_results['mR'] * r_extra * cap_val))
-    rev_results['mR'] = rev_results['mR'] / (1 - (rev_results['mR'] * r_extra * cap_val))
+    full_results['IcorrSine'] = i_corr_sine
 
     # by default Bayesian inference will sort bias in ascending order
-    for item in ['x', 'mR', 'vR']:
-        full_results[item] = np.hstack((forw_results[item], np.flipud(rev_results[item])))
+    rev_results['x'] *= -1
+    rev_results['Irec'] *= -1
+
+    for item in ['x', 'mR', 'vR', 'Irec']:
+        full_results[item] = np.hstack((forw_results[item], rev_results[item]))
         # print(item, full_results[item].shape)
+
+    full_results['Irec'] = np.roll(full_results['Irec'], int(num_v_steps * roll_val))
 
     # Plot to make sure things are indeed correct:
     if show_plots:
@@ -270,10 +268,7 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
         axis.plot(excit_wfm, i_meas, color='green', label='Meas')
         axis.plot(excit_wfm, i_corr_sine, color='k', label='Sine corr')  # should not be able to see this.
         axis.plot(excit_wfm, i_extra, '--', color='grey', label='I extra')
-        # axis.plot(full_results['x'], full_results['x'] / old_resistance, label='Bayes orig')
-        # axis.plot(full_results['x'], full_results['x'] / full_results['mR'], label='Bayes corr')
-        axis.plot(forw_results['x'], forw_results['x'] / old_r_forw, '--', color='cyan', label='Bayes orig F')
-        axis.plot(rev_results['x'], rev_results['x'] / old_r_rev, '--', color='orange', label='Bayes orig R')
+        axis.plot(excit_wfm, full_results['Irec'], '--', color='orange', label='I rec')
         axis.plot(forw_results['x'], forw_results['x'] / forw_results['mR'], color='blue', label='Bayes corr F')
         axis.plot(rev_results['x'], rev_results['x'] / rev_results['mR'], color='red', label='Bayes corr R')
         axis.set_xlabel('Bias (V)')
@@ -285,7 +280,7 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
         def _plot_resistance(axis, bias_triang, res_vec, variance_vec, forward=True):
             st_dev = np.sqrt(variance_vec)
             good_pts = np.where(st_dev < 10)[0]
-            good_pts = good_pts[np.where(good_pts < old_r_forw.size)[0]]
+            good_pts = good_pts[np.where(good_pts < forw_results['x'].size)[0]]
             pos_limits = res_vec + st_dev
             neg_limits = res_vec - st_dev
             if forward:
@@ -297,14 +292,11 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
             axis.fill_between(bias_triang[good_pts], pos_limits[good_pts], neg_limits[good_pts],
                               alpha=0.25, color=cols_set[1], label='R(V)+-$\sigma$')
 
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(10, 10))
+        fig, axes = plt.subplots(ncols=2, nrows=1, figsize=(10, 5))
         for axis, res_vec, variance_vec, name, direction in zip(axes.flat,
-                                                                [old_r_forw, old_r_rev, forw_results['mR'],
-                                                                 rev_results['mR']],
-                                                                [forw_results['vR'], rev_results['vR'],
-                                                                 forw_results['vR'], rev_results['vR']],
-                                                                ['Forw Orig', 'Rev Orig', 'Forw Corr', 'Rev Corr'],
-                                                                [True, False, True, False]):
+                                                                [forw_results['mR'], rev_results['mR']],
+                                                                [forw_results['vR'], rev_results['vR']],
+                                                                ['Forw', 'Rev'], [True, False, ]):
             _plot_resistance(axis, forw_results['x'], res_vec, variance_vec, forward=direction)
             y_lims = axis.get_ylim()
             if r_max is not None:
@@ -317,7 +309,7 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=220, num_x_
             axis.legend()
         fig.tight_layout()
 
-    return full_results['cValue'], full_results['x'], full_results['mR'], full_results['vR'], i_corr_sine
+    return full_results
 
 
 def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, **kwargs):
@@ -353,7 +345,7 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, **kwargs):
                                  pix_pos=h5_pos[pix_ind], **kwargs)
 
 
-def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistance, r_variance,
+def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistance, r_variance, i_recon=None,
                           pix_pos=[0, 0], broken_resistance=True, r_max=None, res_scatter=False, **kwargs):
     """
     Plots the basic Bayesian Inference results for a specific pixel
@@ -364,6 +356,8 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
     i_meas : 1D float numpy array
         Current measured from experiment
     i_corrected : 1D float numpy array
+        current with capacitance and R extra compensated
+    i_recon : 1D float numpy array
         Reconstructed current
     bias_triang : 1D float numpy array
         Interpolated bias
@@ -418,7 +412,6 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
 
     axes[0].set_ylabel('Resistance (G$\Omega$)', fontsize=font_size_2)
 
-
     pts_to_plot = [good_forw, good_rev]
 
     for type_ind, axis, pts_list, cols_set, sym_set, set_name in zip(range(len(names)),
@@ -447,7 +440,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
                 axis.fill_between(bias_triang[cur_range], pos_limits[cur_range], neg_limits[cur_range],
                                   alpha=0.25, color=cols_set[1])
                 if ind == 1:
-                    axis.legend(['R(V)', 'R(V)+-$\sigma$'], loc='best', fontsize=font_size_1)
+                    axis.legend(['R(V)', 'R(V)+-$\sigma$'], loc='upper center', fontsize=font_size_1)
         else:
             if res_scatter:
                 axis.scatter(bias_triang[pts_list], resistance[pts_list],
@@ -457,7 +450,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
                           linestyle=sym_set[0], linewidth=3, label='R(V)')
             axis.fill_between(bias_triang[pts_list], pos_limits[pts_list], neg_limits[pts_list],
                               alpha=0.25, color=cols_set[1], label='R(V)+-$\sigma$')
-            axis.legend(loc='upper left', fontsize=font_size_1)
+            axis.legend(loc='upper center', fontsize=font_size_1)
         axis.set_xlabel('Voltage (V)', fontsize=font_size_2)
 
         axis.set_xlim((-ex_amp, ex_amp))
@@ -465,6 +458,8 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
     # ################### CURRENT PLOT ##########################
 
     axes[2].plot(bias_sine, i_meas, 'green', linewidth=3, label='I$_{meas}$')
+    if i_recon is not None:
+        axes[2].plot(bias_sine, i_recon, 'k--', linewidth=3, label='I$_{recon}$')
     axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
                  'blue', linewidth=3, label='I$_{Bayes} Forw$')
     axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
