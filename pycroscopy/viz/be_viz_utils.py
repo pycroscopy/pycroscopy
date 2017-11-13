@@ -358,7 +358,9 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         resp_vec = resp_func(resp_vec)
         for line_handle, data in zip(line_handles, np.transpose(resp_vec)):
             line_handle.set_ydata(data)
-        ax_loop.set_ylim([np.min(resp_vec), np.max(resp_vec)])
+
+        ax_loop.relim()
+        ax_loop.autoscale_view()
 
         fig.canvas.draw()
 
@@ -675,15 +677,30 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     display(save_fig_filebox_button(fig, h5_projected_loops.file.filename))
 
+    loop_slider = widgets.IntSlider(min=0, max=bias_vec.shape[1]-1, description='Loop Number')
 
-    def update_loop_plots(loop_field, **kwargs):
-        loop_ind = kwargs['Loop Number']
+    def update_loop_plots(loop_field, loop_ind):
         spatial_map = fit_3d[:, :, loop_ind][loop_field]
         im_map.set_data(spatial_map.T)
         spat_mean = np.mean(spatial_map)
         spat_std = np.std(spatial_map)
         im_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
         ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
+
+        xdata, ydata = crosshair.get_xydata().flatten().astype('int')
+
+        proj_data = proj_nd_shifted[xdata, ydata, :, loop_ind]
+        bias_data = bias_shifted[:, loop_ind]
+        guess_data = loop_fit_function(bias_data, np.array(list(guess_3d[xdata, ydata, loop_ind])))
+        fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[xdata, ydata, loop_ind])))
+
+        for line_handle, data in zip(line_handles, [proj_data, guess_data, fit_data]):
+            line_handle.set_ydata(data)
+
+        ax_loop.set_title('Position ({},{})'.format(xdata, ydata))
+
+        ax_loop.relim()
+        ax_loop.autoscale_view()
 
         fig.canvas.draw()
 
@@ -709,16 +726,16 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
         fit_data = loop_fit_function(bias_data, np.array(list(fit_3d[xdata, ydata, loop_ind])))
         for line_handle, data in zip(line_handles, [proj_data, guess_data, fit_data]):
             line_handle.set_ydata(data)
-        ax_loop.set_ylim([np.min([proj_data, guess_data, fit_data]), np.max([proj_data, guess_data, fit_data])])
         ax_loop.set_title('Position ({},{})'.format(xdata, ydata))
+
+        ax_loop.relim()
+        ax_loop.autoscale_view()
 
         fig.canvas.draw()
 
     cid = im_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
-    slider_dict = dict()
-    slider_dict['Loop Number'] = (0, bias_vec.shape[1] - 1, 1)
-    widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), **slider_dict)
+    widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), loop_ind=loop_slider)
 
 
 def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
@@ -1092,6 +1109,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     sho_bias_dim = np.argwhere(sho_spec_labs[sho_spec_order] == 'DC_Offset').squeeze()
     steps_per_loop = sho_spec_dims[sho_bias_dim]
     main_bias_dim = np.argwhere(main_spec_labs[main_spec_order] == 'DC_Offset').squeeze()
+    main_freq_dim = np.argwhere(main_spec_labs[main_spec_order] == 'Frequency').squeeze()
 
     if selected_loop_parm is None:
         selected_loop_parm = loop_parameter_names[0]
@@ -1139,7 +1157,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
 
         loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
-        loop_proj_vec = np.moveaxis(loop_proj_vec, sho_bias_dim, -1)[selected_loop_ndims]
+        loop_proj_vec = np.moveaxis(loop_proj_vec, len(sho_spec_dims)-sho_bias_dim-1, -1)[selected_loop_ndims]
         loop_proj_vec = np.roll(loop_proj_vec, shift_ind)
         loop_guess_vec = loop_fit_function(selected_loop_bias_vec,
                                            h5_loop_guess[pos_ind, selected_loop_cycle].tolist())
@@ -1154,20 +1172,20 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
 
         # Get the frequency vector for the selected step
-        w_vec = np.moveaxis(full_w_vec, main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+        w_vec = np.moveaxis(full_w_vec, main_freq_dim, -1)[selected_step][selected_loop_ndims]
 
         # Get the slice of the sho guess and fit
         sho_guess = h5_sho_guess[pos_ind].reshape(sho_spec_dims[::-1])
-        sho_guess = np.moveaxis(sho_guess, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_guess = np.moveaxis(sho_guess, len(sho_spec_dims)-sho_bias_dim-1, -1)[selected_loop_ndims][selected_step]
         sho_guess = SHOfunc(sho_guess, w_vec)
         sho_fit = h5_sho_fit[pos_ind].reshape(sho_spec_dims[::-1])
-        sho_fit = np.moveaxis(sho_fit, sho_bias_dim, -1)[selected_loop_ndims][selected_step]
+        sho_fit = np.moveaxis(sho_fit, len(sho_spec_dims)-sho_bias_dim-1, -1)[selected_loop_ndims][selected_step]
         sho_fit = SHOfunc(sho_fit, w_vec)
 
         # Get the slice of the Raw Data
         raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
         raw_data_vec = np.moveaxis(raw_data_vec.squeeze(),
-                                   main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
+                                   main_freq_dim, -1)[selected_step][selected_loop_ndims]
 
         return w_vec, sho_guess, sho_fit, raw_data_vec
 
