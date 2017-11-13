@@ -50,7 +50,7 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=1, max_mem_mb=1024):
+    def __init__(self, h5_main, cores=None, max_mem_mb=4*1024, verbose=False):
         """
         Parameters
         ----------
@@ -58,11 +58,16 @@ class Process(object):
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
         cores : uint, optional
-            Default - 1
+            Default - all available cores - 2
             How many cores to use for the computation
         max_mem_mb : uint, optional
             How much memory to use for the computation.  Default 1024 Mb
+        verbose : Boolean, (Optional, default = False)
+            Whether or not to print debugging statements
         """
+
+        if h5_main.file.mode != 'r+':
+            raise TypeError('Need to ensure that the file is in r+ mode to write results back to the file')
 
         # Checking if dataset is "Main"
         if checkIfMain(h5_main):
@@ -71,8 +76,9 @@ class Process(object):
         else:
             raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
 
-        # Determining the max size of the data that can be put into memory
-        self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
+        self.verbose = verbose
+        self._max_pos_per_read = None
+        self._max_mem_mb = None
 
         self._start_pos = 0
         self._end_pos = self.h5_main.shape[0]
@@ -80,7 +86,10 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
-    def _set_memory_and_cores(self, cores=1, mem=1024, verbose=False):
+        # Determining the max size of the data that can be put into memory
+        self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
+
+    def _set_memory_and_cores(self, cores=1, mem=1024):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -93,9 +102,6 @@ class Process(object):
         mem : uint, optional
             Default - 1024
             The amount a memory in Mb to use in the computation
-        verbose : bool, optional
-            Whether or not to print log statements
-
         """
 
         if cores is None:
@@ -114,7 +120,7 @@ class Process(object):
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1e6
         self._max_pos_per_read = int(np.floor(max_data_chunk / mb_per_position))
 
-        if verbose:
+        if self.verbose:
             print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
@@ -122,7 +128,7 @@ class Process(object):
     def _unit_function(*args):
         raise NotImplementedError('Please override the _unit_function specific to your process')
 
-    def _read_data_chunk(self, verbose=False):
+    def _read_data_chunk(self):
         """
         Reads a chunk of data for the intended computation into memory
 
@@ -134,13 +140,13 @@ class Process(object):
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            if verbose:
+            if self.verbose:
                 print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # DON'T update the start position
 
         else:
-            if verbose:
+            if self.verbose:
                 print('Finished reading all data!')
             self.data = None
 
@@ -161,6 +167,13 @@ class Process(object):
         within this function.
         """
         raise NotImplementedError('Please override the _create_results_datasets specific to your process')
+
+    def _get_existing_datasets(self):
+        """
+        The purpose of this function is to allow processes to resume from partly computed results
+
+        """
+        raise NotImplementedError('Please override the _get_existing_datasets specific to your process')
 
     def compute(self, *args, **kwargs):
         """

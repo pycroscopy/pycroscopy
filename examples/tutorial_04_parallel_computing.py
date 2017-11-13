@@ -99,7 +99,12 @@ px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
 #########################################################################
 # The operation
 # =============
-# We will be guessing the fits for each of these complex-valued spectra to a simple harmonic oscillator as defined in
+# We will be computing the parameters that would best describe these complex-valued spectra using a simple harmonic
+# oscillator model in the functions below. These functions have been taken from the BESHOFit submodule available in
+# pycroscopy.analysis.
+#
+# The specifics of the functions are not of interest for this example. Instead, all we need to know
+# is that we need to apply a function (SHOestimateGuess in our case) on each element in our dataset.
 # the functions below
 #
 # .. code-block:: python
@@ -245,14 +250,14 @@ print('Functional fit returned:', norm_guess_parms)
 norm_resp = px.analysis.be_sho.SHOfunc(norm_guess_parms, freq_vec)
 
 
-fig, axes = plt.subplots(nrows=2, sharex=True, figsize=(5, 10))
+fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, func, title in zip(axes.flat, [np.abs, np.angle], ['Amplitude (a.u.)', 'Phase (rad)']):
     axis.scatter(freq_vec, func(resp_vec), c='red', label='Measured')
     axis.plot(freq_vec, func(norm_resp), 'black', lw=3, label='Guess')
     axis.set_title(title, fontsize=16)
     axis.legend(fontsize=14)
-    
-axes[1].set_xlabel('Frequency (kHz)', fontsize=14)
+    axis.set_xlabel('Frequency (kHz)', fontsize=14)
+
 axes[0].set_ylim([0, np.max(np.abs(resp_vec))*1.1])
 axes[1].set_ylim([-np.pi, np.pi])
 
@@ -353,7 +358,7 @@ print('Parallel and serial computation results matching:',
 # The Process class in pycroscopy aims to modularize these operations for faster development of standardized,
 # easy-to-debug code. Common operations can be inherited from this class and only the operation-specific functions
 # need to be extended in your class.
-# Please see another example on how to write a Process class
+# Please see another example on how to write a Process class for Pycroscopy
 
 
 #########################################################################
