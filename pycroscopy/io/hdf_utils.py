@@ -759,10 +759,17 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
         try:
             ds_Nd = np.reshape(ds_main, pos_dims[-1])
-            return ds_Nd, 'Positions'
+
+            if get_labels:
+                return ds_Nd, 'Positions', ['Position']+spec_labs
+            else:
+                return ds_Nd, 'Positions'
         except ValueError:
             warn('Reshape by position only also failed.  Will keep dataset in 2d form.')
-            return ds_main, False
+            if get_labels:
+                return ds_main, False, ['Position', 'Spectral Step']
+            else:
+                return ds_Nd, 'Positions'
         except:
             raise
     except:

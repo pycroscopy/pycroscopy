@@ -1284,7 +1284,7 @@ class ImageWindow(object):
         for k in range(r_n - 1):
             r1 = r_vec[k]
             r2 = r_vec[k + 1]
-            r_ind = np.where((r_mat >= r1) and (r_mat <= r2))
+            r_ind = np.where(np.logical_and(r_mat >= r1, r_mat <= r2))
             fimabs_max[k] = np.max(fimabs[r_ind])
 
         r_vec = r_vec[:-1] + (r_max - r_min) / (r_n - 1.0) / 2.0
@@ -1426,9 +1426,9 @@ class ImageWindow(object):
             fig.savefig(plotpath, format='png')
 
         if show_plots:
-            plt.show(fig)
+            plt.show()
 
-        plt.close(fig)
+        # plt.close(fig)
 
 
 def radially_average_correlation(data_mat, num_r_bin):
