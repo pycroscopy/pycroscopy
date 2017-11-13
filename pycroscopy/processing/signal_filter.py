@@ -13,7 +13,7 @@ import numpy as np
 from collections import Iterable
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, check_for_old
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
@@ -94,6 +94,23 @@ class SignalFilter(Process):
         scaling_factor = 1 + 2 * self.write_filtered + 0.25 * self.write_condensed
         self._max_pos_per_read = int(self._max_pos_per_read / scaling_factor)
 
+        if self.verbose:
+            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
+
+        self.parms_dict = dict()
+        if self.frequency_filters is not None:
+            for filter in self.frequency_filters:
+                self.parms_dict.update(filter.get_parms())
+        if self.noise_threshold is not None:
+            self.parms_dict['noise_threshold'] = self.noise_threshold
+
+        duplicates = check_for_old(self.h5_main, 'FFT_Filtering', new_parms=self.parms_dict)
+        if self.verbose:
+            print('Checking for duplicates:')
+            print(duplicates)
+        if duplicates is not None:
+            print('WARNING! FFT filtering has already been performed with the same parameters before. Consider reusing results')
+
         self.data = None
         self.filtered_data = None
         self.condensed_data = None
@@ -110,16 +127,8 @@ class SignalFilter(Process):
         grp_name = self.h5_main.name.split('/')[-1] + '-FFT_Filtering_'
         grp_filt = MicroDataGroup(grp_name, self.h5_main.parent.name)
 
-        filter_parms = dict()
-        if self.frequency_filters is not None:
-            for filter in self.frequency_filters:
-                filter_parms.update(filter.get_parms())
-        if self.noise_threshold is not None:
-            filter_parms['noise_threshold'] = self.noise_threshold
-        filter_parms['algorithm'] = 'pycroscopy_SignalFilter'
-        filter_parms['last_pixel'] = 0
-
-        grp_filt.attrs = filter_parms
+        self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
+        grp_filt.attrs = self.parms_dict
 
         if isinstance(self.composite_filter, np.ndarray):
             ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
