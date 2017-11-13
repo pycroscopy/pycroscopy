@@ -24,7 +24,7 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
 
 
 class GIVBayesian(Process):
-    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=220, **kwargs):
+    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=110, **kwargs):
         """
         Applies Bayesian Inference to General Mode IV (G-IV) data to extract the true current
 
@@ -56,7 +56,7 @@ class GIVBayesian(Process):
         # take these from kwargs
         self.bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
 
-        self.parm_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps}
+        self.parm_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
         self.parm_dict.update(self.bayesian_parms)
 
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
@@ -65,6 +65,10 @@ class GIVBayesian(Process):
         roll_cyc_fract = -0.25
         self.roll_pts = int(self.single_ao.size * roll_cyc_fract)
         self.rolled_bias = np.roll(self.single_ao, self.roll_pts)
+
+        dt = 1 / (ex_freq * self.single_ao.size)
+        self.dvdt = np.diff(self.single_ao) / dt
+        self.dvdt = np.append(self.dvdt, self.dvdt[-1])
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
@@ -124,8 +128,7 @@ class GIVBayesian(Process):
                                    parent=self.h5_main.parent.name)
         bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
                                ds_cap_spec_inds, ds_cap_spec_vals])
-        bayes_grp.attrs = {'split_directions': True, 'algorithm_author': 'Kody J. Law',
-                           'r_extra': self.r_extra, 'last_pixel': 0}
+        bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}
         bayes_grp.attrs.update(self.bayesian_parms)
 
         if self.verbose:
@@ -180,7 +183,7 @@ class GIVBayesian(Process):
         for pix_ind, i_meas, forw_results, rev_results in zip(range(num_pixels), self.data,
                                                               self.forward_results, self.reverse_results):
             full_results = dict()
-            for item in ['Irec', 'cValue']:
+            for item in ['cValue']:
                 full_results[item] = np.hstack((forw_results[item], rev_results[item]))
                 # print(item, full_results[item].shape)
 
@@ -189,18 +192,20 @@ class GIVBayesian(Process):
             cap_val = np.mean(full_results['cValue'])
 
             # Compensating the resistance..
+            """
             omega = 2 * np.pi * self.ex_freq
             i_cap = cap_val * omega * self.rolled_bias
-            i_extra = self.r_extra * cap_val * self.single_ao
+            """
+            i_cap = cap_val * self.dvdt
+            i_extra = self.r_extra * 2 * cap_val * self.single_ao
             i_corr_sine = i_meas - i_cap - i_extra
 
-            # Now also correct the inferred resistance
-            for res_part in [forw_results, rev_results]:
-                res_part['mR'] = res_part['mR'] / (1 - (res_part['mR'] * self.r_extra * cap_val))
+            # Equivalent to flipping the X:
+            rev_results['x'] *= -1
 
-            # by default Bayesian inference will sort bias in ascending order
+            # Stacking the results - no flipping required for reverse:
             for item in ['x', 'mR', 'vR']:
-                full_results[item] = np.hstack((forw_results[item], np.flipud(rev_results[item])))
+                full_results[item] = np.hstack((forw_results[item], rev_results[item]))
 
             i_cor_sin_mat[pix_ind] = i_corr_sine
             cap_mat[pix_ind] = full_results['cValue'] * 1000  # convert from nF to pF
@@ -266,10 +271,10 @@ class GIVBayesian(Process):
 
             # first roll the data
             rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
-
-            self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps], do_bayesian_inference,
+            # Ensure that the bias has a positive slope. Multiply current by -1 accordingly
+            self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps] * -1, do_bayesian_inference,
                                                     cores=self._cores,
-                                                    func_args=[self.rolled_bias[:half_v_steps], self.ex_freq],
+                                                    func_args=[self.rolled_bias[:half_v_steps] * -1, self.ex_freq],
                                                     func_kwargs=bayes_parms)
 
             if self.verbose:
