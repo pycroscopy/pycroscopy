@@ -230,7 +230,7 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=110, num_x_
 
     # putting the split inference together:
     full_results = dict()
-    for item in ['Irec', 'cValue']:
+    for item in ['cValue']:
         full_results[item] = np.hstack((forw_results[item], rev_results[item]))
 
     # Capacitance is always doubled - halve it now:
@@ -246,9 +246,8 @@ def bayesian_inference_on_period(i_meas, excit_wfm, ex_freq, r_extra=110, num_x_
     dt = 1 / (ex_freq * excit_wfm.size)
     dv = np.diff(excit_wfm) / dt
     dv = np.append(dv, dv[-1])
-    i_meas = i_meas  # from nA to A
-    i_cap = cap_val * dv  # from nF to F
-    i_extra = r_extra * 2 * cap_val * excit_wfm  # from nF to F, ohms to ohms (1)
+    i_cap = cap_val * dv
+    i_extra = r_extra * 2 * cap_val * excit_wfm
     i_corr_sine = i_meas - i_cap - i_extra
     full_results['IcorrSine'] = i_corr_sine
 
@@ -459,7 +458,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
 
     axes[2].plot(bias_sine, i_meas, 'green', linewidth=3, label='I$_{meas}$')
     if i_recon is not None:
-        axes[2].plot(bias_sine, i_recon, 'k--', linewidth=3, label='I$_{recon}$')
+        axes[2].plot(bias_sine, i_recon, 'k--', linewidth=2, label='I$_{recon}$')
     axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
                  'blue', linewidth=3, label='I$_{Bayes} Forw$')
     axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
