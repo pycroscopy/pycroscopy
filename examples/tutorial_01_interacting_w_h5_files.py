@@ -171,8 +171,8 @@ print(px.hdf_utils.check_for_old(h5_raw, 'SHO_Fit',
                                  new_parms={'SHO_fit_method': 'BEAM BESHO'}))
 
 ################################################################################################
-# Clearly, while findH5group returned any and all groups corresponding to SHO_Fit being applied to Raw_Data, check_
-# for_old only returned the group(s) where the operation was performed using the same parameters.
+# Clearly, while findH5group returned any and all groups corresponding to SHO_Fit being applied to Raw_Data,
+# check_for_old only returned the group(s) where the operation was performed using the same parameters.
 #
 # Let's consider the inverse scenario where we are interested in finding the source dataset from which the known
 # result was derived:
