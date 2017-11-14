@@ -18,6 +18,7 @@ from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
+# TODO: correct implementation of num_pix
 
 
 class SignalFilter(Process):
@@ -103,6 +104,7 @@ class SignalFilter(Process):
                 self.parms_dict.update(filter.get_parms())
         if self.noise_threshold is not None:
             self.parms_dict['noise_threshold'] = self.noise_threshold
+        self.parms_dict['num_pix'] = self.num_effective_pix
 
         duplicates = check_for_old(self.h5_main, 'FFT_Filtering', new_parms=self.parms_dict)
         if self.verbose:
@@ -285,7 +287,7 @@ class SignalFilter(Process):
 
             if self.noise_threshold is not None:
                 # apply thresholding
-                self.data[self.data < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
+                self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
 
             if self.write_condensed:
                 # set self.condensed_data here
