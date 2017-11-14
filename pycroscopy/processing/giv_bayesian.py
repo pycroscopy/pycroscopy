@@ -21,6 +21,7 @@ from .giv_utils import do_bayesian_inference
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})
 # TODO : Take lesser used bayesian inference params from kwargs if provided
+# TODO: Allow resuming of computation
 
 
 class GIVBayesian(Process):
@@ -54,10 +55,10 @@ class GIVBayesian(Process):
             print('ensuring that half steps should be odd, num_x_steps is now', self.num_x_steps)
 
         # take these from kwargs
-        self.bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
+        bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
 
         self.parm_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
-        self.parm_dict.update(self.bayesian_parms)
+        self.parm_dict.update(bayesian_parms)
 
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
@@ -88,7 +89,9 @@ class GIVBayesian(Process):
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
         # In the case of simplified Bayeisan inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance
-        self._max_pos_per_read *= 0.25
+        self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
+        # Since these computations take far longer than functional fitting, do in smaller batches:
+        self._max_pos_per_read = np.min(500, self._max_pos_per_read)
 
     def _create_results_datasets(self):
         """
@@ -129,7 +132,7 @@ class GIVBayesian(Process):
         bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
                                ds_cap_spec_inds, ds_cap_spec_vals])
         bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}
-        bayes_grp.attrs.update(self.bayesian_parms)
+        bayes_grp.attrs.update(self.parm_dict)
 
         if self.verbose:
             bayes_grp.showTree()
@@ -187,9 +190,9 @@ class GIVBayesian(Process):
                 full_results[item] = np.hstack((forw_results[item], rev_results[item]))
                 # print(item, full_results[item].shape)
 
-            # Capacitance is always doubled - halve it now:
-            full_results['cValue'] *= 0.5
-            cap_val = np.mean(full_results['cValue'])
+            # Capacitance is always doubled - halve it now (locally):
+            # full_results['cValue'] *= 0.5
+            cap_val = np.mean(full_results['cValue']) * 0.5
 
             # Compensating the resistance..
             """
@@ -230,6 +233,8 @@ class GIVBayesian(Process):
 
         self.hdf.flush()
 
+        print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
+
         # Now update the start position
         self._start_pos = self._end_pos
 
@@ -265,6 +270,7 @@ class GIVBayesian(Process):
         num_pos = self.h5_main.shape[0]
 
         self._read_data_chunk()
+
         while self.data is not None:
 
             t_start = tm.time()
@@ -275,7 +281,7 @@ class GIVBayesian(Process):
             self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps] * -1, do_bayesian_inference,
                                                     cores=self._cores,
                                                     func_args=[self.rolled_bias[:half_v_steps] * -1, self.ex_freq],
-                                                    func_kwargs=bayes_parms)
+                                                    func_kwargs=bayes_parms, lengthy_computation=True)
 
             if self.verbose:
                 print('Finished processing forward sections. Now working on reverse sections....')
@@ -283,7 +289,7 @@ class GIVBayesian(Process):
             self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
                                                     cores=self._cores,
                                                     func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
-                                                    func_kwargs=bayes_parms)
+                                                    func_kwargs=bayes_parms, lengthy_computation=True)
             if self.verbose:
                 print('Finished processing reverse loops')
 
