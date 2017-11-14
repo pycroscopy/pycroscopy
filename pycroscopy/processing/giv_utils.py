@@ -458,7 +458,7 @@ def plot_bayesian_results(bias_sine, i_meas, i_corrected, bias_triang, resistanc
 
     axes[2].plot(bias_sine, i_meas, 'green', linewidth=3, label='I$_{meas}$')
     if i_recon is not None:
-        axes[2].plot(bias_sine, i_recon, 'k--', linewidth=2, label='I$_{recon}$')
+        axes[2].plot(bias_sine, i_recon, 'c--', linewidth=3, label='I$_{recon}$')
     axes[2].plot(cos_omega_t[orig_half_pt:], i_correct_rolled[orig_half_pt:],
                  'blue', linewidth=3, label='I$_{Bayes} Forw$')
     axes[2].plot(cos_omega_t[:orig_half_pt], i_correct_rolled[:orig_half_pt],
