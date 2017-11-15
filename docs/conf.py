@@ -411,7 +411,7 @@ sphinx_gallery_conf = dict(examples_dirs='../examples',
                            reference_url=dict(pycroscopy=None,
                                               matplotlib='https://matplotlib.org',
                                               numpy='https://docs.scipy.org/doc/numpy',
-                                              scipy='https://docs.scipy.org/doc/scipy',
+                                              scipy='https://docs.scipy.org/doc/scipy/reference',
                                               h5py='http://docs.h5py.org/en/latest/'),
                            # directory where function granular galleries are stored
                            backreferences_dir='_autosummary/backreferences',

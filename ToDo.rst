@@ -11,18 +11,16 @@ Documentation
 *	Include examples in documentation
 * Links to references for all functions and methods used in our workflows.
 
-Short tutorials on how to use pycroscopy
+Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Access h5 files
-* Find a specific dataset/group in the file
-* chunking the main dataset
-* Links to tutorials on how to use pycharm, Git, 
-
-Longer examples (via specific scientific usecases)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* A tour of the many functions in hdf_utils and io_utils since these functions need data to show / explain them.
+* A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
+  
+  * chunking the main dataset
+* A tour of the io_utils functions since these functions need data to show / explain them.
+* A tour of plot_utils
 * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 * How to write your own analysis class based on the (to-be simplified) Model class
+* Links to tutorials on how to use pycharm, Git, 
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
