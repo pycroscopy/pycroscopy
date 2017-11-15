@@ -15,7 +15,7 @@ Introduction
 
 In pycroscopy, all position dimensions of a dataset are collapsed into the first dimension and all other
 (spectroscopic) dimensions are collapsed to the second dimension to form a two dimensional matrix. The ancillary
-matrices, namely the spectroscopic indices and values matrix as well as the position indicies and values matrices
+matrices, namely the spectroscopic indices and values matrix as well as the position indices and values matrices
 will be essential for reshaping the data back to its original N dimensional form and for slicing multidimensional
 datasets
 
@@ -54,8 +54,8 @@ import pycroscopy as px
 # imaging datasets, a single spectra is acquired at each location in a two dimensional grid of spatial locations.
 # Thus, BE imaging datasets have two position dimensions (X, Y) and one spectroscopic dimension (frequency - against
 # which the spectra is recorded). The BEPS dataset used in this example has a spectra for each combination of
-# three other paramaters (DC offset, Field, and Cycle). Thus, this dataset has three new spectral
-# dimensions in addition to the spectra itself. Hence, this dataet becomes a 2+4 = 6 dimensional dataset
+# three other parameters (DC offset, Field, and Cycle). Thus, this dataset has three new spectral
+# dimensions in addition to the spectra itself. Hence, this dataset becomes a 2+4 = 6 dimensional dataset
 
 # download the raw data file from Github:
 h5_path = 'temp_3.h5'
@@ -118,6 +118,8 @@ def myfun(pos_index, spec_index):
         print(dim_name, ':', h5_pos_ind[pos_index, dim_ind])
     for dim_ind, dim_name in enumerate(spec_labels):
         print(dim_name, ':', h5_spec_ind[dim_ind, spec_index])
+
+
 interact(myfun, pos_index=(0, h5_main.shape[0]-1, 1), spec_index=(0, h5_main.shape[1]-1, 1))
 
 #########################################################################
@@ -175,13 +177,14 @@ for dim_ind, axis, dim_label, dim_array in zip(range(h5_spec_ind.shape[0]), rhs_
 
 def describe_dimensions(h5_aux):
     for name, unit in zip(px.hdf_utils.get_attr(h5_aux, 'labels'),
-                            px.hdf_utils.get_attr(h5_aux, 'units')):
+                          px.hdf_utils.get_attr(h5_aux, 'units')):
         print(name, '[', unit, ']')
+
 
 print('Position dimension names and units:')
 describe_dimensions(h5_pos_ind)
 
-print('\nSpectrocopic dimension names and units:')
+print('\nSpectroscopic dimension names and units:')
 describe_dimensions(h5_spec_ind)
 
 #########################################################################
@@ -269,7 +272,7 @@ fig, axis = plt. subplots()
 axis.imshow(np.abs(spectrogram3), origin='lower')
 axis.set_xlabel('Frequency Index')
 axis.set_ylabel('DC Offset Index')
-axis.set_title('Spectrogram Amplitude');
+axis.set_title('Spectrogram Amplitude')
 
 #########################################################################
 # Approach 2 - N-dimensional form
@@ -283,16 +286,19 @@ print('Shape of the N-dimensional dataset:', ds_nd.shape)
 print(labels)
 
 #########################################################################
+
 # Now that we have the data in its original N dimensional form, we can easily slice the dataset:
 spectrogram2 = ds_nd[2, 3, :, :, 0, 1]
+
 # Now the spectrogram is of order (frequency x DC_Offset).
 spectrogram2 = spectrogram2.T
+
 # Now the spectrogram is of order (DC_Offset x frequency)
 fig, axis = plt. subplots()
 axis.imshow(np.abs(spectrogram2), origin='lower')
 axis.set_xlabel('Frequency Index')
 axis.set_ylabel('DC Offset Index')
-axis.set_title('Spectrogram Amplitude');
+axis.set_title('Spectrogram Amplitude')
 
 #########################################################################
 # Approach 3 - slicing the 2D matrix
@@ -301,10 +307,10 @@ axis.set_title('Spectrogram Amplitude');
 # This approach is hands-on and requires that we be very careful with the indexing and slicing. Nonetheless,
 # the process is actually fairly intuitive. We rely entirely upon the spectroscopic and position ancillary datasets
 # to find the indices for slicing the dataset. Unlike the main dataset, the ancillary datasets are very small and
-# can be stored easily in memory. Once the slicing indices are calculated, we __only read the desired portion of
-# `main` data to memory__. Thus the amount of data loaded into memory is only the amount that we absolutely need.
-# __This is the only approach that can be applied to slice very large datasets without ovwhelming memory overheads__.
-# The comments for each line explain the entire process comprehensively
+# can be stored easily in memory. Once the slicing indices are calculated, we *only read the desired portion of
+# `main` data to memory*. Thus the amount of data loaded into memory is only the amount that we absolutely need.
+# *This is the only approach that can be applied to slice very large datasets without overwhelming memory overheads*.
+# The comments for each line explain the entire process comprehensively.
 #
 
 # Get only the spectroscopic dimension names:
@@ -312,21 +318,22 @@ spec_dim_names = px.hdf_utils.get_attr(h5_spec_ind, 'labels')
 
 # Find the row in the spectroscopic indices that corresponds to the dimensions we want to slice:
 cycle_row_ind = np.where(spec_dim_names == 'Cycle')[0][0]
-# Find the row correspoding to field in the same way:
+
+# Find the row corresponding to field in the same way:
 field_row_ind = np.where(spec_dim_names == 'Field')[0][0]
 
 # Find all the spectral indices corresponding to the second cycle:
 desired_cycle = h5_spec_ind[cycle_row_ind] == 1
 
-# Do the same to find the spectral indicies for the first field:
+# Do the same to find the spectral indices for the first field:
 desired_field = h5_spec_ind[field_row_ind] == 0
 
 # Now find the indices where the cycle = 1 and the field = 0 using a logical AND statement:
 spec_slice = np.logical_and(desired_cycle, desired_field)
 
 # We will use the same approach to find the position indices
-# corresponding to the row index of 3 and colum index of 2:
-pos_dim_names = px.hdf_utils.get_attr(h5_pos_ind,'labels')
+# corresponding to the row index of 3 and column index of 2:
+pos_dim_names = px.hdf_utils.get_attr(h5_pos_ind, 'labels')
 
 x_col_ind = np.where(pos_dim_names == 'X')[0][0]
 y_col_ind = np.where(pos_dim_names == 'Y')[0][0]
@@ -352,7 +359,7 @@ print('Sliced data is of shape:', data_vec.shape)
 
 # For this we need to find the size of the data in the DC_offset and Frequency dimensions:
 dc_dim_ind = np.where(spec_dim_names == 'DC_Offset')[0][0]
-# Find the row correspoding to field in the same way:
+# Find the row corresponding to field in the same way:
 freq_dim_ind = np.where(spec_dim_names == 'Frequency')[0][0]
 
 dc_dim_size = spec_dim_sizes[dc_dim_ind]
@@ -366,7 +373,7 @@ print('We need to reshape the vector by the tuple:', (dc_dim_size, freq_dim_size
 # The dimensions in the ancillary datasets may or may not be arranged from fastest to slowest even though that is
 # part of the requirements. We can still account for this. In the event that we don't know the order in which to
 # reshape the data vector because we don't know which dimension varies faster than the other(s), we would need to
-# sort the dimensions by how fast their indices change. Fortuantely, pycroscopy has a function called `px.hdf_utils.
+# sort the dimensions by how fast their indices change. Fortunately, pycroscopy has a function called `px.hdf_utils.
 # get_sort_order` that does just this. Knowing the sort order, we can easily reshape correctly in an automated manner.
 # We will do this below
 
@@ -376,7 +383,7 @@ print('Spectroscopic dimensions arranged as is:\n',
       spec_dim_names)
 print('Dimension indices arranged from fastest to slowest:',
       spec_sort_order)
-print('Dimension namess now arranged from fastest to slowest:\n',
+print('Dimension names now arranged from fastest to slowest:\n',
       spec_dim_names[spec_sort_order])
 
 if spec_sort_order[dc_dim_ind] > spec_sort_order[freq_dim_ind]:
