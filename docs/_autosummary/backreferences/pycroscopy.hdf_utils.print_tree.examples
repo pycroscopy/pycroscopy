@@ -9,9 +9,9 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_load_dataset_example_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_load_dataset_example_thumb.png
 
-        :ref:`sphx_glr_auto_examples_load_dataset_example.py`
+        :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
 
 .. raw:: html
 
@@ -19,7 +19,7 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_load_dataset_example.py`
+    * :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
 
 .. raw:: html
 
@@ -41,13 +41,13 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_01_translator_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
+        :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
 
 .. raw:: html
 
@@ -55,7 +55,7 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
+    * :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
 
 .. raw:: html
 
@@ -63,9 +63,9 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_02_writing_to_h5_thumb.png
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_01_translator.py`
 
 .. raw:: html
 
@@ -73,7 +73,7 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_01_translator.py`
 
 .. raw:: html
 
@@ -81,9 +81,9 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_03_multidimensional_data_thumb.png
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_03_multidimensional_data.py`
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
 
 .. raw:: html
 
@@ -91,4 +91,76 @@ Examples using ``pycroscopy.hdf_utils.print_tree``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_03_multidimensional_data.py`
+    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_03_multidimensional_data.py`

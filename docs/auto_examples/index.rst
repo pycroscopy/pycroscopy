@@ -7,53 +7,13 @@ Pycroscopy Gallery
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_microdata_example_thumb.png
-
-        :ref:`sphx_glr_auto_examples_microdata_example.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/microdata_example
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="Conventionally, the h5py package is used to create, read, write, and modify h5 files.">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_load_dataset_example_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_load_dataset_example_thumb.png
 
-        :ref:`sphx_glr_auto_examples_load_dataset_example.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/load_dataset_example
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath, Chris R. Smith**">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_04_parallel_computing_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorial_04_parallel_computing.py`
+        :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
 
 .. raw:: html
 
@@ -63,27 +23,7 @@ Pycroscopy Gallery
 .. toctree::
    :hidden:
 
-   /auto_examples/tutorial_04_parallel_computing
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_01_translator_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorial_01_translator
+   /auto_examples/plot_load_dataset_example
 
 .. raw:: html
 
@@ -107,33 +47,149 @@ Pycroscopy Gallery
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_tutorial_01_interacting_w_h5_files
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="">
+
+.. only:: html
+
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_microdata_example_thumb.png
+
+        :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/plot_microdata_example
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+=======================
+Pycroscopy Publications
+=======================
+
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+====================
+Pycroscopy Tutorials
+====================
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/tutorials/plot_tutorial_01_translator
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/tutorials/plot_tutorial_02_writing_to_h5
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/tutorials/plot_tutorial_03_multidimensional_data
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath, Chris R. Smith**">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_04_parallel_computing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_04_parallel_computing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/tutorials/plot_tutorial_04_parallel_computing
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath**">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_05_data_processing_thumb.png
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_05_data_processing_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_05_data_processing.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorial_05_data_processing
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_02_writing_to_h5_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_05_data_processing.py`
 
 .. raw:: html
 
@@ -143,34 +199,16 @@ Pycroscopy Gallery
 .. toctree::
    :hidden:
 
-   /auto_examples/tutorial_02_writing_to_h5
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_03_multidimensional_data_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorial_03_multidimensional_data.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorial_03_multidimensional_data
+   /auto_examples/tutorials/plot_tutorial_05_data_processing
 .. raw:: html
 
     <div style='clear:both'></div>
 
 
 
-.. container:: sphx-glr-footer
+.. only :: html
+
+ .. container:: sphx-glr-footer
 
 
   .. container:: sphx-glr-download
@@ -183,6 +221,9 @@ Pycroscopy Gallery
 
     :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip <//home/challtdow/workspace/pycroscopy/docs/auto_examples/auto_examples_jupyter.zip>`
 
-.. rst-class:: sphx-glr-signature
 
-    `Generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_

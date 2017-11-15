@@ -9,27 +9,9 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_load_dataset_example_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_load_dataset_example_thumb.png
 
-        :ref:`sphx_glr_auto_examples_load_dataset_example.py`
-
-.. raw:: html
-
-    </div>
-
-.. only:: not html
-
-    * :ref:`sphx_glr_auto_examples_load_dataset_example.py`
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_microdata_example_thumb.png
-
-        :ref:`sphx_glr_auto_examples_microdata_example.py`
+        :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
 
 .. raw:: html
 
@@ -37,7 +19,7 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_microdata_example.py`
+    * :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
 
 .. raw:: html
 
@@ -59,13 +41,13 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+    <div class="sphx-glr-thumbcontainer" tooltip="">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_02_writing_to_h5_thumb.png
+    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_microdata_example_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+        :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
 
 .. raw:: html
 
@@ -73,4 +55,40 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+    * :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`

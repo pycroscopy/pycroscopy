@@ -9,9 +9,9 @@ Examples using ``pycroscopy.io.translators.omicron_asc.AscTranslator``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_02_writing_to_h5_thumb.png
+    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
 
 .. raw:: html
 
@@ -19,4 +19,22 @@ Examples using ``pycroscopy.io.translators.omicron_asc.AscTranslator``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_02_writing_to_h5.py`
+    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_02_writing_to_h5.py`
