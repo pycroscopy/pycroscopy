@@ -405,8 +405,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
 from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder #Can't use until next release of sphinx-gallery
 # Sphinx-gallery configuration
 sphinx_gallery_conf = dict(examples_dirs=['../examples',
-                                          '../examples/tutorials',
-                                          '../examples/publications'],
+                                          '../examples/dev_tutorials',
+                                          '../examples/publications',
+                                          '../examples/user_tutorials'],
                            gallery_dirs=['auto_examples', 'auto_tutorials', 'auto_publications'],
                            within_subsection_order=ExampleTitleSortKey,
                            reference_url=dict(pycroscopy=None,

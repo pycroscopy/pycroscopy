@@ -161,7 +161,7 @@ In this example, we will be loading the Raw_Data dataset from the hdf5 file.
     # Delete the temporarily downloaded h5 file:
     remove(h5_path)
 
-**Total running time of the script:** ( 0 minutes  42.592 seconds)
+**Total running time of the script:** ( 0 minutes  4.747 seconds)
 
 
 

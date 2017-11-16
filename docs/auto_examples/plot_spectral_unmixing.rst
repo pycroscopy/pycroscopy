@@ -278,7 +278,7 @@ the same source h5 file including all relevant links to the source dataset and o
  Out::
 
     Performing SVD decomposition
-    SVD took 2.75 seconds.  Writing results to file.
+    SVD took 4.1 seconds.  Writing results to file.
 
 
 2. KMeans Clustering
@@ -376,7 +376,7 @@ For illustrative purposes, we will only take the amplitude component of the spec
 
 
 
-**Total running time of the script:** ( 0 minutes  51.825 seconds)
+**Total running time of the script:** ( 0 minutes  18.132 seconds)
 
 
 

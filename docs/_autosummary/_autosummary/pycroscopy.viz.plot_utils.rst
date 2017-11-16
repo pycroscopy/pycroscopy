@@ -16,6 +16,7 @@ pycroscopy\.viz\.plot\_utils
       export_fig_data
       get_cmap_object
       make_linear_alpha_cmap
+      make_scalar_mappable
       plotScree
       plot_1d_spectrum
       plot_2d_spectrogram

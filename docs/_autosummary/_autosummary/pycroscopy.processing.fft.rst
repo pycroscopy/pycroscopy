@@ -9,16 +9,24 @@ pycroscopy\.processing\.fft
 
    .. autosummary::
    
+      are_compatible_filters
+      build_composite_freq_filter
       downSample
       getNoiseFloor
       get_fft_stack
-      harmonicsPassFilter
-      makeLPF
-      noiseBandFilter
    
    
 
    
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      FrequencyFilter
+      HarmonicPassFilter
+      LowPassFilter
+      NoiseBandFilter
    
    
 

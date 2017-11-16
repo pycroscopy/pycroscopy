@@ -9,8 +9,7 @@ pycroscopy\.processing\.giv\_utils
 
    .. autosummary::
    
-      bayesian_inference_dataset
-      bayesian_inference_unit
+      bayesian_inference_on_period
       do_bayesian_inference
       plot_bayesian_results
       plot_bayesian_spot_from_h5
