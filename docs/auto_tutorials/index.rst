@@ -1,8 +1,8 @@
 :orphan:
 
-====================
-Pycroscopy Tutorials
-====================
+==============================
+Pycroscopy Developer Tutorials
+==============================
 
 
 .. raw:: html

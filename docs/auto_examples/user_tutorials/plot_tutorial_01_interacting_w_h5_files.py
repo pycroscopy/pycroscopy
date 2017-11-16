@@ -22,27 +22,11 @@ utility functions that simplify access to data and this tutorial provides an ove
 """
 
 import os
-# Warning package in case something goes wrong
-from warnings import warn
-# Package for downloading online files:
-try:
-    # This package is not part of anaconda and may need to be installed.
-    import wget
-except ImportError:
-    warn('wget not found.  Will install with pip.')
-    import pip
-    pip.main(['install', 'wget'])
-    import wget
+import wget
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-try:
-    import pycroscopy as px
-except ImportError:
-    warn('pycroscopy not found.  Will install with pip.')
-    import pip
-    pip.main(['install', 'pycroscopy'])
-    import pycroscopy as px
+import pycroscopy as px
 
 ################################################################################################
 

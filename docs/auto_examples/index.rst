@@ -1,8 +1,8 @@
 :orphan:
 
-==================
-Pycroscopy Gallery
-==================
+===================
+Pycroscopy Examples
+===================
 
 
 .. raw:: html
@@ -68,9 +68,9 @@ Pycroscopy Gallery
 
     <div style='clear:both'></div>
 
-====================
-Pycroscopy Tutorials
-====================
+==============================
+Pycroscopy Developer Tutorials
+==============================
 
 
 .. raw:: html
@@ -180,6 +180,34 @@ Pycroscopy Tutorials
 Pycroscopy Publications
 =======================
 
+.. raw:: html
+
+    <div style='clear:both'></div>
+
+=========================
+Pycroscopy User Tutorials
+=========================
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/user_tutorials/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
+
+        :ref:`sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/user_tutorials/plot_tutorial_01_interacting_w_h5_files
 .. raw:: html
 
     <div style='clear:both'></div>
