@@ -34,13 +34,18 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
+* Generic interactive visualizer for 3 and 4D float numpy arrays.
+  * No need to handle h5py datasets, compound datasets, complex datasets etc.
+  * Add features time permitting.
 * Consider implementing doSVD as a Process. Maybe the Decomposition and Cluster classes could extend Process?
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators
 
 GUI
 ~~~~~~~~~~~
+
 * Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
 * Generic visualizer in plot.lly / dash? that can use the PycroDataset class
    * One suggestion is 2 (or more panes). 
