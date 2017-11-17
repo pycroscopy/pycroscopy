@@ -13,11 +13,12 @@ import numpy as np
 from collections import Iterable
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs
+from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, check_for_old
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
+# TODO: correct implementation of num_pix
 
 
 class SignalFilter(Process):
@@ -85,6 +86,33 @@ class SignalFilter(Process):
         self.write_filtered = write_filtered
         self.write_condensed = write_condensed
 
+        """
+        Remember that the default number of pixels corresponds to only the raw data that can be held in memory
+        In the case of signal filtering, the datasets that will occupy space are:
+        1. Raw, 2. filtered (real + freq space copies), 3. Condensed (substantially lesser space)
+        The actual scaling of memory depends on options:
+        """
+        scaling_factor = 1 + 2 * self.write_filtered + 0.25 * self.write_condensed
+        self._max_pos_per_read = int(self._max_pos_per_read / scaling_factor)
+
+        if self.verbose:
+            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
+
+        self.parms_dict = dict()
+        if self.frequency_filters is not None:
+            for filter in self.frequency_filters:
+                self.parms_dict.update(filter.get_parms())
+        if self.noise_threshold is not None:
+            self.parms_dict['noise_threshold'] = self.noise_threshold
+        self.parms_dict['num_pix'] = self.num_effective_pix
+
+        duplicates = check_for_old(self.h5_main, 'FFT_Filtering', new_parms=self.parms_dict)
+        if self.verbose:
+            print('Checking for duplicates:')
+            print(duplicates)
+        if duplicates is not None:
+            print('WARNING! FFT filtering has already been performed with the same parameters before. Consider reusing results')
+
         self.data = None
         self.filtered_data = None
         self.condensed_data = None
@@ -93,30 +121,6 @@ class SignalFilter(Process):
         self.h5_condensed = None
         self.h5_noise_floors = None
 
-    def _set_memory_and_cores(self, cores=1, mem=1024):
-        """
-        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
-        number of cores to be used by analysis methods.
-
-        Parameters
-        ----------
-        cores : uint, optional
-            Default - 1
-            How many cores to use for the computation
-        mem : uint, optional
-            Default - 1024
-            The amount a memory in Mb to use in the computation
-        """
-        super(SignalFilter, self)._set_memory_and_cores(cores=cores, mem=mem)
-        """
-        Remember that the default number of pixels corresponds to only the raw data that can be held in memory
-        In the case of signal filtering, the datasets that will occupy space are:
-        1. Raw, 2. filtered (real + freq space copies), 3. Condensed (substantially lesser space)
-        The actual scaling of memory depends on options:
-        """
-        scaling_factor = 1 + 2*self.write_filtered + 0.25*self.write_condensed
-        self._max_pos_per_read = int(self._max_pos_per_read / scaling_factor)
-
     def _create_results_datasets(self):
         """
         Creates all the datasets necessary for holding all parameters + data.
@@ -124,13 +128,9 @@ class SignalFilter(Process):
 
         grp_name = self.h5_main.name.split('/')[-1] + '-FFT_Filtering_'
         grp_filt = MicroDataGroup(grp_name, self.h5_main.parent.name)
-        filter_parms = dict()
-        if self.frequency_filters is not None:
-            for filter in self.frequency_filters:
-                filter_parms.update(filter.get_parms())
-        filter_parms['algorithm'] = 'pycroscopy_SignalFilter'
-        filter_parms['last_pixel'] = 0
-        grp_filt.attrs = filter_parms
+
+        self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
+        grp_filt.attrs = self.parms_dict
 
         if isinstance(self.composite_filter, np.ndarray):
             ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
@@ -241,8 +241,7 @@ class SignalFilter(Process):
 
         self.hdf.flush()
 
-        if self.verbose:
-            print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
+        print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
         # Now update the start position
         self._start_pos = self._end_pos
@@ -288,7 +287,7 @@ class SignalFilter(Process):
 
             if self.noise_threshold is not None:
                 # apply thresholding
-                self.data[self.data < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
+                self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
 
             if self.write_condensed:
                 # set self.condensed_data here
