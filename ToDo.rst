@@ -35,8 +35,10 @@ New features
 Core development
 ~~~~~~~~~~~~~~~~
 * Generic interactive visualizer for 3 and 4D float numpy arrays.
+
   * No need to handle h5py datasets, compound datasets, complex datasets etc.
   * Add features time permitting.
+* Clean up Cluser results plotting
 * Consider implementing doSVD as a Process. Maybe the Decomposition and Cluster classes could extend Process?
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
