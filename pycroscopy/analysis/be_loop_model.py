@@ -30,31 +30,12 @@ from ..io.microdata import MicroDataset, MicroDataGroup
 '''
 Custom dtypes for the datasets created during fitting.
 '''
-# loop_metrics32 = np.dtype([('Area', np.float32),
-#                            ('Centroid x', np.float32),
-#                            ('Centroid y', np.float32),
-#                            ('Rotation Angle [rad]', np.float32),
-#                            ('Offset', np.float32)])
 loop_metrics32 = np.dtype({'names': ['Area', 'Centroid x', 'Centroid y', 'Rotation Angle [rad]', 'Offset'],
                            'formats': [np.float32, np.float32, np.float32, np.float32, np.float32]})
 
-# crit32 = np.dtype([('AIC_loop', np.float32),
-#                    ('BIC_loop', np.float32),
-#                    ('AIC_line', np.float32),
-#                    ('BIC_line', np.float32)])
 crit32 = np.dtype({'names': ['AIC_loop', 'BIC_loop', 'AIC_line', 'BIC_line'],
                    'formats': [np.float32, np.float32, np.float32, np.float32]})
 
-# loop_fit32 = np.dtype([('a_0', np.float32),
-#                        ('a_1', np.float32),
-#                        ('a_2', np.float32),
-#                        ('a_3', np.float32),
-#                        ('a_4', np.float32),
-#                        ('b_0', np.float32),
-#                        ('b_1', np.float32),
-#                        ('b_2', np.float32),
-#                        ('b_3', np.float32),
-#                        ('R2 Criterion', np.float32)])
 field_names = ['a_0', 'a_1', 'a_2', 'a_3', 'a_4', 'b_0', 'b_1', 'b_2', 'b_3', 'R2 Criterion']
 loop_fit32 = np.dtype({'names': field_names,
                        'formats': [np.float32 for name in field_names]})
@@ -104,6 +85,7 @@ class BELoopModel(Model):
         self._sho_all_but_dc_forc_inds = None
         self._met_all_but_forc_inds = None
         self._current_forc = 0
+        self._maxDataChunk = 1
 
     def _is_legal(self, h5_main, variables=['DC_Offset']):
         """

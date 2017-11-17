@@ -66,6 +66,9 @@ class GIVBayesian(Process):
         self.roll_pts = int(self.single_ao.size * roll_cyc_fract)
         self.rolled_bias = np.roll(self.single_ao, self.roll_pts)
 
+        self.reverse_results = None
+        self.forward_results = None
+
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
@@ -238,7 +241,6 @@ class GIVBayesian(Process):
 
         Parameters
         ----------
-        None
 
         Returns
         -------

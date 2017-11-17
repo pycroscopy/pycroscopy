@@ -150,7 +150,6 @@ def cmap_jet_white_center():
              }
     return LinearSegmentedColormap('white_jet', cdict)
 
-
 def cmap_from_rgba(name, interp_vals, normalization_val):
     """
     Generates a colormap given a matlab-style interpolation table

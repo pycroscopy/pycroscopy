@@ -24,6 +24,9 @@ class GIVTranslator(Translator):
     """
     Translates G-mode Fast IV datasets from .mat files to .h5
     """
+    def __init__(self, *args, **kwargs):
+        super(GIVTranslator, self).__init__(*args, **kwargs)
+        self.raw_datasets = None
 
     def _parse_file_path(self, input_path):
         pass

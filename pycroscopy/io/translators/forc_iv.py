@@ -21,6 +21,9 @@ class ForcIVTranslator(Translator):
     """
     Translates FORC IV datasets from .mat files to .h5
     """
+    def __init__(self, *args, **kwargs):
+        super(ForcIVTranslator, self).__init__(*args, **kwargs)
+        self.h5_read = None
 
     def _read_data(self):
         pass

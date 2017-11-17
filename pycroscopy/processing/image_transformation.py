@@ -785,7 +785,8 @@ class geoTransformerParallel(object):
 
         Parameters
         ----------
-        input: h5py.dataset
+        dataset: h5py.dataset
+            The dataset to be corrected
 
         """
         if not isinstance(dataset, h5py.Dataset):
@@ -1048,7 +1049,7 @@ class geoTransformerParallel(object):
 
         Parameters
         ----------
-        Processors: int, optional
+        processes: int, optional
             Number of processors to use, default = 1.
 
         Returns
@@ -1197,7 +1198,7 @@ class geoTransformerSerial(object):
         return matches, filt_matches
 
     # TODO: Need Better Error Handling.
-    def findTransformation(self, transform, matches, processes, **kwargs):
+    def findTransformation(self, transform, matches, **kwargs):
         """
         This is a Method that finds the optimal transformation between two images
         given matching features using a random sample consensus.
@@ -1207,8 +1208,6 @@ class geoTransformerSerial(object):
         transform : skimage.transform object
         matches : list
             matches found through match_features method.
-        processors : int
-            Number of processors to use.
         **kwargs are passed to skimage.transform.ransac
 
         Returns
@@ -1351,7 +1350,7 @@ class geoTransformerSerial(object):
 
         Parameters
         ----------
-        Processors: int, optional
+        processes: int, optional
             Number of processors to use, default = 1.
 
         Returns

@@ -257,12 +257,12 @@ class SignalFilter(Process):
 
         Parameters
         ----------
-        None
 
         Returns
         -------
         h5_results_grp : h5py.Datagroup object
             Datagroup containing all the results
+
         """
         self._create_results_datasets()
 

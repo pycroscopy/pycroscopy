@@ -24,7 +24,12 @@ class GLineTranslator(Translator):
     """
     Translated G-mode line (bigtimedata.dat) files from actual BE line experiments to HDF5
     """
-    
+    def __init__(self, *args, **kwargs):
+        super(Translator, self).__init__(*args, **kwargs)
+        self.points_per_pixel = 1
+        self.num_rows = 1
+        self.__bytes_per_row__ = 1
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file

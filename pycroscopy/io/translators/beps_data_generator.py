@@ -55,6 +55,12 @@ class FakeBEPSGenerator(Translator):
         self.n_spec_bins = None
         self.n_fields = None
         self.binning_func = no_bin
+        self.cycle_fraction = None
+        self.h5_path = None
+        self.image_ext = None
+        self.rebin = None
+        self.bin_factor = None
+        self.bin_func = None
 
     def _read_data(self, folder):
         """

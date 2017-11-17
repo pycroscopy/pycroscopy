@@ -108,7 +108,7 @@ class FeatureExtractorParallel(object):
 
         Parameters
         ----------
-        processors : int, optional
+        processes : int, optional
                     Number of processors to use, default = 1.
         mask : boolean, optional, default False.
             Whether to use

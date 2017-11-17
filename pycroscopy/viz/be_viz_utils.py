@@ -746,6 +746,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     ----------
     h5_loop_parameters : h5py.Dataset
         The dataset containing the loop parameters to be visualized
+    cmap : str or matplotlib.colors.Colormap
 
     Returns
     -------
@@ -805,6 +806,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     Parameters
     ----------
     h5_loop_parameters
+    cmap : str or matplotlib.colors.Colormap
 
     Returns
     -------
@@ -1050,15 +1052,28 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
 
 
 def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
-                                 selected_loop_pos=[0,0], selected_step=0, tick_font_size=14):
+                                 selected_loop_pos=[0,0], selected_step=0, tick_font_size=14, cmap='viridis'):
     """
 
     Parameters
     ----------
-    h5_loop_parameters
+    h5_loop_parameters : h5py.Dataset
+        Dataset containing the loop parameters
+    selected_loop_parm : str
+        The initial loop parameter to be plotted
+    selected_loop_cycle : int
+        The initial loop cycle to be plotted
+    selected_loop_pos : array-like of two ints
+        The initial position to be plotted
+    selected_step : int
+        The initial bias step to be plotted
+    tick_font_size : 14
+    cmap : str or matplotlib.colors.Colormap
+        Colormap to be used in plotting the parameter map
 
     Returns
     -------
+    None
 
     """
 

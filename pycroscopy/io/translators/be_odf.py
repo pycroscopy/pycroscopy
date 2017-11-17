@@ -30,10 +30,12 @@ class BEodfTranslator(Translator):
 
     def __init__(self, *args, **kwargs):
         super(BEodfTranslator, self).__init__(*args, **kwargs)
-
         self.hdf = None
         self.h5_raw = None
         self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
+        self.FFT_BE_wave = None
+        self.signal_type = None
+        self.expt_type = None
 
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False, verbose=False):
         """

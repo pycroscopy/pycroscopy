@@ -1184,12 +1184,21 @@ BEHistogram Class and Functions
 
 
 class BEHistogram:
-    # TODO: Turn into proper class
-    # TODO: Parallelize Histogram generation
+    # TODO: Make into Process class
     """
     Class just functions as a container so we can have shared objects
     Chris Smith -- csmith55@utk.edu
     """
+    def __init__(self):
+        self.max_mem = None
+        self.max_response = None
+        self.min_response = None
+        self.num_udvs_steps = 1
+        self.N_spectral_steps = 1
+        self.N_bins = 1
+        self.N_freqs = 1
+        self.N_pixels = 1
+        self.N_y_bins = 1
 
     def addBEHist(self, h5_path, max_mem_mb=1024, show_plot=True, save_plot=True):
         """

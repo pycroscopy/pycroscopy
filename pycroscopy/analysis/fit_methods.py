@@ -27,8 +27,13 @@ class Fit_Methods(object):
         Generates the single Harmonic Oscillator response over the given vector
 
         Parameters
-        -----------
+        ----------
+        guess : array-like
+            The set of guess parameters to be tested
+        data_vec : numpy.ndarray
+            The data vector to compare the current guess against
         freq_vector : numpy.ndarray
+            The frequencies that correspond to each data point in `data_vec`
         args : list or tuple
             SHO parameters=(Amp,w0,Q,phi,vector). vector: 1D np.array of frequency values.
             Amp: amplitude.
@@ -70,12 +75,16 @@ class BE_Fit_Methods(object):
 
         Parameters
         ----------
+        coef_vec : numpy.ndarray
+        data_vec : numpy.ndarray
         dc_vec : numpy.ndarray
             The DC offset vector
         args : list
 
         Returns
         -------
+        fitness : float
+            The 1-r^2 value for the current set of loop coefficients
 
         """
 
@@ -92,38 +101,6 @@ class BE_Fit_Methods(object):
         r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
         return 1 - r_squared
-
-
-    # @staticmethod
-    # def BE_LOOP(dc_vec, *args):
-    #     """
-    #
-    #     Parameters
-    #     ----------
-    #     dc_vec : numpy.ndarray
-    #         The DC offset vector
-    #     args : list
-    #
-    #     Returns
-    #     -------
-    #
-    #     """
-    #     def loop_func(coef_vec, data_vec):
-    #         if coef_vec.size < 9:
-    #             raise ValueError('Error: The Loop Fit requires 9 parameter guesses!')
-    #
-    #         data_mean = np.mean(data_vec)
-    #
-    #         func = loop_fit_function(dc_vec, coef_vec)
-    #
-    #         ss_tot = sum(abs(data_vec - data_mean) ** 2)
-    #         ss_res = sum(abs(data_vec - func) ** 2)
-    #
-    #         r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
-    #
-    #         return 1 - r_squared
-    #
-    #     return loop_func
 
 
 class forc_iv_fit_methods(Fit_Methods):
