@@ -38,11 +38,22 @@ facilitate the efficient use of all CPU cores with minimal modifications to the 
 
     # The package for accessing files in directories, etc.:
     import os
-    import wget
+
+    # Warning package in case something goes wrong
+    from warnings import warn
+
+    # Package for downloading online files:
+    try:
+        # This package is not part of anaconda and may need to be installed.
+        import wget
+    except ImportError:
+        warn('wget not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'wget'])
+        import wget
 
     # The mathematical computation package:
     import numpy as np
-    from numpy import exp, abs, sqrt, sum, real, imag, arctan2, append
 
     # The package used for creating and manipulating HDF5 files:
     import h5py
@@ -51,13 +62,25 @@ facilitate the efficient use of all CPU cores with minimal modifications to the 
     import matplotlib.pyplot as plt
 
     # Parallel computation library:
-    import joblib
+    try:
+        import joblib
+    except ImportError:
+        warn('joblib not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'joblib'])
+        import joblib
 
     # Timing
     import time
 
     # Finally import pycroscopy for certain scientific analysis:
-    import pycroscopy as px
+    try:
+        import pycroscopy as px
+    except ImportError:
+        warn('pycroscopy not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'pycroscopy'])
+        import pycroscopy as px
 
 
 
@@ -384,7 +407,7 @@ a simple for loop.
 
  Out::
 
-    Serial computation took 35.43  seconds
+    Serial computation took 31.78  seconds
 
 
 2. Parallel Computation
@@ -429,7 +452,7 @@ pycroscopy. The below parallel computation is reduced to a single line with this
 
  Out::
 
-    Parallel computation took 22.06  seconds
+    Parallel computation took 19.81  seconds
 
 
 Compare the results
@@ -508,7 +531,7 @@ Please see another example on how to write a Process class for Pycroscopy
 
 
 
-**Total running time of the script:** ( 1 minutes  3.823 seconds)
+**Total running time of the script:** ( 1 minutes  25.566 seconds)
 
 
 

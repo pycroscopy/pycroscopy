@@ -30,11 +30,22 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 # The package for accessing files in directories, etc.:
 import os
-import wget
+
+# Warning package in case something goes wrong
+from warnings import warn
+
+# Package for downloading online files:
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    warn('wget not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
 
 # The mathematical computation package:
 import numpy as np
-from numpy import exp, abs, sqrt, sum, real, imag, arctan2, append
 
 # The package used for creating and manipulating HDF5 files:
 import h5py
@@ -43,13 +54,25 @@ import h5py
 import matplotlib.pyplot as plt
 
 # Parallel computation library:
-import joblib
+try:
+    import joblib
+except ImportError:
+    warn('joblib not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'joblib'])
+    import joblib
 
 # Timing
 import time
 
 # Finally import pycroscopy for certain scientific analysis:
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    warn('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 #########################################################################
 # Load the dataset

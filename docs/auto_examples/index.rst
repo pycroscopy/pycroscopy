@@ -7,26 +7,6 @@ Pycroscopy Examples
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="Conventionally, the h5py package is used to create, read, write, and modify h5 files.">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_load_dataset_example_thumb.png
-
-        :ref:`sphx_glr_auto_examples_plot_load_dataset_example.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_load_dataset_example
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3` * :sup:`1` Institute for Functional Imagin...">
 
 .. only:: html

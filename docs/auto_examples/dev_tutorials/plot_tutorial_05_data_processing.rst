@@ -45,7 +45,19 @@ Ensure python 3 compatibility:
 
     # The package for accessing files in directories, etc.:
     import os
-    import wget
+
+    # Warning package in case something goes wrong
+    from warnings import warn
+
+    # Package for downloading online files:
+    try:
+        # This package is not part of anaconda and may need to be installed.
+        import wget
+    except ImportError:
+        warn('wget not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'wget'])
+        import wget
 
     # The mathematical computation package:
     import numpy as np
@@ -58,7 +70,13 @@ Ensure python 3 compatibility:
     import matplotlib.pyplot as plt
 
     # Finally import pycroscopy for certain scientific analysis:
-    import pycroscopy as px
+    try:
+        import pycroscopy as px
+    except ImportError:
+        warn('pycroscopy not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'pycroscopy'])
+        import pycroscopy as px
 
 
     field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]']
@@ -327,7 +345,7 @@ Plot the Amplitude and Phase of the gaussian versus the raw data.
 
 
 
-**Total running time of the script:** ( 0 minutes  48.416 seconds)
+**Total running time of the script:** ( 0 minutes  49.348 seconds)
 
 
 

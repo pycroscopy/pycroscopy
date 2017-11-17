@@ -162,14 +162,14 @@ new file.
  Out::
 
     Group already exists: /
+    Writing attribute: timestamp with value: 2017_11_16-14_30_42
     Writing attribute: machine_id with value: challtdow-ThinkPad-T530
-    Writing attribute: timestamp with value: 2017_11_16-08_15_44
     Wrote attributes to group: / 
 
     Created Dataset /Main_Data
     Created Group /Data_Group
+    Writing attribute: timestamp with value: 2017_11_16-14_30_42
     Writing attribute: machine_id with value: challtdow-ThinkPad-T530
-    Writing attribute: timestamp with value: 2017_11_16-08_15_44
     Wrote attributes to group /Data_Group
 
     Created Dataset /Data_Group/Empty_Data
@@ -244,7 +244,7 @@ Now that we are done, we should close the file so that it can be accessed elsewh
 
 
 
-**Total running time of the script:** ( 0 minutes  0.007 seconds)
+**Total running time of the script:** ( 0 minutes  0.003 seconds)
 
 
 

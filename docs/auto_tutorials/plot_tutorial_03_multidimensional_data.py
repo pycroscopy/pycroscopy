@@ -28,7 +28,19 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 # The package for accessing files in directories, etc.:
 import os
-import wget
+
+# Warning package in case something goes wrong
+from warnings import warn
+
+# Package for downloading online files:
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    warn('wget not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
 
 # The mathematical computation package:
 import numpy as np
@@ -43,7 +55,13 @@ import matplotlib.pyplot as plt
 from ipywidgets import interact
 
 # Finally import pycroscopy for certain scientific analysis:
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    warn('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 #########################################################################
 # Load the dataset

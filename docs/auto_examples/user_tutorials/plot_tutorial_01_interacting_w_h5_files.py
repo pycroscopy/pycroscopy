@@ -22,11 +22,27 @@ utility functions that simplify access to data and this tutorial provides an ove
 """
 
 import os
-import wget
+# Warning package in case something goes wrong
+from warnings import warn
+# Package for downloading online files:
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    warn('wget not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
 import h5py
 import numpy as np
 import matplotlib.pyplot as plt
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    warn('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 ################################################################################################
 
@@ -38,10 +54,17 @@ _ = wget.download(url, h5_path)
 print('Working on:\n' + h5_path)
 
 ################################################################################################
-# Pycroscopy uses the h5py python package to access the HDF5 files and its contents
+# Pycroscopy uses the h5py python package to access the HDF5 files and its contents.
+# Conventionally, the h5py package is used to create, read, write, and modify h5 files.
 
 # Open the file in read-only mode
 h5_f = h5py.File(h5_path, mode='r')
+
+# We can also use the ioHDF5 class from Pycroscopy to open the file.  Note that you do need to close the
+# file in h5py before opening it again.
+h5_f.close()
+hdf = px.ioHDF5(h5_path)
+h5_f = hdf.file
 
 # Here, h5_f is an active handle to the open file
 
@@ -85,8 +108,12 @@ print('h5_chan_group:', h5_f['Measurement_000/Channel_000'])
 h5_fft = h5_f['Measurement_000/Channel_000/Bin_FFT']
 print('h5_fft:', h5_fft)
 
-# Selecting the same dataset using the relative path:
-h5_fft = h5_meas_group['Channel_000/Bin_FFT']
+# Selecting the same dataset using the relative path.
+# First we get "Channel_000" from h5_meas_group:
+h5_group = h5_meas_group['Channel_000']
+
+# Now we access Bin_FFT from within h5_group:
+h5_fft = h5_group['Bin_FFT']
 print('h5_fft:', h5_fft)
 
 ################################################################################################
@@ -121,7 +148,6 @@ for item in udvs_dsets_2:
 #
 # We can check which datasets within h5_group are Main datasets using a handy hdf_utils function:
 
-h5_group = h5_meas_group['Channel_000']
 for dset_name in h5_group:
     print(px.hdf_utils.checkIfMain(h5_group[dset_name]), ':\t', dset_name)
 

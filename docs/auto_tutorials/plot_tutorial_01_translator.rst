@@ -74,12 +74,21 @@ few python packages that will be necessary in the later steps.
     # Ensure python 3 compatibility:
     from __future__ import division, print_function, absolute_import, unicode_literals
 
-    # In case some of these packages are not installed, install them
-    #!pip install -U os wget numpy h5py matplotlib pycroscopy
-
     # The package for accessing files in directories, etc.:
     import os
-    import wget
+
+    # Warning package in case something goes wrong
+    from warnings import warn
+
+    # Package for downloading online files:
+    try:
+        # This package is not part of anaconda and may need to be installed.
+        import wget
+    except ImportError:
+        warn('wget not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'wget'])
+        import wget
 
     # The mathematical computation package:
     import numpy as np
@@ -91,7 +100,13 @@ few python packages that will be necessary in the later steps.
     import matplotlib.pyplot as plt
 
     # Finally import pycroscopy for certain scientific analysis:
-    import pycroscopy as px
+    try:
+        import pycroscopy as px
+    except ImportError:
+        warn('pycroscopy not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'pycroscopy'])
+        import pycroscopy as px
 
 
 
@@ -234,20 +249,20 @@ The parameters in these files are present in the first few lines of the file
 
  Out::
 
-    value-unit :     nA
-    y-pixels :       100
-    z-section :      491
+    x-pixels :       100
     z-range :        2000000000
     y-offset :       -781.441
     scanspeed :      59519000000
     z-offset :       1116.49
     z-points :       500
-    y-length :       29.7595
     x-length :       29.7595
-    x-pixels :       100
-    z-unit :         nV
-    x-offset :       -967.807
     voidpixels :     0
+    y-pixels :       100
+    z-unit :         nV
+    z-section :      491
+    x-offset :       -967.807
+    value-unit :     nA
+    y-length :       29.7595
 
 
 3.a Prepare to read the data
@@ -403,7 +418,7 @@ Verifying the newly written H5 file:
     Measurement_000/Channel_000/Spectroscopic_Values
 
 
-**Total running time of the script:** ( 1 minutes  9.749 seconds)
+**Total running time of the script:** ( 2 minutes  12.338 seconds)
 
 
 

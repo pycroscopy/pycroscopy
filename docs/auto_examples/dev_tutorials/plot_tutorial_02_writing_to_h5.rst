@@ -88,7 +88,19 @@ Translation can be challenging in many cases:
 
     # The package for accessing files in directories, etc.:
     import os
-    import wget
+
+    # Warning package in case something goes wrong
+    from warnings import warn
+
+    # Package for downloading online files:
+    try:
+        # This package is not part of anaconda and may need to be installed.
+        import wget
+    except ImportError:
+        warn('wget not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'wget'])
+        import wget
 
     # The mathematical computation package:
     import numpy as np
@@ -103,7 +115,13 @@ Translation can be challenging in many cases:
     from sklearn.cluster import KMeans
 
     # Finally import pycroscopy for certain scientific analysis:
-    import pycroscopy as px
+    try:
+        import pycroscopy as px
+    except ImportError:
+        warn('pycroscopy not found.  Will install with pip.')
+        import pip
+        pip.main(['install', 'pycroscopy'])
+        import pycroscopy as px
     from pycroscopy.io.translators.omicron_asc import AscTranslator
 
 
@@ -483,21 +501,21 @@ operation being performed on the same dataset. The index will then be updated ac
 
     Writing the following attrbutes to the group:
     num_clusters : 9
-    max_iter : 300
     cluster_algorithm : KMeans
-    copy_x : True
-    tol : 0.0001
-    verbose : 0
     n_jobs : 1
-    algorithm : auto
-    n_clusters : 9
-    init : k-means++
-    timestamp : 2017_11_16-08_16_32
-    n_init : 10
-    num_samples : 10000
-    machine_id : challtdow-ThinkPad-T530
+    max_iter : 300
+    timestamp : 2017_11_16-14_33_52
     precompute_distances : auto
     random_state : None
+    verbose : 0
+    algorithm : auto
+    machine_id : challtdow-ThinkPad-T530
+    n_init : 10
+    copy_x : True
+    n_clusters : 9
+    tol : 0.0001
+    num_samples : 10000
+    init : k-means++
 
 
 Write to H5 and access the written objects
@@ -529,20 +547,20 @@ Once the tree is prepared (previous cell), ioHDF5 will handle all the file writi
 
     Created group /Measurement_000/Channel_000/Raw_Data-Cluster_000
     Writing attribute: num_clusters with value: 9
-    Writing attribute: max_iter with value: 300
     Writing attribute: cluster_algorithm with value: KMeans
-    Writing attribute: copy_x with value: True
-    Writing attribute: tol with value: 0.0001
-    Writing attribute: verbose with value: 0
     Writing attribute: n_jobs with value: 1
-    Writing attribute: algorithm with value: auto
-    Writing attribute: n_clusters with value: 9
-    Writing attribute: init with value: k-means++
-    Writing attribute: timestamp with value: 2017_11_16-08_16_32
-    Writing attribute: n_init with value: 10
-    Writing attribute: num_samples with value: 10000
-    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
+    Writing attribute: max_iter with value: 300
+    Writing attribute: timestamp with value: 2017_11_16-14_33_52
     Writing attribute: precompute_distances with value: auto
+    Writing attribute: verbose with value: 0
+    Writing attribute: algorithm with value: auto
+    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
+    Writing attribute: n_init with value: 10
+    Writing attribute: copy_x with value: True
+    Writing attribute: n_clusters with value: 9
+    Writing attribute: tol with value: 0.0001
+    Writing attribute: num_samples with value: 10000
+    Writing attribute: init with value: k-means++
     Wrote attributes to group: Raw_Data-Cluster_000 
 
     Created Dataset /Measurement_000/Channel_000/Raw_Data-Cluster_000/Labels
@@ -706,7 +724,7 @@ Deletes the temporary files created in the example
 
 
 
-**Total running time of the script:** ( 0 minutes  29.496 seconds)
+**Total running time of the script:** ( 1 minutes  56.335 seconds)
 
 
 
