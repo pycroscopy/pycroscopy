@@ -1089,7 +1089,7 @@ class BELoopModel(Model):
         vdc_shifted = np.roll(vdc_vec, shift_ind)
         return shift_ind, vdc_shifted
 
-    def _create_fit_dataset(self):
+    def _create_fit_datasets(self):
         """
         Creates the HDF5 Fit dataset and links the it to the ancillary datasets.
         """
