@@ -1,8 +1,8 @@
 :orphan:
 
-==================
-Pycroscopy Gallery
-==================
+===================
+Pycroscopy Examples
+===================
 
 
 .. raw:: html
@@ -47,26 +47,6 @@ Pycroscopy Gallery
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
-
-        :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_tutorial_01_interacting_w_h5_files
-
-.. raw:: html
-
     <div class="sphx-glr-thumbcontainer" tooltip="">
 
 .. only:: html
@@ -88,6 +68,114 @@ Pycroscopy Gallery
 
     <div style='clear:both'></div>
 
+==============================
+Pycroscopy Developer Tutorials
+==============================
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_01_translator
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_02_writing_to_h5.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_02_writing_to_h5
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_03_multidimensional_data
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath, Chris R. Smith**">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_04_parallel_computing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_04_parallel_computing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_04_parallel_computing
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath**">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_05_data_processing_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_05_data_processing.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_05_data_processing
+.. raw:: html
+
+    <div style='clear:both'></div>
+
 =======================
 Pycroscopy Publications
 =======================
@@ -96,20 +184,20 @@ Pycroscopy Publications
 
     <div style='clear:both'></div>
 
-====================
-Pycroscopy Tutorials
-====================
+=========================
+Pycroscopy User Tutorials
+=========================
 
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
 
 .. only:: html
 
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
+    .. figure:: /auto_examples/user_tutorials/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_01_translator.py`
+        :ref:`sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py`
 
 .. raw:: html
 
@@ -119,87 +207,7 @@ Pycroscopy Tutorials
 .. toctree::
    :hidden:
 
-   /auto_examples/tutorials/plot_tutorial_01_translator
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_02_writing_to_h5_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_02_writing_to_h5.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorials/plot_tutorial_02_writing_to_h5
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
-
-.. only:: html
-
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorials/plot_tutorial_03_multidimensional_data
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath, Chris R. Smith**">
-
-.. only:: html
-
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_04_parallel_computing_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_04_parallel_computing.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorials/plot_tutorial_04_parallel_computing
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath**">
-
-.. only:: html
-
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_05_data_processing_thumb.png
-
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_05_data_processing.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/tutorials/plot_tutorial_05_data_processing
+   /auto_examples/user_tutorials/plot_tutorial_01_interacting_w_h5_files
 .. raw:: html
 
     <div style='clear:both'></div>

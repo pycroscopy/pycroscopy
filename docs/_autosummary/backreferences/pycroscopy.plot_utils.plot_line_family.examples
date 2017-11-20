@@ -27,9 +27,9 @@ Examples using ``pycroscopy.plot_utils.plot_line_family``
 
 .. only:: html
 
-    .. figure:: /auto_examples/tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_03_multidimensional_data_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_03_multidimensional_data.py`
 
 .. raw:: html
 
@@ -37,7 +37,7 @@ Examples using ``pycroscopy.plot_utils.plot_line_family``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorials_plot_tutorial_03_multidimensional_data.py`
+    * :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_03_multidimensional_data.py`
 
 .. raw:: html
 

@@ -9,9 +9,9 @@ Examples using ``pycroscopy.hdf_utils.get_unit_values``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
+    .. figure:: /auto_examples/user_tutorials/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
+        :ref:`sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py`
 
 .. raw:: html
 
@@ -19,4 +19,4 @@ Examples using ``pycroscopy.hdf_utils.get_unit_values``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_tutorial_01_interacting_w_h5_files.py`
+    * :ref:`sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py`
