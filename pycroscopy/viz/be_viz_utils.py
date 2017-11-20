@@ -97,7 +97,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     # except KeyError:
     #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
     #     raise
-    except:
+    except Exception:
         raise
 
     # Assume that there's enough memory to load all the guesses into memory
@@ -1135,8 +1135,9 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     '''
     loop_bias_vec = h5_sho_spec_vals[get_attr(h5_sho_spec_vals, 'DC_Offset')].squeeze()
     shift_ind = int(-1 * steps_per_loop / 4)
-    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims)
-    loop_bias_vec = np.moveaxis(loop_bias_vec, sho_bias_dim, 0).reshape(sho_spec_dims[sho_bias_dim], -1)
+    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims[::-1])
+    loop_bias_vec = np.moveaxis(loop_bias_vec, len(loop_bias_vec.shape)-sho_bias_dim-1, 0)
+    loop_bias_vec = np.reshape(loop_bias_vec, [sho_spec_dims[sho_bias_dim], -1])
     loop_bias_vec = np.roll(loop_bias_vec.reshape(steps_per_loop, -1), shift_ind, axis=0)
 
     '''
