@@ -328,7 +328,7 @@ class BELoopModel(Model):
         '''
         Setup the datasets
         '''
-        self._create_fit_dataset()
+        self._create_fit_datasets()
         self._get_sho_chunk_sizes(max_mem, verbose=verbose)
 
         '''
