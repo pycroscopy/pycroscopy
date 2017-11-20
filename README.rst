@@ -8,7 +8,7 @@ pycroscopy		|statusimage|
 
 What is pycroscopy?
 -------------------
-pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy. pycroscopy uses a data-centric model wherein the raw data collected from the microscope, results fron analysis and processing routines are all written to standardized heirarchical data format (HDF5) files for traceability, reproducability, and prevenance. 
+pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy. pycroscopy uses a data-centric model wherein the raw data collected from the microscope, results from analysis and processing routines are all written to standardized hierarchical data format (HDF5) files for traceability, reproducibility, and provenance.
 
 With  `pycroscopy <https://pycroscopy.github.io/pycroscopy/>`_ we aim to:
 	1. Serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
