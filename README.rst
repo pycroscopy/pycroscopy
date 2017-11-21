@@ -87,9 +87,9 @@ Journal Papers using pycroscopy
  
 4. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017), jupyter notebook `here 4 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/BE_Processing.ipynb>`_
 
-5. Ultrafast Current Imaging via Bayesian Inference by S. Somnath et al., accepted at Nature Communications (2017).
+5. `Decoding apparent ferroelectricity in perovskite nanofibers <http://pubs.acs.org/doi/pdf/10.1021/acsami.7b14257>`_ by R. Ganeshkumar et al., ACS Applied Materials & Interfaces (2017). 
 
-6. Decoding apparent ferroelectricity in perovskite nanofibers by R. Ganeshkumar et al., accepted at ACS Applied Materials & Interfaces (2017). 
+6. Ultrafast Current Imaging via Bayesian Inference by S. Somnath et al., accepted at Nature Communications (2017).
 
 7. Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging by S. Somnath et al.; under review at Advanced Structural and Chemical Imaging (2017), jupyter notebook `here 5 <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_
 
