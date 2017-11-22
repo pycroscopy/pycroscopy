@@ -406,7 +406,7 @@ from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder #Can't use
 # Sphinx-gallery configuration
 sphinx_gallery_conf = dict(examples_dirs=['../examples',
                                           '../examples/dev_tutorials',
-                                          '../examples/publications',
+                                          # '../examples/publications',
                                           '../examples/user_tutorials'],
                            gallery_dirs=['auto_examples', 'auto_tutorials', 'auto_publications'],
                            within_subsection_order=ExampleTitleSortKey,
