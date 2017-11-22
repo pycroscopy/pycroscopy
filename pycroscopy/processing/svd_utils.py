@@ -230,7 +230,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     """
 
     hdf = ioHDF5(h5_main.file)
-    comp_slice = _get_component_slice(components)
+    comp_slice = get_component_slice(components)
     dset_name = h5_main.name.split('/')[-1]
 
     # Ensuring that at least one core is available for use / 2 cores are available for other use
@@ -320,7 +320,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     return h5_rebuilt
 
 
-def _get_component_slice(components):
+def get_component_slice(components):
     """
     Check the components object to determine how to use it to slice the dataset
 

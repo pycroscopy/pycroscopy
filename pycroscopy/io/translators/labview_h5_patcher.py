@@ -31,7 +31,7 @@ class LabViewH5Patcher(Translator):
     def _read_data(self):
         pass
 
-    def translate(self, h5_path, force_patch=False):
+    def translate(self, h5_path, force_patch=False, **kwargs):
         """
         Add the needed references and attributes to the h5 file that are not created by the
         LabView data aquisition program.

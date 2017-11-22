@@ -50,6 +50,8 @@ class BESHOmodel(Model):
         self.is_reshapable = True
         self.num_udvs_steps = None
         self.freq_vec = None
+        self._maxDataChunk = 1
+        self._max_pos_per_read = 1
 
     def _create_guess_datasets(self):
         """

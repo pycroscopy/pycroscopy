@@ -19,14 +19,10 @@ In this notebook we load some spectral data, and perform basic data analysis, in
 * KMeans Clustering
 * Non-negative Matrix Factorization
 * Principal Component Analysis
-* NFINDR
 
 Software Prerequisites:
 =======================
 * Standard distribution of **Anaconda** (includes numpy, scipy, matplotlib and sci-kit learn)
-* **pysptools** (will automatically be installed in the next step)
-* **cvxopt** for fully constrained least squares fitting
-    * install in a terminal via **`conda install -c https://conda.anaconda.org/omnia cvxopt`**
 * **pycroscopy** : Though pycroscopy is mainly used here for plotting purposes only, it's true capabilities
   are realized through the ability to seamlessly perform these analyses on any imaging dataset (regardless
   of origin, size, complexity) and storing the results back into the same dataset among other things
@@ -69,6 +65,11 @@ Software Prerequisites:
     """
   
     """
+
+
+
+
+
 
 
 The Data
@@ -122,6 +123,41 @@ We will begin by downloading the BE-PFM dataset from Github
     y_label = 'Amplitude (a.u.)'
 
 
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out::
+
+    Contents of data file:
+    ----------------------
+    /
+    Measurement_000
+    Measurement_000/Channel_000
+    Measurement_000/Channel_000/Bin_FFT
+    Measurement_000/Channel_000/Bin_Frequencies
+    Measurement_000/Channel_000/Bin_Indices
+    Measurement_000/Channel_000/Bin_Step
+    Measurement_000/Channel_000/Bin_Wfm_Type
+    Measurement_000/Channel_000/Excitation_Waveform
+    Measurement_000/Channel_000/Noise_Floor
+    Measurement_000/Channel_000/Position_Indices
+    Measurement_000/Channel_000/Position_Values
+    Measurement_000/Channel_000/Raw_Data
+    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000
+    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Bin_Frequencies
+    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Mean_Spectrogram
+    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Spectroscopic_Parameter
+    Measurement_000/Channel_000/Spatially_Averaged_Plot_Group_000/Step_Averaged_Response
+    Measurement_000/Channel_000/Spectroscopic_Indices
+    Measurement_000/Channel_000/Spectroscopic_Values
+    Measurement_000/Channel_000/UDVS
+    Measurement_000/Channel_000/UDVS_Indices
+    ----------------------
+    Data currently of shape: (16384, 119)
+
+
 Visualize the Amplitude Data
 ============================
 Note that we are not hard-coding / writing any tick labels / axis labels by hand.
@@ -133,6 +169,21 @@ All the necessary information was present in the H5 file
 
 
     px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
+
+
+
+
+.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_001.png
+    :align: center
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out::
+
+    No position datasets found as attributes of /Measurement_000/Channel_000/Spectroscopic_Values
+    HBox(children=(Text(value='temp_um.h5', description='Output Filename:', layout=Layout(width='50%'), placeholder='Type something'), Button(description='Save figure', style=ButtonStyle())))
+    interactive(children=(IntSlider(value=59, description='step', max=118), Output()), _dom_classes=('widget-interact',))
 
 
 1. Singular Value Decomposition (SVD)
@@ -196,6 +247,40 @@ the same source h5 file including all relevant links to the source dataset and o
                                  color_bar_mode='single', cmap='inferno')
 
 
+
+
+.. rst-class:: sphx-glr-horizontal
+
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_002.png
+            :scale: 47
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_003.png
+            :scale: 47
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_004.png
+            :scale: 47
+
+    *
+
+      .. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_005.png
+            :scale: 47
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out::
+
+    Performing SVD decomposition
+    SVD took 2.07 seconds.  Writing results to file.
+
+
 2. KMeans Clustering
 ====================
 
@@ -220,6 +305,21 @@ Set the number of clusters below
     h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
     px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
+
+
+
+
+.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_006.png
+    :align: center
+
+
+.. rst-class:: sphx-glr-script-out
+
+ Out::
+
+    Performing clustering on /Measurement_000/Channel_000/Raw_Data.
+    Calculated the Mean Response of each cluster.
+    Writing clustering results to file.
 
 
 3. Non-negative Matrix Factorization (NMF)
@@ -255,66 +355,12 @@ For illustrative purposes, we will only take the amplitude component of the spec
     axis.legend(bbox_to_anchor=[1.0, 1.0], fontsize=12)
 
 
-4. NFINDR
-=========
-
-NFINDR is a geometric decomposition technique that can aid in determination of constitent spectra in data.
-The basic idea is as follows. Assume that at any point *x*, the spectra measured *A(w,x)* is a
-linear superposition of *k* 'pure' spectra, i.e.
-
-*A(w,x)* = c\ :sub:`0`\ (x)a\ :sub:`0` + c\ :sub:`1`\ (x)a\ :sub:`1` + ... + c\ :sub:`k`\ (x)a\ :sub:`k`
-
-In this case, our task consists of first determining the pure spectra {a\ :sub:`0`\ ,...,a\ :sub:`k`\ },
-and then determining the coefficients {c\ :sub:`0`\ ,...,c\ :sub:`k`\ }. NFINDR determines the 'pure'
-spectra by first projecting the data into a low-dimensional sub-space (typically using PCA), and then
-taking the convex hull of the points in this space. Then, points are picked at random along the convex
-hull and the volume of the simplex that the points form is determined. If (k+1) pure spectra are needed,
-the data is reduced to (k) dimensions for this purpose. The points that maximize the volume of the
-simples are taken as the most representative pure spectra available in the dataset. One way to think of
-this is that any spectra that lie within the given volume can be represented as a superposition of these
-constituent spectra; thus maximizing this volume allows the purest spectra to be determined.
-
-The second task is to determine the coefficients. This is done usign the fully constrained least squares
-optimization, and involves the sum-to-one constraint, to allow quantitative comparisons to be made.
-More information can be found in the paper below:
-
-`Winter, Michael E. "N-FINDR: An algorithm for fast autonomous spectral end-member determination in
-hyperspectral data." SPIE's International Symposium on Optical Science, Engineering, and Instrumentation.
-International Society for Optics and Photonics, 1999.
-<http://proceedings.spiedigitallibrary.org/proceeding.aspx?articleid=994814>`_)
-
-Yet again, we will only work with the non-negative portion of the data (Amplitude)
 
 
+.. image:: /auto_examples/images/sphx_glr_plot_spectral_unmixing_007.png
+    :align: center
 
-.. code-block:: python
 
-
-    num_comps = 4
-
-    # get the amplitude component of the dataset
-    data_mat = np.abs(h5_main)
-
-    nfindr_results = eea.nfindr.NFINDR(data_mat, num_comps) #Find endmembers
-    end_members = nfindr_results[0]
-
-    fig, axis = plt.subplots(figsize=(5.5, 5))
-    px.plot_utils.plot_line_family(axis, freq_vec, end_members, label_prefix='NFINDR endmember #')
-    axis.set_title('NFINDR Endmembers', fontsize=14)
-    axis.set_xlabel(x_label, fontsize=12)
-    axis.set_ylabel(y_label, fontsize=12)
-    axis.legend(bbox_to_anchor=[1.0,1.0], fontsize=12)
-
-    # fully constrained least squares model:
-    fcls = amp.FCLS()
-    # Find abundances:
-    amap = fcls.map(data_mat[np.newaxis, :, :], end_members)
-
-    # Reshaping amap
-    amap = np.reshape(np.squeeze(amap), (num_rows, num_cols, -1))
-
-    px.plot_utils.plot_map_stack(amap, heading='NFINDR Abundance maps', cmap=plt.cm.inferno,
-                                 color_bar_mode='single');
 
 
 
@@ -325,11 +371,18 @@ Yet again, we will only work with the non-negative portion of the data (Amplitud
     h5_file.close()
     os.remove(data_file_path)
 
-**Total running time of the script:** ( 0 minutes  0.000 seconds)
 
 
 
-.. container:: sphx-glr-footer
+
+
+**Total running time of the script:** ( 0 minutes  48.211 seconds)
+
+
+
+.. only :: html
+
+ .. container:: sphx-glr-footer
 
 
   .. container:: sphx-glr-download
@@ -342,6 +395,9 @@ Yet again, we will only work with the non-negative portion of the data (Amplitud
 
      :download:`Download Jupyter notebook: plot_spectral_unmixing.ipynb <plot_spectral_unmixing.ipynb>`
 
-.. rst-class:: sphx-glr-signature
 
-    `Generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_
+.. only:: html
+
+ .. rst-class:: sphx-glr-signature
+
+    `Gallery generated by Sphinx-Gallery <https://sphinx-gallery.readthedocs.io>`_

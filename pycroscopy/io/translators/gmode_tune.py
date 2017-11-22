@@ -27,6 +27,9 @@ class GTuneTranslator(GLineTranslator):
     Translates G-mode Tune (bigtimedata.dat) files from actual BE line experiments to HDF5
     """
 
+    def __init__(self, *args, **kwargs):
+        super(GLineTranslator, self).__init__(*args, **kwargs)
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file

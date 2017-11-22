@@ -308,17 +308,6 @@ class Model(object):
         """
         return np.array(results)
 
-    def _create_fit_dataset(self):
-        """
-        Model specific call that will write the HDF5 fit dataset. pycroscopy requires that the h5 group, guess dataset,
-        corresponding spectroscopic and position datasets be created and populated at this point.
-        This function will create the HDF5 dataset for the fit and link it to same ancillary datasets as the guess.
-        The fit dataset will NOT be populated here but will instead be populated using the __setData function
-        """
-        warn('Please override the _create_fit_dataset specific to your model')
-        self.h5_fit = None  # replace with actual h5 dataset
-        pass
-
     def do_fit(self, processors=None, solver_type='least_squares', solver_options={'jac': '2-point'},
                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])}):
         """

@@ -13,9 +13,12 @@ import numpy as np
 from .microdata import MicroDataset
 
 __all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary',
+           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary', 'copyRegionRefs',
            'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main']
+           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main',
+           'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'create_spec_inds_from_vals',
+           'buildReducedSpec', 'check_for_old', 'get_source_dataset', 'get_unit_values', 'get_data_descriptor',
+           'link_as_main', 'reducingRefCopy', 'simpleRefCopy']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -1214,8 +1217,8 @@ def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
     Copies a region reference from one dataset to another taking into account that a dimension
     has been lost from source to target
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     h5_source : HDF5 Dataset
             source dataset for region reference copy
     h5_target : HDF5 Dataset
@@ -1227,12 +1230,14 @@ def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
     key : String
             Name of attribute in h5_source that contains
             the Region Reference to copy
-    Return
-    ------
+
+    Returns
+    -------
     ref_inds : Nx2x2 array of unsigned integers
             Array containing pairs of points that define
             the corners of each hyperslab in the region
             reference
+
     """
 
     '''
@@ -1281,8 +1286,8 @@ def simpleRefCopy(h5_source, h5_target, key):
     Copies a region reference from one dataset to another
     without alteration
 
-    Parameter
-    ---------
+    Parameters
+    ----------
     h5_source : HDF5 Dataset
             source dataset for region reference copy
     h5_target : HDF5 Dataset
@@ -1290,12 +1295,14 @@ def simpleRefCopy(h5_source, h5_target, key):
     key : String
             Name of attribute in h5_source that contains
             the Region Reference to copy
-    Return
-    ------
+
+    Returns
+    -------
     ref_inds : Nx2x2 array of unsigned integers
             Array containing pairs of points that define
             the corners of each hyperslab in the region
             reference
+
     """
 
     ref = h5_source.attrs[key]

@@ -97,7 +97,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     # except KeyError:
     #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
     #     raise
-    except:
+    except Exception:
         raise
 
     # Assume that there's enough memory to load all the guesses into memory
@@ -746,6 +746,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     ----------
     h5_loop_parameters : h5py.Dataset
         The dataset containing the loop parameters to be visualized
+    cmap : str or matplotlib.colors.Colormap
 
     Returns
     -------
@@ -805,6 +806,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     Parameters
     ----------
     h5_loop_parameters
+    cmap : str or matplotlib.colors.Colormap
 
     Returns
     -------
@@ -1050,15 +1052,28 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
 
 
 def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
-                                 selected_loop_pos=[0,0], selected_step=0, tick_font_size=14):
+                                 selected_loop_pos=[0,0], selected_step=0, tick_font_size=14, cmap='viridis'):
     """
 
     Parameters
     ----------
-    h5_loop_parameters
+    h5_loop_parameters : h5py.Dataset
+        Dataset containing the loop parameters
+    selected_loop_parm : str
+        The initial loop parameter to be plotted
+    selected_loop_cycle : int
+        The initial loop cycle to be plotted
+    selected_loop_pos : array-like of two ints
+        The initial position to be plotted
+    selected_step : int
+        The initial bias step to be plotted
+    tick_font_size : 14
+    cmap : str or matplotlib.colors.Colormap
+        Colormap to be used in plotting the parameter map
 
     Returns
     -------
+    None
 
     """
 
@@ -1120,8 +1135,9 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     '''
     loop_bias_vec = h5_sho_spec_vals[get_attr(h5_sho_spec_vals, 'DC_Offset')].squeeze()
     shift_ind = int(-1 * steps_per_loop / 4)
-    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims)
-    loop_bias_vec = np.moveaxis(loop_bias_vec, sho_bias_dim, 0).reshape(sho_spec_dims[sho_bias_dim], -1)
+    loop_bias_vec = loop_bias_vec.reshape(sho_spec_dims[::-1])
+    loop_bias_vec = np.moveaxis(loop_bias_vec, len(loop_bias_vec.shape)-sho_bias_dim-1, 0)
+    loop_bias_vec = np.reshape(loop_bias_vec, [sho_spec_dims[sho_bias_dim], -1])
     loop_bias_vec = np.roll(loop_bias_vec.reshape(steps_per_loop, -1), shift_ind, axis=0)
 
     '''

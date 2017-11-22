@@ -30,6 +30,28 @@ class BEPSndfTranslator(Translator):
     files to .h5
 
     """
+    def __init__(self, *args, **kwargs):
+        super(BEPSndfTranslator, self).__init__(*args, **kwargs)
+        self.debug = False
+        self.parm_dict = dict()
+        self.field_mode = None
+        self.spec_label = None
+        self.halve_udvs_steps = None
+        self.BE_wave = None
+        self.BE_wave_rev = None
+        self.BE_bin_inds = None
+        self.udvs_mat = None
+        self.udvs_labs = None
+        self.udvs_units = None
+        self.num_udvs_steps = None
+        self.excit_type_vec = None
+        self.__unique_waves__ = None
+        self.__num_wave_types__ = None
+        self.max_pixels = None
+        self.pos_labels = None
+        self.pos_mat = None
+        self.pos_units = None
+        self.hdf = None
 
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
         """

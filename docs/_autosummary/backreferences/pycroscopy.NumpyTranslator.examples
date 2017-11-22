@@ -9,9 +9,9 @@ Examples using ``pycroscopy.NumpyTranslator``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_tutorial_01_translator_thumb.png
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
 
-        :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_translator.py`
 
 .. raw:: html
 
@@ -19,4 +19,22 @@ Examples using ``pycroscopy.NumpyTranslator``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_tutorial_01_translator.py`
+    * :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Suhas Somnath** 8/8/2017">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_01_translator_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_translator.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_translator.py`

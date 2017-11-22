@@ -20,12 +20,8 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import getAvailableMem
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
-from .svd_utils import _get_component_slice
+from .svd_utils import get_component_slice
 
-# windata32 = np.dtype([('Image Data', np.float32)])
-# absfft32 = np.dtype([('FFT Magnitude', np.float32)])
-# winabsfft32 = np.dtype([('Image Data', np.float32), ('FFT Magnitude', np.float32)])
-# wincompfft32 = np.dtype([('Image Data', np.float32), ('FFT Real', np.float32), ('FFT Imag', np.float32)])
 windata32 = np.dtype({'names': ['Image Data'],
                       'formats': [np.float32]})
 absfft32 = np.dtype({'names': ['FFT Magnitude'],
@@ -799,7 +795,7 @@ class ImageWindow(object):
 
         print('Cleaning the image by removing unwanted components.')
 
-        comp_slice = _get_component_slice(components)
+        comp_slice = get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results
@@ -970,7 +966,7 @@ class ImageWindow(object):
             return
 
         print('Cleaning the image by removing unwanted components.')
-        comp_slice = _get_component_slice(components)
+        comp_slice = get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results

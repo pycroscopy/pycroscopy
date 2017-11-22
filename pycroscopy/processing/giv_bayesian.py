@@ -71,6 +71,9 @@ class GIVBayesian(Process):
         self.dvdt = np.diff(self.single_ao) / dt
         self.dvdt = np.append(self.dvdt, self.dvdt[-1])
 
+        self.reverse_results = None
+        self.forward_results = None
+
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
@@ -248,7 +251,6 @@ class GIVBayesian(Process):
 
         Parameters
         ----------
-        None
 
         Returns
         -------

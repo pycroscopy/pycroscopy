@@ -31,6 +31,14 @@ class BEodfRelaxationTranslator(Translator):
     It will not work for in-field. This should be fixed at a later date.
     
     """
+    def __init__(self, max_mem_mb=1024):
+        super(BEodfRelaxationTranslator, self).__init__(max_mem_mb)
+        self.FFT_BE_wave = None
+        self.hdf = None
+        self.ds_main = None
+        self.mean_resp = None
+        self.max_resp = None
+        self.min_resp = None
 
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False):
         """
@@ -147,7 +155,7 @@ class BEodfRelaxationTranslator(Translator):
         num_actual_udvs_steps = int(num_actual_udvs_steps)
 
         stind = 0
-        for step_index in xrange(UDVS_mat.shape[0]):
+        for step_index in range(UDVS_mat.shape[0]):
             if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
                 continue  # skip
             spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=np.uint32)  # Bin step

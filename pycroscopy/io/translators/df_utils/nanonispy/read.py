@@ -170,7 +170,7 @@ class Grid(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='3ds')
-        super().__init__(fname)
+        super(NanonisFile, self).__init__(fname)
         self.header = _parse_3ds_header(self.header_raw)
         self.signals = self._load_data()
         self.signals['sweep_signal'] = self._derive_sweep_signal()
@@ -296,7 +296,7 @@ class Scan(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='sxm')
-        super().__init__(fname)
+        super(NanonisFile, self).__init__(fname)
         self.header = _parse_sxm_header(self.header_raw)
 
         # data begins with 4 byte code, add 4 bytes to offset instead
@@ -368,7 +368,7 @@ class Spec(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='dat')
-        super().__init__(fname)
+        super(NanonisFile, self).__init__(fname)
         self.header = _parse_dat_header(self.header_raw)
         self.signals = self._load_data()
 

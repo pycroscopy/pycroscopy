@@ -58,6 +58,10 @@ class Optimize(object):
             warn('Error: data and guess must be numpy.ndarray. Exiting...')
             sys.exit()
         self._parallel = parallel
+        self.strategy = None
+        self.options = None
+        self.solver_type = None
+        self.solver_options = None
 
     def _guessFunc(self):
         gm = GuessMethods()
