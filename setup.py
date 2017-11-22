@@ -20,11 +20,11 @@ else:
 
 setup(
     name='pycroscopy',
-    version='0.59.0',
-    description='A suite of Python libraries for high performance scientific computing of microscopy data.',
+    version='0.59.2',
+    description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'Environment :: Console',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
@@ -37,17 +37,23 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',
-        'Topic :: Scientific/Engineering :: Information Analysis',
-        ],
-    keywords='scientific microscopy data analysis',
+        'Topic :: Scientific/Engineering :: Information Analysis'],
+    keywords=['EELS', 'STEM', 'TEM', 'XRD', 'AFM', 'SPM', 'STS', 'band excitation', 'BE', 'BEPS', 'Raman', 'NanoIR',
+              'ptychography', 'g-mode', 'general mode', 'electron microscopy', ' scanning probe', ' x-rays', 'probe',
+              'atomic force microscopy', 'SIMS', 'energy', 'spectroscopy', 'imaging', 'microscopy', 'spectra'
+              'characterization', 'spectrogram', 'hyperspectral', 'multidimensional', 'data format', 'universal',
+              'clustering', 'decomposition', 'curve fitting', 'data analysis PCA', ' SVD', ' NMF', ' DBSCAN', ' kMeans',
+              'machine learning', 'bayesian inference', 'fft filtering', 'signal processing', 'image cleaning',
+              'denoising', 'model', 'msa', 'quantification',
+              'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
+              'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
     packages=find_packages(exclude='tests'),
-    url='http://github.com/pycroscopy/pycroscopy',
+    url='https://pycroscopy.github.io/pycroscopy/index.html',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
-
-    # I don't remember how to do this correctly!!!. NL
     install_requires=requirements,
+    platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',
