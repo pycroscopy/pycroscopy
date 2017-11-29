@@ -186,8 +186,12 @@ Documentation Index
    :template: module.rst
 
 .. toctree::
-    Data_Format
-    pycroscopy
+    about
+    getting_started
+    data_format
+    papers_conf
+    api
+    contact
     auto_examples/index
 
 Indices and tables
