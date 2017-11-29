@@ -189,7 +189,7 @@ Documentation Index
     about
     getting_started
     data_format
-    papers_conf
+    papers_conferences
     api
     contact
     auto_examples/index
