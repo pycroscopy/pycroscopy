@@ -129,6 +129,8 @@ class Process(object):
         """
         self.parms_dict = get_attributes(h5_partial_group)
         self._start_pos = self.parms_dict.pop('last_pixel')
+        if self._start_pos == self.h5_main.shape[0] - 1:
+            raise ValueError('The last computed pixel shows that the computation was already complete')
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
