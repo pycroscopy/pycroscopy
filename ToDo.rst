@@ -38,6 +38,10 @@ Core development
 
   * No need to handle h5py datasets, compound datasets, complex datasets etc.
   * Add features time permitting.
+* EVERY process tool should implement two new features:
+  
+  1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
+  2. (Gracefully) Abort and resume processing.
 * Clean up Cluser results plotting
 * Consider implementing doSVD as a Process. Maybe the Decomposition and Cluster classes could extend Process?
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods

@@ -4,8 +4,7 @@ import numpy as np
 _end_tags = dict(grid=':HEADER_END:', scan='SCANIT_END', spec='[DATA]')
 
 
-class NanonisFile:
-
+class NanonisFile(object):
     """
     Base class for Nanonis data files (grid, scan, point spectroscopy).
 
@@ -33,6 +32,12 @@ class NanonisFile:
     """
 
     def __init__(self, fname):
+        """
+
+        Parameters
+        ----------
+        fname
+        """
         self.datadir, self.basename = os.path.split(fname)
         self.fname = fname
         self.filetype = self._determine_filetype()
@@ -170,7 +175,7 @@ class Grid(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='3ds')
-        super(NanonisFile, self).__init__(fname)
+        super(Grid, self).__init__(fname)
         self.header = _parse_3ds_header(self.header_raw)
         self.signals = self._load_data()
         self.signals['sweep_signal'] = self._derive_sweep_signal()
@@ -296,7 +301,7 @@ class Scan(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='sxm')
-        super(NanonisFile, self).__init__(fname)
+        super(Scan, self).__init__(fname)
         self.header = _parse_sxm_header(self.header_raw)
 
         # data begins with 4 byte code, add 4 bytes to offset instead
@@ -368,7 +373,7 @@ class Spec(NanonisFile):
 
     def __init__(self, fname):
         _is_valid_file(fname, ext='dat')
-        super(NanonisFile, self).__init__(fname)
+        super(Spec, self).__init__(fname)
         self.header = _parse_dat_header(self.header_raw)
         self.signals = self._load_data()
 

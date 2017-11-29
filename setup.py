@@ -10,21 +10,31 @@ with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
 if on_rtd:
-    requirements = ['psutil', 'xlrd>=1.0.0']
+    requirements = ['psutil',
+                    'xlrd>=1.0.0']
 else:
-    requirements = ['numpy_groupies>=0.9.6', 'pyqtgraph>=0.10',
-                    'h5py>=2.6.0', 'igor', 'matplotlib>=2.0.0',
-                    'scikit-learn>=0.17.1', 'xlrd>=1.0.0','joblib>=0.11',
-                    'psutil', 'scikit-image>=0.12.3', 'scipy>=0.17.1',
-                    'numpy>=1.11.0', 'ipywidgets>=5.2.2', 'ipython>=5.1.0']
+    requirements = ['numpy_groupies>=0.9.6',
+                    'pyqtgraph>=0.10',
+                    'h5py>=2.6.0',
+                    'igor',
+                    'matplotlib>=2.0.0',
+                    'scikit-learn>=0.17.1',
+                    'xlrd>=1.0.0',
+                    'joblib>=0.11',
+                    'psutil',
+                    'scikit-image>=0.12.3',
+                    'scipy>=0.17.1',
+                    'numpy>=1.11.0',
+                    'ipywidgets>=5.2.2',
+                    'ipython>=5.1.0']
 
 setup(
     name='pycroscopy',
     version='0.59.2',
-    description='Python library for scientific analysis of microscopy data',
+    description='A suite of Python libraries for high performance scientific computing of microscopy data.',
     long_description=long_description,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 2 - Pre-Alpha',
         'Environment :: Console',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
@@ -37,23 +47,17 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',
-        'Topic :: Scientific/Engineering :: Information Analysis'],
-    keywords=['EELS', 'STEM', 'TEM', 'XRD', 'AFM', 'SPM', 'STS', 'band excitation', 'BE', 'BEPS', 'Raman', 'NanoIR',
-              'ptychography', 'g-mode', 'general mode', 'electron microscopy', ' scanning probe', ' x-rays', 'probe',
-              'atomic force microscopy', 'SIMS', 'energy', 'spectroscopy', 'imaging', 'microscopy', 'spectra'
-              'characterization', 'spectrogram', 'hyperspectral', 'multidimensional', 'data format', 'universal',
-              'clustering', 'decomposition', 'curve fitting', 'data analysis PCA', ' SVD', ' NMF', ' DBSCAN', ' kMeans',
-              'machine learning', 'bayesian inference', 'fft filtering', 'signal processing', 'image cleaning',
-              'denoising', 'model', 'msa', 'quantification',
-              'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
-              'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
+        'Topic :: Scientific/Engineering :: Information Analysis',
+        ],
+    keywords='scientific microscopy data analysis',
     packages=find_packages(exclude='tests'),
-    url='https://pycroscopy.github.io/pycroscopy/index.html',
+    url='http://github.com/pycroscopy/pycroscopy',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
+
+    # I don't remember how to do this correctly!!!. NL
     install_requires=requirements,
-    platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',
