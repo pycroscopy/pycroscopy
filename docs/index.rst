@@ -179,7 +179,7 @@ packages:
 + `GitKraken <https://www.gitkraken.com/>`_
 
 Documentation Index
-===================
+-------------------
 .. currentmodule:: index
 
 .. autosummary::
@@ -195,7 +195,7 @@ Documentation Index
     auto_examples/index
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
