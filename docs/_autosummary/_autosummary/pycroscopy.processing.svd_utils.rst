@@ -10,6 +10,7 @@ pycroscopy\.processing\.svd\_utils
    .. autosummary::
    
       doSVD
+      get_component_slice
       rebuild_svd
       simplifiedKPCA
    

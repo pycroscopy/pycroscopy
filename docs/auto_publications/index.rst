@@ -1,9 +1,29 @@
 :orphan:
 
-=======================
-Pycroscopy Publications
-=======================
+==============
+User Tutorials
+==============
 
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
+
+.. only:: html
+
+    .. figure:: /auto_publications/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
+
+        :ref:`sphx_glr_auto_publications_plot_tutorial_01_interacting_w_h5_files.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_publications/plot_tutorial_01_interacting_w_h5_files
 .. raw:: html
 
     <div style='clear:both'></div>

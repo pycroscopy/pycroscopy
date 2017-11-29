@@ -1,8 +1,8 @@
 :orphan:
 
-=======================
-Scientific Applications
-=======================
+===================
+Pycroscopy Examples
+===================
 
 
 .. raw:: html
@@ -156,17 +156,17 @@ Developer Tutorials
 
     <div style='clear:both'></div>
 
-====================
-Journal Publications
-====================
+=======================
+Pycroscopy Publications
+=======================
 
 .. raw:: html
 
     <div style='clear:both'></div>
 
-======================
-General User Tutorials
-======================
+==============
+User Tutorials
+==============
 
 
 .. raw:: html

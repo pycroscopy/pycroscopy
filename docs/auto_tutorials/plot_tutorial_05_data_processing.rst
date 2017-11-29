@@ -345,7 +345,7 @@ Plot the Amplitude and Phase of the gaussian versus the raw data.
 
 
 
-**Total running time of the script:** ( 1 minutes  28.085 seconds)
+**Total running time of the script:** ( 0 minutes  42.678 seconds)
 
 
 

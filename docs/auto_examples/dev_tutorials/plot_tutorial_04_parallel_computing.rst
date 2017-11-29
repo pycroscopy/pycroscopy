@@ -407,7 +407,7 @@ a simple for loop.
 
  Out::
 
-    Serial computation took 32.51  seconds
+    Serial computation took 31.07  seconds
 
 
 2. Parallel Computation
@@ -452,7 +452,7 @@ pycroscopy. The below parallel computation is reduced to a single line with this
 
  Out::
 
-    Parallel computation took 22.05  seconds
+    Parallel computation took 17.36  seconds
 
 
 Compare the results
@@ -531,7 +531,7 @@ Please see another example on how to write a Process class for Pycroscopy
 
 
 
-**Total running time of the script:** ( 1 minutes  37.320 seconds)
+**Total running time of the script:** ( 1 minutes  22.369 seconds)
 
 
 

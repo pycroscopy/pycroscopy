@@ -1,6 +1,6 @@
 
 
-.. _sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py:
+.. _sphx_glr_auto_publications_plot_tutorial_01_interacting_w_h5_files.py:
 
 
 ================================================
@@ -942,7 +942,7 @@ dataset such as the one under consideration. Fortunately, hdf_utils has a very h
 
 
 
-.. image:: /auto_examples/user_tutorials/images/sphx_glr_plot_tutorial_01_interacting_w_h5_files_001.png
+.. image:: /auto_publications/images/sphx_glr_plot_tutorial_01_interacting_w_h5_files_001.png
     :align: center
 
 
@@ -975,7 +975,7 @@ Yet again, this process is simpler when using the PycroDataset object:
 
 
 
-.. image:: /auto_examples/user_tutorials/images/sphx_glr_plot_tutorial_01_interacting_w_h5_files_002.png
+.. image:: /auto_publications/images/sphx_glr_plot_tutorial_01_interacting_w_h5_files_002.png
     :align: center
 
 
@@ -1088,7 +1088,7 @@ The whole process is simplified further when using the PycroDataset object:
 
 
 
-**Total running time of the script:** ( 0 minutes  8.428 seconds)
+**Total running time of the script:** ( 0 minutes  6.178 seconds)
 
 
 

@@ -55,9 +55,6 @@ Software Prerequisites:
     # multivariate analysis:
     from sklearn.cluster import KMeans
     from sklearn.decomposition import NMF
-    from pysptools import eea
-    import pysptools.abundance_maps as amp
-    from pysptools.eea import nfindr
 
     # finally import pycroscopy:
     import pycroscopy as px
@@ -278,7 +275,7 @@ the same source h5 file including all relevant links to the source dataset and o
  Out::
 
     Performing SVD decomposition
-    SVD took 2.07 seconds.  Writing results to file.
+    SVD took 3.51 seconds.  Writing results to file.
 
 
 2. KMeans Clustering
@@ -376,7 +373,7 @@ For illustrative purposes, we will only take the amplitude component of the spec
 
 
 
-**Total running time of the script:** ( 0 minutes  48.211 seconds)
+**Total running time of the script:** ( 1 minutes  1.906 seconds)
 
 
 
