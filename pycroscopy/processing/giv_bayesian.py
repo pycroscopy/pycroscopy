@@ -93,7 +93,7 @@ class GIVBayesian(Process):
         """
         super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
-        # In the case of simplified Bayeisan inference, four (roughly) equally sized datasets need to be held in memory:
+        # In the case of simplified Bayesian inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance
         self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
         # Since these computations take far longer than functional fitting, do in smaller batches:
