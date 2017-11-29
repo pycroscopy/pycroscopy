@@ -50,13 +50,15 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=None, max_mem_mb=4*1024, verbose=False):
+    def __init__(self, h5_main, h5_results_grp=None, cores=None, max_mem_mb=4*1024, verbose=False):
         """
         Parameters
         ----------
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
+        h5_results_grp : h5py.Datagroup object, optional
+            Datagroup containing partially computed results
         cores : uint, optional
             Default - all available cores - 2
             How many cores to use for the computation
@@ -83,19 +85,29 @@ class Process(object):
         self._start_pos = 0
         self._end_pos = self.h5_main.shape[0]
 
-        self._results = None
-        self.h5_results_grp = None
-
         # Determining the max size of the data that can be put into memory
         self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
         self.duplicate_h5_groups = []
         self.process_name = None  # Reset this in the extended classes
         self.parms_dict = None
 
+        self._results = None
+        self.h5_results_grp = h5_results_grp
+        if self.h5_results_grp is not None:
+            self._extract_params(h5_results_grp)
+
         # DON'T check for duplicates since parms_dict has not yet been initialized.
-        # Sub classes will check by theselves if they are interested.
+        # Sub classes will check by themselves if they are interested.
 
     def _check_for_duplicates(self):
+        """
+        Checks for instances where the process was applied to the same dataset with the same parameters
+
+        Returns
+        -------
+        duplicate_h5_groups : list of h5py.Datagroup objects
+            List of groups satisfying the above conditions
+        """
         duplicate_h5_groups = check_for_old(self.h5_main, self.process_name, new_parms=self.parms_dict)
         if self.verbose:
             print('Checking for duplicates:')
@@ -104,6 +116,18 @@ class Process(object):
                                                     'Consider reusing results')
             print(duplicate_h5_groups)
         return duplicate_h5_groups
+
+    def _extract_params(self, h5_partial_group):
+        """
+        Extracts the necessary parameters from the provided h5 group to resume computation
+
+        Parameters
+        ----------
+        h5_partial_group : h5py.Datagroup object
+            Datagroup containing partially computed results
+
+        """
+        raise NotImplementedError('Please override the resume_computation specific to your process')
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
