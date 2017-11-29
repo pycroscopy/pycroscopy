@@ -9,7 +9,7 @@ import numpy as np
 import psutil
 import joblib
 
-from ..io.hdf_utils import checkIfMain, check_for_old
+from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommendCores, getAvailableMem
 
@@ -127,7 +127,8 @@ class Process(object):
             Datagroup containing partially computed results
 
         """
-        raise NotImplementedError('Please override the resume_computation specific to your process')
+        self.parms_dict = get_attributes(h5_partial_group)
+        self._start_pos = self.parms_dict.pop('last_pixel')
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
