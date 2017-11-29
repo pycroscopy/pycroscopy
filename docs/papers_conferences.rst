@@ -1,3 +1,7 @@
+=======================
+Pycroscopy Publications
+=======================
+
 Journal Papers using pycroscopy
 -------------------------------
 1. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); jupyter notebook `here <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_
