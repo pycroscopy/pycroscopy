@@ -9,7 +9,7 @@ import numpy as np
 import psutil
 import joblib
 
-from ..io.hdf_utils import checkIfMain
+from ..io.hdf_utils import checkIfMain, check_for_old
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommendCores, getAvailableMem
 
@@ -88,6 +88,22 @@ class Process(object):
 
         # Determining the max size of the data that can be put into memory
         self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
+        self.duplicate_h5_groups = []
+        self.process_name = None  # Reset this in the extended classes
+        self.parms_dict = None
+
+        # DON'T check for duplicates since parms_dict has not yet been initialized.
+        # Sub classes will check by theselves if they are interested.
+
+    def _check_for_duplicates(self):
+        duplicate_h5_groups = check_for_old(self.h5_main, self.process_name, new_parms=self.parms_dict)
+        if self.verbose:
+            print('Checking for duplicates:')
+        if duplicate_h5_groups is not None:
+            print('WARNING! ' + self.process_name + ' has already been performed with the same parameters before. '
+                                                    'Consider reusing results')
+            print(duplicate_h5_groups)
+        return duplicate_h5_groups
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
