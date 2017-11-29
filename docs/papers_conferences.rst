@@ -16,8 +16,8 @@ Journal Papers using pycroscopy
 
 8. Many more coming soon....
 
-Workshops, Presentations, and Posters at International conferences
---------------------------------------------------------
+pycroscopy at International conferences
+---------------------------------------
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Nov 27 2017 - `Tutorial on Machine Learning for Image and Hyperspectral Data <https://mrsfall.zerista.com/event/member/434841>`_
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; `poster 1641 <http://www2.avs.org/symposium2017/Papers/Paper_SP-TuP1.html>`_
