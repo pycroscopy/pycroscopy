@@ -68,8 +68,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pycroscopy'
-copyright = u'2016, Numan Laanait, Suhas Somnath, Chris Smith'
-author = u'Numan Laanait, Suhas Somnath, Chris Smith'
+copyright = u'2016, Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
+author = u'Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
