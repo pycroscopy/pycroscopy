@@ -1,8 +1,8 @@
 :orphan:
 
-===================
-Pycroscopy Examples
-===================
+=======================
+Scientific Applications
+=======================
 
 
 .. raw:: html
@@ -48,9 +48,9 @@ Pycroscopy Examples
 
     <div style='clear:both'></div>
 
-==============================
-Pycroscopy Developer Tutorials
-==============================
+===================
+Developer Tutorials
+===================
 
 
 .. raw:: html
@@ -156,17 +156,17 @@ Pycroscopy Developer Tutorials
 
     <div style='clear:both'></div>
 
-=======================
-Pycroscopy Publications
-=======================
+====================
+Journal Publications
+====================
 
 .. raw:: html
 
     <div style='clear:both'></div>
 
-=========================
-Pycroscopy User Tutorials
-=========================
+======================
+General User Tutorials
+======================
 
 
 .. raw:: html
