@@ -106,12 +106,8 @@ class SignalFilter(Process):
             self.parms_dict['noise_threshold'] = self.noise_threshold
         self.parms_dict['num_pix'] = self.num_effective_pix
 
-        duplicates = check_for_old(self.h5_main, 'FFT_Filtering', new_parms=self.parms_dict)
-        if self.verbose:
-            print('Checking for duplicates:')
-            print(duplicates)
-        if duplicates is not None:
-            print('WARNING! FFT filtering has already been performed with the same parameters before. Consider reusing results')
+        self.process_name = 'FFT_Filtering'
+        self.duplicate_h5_groups = self._check_for_duplicates()
 
         self.data = None
         self.filtered_data = None
@@ -126,7 +122,7 @@ class SignalFilter(Process):
         Creates all the datasets necessary for holding all parameters + data.
         """
 
-        grp_name = self.h5_main.name.split('/')[-1] + '-FFT_Filtering_'
+        grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
         grp_filt = MicroDataGroup(grp_name, self.h5_main.parent.name)
 
         self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
