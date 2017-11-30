@@ -34,24 +34,27 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Generic interactive visualizer for 3 and 4D float numpy arrays - currently being cleaned up by Chris. :-)
 * EVERY process tool should implement two new features:
   
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
-* Cluster, Decomposition, doSVD **MUST** extend Process
+* Cluster and Decomposition **MUST** extend Process - 1 hour
 
   * The computation will continue to be performed by sklearn. No need to use parallel_compute().
   * Most importantly, they will be forced to implement the check for previous computations
+* multi-node computing capability in parallel_compute
 * Clean up Cluser results plotting
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
-* multi-node computing capability in parallel_compute
 * Data Generators
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level!
 
 GUI
 ~~~~~~~~~~~
+* Make the generic interactive visualizer for 3 and 4D float numpy arrays ROBUST
 
+  * Allow slicing at the pycrodataset level to handle > 4D datasets - 20 mins
+  * Need to handle appropriate reference values for the tick marks in 2D plots - 20 mins
+  * Handle situation when only one position and one spectral axis are present. - low priority - 20 mins
 * Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
 * TRULY Generic visualizer in plot.lly / dash? that can use the PycroDataset class
 *	Switch to using plot.ly and dash for interactive elements
