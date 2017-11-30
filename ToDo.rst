@@ -1,13 +1,31 @@
 .. contents::
 
+v 1.0 goals
+-----------
+1. settle on a structure for process and analysis
+
+  * Process should implement some checks. 
+  * Model needs to catch up with Process
+2. good utilities for interrogating data - pycro data - done
+3. good documentation for both users and developers
+
+  * Need more on dealing with data and (for developers) explaining what is where and why 
+4. generic visualizer
+5. good utils for generating publishable plots
+6. test utils
+7. scalable computing
+  * dask / mpi?
+
 Short-term goals
 --------------------
+* Multi-node compute capability
 * More documentation to help users / developers + PAPER
 * Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-* Multi-node compute capability
 
 Documentation
 -------------
+* Upload clean exports of paper notebooks - Stephen and Chris
+* Organize papers by instrument / technique
 *	Include examples in documentation
 * Links to references for all functions and methods used in our workflows.
 
@@ -42,11 +60,15 @@ Core development
 
   * The computation will continue to be performed by sklearn. No need to use parallel_compute().
   * Most importantly, they will be forced to implement the check for previous computations
+* Absorb functionality from Process into Model
 * multi-node computing capability in parallel_compute
+* Bayesian GIV should actually be an analysis
 * Clean up Cluser results plotting
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * Data Generators
-* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level!
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
+* Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
+* Improve visualization of file contents in print_tree() like hyperspy's `metadata <http://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
 
 GUI
 ~~~~~~~~~~~
@@ -55,7 +77,6 @@ GUI
   * Allow slicing at the pycrodataset level to handle > 4D datasets - 20 mins
   * Need to handle appropriate reference values for the tick marks in 2D plots - 20 mins
   * Handle situation when only one position and one spectral axis are present. - low priority - 20 mins
-* Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
 * TRULY Generic visualizer in plot.lly / dash? that can use the PycroDataset class
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
