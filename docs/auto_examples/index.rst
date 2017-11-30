@@ -48,9 +48,9 @@ Pycroscopy Examples
 
     <div style='clear:both'></div>
 
-==============================
-Pycroscopy Developer Tutorials
-==============================
+===================
+Developer Tutorials
+===================
 
 
 .. raw:: html
@@ -164,9 +164,9 @@ Pycroscopy Publications
 
     <div style='clear:both'></div>
 
-=========================
-Pycroscopy User Tutorials
-=========================
+==============
+User Tutorials
+==============
 
 
 .. raw:: html

@@ -58,12 +58,13 @@ setup(
               'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
               'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
     packages=find_packages(exclude='tests'),
-    url='http://github.com/pycroscopy/pycroscopy',
+    url='https://pycroscopy.github.io/pycroscopy/about.html',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
 
     install_requires=requirements,
+    platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
     tests_require='Nose',

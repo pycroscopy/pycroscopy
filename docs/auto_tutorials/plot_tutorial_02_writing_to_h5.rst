@@ -500,22 +500,22 @@ operation being performed on the same dataset. The index will then be updated ac
     Measurement_000/Channel_000Raw_Data-Cluster_/Label_Spectroscopic_Values
 
     Writing the following attrbutes to the group:
-    num_clusters : 9
-    cluster_algorithm : KMeans
-    n_jobs : 1
-    max_iter : 300
-    timestamp : 2017_11_16-14_42_00
-    precompute_distances : auto
-    random_state : None
-    verbose : 0
-    algorithm : auto
-    machine_id : challtdow-ThinkPad-T530
+    timestamp : 2017_11_29-10_05_46
     n_init : 10
-    copy_x : True
-    n_clusters : 9
-    tol : 0.0001
+    n_jobs : 1
+    algorithm : auto
+    random_state : None
+    num_clusters : 9
+    verbose : 0
     num_samples : 10000
+    tol : 0.0001
     init : k-means++
+    cluster_algorithm : KMeans
+    precompute_distances : auto
+    machine_id : challtdow-ThinkPad-T530
+    n_clusters : 9
+    max_iter : 300
+    copy_x : True
 
 
 Write to H5 and access the written objects
@@ -546,21 +546,21 @@ Once the tree is prepared (previous cell), ioHDF5 will handle all the file writi
  Out::
 
     Created group /Measurement_000/Channel_000/Raw_Data-Cluster_000
-    Writing attribute: num_clusters with value: 9
-    Writing attribute: cluster_algorithm with value: KMeans
-    Writing attribute: n_jobs with value: 1
-    Writing attribute: max_iter with value: 300
-    Writing attribute: timestamp with value: 2017_11_16-14_42_00
-    Writing attribute: precompute_distances with value: auto
-    Writing attribute: verbose with value: 0
-    Writing attribute: algorithm with value: auto
-    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
+    Writing attribute: timestamp with value: 2017_11_29-10_05_46
     Writing attribute: n_init with value: 10
-    Writing attribute: copy_x with value: True
-    Writing attribute: n_clusters with value: 9
-    Writing attribute: tol with value: 0.0001
+    Writing attribute: n_jobs with value: 1
+    Writing attribute: algorithm with value: auto
+    Writing attribute: num_clusters with value: 9
+    Writing attribute: verbose with value: 0
     Writing attribute: num_samples with value: 10000
+    Writing attribute: tol with value: 0.0001
     Writing attribute: init with value: k-means++
+    Writing attribute: cluster_algorithm with value: KMeans
+    Writing attribute: precompute_distances with value: auto
+    Writing attribute: machine_id with value: challtdow-ThinkPad-T530
+    Writing attribute: n_clusters with value: 9
+    Writing attribute: max_iter with value: 300
+    Writing attribute: copy_x with value: True
     Wrote attributes to group: Raw_Data-Cluster_000 
 
     Created Dataset /Measurement_000/Channel_000/Raw_Data-Cluster_000/Labels
@@ -724,7 +724,7 @@ Deletes the temporary files created in the example
 
 
 
-**Total running time of the script:** ( 2 minutes  28.277 seconds)
+**Total running time of the script:** ( 1 minutes  18.893 seconds)
 
 
 

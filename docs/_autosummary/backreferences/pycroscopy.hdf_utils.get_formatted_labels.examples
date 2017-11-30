@@ -56,3 +56,21 @@ Examples using ``pycroscopy.hdf_utils.get_formatted_labels``
 .. only:: not html
 
     * :ref:`sphx_glr_auto_tutorials_plot_tutorial_03_multidimensional_data.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="11/11/2017">
+
+.. only:: html
+
+    .. figure:: /auto_publications/images/thumb/sphx_glr_plot_tutorial_01_interacting_w_h5_files_thumb.png
+
+        :ref:`sphx_glr_auto_publications_plot_tutorial_01_interacting_w_h5_files.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_publications_plot_tutorial_01_interacting_w_h5_files.py`

@@ -397,7 +397,7 @@ avoid recomputing the results. hdf_utils has a function for this too:
  Out::
 
     Parameters already used for computing SHO_Fit on Raw_Data in the file:
-    {'timestamp': '2017_08_22-15_02_08', 'SHO_guess_method': 'pycroscopy BESHO', 'SHO_fit_method': 'pycroscopy BESHO', 'machine_id': 'mac109728.ornl.gov'}
+    {'timestamp': '2017_08_22-15_02_08', 'machine_id': 'mac109728.ornl.gov', 'SHO_guess_method': 'pycroscopy BESHO', 'SHO_fit_method': 'pycroscopy BESHO'}
 
     Checking to see if SHO Fits have been computed on the raw dataset:
     Using pycroscopy
@@ -482,68 +482,68 @@ attributes
 
  Out::
 
-    data_type : BEPSData
-    grid_moving : 0
-    File_date_and_time : 26-Feb-2015 14:49:48
-    num_bins : 22272
-    File_file_suffix : 3
-    BE_amplitude_[V] : 1.5
-    FORC_num_of_FORC_repeats : 1
-    VS_step_edge_smoothing_[s] : 0.001
-    BE_phase_content : chirp-sinc hybrid
-    IO_Analog_Input_2 : off
-    grid_current_row : 1
-    VS_set_pulse_duration[s] : 0.002
+    FORC_V_low2_[V] : -10
+    VS_cycle_fraction : full
+    VS_amplitude_[V] : 8
+    IO_Analog_Input_3 : off
+    FORC_V_low1_[V] : -1
+    BE_center_frequency_[Hz] : 385000
     File_MDAQ_version : MDAQ_VS_111114_01
-    FORC_num_of_FORC_cycles : 1
+    BE_phase_content : chirp-sinc hybrid
+    VS_measure_in_field_loops : in and out-of-field
+    IO_DAQ_platform : NI 6115
+    BE_auto_smoothing : auto smoothing on
+    grid_current_col : 1
+    BE_band_width_[Hz] : 60000
+    VS_read_voltage_[V] : 0
     grid_/single : grid
     VS_steps_per_full_cycle : 64
-    VS_measure_in_field_loops : in and out-of-field
-    grid_transit_set_point_[V] : 0
-    File_file_path : V:\Users\Sangmo\KTaO3\150226\onSTO650\
-    VS_cycle_fraction : full
-    FORC_V_low2_[V] : -10
-    num_udvs_steps : 256
-    BE_auto_smoothing : auto smoothing on
-    FORC_V_high2_[V] : 10
-    grid_contact_set_point_[V] : 0.75
-    VS_set_pulse_amplitude[V] : 0
-    VS_offset_[V] : 0
-    IO_rate_[Hz] : 2000000
-    File_file_name : in_out_BEPS_5x5
-    BE_band_edge_smoothing_[s] : 2560.5
-    FORC_V_low1_[V] : -1
-    grid_cycle_time_[s] : 10
-    BE_phase_variation : 1
-    IO_Analog_Input_3 : off
-    VS_read_voltage_[V] : 0
-    IO_Analog_Input_4 : off
-    IO_AO_amplifier : 1
     num_pix : 25
-    grid_num_cols : 5
-    BE_band_width_[Hz] : 60000
-    VS_number_of_cycles : 2
-    VS_cycle_phase_shift : 0
-    grid_total_time_[h;m;s] : 10
-    VS_mode : DC modulation mode
-    BE_actual_duration_[s] : 0.004
-    BE_center_frequency_[Hz] : 385000
     grid_measuring : 0
-    BE_desired_duration_[s] : 0.004
-    grid_num_rows : 5
-    VS_amplitude_[V] : 8
-    grid_settle_time_[s] : 0.05
-    IO_AO_range_[V] : +/- 10
-    BE_band_edge_trim : 0.14614
-    IO_Analog_Input_1 : +/- .1V, FFT
-    BE_points_per_BE_wave : 0
-    grid_transit_time_[s] : 0.1
-    BE_bins_per_band : 0
-    BE_repeats : 2
-    grid_current_col : 1
-    IO_DAQ_platform : NI 6115
-    FORC_V_high1_[V] : 1
+    grid_transit_set_point_[V] : 0
+    FORC_V_high2_[V] : 10
+    grid_moving : 0
+    grid_current_row : 1
+    data_type : BEPSData
+    num_bins : 22272
     grid_time_remaining_[h;m;s] : 10
+    BE_bins_per_band : 0
+    grid_transit_time_[s] : 0.1
+    BE_band_edge_trim : 0.14614
+    grid_settle_time_[s] : 0.05
+    IO_rate_[Hz] : 2000000
+    IO_Analog_Input_2 : off
+    BE_desired_duration_[s] : 0.004
+    grid_contact_set_point_[V] : 0.75
+    VS_mode : DC modulation mode
+    num_udvs_steps : 256
+    File_file_suffix : 3
+    BE_repeats : 2
+    VS_cycle_phase_shift : 0
+    VS_set_pulse_duration[s] : 0.002
+    BE_phase_variation : 1
+    VS_set_pulse_amplitude[V] : 0
+    VS_number_of_cycles : 2
+    BE_amplitude_[V] : 1.5
+    IO_AO_amplifier : 1
+    VS_offset_[V] : 0
+    IO_AO_range_[V] : +/- 10
+    File_file_path : V:\Users\Sangmo\KTaO3\150226\onSTO650\
+    BE_band_edge_smoothing_[s] : 2560.5
+    grid_num_cols : 5
+    VS_step_edge_smoothing_[s] : 0.001
+    FORC_num_of_FORC_cycles : 1
+    BE_points_per_BE_wave : 0
+    IO_Analog_Input_4 : off
+    FORC_num_of_FORC_repeats : 1
+    grid_num_rows : 5
+    IO_Analog_Input_1 : +/- .1V, FFT
+    grid_cycle_time_[s] : 10
+    BE_actual_duration_[s] : 0.004
+    File_file_name : in_out_BEPS_5x5
+    FORC_V_high1_[V] : 1
+    grid_total_time_[h;m;s] : 10
+    File_date_and_time : 26-Feb-2015 14:49:48
 
 
 
@@ -561,7 +561,7 @@ attributes
 
  Out::
 
-    {'BE_phase_content': 'chirp-sinc hybrid', 'VS_mode': 'DC modulation mode'}
+    {'VS_mode': 'DC modulation mode', 'BE_phase_content': 'chirp-sinc hybrid'}
 
 
 Comparing the number value of attributes is not a problem using h5py:
@@ -1088,7 +1088,7 @@ The whole process is simplified further when using the PycroDataset object:
 
 
 
-**Total running time of the script:** ( 0 minutes  16.429 seconds)
+**Total running time of the script:** ( 0 minutes  8.428 seconds)
 
 
 

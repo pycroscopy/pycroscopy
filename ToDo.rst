@@ -34,34 +34,26 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Generic interactive visualizer for 3 and 4D float numpy arrays.
-
-  * No need to handle h5py datasets, compound datasets, complex datasets etc.
-  * Add features time permitting.
+* Generic interactive visualizer for 3 and 4D float numpy arrays - currently being cleaned up by Chris. :-)
 * EVERY process tool should implement two new features:
   
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
+* Cluster, Decomposition, doSVD **MUST** extend Process
+
+  * The computation will continue to be performed by sklearn. No need to use parallel_compute().
+  * Most importantly, they will be forced to implement the check for previous computations
 * Clean up Cluser results plotting
-* Consider implementing doSVD as a Process. Maybe the Decomposition and Cluster classes could extend Process?
 * Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
 * multi-node computing capability in parallel_compute
 * Data Generators
-* Consistency in the naming of and placement of attributes (chan or meas group) in all translators
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level!
 
 GUI
 ~~~~~~~~~~~
 
 * Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
-* Generic visualizer in plot.lly / dash? that can use the PycroDataset class
-   * One suggestion is 2 (or more panes). 
-         * Left hand side for positions
-               * 1D lines or 2D images
-               * Ability to select individual pixels, points within a polygon.
-               * What quantity to display for these images? Select one within P fields for compound datasets. Perhaps we need sliders / dropdowns for all spectral dimensions here to for the user to slices?
-         * Right hand side for spectral
-               * 1D spectra or 2D images. 
-               * Users will be asked to slice N-1 or N-2 spectral dimensions
+* TRULY Generic visualizer in plot.lly / dash? that can use the PycroDataset class
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
 

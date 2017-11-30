@@ -48,9 +48,6 @@ import os
 # multivariate analysis:
 from sklearn.cluster import KMeans
 from sklearn.decomposition import NMF
-from pysptools import eea
-import pysptools.abundance_maps as amp
-from pysptools.eea import nfindr
 
 # finally import pycroscopy:
 import pycroscopy as px
