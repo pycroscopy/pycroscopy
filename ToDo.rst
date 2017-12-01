@@ -62,9 +62,9 @@ Core development
   * Most importantly, they will be forced to implement the check for previous computations
 * Absorb functionality from Process into Model
 * multi-node computing capability in parallel_compute
+* Image cleaning should be (something like at the very least) a Process
 * Bayesian GIV should actually be an analysis
-* Clean up Cluser results plotting
-* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
+* Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Data Generators
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
