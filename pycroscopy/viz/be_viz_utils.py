@@ -1388,3 +1388,31 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
     widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
     widgets.interact(_update_spec_step, selected_step=spec_step_widget)
+
+
+def _add_loop_parameters(axes, switching_coef_vec):
+    """
+    Add the loop parameters for the given loop to a list of axes
+
+    Parameters
+    ----------
+    axes : list of matplotlib.pyplo.axes
+        Plot axes to add the coeffients to
+    switching_coef_vec : 1D numpy.ndarray
+        Array of loop parameters arranged by position
+
+    Returns
+    -------
+    axes : list of matplotlib.pyplo.axes
+    """
+    positions = np.linspace(0, switching_coef_vec.shape[0] - 1, len(axes.flat), dtype=np.int)
+
+    for ax, pos in zip(axes.flat, positions):
+        ax.axvline(switching_coef_vec[pos]['V+'], c='k', label='V+')
+        ax.axvline(switching_coef_vec[pos]['V-'], c='r', label='V-')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 1'], c='k', ls=':', label='Nucleation Bias 1')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 2'], c='r', ls=':', label='Nucleation Bias 2')
+        ax.axhline(switching_coef_vec[pos]['R+'], c='k', ls='-.', label='R+')
+        ax.axhline(switching_coef_vec[pos]['R-'], c='r', ls='-.', label='R-')
+
+    return axes
