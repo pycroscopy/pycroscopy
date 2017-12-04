@@ -21,6 +21,7 @@ Journal Papers using pycroscopy
 
 pycroscopy at International conferences
 ---------------------------------------
+* Aug 5th 2018 - `Tutorial <https://www.microscopy.org/MandM/2018/program/short_courses.cfm>`_ at Microscopy and Microanalysis Conference 2018.
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Nov 27 2017 - `Tutorial on Machine Learning for Image and Hyperspectral Data <https://mrsfall.zerista.com/event/member/434841>`_
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; `poster 1641 <http://www2.avs.org/symposium2017/Papers/Paper_SP-TuP1.html>`_
