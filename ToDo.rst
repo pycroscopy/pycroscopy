@@ -2,19 +2,18 @@
 
 v 1.0 goals
 -----------
-1. settle on a structure for process and analysis
-
-  * Process should implement some checks. 
-  * Model needs to catch up with Process
+1. test utils - 2+ weeks
 2. good utilities for interrogating data - pycro data - done
 3. good documentation for both users and developers
 
   * Need more on dealing with data and (for developers) explaining what is where and why 
-4. generic visualizer
-5. good utils for generating publishable plots
-6. test utils
-7. scalable computing
-  * dask / mpi?
+4. generic visualizer - mostly complete - 
+5. settle on a structure for process and analysis - moderate ~ 1 day
+
+  * Process should implement some checks. 
+  * Model needs to catch up with Process
+6. good utils for generating publishable plots - easy ~ 1 day
+7. Promote / demote lesser used utilites to processes / analyses. 
 
 Short-term goals
 --------------------
