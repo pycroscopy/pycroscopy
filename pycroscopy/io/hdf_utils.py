@@ -280,6 +280,19 @@ def getH5GroupRefs(group_name, h5_refs):
 def findDataset(h5_group, ds_name):
     """
     Uses visit() to find all datasets with the desired name
+
+    Parameters
+    ----------
+    h5_group : h5py.Group
+        Group to search within for the Dataset
+    ds_name : str
+        Name of the dataset to search for
+
+    Returns
+    -------
+    ds : list
+        List of [Name, object] pairs corresponding to datasets that match `ds_name`.
+
     """
     from .pycro_data import PycroDataset
 
