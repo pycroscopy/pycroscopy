@@ -268,38 +268,35 @@ def discrete_cmap(num_bins, base_cmap=default_cmap):
     return base_cmap
 
 
-def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=default_cmap, **kwargs):
+def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     """
     Plots the input against the output waveform (typically loops).
-    The color of the curve changes as a function of time using the jet colorscheme
+    The color of the curve changes as a function of time
 
     Parameters
     ----------
-    ax : axis handle
+    axis : axis handle
         Axis to plot the curve
-    ao_vec : 1D float numpy array
+    x_vec : 1D float numpy array
         vector that forms the X axis
-    ai_vec : 1D float numpy array
+    y_vec : 1D float numpy array
         vector that forms the Y axis
     num_steps : unsigned int (Optional)
         Number of discrete color steps
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Colormap to be used
     """
+    cmap = kwargs.get('cmap', default_cmap)
     cmap = get_cmap_object(cmap)
 
-    pts_per_step = int(len(ai_vec) / num_steps)
+    pts_per_step = len(y_vec) // num_steps
+
     for step in range(num_steps - 1):
-        ax.plot(ao_vec[step * pts_per_step:(step + 1) * pts_per_step],
-                ai_vec[step * pts_per_step:(step + 1) * pts_per_step],
-                color=cmap(255 * step / num_steps), **kwargs)
+        axis.plot(x_vec[step * pts_per_step:(step + 1) * pts_per_step],
+                  y_vec[step * pts_per_step:(step + 1) * pts_per_step],
+                  color=cmap(255 * step // num_steps), **kwargs)
     # plot the remainder:
-    ax.plot(ao_vec[(num_steps - 1) * pts_per_step:],
-            ai_vec[(num_steps - 1) * pts_per_step:],
-            color=cmap(255 * num_steps / num_steps), **kwargs)
-    """
-    CS3=plt.contourf([[0,0],[0,0]], range(0,310),cmap=plt.cm.viridis)
-    fig.colorbar(CS3)"""
+    axis.plot(x_vec[(num_steps - 1) * pts_per_step:],
+              y_vec[(num_steps - 1) * pts_per_step:],
+              color=cmap(255 * num_steps / num_steps), **kwargs)
 
 
 def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='',
