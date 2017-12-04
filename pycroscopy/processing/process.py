@@ -215,6 +215,7 @@ class Process(object):
         """
         The purpose of this function is to allow processes to resume from partly computed results
 
+        Start with self.h5_results_grp
         """
         raise NotImplementedError('Please override the _get_existing_datasets specific to your process')
 
@@ -231,9 +232,12 @@ class Process(object):
         -------
 
         """
-
-        self._create_results_datasets()
-        self._start_pos = 0
+        if self._start_pos == 0:
+            # starting fresh
+            self._create_results_datasets()
+        else:
+            # resuming from previous checkpoint
+            self._get_existing_datasets()
 
         self._read_data_chunk()
         while self.data is not None:

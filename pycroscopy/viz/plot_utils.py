@@ -744,7 +744,7 @@ def plotScree(scree, title='Scree'):
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
                    title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
-                   **kwargs):
+                   fig_title_yoffset=None, fig_title_size=None, **kwargs):
     """
     Plots the provided stack of maps
 
@@ -777,6 +777,10 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
+    fig_title_yoffset : float
+        Offset to move the figure title vertically in the figure
+    fig_title_size : float
+        Size of figure title
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
@@ -851,8 +855,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         cbar_mode=color_bar_mode,
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
+
     fig202.canvas.set_window_title(heading)
-    fig202.suptitle(heading, fontsize=16+(p_rows+ p_cols), y=0.9)
+    # These parameters have not been easy to fix:
+    if fig_title_yoffset is None:
+        fig_title_yoffset = 0.9
+    if fig_title_size is None:
+        fig_title_size = 16+(p_rows+ p_cols)
+    fig202.suptitle(heading, fontsize=fig_title_size, y=fig_title_yoffset)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],
