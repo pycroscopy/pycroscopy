@@ -284,7 +284,7 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     num_steps : unsigned int (Optional)
         Number of discrete color steps
     """
-    cmap = kwargs.get('cmap', default_cmap)
+    cmap = kwargs.pop('cmap', default_cmap)
     cmap = get_cmap_object(cmap)
 
     pts_per_step = len(y_vec) // num_steps
