@@ -26,7 +26,7 @@ from . import fft
 from . import gmode_utils
 from . import proc_utils
 from . import svd_utils
-from .svd_utils import doSVD, rebuild_svd
+from .svd_utils import SVD, rebuild_svd
 from . import decomposition
 from .decomposition import Decomposition
 from . import cluster
@@ -58,5 +58,5 @@ else:
     FeatureExtractor = FeatureExtractorParallel
     geoTransformer = geoTransformerParallel
 
-__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'doSVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
+__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'proc_utils', 'svd_utils',
            'giv_utils', 'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'GIVBayesian', 'SignalFilter']

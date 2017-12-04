@@ -31,7 +31,7 @@ else:
 setup(
     name='pycroscopy',
     version='0.59.2',
-    description='A suite of Python libraries for high performance scientific computing of microscopy data.',
+    description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
         'Development Status :: 3 - Alpha',
@@ -58,10 +58,11 @@ setup(
               'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
               'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
     packages=find_packages(exclude='tests'),
-    url='https://pycroscopy.github.io/pycroscopy/index.html',
+    url='https://pycroscopy.github.io/pycroscopy/about.html',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
+
     install_requires=requirements,
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
