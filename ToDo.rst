@@ -56,10 +56,22 @@ Core development
   
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
-* Cluster and Decomposition **MUST** extend Process - 1 hour
-
-  * The computation will continue to be performed by sklearn. No need to use parallel_compute().
-  * Most importantly, they will be forced to implement the check for previous computations
+  
+* Legacy processes **MUST** extend Process:
+  
+  * sklearn wrapper classes:
+  
+    * Cluter
+    * Decomposition
+    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
+  
+  * Own classes:
+  
+    * Image Windowing
+    * Image Cleaning
+    * As time permits, ensure that these can resume processing
+  * All these MUST implement the check for previous computations at the very least
+  
 * Absorb functionality from Process into Model
 * multi-node computing capability in parallel_compute
 * Image cleaning should be (something like at the very least) a Process
@@ -135,10 +147,9 @@ Plot Utils
 
 * plot_map_stack:
 
-  1. Do something about the super title getting hidden behind the subtitles
-  2. Respect tick, x label, y label, title, etc font sizes
-  3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-  4. See all other changes that were made for the image cleaning paper
+  1. Respect tick, x label, y label, title, etc font sizes
+  2. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  3. See all other changes that were made for the image cleaning paper
 
 * plot_cluster_results_together
 
