@@ -645,17 +645,18 @@ def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel=
 
 ###############################################################################
 
-def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Eigenvector', num_comps=4, x_label=''):
+def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle='Component', num_comps=4, x_label='',
+                            **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters
     -------------
-    loop_stack : 3D numpy complex matrices
+    loop_stack : 2D numpy complex matrix
         Loops rearranged as - [component, points]
-    x_axis : 1D real numpy array
+    x_vec : 1D real numpy array
         The vector to plot against
-    heading : str
+    title : str
         Title to plot above everything else
     subtitle : str
         Subtile to of Figure
@@ -671,20 +672,25 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
     funcs = [np.abs, np.angle]
     labels = ['Amplitude', 'Phase']
 
-    fig201, axes201 = plt.subplots(len(funcs), num_comps, figsize=(num_comps * 4, 4 * len(funcs)))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(heading)
+    figsize = kwargs.pop('figsize', (4, 4))
+    figsize = (figsize[0] * num_comps, figsize[1] * len(funcs))
+
+    fig, axes = plt.subplots(len(funcs), num_comps, figsize=figsize)
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    if title is not None:
+        fig.canvas.set_window_title(title)
+        fig.suptitle(title, y=1.025)
 
     for index in range(num_comps):
-        cur_map = loop_stack[index, :]
-        axes = [axes201.flat[index], axes201.flat[index + num_comps]]
-        for func, lab, ax in zip(funcs, labels, axes):
-            ax.plot(x_axis, func(cur_map))
-            ax.set_title('%s: %d - %s' % (subtitle, index + 1, lab))
-        ax.set_xlabel(x_label)
-    fig201.tight_layout()
+        cur_loop = loop_stack[index, :]
+        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
+        for func, lab, axis in zip(funcs, labels, cur_axes):
+            axis.plot(x_vec, func(cur_loop), **kwargs)
+            axis.set_title('%s: %d - %s' % (subtitle, index + 1, lab))
+        axis.set_xlabel(x_label)
+    fig.tight_layout()
 
-    return fig201, axes201
+    return fig, axes
 
 
 ###############################################################################
@@ -705,7 +711,7 @@ def plot_scree(scree, title='Scree', **kwargs):
     ---------
     fig, axes
     """
-    fig = plt.figure(figsize=(6.5, 6))
+    fig = plt.figure(figsize=kwargs.pop('figsize', (6.5, 6)))
     axis = fig.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
     kwargs.update({'color': kwargs.pop('color', 'b')})
     kwargs.update({'marker': kwargs.pop('marker', '*')})
