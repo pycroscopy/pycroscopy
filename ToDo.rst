@@ -2,19 +2,18 @@
 
 v 1.0 goals
 -----------
-1. settle on a structure for process and analysis
-
-  * Process should implement some checks. 
-  * Model needs to catch up with Process
+1. test utils - 2+ weeks
 2. good utilities for interrogating data - pycro data - done
 3. good documentation for both users and developers
 
   * Need more on dealing with data and (for developers) explaining what is where and why 
-4. generic visualizer
-5. good utils for generating publishable plots
-6. test utils
-7. scalable computing
-  * dask / mpi?
+4. generic visualizer - mostly complete - 
+5. settle on a structure for process and analysis - moderate ~ 1 day
+
+  * Process should implement some checks. 
+  * Model needs to catch up with Process
+6. good utils for generating publishable plots - easy ~ 1 day
+7. Promote / demote lesser used utilites to processes / analyses. 
 
 Short-term goals
 --------------------
@@ -56,10 +55,22 @@ Core development
   
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
-* Cluster and Decomposition **MUST** extend Process - 1 hour
-
-  * The computation will continue to be performed by sklearn. No need to use parallel_compute().
-  * Most importantly, they will be forced to implement the check for previous computations
+  
+* Legacy processes **MUST** extend Process:
+  
+  * sklearn wrapper classes:
+  
+    * Cluter
+    * Decomposition
+    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
+  
+  * Own classes:
+  
+    * Image Windowing
+    * Image Cleaning
+    * As time permits, ensure that these can resume processing
+  * All these MUST implement the check for previous computations at the very least
+  
 * Absorb functionality from Process into Model
 * multi-node computing capability in parallel_compute
 * Image cleaning should be (something like at the very least) a Process
@@ -135,10 +146,9 @@ Plot Utils
 
 * plot_map_stack:
 
-  1. Do something about the super title getting hidden behind the subtitles
-  2. Respect tick, x label, y label, title, etc font sizes
-  3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-  4. See all other changes that were made for the image cleaning paper
+  1. Respect tick, x label, y label, title, etc font sizes
+  2. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  3. See all other changes that were made for the image cleaning paper
 
 * plot_cluster_results_together
 
