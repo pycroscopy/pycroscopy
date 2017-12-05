@@ -39,6 +39,7 @@ if sys.version_info.major == 3:
 
 default_cmap = plt.cm.viridis
 
+
 def set_tick_font_size(axes, font_size):
     """
     Sets the font size of the ticks in the provided axes
@@ -98,6 +99,32 @@ def make_scalar_mappable(vmin, vmax, cmap=None):
     # fake up the array of the scalar mappable
     sm._A = []
     return sm
+
+
+def cbar_for_line_plot(axis, num_steps, discrete_ticks=True, **kwargs):
+    """
+    Adds a colorbar next to a line plot axis
+
+    Parameters
+    ----------
+    axis : axis handle
+        Axis with multiple line objects
+    num_steps : uint
+        Number of steps in the colorbar
+    discrete_ticks : (optional) bool
+        Whether or not to have the ticks match the number of number of steps. Default = True
+    """
+    cmap = get_cmap_object(kwargs.pop('cmap', None))
+    cmap = discrete_cmap(num_steps, base_cmap=cmap.name)
+
+    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap, **kwargs)
+
+    if discrete_ticks:
+        kwargs.update({'ticks': np.arange(num_steps)})
+
+    cbar = plt.colorbar(sm, ax=axis, orientation='vertical',
+                        pad=0.04, use_gridspec=True, **kwargs)
+    return cbar
 
 
 def get_cmap_object(cmap):
@@ -299,8 +326,8 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
               color=cmap(255 * num_steps / num_steps), **kwargs)
 
 
-def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='',
-                     cmap=default_cmap, y_offset=0, **kwargs):
+def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='', label_suffix='',
+                     y_offset=0, show_cbar=False, **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
@@ -308,7 +335,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
     ----------
     axis : axis handle
         Axis to plot the curve
-    x_axis : array-like
+    x_vec : array-like
         Values to plot against
     line_family : 2D numpy array
         family of curves arranged as [curve_index, features]
@@ -318,26 +345,38 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
         prefix for the legend (before the index of the curve)
     label_suffix : string / unicode
         suffix for the legend (after the index of the curve)
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Colormap to be used
     y_offset : (optional) number
         quantity by which the lines are offset from each other vertically (useful for spectra)
+    show_cbar : (optional) bool
+        Whether or not to show a colorbar (instead of a legend)
     """
-    cmap = get_cmap_object(cmap)
+    cmap = get_cmap_object(kwargs.pop('cmap', None))
 
-    num_lines = line_family.shape[0]
+    num_lines = len(line_family)
+
+    default_names = False
 
     if line_names is None:
-        line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
-    else:
-        if len(line_names) != num_lines:
-            warn('Line names of different length compared to provided dataset')
-            line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
+        label_prefix = 'Line '
+        default_names = True
+    elif len(line_names) != num_lines:
+        warn('Line names of different length compared to provided dataset')
+        default_names = True
+
+    if default_names:
+        line_names = [str(line_ind) for line_ind in range(num_lines)]
+
+    line_names = ['{} {} {}'.format(label_prefix, cur_name, label_suffix) for cur_name in line_names]
 
     for line_ind in range(num_lines):
-        axis.plot(x_axis, line_family[line_ind] + line_ind * y_offset,
+        axis.plot(x_vec, line_family[line_ind] + line_ind * y_offset,
                   label=line_names[line_ind],
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
+
+    if show_cbar:
+        # put back the cmap parameter:
+        kwargs.update({'cmap': cmap})
+        cbar_for_line_plot(axis, num_lines, **kwargs)
 
 
 def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
