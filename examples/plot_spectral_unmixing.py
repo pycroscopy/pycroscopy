@@ -152,7 +152,7 @@ h5_s = h5_svd_group['S']
 abun_maps = np.reshape(h5_u[:,:25], (num_rows, num_cols, -1))
 
 # Visualize the variance / statistical importance of each component:
-px.plot_utils.plotScree(h5_s, title='Note the exponential drop of variance with number of components')
+px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with number of components')
 
 # Visualize the eigenvectors:
 first_evecs = h5_v[:9, :]

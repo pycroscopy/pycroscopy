@@ -690,7 +690,7 @@ def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Ei
 ###############################################################################
 
 
-def plotScree(scree, title='Scree'):
+def plot_scree(scree, title='Scree', **kwargs):
     """
     Plots the scree or scree
 
@@ -705,17 +705,19 @@ def plotScree(scree, title='Scree'):
     ---------
     fig, axes
     """
-    fig203 = plt.figure(figsize=(6.5, 6))
-    axes203 = fig203.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
-    axes203.loglog(np.arange(len(scree)) + 1, scree, 'b', marker='*')
-    axes203.set_xlabel('Principal Component')
-    axes203.set_ylabel('Variance')
-    axes203.set_title(title)
-    axes203.set_xlim(left=1, right=len(scree))
-    axes203.set_ylim(bottom=np.min(scree), top=np.max(scree))
-    fig203.canvas.set_window_title("Scree")
+    fig = plt.figure(figsize=(6.5, 6))
+    axis = fig.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
+    kwargs.update({'color': kwargs.pop('color', 'b')})
+    kwargs.update({'marker': kwargs.pop('marker', '*')})
+    axis.loglog(np.arange(len(scree)) + 1, scree, **kwargs)
+    axis.set_xlabel('Component')
+    axis.set_ylabel('Variance')
+    axis.set_title(title)
+    axis.set_xlim(left=1, right=len(scree))
+    axis.set_ylim(bottom=np.min(scree), top=np.max(scree))
+    fig.canvas.set_window_title("Scree")
 
-    return fig203, axes203
+    return fig, axis
 
 
 # ###############################################################################
