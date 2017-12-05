@@ -8,7 +8,7 @@ from IPython.display import display
 import ipywidgets as widgets
 import numpy as np
 
-from .plot_utils import single_img_cbar_plot
+from .plot_utils import plot_map
 
 
 def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
@@ -169,9 +169,8 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
     spec_titles = get_slice_string(spatmap_slicing, spec_dim_names, spec_ref_vals, spec_dim_units)
     axes[0].set_title('Spatial Map for\n' + component_title + '\n' + spec_titles)
     if pos_plot_2d:
-        img_spat, cbar_spat = single_img_cbar_plot(axes[0], current_spatmap,
-                                                   x_size=data_mat.shape[1], y_size=data_mat.shape[0],
-                                                   clim=clims)
+        img_spat, cbar_spat = plot_map(axes[0], current_spatmap, x_size=data_mat.shape[1], y_size=data_mat.shape[0],
+                                       clim=clims)
         axes[0].set_xlabel(pos_dim_names[1] + ' (' + pos_dim_units_old[1] + ')')
         axes[0].set_ylabel(pos_dim_names[0] + ' (' + pos_dim_units_old[0] + ')')
         main_vert_line = axes[0].axvline(x=spgram_slicing[pos_dim_names[1]], color='k')
@@ -192,10 +191,10 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
     if spec_plot_2d:
         axes[1].set_xlabel(spec_dim_names[1] + ' (' + spec_dim_units_old[1] + ')')
         axes[1].set_ylabel(spec_dim_names[0] + ' (' + spec_dim_units_old[0] + ')')
-        img_spec, cbar_spec = single_img_cbar_plot(axes[1], current_spgram,
-                                                   x_size=data_mat.shape[len(pos_dim_names) + 1],
-                                                   y_size=data_mat.shape[len(pos_dim_names)],
-                                                   cbar_label=component_name, clim=clims)
+        img_spec, cbar_spec = plot_map(axes[1], current_spgram,
+                                       x_size=data_mat.shape[len(pos_dim_names) + 1],
+                                       y_size=data_mat.shape[len(pos_dim_names)],
+                                        cbar_label=component_name, clim=clims)
     else:
         axes[1].set_xlabel(spec_xdim + ' (' + spec_dim_units[spec_xdim] + ')')
         if current_spgram.shape[0] != spec_ref_vals[spec_xdim].size:

@@ -380,51 +380,11 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
         _ = cbar_for_line_plot(axis, num_lines, **kwargs)
 
 
-def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
-    """
-    Plots a 2d map with a tight z axis, with or without color bars.
-    Note that the direction of the y axis is flipped if the color bar is required
-
-    Parameters
-    ----------
-    axis : matplotlib.pyplot.axis object
-        Axis to plot this map onto
-    data : 2D real numpy array
-        Data to be plotted
-    stdevs : unsigned int (Optional. Default = None)
-        Number of standard deviations to consider for plotting.  If None, full range is plotted.
-    origin : str
-        Where should the origin of the image data be located.  'lower' sets the origin to the
-        bottom left, 'upper' sets it to the upper left.
-        Default 'lower'
-
-    Returns
-    -------
-    """
-    if stdevs is not None:
-        data_mean = np.mean(data)
-        data_std = np.std(data)
-        plt_min = data_mean - stdevs * data_std
-        plt_max = data_mean + stdevs * data_std
-    else:
-        plt_min = np.min(data)
-        plt_max = np.max(data)
-
-    im = axis.imshow(data, interpolation='none',
-                     vmin=plt_min,
-                     vmax=plt_max,
-                     origin=origin,
-                     **kwargs)
-
-    return im
-
-
-def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
-                         cbar_label=None, tick_font_size=14, **kwargs):
+def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=None, num_ticks=4,
+             stdevs=None, cbar_label=None, tick_font_size=14, origin='lower', **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
-
     Parameters
     ----------
     axis : matplotlib.axis object
@@ -435,19 +395,24 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
-    x_size : float, optional, default = 1
+    x_size : float, optional, default = number of pixels in x direction
         Extent of tick marks in the X axis. This could be something like 1.5 for 1.5 microns
-    y_size : float, optional, default = 1
+    y_size : float, optional, default = number of pixels in y direction
         Extent of tick marks in y axis
     num_ticks : unsigned int, optional, default = 4
         Number of tick marks on the X and Y axes
+    stdevs : unsigned int (Optional. Default = None)
+        Number of standard deviations to consider for plotting.  If None, full range is plotted.
     cbar_label : str, optional, default = None
         Labels for the colorbar. Use this for something like quantity (units)
     tick_font_size : unsigned int, optional, default = 14
         Font size to apply to x, y, colorbar ticks and colorbar label
+    origin : str
+        Where should the origin of the image data be located.  'lower' sets the origin to the
+        bottom left, 'upper' sets it to the upper left.
+        Default 'lower'
     kwargs : dictionary
-        Anything else that will be passed on to plot_map or imshow
-
+        Anything else that will be passed on to imshow
     Returns
     -------
     im_handle : handle to image plot
@@ -455,39 +420,35 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1
     cbar : handle to color bar
         handle to color bar
     """
-    if 'clim' not in kwargs:
-        im_handle = plot_map(axis, img, **kwargs)
-    else:
-        im_handle = axis.imshow(img, origin='lower', **kwargs)
+    if stdevs is not None:
+        data_mean = np.mean(img)
+        data_std = np.std(img)
+        kwargs.update({'clim': [data_mean - stdevs * data_std,
+                                data_mean + stdevs * data_std]})
+
+    kwargs.update({'origin': origin})
+
+    im_handle = axis.imshow(img, **kwargs)
 
     if show_xy_ticks is True:
-        x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
-        y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
-        axis.set_xticks(x_ticks)
-        axis.set_yticks(y_ticks)
-        axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
-        axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
-        set_tick_font_size(axis, tick_font_size)
-    elif show_xy_ticks is False:
+        if x_size is not None and y_size is not None:
+            x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
+            y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
+            axis.set_xticks(x_ticks)
+            axis.set_yticks(y_ticks)
+            axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
+            axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
+            set_tick_font_size(axis, tick_font_size)
+    else:
         axis.set_xticks([])
         axis.set_yticks([])
-    else:
-        set_tick_font_size(axis, tick_font_size)
 
     cbar = None
     if show_cbar:
-        # cbar = fig.colorbar(im_handle, ax=axis)
-        # divider = make_axes_locatable(axis)
-        # cax = divider.append_axes('right', size='5%', pad=0.05)
-        # cbar = plt.colorbar(im_handle, cax=cax)
         cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
                             fraction=0.046, pad=0.04, use_gridspec=True)
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
-        """
-        z_lims = cbar.get_clim()
-        cbar.set_ticks(np.linspace(z_lims[0],z_lims[1], num_ticks))
-        """
         cbar.ax.tick_params(labelsize=tick_font_size)
     return im_handle, cbar
 

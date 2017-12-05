@@ -14,7 +14,7 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button, \
+from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, save_fig_filebox_button, \
     set_tick_font_size
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
@@ -310,7 +310,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = single_img_cbar_plot(ax_map, spatial_map.T, show_xy_ticks=None)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=None)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel('X')
@@ -415,7 +415,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
-        spatial_img, spatial_cbar = single_img_cbar_plot(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
+        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
                                                          y_size=spatial_map.shape[1], cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
@@ -424,13 +424,11 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         crosshair = axes[0].plot(int(0.5 * spatial_map.shape[0]), int(0.5 * spatial_map.shape[1]), 'k+')[0]
 
         if len(spec_dims) > 1:
-            amp_img, amp_cbar = single_img_cbar_plot(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                                     extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                                             0, spectrogram.shape[0]])
+            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
+                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
-            phase_img, phase_cbar = single_img_cbar_plot(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                                                 0, spectrogram.shape[0]])
+            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
+                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
             for axis in axes[1:3]:
                 axis.set_ylabel('BE step')
@@ -652,7 +650,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map, im_cbar = single_img_cbar_plot(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
+    im_map, im_cbar = plot_map(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
                                            y_size=spatial_map.shape[1], cmap=cmap)
 
     ax_map.set_xlabel('X')
@@ -962,7 +960,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    plt_loop_map = single_img_cbar_plot(ax_loop_map, loop_parm_map, cmap=cmap)
+    plt_loop_map, loop_cbar = plot_map(ax_loop_map, loop_parm_map, cmap=cmap)
     loop_vert_line = ax_loop_map.axvline(x=pos_dims[0], color='k')
     loop_horz_line = ax_loop_map.axhline(y=pos_dims[1], color='k')
     ax_loop_map.set_title(loop_map_title)
@@ -1226,7 +1224,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    loop_map, loop_map_cbar = single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    loop_map, loop_map_cbar = plot_map(ax_loop_map, loop_parm_map)
     crosshair = ax_loop_map.plot(selected_loop_pos[0], selected_loop_pos[1], 'k+')[0]
     ax_loop_map.set_title(loop_map_title)
     ax_loop_map.set_xlabel('X Position')
