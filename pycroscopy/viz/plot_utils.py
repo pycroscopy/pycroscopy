@@ -595,52 +595,58 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
 ###############################################################################
 
 
-def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2,
-                           cmap=default_cmap):
+def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='',
+                           subtitle_prefix='Component', stdevs=2, **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters
     -------------
     map_stack : 3D numpy complex matrices
-        Eigenvectors rearranged as - [row, col, component]
+        Eigenvectors rearranged as - [component, row, col]
     num_comps : int
         Number of components to plot
-    title : String
+    title : str, optional
         Title to plot above everything else
-    xlabel : String
+    x_label : str, optional
         Label for x axis
+    y_label : str, optional
+        Label for y axis
+    subtitle_prefix : str, optional
+        Prefix for the title over each image
     stdevs : int
         Number of standard deviations to consider for plotting
-    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
-        Requested color map
 
     Returns
     ---------
     fig, axes
     """
-    cmap = get_cmap_object(cmap)
+    kwargs.update({'stdevs': stdevs})
 
-    fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 8))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(title)
+    figsize = kwargs.pop('figsize', (4, 4))
+    figsize = (figsize[0] * num_comps, 8)
+
+    fig, axes = plt.subplots(2, num_comps, figsize=figsize)
+    fig.subplots_adjust(hspace=0.1, wspace=0.4)
+    if title is not None:
+        fig.canvas.set_window_title(title)
+        fig.suptitle(title, y=1.025)
 
     for index in range(num_comps):
-        cur_map = np.transpose(map_stack[index, :, :])
-        axes = [axes201.flat[index], axes201.flat[index + num_comps]]
+        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
         funcs = [np.abs, np.angle]
         labels = ['Amplitude', 'Phase']
-        for func, lab, ax in zip(funcs, labels, axes):
-            amp_mean = np.mean(func(cur_map))
-            amp_std = np.std(func(cur_map))
-            ax.imshow(func(cur_map), cmap=cmap,
-                      vmin=amp_mean - stdevs * amp_std,
-                      vmax=amp_mean + stdevs * amp_std)
-            ax.set_title('Eigenvector: %d - %s' % (index + 1, lab))
-            ax.set_aspect('auto')
-        ax.set_xlabel(xlabel)
+        for func, lab, axis in zip(funcs, labels, cur_axes):
+            _ = plot_map(axis, func(map_stack[index]), **kwargs)
+            axis.set_title('%s %d - %s' % (subtitle_prefix, index, lab))
+            axis.set_aspect('auto')
+            if index == 0:
+                axis.set_ylabel(y_label)
+        axis.set_xlabel(x_label)
 
-    return fig201, axes201
+    fig.tight_layout()
+
+    return fig, axes
 
 
 ###############################################################################
