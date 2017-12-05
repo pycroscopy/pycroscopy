@@ -94,14 +94,9 @@ GUI
 
 Plot Utils
 ~~~~~~~~~
-* plot_map -combine this with single_img_cbar_plot
+* plot_map 
 
-* single_img_cbar_plot - It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
-
-  1. Combine with plot_map
-  2. allow the tick labels to be specified instead of just the x_size and y_size. 
-  3. Rename this function to something more sensible
-  4. Color bar should be shown by default
+  1. allow the tick labels to be specified instead of just the x_size and y_size. 
 
 * plot_loops
  
@@ -109,27 +104,6 @@ Plot Utils
   2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
   3. Enable use of kwargs - to specify line widths etc.
   
-
-* Plot_complex_map_stack
-
-  1. allow kwargs. 
-  2. Use plot_map 
-  3. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-  4. Remove map as a kwarg
-  5. Show color bars
-  6. Possibly allow horizontal / vertical configurations? (Optional)
-
-* plot_complex_loop_stack
-
-  1. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-  2. Allow individual plots sizes to be specified
-  3. Allow **kwargs and pass two plot functions
-
-* plotScree
-
-  1. rename to plot_scree
-  2. Use **kwargs on the plot function
-
 * plot_map_stack:
 
   1. Respect tick, x label, y label, title, etc font sizes
@@ -167,7 +141,7 @@ Plot Utils
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Li Xin classification code 
-* Ondrej Dyck’s atom finding code – written but needs work before fully integrated
+* Ondrej Dyck’s atom finding code – written well but needs to work on images with different kinds of atoms
 * Nina Wisinger’s processing code (Tselev) – in progress
 * Sabine Neumeyer's cKPFM code
 * Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
