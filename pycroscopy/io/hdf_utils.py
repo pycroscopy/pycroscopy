@@ -1680,4 +1680,9 @@ def get_source_dataset(h5_group):
 
     h5_parent_group = h5_group.parent
     h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
-    return PycroDataset(h5_source)
+
+    if isinstance(h5_source, h5py.Group):
+        warn('No source dataset was found.')
+        return None
+    else:
+        return PycroDataset(h5_source)
