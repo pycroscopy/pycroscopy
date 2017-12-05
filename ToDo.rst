@@ -94,20 +94,6 @@ GUI
 
 Plot Utils
 ~~~~~~~~~
-* _add_loop_parameters - is BE specific and should be moved out of plot_utils
-
-* rainbow_plot - 
-
-  1. pop cmap from kwargs instead of specifying camp as a separate argument. 
-  2. Rename parameters from ax to axis, ao_vec to x_values, ai_vec to y_values. 
-  3. Use same methodology from single_img_cbar_plot to add color bar. You will need to expect the figure handle as well for this.
-
-* plot_line_family - 
-
-  1. Rename x_axis parameter to something more sensible like x_values
-  2. Remove c map as one of the arguments. It should come from kwargs
-  3. Optional color bar (don’t show legend in this case)
-
 * plot_map -combine this with single_img_cbar_plot
 
 * single_img_cbar_plot - It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
@@ -118,11 +104,11 @@ Plot Utils
   4. Color bar should be shown by default
 
 * plot_loops
-
-  1. Allow excitation_waveform to also be a list - this will allow different x resolutions for each line family. 
+ 
+  1. Legend at the bottom
   2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
   3. Enable use of kwargs - to specify line widths etc.
-  4. Ensure that the title is not crammed somewhere behind the subtitles
+  
 
 * Plot_complex_map_stack
 
@@ -177,7 +163,6 @@ Plot Utils
   3. Don’t allow specification of figure_path here. Save elsewhere
 
 * plot_histograms - not used frequently. Can be ignored for this pass
-Examples / Tutorials
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
