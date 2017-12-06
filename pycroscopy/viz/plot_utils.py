@@ -317,6 +317,9 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     cmap = kwargs.pop('cmap', default_cmap)
     cmap = get_cmap_object(cmap)
 
+    # Remove any color flag
+    _ = kwargs.pop('color', None)
+
     pts_per_step = len(y_vec) // num_steps
 
     for step in range(num_steps - 1):
