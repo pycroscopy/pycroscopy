@@ -1290,7 +1290,7 @@ def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
 
 ###############################################################################
 
-def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwargs):
+def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
     """
     Plots the position averaged spectrogram
 
@@ -1300,10 +1300,8 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
         Means spectrogram arranged as [frequency, UDVS step]
     freq : 1D numpy float array
         BE frequency that serves as the X axes of the plot
-    title : String
+    title : str, optional
         Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
 
     Returns
     ---------
@@ -1325,8 +1323,6 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
                                        extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
                                        figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
                                        **kwargs)
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
     return fig, axes
 
 
