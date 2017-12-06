@@ -596,7 +596,7 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
 
 
 def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='',
-                           subtitle_prefix='Component', stdevs=2, **kwargs):
+                           subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
@@ -614,6 +614,8 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
         Label for y axis
     subtitle_prefix : str, optional
         Prefix for the title over each image
+    amp_units : str, optional
+        Units for amplitude
     stdevs : int
         Number of standard deviations to consider for plotting
 
@@ -621,7 +623,8 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     ---------
     fig, axes
     """
-    kwargs.update({'stdevs': stdevs})
+    if amp_units is None:
+        amp_units = 'a.u.'
 
     figsize = kwargs.pop('figsize', (4, 4))
     figsize = (figsize[0] * num_comps, 8)
@@ -635,8 +638,9 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     for index in range(num_comps):
         cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
         funcs = [np.abs, np.angle]
-        labels = ['Amplitude', 'Phase']
-        for func, lab, axis in zip(funcs, labels, cur_axes):
+        labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
+        for func, lab, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
+            kwargs['stdevs'] = std_val
             _ = plot_map(axis, func(map_stack[index]), **kwargs)
             axis.set_title('%s %d - %s' % (subtitle_prefix, index, lab))
             axis.set_aspect('auto')
@@ -1295,7 +1299,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
     mean_spectrogram : 2D numpy complex array
         Means spectrogram arranged as [frequency, UDVS step]
     freq : 1D numpy float array
-        BE frequency that serves as the X axis of the plot
+        BE frequency that serves as the X axes of the plot
     title : String
         Plot group name
     figure_path : String / Unicode
@@ -1305,7 +1309,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
     ---------
     fig : Matplotlib.pyplot figure
         Figure handle
-    ax : Matplotlib.pyplot axis
+    axes : Matplotlib.pyplot axes
         Axis handle
     """
     if mean_spectrogram.shape[1] != len(freq):
@@ -1314,25 +1318,25 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
         return
 
     freq *= 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
+    fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
     # print(mean_spectrogram.shape)
     # print(freq.shape)
-    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
+    axes[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
                  extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    ax[0].set_title('Amplitude')
-    # ax[0].set_xticks(freq)
-    # ax[0].set_ylabel('UDVS Step')
-    ax[0].axis('tight')
-    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
+    axes[0].set_title('Amplitude')
+    # axes[0].set_xticks(freq)
+    # axes[0].set_ylabel('UDVS Step')
+    axes[0].axis('tight')
+    axes[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
                  extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    ax[1].set_title('Phase')
-    ax[1].set_xlabel('Frequency (kHz)')
-    # ax[0].set_ylabel('UDVS Step')
-    ax[1].axis('tight')
+    axes[1].set_title('Phase')
+    axes[1].set_xlabel('Frequency (kHz)')
+    # axes[0].set_ylabel('UDVS Step')
+    axes[1].axis('tight')
     fig.suptitle(title)
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
-    return fig, ax
+    return fig, axes
 
 
 ###############################################################################
