@@ -774,22 +774,21 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     except ValueError:
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
         try:
-            ds_Nd = np.reshape(ds_main, pos_dims[-1])
+            ds_Nd = np.reshape(ds_main, pos_dims[::-1] + [-1])
 
-            if get_labels:
-                return ds_Nd, 'Positions', ['Position']+spec_labs
-            else:
-                return ds_Nd, 'Positions'
         except ValueError:
             warn('Reshape by position only also failed.  Will keep dataset in 2d form.')
             if get_labels:
                 return ds_main, False, ['Position', 'Spectral Step']
             else:
+                return ds_main, False
+
+        # No exception
+        else:
+            if get_labels:
+                return ds_Nd, 'Positions', ['Position'] + spec_labs
+            else:
                 return ds_Nd, 'Positions'
-        except:
-            raise
-    except:
-        raise
 
     all_labels = np.hstack((pos_labs[pos_sort][::-1],
                             spec_labs[spec_sort][::-1]))
@@ -1661,6 +1660,7 @@ def get_unit_values(h5_spec_ind, h5_spec_val, dim_names=None):
         unit_values[dim_name] = h5_spec_val[desired_row_ind, intersections]
 
     return unit_values
+
 
 def get_source_dataset(h5_group):
     """
