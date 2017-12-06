@@ -1249,7 +1249,7 @@ def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full
     return fig
 
 
-def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
+def plot_1d_spectrum(data_vec, freq, title, **kwargs):
     """
     Plots the Step averaged BE response
 
@@ -1261,31 +1261,24 @@ def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
         BE frequency that serves as the X axis of the plot
     title : String
         Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
 
     Returns
     ---------
     fig : Matplotlib.pyplot figure
         Figure handle
-    ax : Matplotlib.pyplot axis
+    axes : Matplotlib.pyplot axis
         Axis handle
     """
     if len(data_vec) != len(freq):
-        warn('plot_1d_spectrum: Incompatible data sizes!!!!')
-        print('1D:', data_vec.shape, freq.shape)
-        return
+        raise ValueError('Incompatible data sizes! spectrum: '
+                         + str(len(data_vec)) + ', frequency: ' + str(freq.shape))
     freq *= 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-    ax[0].plot(freq, np.abs(data_vec) * 1E+3)
-    ax[0].set_title('Amplitude (mV)')
-    ax[1].plot(freq, np.angle(data_vec) * 180 / np.pi)
-    ax[1].set_title('Phase (deg)')
-    ax[1].set_xlabel('Frequency (kHz)')
-    fig.suptitle(title + ': mean UDVS, mean spatial response')
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
-    return
+
+    title = title + ': mean UDVS, mean spatial response'
+    fig, axes = plot_complex_loop_stack(np.expand_dims(data_vec, axis=0), freq, title=title,
+                                        subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
+                                        figsize=(5, 3), amp_units='V', **kwargs)
+    return fig, axes
 
 
 ###############################################################################
