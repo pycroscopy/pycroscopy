@@ -1,13 +1,30 @@
 .. contents::
 
+v 1.0 goals
+-----------
+1. test utils - 2+ weeks
+2. good utilities for interrogating data - pycro data - done
+3. good documentation for both users and developers
+
+  * Need more on dealing with data and (for developers) explaining what is where and why 
+4. generic visualizer - mostly complete - 
+5. settle on a structure for process and analysis - moderate ~ 1 day
+
+  * Process should implement some checks. 
+  * Model needs to catch up with Process
+6. good utils for generating publishable plots - easy ~ 1 day
+7. Promote / demote lesser used utilites to processes / analyses. 
+
 Short-term goals
 --------------------
+* Multi-node compute capability
 * More documentation to help users / developers + PAPER
 * Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
-* Multi-node compute capability
 
 Documentation
 -------------
+* Upload clean exports of paper notebooks - Stephen and Chris
+* Organize papers by instrument / technique
 *	Include examples in documentation
 * Links to references for all functions and methods used in our workflows.
 
@@ -34,25 +51,43 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Generic interactive visualizer for 3 and 4D float numpy arrays - currently being cleaned up by Chris. :-)
 * EVERY process tool should implement two new features:
   
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
-* Cluster, Decomposition, doSVD **MUST** extend Process
-
-  * The computation will continue to be performed by sklearn. No need to use parallel_compute().
-  * Most importantly, they will be forced to implement the check for previous computations
-* Clean up Cluser results plotting
-* Simplify and demystify analyis / optimize. Use parallel_compute instead of optimize and gues_methods and fit_methods
+  
+* Legacy processes **MUST** extend Process:
+  
+  * sklearn wrapper classes:
+  
+    * Cluter
+    * Decomposition
+    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
+  
+  * Own classes:
+  
+    * Image Windowing
+    * Image Cleaning
+    * As time permits, ensure that these can resume processing
+  * All these MUST implement the check for previous computations at the very least
+  
+* Absorb functionality from Process into Model
 * multi-node computing capability in parallel_compute
+* Image cleaning should be (something like at the very least) a Process
+* Bayesian GIV should actually be an analysis
+* Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Data Generators
-* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level!
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
+* Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
+* Improve visualization of file contents in print_tree() like hyperspy's `metadata <http://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
 
 GUI
 ~~~~~~~~~~~
+* Make the generic interactive visualizer for 3 and 4D float numpy arrays ROBUST
 
-* Need to be able to run a visualizer even on sliced data. What would this object be? (sliced Main data + vectors for each axis + axis labels ....). Perhaps the slice() function should return this object instead of a numpy array? As it stands, the additional information (for the visualizer) is not returned by the slice function.
+  * Allow slicing at the pycrodataset level to handle > 4D datasets - 20 mins
+  * Need to handle appropriate reference values for the tick marks in 2D plots - 20 mins
+  * Handle situation when only one position and one spectral axis are present. - low priority - 20 mins
 * TRULY Generic visualizer in plot.lly / dash? that can use the PycroDataset class
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
@@ -111,10 +146,9 @@ Plot Utils
 
 * plot_map_stack:
 
-  1. Do something about the super title getting hidden behind the subtitles
-  2. Respect tick, x label, y label, title, etc font sizes
-  3. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-  4. See all other changes that were made for the image cleaning paper
+  1. Respect tick, x label, y label, title, etc font sizes
+  2. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  3. See all other changes that were made for the image cleaning paper
 
 * plot_cluster_results_together
 

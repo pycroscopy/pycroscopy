@@ -97,7 +97,7 @@ class GIVBayesian(Process):
         # raw, compensated current, resistance, variance
         self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
         # Since these computations take far longer than functional fitting, do in smaller batches:
-        self._max_pos_per_read = np.min(500, self._max_pos_per_read)
+        self._max_pos_per_read = min(500, self._max_pos_per_read)
 
     def _create_results_datasets(self):
         """
@@ -235,11 +235,11 @@ class GIVBayesian(Process):
         self.h5_i_corrected[pos_slice] = i_cor_sin_mat
 
         # Leaving in this provision that will allow restarting of processes
-        self.h5_results_grp['last_pixel'] = self._end_pos
+        self.h5_results_grp.attrs['last_pixel'] = self._end_pos
 
         self.hdf.flush()
 
-        print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
+        print('Finished processing up to pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
         # Now update the start position
         self._start_pos = self._end_pos

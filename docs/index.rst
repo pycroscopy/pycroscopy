@@ -19,6 +19,7 @@ Documentation Index
 .. toctree::
     about
     getting_started
+    whats_new
     data_format
     papers_conferences
     api

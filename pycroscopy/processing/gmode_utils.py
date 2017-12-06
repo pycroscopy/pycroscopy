@@ -23,7 +23,8 @@ from ..io.translators.utils import build_ind_val_dsets
 ###############################################################################
 
 def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
-                excit_wfm=None, central_resp_size=None, show_plots=True, use_rainbow_plots=True):
+                excit_wfm=None, central_resp_size=None, show_plots=True, use_rainbow_plots=True,
+                verbose=False):
     """
     Filters the provided response with the provided filters.
 
@@ -43,6 +44,8 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         Whether or not to plot FFTs before and after filtering
     use_rainbow_plots : (Optional) Boolean
         Whether or not to plot loops whose color varied as a function of time
+    verbose : (Optional) Boolean
+        Prints extra debugging information if True.  Default False
 
     Returns
     -------
@@ -80,6 +83,9 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
 
     if noise_threshold is not None:
         noise_floor = getNoiseFloor(fft_pix_data, noise_threshold)[0]
+        if verbose:
+            print('The noise_floor is', noise_floor)
+
 
     if show_plots:
         l_ind = int(0.5 * num_pts)
@@ -87,6 +93,9 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
             r_ind = np.max(np.where(composite_filter > 0)[0])
         else:
             r_ind = num_pts
+        if verbose:
+            print('The left index is {} and the right index is {}.'.format(l_ind, r_ind))
+
         w_vec = np.linspace(-0.5 * samp_rate, 0.5 * samp_rate, num_pts) * 1E-3
         if central_resp_size:
             sz = int(0.5 * central_resp_size)
@@ -95,6 +104,8 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         else:
             l_resp_ind = l_ind
             r_resp_ind = num_pts
+        if verbose:
+            print('The left response index is {} and the right response index is {}.'.format(l_resp_ind, r_resp_ind))
 
         fig = plt.figure(figsize=(12, 8))
         lhs_colspan = 2
@@ -138,6 +149,10 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
             ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
 
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(fft_pix_data)))
+
+    if verbose:
+        print('The shape of the filtered data is {}'.format(filt_data.shape))
+        print('The shape of the excitation waveform is {}'.format(excit_wfm.shape))
 
     if show_loops:
         if use_rainbow_plots:
