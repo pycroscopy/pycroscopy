@@ -457,7 +457,7 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=
 
 def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
                plots_on_side=5, x_label='', y_label='', subtitle_prefix='Position', title='',
-               use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None):
+               use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None, **kwargs):
     """
     Plots loops from multiple datasets from up to 25 evenly spaced positions
     Parameters
@@ -541,6 +541,7 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
             # add titles
             dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
         if len(line_colors) != len(datasets):
+            # TODO: Generate colors from a user-specified colormap
             color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
             if len(datasets) < len(color_list):
                 remaining_colors = [x for x in color_list if x not in line_colors]
@@ -555,6 +556,10 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
         # convert it to something like mode 2
         excit_wfms = [excit_wfms[0] for _ in range(len(datasets))]
 
+    if mode != 0:
+        # users are not allowed to specify colors
+        _ = kwargs.pop('color', None)
+
     plots_on_side = min(abs(plots_on_side), 5)
 
     sq_num_plots = min(plots_on_side, int(round(num_pos ** 0.5)))
@@ -568,11 +573,10 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
 
     for count, posn in enumerate(chosen_pos):
         if use_rainbow_plots:
-            rainbow_plot(axes_lin[count], excit_wfms[0], datasets[0][posn])
+            rainbow_plot(axes_lin[count], excit_wfms[0], datasets[0][posn], **kwargs)
         else:
             for dataset, ex_wfm, col_val in zip(datasets, excit_wfms, line_colors):
-                axes_lin[count].plot(ex_wfm, dataset[posn],
-                                     color=col_val)
+                axes_lin[count].plot(ex_wfm, dataset[posn], color=col_val, **kwargs)
         if h5_pos is not None:
             # print('Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0]))
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)
