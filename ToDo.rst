@@ -30,6 +30,7 @@ Documentation
 
 Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Writing a custom Translator
 * A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
   
   * chunking the main dataset
