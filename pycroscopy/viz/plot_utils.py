@@ -655,8 +655,8 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
 
 ###############################################################################
 
-def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle='Component', num_comps=4, x_label='',
-                            **kwargs):
+def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle_prefix='Component', num_comps=4, x_label='',
+                            amp_units=None, **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
@@ -668,19 +668,27 @@ def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle='Component',
         The vector to plot against
     title : str
         Title to plot above everything else
-    subtitle : str
+    subtitle_prefix : str
         Subtile to of Figure
     num_comps : int
         Number of components to plot
     x_label : str
         Label for x axis
+    amp_units : str, optional
+        Units for amplitude
 
     Returns
     ---------
     fig, axes
     """
+    if amp_units is None:
+        amp_units = 'a.u.'
+
+    if min(num_comps, loop_stack.shape[0]) == 1:
+        subtitle_prefix = None
+
     funcs = [np.abs, np.angle]
-    labels = ['Amplitude', 'Phase']
+    comp_labs = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
 
     figsize = kwargs.pop('figsize', (4, 4))
     figsize = (figsize[0] * num_comps, figsize[1] * len(funcs))
@@ -694,10 +702,14 @@ def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle='Component',
     for index in range(num_comps):
         cur_loop = loop_stack[index, :]
         cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
-        for func, lab, axis in zip(funcs, labels, cur_axes):
+        for func, y_label, axis in zip(funcs, comp_labs, cur_axes):
             axis.plot(x_vec, func(cur_loop), **kwargs)
-            axis.set_title('%s: %d - %s' % (subtitle, index + 1, lab))
+            if subtitle_prefix is not None:
+                axis.set_title('%s: %d' % (subtitle_prefix, index))
+            if index == 0:
+                axis.set_ylabel(y_label)
         axis.set_xlabel(x_label)
+
     fig.tight_layout()
 
     return fig, axes
