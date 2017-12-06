@@ -1312,28 +1312,19 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwarg
     axes : Matplotlib.pyplot axes
         Axis handle
     """
-    if mean_spectrogram.shape[1] != len(freq):
-        warn('plot_2d_spectrogram: Incompatible data sizes!!!!')
-        print('2D:', mean_spectrogram.shape, freq.shape)
-        return
-
+    if mean_spectrogram.shape[1] != freq.size:
+        if mean_spectrogram.shape[0] == freq.size:
+            mean_spectrogram = mean_spectrogram.T
+        else:
+            raise ValueError('plot_2d_spectrogram: Incompatible data sizes!!!! spectrogram: '
+                             + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
     freq *= 1E-3  # to kHz
-    fig, axes = plt.subplots(nrows=2, ncols=1, sharex=True)
-    # print(mean_spectrogram.shape)
-    # print(freq.shape)
-    axes[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    axes[0].set_title('Amplitude')
-    # axes[0].set_xticks(freq)
-    # axes[0].set_ylabel('UDVS Step')
-    axes[0].axis('tight')
-    axes[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    axes[1].set_title('Phase')
-    axes[1].set_xlabel('Frequency (kHz)')
-    # axes[0].set_ylabel('UDVS Step')
-    axes[1].axis('tight')
-    fig.suptitle(title)
+
+    fig, axes = plot_complex_map_stack(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
+                                       x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
+                                       extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
+                                       figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
+                                       **kwargs)
     if figure_path:
         plt.savefig(figure_path, format='png', dpi=300)
     return fig, axes
