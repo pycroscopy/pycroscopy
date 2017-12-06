@@ -637,14 +637,20 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
         fig.canvas.set_window_title(title)
         fig.suptitle(title, y=1.025)
 
+    title_prefix = ''
+
     for index in range(num_comps):
         cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
         funcs = [np.abs, np.angle]
         labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
-        for func, lab, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
+        for func, comp_name, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
             kwargs['stdevs'] = std_val
             _ = plot_map(axis, func(map_stack[index]), **kwargs)
-            axis.set_title('%s %d - %s' % (subtitle_prefix, index, lab))
+
+            if num_comps > 1:
+                title_prefix = '%s %d - ' % (subtitle_prefix, index)
+            axis.set_title('%s%s' % (title_prefix, comp_name))
+
             axis.set_aspect('auto')
             if index == 0:
                 axis.set_ylabel(y_label)
