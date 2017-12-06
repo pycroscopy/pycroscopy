@@ -30,6 +30,7 @@ Documentation
 
 Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Writing a custom Translator
 * A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
   
   * chunking the main dataset
@@ -94,54 +95,27 @@ GUI
 
 Plot Utils
 ~~~~~~~~~
-* plot_map -combine this with single_img_cbar_plot
+* move plot_image_cleaning_results to a application specific module
+* move save_fig_filebox_button and export_fig_data to jupyter_utils
+* ensure most of these functions result in publication-ready plots (good proportions, font sizes, etc.)
+* plot_map 
 
-* single_img_cbar_plot - It is OK to spend a lot of time on single_img_cbar_plot and plot_map since these will be used HEAVILY for papers.
-
-  1. Combine with plot_map
-  2. allow the tick labels to be specified instead of just the x_size and y_size. 
-  3. Rename this function to something more sensible
-  4. Color bar should be shown by default
+  1. allow the tick labels to be specified instead of just the x_size and y_size. 
 
 * plot_loops
  
   1. Legend at the bottom
-  2. Apply appropriate x, y, label font sizes etc. This should look very polished and ready for publications
-  3. Enable use of kwargs - to specify line widths etc.
   
-
-* Plot_complex_map_stack
-
-  1. allow kwargs. 
-  2. Use plot_map 
-  3. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-  4. Remove map as a kwarg
-  5. Show color bars
-  6. Possibly allow horizontal / vertical configurations? (Optional)
-
-* plot_complex_loop_stack
-
-  1. Respect font sizes for x, y labels, titles - use new kwargs wherever necessary 
-  2. Allow individual plots sizes to be specified
-  3. Allow **kwargs and pass two plot functions
-
-* plotScree
-
-  1. rename to plot_scree
-  2. Use **kwargs on the plot function
-
 * plot_map_stack:
 
-  1. Respect tick, x label, y label, title, etc font sizes
-  2. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-  3. See all other changes that were made for the image cleaning paper
+  1. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  2. See all other changes that were made for the image cleaning paper
 
 * plot_cluster_results_together
 
   1. Use plot_map and its cleaner color bar option
-  2. Respect font sizes
-  3. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
-  4. See mode IV paper to see other changes
+  2. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
+  3. See G-mode IV paper to see other changes
 
 * plot_cluster_results_separate
   
@@ -149,25 +123,12 @@ Plot Utils
 
 * plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
 
-* plot_1d_spectrum
-
-  1. Respect font sizes
-  2. Do not save figure here. This should be done in the place where this function is called
-  3. Use **kwargs and pass to the plot functions
-  4. Title should be optional
-
-* plot_2d_spectrogram
-
-  1. Respect font sizes
-  2. Use plot_map - show color bar
-  3. Don’t allow specification of figure_path here. Save elsewhere
-
 * plot_histograms - not used frequently. Can be ignored for this pass
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * Li Xin classification code 
-* Ondrej Dyck’s atom finding code – written but needs work before fully integrated
+* Ondrej Dyck’s atom finding code – written well but needs to work on images with different kinds of atoms
 * Nina Wisinger’s processing code (Tselev) – in progress
 * Sabine Neumeyer's cKPFM code
 * Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
