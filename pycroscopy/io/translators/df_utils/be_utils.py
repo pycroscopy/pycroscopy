@@ -22,7 +22,8 @@ from ...io_utils import getAvailableMem, recommendCores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.proc_utils import buildHistogram
-from ....viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+from ....viz.plot_utils import plot_histgrams
+from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})

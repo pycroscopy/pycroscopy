@@ -9,18 +9,20 @@ Created on Thu May 05 13:29:12 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import inspect
-from warnings import warn
 import os
 import sys
+from warnings import warn
+
 import h5py
+import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from scipy.signal import blackman
-import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
+from scipy.signal import blackman
+
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
 # mpl.rcParams.keys()  # gets all allowable keys
@@ -1269,76 +1271,6 @@ def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full
     fig.axes[0].set_ylabel('Distance')
 
     return fig
-
-
-def plot_1d_spectrum(data_vec, freq, title, **kwargs):
-    """
-    Plots the Step averaged BE response
-
-    Parameters
-    ------------
-    data_vec : 1D numpy array
-        Response of one BE pulse
-    freq : 1D numpy array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    axes : Matplotlib.pyplot axis
-        Axis handle
-    """
-    if len(data_vec) != len(freq):
-        raise ValueError('Incompatible data sizes! spectrum: '
-                         + str(len(data_vec)) + ', frequency: ' + str(freq.shape))
-    freq *= 1E-3  # to kHz
-
-    title = title + ': mean UDVS, mean spatial response'
-    fig, axes = plot_complex_loop_stack(np.expand_dims(data_vec, axis=0), freq, title=title,
-                                        subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
-                                        figsize=(5, 3), amp_units='V', **kwargs)
-    return fig, axes
-
-
-###############################################################################
-
-def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
-    """
-    Plots the position averaged spectrogram
-
-    Parameters
-    ------------
-    mean_spectrogram : 2D numpy complex array
-        Means spectrogram arranged as [frequency, UDVS step]
-    freq : 1D numpy float array
-        BE frequency that serves as the X axes of the plot
-    title : str, optional
-        Plot group name
-
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    axes : Matplotlib.pyplot axes
-        Axis handle
-    """
-    if mean_spectrogram.shape[1] != freq.size:
-        if mean_spectrogram.shape[0] == freq.size:
-            mean_spectrogram = mean_spectrogram.T
-        else:
-            raise ValueError('plot_2d_spectrogram: Incompatible data sizes!!!! spectrogram: '
-                             + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
-    freq *= 1E-3  # to kHz
-
-    fig, axes = plot_complex_map_stack(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
-                                       x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
-                                       extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
-                                       figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
-                                       **kwargs)
-    return fig, axes
 
 
 ###############################################################################
