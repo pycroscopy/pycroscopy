@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
 from ..io.io_hdf5 import ioHDF5
+from ..io.pycro_data import PycroDataset
 from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, copy_main_attributes
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..viz.plot_utils import rainbow_plot, set_tick_font_size
@@ -271,4 +272,4 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
 
     print('Finished reshaping G-mode line data to rows and columns')
 
-    return h5_resh
+    return PycroDataset(h5_resh)
