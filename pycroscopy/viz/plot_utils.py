@@ -629,6 +629,8 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     figsize = kwargs.pop('figsize', (4, 4))
     figsize = (figsize[0] * num_comps, 8)
 
+    num_comps = min(num_comps, map_stack.shape[0])
+
     fig, axes = plt.subplots(2, num_comps, figsize=figsize)
     fig.subplots_adjust(hspace=0.1, wspace=0.4)
     if title is not None:
@@ -686,6 +688,8 @@ def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle_prefix='Comp
 
     if min(num_comps, loop_stack.shape[0]) == 1:
         subtitle_prefix = None
+
+    num_comps = min(num_comps, loop_stack.shape[0])
 
     funcs = [np.abs, np.angle]
     comp_labs = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
