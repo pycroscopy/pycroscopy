@@ -146,7 +146,7 @@ def recommendCores(num_jobs, requested_cores=None, lengthy_computation=False):
         # Respecting the explicit request
         requested_cores = min(int(abs(requested_cores)), cpu_count())
 
-    recom_chunks = int(num_jobs / requested_cores)
+    recom_chunks = max(int(num_jobs / requested_cores), 1)
 
     if not lengthy_computation:
         if requested_cores > 1 and recom_chunks < 10:
