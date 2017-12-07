@@ -29,3 +29,29 @@ v 0.59.2
 * Utilies for reading files from `Nanois controllers <https://github.com/pycroscopy/pycroscopy/tree/master/pycroscopy/io/translators/df_utils/nanonispy>`_
 * New robust class for `FFT Signal Filtering <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/processing/signal_filter.py>`_ on any data including G-mode
 * FFT filtering rewritten as easy to use `objects <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/processing/fft.py>`_.
+
+`Oct 9 2017: <https://github.com/pycroscopy/pycroscopy/pull/124>`_
+~~~~~~~~
+* New `PycroDataset class <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/pycro_data.py>`_ that simplifies handling, reshaping, and interpretation of **Main** datasets.
+
+`Sep 6 2017: <https://github.com/pycroscopy/pycroscopy/pull/123>`_
+~~~~~~~~
+* New `Process class <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/processing/process.py>`_ that provides a framework for data processing in Pycroscopy.
+
+`Sep 5 2017: <https://github.com/pycroscopy/pycroscopy/pull/122>`_
+~~~~~~~~
+* Improved the example on `parallel computing <https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_04_parallel_computing.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-04-parallel-computing-py>`_
+
+`Sep 5 2017: <https://github.com/pycroscopy/pycroscopy/pull/121>`_
+~~~~~~~~
+* Added a new tutorial on `parallel computing <https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_04_parallel_computing.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-04-parallel-computing-py>`_
+
+`Aug 31 2017: <https://github.com/pycroscopy/pycroscopy/pull/118>`_
+~~~~~~~~
+* New plot function - single_img_cbar_plot (now merged into plot_map) for nicr `2D image plots <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/viz/plot_utils.py>`_ with colobars.
+
+`Aug 29 2017: <https://github.com/pycroscopy/pycroscopy/pull/117>`_
+~~~~~~~~
+* Improvements to `Bayesian Inference <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/processing/giv_utils.py>`_ on G-mode IV data including resistance compensation.
+
+
