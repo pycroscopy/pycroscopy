@@ -22,9 +22,9 @@ Documentation Index
     whats_new
     data_format
     papers_conferences
-    api
-    contact
     auto_examples/index
+    contact
+    api
 
 Indices and tables
 ------------------
