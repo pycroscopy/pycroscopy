@@ -89,8 +89,8 @@ class PycroDataset(h5py.Dataset):
         self.spec_dim_descriptors = get_formatted_labels(self.h5_spec_inds)
 
         # The size of each dimension
-        self.__pos_dim_sizes = get_dimensionality(np.transpose(self.h5_pos_inds))
-        self.__spec_dim_sizes = get_dimensionality(self.h5_spec_inds)
+        self.__pos_dim_sizes = np.array(get_dimensionality(np.transpose(self.h5_pos_inds)))
+        self.__spec_dim_sizes = np.array(get_dimensionality(self.h5_spec_inds))
 
         # Sorted dimension order
         self.__pos_sort_order = get_sort_order(np.transpose(self.h5_pos_inds))
@@ -153,18 +153,18 @@ class PycroDataset(h5py.Dataset):
         if self.__sort_dims:
             self.pos_dim_labels = self.__pos_dim_labels[self.__pos_sort_order].tolist()
             self.spec_dim_labels = self.__spec_dim_labels[self.__spec_sort_order].tolist()
-            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order]
-            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order]
+            self.pos_dim_sizes = self.__pos_dim_sizes[self.__pos_sort_order].tolist()
+            self.spec_dim_sizes = self.__spec_dim_sizes[self.__spec_sort_order].tolist()
             self.n_dim_labels = self.__n_dim_labs[self.__n_dim_sort_order].tolist()
-            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order]
+            self.n_dim_sizes = self.__n_dim_sizes[self.__n_dim_sort_order].tolist()
 
         else:
             self.pos_dim_labels = self.__pos_dim_labels.tolist()
             self.spec_dim_labels = self.__spec_dim_labels.tolist()
-            self.pos_dim_sizes = self.__pos_dim_sizes
-            self.spec_dim_sizes = self.__spec_dim_sizes
+            self.pos_dim_sizes = self.__pos_dim_sizes.tolist()
+            self.spec_dim_sizes = self.__spec_dim_sizes.tolist()
             self.n_dim_labels = self.__n_dim_labs.tolist()
-            self.n_dim_sizes = self.__n_dim_sizes
+            self.n_dim_sizes = self.__n_dim_sizes.tolist()
 
     def get_pos_values(self, dim_name):
         """
