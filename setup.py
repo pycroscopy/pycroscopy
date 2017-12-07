@@ -30,7 +30,7 @@ else:
 
 setup(
     name='pycroscopy',
-    version='0.59.2',
+    version='0.59.3',
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
