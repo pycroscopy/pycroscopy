@@ -22,7 +22,8 @@ from ...io_utils import getAvailableMem, recommendCores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.proc_utils import buildHistogram
-from ....viz.plot_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+from ....viz.plot_utils import plot_histgrams
+from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -492,8 +493,10 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
                 path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
                 path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
-            plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title, figure_path=path_1d)
-            plot_2d_spectrogram(mean_spec, freq_vec, fig_title, figure_path=path_2d)
+            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
+            fig_1d.savefig(path_1d, format='png', dpi=300)
+            fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
+            fig_2d.savefig(path_2d, format='png', dpi=300)
             if do_histogram:
                 plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 
@@ -560,9 +563,10 @@ def visualize_plot_groups(h5_filepath):
                     plt_grp = grp[plt_grp_name]
                     if expt_type == 'BEPSData':
                         spect_data = plt_grp['Mean_Spectrogram'].value
-                        plot_2d_spectrogram(spect_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
+                        _ = plot_2d_spectrogram(spect_data, plt_grp['Bin_Frequencies'].value,
+                                                title=plt_grp.attrs['Name'])
                     step_avg_data = plt_grp['Step_Averaged_Response']
-                    plot_1d_spectrum(step_avg_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
+                    _ = plot_1d_spectrum(step_avg_data, plt_grp['Bin_Frequencies'].value, plt_grp.attrs['Name'])
                     try:
                         hist_data = plt_grp['Histograms']
                         hist_bins = plt_grp['Histograms_Indicies']

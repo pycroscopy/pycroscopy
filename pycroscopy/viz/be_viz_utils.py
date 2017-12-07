@@ -14,8 +14,8 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, single_img_cbar_plot, save_fig_filebox_button, \
-    set_tick_font_size
+from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, save_fig_filebox_button, \
+    set_tick_font_size, plot_complex_loop_stack, plot_complex_map_stack
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
 from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
@@ -47,8 +47,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
         plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5, use_rainbow_plots=False,
-                             x_label=spec_var_title, y_label=meas_var_title, subtitles='Position', title=plt_title)
+        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5,
+                             x_label=spec_var_title, y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
@@ -310,7 +310,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = single_img_cbar_plot(ax_map, spatial_map.T, show_xy_ticks=None)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=None)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel('X')
@@ -415,7 +415,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
-        spatial_img, spatial_cbar = single_img_cbar_plot(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
+        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
                                                          y_size=spatial_map.shape[1], cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
@@ -424,13 +424,11 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         crosshair = axes[0].plot(int(0.5 * spatial_map.shape[0]), int(0.5 * spatial_map.shape[1]), 'k+')[0]
 
         if len(spec_dims) > 1:
-            amp_img, amp_cbar = single_img_cbar_plot(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                                     extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                                             0, spectrogram.shape[0]])
+            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
+                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
-            phase_img, phase_cbar = single_img_cbar_plot(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0],
-                                                                 0, spectrogram.shape[0]])
+            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
+                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
             for axis in axes[1:3]:
                 axis.set_ylabel('BE step')
@@ -652,7 +650,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map, im_cbar = single_img_cbar_plot(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
+    im_map, im_cbar = plot_map(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
                                            y_size=spatial_map.shape[1], cmap=cmap)
 
     ax_map.set_xlabel('X')
@@ -962,7 +960,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    plt_loop_map = single_img_cbar_plot(ax_loop_map, loop_parm_map, cmap=cmap)
+    plt_loop_map, loop_cbar = plot_map(ax_loop_map, loop_parm_map, cmap=cmap)
     loop_vert_line = ax_loop_map.axvline(x=pos_dims[0], color='k')
     loop_horz_line = ax_loop_map.axhline(y=pos_dims[1], color='k')
     ax_loop_map.set_title(loop_map_title)
@@ -1226,7 +1224,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ax_sho_phase = axes.flatten()[3]
 
     # Plot the map of the loop parameters
-    loop_map, loop_map_cbar = single_img_cbar_plot(ax_loop_map, loop_parm_map)
+    loop_map, loop_map_cbar = plot_map(ax_loop_map, loop_parm_map)
     crosshair = ax_loop_map.plot(selected_loop_pos[0], selected_loop_pos[1], 'k+')[0]
     ax_loop_map.set_title(loop_map_title)
     ax_loop_map.set_xlabel('X Position')
@@ -1388,3 +1386,99 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
     widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
     widgets.interact(_update_spec_step, selected_step=spec_step_widget)
+
+
+def _add_loop_parameters(axes, switching_coef_vec):
+    """
+    Add the loop parameters for the given loop to a list of axes
+
+    Parameters
+    ----------
+    axes : list of matplotlib.pyplo.axes
+        Plot axes to add the coeffients to
+    switching_coef_vec : 1D numpy.ndarray
+        Array of loop parameters arranged by position
+
+    Returns
+    -------
+    axes : list of matplotlib.pyplo.axes
+    """
+    positions = np.linspace(0, switching_coef_vec.shape[0] - 1, len(axes.flat), dtype=np.int)
+
+    for ax, pos in zip(axes.flat, positions):
+        ax.axvline(switching_coef_vec[pos]['V+'], c='k', label='V+')
+        ax.axvline(switching_coef_vec[pos]['V-'], c='r', label='V-')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 1'], c='k', ls=':', label='Nucleation Bias 1')
+        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 2'], c='r', ls=':', label='Nucleation Bias 2')
+        ax.axhline(switching_coef_vec[pos]['R+'], c='k', ls='-.', label='R+')
+        ax.axhline(switching_coef_vec[pos]['R-'], c='r', ls='-.', label='R-')
+
+    return axes
+
+
+def plot_1d_spectrum(data_vec, freq, title, **kwargs):
+    """
+    Plots the Step averaged BE response
+
+    Parameters
+    ------------
+    data_vec : 1D numpy array
+        Response of one BE pulse
+    freq : 1D numpy array
+        BE frequency that serves as the X axis of the plot
+    title : String
+        Plot group name
+
+    Returns
+    ---------
+    fig : Matplotlib.pyplot figure
+        Figure handle
+    axes : Matplotlib.pyplot axis
+        Axis handle
+    """
+    if len(data_vec) != len(freq):
+        raise ValueError('Incompatible data sizes! spectrum: '
+                         + str(len(data_vec)) + ', frequency: ' + str(freq.shape))
+    freq *= 1E-3  # to kHz
+
+    title = title + ': mean UDVS, mean spatial response'
+    fig, axes = plot_complex_loop_stack(np.expand_dims(data_vec, axis=0), freq, title=title,
+                                        subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
+                                        figsize=(5, 3), amp_units='V', **kwargs)
+    return fig, axes
+
+
+def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
+    """
+    Plots the position averaged spectrogram
+
+    Parameters
+    ------------
+    mean_spectrogram : 2D numpy complex array
+        Means spectrogram arranged as [frequency, UDVS step]
+    freq : 1D numpy float array
+        BE frequency that serves as the X axes of the plot
+    title : str, optional
+        Plot group name
+
+    Returns
+    ---------
+    fig : Matplotlib.pyplot figure
+        Figure handle
+    axes : Matplotlib.pyplot axes
+        Axis handle
+    """
+    if mean_spectrogram.shape[1] != freq.size:
+        if mean_spectrogram.shape[0] == freq.size:
+            mean_spectrogram = mean_spectrogram.T
+        else:
+            raise ValueError('plot_2d_spectrogram: Incompatible data sizes!!!! spectrogram: '
+                             + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
+    freq *= 1E-3  # to kHz
+
+    fig, axes = plot_complex_map_stack(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
+                                       x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
+                                       extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
+                                       figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
+                                       **kwargs)
+    return fig, axes

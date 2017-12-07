@@ -9,18 +9,20 @@ Created on Thu May 05 13:29:12 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import inspect
-from warnings import warn
 import os
 import sys
+from warnings import warn
+
 import h5py
+import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy
-from scipy.signal import blackman
-import ipywidgets as widgets
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
+from scipy.signal import blackman
+
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
 # mpl.rcParams.keys()  # gets all allowable keys
@@ -38,6 +40,7 @@ if sys.version_info.major == 3:
     unicode = str
 
 default_cmap = plt.cm.viridis
+
 
 def set_tick_font_size(axes, font_size):
     """
@@ -98,6 +101,32 @@ def make_scalar_mappable(vmin, vmax, cmap=None):
     # fake up the array of the scalar mappable
     sm._A = []
     return sm
+
+
+def cbar_for_line_plot(axis, num_steps, discrete_ticks=True, **kwargs):
+    """
+    Adds a colorbar next to a line plot axis
+
+    Parameters
+    ----------
+    axis : axis handle
+        Axis with multiple line objects
+    num_steps : uint
+        Number of steps in the colorbar
+    discrete_ticks : (optional) bool
+        Whether or not to have the ticks match the number of number of steps. Default = True
+    """
+    cmap = get_cmap_object(kwargs.pop('cmap', None))
+    cmap = discrete_cmap(num_steps, cmap=cmap.name)
+
+    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap, **kwargs)
+
+    if discrete_ticks:
+        kwargs.update({'ticks': np.arange(num_steps)})
+
+    cbar = plt.colorbar(sm, ax=axis, orientation='vertical',
+                        pad=0.04, use_gridspec=True, **kwargs)
+    return cbar
 
 
 def get_cmap_object(cmap):
@@ -234,20 +263,20 @@ def cmap_hot_desaturated():
     return cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
 
 
-def discrete_cmap(num_bins, base_cmap=default_cmap):
+def discrete_cmap(num_bins, cmap=None):
     """
-    Create an N-bin discrete colormap from the specified input map
+    Create an N-bin discrete colormap from the specified input map specified
 
     Parameters
     ----------
     num_bins : unsigned int
         Number of discrete bins
-    base_cmap : matplotlib.colors.LinearSegmentedColormap object
+    cmap : matplotlib.colors.Colormap object
         Base color map to discretize
 
     Returns
     -------
-    new_cmap : String or matplotlib.colors.LinearSegmentedColormap object
+    new_cmap : matplotlib.colors.LinearSegmentedColormap object
         Discretized color map
 
     Notes
@@ -256,82 +285,55 @@ def discrete_cmap(num_bins, base_cmap=default_cmap):
     https://gist.github.com/jakevdp/91077b0cae40f8f8244a
 
     """
-    if base_cmap is None:
-        base_cmap = default_cmap.name
+    if cmap is None:
+        cmap = default_cmap.name
 
-    elif isinstance(base_cmap, type(default_cmap)):
-        base_cmap = base_cmap.name
+    elif not isinstance(cmap, str):
+        # could not figure out a better type check
+        cmap = cmap.name
 
-    if type(base_cmap) == str:
-        return plt.get_cmap(base_cmap, num_bins)
+    if type(cmap) == str:
+        return plt.get_cmap(cmap, num_bins)
 
-    return base_cmap
-
-
-def _add_loop_parameters(axes, switching_coef_vec):
-    """
-    Add the loop parameters for the given loop to a list of axes
-
-    Parameters
-    ----------
-    axes : list of matplotlib.pyplo.axes
-        Plot axes to add the coeffients to
-    switching_coef_vec : 1D numpy.ndarray
-        Array of loop parameters arranged by position
-
-    Returns
-    -------
-    axes : list of matplotlib.pyplo.axes
-    """
-    positions = np.linspace(0, switching_coef_vec.shape[0] - 1, len(axes.flat), dtype=np.int)
-
-    for ax, pos in zip(axes.flat, positions):
-        ax.axvline(switching_coef_vec[pos]['V+'], c='k', label='V+')
-        ax.axvline(switching_coef_vec[pos]['V-'], c='r', label='V-')
-        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 1'], c='k', ls=':', label='Nucleation Bias 1')
-        ax.axvline(switching_coef_vec[pos]['Nucleation Bias 2'], c='r', ls=':', label='Nucleation Bias 2')
-        ax.axhline(switching_coef_vec[pos]['R+'], c='k', ls='-.', label='R+')
-        ax.axhline(switching_coef_vec[pos]['R-'], c='r', ls='-.', label='R-')
-
-    return axes
+    return cmap
 
 
-def rainbow_plot(ax, ao_vec, ai_vec, num_steps=32, cmap=default_cmap, **kwargs):
+def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     """
     Plots the input against the output waveform (typically loops).
-    The color of the curve changes as a function of time using the jet colorscheme
+    The color of the curve changes as a function of time
 
     Parameters
     ----------
-    ax : axis handle
+    axis : axis handle
         Axis to plot the curve
-    ao_vec : 1D float numpy array
+    x_vec : 1D float numpy array
         vector that forms the X axis
-    ai_vec : 1D float numpy array
+    y_vec : 1D float numpy array
         vector that forms the Y axis
     num_steps : unsigned int (Optional)
         Number of discrete color steps
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Colormap to be used
     """
+    cmap = kwargs.pop('cmap', default_cmap)
     cmap = get_cmap_object(cmap)
 
-    pts_per_step = int(len(ai_vec) / num_steps)
+    # Remove any color flag
+    _ = kwargs.pop('color', None)
+
+    pts_per_step = len(y_vec) // num_steps
+
     for step in range(num_steps - 1):
-        ax.plot(ao_vec[step * pts_per_step:(step + 1) * pts_per_step],
-                ai_vec[step * pts_per_step:(step + 1) * pts_per_step],
-                color=cmap(255 * step / num_steps), **kwargs)
+        axis.plot(x_vec[step * pts_per_step:(step + 1) * pts_per_step],
+                  y_vec[step * pts_per_step:(step + 1) * pts_per_step],
+                  color=cmap(255 * step // num_steps), **kwargs)
     # plot the remainder:
-    ax.plot(ao_vec[(num_steps - 1) * pts_per_step:],
-            ai_vec[(num_steps - 1) * pts_per_step:],
-            color=cmap(255 * num_steps / num_steps), **kwargs)
-    """
-    CS3=plt.contourf([[0,0],[0,0]], range(0,310),cmap=plt.cm.viridis)
-    fig.colorbar(CS3)"""
+    axis.plot(x_vec[(num_steps - 1) * pts_per_step:],
+              y_vec[(num_steps - 1) * pts_per_step:],
+              color=cmap(255 * num_steps / num_steps), **kwargs)
 
 
-def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='Line', label_suffix='',
-                     cmap=default_cmap, y_offset=0, **kwargs):
+def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='', label_suffix='',
+                     y_offset=0, show_cbar=False, **kwargs):
     """
     Plots a family of lines with a sequence of colors
 
@@ -339,7 +341,7 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
     ----------
     axis : axis handle
         Axis to plot the curve
-    x_axis : array-like
+    x_vec : array-like
         Values to plot against
     line_family : 2D numpy array
         family of curves arranged as [curve_index, features]
@@ -349,73 +351,45 @@ def plot_line_family(axis, x_axis, line_family, line_names=None, label_prefix='L
         prefix for the legend (before the index of the curve)
     label_suffix : string / unicode
         suffix for the legend (after the index of the curve)
-    cmap : matplotlib.colors.LinearSegmentedColormap object
-        Colormap to be used
     y_offset : (optional) number
         quantity by which the lines are offset from each other vertically (useful for spectra)
+    show_cbar : (optional) bool
+        Whether or not to show a colorbar (instead of a legend)
     """
-    cmap = get_cmap_object(cmap)
+    cmap = get_cmap_object(kwargs.pop('cmap', None))
 
-    num_lines = line_family.shape[0]
+    num_lines = len(line_family)
+
+    default_names = False
 
     if line_names is None:
-        line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
-    else:
-        if len(line_names) != num_lines:
-            warn('Line names of different length compared to provided dataset')
-            line_names = ['{} {} {}'.format(label_prefix, line_ind, label_suffix) for line_ind in range(num_lines)]
+        label_prefix = 'Line '
+        default_names = True
+    elif len(line_names) != num_lines:
+        warn('Line names of different length compared to provided dataset')
+        default_names = True
+
+    if default_names:
+        line_names = [str(line_ind) for line_ind in range(num_lines)]
+
+    line_names = ['{} {} {}'.format(label_prefix, cur_name, label_suffix) for cur_name in line_names]
 
     for line_ind in range(num_lines):
-        axis.plot(x_axis, line_family[line_ind] + line_ind * y_offset,
+        axis.plot(x_vec, line_family[line_ind] + line_ind * y_offset,
                   label=line_names[line_ind],
                   color=cmap(int(255 * line_ind / (num_lines - 1))), **kwargs)
 
-
-def plot_map(axis, data, stdevs=None, origin='lower', **kwargs):
-    """
-    Plots a 2d map with a tight z axis, with or without color bars.
-    Note that the direction of the y axis is flipped if the color bar is required
-
-    Parameters
-    ----------
-    axis : matplotlib.pyplot.axis object
-        Axis to plot this map onto
-    data : 2D real numpy array
-        Data to be plotted
-    stdevs : unsigned int (Optional. Default = None)
-        Number of standard deviations to consider for plotting.  If None, full range is plotted.
-    origin : str
-        Where should the origin of the image data be located.  'lower' sets the origin to the
-        bottom left, 'upper' sets it to the upper left.
-        Default 'lower'
-
-    Returns
-    -------
-    """
-    if stdevs is not None:
-        data_mean = np.mean(data)
-        data_std = np.std(data)
-        plt_min = data_mean - stdevs * data_std
-        plt_max = data_mean + stdevs * data_std
-    else:
-        plt_min = np.min(data)
-        plt_max = np.max(data)
-
-    im = axis.imshow(data, interpolation='none',
-                     vmin=plt_min,
-                     vmax=plt_max,
-                     origin=origin,
-                     **kwargs)
-
-    return im
+    if show_cbar:
+        # put back the cmap parameter:
+        kwargs.update({'cmap': cmap})
+        _ = cbar_for_line_plot(axis, num_lines, **kwargs)
 
 
-def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1, y_size=1, num_ticks=4,
-                         cbar_label=None, tick_font_size=14, **kwargs):
+def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=None, num_ticks=4,
+             stdevs=None, cbar_label=None, tick_font_size=14, origin='lower', **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
-
     Parameters
     ----------
     axis : matplotlib.axis object
@@ -426,19 +400,24 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
-    x_size : float, optional, default = 1
+    x_size : float, optional, default = number of pixels in x direction
         Extent of tick marks in the X axis. This could be something like 1.5 for 1.5 microns
-    y_size : float, optional, default = 1
+    y_size : float, optional, default = number of pixels in y direction
         Extent of tick marks in y axis
     num_ticks : unsigned int, optional, default = 4
         Number of tick marks on the X and Y axes
+    stdevs : unsigned int (Optional. Default = None)
+        Number of standard deviations to consider for plotting.  If None, full range is plotted.
     cbar_label : str, optional, default = None
         Labels for the colorbar. Use this for something like quantity (units)
     tick_font_size : unsigned int, optional, default = 14
         Font size to apply to x, y, colorbar ticks and colorbar label
+    origin : str
+        Where should the origin of the image data be located.  'lower' sets the origin to the
+        bottom left, 'upper' sets it to the upper left.
+        Default 'lower'
     kwargs : dictionary
-        Anything else that will be passed on to plot_map or imshow
-
+        Anything else that will be passed on to imshow
     Returns
     -------
     im_handle : handle to image plot
@@ -446,53 +425,47 @@ def single_img_cbar_plot(axis, img, show_xy_ticks=True, show_cbar=True, x_size=1
     cbar : handle to color bar
         handle to color bar
     """
-    if 'clim' not in kwargs:
-        im_handle = plot_map(axis, img, **kwargs)
-    else:
-        im_handle = axis.imshow(img, origin='lower', **kwargs)
+    if stdevs is not None:
+        data_mean = np.mean(img)
+        data_std = np.std(img)
+        kwargs.update({'clim': [data_mean - stdevs * data_std,
+                                data_mean + stdevs * data_std]})
+
+    kwargs.update({'origin': origin})
+
+    im_handle = axis.imshow(img, **kwargs)
 
     if show_xy_ticks is True:
-        x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
-        y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
-        axis.set_xticks(x_ticks)
-        axis.set_yticks(y_ticks)
-        axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
-        axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
-        set_tick_font_size(axis, tick_font_size)
-    elif show_xy_ticks is False:
+        if x_size is not None and y_size is not None:
+            x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
+            y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
+            axis.set_xticks(x_ticks)
+            axis.set_yticks(y_ticks)
+            axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
+            axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
+            set_tick_font_size(axis, tick_font_size)
+    else:
         axis.set_xticks([])
         axis.set_yticks([])
-    else:
-        set_tick_font_size(axis, tick_font_size)
 
     cbar = None
     if show_cbar:
-        # cbar = fig.colorbar(im_handle, ax=axis)
-        # divider = make_axes_locatable(axis)
-        # cax = divider.append_axes('right', size='5%', pad=0.05)
-        # cbar = plt.colorbar(im_handle, cax=cax)
         cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
                             fraction=0.046, pad=0.04, use_gridspec=True)
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
-        """
-        z_lims = cbar.get_clim()
-        cbar.set_ticks(np.linspace(z_lims[0],z_lims[1], num_ticks))
-        """
         cbar.ax.tick_params(labelsize=tick_font_size)
     return im_handle, cbar
 
 
-def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
-               plots_on_side=5, x_label='', y_label='', subtitles='Position', title='',
-               central_resp_size=None, use_rainbow_plots=False, h5_pos=None):
-    # TODO: Allow multiple excitation waveforms
+def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
+               plots_on_side=5, x_label='', y_label='', subtitle_prefix='Position', title='',
+               use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None, **kwargs):
     """
     Plots loops from multiple datasets from up to 25 evenly spaced positions
-
     Parameters
     -----------
-    excit_wfm : 1D numpy float array
+    excit_wfms : 1D numpy float array or list of same
         Excitation waveform in the time domain
     datasets : list of 2D numpy arrays or 2D hyp5.Dataset objects
         Datasets containing data arranged as (pixel, time)
@@ -500,36 +473,41 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
         Colors to be used for each of the datasets
     dataset_names : (Optional) list of strings
         Names of the different datasets to be compared
-    h5_pos : HDF5 dataset reference or 2D numpy array
-        Dataset containing position indices
-    central_resp_size : (optional) unsigned integer
-        Number of responce sample points from the center of the waveform to show in plots. Useful for SPORC
     evenly_spaced : boolean
         Evenly spaced positions or first N positions
     plots_on_side : unsigned int
         Number of plots on each side
-    use_rainbow_plots : (optional) Boolean
-        Plot the lines as a function of spectral index (eg. time)
     x_label : (optional) String
         X Label for all plots
     y_label : (optional) String
         Y label for all plots
-    subtitles : (optional) String
+    subtitle_prefix : (optional) String
         prefix for title over each plot
     title : (optional) String
         Main plot title
-
+    use_rainbow_plots : (optional) Boolean
+        Plot the lines as a function of spectral index (eg. time)
+    fig_title_yoffset : (optional) float
+        Y offset for the figure title. Value should be around 1
+    h5_pos : HDF5 dataset reference or 2D numpy array
+        Dataset containing position indices
     Returns
     ---------
     fig, axes
     """
+    mode = 0
+    # 0 = one excitation waveform and one dataset
+    # 1 = one excitation waveform but many datasets
+    # 2 = one excitation waveform for each of many dataset
     if type(datasets) in [h5py.Dataset, np.ndarray]:
         # can be numpy array or h5py.dataset
         num_pos = datasets.shape[0]
         num_points = datasets.shape[1]
         datasets = [datasets]
+        excit_wfms = [excit_wfms]
         line_colors = ['b']
         dataset_names = ['Default']
+        mode = 0
     else:
         # First check if the datasets are correctly shaped:
         num_pos_es = list()
@@ -539,11 +517,24 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
             num_points_es.append(dataset.shape[1])
         num_pos_es = np.array(num_pos_es)
         num_points_es = np.array(num_points_es)
-        if np.unique(num_pos_es).size > 1 or np.unique(num_points_es).size > 1:
-            warn('Datasets of incompatible sizes')
-            return
+        if np.unique(num_pos_es).size > 1:  # or np.unique(num_points_es).size > 1:
+            raise ValueError('The first dimension of the datasets are not matching: ' + str(num_pos_es))
         num_pos = np.unique(num_pos_es)[0]
-        num_points = np.unique(num_points_es)[0]
+
+        if len(excit_wfms) == len(datasets):
+            # one excitation waveform per dataset but now verify each size
+            if not np.all([len(cur_ex) == cur_dset.shape[1] for cur_ex, cur_dset in zip(excit_wfms, datasets)]):
+                raise ValueError('Number of points in the datasets do not match with the excitation waveforms')
+            mode = 2
+        else:
+            # one excitation waveform for all datasets
+            if np.unique(num_points_es).size > 1:
+                raise ValueError('Datasets don not contain the same number of points: ' + str(num_points_es))
+            # datasets of the same size but does this match with the size of excitation waveforms:
+            if len(excit_wfms) != np.unique(num_points_es)[0]:
+                raise ValueError('Number of points in dataset not matching with shape of excitation waveform')
+            excit_wfms = [excit_wfms]
+            mode = 1
 
         # Next the identification of datasets:
         if len(dataset_names) > len(datasets):
@@ -553,17 +544,24 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
             # add titles
             dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
         if len(line_colors) != len(datasets):
+            # TODO: Generate colors from a user-specified colormap
             color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
             if len(datasets) < len(color_list):
                 remaining_colors = [x for x in color_list if x not in line_colors]
                 line_colors += remaining_colors[:len(datasets) - len(color_list)]
             else:
-                warn('Insufficient number of line colors provided')
-                return
+                raise ValueError('Insufficient number of line colors provided')
 
-    if excit_wfm.size != num_points:
-        warn('Length of excitation waveform not compatible with second axis of datasets')
-        return
+    # cannot support rainbows with multiple datasets!
+    use_rainbow_plots = use_rainbow_plots and len(datasets) == 1
+
+    if mode != 2:
+        # convert it to something like mode 2
+        excit_wfms = [excit_wfms[0] for _ in range(len(datasets))]
+
+    if mode != 0:
+        # users are not allowed to specify colors
+        _ = kwargs.pop('color', None)
 
     plots_on_side = min(abs(plots_on_side), 5)
 
@@ -576,27 +574,17 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, sharex=True, figsize=(12, 12))
     axes_lin = axes.flatten()
 
-    cent_ind = int(0.5 * excit_wfm.size)
-    if central_resp_size:
-        sz = int(0.5 * central_resp_size)
-        l_resp_ind = cent_ind - sz
-        r_resp_ind = cent_ind + sz
-    else:
-        l_resp_ind = 0
-        r_resp_ind = excit_wfm.size
-
     for count, posn in enumerate(chosen_pos):
-        if use_rainbow_plots and len(datasets) == 1:
-            rainbow_plot(axes_lin[count], excit_wfm[l_resp_ind:r_resp_ind], datasets[0][posn, l_resp_ind:r_resp_ind])
+        if use_rainbow_plots:
+            rainbow_plot(axes_lin[count], excit_wfms[0], datasets[0][posn], **kwargs)
         else:
-            for dataset, col_val in zip(datasets, line_colors):
-                axes_lin[count].plot(excit_wfm[l_resp_ind:r_resp_ind], dataset[posn, l_resp_ind:r_resp_ind],
-                                     color=col_val)
+            for dataset, ex_wfm, col_val in zip(datasets, excit_wfms, line_colors):
+                axes_lin[count].plot(ex_wfm, dataset[posn], color=col_val, **kwargs)
         if h5_pos is not None:
             # print('Row ' + str(h5_pos[posn,1]) + ' Col ' + str(h5_pos[posn,0]))
             axes_lin[count].set_title('Row ' + str(h5_pos[posn, 1]) + ' Col ' + str(h5_pos[posn, 0]), fontsize=12)
         else:
-            axes_lin[count].set_title(subtitles + ' ' + str(posn), fontsize=12)
+            axes_lin[count].set_title(subtitle_prefix + ' ' + str(posn), fontsize=12)
 
         if count % sq_num_plots == 0:
             axes_lin[count].set_ylabel(y_label, fontsize=12)
@@ -608,7 +596,7 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
     if len(datasets) > 1:
         axes_lin[count].legend(dataset_names, loc='best')
     if title:
-        fig.suptitle(title, fontsize=14, y=1.05)
+        fig.suptitle(title, fontsize=14, y=fig_title_yoffset)
     plt.tight_layout()
     return fig, axes
 
@@ -616,102 +604,140 @@ def plot_loops(excit_wfm, datasets, line_colors=[], dataset_names=[], evenly_spa
 ###############################################################################
 
 
-def plot_complex_map_stack(map_stack, num_comps=4, title='Eigenvectors', xlabel='UDVS Step', stdevs=2,
-                           cmap=default_cmap):
+def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='',
+                           subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters
     -------------
     map_stack : 3D numpy complex matrices
-        Eigenvectors rearranged as - [row, col, component]
+        Eigenvectors rearranged as - [component, row, col]
     num_comps : int
         Number of components to plot
-    title : String
+    title : str, optional
         Title to plot above everything else
-    xlabel : String
+    x_label : str, optional
         Label for x axis
+    y_label : str, optional
+        Label for y axis
+    subtitle_prefix : str, optional
+        Prefix for the title over each image
+    amp_units : str, optional
+        Units for amplitude
     stdevs : int
         Number of standard deviations to consider for plotting
-    cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
-        Requested color map
 
     Returns
     ---------
     fig, axes
     """
-    cmap = get_cmap_object(cmap)
+    if amp_units is None:
+        amp_units = 'a.u.'
 
-    fig201, axes201 = plt.subplots(2, num_comps, figsize=(4 * num_comps, 8))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(title)
+    figsize = kwargs.pop('figsize', (4, 4))
+    figsize = (figsize[0] * num_comps, 8)
+
+    num_comps = min(num_comps, map_stack.shape[0])
+
+    fig, axes = plt.subplots(2, num_comps, figsize=figsize)
+    fig.subplots_adjust(hspace=0.1, wspace=0.4)
+    if title is not None:
+        fig.canvas.set_window_title(title)
+        fig.suptitle(title, y=1.025)
+
+    title_prefix = ''
 
     for index in range(num_comps):
-        cur_map = np.transpose(map_stack[index, :, :])
-        axes = [axes201.flat[index], axes201.flat[index + num_comps]]
+        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
         funcs = [np.abs, np.angle]
-        labels = ['Amplitude', 'Phase']
-        for func, lab, ax in zip(funcs, labels, axes):
-            amp_mean = np.mean(func(cur_map))
-            amp_std = np.std(func(cur_map))
-            ax.imshow(func(cur_map), cmap=cmap,
-                      vmin=amp_mean - stdevs * amp_std,
-                      vmax=amp_mean + stdevs * amp_std)
-            ax.set_title('Eigenvector: %d - %s' % (index + 1, lab))
-            ax.set_aspect('auto')
-        ax.set_xlabel(xlabel)
+        labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
+        for func, comp_name, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
+            kwargs['stdevs'] = std_val
+            _ = plot_map(axis, func(map_stack[index]), **kwargs)
 
-    return fig201, axes201
+            if num_comps > 1:
+                title_prefix = '%s %d - ' % (subtitle_prefix, index)
+            axis.set_title('%s%s' % (title_prefix, comp_name))
+
+            axis.set_aspect('auto')
+            if index == 0:
+                axis.set_ylabel(y_label)
+        axis.set_xlabel(x_label)
+
+    fig.tight_layout()
+
+    return fig, axes
 
 
 ###############################################################################
 
-def plot_complex_loop_stack(loop_stack, x_axis, heading='BE Loops', subtitle='Eigenvector', num_comps=4, x_label=''):
+def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle_prefix='Component', num_comps=4, x_label='',
+                            amp_units=None, **kwargs):
     """
     Plots the provided spectrograms from SVD V vector
 
     Parameters
     -------------
-    loop_stack : 3D numpy complex matrices
+    loop_stack : 2D numpy complex matrix
         Loops rearranged as - [component, points]
-    x_axis : 1D real numpy array
+    x_vec : 1D real numpy array
         The vector to plot against
-    heading : str
+    title : str
         Title to plot above everything else
-    subtitle : str
+    subtitle_prefix : str
         Subtile to of Figure
     num_comps : int
         Number of components to plot
     x_label : str
         Label for x axis
+    amp_units : str, optional
+        Units for amplitude
 
     Returns
     ---------
     fig, axes
     """
-    funcs = [np.abs, np.angle]
-    labels = ['Amplitude', 'Phase']
+    if amp_units is None:
+        amp_units = 'a.u.'
 
-    fig201, axes201 = plt.subplots(len(funcs), num_comps, figsize=(num_comps * 4, 4 * len(funcs)))
-    fig201.subplots_adjust(hspace=0.4, wspace=0.4)
-    fig201.canvas.set_window_title(heading)
+    if min(num_comps, loop_stack.shape[0]) == 1:
+        subtitle_prefix = None
+
+    num_comps = min(num_comps, loop_stack.shape[0])
+
+    funcs = [np.abs, np.angle]
+    comp_labs = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
+
+    figsize = kwargs.pop('figsize', (4, 4))
+    figsize = (figsize[0] * num_comps, figsize[1] * len(funcs))
+
+    fig, axes = plt.subplots(len(funcs), num_comps, figsize=figsize)
+    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+    if title is not None:
+        fig.canvas.set_window_title(title)
+        fig.suptitle(title, y=1.025)
 
     for index in range(num_comps):
-        cur_map = loop_stack[index, :]
-        axes = [axes201.flat[index], axes201.flat[index + num_comps]]
-        for func, lab, ax in zip(funcs, labels, axes):
-            ax.plot(x_axis, func(cur_map))
-            ax.set_title('%s: %d - %s' % (subtitle, index + 1, lab))
-        ax.set_xlabel(x_label)
-    fig201.tight_layout()
+        cur_loop = loop_stack[index, :]
+        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
+        for func, y_label, axis in zip(funcs, comp_labs, cur_axes):
+            axis.plot(x_vec, func(cur_loop), **kwargs)
+            if subtitle_prefix is not None:
+                axis.set_title('%s: %d' % (subtitle_prefix, index))
+            if index == 0:
+                axis.set_ylabel(y_label)
+        axis.set_xlabel(x_label)
 
-    return fig201, axes201
+    fig.tight_layout()
+
+    return fig, axes
 
 
 ###############################################################################
 
 
-def plotScree(scree, title='Scree'):
+def plot_scree(scree, title='Scree', **kwargs):
     """
     Plots the scree or scree
 
@@ -726,17 +752,19 @@ def plotScree(scree, title='Scree'):
     ---------
     fig, axes
     """
-    fig203 = plt.figure(figsize=(6.5, 6))
-    axes203 = fig203.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
-    axes203.loglog(np.arange(len(scree)) + 1, scree, 'b', marker='*')
-    axes203.set_xlabel('Principal Component')
-    axes203.set_ylabel('Variance')
-    axes203.set_title(title)
-    axes203.set_xlim(left=1, right=len(scree))
-    axes203.set_ylim(bottom=np.min(scree), top=np.max(scree))
-    fig203.canvas.set_window_title("Scree")
+    fig = plt.figure(figsize=kwargs.pop('figsize', (6.5, 6)))
+    axis = fig.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
+    kwargs.update({'color': kwargs.pop('color', 'b')})
+    kwargs.update({'marker': kwargs.pop('marker', '*')})
+    axis.loglog(np.arange(len(scree)) + 1, scree, **kwargs)
+    axis.set_xlabel('Component')
+    axis.set_ylabel('Variance')
+    axis.set_title(title)
+    axis.set_xlim(left=1, right=len(scree))
+    axis.set_ylim(bottom=np.min(scree), top=np.max(scree))
+    fig.canvas.set_window_title("Scree")
 
-    return fig203, axes203
+    return fig, axis
 
 
 # ###############################################################################
@@ -744,7 +772,7 @@ def plotScree(scree, title='Scree'):
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
                    title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
-                   **kwargs):
+                   fig_title_yoffset=None, fig_title_size=None, **kwargs):
     """
     Plots the provided stack of maps
 
@@ -777,6 +805,10 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
+    fig_title_yoffset : float
+        Offset to move the figure title vertically in the figure
+    fig_title_size : float
+        Size of figure title
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
         pycroscopy.vis.plot_utils.plot_map.  See specific function documentation for the relavent options.
@@ -851,8 +883,14 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         cbar_mode=color_bar_mode,
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
+
     fig202.canvas.set_window_title(heading)
-    fig202.suptitle(heading, fontsize=16+(p_rows+ p_cols), y=0.9)
+    # These parameters have not been easy to fix:
+    if fig_title_yoffset is None:
+        fig_title_yoffset = 0.9
+    if fig_title_size is None:
+        fig_title_size = 16+(p_rows+ p_cols)
+    fig202.suptitle(heading, fontsize=fig_title_size, y=fig_title_yoffset)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im = plot_map(axes202[count],
@@ -1044,7 +1082,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
                  cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
     ax_map.axis('tight')"""
-    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, base_cmap=cmap))
+    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, cmap=cmap))
     fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
     ax_map.axis('tight')
     ax_map.set_aspect('auto')
@@ -1119,7 +1157,7 @@ def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4,
         axes_handles = [fax1, fax2, fax3, fax4, fax5, fax6, fax7, fax8, fax9, fax10]
 
     # First plot the labels map:
-    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0], base_cmap=cmap))
+    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0], cmap=cmap))
     fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
     fax1.axis('tight')
     fax1.set_aspect('auto')
@@ -1240,96 +1278,6 @@ def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full
     fig.axes[0].set_ylabel('Distance')
 
     return fig
-
-
-def plot_1d_spectrum(data_vec, freq, title, figure_path=None):
-    """
-    Plots the Step averaged BE response
-
-    Parameters
-    ------------
-    data_vec : 1D numpy array
-        Response of one BE pulse
-    freq : 1D numpy array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
-
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    ax : Matplotlib.pyplot axis
-        Axis handle
-    """
-    if len(data_vec) != len(freq):
-        warn('plot_1d_spectrum: Incompatible data sizes!!!!')
-        print('1D:', data_vec.shape, freq.shape)
-        return
-    freq *= 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-    ax[0].plot(freq, np.abs(data_vec) * 1E+3)
-    ax[0].set_title('Amplitude (mV)')
-    ax[1].plot(freq, np.angle(data_vec) * 180 / np.pi)
-    ax[1].set_title('Phase (deg)')
-    ax[1].set_xlabel('Frequency (kHz)')
-    fig.suptitle(title + ': mean UDVS, mean spatial response')
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
-    return
-
-
-###############################################################################
-
-def plot_2d_spectrogram(mean_spectrogram, freq, title, figure_path=None, **kwargs):
-    """
-    Plots the position averaged spectrogram
-
-    Parameters
-    ------------
-    mean_spectrogram : 2D numpy complex array
-        Means spectrogram arranged as [frequency, UDVS step]
-    freq : 1D numpy float array
-        BE frequency that serves as the X axis of the plot
-    title : String
-        Plot group name
-    figure_path : String / Unicode
-        Absolute path of the file to write the figure to
-
-    Returns
-    ---------
-    fig : Matplotlib.pyplot figure
-        Figure handle
-    ax : Matplotlib.pyplot axis
-        Axis handle
-    """
-    if mean_spectrogram.shape[1] != len(freq):
-        warn('plot_2d_spectrogram: Incompatible data sizes!!!!')
-        print('2D:', mean_spectrogram.shape, freq.shape)
-        return
-
-    freq *= 1E-3  # to kHz
-    fig, ax = plt.subplots(nrows=2, ncols=1, sharex=True)
-    # print(mean_spectrogram.shape)
-    # print(freq.shape)
-    ax[0].imshow(np.abs(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    ax[0].set_title('Amplitude')
-    # ax[0].set_xticks(freq)
-    # ax[0].set_ylabel('UDVS Step')
-    ax[0].axis('tight')
-    ax[1].imshow(np.angle(mean_spectrogram), interpolation='nearest',
-                 extent=[freq[0], freq[-1], mean_spectrogram.shape[0], 0], **kwargs)
-    ax[1].set_title('Phase')
-    ax[1].set_xlabel('Frequency (kHz)')
-    # ax[0].set_ylabel('UDVS Step')
-    ax[1].axis('tight')
-    fig.suptitle(title)
-    if figure_path:
-        plt.savefig(figure_path, format='png', dpi=300)
-    return fig, ax
 
 
 ###############################################################################

@@ -57,8 +57,11 @@ class GIVBayesian(Process):
         # take these from kwargs
         bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
 
-        self.parm_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
-        self.parm_dict.update(bayesian_parms)
+        self.parms_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
+        self.parms_dict.update(bayesian_parms)
+
+        self.process_name = 'Bayesian_Inference'
+        self.duplicate_h5_groups = self._check_for_duplicates()
 
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
@@ -90,7 +93,7 @@ class GIVBayesian(Process):
         """
         super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
-        # In the case of simplified Bayeisan inference, four (roughly) equally sized datasets need to be held in memory:
+        # In the case of simplified Bayesian inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance
         self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
         # Since these computations take far longer than functional fitting, do in smaller batches:
@@ -130,12 +133,12 @@ class GIVBayesian(Process):
                                  chunking=(1, self.single_ao.size), compression='gzip')
         # don't bother adding any other attributes, all this will be taken from h5_main
 
-        bayes_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Bayesian_Inference_',
+        bayes_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
                                    parent=self.h5_main.parent.name)
         bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
                                ds_cap_spec_inds, ds_cap_spec_vals])
         bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}
-        bayes_grp.attrs.update(self.parm_dict)
+        bayes_grp.attrs.update(self.parms_dict)
 
         if self.verbose:
             bayes_grp.showTree()
@@ -262,7 +265,7 @@ class GIVBayesian(Process):
         half_v_steps = self.single_ao.size // 2
 
         # remove additional parm and halve the x points
-        bayes_parms = self.parm_dict.copy()
+        bayes_parms = self.parms_dict.copy()
         bayes_parms['num_x_steps'] = self.num_x_steps // 2
         bayes_parms['econ'] = True
         del(bayes_parms['freq'])

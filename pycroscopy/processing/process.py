@@ -9,7 +9,7 @@ import numpy as np
 import psutil
 import joblib
 
-from ..io.hdf_utils import checkIfMain
+from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommendCores, getAvailableMem
 
@@ -50,13 +50,15 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, cores=None, max_mem_mb=4*1024, verbose=False):
+    def __init__(self, h5_main, h5_results_grp=None, cores=None, max_mem_mb=4*1024, verbose=False):
         """
         Parameters
         ----------
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
+        h5_results_grp : h5py.Datagroup object, optional
+            Datagroup containing partially computed results
         cores : uint, optional
             Default - all available cores - 2
             How many cores to use for the computation
@@ -83,11 +85,52 @@ class Process(object):
         self._start_pos = 0
         self._end_pos = self.h5_main.shape[0]
 
-        self._results = None
-        self.h5_results_grp = None
-
         # Determining the max size of the data that can be put into memory
         self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
+        self.duplicate_h5_groups = []
+        self.process_name = None  # Reset this in the extended classes
+        self.parms_dict = None
+
+        self._results = None
+        self.h5_results_grp = h5_results_grp
+        if self.h5_results_grp is not None:
+            self._extract_params(h5_results_grp)
+
+        # DON'T check for duplicates since parms_dict has not yet been initialized.
+        # Sub classes will check by themselves if they are interested.
+
+    def _check_for_duplicates(self):
+        """
+        Checks for instances where the process was applied to the same dataset with the same parameters
+
+        Returns
+        -------
+        duplicate_h5_groups : list of h5py.Datagroup objects
+            List of groups satisfying the above conditions
+        """
+        duplicate_h5_groups = check_for_old(self.h5_main, self.process_name, new_parms=self.parms_dict)
+        if self.verbose:
+            print('Checking for duplicates:')
+        if duplicate_h5_groups is not None:
+            print('WARNING! ' + self.process_name + ' has already been performed with the same parameters before. '
+                                                    'Consider reusing results')
+            print(duplicate_h5_groups)
+        return duplicate_h5_groups
+
+    def _extract_params(self, h5_partial_group):
+        """
+        Extracts the necessary parameters from the provided h5 group to resume computation
+
+        Parameters
+        ----------
+        h5_partial_group : h5py.Datagroup object
+            Datagroup containing partially computed results
+
+        """
+        self.parms_dict = get_attributes(h5_partial_group)
+        self._start_pos = self.parms_dict.pop('last_pixel')
+        if self._start_pos == self.h5_main.shape[0] - 1:
+            raise ValueError('The last computed pixel shows that the computation was already complete')
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
@@ -172,6 +215,7 @@ class Process(object):
         """
         The purpose of this function is to allow processes to resume from partly computed results
 
+        Start with self.h5_results_grp
         """
         raise NotImplementedError('Please override the _get_existing_datasets specific to your process')
 
@@ -188,9 +232,12 @@ class Process(object):
         -------
 
         """
-
-        self._create_results_datasets()
-        self._start_pos = 0
+        if self._start_pos == 0:
+            # starting fresh
+            self._create_results_datasets()
+        else:
+            # resuming from previous checkpoint
+            self._get_existing_datasets()
 
         self._read_data_chunk()
         while self.data is not None:
