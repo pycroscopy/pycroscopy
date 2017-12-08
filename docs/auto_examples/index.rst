@@ -1,8 +1,8 @@
 :orphan:
 
-===================
-Pycroscopy Examples
-===================
+========================
+Data Analytics Tutorials
+========================
 
 
 .. raw:: html
@@ -152,14 +152,6 @@ Developer Tutorials
    :hidden:
 
    /auto_examples/dev_tutorials/plot_tutorial_05_data_processing
-.. raw:: html
-
-    <div style='clear:both'></div>
-
-=======================
-Pycroscopy Publications
-=======================
-
 .. raw:: html
 
     <div style='clear:both'></div>
