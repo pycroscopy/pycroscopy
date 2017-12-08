@@ -20,6 +20,7 @@ from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
 from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
     get_source_dataset
+from ..io.pycro_data import PycroDataset
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -751,11 +752,14 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     None
 
     """
-    # Get the position and spectroscopic datasets
-    h5_loop_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[-1]
-    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[-1]
+    if not isinstance(h5_loop_parameters, PycroDataset):
+        h5_loop_parameters = PycroDataset(h5_loop_parameters)
 
-    pos_dims = get_dimensionality(np.transpose(h5_loop_pos_inds))
+    # Get the position and spectroscopic datasets
+    h5_loop_pos_inds = h5_loop_parameters.h5_pos_inds
+    h5_loop_spec_vals = h5_loop_parameters.h5_pos_vals
+
+    pos_dims = h5_loop_parameters.pos_dim_sizes
     num_cycles = h5_loop_parameters.shape[1]
 
     parameter_names = h5_loop_parameters.dtype.names
@@ -763,7 +767,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     parameter_map_stack = np.reshape(h5_loop_parameters[parameter_names[0]],
                                      [pos_dims[0], pos_dims[1], -1])
 
-    loop_spec_labs = get_attr(h5_loop_spec_vals, 'labels')
+    loop_spec_labs = h5_loop_parameters.spec_dim_labels
 
     kwargs.update({'cmap': get_cmap_object(cmap)})
 
@@ -771,7 +775,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     for icycle in range(num_cycles):
         title_list = list()
         for label in loop_spec_labs:
-            val = h5_loop_spec_vals[get_attr(h5_loop_spec_vals, label)].squeeze()[icycle]
+            val = h5_loop_parameters.get_spec_values(label)
             title_list.append('{}: {}'.format(label, val))
         map_titles.append(' - '.join(title_list))
 
