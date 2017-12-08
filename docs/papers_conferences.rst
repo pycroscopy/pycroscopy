@@ -1,6 +1,6 @@
-=======================
-Pycroscopy Publications
-=======================
+====================
+Papers / Conferences
+====================
 
 Journal Papers using pycroscopy
 -------------------------------
