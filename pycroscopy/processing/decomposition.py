@@ -10,79 +10,81 @@ import h5py
 import numpy as np
 import sklearn.decomposition as dec
 
-from ..io.hdf_utils import checkIfMain
+from .process import Process
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transformToTargetType
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 
-class Decomposition(object):
+class Decomposition(Process):
     """
     Pycroscopy wrapper around the sklearn.decomposition classes
     """
 
-    def __init__(self, h5_main, method_name, n_components=None, *args, **kwargs):
+    def __init__(self, h5_main, estimator):
         """
-        Constructs the Decomposition object
-
+        Uses the provided (preconfigured) Decomposition object to 
+        decompose the provided dataset
+        
         Parameters
         ------------
         h5_main : HDF5 dataset object
             Main dataset with ancillary spectroscopic, position indices and values datasets
-        method_name : string / unicode
-            Name of the sklearn.cluster estimator
-        n_components : (Optional) unsigned int
-            Number of components for decomposition
-        args and kwargs : arguments to be passed to the estimator
-
+        estimator : sklearn.cluster estimator object
+            configured decomposition object to apply to the data
         """
+        
+        allowed_methods = [dec.factor_analysis.FactorAnalysis,
+                           dec.fastica_.FastICA,
+                           dec.incremental_pca.IncrementalPCA,
+                           dec.sparse_pca.MiniBatchSparsePCA,
+                           dec.nmf.NMF,
+                           dec.pca.PCA,
+                           dec.sparse_pca.SparsePCA,
+                           dec.truncated_svd.TruncatedSVD]
+        
+        # Store the decomposition object
+        self.estimator = estimator
+        
+        # could not find a nicer way to extract the method name yet
+        self.method_name = str(estimator)[:str(estimator).index('(')]
 
-        if n_components is not None:
-            kwargs['n_components'] = n_components
-
-        allowed_methods = ['FactorAnalysis', 'FastICA', 'IncrementalPCA',
-                           'MiniBatchSparsePCA', 'NMF', 'PCA', 'RandomizedPCA',
-                           'SparsePCA', 'TruncatedSVD']
-
-        # check if h5_main is a valid object - is it a hub?
-        if not checkIfMain(h5_main):
-            raise TypeError('Supplied dataset is not a pycroscopy main dataset')
-
-        if method_name not in allowed_methods:
-            raise TypeError('Cannot work with {} just yet'.format(method_name))
-
-        self.h5_main = h5_main
-
-        # Instantiate the decomposition object
-        self.estimator = dec.__dict__[method_name].__call__(*args, **kwargs)
-        self.method_name = method_name
+        if type(estimator) not in allowed_methods:
+            raise NotImplementedError('Cannot work with {} yet'.format(self.method_name))
+            
+        # Done with decomposition-related checks, now call super init
+        super(Decomposition, self).__init__(h5_main)
+        
+        # set up parameters
+        self.parms_dict = {'decomposition_algorithm':self.method_name}
+        self.parms_dict.update(self.estimator.get_params())
+        
+        # check for existing datagroups with same results 
+        self.process_name = 'Decomposition'
+        self.duplicate_h5_groups = self._check_for_duplicates()
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
-    def doDecomposition(self):
+    def compute(self):
         """
         Decomposes the hdf5 dataset, and writes the ? back to the hdf5 file
-
+        
         Returns
-        --------
+        -------
         h5_group : HDF5 Group reference
             Reference to the group that contains the decomposition results
         """
         self._fit()
         self._transform()
-        return self._writeToHDF5(transformToTargetType(self.estimator.components_, self.h5_main.dtype),
+        return self._write_results_chunk(transformToTargetType(self.estimator.components_, self.h5_main.dtype),
                                  self.projection)
 
     def _fit(self):
         """
         Fits the provided dataset
-
-        Returns
-        ------
-        None
         """
         # perform fit on the real dataset
         if self.method_name == 'NMF':
@@ -100,11 +102,6 @@ class Decomposition(object):
             Dataset to apply the transform to. 
             The number of elements in the first axis of this dataset should match that of the original
             dataset that was fitted
-
-        Returns
-        ------
-        None
-
         """
         if data is None:
             if self.method_name == 'NMF':
@@ -116,17 +113,17 @@ class Decomposition(object):
                 if data.shape[0] == self.h5_main.shape[0]:
                     self.projection = self.estimator.transform(data)
 
-    def _writeToHDF5(self, components, projection):
+    def _write_results_chunk(self, components, projection):
         """
         Writes the labels and mean response to the h5 file
-
+        
         Parameters
         ------------
         labels : 1D unsigned int array
             Array of cluster labels as obtained from the fit
         mean_response : 2D numpy array
             Array of the mean response for each cluster arranged as [cluster number, response]
-
+            
         Returns
         ---------
         h5_labels : HDF5 Group reference
@@ -149,18 +146,11 @@ class Decomposition(object):
 
         decomp_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Decomposition_', self.h5_main.parent.name[1:])
         decomp_grp.addChildren([ds_components, ds_projections, ds_decomp_inds, ds_decomp_vals])
-
-        decomp_grp.attrs['num_components'] = components.shape[0]
-        decomp_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        decomp_grp.attrs['decomposition_algorithm'] = self.method_name
-
-        '''
-        Get the parameters of the estimator used and write them
-        as attributes of the group
-        '''
-        for parm in self.estimator.get_params().keys():
-            decomp_grp.attrs[parm] = self.estimator.get_params()[parm]
-
+        
+        decomp_grp.attrs.update(self.parms_dict)
+        decomp_grp.attrs.update({'n_components': components.shape[0],
+                                 'n_samples': self.h5_main.shape[0]})
+        
         hdf = ioHDF5(self.h5_main.file)
         h5_decomp_refs = hdf.writeData(decomp_grp)
 
