@@ -1509,39 +1509,65 @@ def copy_main_attributes(h5_main, h5_new):
             val = h5_main.attrs[att_name]
         h5_new.attrs[att_name] = val
 
-    return
 
-
-def check_for_old(h5_base, tool_name, new_parms=dict()):
+def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
     """
     Check to see if the results of a tool already exist and if they 
     were performed with the same parameters.
     
     Parameters
     ----------
-    h5_base
-    tool_name
-    new_parms
-
+    h5_base : h5py.Dataset object
+           Dataset on which the tool is being applied to
+    tool_name : str
+           process or analysis name
+    new_parms : dict, optional
+           Parameters with which this tool will be performed.
+    verbose : bool, optional, default = False
+           Whether or not to print debugging statements 
+           
     Returns
     -------
     group : h5py.Group or None
-    Group with parameters matching those in `new_parms`
+           Group with parameters matching those in `new_parms`
     """
 
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
+        if verbose:
+            print('Looking at group - {}'.format(group.name.split('/')[-1]))
 
         tests = []
         for key in new_parms.keys():
-            old_parm = get_attr(group, key)
+            
+            # HDF5 cannot store None as an attribute
+            if new_parms[key] is None:
+                continue
+                
+            try:
+                old_parm = get_attr(group, key)
+            except KeyError:
+                # if parameter was not found assume that something has changed
+                if verbose:
+                    print('New parm: {} \t- new parm not in group *****'.format(key))
+                tests.append(False)
+                break
+                
             if isinstance(old_parm, np.ndarray):
                 new_array = np.array(new_parms[key])
                 if old_parm.size == np.array():
-                    tests.append(np.all(np.isclose(old_parm, new_array)))
+                    answer = np.all(np.isclose(old_parm, new_array))
+                    if verbose:
+                        print('New parm: {} \t- match: {}'.format(key, answer))
+                    tests.append(answer)
             else:
-                tests.append(new_parms[key] == old_parm)
+                answer = new_parms[key] == old_parm
+                if verbose:
+                        print('New parm: {} \t- match: {}'.format(key, answer))
+                tests.append(answer)
+        if verbose:
+              print('')
 
         if all(tests):
             return group
