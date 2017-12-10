@@ -144,7 +144,7 @@ def get_cmap_object(cmap):
     """
     if cmap is None:
         return default_cmap
-    elif isinstance(cmap, str):
+    elif type(cmap) in [str, unicode]:
         return plt.get_cmap(cmap)
     return cmap
 
