@@ -57,19 +57,12 @@ Core development
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
   
+* consolidate _get_component_slice used in Cluster with duplicate
 * Legacy processes **MUST** extend Process:
-  
-  * sklearn wrapper classes:
-  
-    * Cluter
-    * Decomposition
-    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
-  
-  * Own classes:
-  
-    * Image Windowing
-    * Image Cleaning
-    * As time permits, ensure that these can resume processing
+
+  * Image Windowing
+  * Image Cleaning
+  * As time permits, ensure that these can resume processing
   * All these MUST implement the check for previous computations at the very least
   
 * Absorb functionality from Process into Model
