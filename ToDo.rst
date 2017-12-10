@@ -62,6 +62,7 @@ Core development
 
   * Image Windowing
   * Image Cleaning
+  * As time permits, ensure that these can resume processing
   * All these MUST implement the check for previous computations at the very least
   * As time permits, ensure that these can resume processing
   
