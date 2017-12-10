@@ -1562,18 +1562,22 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
                     tests.append(False)
                     break
                 new_array = np.array(new_parms[key])
-                if old_value.size == np.array():
+                if old_value.size != new_array.size:
+                    if verbose:
+                        print('New parm: {} \t- are of different sizes ****'.format(key))
+                    tests.append(False)
+                else:
                     answer = np.all(np.isclose(old_value, new_array))
                     if verbose:
                         print('New parm: {} \t- match: {}'.format(key, answer))
                     tests.append(answer)
             else:
-                if isinstance(new_parms[key], collections.Iterable):
+                """if isinstance(new_parms[key], collections.Iterable):
                     if verbose:
                         print('New parm: {} \t- new parm is iterable unlike old parm *****'.format(key))
                     tests.append(False)
-                    break
-                answer = new_parms[key] == old_value
+                    break"""
+                answer = np.all(new_parms[key] == old_value)
                 if verbose:
                         print('New parm: {} \t- match: {}'.format(key, answer))
                 tests.append(answer)
