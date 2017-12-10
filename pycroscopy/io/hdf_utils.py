@@ -181,9 +181,12 @@ def get_attr(h5_object, attr_name):
         att_val = att_val.decode('utf-8')
 
     elif type(att_val) == np.ndarray:
-        if att_val.dtype.type in [np.bytes_, np.object_]:
-            att_val = np.array([str(x, 'utf-8') for x in att_val])
-
+        if sys.version_info.major == 3: 
+            if att_val.dtype.type in [np.bytes_, np.object_]:
+                att_val = np.array([str(x, 'utf-8') for x in att_val])
+        else:
+            att_val = np.array(att_val)
+            
     return att_val
 
 
