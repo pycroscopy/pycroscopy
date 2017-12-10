@@ -288,14 +288,11 @@ def discrete_cmap(num_bins, cmap=None):
     if cmap is None:
         cmap = default_cmap.name
 
-    elif not isinstance(cmap, str):
+    elif type(cmap) not in [unicode, str]:
         # could not figure out a better type check
         cmap = cmap.name
 
-    if type(cmap) == str:
-        return plt.get_cmap(cmap, num_bins)
-
-    return cmap
+    return plt.get_cmap(cmap, num_bins)
 
 
 def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
