@@ -8,6 +8,7 @@ Created on Tue Nov  3 21:14:25 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 import sys
 import h5py
+import collections
 from warnings import warn
 import numpy as np
 from .microdata import MicroDataset
@@ -1541,12 +1542,12 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
         tests = []
         for key in new_parms.keys():
             
-            # HDF5 cannot store None as an attribute
+            # HDF5 cannot store None as an attribute anyway. ignore
             if new_parms[key] is None:
                 continue
                 
             try:
-                old_parm = get_attr(group, key)
+                old_value = get_attr(group, key)
             except KeyError:
                 # if parameter was not found assume that something has changed
                 if verbose:
@@ -1554,15 +1555,25 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
                 tests.append(False)
                 break
                 
-            if isinstance(old_parm, np.ndarray):
+            if isinstance(old_value, np.ndarray):
+                if not isinstance(new_parms[key], collections.Iterable):
+                    if verbose:
+                        print('New parm: {} \t- new parm not iterable unlike old parm *****'.format(key))
+                    tests.append(False)
+                    break
                 new_array = np.array(new_parms[key])
-                if old_parm.size == np.array():
-                    answer = np.all(np.isclose(old_parm, new_array))
+                if old_value.size == np.array():
+                    answer = np.all(np.isclose(old_value, new_array))
                     if verbose:
                         print('New parm: {} \t- match: {}'.format(key, answer))
                     tests.append(answer)
             else:
-                answer = new_parms[key] == old_parm
+                if isinstance(new_parms[key], collections.Iterable):
+                    if verbose:
+                        print('New parm: {} \t- new parm is iterable unlike old parm *****'.format(key))
+                    tests.append(False)
+                    break
+                answer = new_parms[key] == old_value
                 if verbose:
                         print('New parm: {} \t- match: {}'.format(key, answer))
                 tests.append(answer)
