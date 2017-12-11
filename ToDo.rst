@@ -57,20 +57,26 @@ Core development
   1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
   2. (Gracefully) Abort and resume processing.
   
-* consolidate _get_component_slice used in Cluster with duplicate
 * Legacy processes **MUST** extend Process:
-
-  * Image Windowing
-  * Image Cleaning
-  * As time permits, ensure that these can resume processing
+  
+  * sklearn wrapper classes:
+  
+    * Cluter
+    * Decomposition
+    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
+  
+  * Own classes:
+  
+    * Image Windowing
+    * Image Cleaning
+    * As time permits, ensure that these can resume processing
   * All these MUST implement the check for previous computations at the very least
   
 * Absorb functionality from Process into Model
+* Bayesian GIV should actually be an analysis <-- depends on above
+* Reogranize processing and analysis - promote / demote classes etc.
 * multi-node computing capability in parallel_compute
-* Image cleaning should be (something like at the very least) a Process
-* Bayesian GIV should actually be an analysis
 * Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
-* Data Generators
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 * Improve visualization of file contents in print_tree() like hyperspy's `metadata <http://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
