@@ -895,7 +895,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
         im, im_cbar = plot_map(axes202[count],
                                map_stack[index],
-                               stdevs=stdevs, **kwargs, show_cbar=False)
+                               stdevs=stdevs, show_cbar=False, **kwargs)
         axes202[count].set_title(subtitle)
 
         if color_bar_mode is 'each':
