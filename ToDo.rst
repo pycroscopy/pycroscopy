@@ -3,17 +3,17 @@
 v 1.0 goals
 -----------
 1. test utils - 2+ weeks
-2. good utilities for interrogating data - pycro data - done
-3. good documentation for both users and developers
+2. DONE - good utilities for interrogating data - pycro data
+3. partially done - good documentation for both users and developers
 
-  * Need more on dealing with data and (for developers) explaining what is where and why 
-4. generic visualizer - mostly complete - 
+  * Need more on dealing with data + plot_utils tour
+  * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
+4. mostly done - generic visualizer
 5. settle on a structure for process and analysis - moderate ~ 1 day
-
-  * Process should implement some checks. 
+ 
   * Model needs to catch up with Process
-6. good utils for generating publishable plots - easy ~ 1 day
-7. Promote / demote lesser used utilites to processes / analyses. 
+6. mostly done - good utils for generating publishable plots - easy ~ 1 day
+7. Reorganize package - promote / demote lesser used utilites to processes / analyses. 
 
 Short-term goals
 --------------------
@@ -24,13 +24,12 @@ Short-term goals
 Documentation
 -------------
 * Upload clean exports of paper notebooks - Stephen and Chris
-* Organize papers by instrument / technique
 *	Include examples in documentation
 * Links to references for all functions and methods used in our workflows.
 
 Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Writing a custom Translator
+* A tour of what is where and why
 * A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
   
   * chunking the main dataset
@@ -73,11 +72,10 @@ Core development
   * All these MUST implement the check for previous computations at the very least
   
 * Absorb functionality from Process into Model
+* Bayesian GIV should actually be an analysis <-- depends on above
+* Reogranize processing and analysis - promote / demote classes etc.
 * multi-node computing capability in parallel_compute
-* Image cleaning should be (something like at the very least) a Process
-* Bayesian GIV should actually be an analysis
 * Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
-* Data Generators
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 * Improve visualization of file contents in print_tree() like hyperspy's `metadata <http://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
