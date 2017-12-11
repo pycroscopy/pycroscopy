@@ -13,7 +13,7 @@ import numpy as np
 from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
 from .io_utils import transformToReal
-from ..viz.jupyter_utils import simple_ndim_visualizer
+# from ..viz.jupyter_utils import simple_ndim_visualizer
 
 
 class PycroDataset(h5py.Dataset):
@@ -341,25 +341,25 @@ class PycroDataset(h5py.Dataset):
         else:
             return data_slice, success
 
-    def visualize(self, slice_dict=None, **kwargs):
-        """
-        Interactive visualization of this dataset. Only available on jupyter notebooks
-
-        Parameters
-        ----------
-        slice_dict : dictionary, optional
-            Slicing instructions
-        """
-        # TODO: Robust implementation that allows slicing
-        if len(self.pos_dim_labels + self.spec_dim_labels) > 4:
-            raise NotImplementedError('Unable to support visualization of more than 4 dimensions. Try slicing')
-        data_mat = self.get_n_dim_form()
-        pos_dim_names = self.pos_dim_labels[::-1]
-        spec_dim_names = self.spec_dim_labels
-        pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
-        spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
-        pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals, is_spec=False)
-        spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals, is_spec=True)
-
-        simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
-                               pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)
+    # def visualize(self, slice_dict=None, **kwargs):
+    #     """
+    #     Interactive visualization of this dataset. Only available on jupyter notebooks
+    #
+    #     Parameters
+    #     ----------
+    #     slice_dict : dictionary, optional
+    #         Slicing instructions
+    #     """
+    #     # TODO: Robust implementation that allows slicing
+    #     if len(self.pos_dim_labels + self.spec_dim_labels) > 4:
+    #         raise NotImplementedError('Unable to support visualization of more than 4 dimensions. Try slicing')
+    #     data_mat = self.get_n_dim_form()
+    #     pos_dim_names = self.pos_dim_labels[::-1]
+    #     spec_dim_names = self.spec_dim_labels
+    #     pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
+    #     spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
+    #     pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals, is_spec=False)
+    #     spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals, is_spec=True)
+    #
+    #     simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
+    #                            pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)
