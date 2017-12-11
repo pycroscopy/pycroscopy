@@ -237,10 +237,12 @@ h5_path = tran.translate(h5_path, raw_data_2d, num_rows, num_cols,
 #   the h5 file can be written very easily using pycroscopy.io.Translator 's .simple_write() function. 
 #   The NumpyTranslator used above uses the very same .simple_write() function underneath to write its data as well.
 # * There are many benefits to writing such a formal Translator class instead of standalone scripts like this including:
+#
 #   * Unlike such a stand-alone script, a Translator class in the package can be used by everyone repeatedly
 #   * The custom Translator class can ensure consistency when translating multiple files. 
 #   * A single, robust Translator class can handle the finer variations / modes in the data. See the IgorIBWTranslator
 #     as an example - https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/igor_ibw.py.
+#
 # * While this approach is feasible and encouraged for simple and small data, it may be necessary to use lower level
 #   calls to write efficient translators. As an example, please see the BEPSndfTranslator at:
 #   https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/beps_ndf.py
