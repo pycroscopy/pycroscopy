@@ -275,13 +275,50 @@ class PycroDataset(h5py.Dataset):
             Informs the user as to how the data_slice has been shaped.
 
         """
+        # Convert the slice dictionary into lists of indices for each dimension
+        pos_slice, spec_slice = self.get_pos_spec_slices(slice_dict)
+
+        # Now that the slices are built, we just need to apply them to the data
+        # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
+        if len(np.argwhere(pos_slice)) <= len(np.argwhere(spec_slice)):
+            # Fewer final positions that spectra (Most common case)
+            data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
+        else:
+            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
+
+        data_slice, success = reshape_to_Ndims(data_slice,
+                                               h5_pos=self.h5_pos_inds[pos_slice, :],
+                                               h5_spec=self.h5_spec_inds[:, spec_slice])
+
+        if as_scalar:
+            return transformToReal(data_slice), success
+        else:
+            return data_slice, success
+
+    def get_pos_spec_slices(self, slice_dict):
+        """
+        Convert the slice dictionary into two lists of indices, one each for the position and spectroscopic
+        dimensions.
+
+        Parameters
+        ----------
+        slice_dict : dict
+            Dictionary of array-likes.
+
+        Returns
+        -------
+        pos_slice : list of uints
+            Position indices included in the slice
+        spec_slice : list of uints
+            Spectroscopic indices included in the slice
+
+        """
         # Create default slices that include the entire dimension
         n_dim_slices = dict()
         n_dim_slices_sizes = dict()
         for dim_lab, dim_size in zip(self.n_dim_labels, self.n_dim_sizes):
             n_dim_slices[dim_lab] = list(range(dim_size))
             n_dim_slices_sizes[dim_lab] = len(n_dim_slices[dim_lab])
-
         # Loop over all the keyword arguments and create slices for each.
         for key, val in slice_dict.items():
             # Make sure the dimension is valid
@@ -306,40 +343,25 @@ class PycroDataset(h5py.Dataset):
 
             n_dim_slices_sizes[key] = len(val)
 
-        # Now that the slices are built, we just need to apply them to the data
-        # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
+        # Build the list of position slice indices
         for pos_ind, pos_lab in enumerate(self.__pos_dim_labels):
             n_dim_slices[pos_lab] = np.isin(self.h5_pos_inds[:, pos_ind], n_dim_slices[pos_lab])
             if pos_ind == 0:
                 pos_slice = n_dim_slices[pos_lab]
             else:
                 pos_slice = np.logical_and(pos_slice, n_dim_slices[pos_lab])
-
         pos_slice = np.argwhere(pos_slice)
 
+        # Do the same for the spectroscopic slice
         for spec_ind, spec_lab in enumerate(self.__spec_dim_labels):
             n_dim_slices[spec_lab] = np.isin(self.h5_spec_inds[spec_ind], n_dim_slices[spec_lab])
             if spec_ind == 0:
                 spec_slice = n_dim_slices[spec_lab]
             else:
                 spec_slice = np.logical_and(spec_slice, n_dim_slices[spec_lab])
-
         spec_slice = np.argwhere(spec_slice)
 
-        if len(np.argwhere(pos_slice)) <= len(np.argwhere(spec_slice)):
-            # Fewer final positions that spectra (Most common case)
-            data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
-        else:
-            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
-
-        data_slice, success = reshape_to_Ndims(data_slice,
-                                               h5_pos=self.h5_pos_inds[pos_slice, :],
-                                               h5_spec=self.h5_spec_inds[:, spec_slice])
-
-        if as_scalar:
-            return transformToReal(data_slice), success
-        else:
-            return data_slice, success
+        return pos_slice, spec_slice
 
     # def visualize(self, slice_dict=None, **kwargs):
     #     """
