@@ -280,15 +280,17 @@ class PycroDataset(h5py.Dataset):
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
-        if len(np.argwhere(pos_slice)) <= len(np.argwhere(spec_slice)):
+        if len(pos_slice) <= len(spec_slice):
             # Fewer final positions that spectra (Most common case)
             data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
         else:
             data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
 
+        pos_inds = self.h5_pos_inds[pos_slice, :]
+        spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
         data_slice, success = reshape_to_Ndims(data_slice,
-                                               h5_pos=self.h5_pos_inds[pos_slice, :],
-                                               h5_spec=self.h5_spec_inds[:, spec_slice])
+                                               h5_pos=pos_inds,
+                                               h5_spec=spec_inds)
 
         if as_scalar:
             return transformToReal(data_slice), success
