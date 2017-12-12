@@ -16,6 +16,7 @@ from scipy.optimize import least_squares
 from scipy.optimize import leastsq
 from scipy.spatial import ConvexHull
 from scipy.special import erf, erfinv
+import warnings
 
 # switching32 = np.dtype([('V+', np.float32),
 #                         ('V-', np.float32),
@@ -176,7 +177,10 @@ def projectLoop(vdc, amp_vec, phase_vec):
     y_proj = (-D - C * zz[:, 0]) / B
     z_proj = (-D - B * yy[:, 0]) / C
 
-    p = np.polyfit(y_proj, z_proj, 1)  # Fit a straight line
+    # Only print the first warning
+    with warnings.catch_warnings():
+        warnings.simplefilter("once")
+        p = np.polyfit(y_proj, z_proj, 1)  # Fit a straight line
     xdat_fit = np.linspace(y_proj.min(), y_proj.max(), num_pt_fit)
     ydat_fit = np.polyval(p, xdat_fit)
 
