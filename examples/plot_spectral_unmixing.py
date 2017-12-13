@@ -180,8 +180,8 @@ px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps
 
 num_clusters = 4
 
-estimators = px.Cluster(h5_main, 'KMeans', n_clusters=num_clusters)
-h5_kmeans_grp = estimators.do_cluster(h5_main)
+estimators = px.Cluster(h5_main, KMeans(n_clusters=num_clusters))
+h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 

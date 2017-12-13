@@ -10,66 +10,98 @@ import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from multiprocessing import cpu_count
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes, checkIfMain
+from .process import Process
+from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType
+from ..io.io_utils import check_dtype, transformToTargetType, to_ranges
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 
-class Cluster(object):
+class Cluster(Process):
     """
     Pycroscopy wrapper around the sklearn.cluster classes.
-
     """
 
-    def __init__(self, h5_main, method_name, num_comps=None, *args, **kwargs):
+    def __init__(self, h5_main, estimator, num_comps=None, **kwargs):
         """
         Constructs the Cluster object
-
         Parameters
         ----------
         h5_main : HDF5 dataset object
             Main dataset with ancillary spectroscopic, position indices and values datasets
-        method_name : string / unicode
-            Name of the sklearn.cluster estimator
+        estimator : sklearn.cluster estimator
+            configured clustering algorithm to be applied to the data
         num_comps : (optional) unsigned int
             Number of features / spectroscopic indices to be used to cluster the data. Default = all
         args and kwargs : arguments to be passed to the estimator
-
         """
 
-        allowed_methods = ['AgglomerativeClustering', 'Birch', 'KMeans',
-                           'MiniBatchKMeans', 'SpectralClustering']
+        allowed_methods = [cls.AgglomerativeClustering,
+                           cls.Birch,
+                           cls.KMeans,
+                           cls.MiniBatchKMeans,
+                           cls.SpectralClustering]
 
-        # check if h5_main is a valid object - is it a hub?
-        if not checkIfMain(h5_main):
-            raise TypeError('Supplied dataset is not a pycroscopy main dataset')
+        # could not find a nicer way to extract the method name yet
+        self.method_name = str(estimator)[:str(estimator).index('(')]
 
-        if method_name not in allowed_methods:
-            raise TypeError('Cannot work with {} just yet'.format(method_name))
+        if type(estimator) not in allowed_methods:
+            raise TypeError('Cannot work with {} just yet'.format(self.method_name))
 
-        self.h5_main = h5_main
+        # Done with decomposition-related checks, now call super init
+        super(Cluster, self).__init__(h5_main, **kwargs)
 
-        '''
-        If n_jobs is not provided, set to n_cores-2
-        '''
-        kwargs.update({'n_jobs': kwargs.pop('n_jobs', max(1, cpu_count() - 2))})
+        # Store the decomposition object
+        self.estimator = estimator
 
-        # Instantiate the clustering object
-        self.estimator = cls.__dict__[method_name].__call__(*args, **kwargs)
-        self.method_name = method_name
+        if num_comps is None:
+            comp_attr = 'all'
 
         comp_slice, num_comps = self._get_component_slice(num_comps)
 
         self.num_comps = num_comps
         self.data_slice = (slice(None), comp_slice)
 
+        if isinstance(comp_slice, slice):
+            # cannot store slice as an attribute in hdf5
+            # convert to list of integers!
+            inds = comp_slice.indices(self.h5_main.shape[1])
+            # much like range, inds are arranged as (start, stop, step)
+            if inds[0] == 0 and inds[2] == 1:
+                # starting from 0 with step of 1 = upto N components
+                if inds[1] >= self.h5_main.shape[1] - 1:
+                    comp_attr = 'all'
+                else:
+                    comp_attr = inds[1]
+            else:
+                comp_attr = range(*inds)
+        elif comp_attr == 'all':
+            pass
+        else:
+            # subset of spectral components specified as an array
+            comp_attr = comp_slice
+
+        # set up parameters
+        self.parms_dict = {'cluster_algorithm': self.method_name,
+                           'spectral_components': comp_attr}
+        self.parms_dict.update(self.estimator.get_params())
+
+        # update n_jobs according to the cores argument
+        # print('cores reset to', self._cores)
+        # different number of cores should not* be a reason for different results
+        # so we update this flag only after checking for duplicates
+        estimator.n_jobs = self._cores
+        self.parms_dict.update({'n_jobs': self._cores})
+
+        # check for existing datagroups with same results
+        self.process_name = 'Cluster'
+        self.duplicate_h5_groups = self._check_for_duplicates()
+
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
-    def do_cluster(self, rearrange_clusters=True):
+    def compute(self, rearrange_clusters=True):
         """
         Clusters the hdf5 dataset, calculates mean response for each cluster, and writes the labels and mean response
         back to the h5 file
@@ -89,15 +121,11 @@ class Cluster(object):
         new_labels = self.results.labels_
         if rearrange_clusters:
             new_labels, new_mean_response = reorder_clusters(self.results.labels_, new_mean_response)
-        return self._write_to_hdf5(new_labels, new_mean_response)
+        return self._write_results_chunk(new_labels, new_mean_response)
 
     def _fit(self):
         """
         Fits the provided dataset
-
-        Returns
-        ------
-        None
         """
         print('Performing clustering on {}.'.format(self.h5_main.name))
         # perform fit on the real dataset
@@ -143,6 +171,7 @@ class Cluster(object):
             length 2 iterable of integers: Integers define start and stop of component slice to retain
             other iterable of integers or slice: Selection of component indices to retain
             None: All components will be used
+
         Returns
         -------
         comp_slice : slice or numpy.ndarray of uints
@@ -165,7 +194,16 @@ class Cluster(object):
             else:
                 # Convert components to an unsigned integer array
                 comp_slice = np.uint(components)
+                # sort and take unique values only
+                comp_slice.sort()
+                comp_slice = np.unique(comp_slice)
                 num_comps = len(comp_slice)
+                # check to see if this giant list of integers is just a simple range
+                list_of_ranges = list(to_ranges(comp_slice))
+                if len(list_of_ranges) == 1:
+                    # increment the second index by 1 to be consistent with python
+                    comp_slice = slice(int(list_of_ranges[0][0]), int(list_of_ranges[0][1] + 1))
+
         elif isinstance(components, slice):
             # Components is already a slice
             comp_slice = components
@@ -176,7 +214,7 @@ class Cluster(object):
 
         return comp_slice, num_comps
 
-    def _write_to_hdf5(self, labels, mean_response):
+    def _write_results_chunk(self, labels, mean_response):
         """
         Writes the labels and mean response to the h5 file
 
@@ -214,13 +252,12 @@ class Cluster(object):
         ds_cluster_vals.attrs['labels'] = clust_slices
         ds_cluster_vals.attrs['units'] = ['']
 
-        cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Cluster_', self.h5_main.parent.name[1:])
+        cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_', self.h5_main.parent.name[1:])
         cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
                                  ds_label_vals])
 
-        cluster_grp.attrs['num_clusters'] = num_clusters
-        cluster_grp.attrs['num_samples'] = self.h5_main.shape[0]
-        cluster_grp.attrs['cluster_algorithm'] = self.method_name
+        # Write out all the parameters including those from the estimator
+        cluster_grp.attrs.update(self.parms_dict)
 
         h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
         h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
@@ -233,27 +270,13 @@ class Cluster(object):
 
             if isinstance(self.data_slice[1], np.ndarray):
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
-                cluster_grp.attrs['components_used'] = self.data_slice[1].tolist()
 
             else:
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
 
-                cluster_grp.attrs['components_used'] = range(self.data_slice[1].start,
-                                                             self.data_slice[1].stop)[self.data_slice[1]]
-
             ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
 
             cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
-
-        else:
-            cluster_grp.attrs['components_used'] = 'all'
-
-        '''
-        Get the parameters of the estimator used and write them
-        as attributes of the group
-        '''
-        for parm in self.estimator.get_params().keys():
-            cluster_grp.attrs[parm] = self.estimator.get_params()[parm]
 
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)
@@ -273,11 +296,6 @@ class Cluster(object):
         else:
             h5_mean_resp_inds = h5_spec_inds
             h5_mean_resp_vals = h5_spec_vals
-
-        # h5_label_inds.attrs['labels'] = ''
-        # h5_label_inds.attrs['units'] = ''
-        # h5_label_vals.attrs['labels'] = ''
-        # h5_label_vals.attrs['units'] = ''
 
         checkAndLinkAncillary(h5_labels,
                               ['Position_Indices', 'Position_Values'],
