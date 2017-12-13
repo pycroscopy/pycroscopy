@@ -1,14 +1,57 @@
 """
-===========================================
-Writing to hdf5 using the Microdata objects
-===========================================
+====================================================================================================
+Tutorial 1.5: Writing to hdf5 using Microdata objects
+====================================================================================================
 
+**Chris R. Smith** -- cq6@ornl.gov
+License: MIT
 
+This set of tutorials will serve as examples for developing end-to-end workflows for and using pycroscopy.
 
+Classes for writing files
+=========================
+
+In order to deal with the numerous challenges in writing data in a consistent manner, especially during translation,
+in the pycroscopy format, we developed two main classes: **MicroData** and **ioHDF5**.
+
+MicroData
+=========
+
+The abstract class MicroData is extended by **MicroDataset** and **MicroDatagroup** which are skeletal counterparts
+for the h5py.Dataset and h5py.Datagroup classes respectively. These classes allow programmers to quickly and simply
+set up the tree structure that needs to be written to H5 files without having to worry about the low-level HDF5
+constructs or defensive programming strategies necessary for writing the H5 files. Besides facilitating the
+construction of a tree structure, each of the classes have a few features specific to pycroscopy to alleviate file
+writing.
+
+ioHDF5
+======
+
+While we use **h5py** to read from pycroscopy files, the ioHDF5 class is used to write data to H5 files. ioHDF5
+translates the tree structure described by a MicroDataGroup object and writes the contents to H5 files in a
+standardized manner. As a wrapper around h5py, tt handles the low-level file I/O calls and includes defensive
+programming strategies to minimize issues with writing to H5 files.
+
+Why bother with Microdata and ioHDF5?
+=====================================
+
+* These classes simplify the process of writing to H5 files considerably. The programmer only needs to construct
+  the tree structure with simple python objects such as dictionaries for parameters, numpy datasets for storing data, etc.
+* It is easy to corrupt H5 files. ioHDF5 uses defensive programming strategies to solve these problems.
+
+Translation can be challenging in many cases:
+
+* It may not be possible to read the entire data from the raw data file to memory as we did in the tutorial on
+  Translation
+
+    * ioHDF5 allows the general tree structure and the attributes to be written before the data is populated.
+
+* Sometimes, the raw data files do not come with sufficient parameters that describe the size and shape of the data.
+  This makes it challenging to prepare the H5 file.
+
+    * ioHDF5 allows dataets to be dataFile I/O is expensive and we don't want to read the same raw data files multiple
+      times
 """
-
-# Code source: Chris Smith -- cq6@ornl.gov
-# Liscense: MIT
 
 import os
 import numpy as np
