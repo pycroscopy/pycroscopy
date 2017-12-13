@@ -24,6 +24,7 @@ Documentation Index
     papers_conferences
     auto_examples/index
     contact
+    install
     api
 
 Indices and tables
