@@ -62,7 +62,7 @@ class SVD(Process):
         C.Smith -- We might need to put a lower limit on num_comps in the future.  I don't
                    know enough about svd to be sure.
         '''
-        print('Performing SVD decomposition')
+        print('Performing SVD')
 
         t1 = time.time()
 
