@@ -1,0 +1,23 @@
+
+axes.linewidth: 1.5
+xtick.major.size: 6
+xtick.minor.size: 2
+xtick.major.width: 1.5
+xtick.minor.width: 1.5
+ytick.major.size: 6
+ytick.minor.size: 2
+ytick.major.width: 1.5
+ytick.minor.width: 1.5
+font.family: DejaVu Sans
+axes.labelweight: bold
+axes.labelpad: 1
+axes.labelsize: 12
+xtick.major.pad: 1
+ytick.major.pad: 1
+xtick.labelsize: 12
+ytick.labelsize: 12
+xtick.top: True
+ytick.right: True
+xtick.direction: in
+ytick.direction: in
+image.interpolation: nearest
