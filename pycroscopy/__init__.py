@@ -21,6 +21,8 @@ from . import processing
 from .processing import *
 from . import viz
 from .viz import *
+from . import josh_codes
+from .josh_codes import *
 
 from .__version__ import version as __version__
 from .__version__ import date as __date__
