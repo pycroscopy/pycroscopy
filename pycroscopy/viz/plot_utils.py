@@ -449,6 +449,8 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=
     if show_cbar:
         cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
                             fraction=0.046, pad=0.04, use_gridspec=True)
+        # cbar = axis.cbar_axes[count].colorbar(im_handle)
+
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
         cbar.ax.tick_params(labelsize=tick_font_size)
@@ -1425,10 +1427,10 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
 
     for count, ax, image, title, plot_min, plot_max in zip(range(6), axes_clean, plot_data,
                                                            plot_names, plot_mins, plot_maxes):
-        im = plot_map(ax, image, stdevs, **kwargs)
-        im.set_clim(vmin=plot_min, vmax=plot_max)
+        im_handle, cbar_handle = plot_map(ax, image, stdevs, show_cbar=False, **kwargs)
+        im_handle.set_clim(vmin=plot_min, vmax=plot_max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
-        cbar = axes_clean.cbar_axes[count].colorbar(im)
+        cbar = axes_clean.cbar_axes[count].colorbar(im_handle)
         cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])
 
         if not plot_args['show_x_y_ticks']:
