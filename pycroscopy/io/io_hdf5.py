@@ -398,9 +398,9 @@ class ioHDF5(object):
         """
         try:
             if isinstance(att_val, Iterable):
-                if isinstance(att_val, str):
+                if type(att_val) in [unicode, str]:
                     return att_val
-                if np.any([type(x) in [str, bytes] for x in att_val]):
+                elif np.any([type(x) in [str, unicode, bytes] for x in att_val]):
                     return np.array(att_val, dtype='S')
             if type(att_val) == np.str_:
                 return str(att_val)
