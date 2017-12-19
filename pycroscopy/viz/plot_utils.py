@@ -1428,7 +1428,7 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
 
     for count, ax, image, title, plot_min, plot_max in zip(range(6), axes_clean, plot_data,
                                                            plot_names, plot_mins, plot_maxes):
-        im = plot_map(ax, image, stdevs, **kwargs)
+        im, im_cbar = plot_map(ax, image, stdevs, show_cbar=False, **kwargs)
         im.set_clim(vmin=plot_min, vmax=plot_max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
         cbar = axes_clean.cbar_axes[count].colorbar(im)
