@@ -3,9 +3,9 @@
 .. _sphx_glr_auto_tutorials_plot_tutorial_05_data_processing.py:
 
 
-=================================================================
+=======================================
 Tutorial 5: Formalizing Data Processing
-=================================================================
+=======================================
 
 **Suhas Somnath**
 
@@ -128,7 +128,7 @@ Note that:
             h5_main - dataset to compute on
             cores - Number of CPU cores to use for computation - Optional
             """
-            super(ShoGuess, self).__init__(h5_main, cores)
+            super(ShoGuess, self).__init__(h5_main, cores=cores)
 
             # find the frequency vector
             h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[-1]
@@ -345,7 +345,7 @@ Plot the Amplitude and Phase of the gaussian versus the raw data.
 
 
 
-**Total running time of the script:** ( 0 minutes  43.305 seconds)
+**Total running time of the script:** ( 0 minutes  42.553 seconds)
 
 
 

@@ -1,7 +1,16 @@
 :orphan:
 
+====================
+Examples & Tutorials
+====================
+
+
+.. raw:: html
+
+    <div style='clear:both'></div>
+
 ========================
-Data Analytics Tutorials
+Scientific Data Analysis
 ========================
 
 
@@ -11,29 +20,9 @@ Data Analytics Tutorials
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
+    .. figure:: /auto_examples/data_analysis/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
-
-.. raw:: html
-
-    </div>
-
-
-.. toctree::
-   :hidden:
-
-   /auto_examples/plot_spectral_unmixing
-
-.. raw:: html
-
-    <div class="sphx-glr-thumbcontainer" tooltip="">
-
-.. only:: html
-
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_microdata_example_thumb.png
-
-        :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
+        :ref:`sphx_glr_auto_examples_data_analysis_plot_spectral_unmixing.py`
 
 .. raw:: html
 
@@ -43,7 +32,7 @@ Data Analytics Tutorials
 .. toctree::
    :hidden:
 
-   /auto_examples/plot_microdata_example
+   /auto_examples/data_analysis/plot_spectral_unmixing
 .. raw:: html
 
     <div style='clear:both'></div>
@@ -52,6 +41,26 @@ Data Analytics Tutorials
 Developer Tutorials
 ===================
 
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Chris R. Smith** -- cq6@ornl.gov License: MIT">
+
+.. only:: html
+
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_01_5_microdata_thumb.png
+
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_5_microdata.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/dev_tutorials/plot_tutorial_01_5_microdata
 
 .. raw:: html
 
@@ -193,13 +202,13 @@ User Tutorials
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: auto_examples_python.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_examples/auto_examples_python.zip>`
+    :download:`Download all examples in Python source code: auto_examples_python.zip <//home/challtdow/workspace/pycroscopy/docs/auto_examples/auto_examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_examples/auto_examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip <//home/challtdow/workspace/pycroscopy/docs/auto_examples/auto_examples_jupyter.zip>`
 
 
 .. only:: html

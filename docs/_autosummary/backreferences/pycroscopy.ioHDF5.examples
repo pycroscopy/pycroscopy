@@ -9,9 +9,9 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
+    .. figure:: /auto_examples/data_analysis/images/thumb/sphx_glr_plot_spectral_unmixing_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+        :ref:`sphx_glr_auto_examples_data_analysis_plot_spectral_unmixing.py`
 
 .. raw:: html
 
@@ -19,17 +19,17 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_spectral_unmixing.py`
+    * :ref:`sphx_glr_auto_examples_data_analysis_plot_spectral_unmixing.py`
 
 .. raw:: html
 
-    <div class="sphx-glr-thumbcontainer" tooltip="">
+    <div class="sphx-glr-thumbcontainer" tooltip="**Chris R. Smith** -- cq6@ornl.gov License: MIT">
 
 .. only:: html
 
-    .. figure:: /auto_examples/images/thumb/sphx_glr_plot_microdata_example_thumb.png
+    .. figure:: /auto_examples/dev_tutorials/images/thumb/sphx_glr_plot_tutorial_01_5_microdata_thumb.png
 
-        :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
+        :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_5_microdata.py`
 
 .. raw:: html
 
@@ -37,7 +37,7 @@ Examples using ``pycroscopy.ioHDF5``
 
 .. only:: not html
 
-    * :ref:`sphx_glr_auto_examples_plot_microdata_example.py`
+    * :ref:`sphx_glr_auto_examples_dev_tutorials_plot_tutorial_01_5_microdata.py`
 
 .. raw:: html
 
@@ -74,6 +74,24 @@ Examples using ``pycroscopy.ioHDF5``
 .. only:: not html
 
     * :ref:`sphx_glr_auto_examples_user_tutorials_plot_tutorial_01_interacting_w_h5_files.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="**Chris R. Smith** -- cq6@ornl.gov License: MIT">
+
+.. only:: html
+
+    .. figure:: /auto_tutorials/images/thumb/sphx_glr_plot_tutorial_01_5_microdata_thumb.png
+
+        :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_5_microdata.py`
+
+.. raw:: html
+
+    </div>
+
+.. only:: not html
+
+    * :ref:`sphx_glr_auto_tutorials_plot_tutorial_01_5_microdata.py`
 
 .. raw:: html
 

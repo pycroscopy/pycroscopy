@@ -9,6 +9,7 @@ pycroscopy\.viz\.plot\_utils
 
    .. autosummary::
    
+      cbar_for_line_plot
       cmap_from_rgba
       cmap_hot_desaturated
       cmap_jet_white_center
@@ -17,9 +18,6 @@ pycroscopy\.viz\.plot\_utils
       get_cmap_object
       make_linear_alpha_cmap
       make_scalar_mappable
-      plotScree
-      plot_1d_spectrum
-      plot_2d_spectrogram
       plot_cluster_dendrogram
       plot_cluster_h5_group
       plot_cluster_results_separate
@@ -32,10 +30,10 @@ pycroscopy\.viz\.plot\_utils
       plot_loops
       plot_map
       plot_map_stack
+      plot_scree
       rainbow_plot
       save_fig_filebox_button
       set_tick_font_size
-      single_img_cbar_plot
    
    
 

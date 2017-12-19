@@ -37,13 +37,13 @@ User Tutorials
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: auto_publications_python.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_publications/auto_publications_python.zip>`
+    :download:`Download all examples in Python source code: auto_publications_python.zip <//home/challtdow/workspace/pycroscopy/docs/auto_publications/auto_publications_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: auto_publications_jupyter.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_publications/auto_publications_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: auto_publications_jupyter.zip <//home/challtdow/workspace/pycroscopy/docs/auto_publications/auto_publications_jupyter.zip>`
 
 
 .. only:: html

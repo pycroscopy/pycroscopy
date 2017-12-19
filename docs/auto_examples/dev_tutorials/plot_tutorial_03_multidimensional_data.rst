@@ -471,7 +471,7 @@ the slicing.
  Out::
 
     ['X', 'Y', 'Frequency', 'DC_Offset', 'Field', 'Cycle']
-    [ 5  5 87 64  2  2]
+    [5, 5, 87, 64, 2, 2]
 
 
 With this information, we can now get our data slice.
@@ -751,7 +751,7 @@ approach.
 
 
 
-**Total running time of the script:** ( 0 minutes  1.511 seconds)
+**Total running time of the script:** ( 0 minutes  5.056 seconds)
 
 
 

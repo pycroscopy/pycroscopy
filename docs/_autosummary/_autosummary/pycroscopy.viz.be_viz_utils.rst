@@ -14,6 +14,8 @@ pycroscopy\.viz\.be\_viz\_utils
       jupyter_visualize_beps_sho
       jupyter_visualize_loop_sho_raw_comparison
       jupyter_visualize_parameter_maps
+      plot_1d_spectrum
+      plot_2d_spectrogram
       plot_loop_guess_fit
       plot_loop_sho_raw_comparison
       visualize_sho_results

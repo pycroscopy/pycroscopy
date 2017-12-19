@@ -230,8 +230,25 @@ h5_path = tran.translate(h5_path, raw_data_2d, num_rows, num_cols,
 # ===============================
 # * Steps 1-3 would be performed anyway in order to begin data analysis
 # * The actual pycroscopy translation step are reduced to just 3-4 lines in step 4.
+# * A modular / formal version of this translator has been implemented as a class in pycroscopy as the AscTranslator
+#   found at: https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py .
+#   This custom translator packages the same code used above into functions that focus on the individual tasks such
+#   as extracting parameters, reading data, and writing to h5. Once the necessary pieces (parameters, data) are gathered,
+#   the h5 file can be written very easily using pycroscopy.io.Translator 's .simple_write() function. 
+#   The NumpyTranslator used above uses the very same .simple_write() function underneath to write its data as well.
+# * There are many benefits to writing such a formal Translator class instead of standalone scripts like this including:
+#
+#   * Unlike such a stand-alone script, a Translator class in the package can be used by everyone repeatedly
+#   * The custom Translator class can ensure consistency when translating multiple files. 
+#   * A single, robust Translator class can handle the finer variations / modes in the data. See the IgorIBWTranslator
+#     as an example - https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/igor_ibw.py.
+#
 # * While this approach is feasible and encouraged for simple and small data, it may be necessary to use lower level
-#   calls to write efficient translators
+#   calls to write efficient translators. As an example, please see the BEPSndfTranslator at:
+#   https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/beps_ndf.py
+# * We have found python packages online to open a few proprietary file formats and have written translators using these
+#   packages. If you are having trouble reading the data in your files and cannot find any packages online, consider 
+#   contacting the manufacturer of the instrument which generated the data in the proprietary format for help.
 #
 # Verifying the newly written H5 file:
 # ====================================
