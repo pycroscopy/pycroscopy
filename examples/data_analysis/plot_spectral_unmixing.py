@@ -142,7 +142,8 @@ px.viz.be_viz_utils.jupyter_visualize_be_spectrograms(h5_main)
 # Furthermore, while it is not discussed in this example, pycroscopy also writes back the results from SVD back to
 # the same source h5 file including all relevant links to the source dataset and other ancillary datasets
 
-h5_svd_group = px.doSVD(h5_main, num_comps=256)
+do_svd = px.processing.svd_utils.SVD(h5_main, num_components=256)
+h5_svd_group = do_svd.compute()
 
 h5_u = h5_svd_group['U']
 h5_v = h5_svd_group['V']
