@@ -99,7 +99,7 @@ def fft_to_real(image):
     return np.real(np.fft.ifft2(np.fft.ifftshift(image)))
 
 
-def getNoiseFloor(fft_data, tolerance):
+def get_noise_floor(fft_data, tolerance):
     """
     Calculate the noise floor from the FFT data. Algorithm originally written by Mahmut Okatan Baris
 
@@ -148,7 +148,7 @@ def getNoiseFloor(fft_data, tolerance):
 
 ###############################################################################
 
-def downSample(fft_vec, freq_ratio):
+def down_sample(fft_vec, freq_ratio):
     """
     Downsamples the provided data vector
     
@@ -466,7 +466,7 @@ class HarmonicPassFilter(FrequencyFilter):
         this_parms.update(basic_parms)
         return this_parms
 
-    # def removeNoiseHarmonics(F_AI_vec,samp_rate,noise_combs):
+    # def remove_noise_harmonics(F_AI_vec,samp_rate,noise_combs):
     #     """
     #     Removes specified noise frequencies from the signal
     #

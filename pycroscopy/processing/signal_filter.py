@@ -16,7 +16,7 @@ from ..io.microdata import MicroDataset, MicroDataGroup
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, check_for_old
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
-from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
+from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
 # TODO: correct implementation of num_pix
 
@@ -244,7 +244,7 @@ class SignalFilter(Process):
 
     @staticmethod
     def _unit_function():
-        return getNoiseFloor
+        return get_noise_floor
 
     def compute(self, *args, **kwargs):
         """
@@ -274,7 +274,7 @@ class SignalFilter(Process):
             self.data = np.fft.fftshift(np.fft.fft(self.data, axis=1), axes=1)
 
             if self.noise_threshold is not None:
-                self.noise_floors = parallel_compute(self.data, getNoiseFloor, cores=self._cores,
+                self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
                                                      func_args=[self.noise_threshold])
 
             if isinstance(self.composite_filter, np.ndarray):

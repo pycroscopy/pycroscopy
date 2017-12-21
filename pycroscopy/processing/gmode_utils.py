@@ -10,7 +10,7 @@ from collections import Iterable
 from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
-from .fft import getNoiseFloor, are_compatible_filters, build_composite_freq_filter
+from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from ..io.io_hdf5 import ioHDF5
 from ..io.pycro_data import PycroDataset
 from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, copy_main_attributes
@@ -83,7 +83,7 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
     fft_pix_data = np.fft.fftshift(np.fft.fft(resp_wfm))
 
     if noise_threshold is not None:
-        noise_floor = getNoiseFloor(fft_pix_data, noise_threshold)[0]
+        noise_floor = get_noise_floor(fft_pix_data, noise_threshold)[0]
         if verbose:
             print('The noise_floor is', noise_floor)
 
