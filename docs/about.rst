@@ -27,13 +27,19 @@ By sharing our methodology and code for analyzing materials imaging we hope that
 community of materials science/physics. We also hope, quite ardently, that other materials scientists would
 follow suit.
 
-**The (core) pycroscopy team:**
+The core pycroscopy team consists of:
 
 * `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath), 
 * `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith), 
 * `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), 
 * `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) 
-* and many more...
+
+Substantial contributions from many developers including:
+
+* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
+* `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
+* Anton Ievlev
+* and many more
 
 Why?
 ---------------
