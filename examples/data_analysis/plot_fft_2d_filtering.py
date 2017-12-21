@@ -102,13 +102,13 @@ fft_image_raw = npf.fft2(image_raw)
 # there appears to be peaks at the corners and no information at the center. 
 # This is because the output for the ‘fft2’ function flips the frequency axes so 
 # that low frequencies are at the ends, and the highest frequency is in the middle. 
-# To correct this, use the ‘fftshift’ command. 
 fig, axis = plt.subplots(figsize=(5, 5))
 _ = px.plot_utils.plot_map(axis, np.abs(fft_image_raw), cmap=plt.cm.OrRd, clim=[0, 3E+3])
 axis.set_title('FFT2 of image')
 
-# use fftshift to bring the lowest frequency 
-# components of the FFT back to the center of the plot
+####################################################################################
+# To correct this, use the ‘fftshift’ command. 
+# fftshift brings the lowest frequency components of the FFT back to the center of the plot
 fft_image_raw = npf.fftshift(fft_image_raw)
 fft_abs_image_raw = np.abs(fft_image_raw)
 
