@@ -16,6 +16,26 @@ Scientific Data Analysis
 
 .. raw:: html
 
+    <div class="sphx-glr-thumbcontainer" tooltip="**Stephen Jesse and Suhas Somnath**">
+
+.. only:: html
+
+    .. figure:: /auto_examples/data_analysis/images/thumb/sphx_glr_plot_fft_2d_filtering_thumb.png
+
+        :ref:`sphx_glr_auto_examples_data_analysis_plot_fft_2d_filtering.py`
+
+.. raw:: html
+
+    </div>
+
+
+.. toctree::
+   :hidden:
+
+   /auto_examples/data_analysis/plot_fft_2d_filtering
+
+.. raw:: html
+
     <div class="sphx-glr-thumbcontainer" tooltip="S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3` * :sup:`1` Institute for Functional Imagin...">
 
 .. only:: html
@@ -202,13 +222,13 @@ User Tutorials
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Python source code: auto_examples_python.zip <//home/challtdow/workspace/pycroscopy/docs/auto_examples/auto_examples_python.zip>`
+    :download:`Download all examples in Python source code: auto_examples_python.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_examples/auto_examples_python.zip>`
 
 
 
   .. container:: sphx-glr-download
 
-    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip <//home/challtdow/workspace/pycroscopy/docs/auto_examples/auto_examples_jupyter.zip>`
+    :download:`Download all examples in Jupyter notebooks: auto_examples_jupyter.zip </C:/Users/cq6/git/Pycroscopy/pycroscopy/docs/auto_examples/auto_examples_jupyter.zip>`
 
 
 .. only:: html

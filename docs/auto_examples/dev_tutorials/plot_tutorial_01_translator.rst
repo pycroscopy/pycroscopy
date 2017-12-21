@@ -249,20 +249,20 @@ The parameters in these files are present in the first few lines of the file
 
  Out::
 
-    x-length :       29.7595
-    y-offset :       -781.441
     x-pixels :       100
-    z-section :      491
     y-pixels :       100
-    z-unit :         nV
-    voidpixels :     0
-    x-offset :       -967.807
+    x-length :       29.7595
     y-length :       29.7595
+    x-offset :       -967.807
+    y-offset :       -781.441
+    z-points :       500
+    z-section :      491
+    z-unit :         nV
     z-range :        2000000000
     z-offset :       1116.49
-    z-points :       500
-    scanspeed :      59519000000
     value-unit :     nA
+    scanspeed :      59519000000
+    voidpixels :     0
 
 
 3.a Prepare to read the data
@@ -435,7 +435,7 @@ Verifying the newly written H5 file:
     Measurement_000/Channel_000/Spectroscopic_Values
 
 
-**Total running time of the script:** ( 1 minutes  36.849 seconds)
+**Total running time of the script:** ( 0 minutes  4.472 seconds)
 
 
 
