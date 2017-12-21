@@ -273,7 +273,8 @@ class FakeBEPSGenerator(Translator):
         coef_OF_mat = np.hstack((coef_OF_mat[:, :9], np.ones([coef_OF_mat.shape[0], 1])))
         coef_IF_mat = np.hstack((coef_IF_mat[:, :9], np.ones([coef_IF_mat.shape[0], 1])))
 
-        coef_mat = np.hstack([coef_IF_mat, coef_OF_mat])
+        coef_mat = np.hstack([coef_IF_mat[:, np.newaxis, :], coef_OF_mat[:, np.newaxis, :]])
+        coef_mat = np.rollaxis(coef_mat, 1, coef_mat.ndim).reshape([coef_mat.shape[0], -1])
 
         self.h5_loop_fit[:] = np.tile(realToCompound(coef_mat, loop_fit32),
                                       [1, int(self.n_loops / self.n_fields)])
