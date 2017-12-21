@@ -16,27 +16,87 @@ from warnings import warn
 
 def get_fft_stack(image_stack):
     """
-    Gets the 2D FFT for a stack of images by applying a blackman window
+    Gets the 2D FFT for a single or stack of images by applying a blackman window
 
     Parameters
     ----------
     image_stack : 2D or 3D real numpy array
-        Either a 2D matrix [x, y] or a stack of 2D images arranged as [x, y, z or spectral]
+        Either a 2D matrix [x, y] or a stack of 2D images arranged as [z or spectral, x, y]
 
     Returns
     -------
     fft_stack : 2D or 3D real numpy array
-        2 or 3 dimensional matrix arranged as [x, y, spectral dimension]
+        2 or 3 dimensional matrix arranged as [z or spectral, x, y]
 
     """
-    image_stack = np.atleast_3d(image_stack)
-    blackman_2d = np.atleast_2d(np.blackman(image_stack.shape[1])) * np.atleast_2d(np.blackman(image_stack.shape[0])).T
-    image_stack = np.transpose(image_stack, [2, 0, 1])
-    blackman_3d = np.transpose(np.atleast_3d(blackman_2d), [2, 0, 1])
+    if image_stack.ndim == 2:
+        # single image
+        image_stack = np.expand_dims(image_stack, axis=0)
+    blackman_2d = np.atleast_2d(np.blackman(image_stack.shape[2])) * np.atleast_2d(np.blackman(image_stack.shape[1])).T
+    blackman_3d = np.expand_dims(blackman_2d, axis=0)
     fft_stack = blackman_3d * image_stack
     fft_stack = np.abs(np.fft.fftshift(np.fft.fft2(fft_stack, axes=(1, 2)), axes=(1, 2)))
-    fft_stack = np.transpose(fft_stack, [1, 2, 0])
     return np.squeeze(fft_stack)
+
+
+def build_radius_matrix(image_shape):
+    """
+    Builds a matrix where the value of a given pixel is its L2 distance from the origin, which is located at the
+    center of the provided image rather one of the corners of the image. The result from this function is required
+    by get_2d_gauss_lpf
+
+    Parameters
+    ----------
+    image_shape: list or tuple
+        Number of rows and columns in the image
+
+    Returns
+    -------
+    radius_mat: 2d numpy float array
+        Radius matrix
+    """
+    (u_mat, v_mat) = np.meshgrid(range(-image_shape[0] // 2, image_shape[0] // 2, 1),
+                                 range(-image_shape[1] // 2, image_shape[1] // 2, 1))
+    return np.sqrt(u_mat ** 2 + v_mat ** 2)
+
+
+def get_2d_gauss_lpf(radius_mat, filter_width):
+    """
+    Builds a 2D, radially symmetric, low-pass Gaussian filter based on the provided radius matrix. The corresponding
+    high pass filter can be built simply by subtracting the resulting low-pass filter from 1.
+
+    Multiply the output of this function with the (shifted) fft of an image to apply the filter.
+
+    Parameters
+    ----------
+    radius_mat: 2d numpy float array
+        A [NxM] matrix of the same size as the image that this filter will be applied to
+    filter_width: float
+        Size of the filter
+
+    Returns
+    -------
+    gauss_filt: 2D numpy float array
+        matrix with a single gaussian peak at the center of the matrix.
+    """
+    return np.e ** (-(radius_mat * filter_width) ** 2)
+
+
+def fft_to_real(image):
+    """
+    Provides the real-space equivalent of the provided image in Fourier space
+
+    Parameters
+    ----------
+    image: 2D numpy float array
+        FFT of image that has been fft shifted.
+
+    Returns
+    -------
+    image : 2D numpy float array
+        Image in real space
+    """
+    return np.real(np.fft.ifft2(np.fft.ifftshift(image)))
 
 
 def getNoiseFloor(fft_data, tolerance):
