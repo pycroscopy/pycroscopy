@@ -151,8 +151,9 @@ class Process(object):
             self._cores = psutil.cpu_count() - 2
         else:
             cores = int(abs(cores))
-            self._cores = min(psutil.cpu_count(), max(1, cores))
+            self._cores = min(psutil.cpu_count(), cores)
 
+        self._cores = max(1, self._cores)
         _max_mem_mb = getAvailableMem() / 1E6  # in MB
 
         self._max_mem_mb = min(_max_mem_mb, mem)
