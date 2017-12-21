@@ -4,7 +4,7 @@ python:
 - '3.6'
 before_install:
 - sudo apt-get update -qq
-install: pip install pycroscopy
+install: python setup.py install
 script: pytest
 after_success:
   - pip install sphinx sphinx-gallery sphinx-rtd-theme numpydoc wget pysptools cvxopt
