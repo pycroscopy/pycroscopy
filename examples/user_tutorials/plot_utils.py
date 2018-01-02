@@ -263,14 +263,22 @@ px.plot_utils.set_tick_font_size(axes[1], 24)
 fig.tight_layout()
 
 ################################################################################################
-# get_cmap_object
+# plot_map_stack
 # ---------------
-# This function is useful more for developers writing their own plotting functions that need to manipulate the
-# colormap object. This function makes it easy to ensure that you are working on the colormap object and not the
-# string name of the colormap (both of which are accepted by most matplotlib functions).
-# Here we simply compare the returned values when passing both the colormap object and the string name of the colormap
+# One of the most popular operations in scientific research is the visualization of a stack of images.
+# This function is built specifically for that purpose. 
+# Here we simply simulate some images using sinusoidal functions for demonstration purposes.
 
-px.plot_utils.get_cmap_object('jet') == px.plot_utils.get_cmap_object(plt.cm.jet)
+def get_sine_2d_image(freq):
+    x_vec = np.linspace(0, freq*np.pi, 256)
+    y_vec = np.sin(x_vec)**2
+    return y_vec * np.atleast_2d(y_vec).T
+
+frequencies = [0.25, 0.5, 1, 2, 4 ,8, 16, 32, 64]
+image_stack = [get_sine_2d_image(freq) for freq in frequencies]
+image_stack = np.array(image_stack)
+
+fig, axes = px.plot_utils.plot_map_stack(image_stack, reverse_dims=False, fig_title_yoffset=0.95)
 
 ################################################################################################
 # plot_complex_map_stack
@@ -290,3 +298,13 @@ frequencies = 2**np.arange(4)
 image_stack = [get_complex_2d_image(freq) for freq in frequencies]
 
 fig, axes = px.plot_utils.plot_complex_map_stack(np.array(image_stack))
+
+################################################################################################
+# get_cmap_object
+# ---------------
+# This function is useful more for developers writing their own plotting functions that need to manipulate the
+# colormap object. This function makes it easy to ensure that you are working on the colormap object and not the
+# string name of the colormap (both of which are accepted by most matplotlib functions).
+# Here we simply compare the returned values when passing both the colormap object and the string name of the colormap
+
+px.plot_utils.get_cmap_object('jet') == px.plot_utils.get_cmap_object(plt.cm.jet)
