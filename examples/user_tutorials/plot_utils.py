@@ -84,6 +84,25 @@ px.plot_utils.plot_line_family(axes[2], x_vec, y_mat,
 axes[2].set_title('Line family with colorbar')
 
 ################################################################################################
+# plot_complex_loop_stack
+# ------------------
+# This handy function plots the amplitude and phase components of multiple complex valued spectra
+# Here we simulate the signal coming from a simple harmonic oscillator (SHO). 
+
+num_spectra = 4
+spectra_length = 77
+w_vec = np.linspace(300, 350, spectra_length)
+amps = np.random.rand(num_spectra)
+freqs = np.random.rand(num_spectra)*35 + 310
+q_facs = np.random.rand(num_spectra)*25 + 50
+phis = np.random.rand(num_spectra)*2*np.pi
+spectra = np.zeros((num_spectra, spectra_length), dtype=np.complex)
+for index, amp, freq, qfac, phase in zip(range(num_spectra), amps, freqs, q_facs, phis):
+    spectra[index] = px.analysis.utils.be_sho.SHOfunc((amp, freq, qfac, phase), w_vec)
+
+fig, axis = px.plot_utils.plot_complex_loop_stack(spectra, w_vec, title='Oscillator responses')
+
+################################################################################################
 # rainbow_plot
 # ------------
 # This function is ideally suited for visualizing a signal that varies as a function of time or when 
@@ -252,3 +271,22 @@ fig.tight_layout()
 # Here we simply compare the returned values when passing both the colormap object and the string name of the colormap
 
 px.plot_utils.get_cmap_object('jet') == px.plot_utils.get_cmap_object(plt.cm.jet)
+
+################################################################################################
+# plot_complex_map_stack
+# ---------------
+# This function plots the amplitude and phase components of a stack of complex valued 2D images.
+# Here we simulate the data using sine and cosine components
+
+# Simple function to generate images
+def get_complex_2d_image(freq):
+    x_vec = np.linspace(0, freq*np.pi, 256)
+    y_vec_1 = np.sin(x_vec)**2
+    y_vec_2 = np.cos(x_vec)**2
+    return y_vec_2 * np.atleast_2d(y_vec_2).T + 1j*(y_vec_1 * np.atleast_2d(y_vec_1).T)
+
+# The range of frequences over which the images are generated
+frequencies = 2**np.arange(4)
+image_stack = [get_complex_2d_image(freq) for freq in frequencies]
+
+fig, axes = px.plot_utils.plot_complex_map_stack(np.array(image_stack))
