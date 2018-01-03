@@ -9,6 +9,8 @@ Pycroscopy
 
 **Scientific analysis of nanoscale materials imaging data**
 
+Jump to our `GitHub project page <https://github.com/pycroscopy/pycroscopy>`_
+
 Documentation Index
 -------------------
 .. currentmodule:: index
