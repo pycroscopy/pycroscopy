@@ -16,6 +16,8 @@ With  pycroscopy we aim to:
 
 To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
 
+Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
+
 Who?
 -----------
 This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase
