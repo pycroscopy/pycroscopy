@@ -38,9 +38,9 @@ The core pycroscopy team consists of:
 
 Substantial contributions from many developers including:
 
+* `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
-* Anton Ievlev
 * and many more
 
 Why?
