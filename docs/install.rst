@@ -1,7 +1,7 @@
 Installation
 ------------
 
-Pycroscopy requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
+`Pycroscopy <https://github.com/pycroscopy/pycroscopy>`_ requires many commonly used python packages such as numpy, scipy etc. To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages as well as a development environment - Spyder. 
 
    1. Recommended - uninstall existing Python distribution(s) if installed.  Restart computer afterwards.
 
