@@ -1,8 +1,8 @@
 Getting Started
 ---------------
 * Follow `these instructions <https://pycroscopy.github.io/pycroscopy/install.html>`_ to install pycroscopy
-* See how we use pycroscopy for our scientific research in these `jupyter notebooks <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/tree/master/jupyter_notebooks/>`_. Many of them are linked to journal publications listed below.
-	* Please see the official `jupyter <http://jupyter.org>`_ website for more information about notebooks and consider watching this `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_.
+* See how we use pycroscopy for our scientific research in these `jupyter notebooks <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/tree/master/jupyter_notebooks/>`_. Many of them are linked to `journal publications <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
+	* Please see the official `jupyter <http://jupyter.org>`_ website for more information about notebooks or consider watching this `youtube video <https://www.youtube.com/watch?v=HW29067qVWk>`_.
 * See our `examples <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html>`_ to get started on using and writing your own pycroscopy functions
 * Videos and other tutorials are available at the `Institute For Functional Imaging of Materials <http://ifim.ornl.gov/resources.html>`_ 
 * For more information about our functions and classes, please see our `API <https://pycroscopy.github.io/pycroscopy/pycroscopy.html>`_
