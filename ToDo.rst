@@ -6,7 +6,7 @@ v 1.0 goals
 2. DONE - good utilities for interrogating data - pycro data
 3. partially done - good documentation for both users and developers
 
-  * Need more on dealing with data + plot_utils tour
+  * Need more on dealing with data + slight improvements to plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
 4. mostly done - generic visualizer
 5. settle on a structure for process and analysis - moderate ~ 1 day
@@ -30,12 +30,12 @@ Documentation
 Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * A tour of what is where and why
+
+ * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 * A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
   
   * chunking the main dataset
 * A tour of the io_utils functions since these functions need data to show / explain them.
-* A tour of plot_utils
-* pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
 * How to write your own analysis class based on the (to-be simplified) Model class
 * Links to tutorials on how to use pycharm, Git, 
 
