@@ -37,9 +37,9 @@ class GIVBayesian(Process):
             Frequency of the excitation waveform
         gain : uint
             Gain setting on current amplifier (typically 7-9)
-        num_x_steps : uint (Optional, default = 500)
+        num_x_steps : uint (Optional, default = 250)
             Number of steps for the inferred results. Note: this may be end up being slightly different from specified.
-        r_extra : float (Optional, default = 220 [Ohms])
+        r_extra : float (Optional, default = 110 [Ohms])
             Extra resistance in the RC circuit that will provide correct current and resistance values
         kwargs : dict
             Other parameters specific to the Process class and nuanced bayesian_inference parameters
