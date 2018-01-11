@@ -6,7 +6,7 @@ Created on 7/17/16 10:08 AM
 from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 import numpy as np
-from .model import Model
+from .fitter import Fitter
 from ..io.pycro_data import PycroDataset
 from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
@@ -24,7 +24,7 @@ sho32 = np.dtype({'names': field_names,
                   'formats': [np.float32 for name in field_names]})
 
 
-class BESHOmodel(Model):
+class BESHOfitter(Fitter):
     """
     Analysis of Band excitation spectra with harmonic oscillator responses.
     
@@ -45,7 +45,7 @@ class BESHOmodel(Model):
     """
 
     def __init__(self, h5_main, variables=['Frequency'], parallel=True):
-        super(BESHOmodel, self).__init__(h5_main, variables, parallel)
+        super(BESHOfitter, self).__init__(h5_main, variables, parallel)
         self.step_start_inds = None
         self.is_reshapable = True
         self.num_udvs_steps = None
@@ -230,7 +230,7 @@ class BESHOmodel(Model):
             self.fit = reshapeToNsteps(self.fit, self.num_udvs_steps)
 
         # ask super to take care of the rest, which is a standardized operation
-        super(BESHOmodel, self)._set_results(is_guess)
+        super(BESHOfitter, self)._set_results(is_guess)
 
     def _set_guess(self, h5_guess):
         """
@@ -304,7 +304,7 @@ class BESHOmodel(Model):
         if strategy == 'complex_gaussian':
             freq_vec = self.freq_vec
             options.update({'frequencies': freq_vec})
-        super(BESHOmodel, self).do_guess(processors=processors, strategy=strategy, options=options)
+        super(BESHOfitter, self).do_guess(processors=processors, strategy=strategy, options=options)
 
         return self.h5_guess
 
@@ -362,9 +362,9 @@ class BESHOmodel(Model):
         self._start_pos = 0
         obj_func['xvals'] = self.freq_vec
 
-        super(BESHOmodel, self).do_fit(processors=processors, solver_type=solver_type,
-                                       solver_options=solver_options,
-                                       obj_func=obj_func)
+        super(BESHOfitter, self).do_fit(processors=processors, solver_type=solver_type,
+                                        solver_options=solver_options,
+                                        obj_func=obj_func)
         return self.h5_fit
 
     def _reformat_results(self, results, strategy='wavelet_peaks', verbose=False):
