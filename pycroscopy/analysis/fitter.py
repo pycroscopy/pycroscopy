@@ -17,7 +17,7 @@ from ..io.io_utils import getAvailableMem, recommendCores
 from .optimize import Optimize
 
 
-class Model(object):
+class Fitter(object):
     """
     Encapsulates the typical routines performed during model-dependent analysis of data.
     This abstract class should be extended to cover different types of imaging modalities.
