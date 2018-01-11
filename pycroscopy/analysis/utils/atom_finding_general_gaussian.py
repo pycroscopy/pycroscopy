@@ -4,25 +4,17 @@
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
 import numpy as np
 from scipy.optimize import least_squares
 import itertools as itt
 import multiprocessing as mp
 import time as tm
-from _warnings import warn
-from sklearn.neighbors import KNeighborsClassifier
-import h5py
-
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import sys
 
-from ...io.io_utils import recommendCores, realToCompound
+from ...io.io_utils import recommendCores
 from ...io.microdata import MicroDataset, MicroDataGroup
 from ...io.io_hdf5 import ioHDF5
 from ...viz import plot_utils
-from ..model import Model
 
 
 def do_fit(single_parm):
