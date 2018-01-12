@@ -14,6 +14,7 @@ from ..io_utils import realToCompound, compound_to_scalar
 from .utils import build_ind_val_dsets, generate_dummy_main_parms
 from .translator import Translator
 from ..microdata import MicroDataGroup, MicroDataset
+from ..pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_model import sho32
@@ -135,7 +136,7 @@ class FakeBEPSGenerator(Translator):
                   data_type='BEPSData', mode='DC modulation mode', field_mode='in and out-of-field',
                   n_cycles=1, FORC_cycles=1, FORC_repeats=1, loop_a=1, loop_b=4,
                   cycle_frac='full', image_folder=beps_image_folder, bin_factor=None,
-                  bin_func=np.mean, image_type='.tif'):
+                  bin_func=np.mean, image_type='.tif', simple_coefs=False):
         """
 
         Parameters
@@ -196,6 +197,9 @@ class FakeBEPSGenerator(Translator):
             numpy.mean.
         image_type : str
             File extension of images to be read.  Default '.tif'
+        simple_coefs : bool
+            Should a simpler coefficient generation be used.  Ensures loops, but all loops are identical.
+            Default False
 
         Returns
         -------
@@ -227,6 +231,7 @@ class FakeBEPSGenerator(Translator):
         self.n_spec_bins = n_bins * self.n_sho_bins
         self.h5_path = h5_path
         self.image_ext = image_type
+        self.simple_coefs = simple_coefs
 
         '''
         Check if a bin_factor is given.  Set up binning objects if it is.
@@ -283,9 +288,33 @@ class FakeBEPSGenerator(Translator):
                                                        loop_fit32),
                                         [1, int(self.n_loops / self.n_fields)])
 
+        self.h5_file.flush()
+
         self._calc_raw()
 
         self.h5_file.flush()
+
+        # Test in-field
+        # positions = np.random.randint(0, coef_mat.shape[0], 100)
+        # for pos in positions:
+        #     is_close = np.all(np.isclose(self.h5_loop_fit[pos, 0].tolist(), coef_IF_mat[pos]))
+        #     if is_close:
+        #         print('Close for {}'.format(pos))
+        #     else:
+        #         print('Not close for {}'.format(pos))
+        #         for h5_coef, coef in zip(self.h5_loop_fit[pos, 0].tolist(), coef_IF_mat[pos]):
+        #             print('h5: {}, \t mat: {}'.format(h5_coef, coef))
+
+        # Test out-of-field
+        # positions = np.random.randint(0, coef_mat.shape[0], 100)
+        # for pos in positions:
+        #     is_close = np.all(np.isclose(self.h5_loop_fit[pos, 1].tolist(), coef_OF_mat[pos]))
+        #     if is_close:
+        #         print('Close for {}'.format(pos))
+        #     else:
+        #         print('Not close for {}'.format(pos))
+        #         for h5_coef, coef in zip(self.h5_loop_fit[pos, 1].tolist(), coef_OF_mat[pos]):
+        #             print('h5: {}, \t mat: {}'.format(h5_coef, coef))
 
         self.h5_file.close()
 
@@ -435,7 +464,7 @@ class FakeBEPSGenerator(Translator):
         sho_grp = MicroDataGroup('Raw_Data-SHO_Fit_', parent=h5_chan_grp.name)
 
         # Build the Spectroscopic datasets for the SHO Guess and Fit
-        sho_spec_starts = np.where(h5_spec_inds[0] == 0)[0]
+        sho_spec_starts = np.where(h5_spec_inds[h5_spec_inds.attrs['Frequency']].squeeze() == 0)[0]
         sho_spec_labs = get_attr(h5_spec_inds, 'labels')
         ds_sho_spec_inds, ds_sho_spec_vals = buildReducedSpec(h5_spec_inds,
                                                               h5_spec_vals,
@@ -483,7 +512,7 @@ class FakeBEPSGenerator(Translator):
         loop_grp = MicroDataGroup('Fit-Loop_Fit_', parent=h5_sho_fit.parent.name)
 
         # Build the Spectroscopic datasets for the loops
-        loop_spec_starts = np.where(h5_sho_spec_inds[0] == 0)[0]
+        loop_spec_starts = np.where(h5_sho_spec_inds[h5_sho_spec_inds.attrs['DC_Offset']].squeeze() == 0)[0]
         loop_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
         ds_loop_spec_inds, ds_loop_spec_vals = buildReducedSpec(h5_sho_spec_inds,
                                                                 h5_sho_spec_vals,
@@ -525,11 +554,11 @@ class FakeBEPSGenerator(Translator):
         link_as_main(h5_loop_fit, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)
         link_as_main(h5_loop_guess, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)
 
-        self.h5_raw = h5_raw
-        self.h5_sho_guess = h5_sho_guess
-        self.h5_sho_fit = h5_sho_fit
-        self.h5_loop_guess = h5_loop_guess
-        self.h5_loop_fit = h5_loop_fit
+        self.h5_raw = PycroDataset(h5_raw)
+        self.h5_sho_guess = PycroDataset(h5_sho_guess)
+        self.h5_sho_fit = PycroDataset(h5_sho_fit)
+        self.h5_loop_guess = PycroDataset(h5_loop_guess)
+        self.h5_loop_fit = PycroDataset(h5_loop_fit)
         self.h5_spec_vals = h5_spec_vals
         self.h5_spec_inds = h5_spec_inds
         self.h5_sho_spec_inds = h5_sho_spec_inds
@@ -572,10 +601,13 @@ class FakeBEPSGenerator(Translator):
         # build loop coef matrix
         coef_mat = np.zeros([self.n_pixels, 11])
         for coef_ind in range(11):
-            coef_img = image_list[coef_ind]
-            coef_min = coef_limits[coef_ind][0]
-            coef_max = coef_limits[coef_ind][1]
-            coef_img = coef_img * (coef_max - coef_min) + coef_min
+            if self.simple_coefs:
+                coef_img = np.mean(coef_limits[coef_ind])
+            else:
+                coef_img = image_list[coef_ind]
+                coef_min = coef_limits[coef_ind][0]
+                coef_max = coef_limits[coef_ind][1]
+                coef_img = coef_img * (coef_max - coef_min) + coef_min
 
             coef_mat[:, coef_ind] = coef_img.flatten()
 
@@ -605,10 +637,11 @@ class FakeBEPSGenerator(Translator):
         None
 
         """
+        # TODO: Fix sho parameter generation
         vdc_vec = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['DC_Offset']].squeeze()
-        field = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['Field']].squeeze()
-        of_inds = field == 0
-        if_inds = field == 1
+        sho_field = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['Field']].squeeze()
+        sho_of_inds = sho_field == 0
+        sho_if_inds = sho_field == 1
         # determine how many pixels can be read at once
         mem_per_pix = vdc_vec.size * np.float32(0).itemsize
         free_mem = self.max_ram - vdc_vec.size * vdc_vec.dtype.itemsize * 6
@@ -616,15 +649,16 @@ class FakeBEPSGenerator(Translator):
         batches = gen_batches(self.n_pixels, batch_size)
 
         for pix_batch in batches:
-            R_OF = np.array([loop_fit_function(vdc_vec[of_inds], coef) for coef in coef_OF_mat[pix_batch]])
-            R_IF = np.array([loop_fit_function(vdc_vec[if_inds], coef) for coef in coef_IF_mat[pix_batch]])
-            R_mat = np.stack([R_IF, R_OF], axis=2).reshape(-1, self.n_sho_bins)
+            R_OF = np.array([loop_fit_function(vdc_vec[sho_of_inds], coef) for coef in coef_OF_mat[pix_batch]])
+            R_IF = np.array([loop_fit_function(vdc_vec[sho_if_inds], coef) for coef in coef_IF_mat[pix_batch]])
+            R_mat = np.hstack([R_IF[:, np.newaxis, :], R_OF[:, np.newaxis, :]])
+            R_mat = np.rollaxis(R_mat, 1, R_mat.ndim).reshape(R_mat.shape[0], -1)
 
             del R_OF, R_IF
 
             amp = np.abs(R_mat)
             resp = coef_OF_mat[pix_batch, 9, None] * np.ones_like(R_mat)
-            q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat)
+            q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat)*10
             phase = np.sign(R_mat) * np.pi / 2
 
             self.h5_sho_fit[pix_batch, :] = realToCompound(np.hstack([amp,

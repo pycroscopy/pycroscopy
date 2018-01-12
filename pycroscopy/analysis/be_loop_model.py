@@ -538,14 +538,22 @@ class BELoopModel(Model):
         has_forcs = 'FORC' in sho_spec_labels or 'FORC_Cycle' in sho_spec_labels
         if has_forcs:
             forc_name = 'FORC' if 'FORC' in sho_spec_labels else 'FORC_Cycle'
-            forc_pos = np.argwhere(sho_spec_labels == forc_name)[0][0]
+            try:
+                forc_pos = sho_spec_labels.index(forc_name)
+            except Exception:
+                raise
+            # forc_pos = np.argwhere(sho_spec_labels == forc_name)[0][0]
             self._num_forcs = np.unique(self._sho_spec_inds[forc_pos]).size
             all_spec_dims.remove(forc_pos)
 
             # Remove FORC_repeats
             has_forc_repeats = 'FORC_repeat' in sho_spec_labels
             if has_forc_repeats:
-                forc_repeat_pos = np.argwhere(sho_spec_labels == 'FORC_repeat')[0][0]
+                try:
+                    forc_repeat_pos = sho_spec_labels.index('FORC_repeat')
+                except Exception:
+                    raise
+                # forc_repeat_pos = np.argwhere(sho_spec_labels == 'FORC_repeat')[0][0]
                 self._num_forc_repeats = np.unique(self._sho_spec_inds[forc_repeat_pos]).size
                 all_spec_dims.remove(forc_repeat_pos)
 
@@ -779,6 +787,8 @@ class BELoopModel(Model):
             if dim == self._fit_dim:
                 fit_dim_slice.append(slice(None))
                 fit_dim_slice[0] = idim
+            elif dim in ['FORC', 'FORC_repeat']:
+                continue
             else:
                 fit_dim_slice.append(slice(0, 1))
 
