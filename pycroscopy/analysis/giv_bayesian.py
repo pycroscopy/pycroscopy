@@ -10,13 +10,13 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import time as tm
 import numpy as np
-from .process import Process, parallel_compute
+from ..processing.process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
 from ..io.io_utils import real_to_compound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
-from .giv_utils import do_bayesian_inference
+from .utils.giv_utils import do_bayesian_inference
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})

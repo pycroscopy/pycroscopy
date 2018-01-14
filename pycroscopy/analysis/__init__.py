@@ -29,5 +29,7 @@ from .fitter import Fitter
 from .optimize import Optimize
 from . import fit_methods
 from .fit_methods import *
-__all__ = ['GuessMethods', 'Fitter', 'BESHOfitter', 'BELoopFitter', 'utils', 'Optimize', 'fit_methods']
+from .giv_bayesian import GIVBayesian
+
+__all__ = ['GuessMethods', 'Fitter', 'BESHOfitter', 'BELoopFitter', 'utils', 'Optimize', 'fit_methods', 'GIVBayesian']
 __all__ += utils.__all__
