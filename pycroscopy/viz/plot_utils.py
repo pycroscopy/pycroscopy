@@ -12,7 +12,6 @@ import inspect
 import os
 import sys
 from warnings import warn
-
 import h5py
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -24,21 +23,27 @@ from scipy.signal import blackman
 
 from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
 
-# mpl.rcParams.keys()  # gets all allowable keys
-mpl.rc('figure', figsize=(5,5))
-mpl.rc('lines', linewidth=2)
-mpl.rc('axes', labelsize=16, titlesize=16)
-mpl.rc('figure', titlesize=20)
-mpl.rc('font', size=14) # global font size
-mpl.rc('legend', fontsize=16, fancybox=True)
-mpl.rc('xtick.major', size=6)
-mpl.rc('xtick.minor', size=4)
-# mpl.rcParams['xtick.major.size'] = 6
-
 if sys.version_info.major == 3:
     unicode = str
 
 default_cmap = plt.cm.viridis
+
+
+def use_nice_plot_params():
+    """
+    Resets default plot parameters such as figure size, font sizes etc. to values better suited for scientific
+    publications
+    """
+    # mpl.rcParams.keys()  # gets all allowable keys
+    mpl.rc('figure', figsize=(5.5, 5))
+    mpl.rc('lines', linewidth=2)
+    mpl.rc('axes', labelsize=16, titlesize=16)
+    mpl.rc('figure', titlesize=20)
+    mpl.rc('font', size=14)  # global font size
+    mpl.rc('legend', fontsize=16, fancybox=True)
+    mpl.rc('xtick.major', size=6)
+    mpl.rc('xtick.minor', size=4)
+    # mpl.rcParams['xtick.major.size'] = 6
 
 
 def set_tick_font_size(axes, font_size):
