@@ -21,6 +21,14 @@ __all__ = ['getAvailableMem', 'getTimeStamp', 'transformToTargetType', 'transfor
 
 
 def check_ssh():
+    """
+    Checks whether or not the python kernel is running locally (False) or remotely (True)
+
+    Returns
+    -------
+    output : bool
+        Whether or not the kernel is running over SSH (remote machine)
+    """
     return 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
 
 
