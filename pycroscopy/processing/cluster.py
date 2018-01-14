@@ -13,7 +13,7 @@ from scipy.spatial.distance import pdist
 from .process import Process
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType, to_ranges
+from ..io.io_utils import check_dtype, transform_to_target_dtype, to_ranges
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -156,7 +156,7 @@ class Cluster(Process):
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
-            mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
+            mean_resp[clust_ind] = transform_to_target_dtype(avg_data, self.h5_main.dtype)
         return mean_resp
 
     def _get_component_slice(self, components):

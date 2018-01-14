@@ -17,7 +17,7 @@ from .process import Process
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, \
     getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes, copyAttributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType, getAvailableMem
+from ..io.io_utils import check_dtype, transform_to_target_dtype, get_available_memory
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 
@@ -101,7 +101,7 @@ class SVD(Process):
         ds_U = MicroDataset('U', data=np.float32(U), chunking=u_chunks)
         del U
 
-        V = transformToTargetType(V, self.h5_main.dtype)
+        V = transform_to_target_dtype(V, self.h5_main.dtype)
         v_chunks = calc_chunks(V.shape, self.h5_main.dtype.itemsize)
         ds_V = MicroDataset('V', data=V, chunking=v_chunks)
         del V
@@ -251,7 +251,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         cores = max_cores
 
-    max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * getAvailableMem())
+    max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * get_available_memory())
     if cores != 1:
         max_memory = int(max_memory / 2)
 
@@ -300,7 +300,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     for ibatch, batch in enumerate(batch_slices):
         rebuild[batch, :] += np.dot(h5_U[batch, comp_slice], ds_V)
 
-    rebuild = transformToTargetType(rebuild, h5_V.dtype)
+    rebuild = transform_to_target_dtype(rebuild, h5_V.dtype)
 
     print('Completed reconstruction of data from SVD results.  Writing to file.')
     '''

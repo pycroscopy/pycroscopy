@@ -17,7 +17,7 @@ from sklearn.utils import gen_batches
 from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main, \
     check_for_old
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import getAvailableMem
+from ..io.io_utils import get_available_memory
 from ..io.microdata import MicroDataGroup, MicroDataset
 from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
 from .svd_utils import get_component_slice
@@ -68,7 +68,7 @@ class ImageWindow(object):
             cores = max_cores
         self.cores = int(cores)
 
-        self.max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * getAvailableMem())
+        self.max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * get_available_memory())
         if self.cores != 1:
             self.max_memory = int(self.max_memory / 2)
 

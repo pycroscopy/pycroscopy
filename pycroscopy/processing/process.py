@@ -11,7 +11,7 @@ import joblib
 
 from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import recommendCores, getAvailableMem
+from ..io.io_utils import recommend_cpu_cores, get_available_memory
 
 
 def calc_func(some_func, args):
@@ -151,10 +151,9 @@ class Process(object):
             self._cores = psutil.cpu_count() - 2
         else:
             cores = int(abs(cores))
-            self._cores = min(psutil.cpu_count(), cores)
+            self._cores = min(psutil.cpu_count(), max(1, cores))
 
-        self._cores = max(1, self._cores)
-        _max_mem_mb = getAvailableMem() / 1E6  # in MB
+        _max_mem_mb = get_available_memory() / 1E6  # in MB
 
         self._max_mem_mb = min(_max_mem_mb, mem)
 
@@ -284,8 +283,8 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=l
     if not callable(func):
         raise TypeError('Function argument is not callable')
 
-    cores = recommendCores(data.shape[0], requested_cores=cores,
-                           lengthy_computation=lengthy_computation)
+    cores = recommend_cpu_cores(data.shape[0], requested_cores=cores,
+                                lengthy_computation=lengthy_computation)
 
     if cores > 1:
         values = [joblib.delayed(func)(x, *func_args, **func_kwargs) for x in data]

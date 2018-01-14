@@ -21,7 +21,7 @@ from .utils.tree import ClusterTree
 from .be_sho_model import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..io.io_utils import realToCompound, compound_to_scalar
+from ..io.io_utils import real_to_compound, compound_to_scalar
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
     get_attr
@@ -1079,7 +1079,7 @@ class BELoopModel(Model):
             temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
             # convert to the appropriate dtype as well:
             r2 = 1 - np.sum(np.abs(loop_fit_results[clust_id][0].fun ** 2))
-            guess_parms[pix_inds] = realToCompound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
+            guess_parms[pix_inds] = real_to_compound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
 
         return guess_parms
 
@@ -1144,7 +1144,7 @@ class BELoopModel(Model):
 
         if strategy in ['BE_LOOP']:
             temp = np.array([np.hstack([result.x, result.fun]) for result in results])
-            temp = realToCompound(temp, loop_fit32)
+            temp = real_to_compound(temp, loop_fit32)
         return temp
 
 

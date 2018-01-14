@@ -15,9 +15,9 @@ import h5py
 import numpy as np
 import itertools
 
-__all__ = ['getAvailableMem', 'getTimeStamp', 'transformToTargetType', 'transformToReal',
-           'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
-           'recommendCores', 'uiGetFile']
+__all__ = ['get_available_memory', 'get_time_stamp', 'transform_to_target_dtype', 'transform_to_real',
+           'complex_to_float', 'compound_to_scalar', 'real_to_complex', 'real_to_compound', 'check_dtype',
+           'recommend_cpu_cores', 'uiGetFile']
 
 
 def check_ssh():
@@ -86,7 +86,7 @@ def uiGetFile(file_filter='H5 file (*.h5)', caption='Select File'):
     return str(path)
 
 
-def getTimeStamp():
+def get_time_stamp():
     """
     Teturns the current date and time as a string formatted as:
     Year_Month_Dat-Hour_Minute_Second
@@ -101,7 +101,7 @@ def getTimeStamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
-def getAvailableMem():
+def get_available_memory():
     """
     Returns the available memory
 
@@ -124,7 +124,7 @@ def getAvailableMem():
     return mem
 
 
-def recommendCores(num_jobs, requested_cores=None, lengthy_computation=False):
+def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=False):
     """
     Decides the number of cores to use for parallel computing
 
@@ -265,7 +265,7 @@ def check_dtype(ds_main):
     return func, is_complex, is_compound, n_features, n_samples, type_mult
 
 
-def realToComplex(ds_real):
+def real_to_complex(ds_real):
     """
     Puts the real and imaginary sections together to make complex dataset
 
@@ -284,7 +284,7 @@ def realToComplex(ds_real):
     return ds_real[:, :int(0.5 * ds_real.shape[1])] + 1j * ds_real[:, int(0.5 * ds_real.shape[1]):]
 
 
-def realToCompound(ds_real, compound_type):
+def real_to_compound(ds_real, compound_type):
     """
     Converts a real dataset to a compound dataset of the provided compound d-type
 
@@ -314,7 +314,7 @@ def realToCompound(ds_real, compound_type):
     return np.squeeze(ds_compound)
 
 
-def transformToTargetType(ds_real, new_dtype):
+def transform_to_target_dtype(ds_real, new_dtype):
     """
     Transforms real data into the target dtype
 
@@ -331,14 +331,14 @@ def transformToTargetType(ds_real, new_dtype):
         Data of the target data type
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
-        return realToComplex(ds_real)
+        return real_to_complex(ds_real)
     elif len(new_dtype) > 0:
-        return realToCompound(ds_real, new_dtype)
+        return real_to_compound(ds_real, new_dtype)
     else:
         return new_dtype.type(ds_real)
 
 
-def transformToReal(ds_main):
+def transform_to_real(ds_main):
     """
     Transforms real data into the target dtype
 

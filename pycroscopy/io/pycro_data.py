@@ -12,7 +12,7 @@ from warnings import warn
 import numpy as np
 from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
-from .io_utils import transformToReal
+from .io_utils import transform_to_real
 # from ..viz.jupyter_utils import simple_ndim_visualizer
 
 
@@ -246,7 +246,7 @@ class PycroDataset(h5py.Dataset):
             raise ValueError('Unable to reshape data to N-dimensional form.')
 
         if as_scalar:
-            self.__n_dim_data = transformToReal(n_dim_data)
+            self.__n_dim_data = transform_to_real(n_dim_data)
         else:
             self.__n_dim_data = n_dim_data
 
@@ -293,7 +293,7 @@ class PycroDataset(h5py.Dataset):
                                                h5_spec=spec_inds)
 
         if as_scalar:
-            return transformToReal(data_slice), success
+            return transform_to_real(data_slice), success
         else:
             return data_slice, success
 
