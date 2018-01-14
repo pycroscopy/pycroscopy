@@ -1535,3 +1535,70 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
                                        figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
                                        **kwargs)
     return fig, axes
+
+
+def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
+    """
+    Plots the position averaged spectrogram
+
+    Parameters
+    ------------
+    p_hist : 2D numpy array
+        histogram data arranged as [physical quantity, frequency bin]
+    p_hbins : 1D numpy array
+        BE frequency that serves as the X axis of the plot
+    title : String
+        Plot group name
+    figure_path : String / Unicode
+        Absolute path of the file to write the figure to
+
+    Returns
+    ---------
+    fig : Matplotlib.pyplot figure
+        Figure handle
+    """
+
+    base_fig_size = 7
+    h_fig = base_fig_size
+    w_fig = base_fig_size * 4
+
+    fig = plt.figure(figsize=(w_fig, h_fig))
+    fig.suptitle(title)
+    iplot = 0
+
+    p_Nx, p_Ny = np.amax(p_hbins, axis=1) + 1
+
+    p_hist = np.reshape(p_hist, (4, p_Ny, p_Nx))
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Amp (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[0])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Phase (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[1])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Real (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[2])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Imag (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[3])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    if figure_path:
+        plt.savefig(figure_path, format='png')
+
+    return fig
