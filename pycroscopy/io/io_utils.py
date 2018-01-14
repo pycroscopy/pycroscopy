@@ -161,10 +161,10 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
         if requested_cores > 1 and recom_chunks < 10:
             recom_chunks = 20
             # intelligently set the cores now.
-            requested_cores = min(requested_cores, int(num_jobs / recom_chunks))
+            requested_cores = max(0, min(requested_cores, int(num_jobs / recom_chunks)))
             # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
-    return requested_cores
+    return int(requested_cores)
 
 
 def complex_to_float(ds_main):
