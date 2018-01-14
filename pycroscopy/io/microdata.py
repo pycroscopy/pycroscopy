@@ -12,7 +12,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import socket
 from warnings import warn
 
-from .io_utils import getTimeStamp
+from .io_utils import get_time_stamp
 
 
 class MicroData(object):
@@ -57,7 +57,7 @@ class MicroDataGroup(MicroData):
         super(MicroDataGroup, self).__init__(name, parent)
         self.children = list()
         self.attrs['machine_id'] = socket.getfqdn()
-        self.attrs['timestamp'] = getTimeStamp()
+        self.attrs['timestamp'] = get_time_stamp()
 
         if name != '':
             self.indexed = self.name[-1] == '_'

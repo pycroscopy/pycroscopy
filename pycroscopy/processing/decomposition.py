@@ -13,7 +13,7 @@ import sklearn.decomposition as dec
 from .process import Process
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType
+from ..io.io_utils import check_dtype, transform_to_target_dtype
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -79,8 +79,8 @@ class Decomposition(Process):
         """
         self._fit()
         self._transform()
-        return self._write_results_chunk(transformToTargetType(self.estimator.components_, self.h5_main.dtype),
-                                 self.projection)
+        return self._write_results_chunk(transform_to_target_dtype(self.estimator.components_, self.h5_main.dtype),
+                                         self.projection)
 
     def _fit(self):
         """

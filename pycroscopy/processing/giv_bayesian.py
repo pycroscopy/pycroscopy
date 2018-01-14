@@ -12,7 +12,7 @@ import time as tm
 import numpy as np
 from .process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.io_utils import realToCompound
+from ..io.io_utils import real_to_compound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
@@ -229,7 +229,7 @@ class GIVBayesian(Process):
             self.h5_new_spec_vals[0, :] = full_results['x']  # Technically this needs to only be done once
 
         pos_slice = slice(self._start_pos, self._end_pos)
-        self.h5_cap[pos_slice] = np.atleast_2d(realToCompound(cap_mat, cap_dtype)).T
+        self.h5_cap[pos_slice] = np.atleast_2d(real_to_compound(cap_mat, cap_dtype)).T
         self.h5_variance[pos_slice] = r_var_mat
         self.h5_resistance[pos_slice] = r_inf_mat
         self.h5_i_corrected[pos_slice] = i_cor_sin_mat

@@ -13,7 +13,7 @@ from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..io.pycro_data import PycroDataset
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import getAvailableMem, recommendCores
+from ..io.io_utils import get_available_memory, recommend_cpu_cores
 from .optimize import Optimize
 
 
@@ -91,7 +91,7 @@ class Fitter(object):
         if self._maxCpus == 1:
             self._parallel = False
 
-        self._maxMemoryMB = getAvailableMem() / 1024 ** 2  # in Mb
+        self._maxMemoryMB = get_available_memory() / 1024 ** 2  # in Mb
 
         self._maxDataChunk = int(self._maxMemoryMB / self._maxCpus)
 
@@ -263,7 +263,7 @@ class Fitter(object):
 
         self._start_pos = 0
 
-        processors = recommendCores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
 
         self._get_data_chunk()
         gm = GuessMethods()
@@ -333,7 +333,7 @@ class Fitter(object):
             print("You need to guess before fitting\n")
             return None
 
-        processors = recommendCores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
 
         self._start_pos = 0
         self._get_guess_chunk()

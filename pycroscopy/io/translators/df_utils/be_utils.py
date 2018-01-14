@@ -18,7 +18,7 @@ import xlrd as xlreader
 from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
 from ...io_hdf5 import ioHDF5
-from ...io_utils import getAvailableMem, recommendCores
+from ...io_utils import get_available_memory, recommend_cpu_cores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.proc_utils import buildHistogram
@@ -232,7 +232,7 @@ def requires_conjugate(chosen_spectra, default_q=10):
     opt = Optimize(data=chosen_spectra)
 
     fitguess_results = opt.computeGuess(strategy='complex_gaussian',
-                                        processors=recommendCores(chosen_spectra.shape[0]),
+                                        processors=recommend_cpu_cores(chosen_spectra.shape[0]),
                                         options={'frequencies': np.arange(chosen_spectra.shape[1])})
 
     q_results = np.array(fitguess_results)[:, 2]
@@ -1231,7 +1231,7 @@ class BEHistogram:
         print('Adding Histograms to file {}'.format(h5_file.name))
         print('Path to HDF5 file is {}'.format(hdf.path))
 
-        max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * getAvailableMem())
+        max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
 
         h5_main = getDataSet(h5_file, 'Raw_Data')
         h5_udvs = getDataSet(h5_file, 'UDVS')
@@ -1319,7 +1319,7 @@ class BEHistogram:
 
         """
 
-        free_mem = getAvailableMem()
+        free_mem = get_available_memory()
         if debug:
             print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * free_mem)
@@ -1409,7 +1409,7 @@ class BEHistogram:
             labels for the hist_indices array
 
         """
-        free_mem = getAvailableMem()
+        free_mem = get_available_memory()
         if debug:
             print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb, 0.75 * free_mem)

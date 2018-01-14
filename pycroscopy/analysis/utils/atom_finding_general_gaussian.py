@@ -11,7 +11,7 @@ import multiprocessing as mp
 import time as tm
 import matplotlib.pyplot as plt
 
-from ...io.io_utils import recommendCores
+from ...io.io_utils import recommend_cpu_cores
 from ...io.microdata import MicroDataset, MicroDataGroup
 from ...io.io_hdf5 import ioHDF5
 from ...viz import plot_utils
@@ -237,7 +237,7 @@ class Gauss_Fit(object):
 
         t_start = tm.time()
         if num_cores is None:
-            num_cores = recommendCores(self.num_atoms, requested_cores=num_cores, lengthy_computation=False)
+            num_cores = recommend_cpu_cores(self.num_atoms, requested_cores=num_cores, lengthy_computation=False)
 
         print('Setting up guesses')
         self.guess_parms = []

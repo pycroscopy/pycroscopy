@@ -9,7 +9,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import abc
 from os import path, remove
-from ..io_utils import getAvailableMem
+from ..io_utils import get_available_memory
 from ..microdata import MicroDataGroup, MicroDataset
 from .utils import generate_dummy_main_parms
 from ..hdf_utils import getH5DsetRefs, linkRefs
@@ -35,7 +35,7 @@ class Translator(object):
         -------
         Translator object
         """
-        self.max_ram = min(max_mem_mb*1024**2, 0.75*getAvailableMem())
+        self.max_ram = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
 
     @abc.abstractmethod
     def translate(self, filepath):

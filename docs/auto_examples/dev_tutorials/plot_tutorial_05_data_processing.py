@@ -180,7 +180,7 @@ class ShoGuess(px.Process):
         """
         # converting from a list to a 2D numpy array
         self._results = np.array(self._results, dtype=np.float32)
-        self.h5_guess[:, 0] = px.io_utils.realToCompound(self._results, sho32)
+        self.h5_guess[:, 0] = px.io_utils.real_to_compound(self._results, sho32)
 
         # Now update the start position
         self._start_pos = self._end_pos

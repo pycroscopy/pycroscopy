@@ -17,7 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from ...io.io_utils import recommendCores, realToCompound
+from ...io.io_utils import recommend_cpu_cores, real_to_compound
 from ...io.microdata import MicroDataset, MicroDataGroup
 from ...io.io_hdf5 import ioHDF5
 
@@ -233,7 +233,7 @@ def fit_atom_positions_parallel(parm_dict, fitting_parms, num_cores=None):
     parm_dict['verbose'] = False
     all_atom_guesses = parm_dict['atom_pos_guess']
     t_start = tm.time()
-    num_cores = recommendCores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
+    num_cores = recommend_cpu_cores(all_atom_guesses.shape[0], requested_cores=num_cores, lengthy_computation=False)
     if num_cores > 1:
         pool = mp.Pool(processes=num_cores)
         parm_list = itt.izip(range(all_atom_guesses.shape[0]), itt.repeat(parm_dict), itt.repeat(fitting_parms))
@@ -323,8 +323,8 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     for atom_ind, single_atom_results in enumerate(fitting_results):
         guess_coeff, fit_coeff = single_atom_results
         num_neighbors_used = guess_coeff.shape[0]
-        guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(realToCompound(guess_coeff, guess_parms.dtype))
-        fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(realToCompound(fit_coeff, guess_parms.dtype))
+        guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(guess_coeff, guess_parms.dtype))
+        fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(fit_coeff, guess_parms.dtype))
 
     ds_atom_guesses = MicroDataset('Guess', data=guess_parms)
     ds_atom_fits = MicroDataset('Fit', data=fit_parms)
