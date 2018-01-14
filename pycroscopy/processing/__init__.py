@@ -33,11 +33,9 @@ from . import cluster
 from .cluster import Cluster
 from . import image_processing
 from .image_processing import ImageWindow
-from . import giv_utils
 from . import process
 from .process import Process
-from .giv_bayesian import GIVBayesian
 from .signal_filter import SignalFilter
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'histogram.py', 'svd_utils',
-           'giv_utils', 'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'GIVBayesian', 'SignalFilter']
+           'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'SignalFilter']
