@@ -9,9 +9,11 @@ Created on Thu May 05 13:29:12 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import inspect
+import os
 import sys
 from warnings import warn
 import h5py
+import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1282,3 +1284,166 @@ def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full
     fig.axes[0].set_ylabel('Distance')
 
     return fig
+
+
+def save_fig_filebox_button(fig, filename):
+    """
+    Create ipython widgets to allow the user to save a figure to the
+    specified file.
+
+    Parameters
+    ----------
+    fig : matplotlib.Figure
+        The figure to be saved.
+    filename : str
+        The filename the figure should be saved to
+
+    Returns
+    -------
+    widget_box : ipywidgets.HBox
+        Widget box holding the text entry and save button
+
+    """
+    filename = os.path.abspath(filename)
+    file_dir, filename = os.path.split(filename)
+
+    name_box = widgets.Text(value=filename,
+                            placeholder='Type something',
+                            description='Output Filename:',
+                            disabled=False,
+                            layout={'width': '50%'})
+    save_button = widgets.Button(description='Save figure')
+
+    def _save_fig():
+        save_path = os.path.join(file_dir, filename)
+        fig.save_fig(save_path, dpi='figure')
+        print('Figure saved to "{}".'.format(save_path))
+
+    widget_box = widgets.HBox([name_box, save_button])
+
+    save_button.on_click(_save_fig)
+
+    return widget_box
+
+
+def export_fig_data(fig, filename, include_images=False):
+    """
+    Export the data of all plots in the figure `fig` to a plain text file.
+
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        The figure containing the data to be exported
+    filename : str
+        The filename of the output text file
+    include_images : bool
+        Should images in the figure also be exported
+
+    Returns
+    -------
+
+    """
+    # Get the data from the figure
+    axes = fig.get_axes()
+    axes_dict = dict()
+    for ax in axes:
+        ax_dict = dict()
+
+        ims = ax.get_images()
+        if len(ims) != 0 and include_images:
+            im_dict = dict()
+
+            for im in ims:
+                # Image data
+                im_lab = im.get_label()
+                im_dict[im_lab] = im.get_array().data
+
+                # X-Axis
+                x_ax = ax.get_xaxis()
+                x_lab = x_ax.label.get_label()
+                if x_lab == '':
+                    x_lab = 'X'
+
+                im_dict[im_lab + x_lab] = x_ax.get_data_interval()
+
+                # Y-Axis
+                y_ax = ax.get_yaxis()
+                y_lab = y_ax.label.get_label()
+                if y_lab == '':
+                    y_lab = 'Y'
+
+                im_dict[im_lab + y_lab] = y_ax.get_data_interval()
+
+            ax_dict['Images'] = im_dict
+
+        lines = ax.get_lines()
+        if len(lines) != 0:
+            line_dict = dict()
+
+            xlab = ax.get_xlabel()
+            ylab = ax.get_ylabel()
+
+            if xlab == '':
+                xlab = 'X Data'
+            if ylab == '':
+                ylab = 'Y Data'
+
+            for line in lines:
+                line_dict[line.get_label()] = {xlab: line.get_xdata(),
+                                               ylab: line.get_ydata()}
+
+            ax_dict['Lines'] = line_dict
+
+        if ax_dict != dict():
+            axes_dict[ax.get_title()] = ax_dict
+
+    '''
+    Now that we have the data from the figure, we need to write it to file.
+    '''
+
+    filename = os.path.abspath(filename)
+    basename, ext = os.path.splitext(filename)
+    folder, _ = os.path.split(basename)
+
+    spacer = r'**********************************************\n'
+
+    data_file = open(filename, 'w')
+
+    data_file.write(fig.get_label() + '\n')
+    data_file.write('\n')
+
+    for ax_lab, ax in axes_dict.items():
+        data_file.write('Axis: {} \n'.format(ax_lab))
+
+        for im_lab, im in ax['Images'].items():
+            data_file.write('Image: {} \n'.format(im_lab))
+            data_file.write('\n')
+            im_data = im.pop('data')
+            for row in im_data:
+                row.tofile(data_file, sep='\t', format='%s')
+                data_file.write('\n')
+            data_file.write('\n')
+
+            for key, val in im.items():
+                data_file.write(key + '\n')
+
+                val.tofile(data_file, sep='\n', format='%s')
+                data_file.write('\n')
+
+            data_file.write(spacer)
+
+        for line_lab, line_dict in ax['Lines'].items():
+            data_file.write('Line: {} \n'.format(line_lab))
+            data_file.write('\n')
+
+            dim1, dim2 = line_dict.keys()
+
+            data_file.write('{} \t {} \n'.format(dim1, dim2))
+            for val1, val2 in zip(line_dict[dim1], line_dict[dim2]):
+                data_file.write('{} \t {} \n'.format(str(val1), str(val2)))
+
+            data_file.write(spacer)
+
+        data_file.write(spacer)
+
+    data_file.close()
