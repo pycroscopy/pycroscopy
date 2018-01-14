@@ -25,21 +25,33 @@ if sys.version_info.major == 3:
     unicode = str
 
 
-def print_tree(parent):
+def print_tree(parent, full_paths=False):
     """
     Simple function to recursively print the contents of an hdf5 group
+
     Parameters
     ----------
     parent : h5py.Group
+        HDF5 tree to print
+    full_paths : (Optional) bool. Default = False
+        True - prints the full paths for all elements.
+        False - prints a tree-like structure with only the element names
 
     Returns
     -------
     None
-    
+
     """
 
     def __print(name, obj):
-        print(name)
+        if full_paths:
+            print(name)
+        else:
+            levels = name.count('/')
+            curr_name = name[name.rfind('/') + 1:]
+            print(levels * '  ' + '├ ' + curr_name)
+            if isinstance(obj, h5py.Group):
+                print((levels + 1) * '  ' + len(curr_name) * '-')
 
     print(parent.name)
     parent.visititems(__print)
