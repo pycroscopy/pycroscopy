@@ -169,11 +169,11 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
 
 def complex_to_float(ds_main):
     """
-    Function to convert a complex ND numpy array or HDF5 dataset into a scalar dataset
+    Stacks the real values followed by the imaginary values in an N dimensional matrix
 
     Parameters
     ----------
-    ds_main : complex ND numpy array or ND HDF5 dataset
+    ds_main : complex array-like or h5py.Dataset
         Dataset of interest
 
     Returns
@@ -185,11 +185,11 @@ def complex_to_float(ds_main):
 
 def compound_to_scalar(ds_main):
     """
-    Converts a compound ND numpy array or HDF5 dataset into a real scalar dataset
+    Stacks the individual components in a compound valued array to form a real valued scalar array
 
     Parameters
     ----------
-    ds_main : ND numpy array or ND HDF5 dataset object of compound datatype
+    ds_main : numpy array or h5py.Dataset of compound datatype
         Dataset of interest
 
     Returns
@@ -340,7 +340,7 @@ def transform_to_target_dtype(ds_real, new_dtype):
 
 def transform_to_real(ds_main):
     """
-    Transforms real data into the target dtype
+    Transforms complex / compound / real valued arrays to real valued arrays
 
     Parameters
     ----------
