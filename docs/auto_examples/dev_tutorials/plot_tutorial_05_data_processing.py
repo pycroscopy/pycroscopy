@@ -239,7 +239,7 @@ resp_vec = h5_main[pix_ind]
 norm_guess_parms = h5_guess[pix_ind]
 
 # Converting from compound to real:
-norm_guess_parms = px.io_utils.compound_to_scalar(norm_guess_parms)
+norm_guess_parms = px.io_utils.compound_to_real(norm_guess_parms)
 print('Functional fit returned:', norm_guess_parms)
 norm_resp = px.be_sho.SHOfunc(norm_guess_parms, freq_vec)
 

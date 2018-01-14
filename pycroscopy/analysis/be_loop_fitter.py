@@ -21,7 +21,7 @@ from .utils.tree import ClusterTree
 from .be_sho_model import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..io.io_utils import real_to_compound, compound_to_scalar
+from ..io.io_utils import real_to_compound, compound_to_real
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
     get_attr
@@ -432,7 +432,7 @@ class BELoopModel(Model):
                                                   dset_name=dset_name,
                                                   new_attrs={'nuc_threshold': nuc_threshold})
 
-        loop_coef_vec = compound_to_scalar(np.reshape(h5_loop_fit, [-1, 1]))
+        loop_coef_vec = compound_to_real(np.reshape(h5_loop_fit, [-1, 1]))
         switching_coef_vec = calc_switching_coef_vec(loop_coef_vec, nuc_threshold)
 
         h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
@@ -972,7 +972,7 @@ class BELoopModel(Model):
 
         guess = self.h5_guess[self._start_pos:self._end_pos,
                               self._current_met_spec_slice].reshape([-1, 1])
-        self.guess = compound_to_scalar(guess)[:, :-1]
+        self.guess = compound_to_real(guess)[:, :-1]
 
     def _create_guess_datasets(self):
         """
