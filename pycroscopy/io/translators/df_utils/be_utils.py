@@ -21,7 +21,7 @@ from ...io_hdf5 import ioHDF5
 from ...io_utils import get_available_memory, recommend_cpu_cores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
-from ....processing.proc_utils import buildHistogram
+from ....processing.histogram import buildHistogram
 from ....viz.plot_utils import plot_histgrams
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram
 
