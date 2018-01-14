@@ -14,37 +14,6 @@ from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommend_cpu_cores, get_available_memory
 
 
-def calc_func(some_func, args):
-    """
-
-    Parameters
-    ----------
-    some_func
-    args
-
-    Returns
-    -------
-
-    """
-
-    return some_func(*args)
-
-
-def setup_func(args):
-    """
-
-    Parameters
-    ----------
-    args
-
-    Returns
-    -------
-
-    """
-
-    return calc_func(*args)
-
-
 class Process(object):
     """
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
