@@ -187,7 +187,7 @@ class ShoGuess(px.Process):
         # this should stop the computation.
 
     @staticmethod
-    def _unit_function():
+    def _map_function():
 
         return px.be_sho.SHOestimateGuess
 

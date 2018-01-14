@@ -8,7 +8,6 @@ Created on Thu Nov 02 11:48:53 2017
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
-import time as tm
 import numpy as np
 from ..processing.process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -76,6 +75,7 @@ class GIVBayesian(Process):
 
         self.reverse_results = None
         self.forward_results = None
+        self._bayes_parms = None
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
@@ -244,9 +244,36 @@ class GIVBayesian(Process):
         # Now update the start position
         self._start_pos = self._end_pos
 
-    @staticmethod
-    def _unit_function():
-        return do_bayesian_inference
+    def _unit_computation(self, *args, **kwargs):
+        """
+        Processing per chunk of the dataset
+
+        Parameters
+        ----------
+        args : list
+            Not used
+        kwargs : dictionary
+            Not used
+        """
+        half_v_steps = self.single_ao.size // 2
+
+        # first roll the data
+        rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
+        # Ensure that the bias has a positive slope. Multiply current by -1 accordingly
+        self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps] * -1, do_bayesian_inference,
+                                                cores=self._cores,
+                                                func_args=[self.rolled_bias[:half_v_steps] * -1, self.ex_freq],
+                                                func_kwargs=self._bayes_parms, lengthy_computation=True)
+
+        if self.verbose:
+            print('Finished processing forward sections. Now working on reverse sections....')
+
+        self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
+                                                cores=self._cores,
+                                                func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
+                                                func_kwargs=self._bayes_parms, lengthy_computation=True)
+        if self.verbose:
+            print('Finished processing reverse loops')
 
     def compute(self, *args, **kwargs):
         """
@@ -254,64 +281,21 @@ class GIVBayesian(Process):
 
         Parameters
         ----------
+        args : list
+            Not used
+        kwargs : dictionary
+            Not used
 
         Returns
         -------
         h5_results_grp : h5py.Datagroup object
             Datagroup containing all the results
         """
-        self._create_results_datasets()
-
-        half_v_steps = self.single_ao.size // 2
 
         # remove additional parm and halve the x points
-        bayes_parms = self.parms_dict.copy()
-        bayes_parms['num_x_steps'] = self.num_x_steps // 2
-        bayes_parms['econ'] = True
-        del(bayes_parms['freq'])
+        self._bayes_parms = self.parms_dict.copy()
+        self._bayes_parms['num_x_steps'] = self.num_x_steps // 2
+        self._bayes_parms['econ'] = True
+        del(self._bayes_parms['freq'])
 
-        time_per_pix = 0
-
-        num_pos = self.h5_main.shape[0]
-
-        self._read_data_chunk()
-
-        while self.data is not None:
-
-            t_start = tm.time()
-
-            # first roll the data
-            rolled_raw_data = np.roll(self.data, self.roll_pts, axis=1)
-            # Ensure that the bias has a positive slope. Multiply current by -1 accordingly
-            self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps] * -1, do_bayesian_inference,
-                                                    cores=self._cores,
-                                                    func_args=[self.rolled_bias[:half_v_steps] * -1, self.ex_freq],
-                                                    func_kwargs=bayes_parms, lengthy_computation=True)
-
-            if self.verbose:
-                print('Finished processing forward sections. Now working on reverse sections....')
-
-            self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
-                                                    cores=self._cores,
-                                                    func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
-                                                    func_kwargs=bayes_parms, lengthy_computation=True)
-            if self.verbose:
-                print('Finished processing reverse loops')
-
-            tot_time = np.round(tm.time() - t_start, decimals=2)
-
-            if self.verbose:
-                print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / self._max_pos_per_read))
-            if self._start_pos == 0:
-                time_per_pix = tot_time / self._end_pos  # in seconds
-            else:
-                print('Time remaining: {} hours'.format(np.round((num_pos - self._end_pos) * time_per_pix / 3600, 2)))
-
-            self._write_results_chunk()
-            self._read_data_chunk()
-
-        if self.verbose:
-            print('Finished processing the dataset completely')
-
-        return self.h5_results_grp
+        return super(GIVBayesian, self)._unit_computation()
