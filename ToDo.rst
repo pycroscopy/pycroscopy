@@ -6,20 +6,13 @@ v 1.0 goals
 2. DONE - good utilities for interrogating data - pycro data
 3. partially done - good documentation for both users and developers
 
-  * Need more on dealing with data + slight improvements to plot_utils tour
+  * Need more on dealing with data + finish plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
 4. mostly done - generic visualizer
-5. settle on a structure for process and analysis - moderate ~ 1 day
- 
-  * Model needs to catch up with Process
+5. Fitter needs to extend Process - moderate ~ 1 day
 6. mostly done - good utils for generating publishable plots - easy ~ 1 day
 7. Reorganize package - promote / demote lesser used utilites to processes / analyses. 
-
-Short-term goals
---------------------
-* Multi-node compute capability
-* More documentation to help users / developers + PAPER
-* Cleaned versions of the main modules (Analysis pending) + enough documentation for users and developers
+8. Examples within docs for popular functions
 
 Documentation
 -------------
@@ -31,7 +24,7 @@ Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * A tour of what is where and why
 
- * pycroscopy pacakge organization - a short writeup on what is where and differences between the process / analyis submodules
+ * pycroscopy pacakge organization - a short writeup on what is where and why
 * A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
   
   * chunking the main dataset
@@ -57,7 +50,6 @@ Core development
   2. (Gracefully) Abort and resume processing.
   
 * consolidate _get_component_slice used in Cluster with duplicate in svd_utils
-* Reogranize processing and analysis - promote / demote classes etc.
 * Legacy processes **MUST** extend Process:
 
   * Image Windowing
@@ -66,12 +58,9 @@ Core development
   * As time permits, ensure that these can resume processing
   
 * Absorb functionality from Process into Model
-* Bayesian GIV should actually be an analysis <-- depends on above
-* multi-node computing capability in parallel_compute
 * Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
-* Improve visualization of file contents in print_tree() like hyperspy's `metadata <http://hyperspy.org/hyperspy-doc/current/user_guide/metadata_structure.html>`_
 
 GUI
 ~~~~~~~~~~~
