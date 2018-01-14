@@ -8,6 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import psutil
 import joblib
+import time as tm
 
 from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
 from ..io.io_hdf5 import ioHDF5
@@ -19,15 +20,13 @@ class Process(object):
     Encapsulates the typical steps performed when applying a processing function to  a dataset.
     """
 
-    def __init__(self, h5_main, h5_results_grp=None, cores=None, max_mem_mb=4*1024, verbose=False):
+    def __init__(self, h5_main, cores=None, max_mem_mb=4*1024, verbose=False):
         """
         Parameters
         ----------
         h5_main : h5py.Dataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
-        h5_results_grp : h5py.Datagroup object, optional
-            Datagroup containing partially computed results
         cores : uint, optional
             Default - all available cores - 2
             How many cores to use for the computation
@@ -61,9 +60,7 @@ class Process(object):
         self.parms_dict = None
 
         self._results = None
-        self.h5_results_grp = h5_results_grp
-        if self.h5_results_grp is not None:
-            self._extract_params(h5_results_grp)
+        self.h5_results_grp = None
 
         # DON'T check for duplicates since parms_dict has not yet been initialized.
         # Sub classes will check by themselves if they are interested.
@@ -86,7 +83,7 @@ class Process(object):
             print(duplicate_h5_groups)
         return duplicate_h5_groups
 
-    def _extract_params(self, h5_partial_group):
+    def use_partial_computation(self, h5_partial_group):
         """
         Extracts the necessary parameters from the provided h5 group to resume computation
 
@@ -94,12 +91,13 @@ class Process(object):
         ----------
         h5_partial_group : h5py.Datagroup object
             Datagroup containing partially computed results
-
         """
         self.parms_dict = get_attributes(h5_partial_group)
         self._start_pos = self.parms_dict.pop('last_pixel')
         if self._start_pos == self.h5_main.shape[0] - 1:
             raise ValueError('The last computed pixel shows that the computation was already complete')
+
+        self.h5_results_grp = h5_partial_group
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
@@ -137,7 +135,7 @@ class Process(object):
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
     @staticmethod
-    def _unit_function(*args):
+    def _map_function(*args):
         raise NotImplementedError('Please override the _unit_function specific to your process')
 
     def _read_data_chunk(self):
@@ -188,18 +186,31 @@ class Process(object):
         """
         raise NotImplementedError('Please override the _get_existing_datasets specific to your process')
 
+    def _unit_computation(self, *args, **kwargs):
+        """
+        The unit computation that is performed per data chunk. This allows room for any data pre / post-processing
+        as well as multiple calls to parallel_compute if necessary
+        """
+        # TODO: Try to use the functools.partials to preconfigure the map function
+        self._results = parallel_compute(self.data, self._map_function(), cores=self._cores,
+                                         lengthy_computation=False,
+                                         func_args=args, func_kwargs=kwargs)
+
     def compute(self, *args, **kwargs):
         """
+        Creates placeholders for the results, applies the unit computation to chunks of the dataset
 
         Parameters
         ----------
-        kwargs:
-            processors: int
-                number of processors to use. Default all processors on the system except for 1.
+        args : list
+            arguments to the mapped function in the correct order
+        kwargs : dictionary
+            keyword arguments to the mapped function
 
         Returns
         -------
-
+        h5_results_grp : h5py.Datagroup object
+            Datagroup containing all the results
         """
         if self._start_pos == 0:
             # starting fresh
@@ -208,11 +219,27 @@ class Process(object):
             # resuming from previous checkpoint
             self._get_existing_datasets()
 
+        time_per_pix = 0
+
+        num_pos = self.h5_main.shape[0]
+
         self._read_data_chunk()
         while self.data is not None:
-            self._results = parallel_compute(self.data, self._unit_function(), cores=self._cores,
-                                             lengthy_computation=False,
-                                             func_args=args, func_kwargs=kwargs)
+
+            t_start = tm.time()
+
+            self._unit_computation()
+
+            tot_time = np.round(tm.time() - t_start, decimals=2)
+
+            if self.verbose:
+                print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
+                                                                                     tot_time / self.data.shape[0]))
+            if self._start_pos == 0:
+                time_per_pix = tot_time / self._end_pos  # in seconds
+            else:
+                print('Time remaining: {} mins'.format(np.round((num_pos - self._end_pos) * time_per_pix / 60, 2)))
+
             self._write_results_chunk()
             self._read_data_chunk()
 

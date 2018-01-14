@@ -253,6 +253,17 @@ class SignalFilter(Process):
                          getH5DsetRefs(['Spectroscopic_Indices'], h5_filt_refs)[0],
                          getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
 
+    def _get_existing_datasets(self):
+        """
+        Extracts references to the existing datasets that hold the results
+        """
+        if self.write_filtered:
+            self.h5_filtered = self.h5_results_grp['Filtered_Data']
+        if self.write_condensed:
+            self.h5_condensed = self.h5_results_grp['Condensed_Data']
+        if self.noise_threshold is not None:
+            self.h5_noise_floors = self.h5_results_grp['Noise_Floors']
+
     def _write_results_chunk(self):
         """
         Writes data chunks back to the file
@@ -277,75 +288,40 @@ class SignalFilter(Process):
         # Now update the start position
         self._start_pos = self._end_pos
 
-    @staticmethod
-    def _unit_function():
-        return get_noise_floor
-
-    def compute(self, *args, **kwargs):
+    def _unit_computation(self, *args, **kwargs):
         """
-        Creates placeholders for the results, applies the filers to the data, and writes the output to the file.
+        Processing per chunk of the dataset
 
         Parameters
         ----------
-
-        Returns
-        -------
-        h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
-
+        args : list
+            Not used
+        kwargs : dictionary
+            Not used
         """
-        self._create_results_datasets()
+        # get FFT of the entire data chunk
+        self.data = np.fft.fftshift(np.fft.fft(self.data, axis=1), axes=1)
 
-        time_per_pix = 0
+        if self.noise_threshold is not None:
+            self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
+                                                 func_args=[self.noise_threshold])
 
-        num_pos = self.h5_main.shape[0]
+        if isinstance(self.composite_filter, np.ndarray):
+            # multiple fft of data with composite filter
+            self.data *= self.composite_filter
 
-        self._read_data_chunk()
-        while self.data is not None:
+        if self.noise_threshold is not None:
+            # apply thresholding
+            self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
 
-            t_start = tm.time()
+        if self.write_condensed:
+            # set self.condensed_data here
+            self.condensed_data = self.data[:, self.hot_inds]
 
-            # get FFT of the entire data chunk
-            self.data = np.fft.fftshift(np.fft.fft(self.data, axis=1), axes=1)
-
-            if self.noise_threshold is not None:
-                self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
-                                                     func_args=[self.noise_threshold])
-
-            if isinstance(self.composite_filter, np.ndarray):
-                # multiple fft of data with composite filter
-                self.data *= self.composite_filter
-
-            if self.noise_threshold is not None:
-                # apply thresholding
-                self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
-
-            if self.write_condensed:
-                # set self.condensed_data here
-                self.condensed_data = self.data[:, self.hot_inds]
-
-            if self.write_filtered:
-                # take inverse FFT
-                self.filtered_data = np.real(np.fft.ifft(np.fft.ifftshift(self.data, axes=1), axis=1))
-                if self.phase_rad > 0:
-                    # do np.roll on data
-                    # self.data = np.roll(self.data, 0, axis=1)
-                    pass
-
-            tot_time = np.round(tm.time() - t_start, decimals=2)
-
-            if self.verbose:
-                print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / self.data.shape[0]))
-            if self._start_pos == 0:
-                time_per_pix = tot_time / self._end_pos  # in seconds
-            else:
-                print('Time remaining: {} mins'.format(np.round((num_pos - self._end_pos) * time_per_pix / 60, 2)))
-
-            self._write_results_chunk()
-            self._read_data_chunk()
-
-        if self.verbose:
-            print('Finished processing the dataset completely')
-
-        return self.h5_results_grp
+        if self.write_filtered:
+            # take inverse FFT
+            self.filtered_data = np.real(np.fft.ifft(np.fft.ifftshift(self.data, axes=1), axis=1))
+            if self.phase_rad > 0:
+                # do np.roll on data
+                # self.data = np.roll(self.data, 0, axis=1)
+                pass
