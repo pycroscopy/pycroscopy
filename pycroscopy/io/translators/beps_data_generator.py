@@ -10,7 +10,7 @@ from skimage.measure import block_reduce
 # Pycroscopy imports
 from ..io_hdf5 import ioHDF5
 from ..hdf_utils import calc_chunks, getH5DsetRefs, link_as_main, get_attr, buildReducedSpec
-from ..io_utils import real_to_compound, compound_to_scalar
+from ..io_utils import real_to_compound, compound_to_real
 from .utils import build_ind_val_dsets, generate_dummy_main_parms
 from .translator import Translator
 from ..microdata import MicroDataGroup, MicroDataset

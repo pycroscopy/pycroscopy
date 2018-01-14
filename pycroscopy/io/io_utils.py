@@ -16,7 +16,7 @@ import numpy as np
 import itertools
 
 __all__ = ['get_available_memory', 'get_time_stamp', 'transform_to_target_dtype', 'transform_to_real',
-           'complex_to_float', 'compound_to_scalar', 'real_to_complex', 'real_to_compound', 'check_dtype',
+           'complex_to_float', 'compound_to_real', 'real_to_complex', 'real_to_compound', 'check_dtype',
            'recommend_cpu_cores', 'uiGetFile']
 
 
@@ -183,26 +183,27 @@ def complex_to_float(ds_main):
     return np.hstack([np.real(ds_main), np.imag(ds_main)])
 
 
-def compound_to_scalar(ds_main):
+def compound_to_real(ds_main):
     """
-    Stacks the individual components in a compound valued array to form a real valued scalar array
+    Stacks the individual components in a structured array or compound valued hdf5 dataset to form a real valued array
 
     Parameters
     ----------
-    ds_main : numpy array or h5py.Dataset of compound datatype
+    ds_main : numpy array that is a structured array or h5py.Dataset of compound dtype
         Dataset of interest
 
     Returns
     -------
-    retval : ND real numpy array
-
+    retval : n-dimensional real numpy array
+        real valued dataset
     """
     if isinstance(ds_main, h5py.Dataset):
+        # TODO: Avoid hard-coding to float32
         return np.hstack([np.float32(ds_main[name]) for name in ds_main.dtype.names])
     elif isinstance(ds_main, np.ndarray):
         return np.hstack([ds_main[name] for name in ds_main.dtype.names])
     else:
-        raise TypeError('Datatype {} not supported in compound_to_scalar'.format(type(ds_main)))
+        raise TypeError('Datatype {} not supported in struct_to_scalar'.format(type(ds_main)))
 
 
 def check_dtype(ds_main):
@@ -231,6 +232,7 @@ def check_dtype(ds_main):
         multiplier that converts from the typesize of the input dtype to the
         typesize of the data after func is run on it
     """
+    # TODO: Avoid hard-coding to float32
     is_complex = False
     is_compound = False
     in_dtype = ds_main.dtype
@@ -244,13 +246,13 @@ def check_dtype(ds_main):
         n_features *= 2
     elif len(ds_main.dtype) > 0:
         """
-        Some form of compound datatype is in use
+        Some form of structured numpy is in use
         We only support real scalars for the component types at the current time
         """
         is_compound = True
         new_dtype = np.float32
         type_mult = len(in_dtype) * new_dtype(0).itemsize
-        func = compound_to_scalar
+        func = compound_to_real
         n_features *= len(in_dtype)
     else:
         if ds_main.dtype not in [np.float32, np.float64]:
@@ -300,9 +302,11 @@ def real_to_compound(ds_real, compound_type):
     ds_compound : 2D complex numpy array
         Data arranged as [sample, features]
     """
+    # TODO: More robust check to ensure that we are not inserting int string / boolean / other valued dtypes
+    # TODO: Handle inserting into complex valued dtypes
     new_spec_length = ds_real.shape[1] / len(compound_type)
     if new_spec_length % 1:
-        raise TypeError('Provided compound type was not compatible by numbr of elements')
+        raise TypeError('Provided compound type was not compatible by number of elements')
 
     new_spec_length = int(new_spec_length)
     ds_compound = np.empty([ds_real.shape[0], new_spec_length], dtype=compound_type)
@@ -355,7 +359,7 @@ def transform_to_real(ds_main):
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         return complex_to_float(ds_main)
     elif len(ds_main.dtype) > 0:
-        return compound_to_scalar(ds_main)
+        return compound_to_real(ds_main)
     else:
         return ds_main
 
