@@ -22,7 +22,7 @@ from ...io_utils import get_available_memory, recommend_cpu_cores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.histogram import buildHistogram
-from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histgrams
+from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -497,7 +497,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
             fig_2d.savefig(path_2d, format='png', dpi=300)
             if do_histogram:
-                plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
+                plot_histograms(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 
             if show_plots:
                 plt.show()
@@ -569,7 +569,7 @@ def visualize_plot_groups(h5_filepath):
                     try:
                         hist_data = plt_grp['Histograms']
                         hist_bins = plt_grp['Histograms_Indicies']
-                        plot_histgrams(hist_data, hist_bins, plt_grp.attrs['Name'])
+                        plot_histograms(hist_data, hist_bins, plt_grp.attrs['Name'])
                     except:
                         pass
 
@@ -1294,7 +1294,7 @@ class BEHistogram:
                     if save_plot:
                         basename, junk = path.splitext(h5_path)
                         plotfile = '{}_MG{}_PG{}_Histograms.png'.format(basename, im, ip)
-                    plot_histgrams(hist_mat, hist_indices, p_group, plotfile)
+                    plot_histograms(hist_mat, hist_indices, p_group, plotfile)
                     if show_plot:
                         plt.show()
 
