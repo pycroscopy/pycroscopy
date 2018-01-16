@@ -30,7 +30,7 @@ else:
 
 setup(
     name='pycroscopy',
-    version='0.59.3',
+    version='0.59.4',
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
@@ -62,12 +62,12 @@ setup(
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
-
     install_requires=requirements,
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest', 'Nose'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
-    tests_require='Nose',
     dependency='',
     dependency_links=[''],
     include_package_data=True,
