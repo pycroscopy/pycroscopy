@@ -107,7 +107,7 @@ class SignalFilter(Process):
         self.parms_dict['num_pix'] = self.num_effective_pix
 
         self.process_name = 'FFT_Filtering'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         self.data = None
         self.filtered_data = None
