@@ -99,6 +99,8 @@ class GIVBayesian(Process):
         self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
         # Since these computations take far longer than functional fitting, do in smaller batches:
         self._max_pos_per_read = min(500, self._max_pos_per_read)
+        if self.verbose:
+            print('Max positions per read set to {}'.format(self._max_pos_per_read))
 
     def _create_results_datasets(self):
         """
@@ -176,6 +178,18 @@ class GIVBayesian(Process):
 
         if self.verbose:
             print('Finished linking all datasets!')
+
+        self.hdf.flush()
+
+    def _get_existing_datasets(self):
+        """
+        Extracts references to the existing datasets that hold the results
+        """
+        self.h5_new_spec_vals = self.h5_results_grp['Spectroscopic_Values']
+        self.h5_cap = self.h5_results_grp['Capacitance']
+        self.h5_variance = self.h5_results_grp['R_variance']
+        self.h5_resistance = self.h5_results_grp['Resistance']
+        self.h5_i_corrected = self.h5_results_grp['Corrected_Current']
 
     def _write_results_chunk(self):
         """
