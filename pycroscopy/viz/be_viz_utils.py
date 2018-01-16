@@ -1520,7 +1520,7 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
     return fig, axes
 
 
-def plot_histgrams(p_hist, p_hbins, title, figure_path=None):
+def plot_histograms(p_hist, p_hbins, title, figure_path=None):
     """
     Plots the position averaged spectrogram
 
