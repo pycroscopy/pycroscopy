@@ -250,7 +250,7 @@ class Process(object):
                 print('Resuming computation in group: ' + self.partial_h5_groups[-1].name)
                 self.use_partial_computation()
 
-        if self._start_pos == 0:
+        if self.h5_results_grp is None:
             # starting fresh
             if self.verbose:
                 print('Creating datagroup and datasets')
