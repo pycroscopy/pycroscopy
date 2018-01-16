@@ -97,7 +97,9 @@ class Process(object):
         if partial_h5_groups:
             print('Note: ' + self.process_name + ' has already been performed PARTIALLY with the same parameters. '
                                                  'compute() will resuming computation in the last group below. '
-                                                 'Set override to True to force fresh computation')
+                                                 'To choose a different group call use_patial_computation()'
+                                                 'Set override to True to force fresh computation or resume from a '
+                                                 'data group besides the last in the list.')
             print(partial_h5_groups)
 
         return duplicate_h5_groups, partial_h5_groups
