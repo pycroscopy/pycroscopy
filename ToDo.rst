@@ -44,33 +44,15 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* EVERY process tool should implement two new features:
-  
-  1. Check if the same process has been performed with the same paramters. When initializing the process, throw an exception. This is better than checking in the notebook stage.
-  2. (Gracefully) Abort and resume processing.
-  
-* Legacy processes **MUST** extend Process:
-  
-  * sklearn wrapper classes:
-  
-    * Cluter
-    * Decomposition
-    * The computation will continue to be performed by sklearn. No need to use parallel_compute() or resume computation.
-  
-  * Own classes:
-  
-    * Image Windowing
-    * Image Cleaning
-    * As time permits, ensure that these can resume processing
-  * All these MUST implement the check for previous computations at the very least
-  * As time permits, ensure that these can resume processing
-  
-* Absorb functionality from Process into Model
-* Bayesian GIV should actually be an analysis <-- depends on above
-* Reogranize processing and analysis - promote / demote classes etc.
-* multi-node computing capability in parallel_compute
+* Features in Process must be absorbed into Fitter
 * Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
+* Windows compatible function for deleting sub-tree
+* Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
+
+Long-term
+^^^^^^^^^
+* multi-node computing capability in parallel_compute
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 
 GUI
