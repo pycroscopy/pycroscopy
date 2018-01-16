@@ -249,7 +249,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_main.shape[0]], is_spectral=False,
                                                    steps=[scan_step_x_m, h5_pos_vals[1, 0]],
                                                    labels=['X', 'Y'], units=['m', 'm'], verbose=False)
-
+    # TODO: Create empty datasets and then write for very large datasets
     ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
                                     compression='gzip', chunking=(10, pts_per_cycle))
 
