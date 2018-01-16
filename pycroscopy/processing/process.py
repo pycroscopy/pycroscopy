@@ -118,6 +118,10 @@ class Process(object):
             if len(self.partial_h5_groups) < 1:
                 raise ValueError('No group was found with partial results and no such group was provided')
             h5_partial_group = self.partial_h5_groups[-1]
+        else:
+            # Make sure that this group is among the legal ones already discovered:
+            if h5_partial_group not in self.partial_h5_groups:
+                raise ValueError('Provided group does not appear to be in the list of discovered groups')
 
         self.parms_dict = get_attributes(h5_partial_group)
         self._start_pos = self.parms_dict.pop('last_pixel')
