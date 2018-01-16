@@ -266,8 +266,11 @@ class Process(object):
             self._get_existing_datasets()
 
         time_per_pix = 0
+        num_pos = self.h5_main.shape[0] - self._start_pos
 
-        num_pos = self.h5_main.shape[0]
+        print('You can abort this computation at any time and resume at a later time!\n'
+              '\tIf you are operating in a python console, press Ctrl+C or Cmd+C to abort\n'
+              '\tIf you are in a Jupyter notebook, click on "Kernel">>"Interrupt"')
 
         self._read_data_chunk()
         while self.data is not None:
