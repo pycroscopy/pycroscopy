@@ -14,7 +14,6 @@ import sys
 from warnings import warn
 
 import h5py
-import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -144,7 +143,7 @@ def get_cmap_object(cmap):
     """
     if cmap is None:
         return default_cmap
-    elif isinstance(cmap, str):
+    elif type(cmap) in [str, unicode]:
         return plt.get_cmap(cmap)
     return cmap
 
@@ -288,14 +287,11 @@ def discrete_cmap(num_bins, cmap=None):
     if cmap is None:
         cmap = default_cmap.name
 
-    elif not isinstance(cmap, str):
+    elif type(cmap) not in [unicode, str]:
         # could not figure out a better type check
         cmap = cmap.name
 
-    if type(cmap) == str:
-        return plt.get_cmap(cmap, num_bins)
-
-    return cmap
+    return plt.get_cmap(cmap, num_bins)
 
 
 def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
@@ -452,6 +448,8 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=
     if show_cbar:
         cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
                             fraction=0.046, pad=0.04, use_gridspec=True)
+        # cbar = axis.cbar_axes[count].colorbar(im_handle)
+
         if cbar_label is not None:
             cbar.set_label(cbar_label, fontsize=tick_font_size)
         cbar.ax.tick_params(labelsize=tick_font_size)
@@ -1428,10 +1426,10 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
 
     for count, ax, image, title, plot_min, plot_max in zip(range(6), axes_clean, plot_data,
                                                            plot_names, plot_mins, plot_maxes):
-        im, im_cbar = plot_map(ax, image, stdevs, show_cbar=False, **kwargs)
-        im.set_clim(vmin=plot_min, vmax=plot_max)
+        im_handle, cbar_handle = plot_map(ax, image, stdevs, show_cbar=False, **kwargs)
+        im_handle.set_clim(vmin=plot_min, vmax=plot_max)
         axes_clean[count].set_title(title, fontsize=plot_args['sub_title_size'])
-        cbar = axes_clean.cbar_axes[count].colorbar(im)
+        cbar = axes_clean.cbar_axes[count].colorbar(im_handle)
         cbar.ax.tick_params(labelsize=plot_args['cbar_tick_font_size'])
 
         if not plot_args['show_x_y_ticks']:
@@ -1442,46 +1440,6 @@ def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image
             ax.get_xaxis().set_visible(False)
 
     return fig_clean, axes_clean
-
-
-def save_fig_filebox_button(fig, filename):
-    """
-    Create ipython widgets to allow the user to save a figure to the
-    specified file.
-
-    Parameters
-    ----------
-    fig : matplotlib.Figure
-        The figure to be saved.
-    filename : str
-        The filename the figure should be saved to
-
-    Returns
-    -------
-    widget_box : ipywidgets.HBox
-        Widget box holding the text entry and save button
-
-    """
-    filename = os.path.abspath(filename)
-    file_dir, filename = os.path.split(filename)
-
-    name_box = widgets.Text(value=filename,
-                            placeholder='Type something',
-                            description='Output Filename:',
-                            disabled=False,
-                            layout={'width': '50%'})
-    save_button = widgets.Button(description='Save figure')
-
-    def _save_fig():
-        save_path = os.path.join(file_dir, filename)
-        fig.save_fig(save_path, dpi='figure')
-        print('Figure saved to "{}".'.format(save_path))
-
-    widget_box = widgets.HBox([name_box, save_button])
-
-    save_button.on_click(_save_fig)
-
-    return widget_box
 
 
 def export_fig_data(fig, filename, include_images=False):
@@ -1605,5 +1563,3 @@ def export_fig_data(fig, filename, include_images=False):
         data_file.write(spacer)
 
     data_file.close()
-
-    return

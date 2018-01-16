@@ -8,6 +8,7 @@ Created on Tue Nov  3 21:14:25 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 import sys
 import h5py
+import collections
 from warnings import warn
 import numpy as np
 from .microdata import MicroDataset
@@ -180,9 +181,10 @@ def get_attr(h5_object, attr_name):
         att_val = att_val.decode('utf-8')
 
     elif type(att_val) == np.ndarray:
-        if att_val.dtype.type in [np.bytes_, np.object_]:
-            att_val = np.array([str(x, 'utf-8') for x in att_val])
-
+        if sys.version_info.major == 3: 
+            if att_val.dtype.type in [np.bytes_, np.object_]:
+                att_val = np.array([str(x, 'utf-8') for x in att_val])
+            
     return att_val
 
 
@@ -1509,39 +1511,79 @@ def copy_main_attributes(h5_main, h5_new):
             val = h5_main.attrs[att_name]
         h5_new.attrs[att_name] = val
 
-    return
 
-
-def check_for_old(h5_base, tool_name, new_parms=dict()):
+def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
     """
     Check to see if the results of a tool already exist and if they 
     were performed with the same parameters.
     
     Parameters
     ----------
-    h5_base
-    tool_name
-    new_parms
-
+    h5_base : h5py.Dataset object
+           Dataset on which the tool is being applied to
+    tool_name : str
+           process or analysis name
+    new_parms : dict, optional
+           Parameters with which this tool will be performed.
+    verbose : bool, optional, default = False
+           Whether or not to print debugging statements 
+           
     Returns
     -------
     group : h5py.Group or None
-    Group with parameters matching those in `new_parms`
+           Group with parameters matching those in `new_parms`
     """
 
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
+        if verbose:
+            print('Looking at group - {}'.format(group.name.split('/')[-1]))
 
         tests = []
         for key in new_parms.keys():
-            old_parm = get_attr(group, key)
-            if isinstance(old_parm, np.ndarray):
+            
+            # HDF5 cannot store None as an attribute anyway. ignore
+            if new_parms[key] is None:
+                continue
+                
+            try:
+                old_value = get_attr(group, key)
+            except KeyError:
+                # if parameter was not found assume that something has changed
+                if verbose:
+                    print('New parm: {} \t- new parm not in group *****'.format(key))
+                tests.append(False)
+                break
+                
+            if isinstance(old_value, np.ndarray):
+                if not isinstance(new_parms[key], collections.Iterable):
+                    if verbose:
+                        print('New parm: {} \t- new parm not iterable unlike old parm *****'.format(key))
+                    tests.append(False)
+                    break
                 new_array = np.array(new_parms[key])
-                if old_parm.size == np.array():
-                    tests.append(np.all(np.isclose(old_parm, new_array)))
+                if old_value.size != new_array.size:
+                    if verbose:
+                        print('New parm: {} \t- are of different sizes ****'.format(key))
+                    tests.append(False)
+                else:
+                    answer = np.all(np.isclose(old_value, new_array))
+                    if verbose:
+                        print('New parm: {} \t- match: {}'.format(key, answer))
+                    tests.append(answer)
             else:
-                tests.append(new_parms[key] == old_parm)
+                """if isinstance(new_parms[key], collections.Iterable):
+                    if verbose:
+                        print('New parm: {} \t- new parm is iterable unlike old parm *****'.format(key))
+                    tests.append(False)
+                    break"""
+                answer = np.all(new_parms[key] == old_value)
+                if verbose:
+                        print('New parm: {} \t- match: {}'.format(key, answer))
+                tests.append(answer)
+        if verbose:
+              print('')
 
         if all(tests):
             return group
