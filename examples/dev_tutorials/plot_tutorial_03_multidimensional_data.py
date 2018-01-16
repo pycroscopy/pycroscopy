@@ -77,7 +77,7 @@ except ImportError:
 
 # download the raw data file from Github:
 h5_path = 'temp_3.h5'
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/cades_dev/data/BEPS_small.h5'
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BEPS_small.h5'
 if os.path.exists(h5_path):
     os.remove(h5_path)
 _ = wget.download(url, h5_path, bar=None)
