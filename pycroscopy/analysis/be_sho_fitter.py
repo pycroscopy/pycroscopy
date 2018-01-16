@@ -25,27 +25,20 @@ sho32 = np.dtype({'names': field_names,
 
 
 class BESHOfitter(Fitter):
-    """
-    Analysis of Band excitation spectra with harmonic oscillator responses.
-    
-    Parameters
-    ----------
-    h5_main : h5py.Dataset instance
-        The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-        indices and values, and position indices and values datasets.
-    variables : list(string), Default ['Frequency']
-        Lists of attributes that h5_main should possess so that it may be analyzed by Model.
-    parallel : bool, optional
-        Should the parallel implementation of the fitting be used.  Default True.
 
-    Returns
-    -------
-    None
-    
-    """
+    def __init__(self, h5_main, variables=['Frequency'], **kwargs):
+        """
+        Analysis of Band excitation spectra with harmonic oscillator responses.
 
-    def __init__(self, h5_main, variables=['Frequency'], parallel=True):
-        super(BESHOfitter, self).__init__(h5_main, variables, parallel)
+        Parameters
+        ----------
+        h5_main : h5py.Dataset instance
+           The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
+           indices and values, and position indices and values datasets.
+        variables : list(string), Default ['Frequency']
+           Lists of attributes that h5_main should possess so that it may be analyzed by Model.
+        """
+        super(BESHOfitter, self).__init__(h5_main, variables, **kwargs)
         self.step_start_inds = None
         self.is_reshapable = True
         self.num_udvs_steps = None
@@ -149,14 +142,9 @@ class BESHOfitter(Fitter):
 
         self.freq_vec = h5_spec_vals[freq_dim, self.step_start_inds[0]:end_ind]
 
-    def _get_data_chunk(self, verbose=False):
+    def _get_data_chunk(self):
         """
         Returns the next chunk of data for the guess or the fit
-
-        Parameters
-        ----------
-        verbose : Boolean (optional. default = False)
-            Whether or not to print debug statements
         """
 
         """
@@ -167,22 +155,22 @@ class BESHOfitter(Fitter):
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            if verbose:
+            if self._verbose:
                 print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
             self._start_pos = self._end_pos
         else:
-            if verbose:
+            if self._verbose:
                 print('Finished reading all data!')
             self.data = None
 
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         if self.data is not None:
-            if verbose:
+            if self._verbose:
                 print('Got raw data of shape {} from super'.format(self.data.shape))
             self.data = reshapeToOneStep(self.data, self.num_udvs_steps)
-            if verbose:
+            if self._verbose:
                 print('Reshaped raw data to shape {}'.format(self.data.shape))
 
     def _get_guess_chunk(self):
@@ -204,7 +192,7 @@ class BESHOfitter(Fitter):
         self.guess = np.hstack([self.guess[name] for name in self.guess.dtype.names if name != 'R2 Criterion'])
         # bear in mind that this self.guess is a compound dataset.
 
-    def _set_results(self, is_guess=False, verbose=False):
+    def _set_results(self, is_guess=False):
         """
         Writes the provided chunk of data into the guess or fit datasets. 
         This method is responsible for any and all book-keeping.
@@ -213,17 +201,14 @@ class BESHOfitter(Fitter):
         ---------
         is_guess : Boolean
             Flag that differentiates the guess from the fit
-        verbose : Boolean (optional. default = False)
-            Whether or not to print debug statements
-        
         """
         if is_guess:
             # prepare to reshape:
             self.guess = np.transpose(np.atleast_2d(self.guess))
-            if verbose:
+            if self._verbose:
                 print('Prepared guess of shape {} before reshaping'.format(self.guess.shape))
             self.guess = reshapeToNsteps(self.guess, self.num_udvs_steps)
-            if verbose:
+            if self._verbose:
                 print('Reshaped guess to shape {}'.format(self.guess.shape))
         else:
             self.fit = np.transpose(np.atleast_2d(self.fit))
@@ -367,7 +352,7 @@ class BESHOfitter(Fitter):
                                         obj_func=obj_func)
         return self.h5_fit
 
-    def _reformat_results(self, results, strategy='wavelet_peaks', verbose=False):
+    def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
         Model specific calculation and or reformatting of the raw guess or fit results
 
@@ -378,8 +363,6 @@ class BESHOfitter(Fitter):
         strategy : str
             The strategy used in the fit.  Determines how the results will be reformatted.
             Default 'wavelet_peaks'
-        verbose : bool
-            Enables extra print statements if True
 
         Returns
         -------
@@ -387,11 +370,11 @@ class BESHOfitter(Fitter):
             The reformatted array of parameters.
             
         """
-        if verbose:
+        if self._verbose:
             print('Strategy to use: {}'.format(strategy))
         # Create an empty array to store the guess parameters
         sho_vec = np.zeros(shape=(len(results)), dtype=sho32)
-        if verbose:
+        if self._verbose:
             print('Raw results and compound SHO vector of shape {}'.format(len(results)))
 
         # Extracting and reshaping the remaining parameters for SHO
@@ -407,12 +390,12 @@ class BESHOfitter(Fitter):
                 else:  # more than one peak found
                     dist = np.abs(np.array(pixel) - int(0.5*self.data.shape[1]))
                     peak_inds[pix_ind] = pixel[np.argmin(dist)]  # set to peak closest to center of band
-            if verbose:
+            if self._verbose:
                 print('Peak positions of shape {}'.format(peak_inds.shape))
             # First get the value (from the raw data) at these positions:
             comp_vals = np.array(
                 [self.data[pixel_ind, peak_inds[pixel_ind]] for pixel_ind in np.arange(peak_inds.size)])
-            if verbose:
+            if self._verbose:
                 print('Complex values at peak positions of shape {}'.format(comp_vals.shape))
             sho_vec['Amplitude [V]'] = np.abs(comp_vals)  # Amplitude
             sho_vec['Phase [rad]'] = np.angle(comp_vals)  # Phase in radians

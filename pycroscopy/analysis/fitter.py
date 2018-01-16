@@ -21,28 +21,24 @@ class Fitter(object):
     """
     Encapsulates the typical routines performed during model-dependent analysis of data.
     This abstract class should be extended to cover different types of imaging modalities.
-
-    Parameters
-    ----------
-    h5_main : h5py.Dataset instance
-        The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-        indices and values, and position indices and values datasets.
-    variables : list(string), Default ['Frequency']
-        Lists of attributes that h5_main should possess so that it may be analyzed by Model.
-    parallel : bool, optional
-        Should the parallel implementation of the fitting be used.  Default True.
-
-    Returns
-    -------
-    None
-
     """
 
-    def __init__(self, h5_main, variables=['Frequency'], parallel=True):
+    def __init__(self, h5_main, variables=['Frequency'], parallel=True, verbose=False):
         """
         For now, we assume that the guess dataset has not been generated for this dataset but we will relax this
         requirement after testing the basic components.
 
+        Parameters
+        ----------
+        h5_main : h5py.Dataset instance
+            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
+            indices and values, and position indices and values datasets.
+        variables : list(string), Default ['Frequency']
+            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
+        parallel : bool, optional
+            Should the parallel implementation of the fitting be used.  Default True
+        verbose : bool, optional. default = False
+            Whether or not to print statements that aid in debugging
         """
 
         if not isinstance(h5_main, PycroDataset):
@@ -58,6 +54,7 @@ class Fitter(object):
 
         # Checking if parallel processing will be used
         self._parallel = parallel
+        self._verbose = verbose
 
         # Determining the max size of the data that can be put into memory
         self._set_memory_and_cores()
@@ -66,21 +63,22 @@ class Fitter(object):
         self._end_pos = self.h5_main.shape[0]
         self.h5_guess = None
         self.h5_fit = None
+        self.h5_results_grp = None
 
+        # TODO: do NOT expose a lot of innards. Turn it into private with _var_name
         self.data = None
         self.guess = None
         self.fit = None
 
-    def _set_memory_and_cores(self, verbose=False):
+        self.duplicate_h5_groups = []
+        self.partial_h5_groups = []
+        self.process_name = None  # Reset this in the extended classes
+        self.parms_dict = None
+
+    def _set_memory_and_cores(self):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
-
-        Parameters
-        ----------
-        verbose : Boolean (Optional)
-            Whether or not to print log statements
-
         """
 
         if self._parallel:
@@ -98,7 +96,7 @@ class Fitter(object):
         # Now calculate the number of positions that can be stored in memory in one go.
         mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
         self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
-        if verbose:
+        if self._verbose:
             print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
 
     def _is_legal(self, h5_main, variables):
@@ -123,25 +121,20 @@ class Fitter(object):
         """
         return np.all(np.isin(variables, h5_main.spec_dim_labels))
 
-    def _get_data_chunk(self, verbose=False):
+    def _get_data_chunk(self):
         """
         Reads the next chunk of data for the guess or the fit into memory
-
-        Parameters
-        -----
-        verbose : bool, optional
-            Whether or not to print log statements
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
             self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            if verbose:
+            if self._verbose:
                 print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
 
             # Now update the start position
             self._start_pos = self._end_pos
         else:
-            if verbose:
+            if self._verbose:
                 print('Finished reading all data!')
             self.data = None
 
@@ -165,7 +158,7 @@ class Fitter(object):
         else:
             self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
 
-    def _set_results(self, is_guess=False, verbose=False):
+    def _set_results(self, is_guess=False):
         """
         Writes the provided guess or fit results into appropriate datasets.
         Given that the guess and fit datasets are relatively small, we should be able to hold them in memory just fine
@@ -175,9 +168,6 @@ class Fitter(object):
         is_guess : bool, optional
             Default - False
             Flag that differentiates the guess from the fit
-        verbose : bool, optional
-            Default - False
-            Whether or not to print log statements
         """
         statement = 'guess'
 
@@ -189,13 +179,13 @@ class Fitter(object):
             targ_dset = self.h5_fit
             source_dset = self.fit
 
-        if verbose:
+        if self._verbose:
             print('Writing data to positions: {} to {}'.format(self.__start_pos, self._end_pos))
         targ_dset[:, :] = source_dset
 
         # flush the file
         self.hdf.flush()
-        if verbose:
+        if self._verbose:
             print('Finished writing ' + statement + ' results to file!')
 
     def _create_guess_datasets(self):
