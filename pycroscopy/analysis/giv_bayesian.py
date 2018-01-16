@@ -24,6 +24,7 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
 
 
 class GIVBayesian(Process):
+
     def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=110, **kwargs):
         """
         Applies Bayesian Inference to General Mode IV (G-IV) data to extract the true current
@@ -60,7 +61,7 @@ class GIVBayesian(Process):
         self.parms_dict.update(bayesian_parms)
 
         self.process_name = 'Bayesian_Inference'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
@@ -275,12 +276,15 @@ class GIVBayesian(Process):
         if self.verbose:
             print('Finished processing reverse loops')
 
-    def compute(self, *args, **kwargs):
+    def compute(self, override=False, *args, **kwargs):
         """
         Creates placeholders for the results, applies the inference to the data, and writes the output to the file.
 
         Parameters
         ----------
+        override : bool, optional. default = False
+            By default, compute will simply return duplicate results to avoid recomputing or resume computation on a
+            group with partial results. Set to True to force fresh computation.
         args : list
             Not used
         kwargs : dictionary
@@ -298,4 +302,4 @@ class GIVBayesian(Process):
         self._bayes_parms['econ'] = True
         del(self._bayes_parms['freq'])
 
-        return super(GIVBayesian, self)._unit_computation()
+        return super(GIVBayesian, self).compute(override=override, *args, **kwargs)
