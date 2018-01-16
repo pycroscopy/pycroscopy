@@ -1542,10 +1542,10 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
            
     Returns
     -------
-    group : h5py.Group or None
-           Group with parameters matching those in `new_parms`
+    group : list
+           List of all groups with parameters matching those in `new_parms`
     """
-
+    matching_groups = []
     groups = findH5group(h5_base, tool_name)
 
     for group in groups:
@@ -1598,9 +1598,10 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
               print('')
 
         if all(tests):
-            return group
+            # return group
+            matching_groups.append(group)
 
-    return None
+    return matching_groups
 
 
 def create_spec_inds_from_vals(ds_spec_val_mat):
