@@ -37,5 +37,5 @@ from . import process
 from .process import Process
 from .signal_filter import SignalFilter
 
-__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'histogram.py', 'svd_utils',
+__all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'histogram', 'svd_utils',
            'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'SignalFilter']
