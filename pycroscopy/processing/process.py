@@ -56,6 +56,7 @@ class Process(object):
         # Determining the max size of the data that can be put into memory
         self._set_memory_and_cores(cores=cores, mem=max_mem_mb)
         self.duplicate_h5_groups = []
+        self.partial_h5_groups = []
         self.process_name = None  # Reset this in the extended classes
         self.parms_dict = None
 
@@ -74,16 +75,34 @@ class Process(object):
         duplicate_h5_groups : list of h5py.Datagroup objects
             List of groups satisfying the above conditions
         """
-        duplicate_h5_groups = check_for_old(self.h5_main, self.process_name, new_parms=self.parms_dict)
         if self.verbose:
             print('Checking for duplicates:')
-        if duplicate_h5_groups is not None:
-            print('WARNING! ' + self.process_name + ' has already been performed with the same parameters before. '
-                                                    'Consider reusing results')
-            print(duplicate_h5_groups)
-        return duplicate_h5_groups
 
-    def use_partial_computation(self, h5_partial_group):
+        duplicate_h5_groups = check_for_old(self.h5_main, self.process_name, new_parms=self.parms_dict)
+        partial_h5_groups = []
+
+        # First figure out which ones are partially completed:
+        if len(duplicate_h5_groups) > 0:
+            for index, curr_group in enumerate(duplicate_h5_groups):
+                if curr_group.attrs['last_pixel'] < self._end_pos:
+                    # remove from duplicates and move to partial
+                    partial_h5_groups.append(duplicate_h5_groups.pop(index))
+
+        if len(duplicate_h5_groups) > 0:
+            print('Note: ' + self.process_name + ' has already been performed with the same parameters before. '
+                                                 'These results will be returned by compute() by default. '
+                                                 'Set override to True to force fresh computation')
+            print(duplicate_h5_groups)
+
+        if partial_h5_groups:
+            print('Note: ' + self.process_name + ' has already been performed PARTIALLY with the same parameters. '
+                                                 'compute() will resuming computation in the last group below. '
+                                                 'Set override to True to force fresh computation')
+            print(partial_h5_groups)
+
+        return duplicate_h5_groups, partial_h5_groups
+
+    def use_partial_computation(self, h5_partial_group=None):
         """
         Extracts the necessary parameters from the provided h5 group to resume computation
 
@@ -92,6 +111,12 @@ class Process(object):
         h5_partial_group : h5py.Datagroup object
             Datagroup containing partially computed results
         """
+        # Attempt to automatically take partial results
+        if h5_partial_group is None:
+            if len(self.partial_h5_groups) < 1:
+                raise ValueError('No group was found with partial results and no such group was provided')
+            h5_partial_group = self.partial_h5_groups[-1]
+
         self.parms_dict = get_attributes(h5_partial_group)
         self._start_pos = self.parms_dict.pop('last_pixel')
         if self._start_pos == self.h5_main.shape[0] - 1:
@@ -196,12 +221,15 @@ class Process(object):
                                          lengthy_computation=False,
                                          func_args=args, func_kwargs=kwargs)
 
-    def compute(self, *args, **kwargs):
+    def compute(self, override=False, *args, **kwargs):
         """
         Creates placeholders for the results, applies the unit computation to chunks of the dataset
 
         Parameters
         ----------
+        override : bool, optional. default = False
+            By default, compute will simply return duplicate results to avoid recomputing or resume computation on a
+            group with partial results. Set to True to force fresh computation.
         args : list
             arguments to the mapped function in the correct order
         kwargs : dictionary
@@ -212,11 +240,23 @@ class Process(object):
         h5_results_grp : h5py.Datagroup object
             Datagroup containing all the results
         """
+        if not override:
+            if len(self.duplicate_h5_groups) > 0:
+                print('Returned previously computed results at ' + self.duplicate_h5_groups[-1].name)
+                return self.duplicate_h5_groups[-1]
+            elif len(self.partial_h5_groups) > 0:
+                print('Resuming computation in group: ' + self.partial_h5_groups[-1].name)
+                self.use_partial_computation()
+
         if self._start_pos == 0:
             # starting fresh
+            if self.verbose:
+                print('Creating datagroup and datasets')
             self._create_results_datasets()
         else:
             # resuming from previous checkpoint
+            if self.verbose:
+                print('Resuming computation')
             self._get_existing_datasets()
 
         time_per_pix = 0
