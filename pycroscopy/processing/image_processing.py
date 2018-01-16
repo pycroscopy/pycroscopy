@@ -325,7 +325,8 @@ class ImageWindow(object):
 
         old_group = check_for_old(h5_main, '-Windowing', check_parameters)
 
-        if old_group is not None:
+        if len(old_group) > 0:
+            old_group = old_group[-1]
             old = True
             h5_wins = old_group['Image_Windows']
 
