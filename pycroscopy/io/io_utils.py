@@ -101,6 +101,36 @@ def get_time_stamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
+def get_remaining_time(time_in_seconds, decimals=2, prefix='Time remaining', suffix=''):
+    """
+    Returns a string correctly formatted to display time remaining in seconds, minutes, or hours
+
+    Parameters
+    ----------
+    time_in_seconds : number
+        Time in seconds
+    decimals : uint, optional. default = 2
+        Number of decimal places to which the time needs to be formatted
+    prefix : str
+        Prefix that will appear before the time
+    suffix : str
+        Suffix that will appear after the time
+
+    Returns
+    -------
+    str
+        String with time formatted correctly
+    """
+    units = ['sec', 'min', 'hours']
+    factors = [1, 60, 3600]
+    for index, val in enumerate(factors):
+        if time_in_seconds < val:
+            index -= 1
+            break
+
+    return '{}: {} {} {}'.format(prefix, np.round(time_in_seconds / factors[index], decimals), units[index], suffix)
+
+
 def get_available_memory():
     """
     Returns the available memory
