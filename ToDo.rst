@@ -11,8 +11,8 @@ v 1.0 goals
 4. mostly done - generic visualizer
 5. mostly done - good utils for generating publishable plots - easy ~ 1 day
 6. DONE - Fitter must absorb new features in Process if it is not possible to extend it
-6. mostly done - Reorganize package - promote / demote lesser used utilites to processes / analyses. 
-7. Examples within docs for popular functions
+7. mostly done - Reorganize package - promote / demote lesser used utilites to processes / analyses. 
+8. Examples within docs for popular functions
 
 Documentation
 -------------
