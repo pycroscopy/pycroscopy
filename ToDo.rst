@@ -9,10 +9,10 @@ v 1.0 goals
   * Need more on dealing with data + finish plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
 4. mostly done - generic visualizer
-5. Fitter needs to extend Process - moderate ~ 1 day
-6. mostly done - good utils for generating publishable plots - easy ~ 1 day
-7. Reorganize package - promote / demote lesser used utilites to processes / analyses. 
-8. Examples within docs for popular functions
+5. mostly done - good utils for generating publishable plots - easy ~ 1 day
+6. DONE - Fitter must absorb new features in Process if it is not possible to extend it
+6. mostly done - Reorganize package - promote / demote lesser used utilites to processes / analyses. 
+7. Examples within docs for popular functions
 
 Documentation
 -------------
@@ -44,10 +44,10 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Features in Process must be absorbed into Fitter
-* Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
+* Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
 * Windows compatible function for deleting sub-tree
-* Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
+* Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
+* Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 
 Long-term
