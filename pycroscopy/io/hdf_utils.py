@@ -1524,7 +1524,7 @@ def copy_main_attributes(h5_main, h5_new):
         h5_new.attrs[att_name] = val
 
 
-def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
+def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbose=False):
     """
     Check to see if the results of a tool already exist and if they 
     were performed with the same parameters.
@@ -1537,6 +1537,9 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
            process or analysis name
     new_parms : dict, optional
            Parameters with which this tool will be performed.
+    target_dset : str, optional, defaukt = None
+            Name of the dataset whose attributes will be compared against new_parms.
+            Default - checking against the group
     verbose : bool, optional, default = False
            Whether or not to print debugging statements 
            
@@ -1560,7 +1563,17 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), verbose=False):
                 continue
                 
             try:
-                old_value = get_attr(group, key)
+                if target_dset is None:
+                    old_value = get_attr(group, key)
+                else:
+                    if target_dset not in group.keys():
+                        if verbose:
+                            print('{} did not contain the target dataset: {}'.format(group.name.split('/')[-1],
+                                                                                     target_dset))
+                        continue
+                    # take the attribute from the dataset instead of the group
+                    old_value = get_attr(group[target_dset], key)
+
             except KeyError:
                 # if parameter was not found assume that something has changed
                 if verbose:
