@@ -12,7 +12,7 @@ import time as tm
 
 from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import recommend_cpu_cores, get_available_memory
+from ..io.io_utils import recommend_cpu_cores, get_available_memory, format_time
 
 
 class Process(object):
@@ -267,6 +267,7 @@ class Process(object):
 
         time_per_pix = 0
         num_pos = self.h5_main.shape[0] - self._start_pos
+        orig_start_pos = self._start_pos
 
         print('You can abort this computation at any time and resume at a later time!\n'
               '\tIf you are operating in a python console, press Ctrl+C or Cmd+C to abort\n'
@@ -280,14 +281,15 @@ class Process(object):
             self._unit_computation()
 
             tot_time = np.round(tm.time() - t_start, decimals=2)
-
             if self.verbose:
-                print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / self.data.shape[0]))
-            if self._start_pos == 0:
+                print('Done parallel computing in {} or {} per pixel'.format(format_time(tot_time),
+                                                                             format_time(
+                                                                                 tot_time / self.data.shape[0])))
+            if self._start_pos == orig_start_pos:
                 time_per_pix = tot_time / self._end_pos  # in seconds
             else:
-                print('Time remaining: {} mins'.format(np.round((num_pos - self._end_pos) * time_per_pix / 60, 2)))
+                time_remaining = (num_pos - self._end_pos) * time_per_pix  # in seconds
+                print('Time remaining: ' + format_time(time_remaining))
 
             self._write_results_chunk()
             self._read_data_chunk()
