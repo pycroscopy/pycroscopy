@@ -43,18 +43,13 @@ class BESHOfitter(Fitter):
         self.is_reshapable = True
         self.num_udvs_steps = None
         self.freq_vec = None
+        # self._maxDataChunk = 1
+        # self._max_pos_per_read = 1
+        self._fitter_name = "SHO_Fit"
+        self._parms_dict = None
 
-    def _create_guess_datasets(self):
-        """
-        Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
-        links the guess dataset to the spectroscopic datasets.
-        """
-        # Create all the ancilliary datasets, allocate space.....
-
-        h5_spec_inds = self.h5_main.h5_spec_inds
-        h5_spec_vals = self.h5_main.h5_spec_vals
-
-        self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+        # Extract some basic parameters that are necessary for either the guess or fit
+        self.step_start_inds = np.where(self.h5_main.h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
 
         # find the frequency vector and hold in memory
@@ -62,13 +57,26 @@ class BESHOfitter(Fitter):
 
         self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
 
+        if self._parallel:
+            # accounting for memory copies
+            self._max_pos_per_read /= 2
+
+    def _create_guess_datasets(self):
+        """
+        Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
+        links the guess dataset to the spectroscopic datasets.
+        """
+        # Create all the ancilliary datasets, allocate space.....
         ds_guess = MicroDataset('Guess', data=[],
                                 maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
                                 chunking=(1, self.num_udvs_steps), dtype=sho32)
+        ds_guess.attrs = self._parms_dict
 
         not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
 
-        ds_sho_inds, ds_sho_vals = buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq, self.step_start_inds)
+        ds_sho_inds, ds_sho_vals = buildReducedSpec(self.h5_main.h5_spec_inds,
+                                                    self.h5_main.h5_spec_vals,
+                                                    not_freq, self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
         sho_grp = MicroDataGroup('-'.join([dset_name,
@@ -79,7 +87,7 @@ class BESHOfitter(Fitter):
                              ds_sho_vals])
         sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
-        h5_sho_grp_refs = self.hdf.writeData(sho_grp)
+        h5_sho_grp_refs = self.hdf.writeData(sho_grp, print_log=self._verbose)
 
         self.h5_guess = getH5DsetRefs(['Guess'], h5_sho_grp_refs)[0]
         h5_sho_inds = getH5DsetRefs(['Spectroscopic_Indices'],
@@ -126,6 +134,11 @@ class BESHOfitter(Fitter):
         # Also automatically links in the ancillary datasets.
         self.h5_fit = PycroDataset(create_empty_dataset(self.h5_guess, dtype=sho32, dset_name='Fit'))
 
+        # This is necessary comparing against new runs to avoid re-computation + resuming partial computation
+        self.h5_fit.attrs.update(self._parms_dict)
+
+        self.h5_fit.file.flush()
+
     def _get_frequency_vector(self):
         """
         Reads the frequency vector from the Spectroscopic_Values dataset.  
@@ -147,23 +160,8 @@ class BESHOfitter(Fitter):
         Returns the next chunk of data for the guess or the fit
         """
 
-        """
         # The model class should take care of all the basic reading
-        super(BESHOmodel, self)._get_data_chunk(verbose=verbose)
-        """
-
-        if self._start_pos < self.h5_main.shape[0]:
-            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            if self._verbose:
-                print('Reading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
-
-            # Now update the start position
-            self._start_pos = self._end_pos
-        else:
-            if self._verbose:
-                print('Finished reading all data!')
-            self.data = None
+        super(BESHOfitter, self)._get_data_chunk()
 
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
         if self.data is not None:
@@ -217,33 +215,9 @@ class BESHOfitter(Fitter):
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOfitter, self)._set_results(is_guess)
 
-    def _set_guess(self, h5_guess):
-        """
-        Setup to run the fit on an existing guess dataset.  Sets the attributes
-        normally defined during do_guess.
-
-        Parameters
-        ----------
-        h5_guess : h5py.Dataset
-            Dataset object containing the guesses
-        """
-        h5_spec_inds = self.h5_main.h5_spec_inds
-
-        self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
-        self.num_udvs_steps = len(self.step_start_inds)
-
-        # find the frequency vector and hold in memory
-        self._get_frequency_vector()
-
-        self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
-
-        self.h5_guess = h5_guess
-
-        if self._parallel:
-            self._max_pos_per_read /= 2
-
     def do_guess(self, max_mem=None, processors=None, strategy='complex_gaussian',
-                 options={"peak_widths": np.array([10, 200]), "peak_step": 20}):
+                 options={"peak_widths": np.array([10, 200]), "peak_step": 20},
+                 h5_partial_guess=None, override=False, **kwargs):
         """
 
         Parameters
@@ -261,6 +235,11 @@ class BESHOfitter(Fitter):
         options: dict
             Default Options for wavelet_peaks{"peaks_widths": np.array([10,200]), "peak_step":20}.
             Dictionary of options passed to strategy. For more info see GuessMethods documentation.
+        h5_partial_guess : h5py.group. optional, default = None
+            Datagroup containing (partially computed) guess results. do_guess will resume computation if provided.
+        override : bool, optional. default = False
+            By default, will simply return duplicate results to avoid recomputing or resume computation on a
+            group with partial results. Set to True to force fresh computation.
 
         Returns
         -------
@@ -268,34 +247,22 @@ class BESHOfitter(Fitter):
             Dataset with the SHO guess parameters
             
         """
-        if processors is None:
-            processors = self._maxCpus
-        else:
-            processors = min(processors, self._maxCpus)
 
-        if max_mem is not None:
-            max_mem = min(max_mem, self._maxMemoryMB)
-            self._maxDataChunk = int(max_mem / self._maxCpus)
-
-            # Now calculate the number of positions that can be stored in memory in one go.
-            mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
-            self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
-
+        """
         if self._parallel:
             self._max_pos_per_read = int(self._max_pos_per_read / 2)
-
-        self._create_guess_datasets()
-        self._start_pos = 0
+        """
         if strategy == 'complex_gaussian':
             freq_vec = self.freq_vec
             options.update({'frequencies': freq_vec})
-        super(BESHOfitter, self).do_guess(processors=processors, strategy=strategy, options=options)
+        super(BESHOfitter, self).do_guess(processors=processors, strategy=strategy, options=options,
+                                          h5_partial_guess=h5_partial_guess, override=override, **kwargs)
 
         return self.h5_guess
 
     def do_fit(self, max_mem=None, processors=None, solver_type='least_squares', solver_options={'jac': 'cs'},
                obj_func={'class': 'Fit_Methods', 'obj_func': 'SHO', 'xvals': np.array([])},
-               h5_guess=None):
+               h5_partial_fit=None, h5_guess=None, override=False):
         """
         Fits the dataset to the SHO function
 
@@ -317,39 +284,24 @@ class BESHOfitter(Fitter):
         obj_func : dict
             Dictionary defining the class and method containing the function to be fit as well as any 
             additional function parameters.
-        h5_guess : h5py.Dataset
-            Existing guess to use as input to fit.
-            Default None
+        h5_partial_fit : h5py.group. optional, default = None
+            Datagroup containing (partially computed) fit results. do_fit will resume computation if provided.
+        h5_guess : h5py.group. optional, default = None
+            Datagroup containing guess results. do_fit will use this if provided.
+        override : bool, optional. default = False
+            By default, will simply return duplicate results to avoid recomputing or resume computation on a
+            group with partial results. Set to True to force fresh computation.
 
         Returns
         -------
-        results : h5py.Dataset object
-            Dataset with the SHO fit parameters
+        h5_results : h5py.Dataset object
+            Dataset with the fit parameters
             
         """
-        if processors is None:
-            processors = self._maxCpus
-        else:
-            processors = min(processors, self._maxCpus)
-
-        if max_mem is not None:
-            max_mem = min(max_mem, self._maxMemoryMB)
-            self._maxDataChunk = int(max_mem / self._maxCpus)
-
-            # Now calculate the number of positions that can be stored in memory in one go.
-            mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
-            self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
-
-        if h5_guess is not None or self.h5_guess is None:
-            self._set_guess(h5_guess)
-
-        self._create_fit_datasets()
-        self._start_pos = 0
         obj_func['xvals'] = self.freq_vec
-
         super(BESHOfitter, self).do_fit(processors=processors, solver_type=solver_type,
-                                        solver_options=solver_options,
-                                        obj_func=obj_func)
+                                        solver_options=solver_options, obj_func=obj_func,
+                                        h5_partial_fit=h5_partial_fit, h5_guess=h5_guess, override=override)
         return self.h5_fit
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
