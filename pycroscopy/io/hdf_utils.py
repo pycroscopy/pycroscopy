@@ -625,15 +625,15 @@ def get_formatted_labels(h5_dset):
             units = ['' for _ in labs]
 
         if len(labs) != len(units):
-            warn('Labels and units have different sizes!')
-            return None
+            raise ValueError('Labels and units have different sizes!\n\tLabels:{}, units:{}'.format(labs, units))
+
         labels = []
         for lab, unit in zip(labs, units):
             labels.append('{} ({})'.format(lab, unit))
         return labels
+
     except KeyError:
-        warn('labels attribute was missing')
-        return None
+        raise KeyError('labels attribute was missing')
 
 
 def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False, sort_dims=False):
@@ -1397,8 +1397,8 @@ def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename
 
         ds_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
         ds_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
-        ds_inds.attrs['units'] = ''
-        ds_vals.attrs['units'] = ''
+        ds_inds.attrs['units'] = ['']
+        ds_vals.attrs['units'] = ['']
 
     return ds_inds, ds_vals
 
@@ -1555,66 +1555,87 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbos
         if verbose:
             print('Looking at group - {}'.format(group.name.split('/')[-1]))
 
-        tests = []
-        for key in new_parms.keys():
-            
-            # HDF5 cannot store None as an attribute anyway. ignore
-            if new_parms[key] is None:
-                continue
-                
-            try:
-                if target_dset is None:
-                    old_value = get_attr(group, key)
-                else:
-                    if target_dset not in group.keys():
-                        if verbose:
-                            print('{} did not contain the target dataset: {}'.format(group.name.split('/')[-1],
-                                                                                     target_dset))
-                        continue
-                    # take the attribute from the dataset instead of the group
-                    old_value = get_attr(group[target_dset], key)
-
-            except KeyError:
-                # if parameter was not found assume that something has changed
-                if verbose:
-                    print('New parm: {} \t- new parm not in group *****'.format(key))
-                tests.append(False)
-                break
-                
-            if isinstance(old_value, np.ndarray):
-                if not isinstance(new_parms[key], collections.Iterable):
-                    if verbose:
-                        print('New parm: {} \t- new parm not iterable unlike old parm *****'.format(key))
-                    tests.append(False)
-                    break
-                new_array = np.array(new_parms[key])
-                if old_value.size != new_array.size:
-                    if verbose:
-                        print('New parm: {} \t- are of different sizes ****'.format(key))
-                    tests.append(False)
-                else:
-                    answer = np.all(np.isclose(old_value, new_array))
-                    if verbose:
-                        print('New parm: {} \t- match: {}'.format(key, answer))
-                    tests.append(answer)
+        h5_obj = group
+        if target_dset is not None:
+            if target_dset in group.keys():
+                h5_obj = group[target_dset]
             else:
-                """if isinstance(new_parms[key], collections.Iterable):
-                    if verbose:
-                        print('New parm: {} \t- new parm is iterable unlike old parm *****'.format(key))
-                    tests.append(False)
-                    break"""
-                answer = np.all(new_parms[key] == old_value)
                 if verbose:
-                        print('New parm: {} \t- match: {}'.format(key, answer))
-                tests.append(answer)
-        if verbose:
-              print('')
+                    print('{} did not contain the target dataset: {}'.format(group.name.split('/')[-1],
+                                                                             target_dset))
+                continue
 
-        if all(tests):
+        if check_for_matching_attrs(h5_obj, new_parms=new_parms, verbose=verbose):
             # return group
             matching_groups.append(group)
 
     return matching_groups
+
+
+def check_for_matching_attrs(h5_obj, new_parms=dict(), verbose=False):
+    """
+    Compares attributes in the given H5 object against those in the provided dictionary and returns True if
+    the parameters match, and False otherwise
+
+    Parameters
+    ----------
+    h5_obj : h5py object (Dataset or Group)
+        Object whose attributes will be compared against new_parms
+    new_parms : dict, optional. default = empty dictionary
+        Parameters to compare against the attributes present in h5_obj
+    verbose : bool, optional, default = False
+       Whether or not to print debugging statements
+
+    Returns
+    -------
+
+    """
+    tests = []
+    for key in new_parms.keys():
+
+        # HDF5 cannot store None as an attribute anyway. ignore
+        if new_parms[key] is None:
+            continue
+
+        try:
+            old_value = get_attr(h5_obj, key)
+        except KeyError:
+            # if parameter was not found assume that something has changed
+            if verbose:
+                print('New parm: {} \t- new parm not in group *****'.format(key))
+            tests.append(False)
+            break
+
+        if isinstance(old_value, np.ndarray):
+            if not isinstance(new_parms[key], collections.Iterable):
+                if verbose:
+                    print('New parm: {} \t- new parm not iterable unlike old parm *****'.format(key))
+                tests.append(False)
+                break
+            new_array = np.array(new_parms[key])
+            if old_value.size != new_array.size:
+                if verbose:
+                    print('New parm: {} \t- are of different sizes ****'.format(key))
+                tests.append(False)
+            else:
+                answer = np.all(np.isclose(old_value, new_array))
+                if verbose:
+                    print('New parm: {} \t- match: {}'.format(key, answer))
+                tests.append(answer)
+        else:
+            """if isinstance(new_parms[key], collections.Iterable):
+                if verbose:
+                    print('New parm: {} \t- new parm is iterable unlike old parm *****'.format(key))
+                tests.append(False)
+                break"""
+            answer = np.all(new_parms[key] == old_value)
+            if verbose:
+                print('New parm: {} \t- match: {}'.format(key, answer))
+            tests.append(answer)
+    if verbose:
+        print('')
+
+    return all(tests)
 
 
 def create_spec_inds_from_vals(ds_spec_val_mat):
