@@ -1,6 +1,6 @@
 """
 ====================================================================================================
-Tutorial 3: Image alignment and registration
+Image alignment and registration
 ====================================================================================================
 
 **Stephen Jesse, Alex Belianinov, Suhas Somnath**
