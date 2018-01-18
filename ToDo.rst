@@ -44,7 +44,6 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
 * Windows compatible function for deleting sub-tree
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
@@ -53,6 +52,7 @@ Core development
 Long-term
 ^^^^^^^^^
 * multi-node computing capability in parallel_compute
+* Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 
 GUI
