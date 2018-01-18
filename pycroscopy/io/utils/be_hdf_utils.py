@@ -8,7 +8,7 @@ Created on Tue Dec 15 11:10:37 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 
-from .hdf_utils import getAuxData
+from pycroscopy.io.hdf_utils import getAuxData
 
 __all__ = [
     'maxReadPixels', 'getActiveUDVSsteps', 'getDataIndicesForUDVSstep', 'getForExcitWfm',
