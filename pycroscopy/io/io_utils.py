@@ -17,7 +17,8 @@ import itertools
 
 __all__ = ['get_available_memory', 'get_time_stamp', 'transform_to_target_dtype', 'transform_to_real',
            'complex_to_real', 'compound_to_real', 'real_to_complex', 'real_to_compound', 'check_dtype',
-           'recommend_cpu_cores', 'uiGetFile', 'format_quantity', 'format_time', 'format_size']
+           'recommend_cpu_cores', 'uiGetFile', 'format_quantity', 'format_time', 'format_size',
+           'get_compound_subdtypes']
 
 
 def check_ssh():
@@ -253,6 +254,26 @@ def complex_to_real(ds_main):
     retval : ND real numpy array
     """
     return np.hstack([np.real(ds_main), np.imag(ds_main)])
+
+
+def get_compound_subdtypes(struct_dtype):
+    """
+    Returns a dictionary of the dtypes of each of the fields in the given structured array dtype
+
+    Parameters
+    ----------
+    struct_dtype : numpy.dtype object
+        dtype of a structured array
+
+    Returns
+    -------
+    dtypes : dict
+        Dictionary whose keys are the field names and values are the corresponding dtypes
+    """
+    dtypes = dict()
+    for field_name in struct_dtype.fields:
+        dtypes[field_name] = struct_dtype.fields[field_name][0]
+    return dtypes
 
 
 def compound_to_real(ds_main):
