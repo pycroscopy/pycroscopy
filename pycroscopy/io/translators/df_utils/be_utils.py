@@ -21,7 +21,7 @@ from ...io_hdf5 import ioHDF5
 from ...io_utils import get_available_memory, recommend_cpu_cores
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
-from ....processing.histogram import buildHistogram
+from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
@@ -1601,15 +1601,15 @@ class BEHistogram:
         Get the Histograms and store in correct place in ds_hist
                 """
                 for ifunc, func in enumerate(func_list):
-                    chunk_hist = buildHistogram(this_x_hist,
-                                                data_mat,
-                                                N_x_bins,
-                                                self.N_y_bins,
-                                                weighting_vec,
-                                                min_list[ifunc],
-                                                max_list[ifunc],
-                                                func,
-                                                debug)
+                    chunk_hist = build_histogram(this_x_hist,
+                                                 data_mat,
+                                                 N_x_bins,
+                                                 self.N_y_bins,
+                                                 weighting_vec,
+                                                 min_list[ifunc],
+                                                 max_list[ifunc],
+                                                 func,
+                                                 debug)
                     if debug:
                         print('chunkhist-{}'.format(func.__name__), np.shape(chunk_hist))
                         print(chunk_hist.dtype)
