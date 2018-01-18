@@ -12,7 +12,9 @@ from warnings import warn
 import numpy as np
 from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
-from .io_utils import transform_to_real
+from .dtype_utils import transform_to_real
+
+
 # from ..viz.jupyter_utils import simple_ndim_visualizer
 
 

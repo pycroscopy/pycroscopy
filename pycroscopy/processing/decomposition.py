@@ -13,7 +13,7 @@ import sklearn.decomposition as dec
 from .process import Process
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transform_to_target_dtype
+from ..io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 

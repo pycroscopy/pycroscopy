@@ -14,8 +14,8 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, plot_complex_loop_stack, plot_complex_map_stack
-from pycroscopy.viz.plot_utils import save_fig_filebox_button
+from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+    plot_complex_loop_stack, plot_complex_map_stack, save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
 from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
