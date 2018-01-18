@@ -17,8 +17,15 @@ the generation of high quality figures for journal publications.
 from __future__ import division, print_function, absolute_import, unicode_literals
 # plotting utilities and our own pycroscopy:
 import numpy as np
+from warnings import warn
 import matplotlib.pyplot as plt
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    warn('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 
 ################################################################################################

@@ -25,6 +25,7 @@ be transformed to look like the image on the left.
 
 from __future__ import print_function, division, unicode_literals  # ensure python3 compatibility
 import numpy as np  # fast math
+from warnings import warn
 import matplotlib.pyplot as plt  # plotting
 import h5py  # reading the data file
 import os  # file operations

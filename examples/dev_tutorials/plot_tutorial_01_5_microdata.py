@@ -55,7 +55,13 @@ Translation can be challenging in many cases:
 
 import os
 import numpy as np
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    print('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 ##############################################################################
 # Create some MicroDatasets and MicroDataGroups that will be written to the file.

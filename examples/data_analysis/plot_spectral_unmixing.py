@@ -50,7 +50,13 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import NMF
 
 # finally import pycroscopy:
-import pycroscopy as px
+try:
+    import pycroscopy as px
+except ImportError:
+    print('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 """
   
