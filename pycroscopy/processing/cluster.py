@@ -14,7 +14,7 @@ from .process import Process
 from .proc_utils import get_component_slice
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transform_to_target_dtype
+from ..io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 

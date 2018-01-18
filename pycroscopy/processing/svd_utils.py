@@ -18,7 +18,8 @@ from .proc_utils import get_component_slice
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, \
     getH5RegRefIndices, createRefFromIndices, calc_chunks, copy_main_attributes, copyAttributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transform_to_target_dtype, get_available_memory
+from ..io.io_utils import get_available_memory
+from ..io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..io.microdata import MicroDataset, MicroDataGroup
 
 

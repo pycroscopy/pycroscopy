@@ -21,7 +21,7 @@ from .utils.tree import ClusterTree
 from .be_sho_model import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..io.io_utils import real_to_compound, compound_to_real
+from ..io.dtype_utils import compound_to_real, real_to_compound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
     get_attr

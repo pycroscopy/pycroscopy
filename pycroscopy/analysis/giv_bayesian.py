@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 from ..processing.process import Process, parallel_compute
 from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.io_utils import real_to_compound
+from ..io.dtype_utils import real_to_compound
 from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
 from ..io.translators.utils import build_ind_val_dsets
 from ..io.io_hdf5 import ioHDF5
