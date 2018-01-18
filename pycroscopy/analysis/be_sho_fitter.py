@@ -8,7 +8,7 @@ from warnings import warn
 import numpy as np
 from .fitter import Fitter
 from ..io.pycro_data import PycroDataset
-from ..io.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
+from ..io.utils.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             create_empty_dataset
 from ..io.microdata import MicroDataset, MicroDataGroup

@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
+from ...utils.be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
 from ...io_hdf5 import ioHDF5
 from ...io_utils import get_available_memory, recommend_cpu_cores
