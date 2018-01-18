@@ -18,6 +18,7 @@ Submodules
 from . import hdf_utils
 from . import io_hdf5
 from . import io_utils
+from . import dtype_utils
 from . import microdata
 from . import translators
 from . import utils
@@ -28,7 +29,7 @@ from .translators import *
 from . import pycro_data
 from .pycro_data import PycroDataset
 
-__all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'PycroDataset', 'hdf_utils', 'io_utils',
+__all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'PycroDataset', 'hdf_utils', 'io_utils', 'dtype_utils',
            'microdata']
 __all__ += translators.__all__
 __all__ += utils.__all__

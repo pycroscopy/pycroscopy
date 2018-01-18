@@ -2,7 +2,7 @@
 """
 Created on Mon Sep 28 11:35:57 2015
 
-@author: Anton Ievlev
+@author: Stephen Jesse, Anton Ievlev, Chris R. Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
