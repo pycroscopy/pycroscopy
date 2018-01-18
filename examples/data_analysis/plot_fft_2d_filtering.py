@@ -22,15 +22,26 @@ A few properties/uses of FFT’s are worth reviewing:
 """
 
 from __future__ import division, unicode_literals, print_function
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.fft as npf
-# for downloading files:
-import wget
 import os
-
-import pycroscopy as px
+# for downloading files:
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    print('wget not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
+try:
+    import pycroscopy as px
+except ImportError:
+    print('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 ####################################################################################
 # In this example we will load an image, Fourier transform it, apply a smoothing filter, 
