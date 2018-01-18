@@ -7,8 +7,8 @@ Created on Tue Jan 05 07:55:56 2016
 """
 
 from __future__ import division, print_function, absolute_import
+import itertools
 import numpy as np
-from ..io.io_utils import to_ranges
 
 
 def get_component_slice(components, total_components=None):
@@ -71,3 +71,28 @@ def get_component_slice(components, total_components=None):
                         'Allowed types are integer, numpy array, list, tuple, and slice.')
 
     return comp_slice, num_comps
+
+
+def to_ranges(iterable):
+    """
+    Converts a sequence of iterables to range tuples
+
+    From https://stackoverflow.com/questions/4628333/converting-a-list-of-integers-into-range-in-python
+
+    Credits: @juanchopanza and @luca
+
+    Parameters
+    ----------
+    iterable : collections.Iterable object
+        iterable object like a list
+
+    Returns
+    -------
+    iterable : generator object
+        Cast to list or similar to use
+    """
+    iterable = sorted(set(iterable))
+    for key, group in itertools.groupby(enumerate(iterable),
+                                        lambda t: t[1] - t[0]):
+        group = list(group)
+        yield group[0][1], group[-1][1]

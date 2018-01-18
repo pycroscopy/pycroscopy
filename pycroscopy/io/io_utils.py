@@ -13,7 +13,6 @@ from psutil import virtual_memory as vm
 from warnings import warn
 import h5py
 import numpy as np
-import itertools
 
 __all__ = ['get_available_memory', 'get_time_stamp', 'transform_to_target_dtype', 'transform_to_real',
            'complex_to_real', 'compound_to_real', 'real_to_complex', 'real_to_compound', 'check_dtype',
@@ -455,28 +454,3 @@ def transform_to_real(ds_main):
         return compound_to_real(ds_main)
     else:
         return ds_main
-
-
-def to_ranges(iterable):
-    """
-    Converts a sequence of iterables to range tuples
-    
-    From https://stackoverflow.com/questions/4628333/converting-a-list-of-integers-into-range-in-python
-    
-    Credits: @juanchopanza and @luca
-    
-    Parameters
-    ----------
-    iterable : collections.Iterable object
-        iterable object like a list
-    
-    Returns
-    -------
-    iterable : generator object
-        Cast to list or similar to use
-    """
-    iterable = sorted(set(iterable))
-    for key, group in itertools.groupby(enumerate(iterable),
-                                        lambda t: t[1] - t[0]):
-        group = list(group)
-        yield group[0][1], group[-1][1]
