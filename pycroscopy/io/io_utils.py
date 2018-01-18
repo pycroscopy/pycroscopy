@@ -101,6 +101,36 @@ def get_time_stamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
+def format_quantity(value, units, factors, decimals=2):
+    """
+    Formats the provided quantity such as time or size to appropriate strings
+
+    Parameters
+    ----------
+    value : number
+        value in some base units. For example - time in seconds
+    units : array-like
+        List of names of units for each scale of the value
+    factors : array-like
+        List of scaling factors for each scale of the value
+    decimals : uint, optional. default = 2
+        Number of decimal places to which the value needs to be formatted
+
+    Returns
+    -------
+    str
+        String with value formatted correctly
+    """
+    for index, val in enumerate(factors):
+        if value < val:
+            index -= 1
+            break
+
+    index = max(0, index)  # handles sub msec
+
+    return '{} {}'.format(np.round(value / factors[index], decimals), units[index])
+
+
 def format_time(time_in_seconds, decimals=2):
     """
     Formats the provided time in seconds to seconds, minutes, or hours
@@ -119,14 +149,28 @@ def format_time(time_in_seconds, decimals=2):
     """
     units = ['msec', 'sec', 'min', 'hours']
     factors = [0.001, 1, 60, 3600]
-    for index, val in enumerate(factors):
-        if time_in_seconds < val:
-            index -= 1
-            break
+    return format_quantity(time_in_seconds, units, factors, decimals=decimals)
 
-    index = max(0, index)  # handles sub msec
 
-    return '{} {}'.format(np.round(time_in_seconds / factors[index], decimals), units[index])
+def format_size(size_in_bytes, decimals=2):
+    """
+    Formats the provided size in bytes to kB, MB, GB, TB etc.
+
+    Parameters
+    ----------
+    size_in_bytes : number
+        size in bytes
+    decimals : uint, optional. default = 2
+        Number of decimal places to which the size needs to be formatted
+
+    Returns
+    -------
+    str
+        String with size formatted correctly
+    """
+    units = ['bytes', 'kB', 'MB', 'GB', 'TB']
+    factors = 1024 ** np.arange(len(units))
+    return format_quantity(size_in_bytes, units, factors, decimals=decimals)
 
 
 def get_available_memory():
