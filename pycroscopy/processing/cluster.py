@@ -58,7 +58,7 @@ class Cluster(Process):
         if num_comps is None:
             comp_attr = 'all'
 
-        comp_slice, num_comps = get_component_slice(self.h5_main.shape[1], num_comps)
+        comp_slice, num_comps = get_component_slice(num_comps, total_components=self.h5_main.shape[1])
 
         self.num_comps = num_comps
         self.data_slice = (slice(None), comp_slice)

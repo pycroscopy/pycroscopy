@@ -241,7 +241,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     """
 
     hdf = ioHDF5(h5_main.file)
-    comp_slice = get_component_slice(h5_main.shape[1], components)
+    comp_slice, num_comps = get_component_slice(components, total_components=h5_main.shape[1])
     dset_name = h5_main.name.split('/')[-1]
 
     # Ensuring that at least one core is available for use / 2 cores are available for other use
