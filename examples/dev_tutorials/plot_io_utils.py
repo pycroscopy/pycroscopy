@@ -1,13 +1,13 @@
 """
 ======================================================================================
-Walk-through: Input / Output utilities
+Walk-through: Input / Output / Computing utilities
 ======================================================================================
 
 **Suhas Somnath**
 
 10/12/2017
 
-This is a short walk-through of useful utilities in pycroscopy that simplify common input / output tasks.
+This is a short walk-through of useful utilities in pycroscopy that simplify common i/o and computation tasks.
 """
 
 from multiprocessing import cpu_count
