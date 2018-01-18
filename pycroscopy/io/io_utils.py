@@ -16,8 +16,8 @@ import numpy as np
 import itertools
 
 __all__ = ['get_available_memory', 'get_time_stamp', 'transform_to_target_dtype', 'transform_to_real',
-           'complex_to_float', 'compound_to_real', 'real_to_complex', 'real_to_compound', 'check_dtype',
-           'recommend_cpu_cores', 'uiGetFile']
+           'complex_to_real', 'compound_to_real', 'real_to_complex', 'real_to_compound', 'check_dtype',
+           'recommend_cpu_cores', 'uiGetFile', 'format_quantity', 'format_time', 'format_size']
 
 
 def check_ssh():
@@ -239,7 +239,7 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
     return int(requested_cores)
 
 
-def complex_to_float(ds_main):
+def complex_to_real(ds_main):
     """
     Stacks the real values followed by the imaginary values in an N dimensional matrix
 
@@ -314,7 +314,7 @@ def check_dtype(ds_main):
         is_complex = True
         new_dtype = np.real(ds_main[0, 0]).dtype
         type_mult = new_dtype.itemsize * 2
-        func = complex_to_float
+        func = complex_to_real
         n_features *= 2
     elif len(ds_main.dtype) > 0:
         """
@@ -429,7 +429,7 @@ def transform_to_real(ds_main):
         Data raveled to a float data type
     """
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
-        return complex_to_float(ds_main)
+        return complex_to_real(ds_main)
     elif len(ds_main.dtype) > 0:
         return compound_to_real(ds_main)
     else:
