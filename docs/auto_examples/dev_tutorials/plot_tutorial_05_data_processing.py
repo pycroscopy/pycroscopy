@@ -180,7 +180,7 @@ class ShoGuess(px.Process):
         """
         # converting from a list to a 2D numpy array
         self._results = np.array(self._results, dtype=np.float32)
-        self.h5_guess[:, 0] = px.io_utils.real_to_compound(self._results, sho32)
+        self.h5_guess[:, 0] = px.dtype_utils.real_to_compound(self._results, sho32)
 
         # Now update the start position
         self._start_pos = self._end_pos
@@ -239,7 +239,7 @@ resp_vec = h5_main[pix_ind]
 norm_guess_parms = h5_guess[pix_ind]
 
 # Converting from compound to real:
-norm_guess_parms = px.io_utils.compound_to_real(norm_guess_parms)
+norm_guess_parms = px.dtype_utils.compound_to_real(norm_guess_parms)
 print('Functional fit returned:', norm_guess_parms)
 norm_resp = px.be_sho.SHOfunc(norm_guess_parms, freq_vec)
 
