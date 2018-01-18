@@ -11,20 +11,20 @@ import numpy as np
 from ..io.io_utils import to_ranges
 
 
-def get_component_slice(total_components, components):
+def get_component_slice(components, total_components=None):
     """
     Check the components object to determine how to use it to slice the dataset
 
     Parameters
     ----------
-    total_components : uint
-        Total number of spectral components in the dataset
     components : {int, array-like of ints, slice, or None}
         Input Options
         integer: Components less than the input will be kept
         length 2 iterable of integers: Integers define start and stop of component slice to retain
         other iterable of integers or slice: Selection of component indices to retain
         None: All components will be used
+    total_components : uint, optional. Default = None
+        Total number of spectral components in the dataset
 
     Returns
     -------
@@ -33,13 +33,15 @@ def get_component_slice(total_components, components):
     num_comps : uint
         Number of selected components
     """
+    num_comps = None
 
     if components is None:
         num_comps = total_components
         comp_slice = slice(0, num_comps)
     elif isinstance(components, int):
         # Component is integer
-        num_comps = int(np.min([components, total_components]))
+        if total_components is not None:
+            num_comps = int(np.min([components, total_components]))
         comp_slice = slice(0, num_comps)
     elif hasattr(components, '__iter__') and not isinstance(components, dict):
         # Component is array, list, or tuple
