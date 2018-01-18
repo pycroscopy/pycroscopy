@@ -15,8 +15,8 @@ else:
     from numpy_groupies import aggregate_np
 
 
-def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
-                   debug=False, *args, **kwargs):
+def build_histogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
+                    debug=False, *args, **kwargs):
     """
     Creates histogram for a single block of pixels
 
