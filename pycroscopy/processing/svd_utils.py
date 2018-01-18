@@ -14,8 +14,9 @@ from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
 
 from .process import Process
+from .proc_utils import get_component_slice
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, \
-    getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes, copyAttributes
+    getH5RegRefIndices, createRefFromIndices, calc_chunks, copy_main_attributes, copyAttributes
 from ..io.io_hdf5 import ioHDF5
 from ..io.io_utils import check_dtype, transform_to_target_dtype, get_available_memory
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -240,7 +241,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     """
 
     hdf = ioHDF5(h5_main.file)
-    comp_slice = get_component_slice(components)
+    comp_slice = get_component_slice(h5_main.shape[1], components)
     dset_name = h5_main.name.split('/')[-1]
 
     # Ensuring that at least one core is available for use / 2 cores are available for other use
@@ -328,45 +329,3 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     print('Done writing reconstructed data to file.')
 
     return h5_rebuilt
-
-
-def get_component_slice(components):
-    """
-    Check the components object to determine how to use it to slice the dataset
-
-    Parameters
-    ----------
-    components : {int, iterable of ints, slice, or None}
-        Input Options
-        integer: Components less than the input will be kept
-        length 2 iterable of integers: Integers define start and stop of component slice to retain
-        other iterable of integers or slice: Selection of component indices to retain
-        None: All components will be used
-    Returns
-    -------
-    comp_slice : slice or numpy array of uints
-        Slice or array specifying which components should be kept
-
-    """
-
-    comp_slice = slice(None)
-
-    if isinstance(components, int):
-        # Component is integer
-        comp_slice = slice(0, components)
-    elif hasattr(components, '__iter__') and not isinstance(components, dict):
-        # Component is array, list, or tuple
-        if len(components) == 2:
-            # If only 2 numbers are given, use them as the start and stop of a slice
-            comp_slice = slice(int(components[0]), int(components[1]))
-        else:
-            # Convert components to an unsigned integer array
-            comp_slice = np.uint(np.round(components)).tolist()
-    elif isinstance(components, slice):
-        # Components is already a slice
-        comp_slice = components
-    elif components is not None:
-        raise TypeError('Unsupported component type supplied to clean_and_build.  '
-                        'Allowed types are integer, numpy array, list, tuple, and slice.')
-
-    return comp_slice

@@ -11,9 +11,10 @@ import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .process import Process
+from .proc_utils import get_component_slice
 from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
 from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transform_to_target_dtype, to_ranges
+from ..io.io_utils import check_dtype, transform_to_target_dtype
 from ..io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -57,7 +58,7 @@ class Cluster(Process):
         if num_comps is None:
             comp_attr = 'all'
 
-        comp_slice, num_comps = self._get_component_slice(num_comps)
+        comp_slice, num_comps = get_component_slice(self.h5_main.shape[1], num_comps)
 
         self.num_comps = num_comps
         self.data_slice = (slice(None), comp_slice)
@@ -159,61 +160,6 @@ class Cluster(Process):
             # transform back to the source data type and insert into the mean response
             mean_resp[clust_ind] = transform_to_target_dtype(avg_data, self.h5_main.dtype)
         return mean_resp
-
-    def _get_component_slice(self, components):
-        """
-        Check the components object to determine how to use it to slice the dataset
-
-        Parameters
-        ----------
-        components : {int, array-like of ints, slice, or None}
-            Input Options
-            integer: Components less than the input will be kept
-            length 2 iterable of integers: Integers define start and stop of component slice to retain
-            other iterable of integers or slice: Selection of component indices to retain
-            None: All components will be used
-
-        Returns
-        -------
-        comp_slice : slice or numpy.ndarray of uints
-            Slice or array specifying which components should be kept
-        """
-
-        if components is None:
-            num_comps = self.h5_main.shape[1]
-            comp_slice = slice(0, num_comps)
-        elif isinstance(components, int):
-            # Component is integer
-            num_comps = int(np.min([components, self.h5_main.shape[1]]))
-            comp_slice = slice(0, num_comps)
-        elif hasattr(components, '__iter__') and not isinstance(components, dict):
-            # Component is array, list, or tuple
-            if len(components) == 2:
-                # If only 2 numbers are given, use them as the start and stop of a slice
-                comp_slice = slice(int(components[0]), int(components[1]))
-                num_comps = abs(comp_slice.stop - comp_slice.start)
-            else:
-                # Convert components to an unsigned integer array
-                comp_slice = np.uint(components)
-                # sort and take unique values only
-                comp_slice.sort()
-                comp_slice = np.unique(comp_slice)
-                num_comps = len(comp_slice)
-                # check to see if this giant list of integers is just a simple range
-                list_of_ranges = list(to_ranges(comp_slice))
-                if len(list_of_ranges) == 1:
-                    # increment the second index by 1 to be consistent with python
-                    comp_slice = slice(int(list_of_ranges[0][0]), int(list_of_ranges[0][1] + 1))
-
-        elif isinstance(components, slice):
-            # Components is already a slice
-            comp_slice = components
-            num_comps = abs(comp_slice.stop - comp_slice.start)
-        else:
-            raise TypeError('Unsupported component type supplied to clean_and_build.  '
-                            'Allowed types are integer, numpy array, list, tuple, and slice.')
-
-        return comp_slice, num_comps
 
     def _write_results_chunk(self, labels, mean_response):
         """
