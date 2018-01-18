@@ -1,18 +1,17 @@
 """
-================================================
-Tutorial 1: Interacting with Pycroscopy H5 files
-================================================
+====================================
+Interacting with Pycroscopy H5 files
+====================================
 Suhas Somnath
 
 11/11/2017
 
-This set of tutorials will serve as examples for using and developing end-to-end workflows for pycroscopy.
-
-In this example, we will learn how to interact with pycroscopy formatted h5 files.
+Here, we will learn how to interact with pycroscopy formatted h5 files.
 
 Introduction
 ============
-We highly recommend reading about the pycroscopy data format - available in the docs.
+We highly recommend reading about the pycroscopy data format - available at
+https://pycroscopy.github.io/pycroscopy/data_format.html.
 
 Pycroscopy uses a data-centric approach to data analysis and processing meaning that results from all data analysis and
 processing are written to the same h5 file that contains the recorded measurements. The Hierarchical Data Format (HDF5)
