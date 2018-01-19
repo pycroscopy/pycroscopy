@@ -8,14 +8,14 @@ Created on Tue Nov 07 11:48:53 2017
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
-import time as tm
 import numpy as np
 from collections import Iterable
-from .process import Process, parallel_compute
-from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, check_for_old
-from ..io.translators.utils import build_ind_val_dsets
-from ..io.io_hdf5 import ioHDF5
+from pycroscopy.core.processing.process import Process, parallel_compute
+from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
+                                link_h5_objects_as_attrs
+from pycroscopy.core.io.translator import build_ind_val_dsets
+from pycroscopy.core.io.io_hdf5 import ioHDF5
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
 # TODO: correct implementation of num_pix
@@ -149,8 +149,8 @@ class SignalFilter(Process):
 
         self.hot_inds = None
 
-        h5_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
-        h5_pos_vals = getAuxData(self.h5_main, auxDataName=['Position_Values'])[0]
+        h5_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
+        h5_pos_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Values'])[0]
 
         if self.write_condensed:
             self.hot_inds = np.where(self.composite_filter > 0)[0]
@@ -181,42 +181,42 @@ class SignalFilter(Process):
         h5_filt_refs = hdf.writeData(grp_filt, print_log=self.verbose)
 
         if isinstance(self.composite_filter, np.ndarray):
-            h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
+            h5_comp_filt = get_h5_obj_refs(['Composite_Filter'], h5_filt_refs)[0]
 
         if self.noise_threshold is not None:
-            self.h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
+            self.h5_noise_floors = get_h5_obj_refs(['Noise_Floors'], h5_filt_refs)[0]
             self.h5_results_grp = self.h5_noise_floors.parent
             link_as_main(self.h5_noise_floors, h5_pos_inds, h5_pos_vals,
-                         getH5DsetRefs(['Noise_Spectral_Indices'], h5_filt_refs)[0],
-                         getH5DsetRefs(['Noise_Spectral_Values'], h5_filt_refs)[0])
+                         get_h5_obj_refs(['Noise_Spectral_Indices'], h5_filt_refs)[0],
+                         get_h5_obj_refs(['Noise_Spectral_Values'], h5_filt_refs)[0])
 
         # Now need to link appropriately:
         if self.write_filtered:
-            self.h5_filtered = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
+            self.h5_filtered = get_h5_obj_refs(['Filtered_Data'], h5_filt_refs)[0]
             self.h5_results_grp = self.h5_filtered.parent
-            copyAttributes(self.h5_main, self.h5_filtered, skip_refs=False)
+            copy_attributes(self.h5_main, self.h5_filtered, skip_refs=False)
             if isinstance(self.composite_filter, np.ndarray):
-                linkRefs(self.h5_filtered, [h5_comp_filt])
+                link_h5_objects_as_attrs(self.h5_filtered, [h5_comp_filt])
 
             """link_as_main(self.h5_filtered, h5_pos_inds, h5_pos_vals,
-                         getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
-                         getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
+                         get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
+                         get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
 
         if self.write_condensed:
-            self.h5_condensed = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
+            self.h5_condensed = get_h5_obj_refs(['Condensed_Data'], h5_filt_refs)[0]
             self.h5_results_grp = self.h5_condensed.parent
             if isinstance(self.composite_filter, np.ndarray):
-                linkRefs(self.h5_condensed, [h5_comp_filt])
+                link_h5_objects_as_attrs(self.h5_condensed, [h5_comp_filt])
             if self.noise_threshold is not None:
-                linkRefs(self.h5_condensed, [self.h5_noise_floors])
+                link_h5_objects_as_attrs(self.h5_condensed, [self.h5_noise_floors])
 
             if self.num_effective_pix > 1:
-                h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_filt_refs)[0]
-                h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_filt_refs)[0]
+                h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_filt_refs)[0]
+                h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_filt_refs)[0]
 
             link_as_main(self.h5_condensed, h5_pos_inds, h5_pos_vals,
-                         getH5DsetRefs(['Spectroscopic_Indices'], h5_filt_refs)[0],
-                         getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
+                         get_h5_obj_refs(['Spectroscopic_Indices'], h5_filt_refs)[0],
+                         get_h5_obj_refs(['Spectroscopic_Values'], h5_filt_refs)[0])
 
     def _get_existing_datasets(self):
         """

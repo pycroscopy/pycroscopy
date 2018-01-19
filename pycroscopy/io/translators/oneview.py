@@ -15,12 +15,11 @@ from skimage.util import crop
 
 from .df_utils import dm4reader
 from .df_utils.io_image import read_image, read_dm3, parse_dm4_parms
-from .translator import Translator
-from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
-    get_position_slicing, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat, \
+    get_position_slicing, get_spectral_slicing, build_ind_val_dsets
+from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class OneViewTranslator(Translator):
@@ -229,13 +228,13 @@ class OneViewTranslator(Translator):
         '''
         image_refs = self.hdf.writeData(root_grp)
 
-        h5_image = getH5DsetRefs(['Raw_Data'], image_refs)[0]
+        h5_image = get_h5_obj_refs(['Raw_Data'], image_refs)[0]
 
         '''
         Link references to raw
         '''
         aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        link_as_main(h5_image, *getH5DsetRefs(aux_ds_names, image_refs))
+        link_as_main(h5_image, *get_h5_obj_refs(aux_ds_names, image_refs))
 
         self.root_image_list.append(h5_image)
 
@@ -497,15 +496,15 @@ class OneViewTranslator(Translator):
         # root_grp.showTree()
 
         h5_refs = self.hdf.writeData(root_grp)
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-        h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
-        h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
+        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+        h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
+        h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]
         aux_ds_names = ['Position_Indices',
                         'Position_Values',
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
 

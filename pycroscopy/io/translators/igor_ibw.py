@@ -11,11 +11,11 @@ import numpy as np  # For array operations
 
 from igor import binarywave as bw
 
-from .translator import Translator  # Because this class extends the abstract Translator class
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, \
+from ...core.io.translator import Translator, \
+    generate_dummy_main_parms, build_ind_val_dsets  # Because this class extends the abstract Translator class
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.microdata import MicroDataGroup, \
     MicroDataset  # The building blocks for defining hierarchical storage in the H5 file
 
 
@@ -151,8 +151,8 @@ class IgorIBWTranslator(Translator):
             chan_grp.attrs['name'] = raw_dset.attrs['quantity']
             chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, raw_dset])
             h5_refs = hdf.writeData(chan_grp, print_log=verbose)
-            h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-            linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+            h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+            link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         if verbose:
             print('Finished writing all channels')

@@ -10,8 +10,8 @@ import h5py
 import six
 from warnings import warn
 import numpy as np
-from .hdf_utils import checkIfMain, get_attr, get_data_descriptor, get_formatted_labels, \
-    get_dimensionality, get_sort_order, get_unit_values, reshape_to_Ndims
+from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatted_labels, \
+    get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
 from .dtype_utils import transform_to_real
 
 
@@ -70,7 +70,7 @@ class PycroDataset(h5py.Dataset):
 
         """
 
-        if not checkIfMain(h5_ref):
+        if not check_if_main(h5_ref):
             raise TypeError('Supply a h5py.Dataset object that is a pycroscopy main dataset')
 
         super(PycroDataset, self).__init__(h5_ref.id)
@@ -242,7 +242,7 @@ class PycroDataset(h5py.Dataset):
 
         """
 
-        n_dim_data, success = reshape_to_Ndims(self, sort_dims=self.__sort_dims)
+        n_dim_data, success = reshape_to_n_dims(self, sort_dims=self.__sort_dims)
 
         if success is not True:
             raise ValueError('Unable to reshape data to N-dimensional form.')
@@ -290,9 +290,9 @@ class PycroDataset(h5py.Dataset):
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
-        data_slice, success = reshape_to_Ndims(data_slice,
-                                               h5_pos=pos_inds,
-                                               h5_spec=spec_inds)
+        data_slice, success = reshape_to_n_dims(data_slice,
+                                                h5_pos=pos_inds,
+                                                h5_spec=spec_inds)
 
         if as_scalar:
             return transform_to_real(data_slice), success

@@ -193,8 +193,8 @@ new file.
     h5_refs = hdf.writeData(root_group, print_log=True)
 
     # We can use these references to get the h5py dataset and group objects
-    h5_main = px.io.hdf_utils.getH5DsetRefs(['Main_Data'], h5_refs)[0]
-    h5_empty = px.io.hdf_utils.getH5DsetRefs(['Empty_Data'], h5_refs)[0]
+    h5_main = px.io.hdf_utils.get_h5_obj_refs(['Main_Data'], h5_refs)[0]
+    h5_empty = px.io.hdf_utils.get_h5_obj_refs(['Empty_Data'], h5_refs)[0]
 
 
 

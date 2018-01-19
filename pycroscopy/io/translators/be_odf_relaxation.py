@@ -15,12 +15,11 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
     nf32
-from .translator import Translator  # Because this class extends the abstract Translator class
-from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
-from ..hdf_utils import getH5DsetRefs
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat, get_position_slicing  
+from ...core.io.hdf_utils import get_h5_obj_refs
+from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 # The building blocks for defining hierarchical storage in the H5 file
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class BEodfRelaxationTranslator(Translator):
@@ -267,13 +266,13 @@ class BEodfRelaxationTranslator(Translator):
 
         h5_refs = self.hdf.writeData(spm_data)
 
-        self.ds_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
         # Now doing linkrefs:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'UDVS', 'Bin_Step', 'Bin_Indices',
                         'Bin_Frequencies', 'Bin_FFT', 'Bin_Wfm_Type', 'Noise_Floor', 'Spectroscopic_Values']
-        self.hdf.linkRefs(self.ds_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        self.hdf.linkRefs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         self.mean_resp = np.zeros(shape=(self.ds_main.shape[1]), dtype=np.complex64)
         self.max_resp = np.zeros(shape=(self.ds_main.shape[0]), dtype=np.float32)

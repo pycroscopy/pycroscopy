@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.checkAndLinkAncillary``
+Examples using ``pycroscopy.hdf_utils.check_and_link_ancillary``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

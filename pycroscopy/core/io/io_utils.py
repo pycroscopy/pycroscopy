@@ -234,3 +234,25 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
             # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
     return int(requested_cores)
+
+
+def interpret_frequency(freq_str):
+    """
+    Interprets a string denoting frequency into its numerical equivalent.
+    For example "4 MHz" is translated to 4E+6
+
+    Parameters
+    ----------
+    freq_str : unicode / string
+        Frequency as a string - eg '4 MHz'
+
+    Returns
+    -------
+    frequency : float
+        Frequency in hertz
+    """
+    components = freq_str.split()
+    if components[1] == 'MHz':
+        return int(components[0])*1.0E+6
+    elif components[1] == 'kHz':
+        return int(components[0])*1.0E+3

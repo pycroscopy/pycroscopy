@@ -11,15 +11,17 @@ import h5py
 import collections
 from warnings import warn
 import numpy as np
-from .microdata import MicroDataset
+from pycroscopy.io.microdata import MicroDataset
 
-__all__ = ['get_attr', 'getDataSet', 'getH5DsetRefs', 'getH5RegRefIndices', 'get_dimensionality', 'get_sort_order',
-           'getAuxData', 'get_attributes', 'getH5GroupRefs', 'checkIfMain', 'checkAndLinkAncillary', 'copyRegionRefs',
-           'createRefFromIndices', 'copyAttributes', 'reshape_to_Ndims', 'linkRefs', 'linkRefAsAlias',
-           'findH5group', 'get_formatted_labels', 'reshape_from_Ndims', 'findDataset', 'print_tree', 'get_all_main',
+__all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
+           'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
+           'copy_region_refs', 'get_all_main',
+           'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
+           'link_h5_obj_as_alias',
+           'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
            'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'create_spec_inds_from_vals',
-           'buildReducedSpec', 'check_for_old', 'get_source_dataset', 'get_unit_values', 'get_data_descriptor',
-           'link_as_main', 'reducingRefCopy', 'simpleRefCopy']
+           'build_reduced_spec_dsets', 'check_for_old', 'get_source_dataset', 'get_unit_values', 'get_data_descriptor',
+           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -84,7 +86,7 @@ def get_all_main(parent, verbose=False):
         if isinstance(obj, h5py.Dataset):
             if verbose:
                 print(name, 'is an HDF5 Dataset.')
-            ismain = checkIfMain(obj)
+            ismain = check_if_main(obj)
             if ismain:
                 if verbose:
                     print(name, 'is a `Main` dataset.')
@@ -97,44 +99,7 @@ def get_all_main(parent, verbose=False):
     return main_list
 
 
-def getDataSet(h5_parent, data_name):
-    """
-    Search for dataset objects in the hdf5 file with given name
-    and returns a list of reference(s).
-
-    Parameters
-    ----------
-    h5_parent : h5py.File reference.
-        Reference to file, the file must be open and in read-mode.
-    data_name : string.
-        Name of Dataset object. If not unique, i.e. parent not specified,
-        then references to all Dataset objects that contain this name are returned.
-
-    Returns
-    -------
-    list of h5py.Reference of the dataset.
-    """
-    from .pycro_data import PycroDataset
-
-    if isinstance(h5_parent, h5py.File) or isinstance(h5_parent, h5py.Group):
-        data_list = []
-
-        def findData(name, obj):
-            if name.endswith(data_name) and isinstance(obj, h5py.Dataset):
-                try:
-                    data_list.append(PycroDataset(obj))
-                except TypeError:
-                    data_list.append(obj)
-                except:
-                    raise
-
-        h5_parent.visititems(findData)
-        return data_list
-    else:
-        print('%s is not an hdf5 File or Group' % h5_parent)
-
-
-def getAuxData(parent_data, auxDataName=None):
+def get_auxillary_datasets(parent_data, auxDataName=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
@@ -142,8 +107,8 @@ def getAuxData(parent_data, auxDataName=None):
     ----------
     parent_data : h5py.Dataset
         Dataset object reference.
-    auxDataName : list of strings, optional, default = all (DataSet.attrs).
-        Name of auxiliary Dataset object to return.
+    auxDataName : str or list of strings, optional, default = all (DataSet.attrs).
+        Name of auxiliary Dataset objects to return.
 
     Returns
     -------
@@ -235,38 +200,38 @@ def get_attributes(parent_data, attr_names=None):
     return att_dict
 
 
-def getH5DsetRefs(ds_names, h5_refs):
+def get_h5_obj_refs(obj_names, h5_refs):
     """
-    Given a list of H5 dataset references and a list of dataset names,
-    this method returns H5 Dataset objects corresponding to the names
+    Given a list of H5 references and a list of names,
+    this method returns H5 objects corresponding to the names
 
     Parameters
     ----------
-    ds_names : List of strings
-        names of target datasets
-    h5_refs : List of H5 dataset references
+    obj_names : List of strings
+        names of target h5py objects
+    h5_refs : List of H5 object references
         list containing the target reference
 
     Returns
     -------
-    aux_dset : List of HDF5 dataset references
+    found_objects : List of HDF5 dataset references
         Corresponding references
     """
     from .pycro_data import PycroDataset
-    aux_dset = []
-    for ds_name in ds_names:
+    found_objects = []
+    for ds_name in obj_names:
         for dset in h5_refs:
             if dset.name.split('/')[-1] == ds_name:
                 try:
-                    aux_dset.append(PycroDataset(dset))
+                    found_objects.append(PycroDataset(dset))
                 except TypeError:
-                    aux_dset.append(dset)
+                    found_objects.append(dset)
                 except:
                     raise
-    return aux_dset
+    return found_objects
 
 
-def getH5GroupRefs(group_name, h5_refs):
+def get_group_refs(group_name, h5_refs):
     """
     Given a list of H5 references and a group name,
     this method returns H5 Datagroup object corresponding to the names.
@@ -291,7 +256,7 @@ def getH5GroupRefs(group_name, h5_refs):
     return group_list
 
 
-def findDataset(h5_group, ds_name):
+def find_dataset(h5_group, ds_name):
     """
     Uses visit() to find all datasets with the desired name
 
@@ -304,31 +269,31 @@ def findDataset(h5_group, ds_name):
 
     Returns
     -------
-    ds : list
+    datasets : list
         List of [Name, object] pairs corresponding to datasets that match `ds_name`.
 
     """
     from .pycro_data import PycroDataset
 
     # print 'Finding all instances of', ds_name
-    ds = []
+    datasets = []
 
     def __find_name(name, obj):
         if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
             try:
-                ds.append([name, PycroDataset(obj)])
+                datasets.append([name, PycroDataset(obj)])
             except TypeError:
-                ds.append([name, obj])
+                datasets.append([name, obj])
             except:
                 raise
         return
 
     h5_group.visititems(__find_name)
 
-    return ds
+    return datasets
 
 
-def findH5group(h5_main, tool_name):
+def find_results_groups(h5_main, tool_name):
     """
     Given a dataset and a tool name, return the list of all groups
 
@@ -353,7 +318,7 @@ def findH5group(h5_main, tool_name):
     return groups
 
 
-def getH5RegRefIndices(ref, h5_main, return_method='slices'):
+def get_indices_for_region_ref(ref, h5_main, return_method='slices'):
     """
     Given an hdf5 region reference and the dataset it refers to,
     return an array of indices within that dataset that
@@ -469,7 +434,7 @@ def getH5RegRefIndices(ref, h5_main, return_method='slices'):
     return ref_inds
 
 
-def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
+def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     """
     This function will add references to auxilliary datasets as attributes
     of an input dataset.
@@ -510,9 +475,9 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
         elif isinstance(h5_ref, h5py.Dataset):
             h5_dset.attrs[ref_name] = h5_ref.ref
         elif h5_main is not None:
-            h5_anc = getAuxData(h5_main, auxDataName=[ref_name])
+            h5_anc = get_auxillary_datasets(h5_main, auxDataName=[ref_name])
             if len(h5_anc) == 1:
-                linkRefAsAlias(h5_dset, h5_anc[0], ref_name)
+                link_h5_obj_as_alias(h5_dset, h5_anc[0], ref_name)
         else:
             warnstring = '{} is not a valid h5py Reference and will be skipped.'.format(repr(h5_ref))
             warn(warnstring)
@@ -543,7 +508,7 @@ def checkAndLinkAncillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     h5_dset.file.flush()
 
 
-def createRefFromIndices(h5_main, ref_inds):
+def create_region_reference(h5_main, ref_inds):
     """
     Create a region reference in the destination dataset using an iterable of pairs of indices
     representing the start and end points of a hyperslab block
@@ -636,7 +601,7 @@ def get_formatted_labels(h5_dset):
         raise KeyError('labels attribute was missing')
 
 
-def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False, sort_dims=False):
+def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbose=False, sort_dims=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -852,7 +817,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     return results
 
 
-def reshape_from_Ndims(ds_Nd, h5_pos=None, h5_spec=None):
+def reshape_from_n_dims(ds_Nd, h5_pos=None, h5_spec=None):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -1036,15 +1001,27 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     except:
         raise
     # This should link the ancillary datasets correctly
-    h5_new_dset = copyAttributes(source_dset, h5_new_dset, skip_refs=skip_refs)
+    h5_new_dset = copy_attributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
 
     return h5_new_dset
 
 
-def copyAttributes(source, dest, skip_refs=True):
+def copy_attributes(source, dest, skip_refs=True):
     """
     Copy attributes from one h5object to another
+
+    Parameters
+    ----------
+    source : h5py.dataset object
+        Dataset containing the desired attributes
+    dest : h5py.dataset object
+        Dataset to which the attributes need to be copied to
+    skip_refs : bool, optional. default = True
+        Whether or not the references (dataset and region) should be skipped
+    Returns
+    -------
+
     """
     for attr in source.attrs.keys():
         atval = source.attrs[attr]
@@ -1081,14 +1058,14 @@ def copyAttributes(source, dest, skip_refs=True):
         dest.attrs[attr] = atval
     if not skip_refs:
         try:
-            copyRegionRefs(source, dest)
+            copy_region_refs(source, dest)
         except:
             print('Could not create new region reference for {} in {}.'.format(attr, source.name))
 
     return dest
 
 
-def checkIfMain(h5_main, verbose=False):
+def check_if_main(h5_main, verbose=False):
     """
     Checks the input dataset to see if it has all the neccessary
     features to be considered a Main dataset.  This means it is
@@ -1145,7 +1122,7 @@ def checkIfMain(h5_main, verbose=False):
     return success
 
 
-def linkRefs(src, trg):
+def link_h5_objects_as_attrs(src, h5_objects):
     """
     Creates Dataset attributes that contain references to other Dataset Objects.
 
@@ -1153,18 +1130,18 @@ def linkRefs(src, trg):
     -----------
     src : Reference to h5.objects
         Reference to the the object to which attributes will be added
-    trg : list of references to h5.objects
+    h5_objects : list of references to h5.objects
         objects whose references that can be accessed from src.attrs
 
     Returns
     --------
     None
     """
-    for itm in trg:
+    for itm in h5_objects:
         src.attrs[itm.name.split('/')[-1]] = itm.ref
 
 
-def linkRefAsAlias(src, trg, trg_name):
+def link_h5_obj_as_alias(src, trg, trg_name):
     """
     Creates Dataset attributes that contain references to other Dataset Objects.
     This function is useful when the reference attribute must have a reserved name.
@@ -1182,7 +1159,7 @@ def linkRefAsAlias(src, trg, trg_name):
     src.attrs[trg_name] = trg.ref
 
 
-def copyRegionRefs(h5_source, h5_target):
+def copy_region_refs(h5_source, h5_target):
     """
     Check the input dataset for plot groups, copy them if they exist
     Also make references in the Spectroscopic Values and Indices tables
@@ -1201,7 +1178,7 @@ def copyRegionRefs(h5_source, h5_target):
     '''
     Check both h5_source and h5_target to ensure that are Main
     '''
-    if not all([checkIfMain(h5_source), checkIfMain(h5_target)]):
+    if not all([check_if_main(h5_source), check_if_main(h5_target)]):
         raise TypeError('Inputs to copyRegionRefs must be HDF5 Datasets.')
 
     h5_source_inds = h5_source.file[h5_source.attrs['Spectroscopic_Indices']]
@@ -1218,27 +1195,27 @@ def copyRegionRefs(h5_source, h5_target):
             Spectroscopic dimensions are identical.
             Do direct copy.
             '''
-            ref_inds = simpleRefCopy(h5_source, h5_target, key)
+            ref_inds = simple_region_ref_copy(h5_source, h5_target, key)
 
         else:
             '''
         Spectroscopic dimensions are different.
         Do the dimenion reducing copy.
             '''
-            ref_inds = reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_spec_inds, key)
+            ref_inds = copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_spec_inds, key)
         '''
         Create references for Spectroscopic Indices and Values
         Set the end-point of each hyperslab in the position dimension to the number of
         rows in the index array
         '''
         ref_inds[:, 1, 0][ref_inds[:, 1, 0] > h5_spec_inds.shape[0]] = h5_spec_inds.shape[0] - 1
-        spec_inds_ref = createRefFromIndices(h5_spec_inds, ref_inds)
+        spec_inds_ref = create_region_reference(h5_spec_inds, ref_inds)
         h5_spec_inds.attrs[key] = spec_inds_ref
-        spec_vals_ref = createRefFromIndices(h5_spec_vals, ref_inds)
+        spec_vals_ref = create_region_reference(h5_spec_vals, ref_inds)
         h5_spec_vals.attrs[key] = spec_vals_ref
 
 
-def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
+def copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
     """
     Copies a region reference from one dataset to another taking into account that a dimension
     has been lost from source to target
@@ -1274,7 +1251,7 @@ def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
         if dim not in h5_target_inds.attrs['labels']:
             lost_dim.append(np.where(h5_source_inds.attrs['labels'] == dim)[0])
     ref = h5_source.attrs[key]
-    ref_inds = getH5RegRefIndices(ref, h5_source, return_method='corners')
+    ref_inds = get_indices_for_region_ref(ref, h5_source, return_method='corners')
     '''
     Convert to proper spectroscopic dimensions
     First is special case for a region reference that spans the entire dataset
@@ -1302,12 +1279,12 @@ def reducingRefCopy(h5_source, h5_target, h5_source_inds, h5_target_inds, key):
     '''
     Create the new reference from the indices
     '''
-    h5_target.attrs[key] = createRefFromIndices(h5_target, ref_inds)
+    h5_target.attrs[key] = create_region_reference(h5_target, ref_inds)
 
     return ref_inds
 
 
-def simpleRefCopy(h5_source, h5_target, key):
+def simple_region_ref_copy(h5_source, h5_target, key):
     """
     Copies a region reference from one dataset to another
     without alteration
@@ -1332,18 +1309,18 @@ def simpleRefCopy(h5_source, h5_target, key):
     """
 
     ref = h5_source.attrs[key]
-    ref_inds = getH5RegRefIndices(ref, h5_source, return_method='corners')
+    ref_inds = get_indices_for_region_ref(ref, h5_source, return_method='corners')
     ref_inds = ref_inds.reshape([-1, 2, 2])
     ref_inds[:, 1, 1] = h5_target.shape[1] - 1
-    target_ref = createRefFromIndices(h5_target, ref_inds)
+    target_ref = create_region_reference(h5_target, ref_inds)
     h5_target.attrs[key] = target_ref
     return ref_inds
 
 
-def buildReducedSpec(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename='Spectroscopic'):
+def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, basename='Spectroscopic'):
     """
     Creates new Spectroscopic Indices and Values datasets from the input datasets
-    and keeps the dimensions specified in not_freq
+    and keeps the dimensions specified in keep_dim
 
     Parameters
     ----------
@@ -1498,12 +1475,12 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     anc_dsets : (Optional) list of h5py.Dataset objects
         Datasets that will be linked with their own names
     """
-    linkRefAsAlias(h5_main, h5_pos_inds, 'Position_Indices')
-    linkRefAsAlias(h5_main, h5_pos_vals, 'Position_Values')
-    linkRefAsAlias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
-    linkRefAsAlias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
+    link_h5_obj_as_alias(h5_main, h5_pos_inds, 'Position_Indices')
+    link_h5_obj_as_alias(h5_main, h5_pos_vals, 'Position_Values')
+    link_h5_obj_as_alias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
+    link_h5_obj_as_alias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
     for dset in anc_dsets:
-        linkRefs(h5_main, dset)
+        link_h5_objects_as_attrs(h5_main, dset)
 
 
 def copy_main_attributes(h5_main, h5_new):
@@ -1549,7 +1526,7 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbos
            List of all groups with parameters matching those in `new_parms`
     """
     matching_groups = []
-    groups = findH5group(h5_base, tool_name)
+    groups = find_results_groups(h5_base, tool_name)
 
     for group in groups:
         if verbose:

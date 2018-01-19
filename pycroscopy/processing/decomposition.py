@@ -10,11 +10,11 @@ import h5py
 import numpy as np
 import sklearn.decomposition as dec
 
-from .process import Process
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary
-from ..io.io_hdf5 import ioHDF5
-from ..io.dtype_utils import check_dtype, transform_to_target_dtype
-from ..io.microdata import MicroDataGroup, MicroDataset
+from ..core.processing.process import Process
+from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary
+from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class Decomposition(Process):
@@ -154,24 +154,24 @@ class Decomposition(Process):
         hdf = ioHDF5(self.h5_main.file)
         h5_decomp_refs = hdf.writeData(decomp_grp)
 
-        h5_components = getH5DsetRefs(['Components'], h5_decomp_refs)[0]
-        h5_projections = getH5DsetRefs(['Projection'], h5_decomp_refs)[0]
-        h5_decomp_inds = getH5DsetRefs(['Decomposition_Indices'], h5_decomp_refs)[0]
-        h5_decomp_vals = getH5DsetRefs(['Decomposition_Values'], h5_decomp_refs)[0]
+        h5_components = get_h5_obj_refs(['Components'], h5_decomp_refs)[0]
+        h5_projections = get_h5_obj_refs(['Projection'], h5_decomp_refs)[0]
+        h5_decomp_inds = get_h5_obj_refs(['Decomposition_Indices'], h5_decomp_refs)[0]
+        h5_decomp_vals = get_h5_obj_refs(['Decomposition_Values'], h5_decomp_refs)[0]
 
-        checkAndLinkAncillary(h5_projections,
+        check_and_link_ancillary(h5_projections,
                               ['Position_Indices', 'Position_Values'],
                               h5_main=self.h5_main)
 
-        checkAndLinkAncillary(h5_projections,
+        check_and_link_ancillary(h5_projections,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                               anc_refs=[h5_decomp_inds, h5_decomp_vals])
 
-        checkAndLinkAncillary(h5_components,
+        check_and_link_ancillary(h5_components,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                               h5_main=self.h5_main)
 
-        checkAndLinkAncillary(h5_components,
+        check_and_link_ancillary(h5_components,
                               ['Position_Indices', 'Position_Values'],
                               anc_refs=[h5_decomp_inds, h5_decomp_vals])
 

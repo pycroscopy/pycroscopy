@@ -13,14 +13,14 @@ import numpy as np
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
 
-from .process import Process
+from ..core.processing.process import Process
 from .proc_utils import get_component_slice
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, \
-    getH5RegRefIndices, createRefFromIndices, calc_chunks, copy_main_attributes, copyAttributes
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import get_available_memory
-from ..io.dtype_utils import check_dtype, transform_to_target_dtype
-from ..io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_results_groups, \
+    get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes
+from pycroscopy.core.io.io_hdf5 import ioHDF5
+from ..core.io.io_utils import get_available_memory
+from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.microdata import MicroDataset, MicroDataGroup
 
 
 class SVD(Process):
@@ -128,10 +128,10 @@ class SVD(Process):
         hdf = ioHDF5(self.h5_main.file)
         h5_svd_refs = hdf.writeData(svd_grp)
 
-        h5_U = getH5DsetRefs(['U'], h5_svd_refs)[0]
-        h5_S = getH5DsetRefs(['S'], h5_svd_refs)[0]
-        h5_V = getH5DsetRefs(['V'], h5_svd_refs)[0]
-        h5_svd_inds = getH5DsetRefs(['Component_Indices'], h5_svd_refs)[0]
+        h5_U = get_h5_obj_refs(['U'], h5_svd_refs)[0]
+        h5_S = get_h5_obj_refs(['S'], h5_svd_refs)[0]
+        h5_V = get_h5_obj_refs(['V'], h5_svd_refs)[0]
+        h5_svd_inds = get_h5_obj_refs(['Component_Indices'], h5_svd_refs)[0]
         self.h5_results_grp = h5_S.parent
 
         # copy attributes
@@ -142,21 +142,21 @@ class SVD(Process):
 
         # Will attempt to see if there is anything linked to this dataset.
         # Since I was meticulous about the translators that I wrote, I know I will find something here
-        checkAndLinkAncillary(h5_U,
-                              ['Position_Indices', 'Position_Values'],
-                              h5_main=self.h5_main)
+        check_and_link_ancillary(h5_U,
+                                 ['Position_Indices', 'Position_Values'],
+                                 h5_main=self.h5_main)
 
-        checkAndLinkAncillary(h5_V,
-                              ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_svd_inds, h5_S])
+        check_and_link_ancillary(h5_V,
+                                 ['Position_Indices', 'Position_Values'],
+                                 anc_refs=[h5_svd_inds, h5_S])
 
-        checkAndLinkAncillary(h5_U,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_svd_inds, h5_S])
+        check_and_link_ancillary(h5_U,
+                                 ['Spectroscopic_Indices', 'Spectroscopic_Values'],
+                                 anc_refs=[h5_svd_inds, h5_S])
 
-        checkAndLinkAncillary(h5_V,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              h5_main=self.h5_main)
+        check_and_link_ancillary(h5_V,
+                                 ['Spectroscopic_Indices', 'Spectroscopic_Values'],
+                                 h5_main=self.h5_main)
 
         '''
         Check h5_main for plot group references.
@@ -166,11 +166,11 @@ class SVD(Process):
             if '_Plot_Group' not in key:
                 continue
 
-            ref_inds = getH5RegRefIndices(self.h5_main.attrs[key], self.h5_main, return_method='corners')
+            ref_inds = get_indices_for_region_ref(self.h5_main.attrs[key], self.h5_main, return_method='corners')
             ref_inds = ref_inds.reshape([-1, 2, 2])
             ref_inds[:, 1, 0] = h5_V.shape[0] - 1
 
-            svd_ref = createRefFromIndices(h5_V, ref_inds)
+            svd_ref = create_region_reference(h5_V, ref_inds)
 
             h5_V.attrs[key] = svd_ref
 
@@ -261,7 +261,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     Get the handles for the SVD results
     '''
     try:
-        h5_svd = findH5group(h5_main, 'SVD')[-1]
+        h5_svd = find_results_groups(h5_main, 'SVD')[-1]
 
         h5_S = h5_svd['S']
         h5_U = h5_svd['U']
@@ -322,8 +322,8 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
 
     h5_refs = hdf.writeData(rebuilt_grp)
 
-    h5_rebuilt = getH5DsetRefs(['Rebuilt_Data'], h5_refs)[0]
-    copyAttributes(h5_main, h5_rebuilt, skip_refs=False)
+    h5_rebuilt = get_h5_obj_refs(['Rebuilt_Data'], h5_refs)[0]
+    copy_attributes(h5_main, h5_rebuilt, skip_refs=False)
 
     hdf.flush()
 

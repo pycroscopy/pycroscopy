@@ -192,7 +192,7 @@ instead.
     y_label = px.hdf_utils.get_attr(h5_main, 'quantity') + ' [' + px.hdf_utils.get_attr(h5_main, 'units') + ']'
 
     # Get the voltage vector that this data was acquired as a function of:
-    h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[0]
+    h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[0]
     volt_vec = np.squeeze(h5_spec_vals[()])
 
     # Get the descriptor for this
@@ -530,12 +530,12 @@ Once the tree is prepared (previous cell), ioHDF5 will handle all the file writi
 
     h5_clust_refs = hdf.writeData(cluster_grp, print_log=True)
 
-    h5_labels = px.hdf_utils.getH5DsetRefs(['Labels'], h5_clust_refs)[0]
-    h5_centroids = px.hdf_utils.getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
-    h5_clust_inds = px.hdf_utils.getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
-    h5_clust_vals = px.hdf_utils.getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
-    h5_label_inds = px.hdf_utils.getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
-    h5_label_vals = px.hdf_utils.getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
+    h5_labels = px.hdf_utils.get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
+    h5_centroids = px.hdf_utils.get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]
+    h5_clust_inds = px.hdf_utils.get_h5_obj_refs(['Cluster_Indices'], h5_clust_refs)[0]
+    h5_clust_vals = px.hdf_utils.get_h5_obj_refs(['Cluster_Values'], h5_clust_refs)[0]
+    h5_label_inds = px.hdf_utils.get_h5_obj_refs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
+    h5_label_vals = px.hdf_utils.get_h5_obj_refs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
 
 
 
@@ -653,20 +653,20 @@ rather easy by a few pycroscopy functions.
 
 
     # we already got the reference to the spectroscopic values in the first few cells
-    h5_spec_inds = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Indices')[0]
+    h5_spec_inds = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Indices')[0]
 
-    px.hdf_utils.checkAndLinkAncillary(h5_labels,
+    px.hdf_utils.check_and_link_ancillary(h5_labels,
                           ['Position_Indices', 'Position_Values'],
                           h5_main=h5_main)
-    px.hdf_utils.checkAndLinkAncillary(h5_labels,
+    px.hdf_utils.check_and_link_ancillary(h5_labels,
                           ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                           anc_refs=[h5_label_inds, h5_label_vals])
 
-    px.hdf_utils.checkAndLinkAncillary(h5_centroids,
+    px.hdf_utils.check_and_link_ancillary(h5_centroids,
                           ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                           anc_refs=[h5_spec_inds, h5_spec_vals])
 
-    px.hdf_utils.checkAndLinkAncillary(h5_centroids,
+    px.hdf_utils.check_and_link_ancillary(h5_centroids,
                           ['Position_Indices', 'Position_Values'],
                           anc_refs=[h5_clust_inds, h5_clust_vals])
 

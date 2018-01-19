@@ -11,10 +11,10 @@ import multiprocessing as mp
 import time as tm
 import matplotlib.pyplot as plt
 
-from ...io.io_utils import recommend_cpu_cores
-from ...io.microdata import MicroDataset, MicroDataGroup
-from ...io.io_hdf5 import ioHDF5
-from ...viz import plot_utils
+from ...core.io.io_utils import recommend_cpu_cores
+from ...core.io.microdata import MicroDataset, MicroDataGroup
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.viz.plot_utils import cmap_jet_white_center
 
 
 def do_fit(single_parm):
@@ -582,17 +582,17 @@ class Gauss_Fit(object):
             for i, ax_row in enumerate(np.atleast_2d(axes)):
                 # plot the original windows
                 ax_row[0].imshow(fit_region[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[0].set_title('Original Window')
 
                 # plot the initial guess windows
                 ax_row[1].imshow(self.motif_guesses[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[1].set_title('Initial Gaussian Guesses')
 
                 # plot the converged gaussians
                 ax_row[2].imshow(self.fit_motifs[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[2].set_title('Converged Gaussians')
 
             fig.show()

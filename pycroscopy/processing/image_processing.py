@@ -14,12 +14,12 @@ from scipy.optimize import leastsq
 from scipy.signal import blackman
 from sklearn.utils import gen_batches
 
-from ..io.hdf_utils import getH5DsetRefs, copyAttributes, linkRefs, findH5group, calc_chunks, link_as_main, \
-    check_for_old
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import get_available_memory
-from ..io.microdata import MicroDataGroup, MicroDataset
-from ..io.translators.utils import get_position_slicing, make_position_mat, get_spectral_slicing
+from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
+    calc_chunks, link_as_main, check_for_old
+from pycroscopy.core.io.io_hdf5 import ioHDF5
+from ..core.io.io_utils import get_available_memory
+from ..core.io.microdata import MicroDataGroup, MicroDataset
+from ..core.io.translator import make_position_mat, get_position_slicing, get_spectral_slicing
 from .svd_utils import get_component_slice
 
 windata32 = np.dtype({'names': ['Image Data'],
@@ -358,13 +358,13 @@ class ImageWindow(object):
             '''
             Get the hdf5 objects for the windows and ancillary datasets
             '''
-            h5_wins = getH5DsetRefs(['Image_Windows'], image_refs)[0]
+            h5_wins = get_h5_obj_refs(['Image_Windows'], image_refs)[0]
 
             '''
             Link references to windowed dataset
             '''
             aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-            linkRefs(h5_wins, getH5DsetRefs(aux_ds_names, image_refs))
+            link_h5_objects_as_attrs(h5_wins, get_h5_obj_refs(aux_ds_names, image_refs))
 
             self.hdf.flush()
 
@@ -600,7 +600,7 @@ class ImageWindow(object):
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
-        h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
+        h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
 
         self.h5_clean = h5_clean
 
@@ -650,7 +650,7 @@ class ImageWindow(object):
     #     win_name = h5_win.name.split('/')[-1]
     #
     #     try:
-    #         win_svd = findH5group(h5_win, 'SVD')[-1]
+    #         win_svd = find_results_groups(h5_win, 'SVD')[-1]
     #
     #         h5_S = win_svd['S']
     #         h5_U = win_svd['U']
@@ -745,15 +745,15 @@ class ImageWindow(object):
     #     image_refs = self.hdf.writeData(clean_grp)
     #     self.hdf.flush()
     #
-    #     h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
-    #     h5_noise = getH5DsetRefs(['Removed_Noise'], image_refs)[0]
-    #     h5_fft_clean = getH5DsetRefs(['FFT_Cleaned_Image'], image_refs)[0]
-    #     h5_fft_noise = getH5DsetRefs(['FFT_Removed_Noise'], image_refs)[0]
+    #     h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
+    #     h5_noise = get_h5_obj_refs(['Removed_Noise'], image_refs)[0]
+    #     h5_fft_clean = get_h5_obj_refs(['FFT_Cleaned_Image'], image_refs)[0]
+    #     h5_fft_noise = get_h5_obj_refs(['FFT_Removed_Noise'], image_refs)[0]
     #
-    #     copyAttributes(self.h5_raw, h5_clean, skip_refs=False)
-    #     copyAttributes(self.h5_raw, h5_noise, skip_refs=False)
-    #     copyAttributes(self.h5_raw, h5_fft_clean, skip_refs=False)
-    #     copyAttributes(self.h5_raw, h5_fft_noise, skip_refs=False)
+    #     copy_attributes(self.h5_raw, h5_clean, skip_refs=False)
+    #     copy_attributes(self.h5_raw, h5_noise, skip_refs=False)
+    #     copy_attributes(self.h5_raw, h5_fft_clean, skip_refs=False)
+    #     copy_attributes(self.h5_raw, h5_fft_noise, skip_refs=False)
     #
     #     self.h5_clean = h5_clean
     #     self.h5_noise = h5_noise
@@ -805,7 +805,7 @@ class ImageWindow(object):
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            win_svd = findH5group(h5_win, 'SVD')[-1]
+            win_svd = find_results_groups(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
@@ -917,15 +917,15 @@ class ImageWindow(object):
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
-        h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
-        h5_noise = getH5DsetRefs(['Removed_Noise'], image_refs)[0]
-        h5_fft_clean = getH5DsetRefs(['FFT_Cleaned_Image'], image_refs)[0]
-        h5_fft_noise = getH5DsetRefs(['FFT_Removed_Noise'], image_refs)[0]
+        h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
+        h5_noise = get_h5_obj_refs(['Removed_Noise'], image_refs)[0]
+        h5_fft_clean = get_h5_obj_refs(['FFT_Cleaned_Image'], image_refs)[0]
+        h5_fft_noise = get_h5_obj_refs(['FFT_Removed_Noise'], image_refs)[0]
 
-        copyAttributes(self.h5_raw, h5_clean, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_noise, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_fft_clean, skip_refs=False)
-        copyAttributes(self.h5_raw, h5_fft_noise, skip_refs=False)
+        copy_attributes(self.h5_raw, h5_clean, skip_refs=False)
+        copy_attributes(self.h5_raw, h5_noise, skip_refs=False)
+        copy_attributes(self.h5_raw, h5_fft_clean, skip_refs=False)
+        copy_attributes(self.h5_raw, h5_fft_noise, skip_refs=False)
 
         self.h5_clean = h5_clean
         self.h5_noise = h5_noise
@@ -976,7 +976,7 @@ class ImageWindow(object):
         win_name = h5_win.name.split('/')[-1]
 
         try:
-            win_svd = findH5group(h5_win, 'SVD')[-1]
+            win_svd = find_results_groups(h5_win, 'SVD')[-1]
 
             h5_S = win_svd['S']
             h5_U = win_svd['U']
@@ -1079,7 +1079,7 @@ class ImageWindow(object):
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
 
-        h5_clean = getH5DsetRefs(['Cleaned_Image'], image_refs)[0]
+        h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
         h5_comp_inds = h5_clean.file[h5_V.attrs['Position_Indices']]
         h5_pos_inds = self.h5_file[self.h5_raw.attrs['Position_Indices']]
         h5_pos_vals = self.h5_file[self.h5_raw.attrs['Position_Values']]

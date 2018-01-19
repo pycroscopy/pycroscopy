@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.findH5group``
+Examples using ``pycroscopy.hdf_utils.find_results_groups``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

@@ -10,8 +10,8 @@ import psutil
 import joblib
 import time as tm
 
-from ..io.hdf_utils import checkIfMain, check_for_old, get_attributes
-from ..io.io_hdf5 import ioHDF5
+from ..io.hdf_utils import check_if_main, check_for_old, get_attributes
+from pycroscopy.core.io.io_hdf5 import ioHDF5
 from ..io.io_utils import recommend_cpu_cores, get_available_memory, format_time
 
 
@@ -40,7 +40,7 @@ class Process(object):
             raise TypeError('Need to ensure that the file is in r+ mode to write results back to the file')
 
         # Checking if dataset is "Main"
-        if checkIfMain(h5_main):
+        if check_if_main(h5_main):
             self.h5_main = h5_main
             self.hdf = ioHDF5(self.h5_main.file)
         else:

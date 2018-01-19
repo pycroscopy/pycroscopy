@@ -17,11 +17,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from .translator import Translator
-from .utils import make_position_mat, generate_dummy_main_parms
-from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class BEPSndfTranslator(Translator):
@@ -327,7 +326,7 @@ class BEPSndfTranslator(Translator):
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values', 'UDVS_Indices',
                         'Spectroscopic_Indices', 'Bin_Step', 'Bin_Indices', 'Bin_Wfm_Type',
                         'Bin_Frequencies', 'Bin_FFT', 'UDVS', 'UDVS_Labels', 'Noise_Floor', 'Spectroscopic_Values']
-        linkRefs(self.ds_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
         generatePlotGroups(self.ds_main, self.hdf, self.mean_resp,
@@ -500,8 +499,8 @@ class BEPSndfTranslator(Translator):
         # meas_grp.showTree()
         h5_refs = self.hdf.writeData(meas_grp)
 
-        self.ds_noise = getH5DsetRefs(['Noise_Floor'], h5_refs)[0]
-        self.ds_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        self.ds_noise = get_h5_obj_refs(['Noise_Floor'], h5_refs)[0]
+        self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         self.pos_vals_list = list()
 
         # self.dset_index += 1 #  raise dset index after closing only

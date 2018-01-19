@@ -21,7 +21,7 @@ import scipy
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from ..io.hdf_utils import reshape_to_Ndims, get_formatted_labels, get_data_descriptor
+from ..io.hdf_utils import reshape_to_n_dims, get_formatted_labels, get_data_descriptor
 
 if sys.version_info.major == 3:
     unicode = str
@@ -941,7 +941,7 @@ def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
         h5_mean_resp = h5_group['Centroids']
 
     # Reshape the mean response to N dimensions
-    mean_response, success = reshape_to_Ndims(h5_mean_resp)
+    mean_response, success = reshape_to_n_dims(h5_mean_resp)
 
     # unfortunately, we cannot use the above function for the labels
     # However, we will assume that the position values are linked to the labels:

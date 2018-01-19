@@ -13,12 +13,13 @@ import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.gmode_utils import readGmodeParms
-from .translator import Translator  # Because this class extends the abstract Translator class
-from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
-from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.translator import Translator, \
+    generate_dummy_main_parms, make_position_mat, \
+    get_position_slicing  # Because this class extends the abstract Translator class
+from ...core.io.hdf_utils import get_h5_obj_refs, linkRefs
+from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class GDMTranslator(Translator):
@@ -135,13 +136,13 @@ class GDMTranslator(Translator):
 
         h5_refs = hdf.writeData(spm_data)
 
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
         # Now doing linkrefs:
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values',
                         'Excitation_Frequencies', 'Bin_Frequencies']
-        linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        linkRefs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # Now read the raw data files:
         pos_ind = 0
