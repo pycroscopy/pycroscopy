@@ -44,6 +44,8 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
+* file dialog for Jupyter
+* function for saving sub-tree to new h5 file
 * Windows compatible function for deleting sub-tree
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
