@@ -114,6 +114,7 @@ except ImportError:
     import pip
     pip.main(['install', 'pycroscopy'])
     import pycroscopy as px
+
 from pycroscopy.io.translators.omicron_asc import AscTranslator
 
 ###############################################################################
@@ -277,9 +278,9 @@ px.plot_utils.plot_cluster_results_together(np.reshape(labels, (num_rows, num_co
 #
 # In this case, `centroids` has `k` positions all in one dimension. Thus the matrix needs to be reshaped to `k x 1`
 
-ds_labels_spec_inds, ds_labels_spec_vals = px.io.translators.utils.build_ind_val_dsets([1], labels=['Label'])
-ds_cluster_inds, ds_cluster_vals = px.io.translators.utils.build_ind_val_dsets([centroids.shape[0]], is_spectral=False,
-                                                                               labels=['Cluster'])
+ds_labels_spec_inds, ds_labels_spec_vals = px.build_ind_val_dsets([1], labels=['Label'])
+ds_cluster_inds, ds_cluster_vals = px.build_ind_val_dsets([centroids.shape[0]], is_spectral=False,
+                                                                                     labels=['Cluster'])
 labels_mat = np.uint32(labels.reshape([-1, 1]))
 
 # Rename the datasets
