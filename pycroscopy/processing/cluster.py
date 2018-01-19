@@ -281,6 +281,7 @@ class Cluster(Process):
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)
 
+        # Get the h5 objects we just created
         h5_labels = getH5DsetRefs(['Labels'], h5_clust_refs)[0]
         h5_centroids = getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
         h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
@@ -288,11 +289,21 @@ class Cluster(Process):
         h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
         h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
 
+        # Add the attributes to label spectroscopic datasets
+        h5_label_inds.attrs['labels'] = np.array([''], dtype='S')
+        h5_label_inds.attrs['units'] = np.array([''], dtype='S')
+        h5_label_vals.attrs['labels'] = np.array([''], dtype='S')
+        h5_label_vals.attrs['units'] = np.array([''], dtype='S')
+
         copy_main_attributes(self.h5_main, h5_centroids)
 
         if isinstance(self.data_slice[1], np.ndarray):
             h5_mean_resp_inds = getH5DsetRefs(['Mean_Response_Indices'], h5_clust_refs)[0]
             h5_mean_resp_vals = getH5DsetRefs(['Mean_Response_Values'], h5_clust_refs)[0]
+            h5_mean_resp_inds.attrs['labels'] = np.array([''], dtype='S')
+            h5_mean_resp_inds.attrs['units'] = np.array([''], dtype='S')
+            h5_mean_resp_vals.attrs['labels'] = np.array([''], dtype='S')
+            h5_mean_resp_vals.attrs['units'] = np.array([''], dtype='S')
         else:
             h5_mean_resp_inds = h5_spec_inds
             h5_mean_resp_vals = h5_spec_vals
