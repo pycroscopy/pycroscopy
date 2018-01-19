@@ -6,9 +6,9 @@ Created on 7/17/16 10:08 AM
 from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 import numpy as np
+
 from .fitter import Fitter
 from ..io.pycro_data import PycroDataset
-from ..io.utils.be_hdf_utils import isReshapable, reshapeToNsteps, reshapeToOneStep
 from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
             create_empty_dataset
 from ..io.microdata import MicroDataset, MicroDataGroup
@@ -55,7 +55,7 @@ class BESHOfitter(Fitter):
         # find the frequency vector and hold in memory
         self._get_frequency_vector()
 
-        self.is_reshapable = isReshapable(self.h5_main, self.step_start_inds)
+        self.is_reshapable = is_reshapable(self.h5_main, self.step_start_inds)
 
         if self._parallel:
             # accounting for memory copies
@@ -167,7 +167,7 @@ class BESHOfitter(Fitter):
         if self.data is not None:
             if self._verbose:
                 print('Got raw data of shape {} from super'.format(self.data.shape))
-            self.data = reshapeToOneStep(self.data, self.num_udvs_steps)
+            self.data = reshape_to_one_step(self.data, self.num_udvs_steps)
             if self._verbose:
                 print('Reshaped raw data to shape {}'.format(self.data.shape))
 
@@ -185,7 +185,7 @@ class BESHOfitter(Fitter):
         self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
         self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
         # At this point the self.data object is the raw data that needs to be reshaped to a single UDVS step:
-        self.guess = reshapeToOneStep(self.guess, self.num_udvs_steps)
+        self.guess = reshape_to_one_step(self.guess, self.num_udvs_steps)
         # don't keep the R^2.
         self.guess = np.hstack([self.guess[name] for name in self.guess.dtype.names if name != 'R2 Criterion'])
         # bear in mind that this self.guess is a compound dataset.
@@ -205,12 +205,12 @@ class BESHOfitter(Fitter):
             self.guess = np.transpose(np.atleast_2d(self.guess))
             if self._verbose:
                 print('Prepared guess of shape {} before reshaping'.format(self.guess.shape))
-            self.guess = reshapeToNsteps(self.guess, self.num_udvs_steps)
+            self.guess = reshape_to_n_steps(self.guess, self.num_udvs_steps)
             if self._verbose:
                 print('Reshaped guess to shape {}'.format(self.guess.shape))
         else:
             self.fit = np.transpose(np.atleast_2d(self.fit))
-            self.fit = reshapeToNsteps(self.fit, self.num_udvs_steps)
+            self.fit = reshape_to_n_steps(self.fit, self.num_udvs_steps)
 
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOfitter, self)._set_results(is_guess)
@@ -372,3 +372,81 @@ class BESHOfitter(Fitter):
                 sho_vec['R2 Criterion'][iresult] = 1-result.fun
 
         return sho_vec
+
+
+def reshape_to_one_step(raw_mat, num_steps):
+    """
+    Reshapes provided data from (pos, step * bin) to (pos * step, bin).
+    This is useful when unraveling data for parallel processing.
+
+    Parameters
+    -------------
+    raw_mat : 2D numpy array
+        Data organized as (positions, step * bins)
+    num_steps : unsigned int
+        Number of spectroscopic steps per pixel (eg - UDVS steps)
+
+    Returns
+    --------------
+    two_d : 2D numpy array
+        Data rearranged as (positions * step, bin)
+    """
+    num_pos = raw_mat.shape[0]
+    num_bins = int(raw_mat.shape[1] / num_steps)
+    one_d = raw_mat
+    one_d = one_d.reshape((num_bins * num_steps * num_pos))
+    two_d = one_d.reshape((num_steps * num_pos, num_bins))
+    return two_d
+
+
+def reshape_to_n_steps(raw_mat, num_steps):
+    """
+    Reshapes provided data from (positions * step, bin) to (positions, step * bin).
+    Use this to restructure data back to its original form after parallel computing
+
+    Parameters
+    --------------
+    raw_mat : 2D numpy array
+        Data organized as (positions * step, bin)
+    num_steps : unsigned int
+         Number of spectroscopic steps per pixel (eg - UDVS steps)
+
+    Returns
+    ---------------
+    two_d : 2D numpy array
+        Data rearranged as (positions, step * bin)
+    """
+    num_bins = raw_mat.shape[1]
+    num_pos = int(raw_mat.shape[0] / num_steps)
+    one_d = raw_mat
+    one_d = one_d.reshape(num_bins * num_steps * num_pos)
+    two_d = one_d.reshape((num_pos, num_steps * num_bins))
+    return two_d
+
+
+def is_reshapable(h5_main, step_start_inds=None):
+    """
+    A BE dataset is said to be reshape-able if the number of bins per steps is constant. Even if the dataset contains
+    multiple excitation waveforms (harmonics), We know that the measurement is always at the resonance peak, so the
+    frequency vector should not change.
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset object
+        Reference to the main dataset
+    step_start_inds : list or 1D array
+        Indices that correspond to the start of each BE pulse / UDVS step
+
+    Returns
+    ---------
+    reshapable : Boolean
+        Whether or not the number of bins per step are constant in this dataset
+    """
+    if step_start_inds is None:
+        h5_spec_inds = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
+    # Adding the size of the main dataset as the last (virtual) step
+    step_start_inds = np.hstack((step_start_inds, h5_main.shape[1]))
+    num_bins = np.diff(step_start_inds)
+    step_types = np.unique(num_bins)
+    return len(step_types) == 1
