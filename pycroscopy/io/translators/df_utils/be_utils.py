@@ -15,10 +15,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
-from pycroscopy.core.io.io_hdf5 import ioHDF5
-from ...io_utils import get_available_memory, recommend_cpu_cores
-from ...microdata import MicroDataset, MicroDataGroup
+from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
+    get_attr, create_spec_inds_from_vals
+from ....core.io.io_hdf5 import ioHDF5
+from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
+from ....core.io.microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
@@ -412,14 +413,14 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
         h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
 
-        h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
-        h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
-        h5_spec_parm = getH5DsetRefs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
-        h5_freq_vec = getH5DsetRefs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
+        h5_mean_spec = get_h5_obj_refs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
+        h5_step_avg = get_h5_obj_refs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
+        h5_spec_parm = get_h5_obj_refs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
+        h5_freq_vec = get_h5_obj_refs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
 
         # Linking the datasets with the frequency and the spectroscopic variable:
-        linkRefs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
-        linkRefs(h5_step_avg, [h5_freq_vec])
+        link_h5_objects_as_attrs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
+        link_h5_objects_as_attrs(h5_step_avg, [h5_freq_vec])
 
         """
         Create Region Reference for the plot group in the Raw_Data, Spectroscopic_Indices 
@@ -465,11 +466,11 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
             h5_hist_grp_refs = hdf.writeData(hist_grp)
 
-            h5_hist = getH5DsetRefs(['Histograms'], h5_hist_grp_refs)[0]
-            h5_hist_inds = getH5DsetRefs(['Indices'], h5_hist_grp_refs)[0]
-            h5_hist_vals = getH5DsetRefs(['Values'], h5_hist_grp_refs)[0]
+            h5_hist = get_h5_obj_refs(['Histograms'], h5_hist_grp_refs)[0]
+            h5_hist_inds = get_h5_obj_refs(['Indices'], h5_hist_grp_refs)[0]
+            h5_hist_vals = get_h5_obj_refs(['Values'], h5_hist_grp_refs)[0]
 
-            linkRefs(h5_hist, getH5DsetRefs(['Indices', 'Values'], h5_hist_grp_refs))
+            link_h5_objects_as_attrs(h5_hist, get_h5_obj_refs(['Indices', 'Values'], h5_hist_grp_refs))
 
             h5_hist.attrs['Spectroscopic_Indices'] = h5_hist_inds.ref
             h5_hist.attrs['Spectroscopic_Values'] = h5_hist_vals.ref
@@ -1231,8 +1232,8 @@ class BEHistogram:
 
         max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
 
-        h5_main = getDataSet(h5_file, 'Raw_Data')
-        h5_udvs = getDataSet(h5_file, 'UDVS')
+        h5_main = find_dataset(h5_file, 'Raw_Data')
+        h5_udvs = find_dataset(h5_file, 'UDVS')
 
         m_groups = [data.parent for data in h5_main]
         print('{} Measurement groups found.'.format(len(m_groups)))
@@ -1241,15 +1242,15 @@ class BEHistogram:
 
             p_groups = []
 
-            mspecs = getDataSet(group, 'Mean_Spectrogram')
+            mspecs = find_dataset(group, 'Mean_Spectrogram')
             p_groups.extend([mspec.parent for mspec in mspecs])
 
             print('{} Plot groups in {}'.format(len(p_groups), group.name))
 
             for ip, p_group in enumerate(p_groups):
                 try:
-                    max_resp = getDataSet(group, 'Max_Response')
-                    min_resp = getDataSet(group, 'Min_Response')
+                    max_resp = find_dataset(group, 'Max_Response')
+                    min_resp = find_dataset(group, 'Min_Response')
                 except:
                     warn('Maximum and Minimum Response vectors not found for {}.'.format(p_group.name))
                     max_resp = []
@@ -1342,13 +1343,13 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        spec_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         self.N_spectral_steps = np.shape(spec_ind_mat)[0]
 
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, auxDataName=['Bin_Frequencies'])[0]
         x_hist = np.array(spec_ind_mat)
 
         self.N_bins = np.size(freqs_mat)
@@ -1427,8 +1428,8 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        step_ind_mat = getAuxData(h5_main, auxDataName=['UDVS_Indices'])[0].value
-        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0].value
+        step_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['UDVS_Indices'])[0].value
+        spec_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0].value
         self.N_spectral_steps = np.size(step_ind_mat)
 
         active_udvs_steps = np.unique(step_ind_mat[active_spec_steps])
@@ -1437,7 +1438,7 @@ class BEHistogram:
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, auxDataName=['Bin_Frequencies'])[0]
         x_hist = np.array([spec_ind_mat[0], step_ind_mat], dtype=np.int32)
 
         self.N_bins = np.size(freqs_mat)
@@ -1669,7 +1670,7 @@ def getActiveUDVSsteps(h5_raw):
     steps : 1D numpy array
         Active UDVS steps
     """
-    udvs_step_vec = getAuxData(h5_raw, auxDataName=['UDVS_Indices'])[0].value
+    udvs_step_vec = get_auxillary_datasets(h5_raw, auxDataName=['UDVS_Indices'])[0].value
     return np.unique(udvs_step_vec)
 
 
@@ -1758,7 +1759,7 @@ def getForExcitWfm(h5_main, h5_other, wave_type):
     freq_vec : 1D numpy array
         data specific to specified excitation waveform
     """
-    h5_bin_wfm_type = getAuxData(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
+    h5_bin_wfm_type = get_auxillary_datasets(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
     inds = np.where(h5_bin_wfm_type.value == wave_type)[0]
     return h5_other[slice(inds[0], inds[-1] + 1)]
 
@@ -1876,7 +1877,7 @@ def isSimpleDataset(h5_main, isBEPS=True):
         else:
             # Could be user defined or some other kind I am not aware of
             # In many cases, some of these datasets could also potentially be simple datasets
-            ds_udvs = getAuxData(h5_main, auxDataName=['UDVS'])[0]
+            ds_udvs = get_auxillary_datasets(h5_main, auxDataName=['UDVS'])[0]
             excit_wfms = ds_udvs[ds_udvs.attrs.get('wave_mod')]
             wfm_types = np.unique(excit_wfms)
             if len(wfm_types) == 1:
@@ -1890,7 +1891,7 @@ def isSimpleDataset(h5_main, isBEPS=True):
                     # eg - excitaiton waveforms 1, 2, 3 NOT -1, +1
                     return False
                 # In this case a single excitation waveform with forward and reverse was used.
-                h5_bin_wfm_type = getAuxData(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
+                h5_bin_wfm_type = get_auxillary_datasets(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
                 # Now for each wfm type, count number of bins.
                 wfm_bin_count = []
                 for wfm in wfm_types:
