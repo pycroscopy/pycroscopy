@@ -17,10 +17,10 @@ from sklearn.neighbors import KNeighborsClassifier
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from ...io.io_utils import recommend_cpu_cores
-from ...io.dtype_utils import real_to_compound
-from ...io.microdata import MicroDataset, MicroDataGroup
-from ...io.io_hdf5 import ioHDF5
+from ...core.io.io_utils import recommend_cpu_cores
+from ...core.io.dtype_utils import real_to_compound
+from ...core.io.microdata import MicroDataset, MicroDataGroup
+from pycroscopy.core.io.io_hdf5 import ioHDF5
 
 # atom_dtype = np.dtype([('x', np.float32),
 #                        ('y', np.float32),

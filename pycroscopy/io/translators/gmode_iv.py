@@ -13,11 +13,10 @@ from warnings import warn
 import h5py
 import numpy as np  # For array operations
 
-from .translator import Translator
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
-from ..microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
+from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
 
 
 class GIVTranslator(Translator):
@@ -102,8 +101,8 @@ class GIVTranslator(Translator):
             chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                   ds_raw_data])
             h5_refs = hdf.writeData(chan_grp, print_log=False)
-            h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-            linkRefs(h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+            h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+            link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
             self.raw_datasets.append(h5_raw)
             
         # Now that the N channels have been made, populate them with the actual data....

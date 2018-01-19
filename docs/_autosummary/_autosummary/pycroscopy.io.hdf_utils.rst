@@ -9,24 +9,24 @@ pycroscopy\.io\.hdf\_utils
 
    .. autosummary::
    
-      buildReducedSpec
+      build_reduced_spec_dsets
       calc_chunks
-      checkAndLinkAncillary
-      checkIfMain
+      check_and_link_ancillary
+      check_if_main
       check_for_old
-      copyAttributes
-      copyRegionRefs
+      copy_attributes
+      copy_region_refs
       copy_main_attributes
-      createRefFromIndices
+      create_region_reference
       create_empty_dataset
       create_spec_inds_from_vals
-      findDataset
-      findH5group
-      getAuxData
-      getDataSet
-      getH5DsetRefs
-      getH5GroupRefs
-      getH5RegRefIndices
+      find_dataset
+      find_results_groups
+      get_auxillary_datasets
+      get_datasets
+      get_h5_obj_refs
+      get_group_refs
+      get_indices_for_region_ref
       get_all_main
       get_attr
       get_attributes
@@ -36,14 +36,14 @@ pycroscopy\.io\.hdf\_utils
       get_sort_order
       get_source_dataset
       get_unit_values
-      linkRefAsAlias
-      linkRefs
+      link_h5_obj_as_alias
+      link_h5_objects_as_attrs
       link_as_main
       print_tree
-      reducingRefCopy
-      reshape_from_Ndims
-      reshape_to_Ndims
-      simpleRefCopy
+      copy_reg_ref_reduced_dim
+      reshape_from_n_dims
+      reshape_to_n_dims
+      simple_region_ref_copy
    
    
 

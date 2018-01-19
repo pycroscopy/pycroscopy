@@ -4,17 +4,15 @@ Utility functions for the Fake BEPS generator
 """
 import os
 import numpy as np
-from PIL import Image
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from ..io_hdf5 import ioHDF5
-from ..hdf_utils import calc_chunks, getH5DsetRefs, link_as_main, get_attr, buildReducedSpec
-from ..dtype_utils import real_to_compound
-from .utils import build_ind_val_dsets, generate_dummy_main_parms
-from .translator import Translator
-from ..microdata import MicroDataGroup, MicroDataset
-from ..pycro_data import PycroDataset
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, buildReducedSpec
+from ...core.io.dtype_utils import real_to_compound
+from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_fitter import sho32
@@ -446,14 +444,14 @@ class FakeBEPSGenerator(Translator):
         del ds_raw_data, ds_spec_inds, ds_spec_vals, ds_pos_inds, ds_pos_vals
 
         # Get the file and Raw_Data objects
-        h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         h5_chan_grp = h5_raw.parent
 
         # Get the Position and Spectroscopic dataset objects
-        h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_refs)[0]
-        h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_refs)[0]
-        h5_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_refs)[0]
-        h5_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_refs)[0]
+        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_refs)[0]
+        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_refs)[0]
+        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]
+        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
 
         # Link the Position and Spectroscopic datasets as attributes of Raw_Data
         link_as_main(h5_raw, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
@@ -495,12 +493,12 @@ class FakeBEPSGenerator(Translator):
         del ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals
 
         # Get the dataset handles for the fit and guess
-        h5_sho_fit = getH5DsetRefs(['Fit'], h5_sho_refs)[0]
-        h5_sho_guess = getH5DsetRefs(['Guess'], h5_sho_refs)[0]
+        h5_sho_fit = get_h5_obj_refs(['Fit'], h5_sho_refs)[0]
+        h5_sho_guess = get_h5_obj_refs(['Guess'], h5_sho_refs)[0]
 
         # Get the dataset handles for the SHO Spectroscopic datasets
-        h5_sho_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_sho_refs)[0]
-        h5_sho_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_sho_refs)[0]
+        h5_sho_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_sho_refs)[0]
+        h5_sho_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_sho_refs)[0]
 
         # Link the Position and Spectroscopic datasets as attributes of the SHO Fit and Guess
         link_as_main(h5_sho_fit, h5_pos_inds, h5_pos_vals, h5_sho_spec_inds, h5_sho_spec_vals)
@@ -545,10 +543,10 @@ class FakeBEPSGenerator(Translator):
         del ds_loop_spec_vals, ds_loop_spec_inds, ds_loop_guess, ds_loop_fit
 
         # Get the handles to the datasets
-        h5_loop_fit = getH5DsetRefs(['Fit'], h5_loop_refs)[0]
-        h5_loop_guess = getH5DsetRefs(['Guess'], h5_loop_refs)[0]
-        h5_loop_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_loop_refs)[0]
-        h5_loop_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_loop_refs)[0]
+        h5_loop_fit = get_h5_obj_refs(['Fit'], h5_loop_refs)[0]
+        h5_loop_guess = get_h5_obj_refs(['Guess'], h5_loop_refs)[0]
+        h5_loop_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_loop_refs)[0]
+        h5_loop_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_loop_refs)[0]
 
         # Link the Position and Spectroscopic datasets to the Loop Guess and Fit
         link_as_main(h5_loop_fit, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)

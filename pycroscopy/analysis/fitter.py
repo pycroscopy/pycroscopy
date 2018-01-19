@@ -12,10 +12,10 @@ import h5py
 import time as tm
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
-from ..io.pycro_data import PycroDataset
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import get_available_memory, recommend_cpu_cores, format_time
-from ..io.hdf_utils import check_for_old, findH5group, check_for_matching_attrs
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
+from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs
 from .optimize import Optimize
 
 
@@ -415,7 +415,7 @@ class Fitter(object):
 
         """
         # First find all groups that match the basic condition of matching tool name
-        all_groups = findH5group(self.h5_main, self._fitter_name)
+        all_groups = find_results_groups(self.h5_main, self._fitter_name)
 
         # Next sort these groups into three categories:
         completed_guess = []

@@ -14,13 +14,13 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+from ..core.viz.plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
     plot_complex_loop_stack, plot_complex_map_stack, save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
+from ..core.io.hdf_utils import reshape_to_n_dims, get_auxillary_datasets, get_sort_order, get_dimensionality, get_attr, \
     get_source_dataset
-from ..io.pycro_data import PycroDataset
+from pycroscopy.core.io.pycro_data import PycroDataset
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -235,16 +235,16 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     """
     cmap = get_cmap_object(cmap)
 
-    guess_3d_data, success = reshape_to_Ndims(h5_sho_dset)
+    guess_3d_data, success = reshape_to_n_dims(h5_sho_dset)
 
-    h5_sho_spec_inds = getAuxData(h5_sho_dset, 'Spectroscopic_Indices')[0]
-    h5_sho_spec_vals = getAuxData(h5_sho_dset, 'Spectroscopic_Values')[0]
-    spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
+    h5_sho_spec_inds = get_auxillary_datasets(h5_sho_dset, 'Spectroscopic_Indices')[0]
+    h5_sho_spec_vals = get_auxillary_datasets(h5_sho_dset, 'Spectroscopic_Values')[0]
+    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
     sho_spec_dims = np.array(spec_nd.shape[1:])
     sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
 
-    h5_pos_inds = getAuxData(h5_sho_dset, auxDataName='Position_Indices')[-1]
-    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    h5_pos_inds = get_auxillary_datasets(h5_sho_dset, auxDataName='Position_Indices')[-1]
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
     pos_labels = get_attr(h5_pos_inds, 'labels')
 
@@ -273,7 +273,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     sho_dset_collapsed = np.reshape(sho_guess_Nd_1, final_guess_shape)
 
     # Get the bias matrix:
-    bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
+    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
     bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
                             new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
 
@@ -396,19 +396,19 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     """
     cmap = get_cmap_object(cmap)
 
-    h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
+    h5_pos_inds = get_auxillary_datasets(h5_main, auxDataName='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
     pos_labels = np.array(get_attr(h5_pos_inds, 'labels'))[pos_sort]
 
-    h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
-    h5_spec_inds = getAuxData(h5_main, auxDataName='Spectroscopic_Indices')[-1]
+    h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName='Spectroscopic_Values')[-1]
+    h5_spec_inds = get_auxillary_datasets(h5_main, auxDataName='Spectroscopic_Indices')[-1]
     spec_sort = get_sort_order(h5_spec_inds)
     spec_dims = get_dimensionality(h5_spec_inds, spec_sort)
     spec_labels = np.array(get_attr(h5_spec_inds, 'labels'))[spec_sort]
 
     ifreq = int(np.argwhere(spec_labels == 'Frequency'))
-    freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
+    freqs_nd = reshape_to_n_dims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
 
     num_udvs_steps = h5_main.parent.parent.attrs.get('num_udvs_steps', None)
@@ -600,23 +600,23 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     # Prepare some variables for plotting loops fits and guesses
     # Plot the Loop Guess and Fit Results
-    proj_nd, _ = reshape_to_Ndims(h5_projected_loops)
-    guess_nd, _ = reshape_to_Ndims(h5_loop_guess)
-    fit_nd, _ = reshape_to_Ndims(h5_loop_fit)
+    proj_nd, _ = reshape_to_n_dims(h5_projected_loops)
+    guess_nd, _ = reshape_to_n_dims(h5_loop_guess)
+    fit_nd, _ = reshape_to_n_dims(h5_loop_fit)
 
     h5_projected_loops = h5_loop_guess.parent['Projected_Loops']
-    h5_proj_spec_inds = getAuxData(h5_projected_loops,
-                                   auxDataName='Spectroscopic_Indices')[-1]
-    h5_proj_spec_vals = getAuxData(h5_projected_loops,
-                                   auxDataName='Spectroscopic_Values')[-1]
-    h5_pos_inds = getAuxData(h5_projected_loops,
-                             auxDataName='Position_Indices')[-1]
-    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    h5_proj_spec_inds = get_auxillary_datasets(h5_projected_loops,
+                                               auxDataName='Spectroscopic_Indices')[-1]
+    h5_proj_spec_vals = get_auxillary_datasets(h5_projected_loops,
+                                               auxDataName='Spectroscopic_Values')[-1]
+    h5_pos_inds = get_auxillary_datasets(h5_projected_loops,
+                                         auxDataName='Position_Indices')[-1]
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
     pos_labels = get_attr(h5_pos_inds, 'labels')
 
     # reshape the vdc_vec into DC_step by Loop
-    spec_nd, _ = reshape_to_Ndims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
+    spec_nd, _ = reshape_to_n_dims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
     loop_spec_dims = np.array(spec_nd.shape[1:])
     loop_spec_labels = get_attr(h5_proj_spec_vals, 'labels')
 
@@ -846,26 +846,26 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     h5_main = get_source_dataset(h5_sho_grp)
 
     # Now get the needed ancillary datasets for each main dataset
-    h5_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[0]
-    h5_pos_vals = getAuxData(h5_loop_parameters, 'Position_Values')[0]
+    h5_pos_inds = get_auxillary_datasets(h5_loop_parameters, 'Position_Indices')[0]
+    h5_pos_vals = get_auxillary_datasets(h5_loop_parameters, 'Position_Values')[0]
     pos_order = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_order)
     pos_labs = get_attr(h5_pos_inds, 'labels')
 
-    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[0]
-    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[0]
+    h5_loop_spec_inds = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Indices')[0]
+    h5_loop_spec_vals = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Values')[0]
     loop_spec_order = get_sort_order(h5_loop_spec_inds)
     loop_spec_dims = get_dimensionality(h5_loop_spec_inds, loop_spec_order)
     loop_spec_labs = get_attr(h5_loop_spec_inds, 'labels')
 
-    h5_sho_spec_inds = getAuxData(h5_sho_fit, 'Spectroscopic_Indices')[0]
-    h5_sho_spec_vals = getAuxData(h5_sho_fit, 'Spectroscopic_Values')[0]
+    h5_sho_spec_inds = get_auxillary_datasets(h5_sho_fit, 'Spectroscopic_Indices')[0]
+    h5_sho_spec_vals = get_auxillary_datasets(h5_sho_fit, 'Spectroscopic_Values')[0]
     sho_spec_order = get_sort_order(h5_sho_spec_inds)
     sho_spec_dims = get_dimensionality(h5_sho_spec_inds, sho_spec_order)
     sho_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
 
-    h5_main_spec_inds = getAuxData(h5_main, 'Spectroscopic_Indices')[0]
-    h5_main_spec_vals = getAuxData(h5_main, 'Spectroscopic_Values')[0]
+    h5_main_spec_inds = get_auxillary_datasets(h5_main, 'Spectroscopic_Indices')[0]
+    h5_main_spec_vals = get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[0]
     main_spec_order = get_sort_order(h5_main_spec_inds)
     main_spec_dims = get_dimensionality(h5_main_spec_inds, main_spec_order)
     main_spec_labs = get_attr(h5_main_spec_inds, 'labels')
@@ -899,7 +899,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     Get the frequency vector to be plotted against
     '''
     full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
-    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec, _ = reshape_to_n_dims(full_w_vec, h5_spec=h5_main_spec_inds)
     full_w_vec = full_w_vec.squeeze()
 
     '''
@@ -952,7 +952,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
         sho_fit = SHOfunc(sho_fit, w_vec)
 
         # Get the slice of the Raw Data
-        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec, _ = reshape_to_n_dims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
         raw_data_vec = np.moveaxis(raw_data_vec.squeeze(),
                                    main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
 
@@ -1169,7 +1169,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     Get the frequency vector to be plotted against
     '''
     full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
-    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec, _ = reshape_to_n_dims(full_w_vec, h5_spec=h5_main_spec_inds)
     full_w_vec = full_w_vec.squeeze()
 
     '''
@@ -1245,7 +1245,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         sho_fit = SHOfunc(sho_fit, w_vec2)
 
         # Get the slice of the Raw Data
-        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec, _ = reshape_to_n_dims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
         # Move freqency dimension to the end
         raw_data_vec2 = np.rollaxis(raw_data_vec.squeeze(), main_freq_dim, len(main_spec_dims))
         # Now move the bias dimension to the front

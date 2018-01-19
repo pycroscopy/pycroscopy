@@ -8,7 +8,7 @@ Created on Wed Jul 27 3:19:46 2017
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
-from os import path, listdir, remove
+from os import path, remove
 from warnings import warn
 
 import numpy as np
@@ -16,10 +16,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.translator import generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class GTuneTranslator(GLineTranslator):
@@ -164,10 +164,10 @@ class GTuneTranslator(GLineTranslator):
             # chan_grp.showTree()
             h5_refs = hdf.writeData(chan_grp)
 
-            h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
+            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
 
             # Reference linking can certainly take place even before the datasets have reached their final size         
-            linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+            link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
             # Now transfer scan data in the dat file to the h5 file:
             super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)

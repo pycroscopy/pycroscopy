@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.getDataSet``
+Examples using ``pycroscopy.hdf_utils.get_datasets``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

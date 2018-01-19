@@ -10,8 +10,7 @@ import h5py
 
 sys.path.append('../')
 from scipy.io import loadmat
-from pycroscopy.io.io_hdf5 import ioHDF5
-from pycroscopy.io.hdf_utils import reshape_to_Ndims
+from ...core.io.io_hdf5 import ioHDF5
 
 
 def loadDataFunc(filePath, **kwargs):

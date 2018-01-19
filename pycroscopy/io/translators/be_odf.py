@@ -15,11 +15,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
-from .translator import Translator
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from pycroscopy.core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
+from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class BEodfTranslator(Translator):
@@ -326,13 +325,13 @@ class BEodfTranslator(Translator):
 
         h5_refs = self.hdf.writeData(spm_data, print_log=verbose)
 
-        self.h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        self.h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
-        # Now doing linkrefs:
+        # Now doing link_h5_objects_as_attrs:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'UDVS', 'Bin_Step', 'Bin_Indices', 'UDVS_Indices',
                         'Bin_Frequencies', 'Bin_FFT', 'Bin_Wfm_Type', 'Noise_Floor', 'Spectroscopic_Values']
-        linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(self.h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix)
 

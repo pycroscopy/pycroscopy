@@ -21,7 +21,7 @@ Submodules
     svd_utils
 
 """
-from .process import Process, parallel_compute
+from pycroscopy.core.processing.process import Process, parallel_compute
 from . import fft
 from . import gmode_utils
 from . import histogram
@@ -33,8 +33,7 @@ from . import cluster
 from .cluster import Cluster
 from . import image_processing
 from .image_processing import ImageWindow
-from . import process
-from .process import Process
+from pycroscopy.core.processing.process import Process
 from .signal_filter import SignalFilter
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'histogram', 'svd_utils',

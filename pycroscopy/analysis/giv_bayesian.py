@@ -9,12 +9,12 @@ Created on Thu Nov 02 11:48:53 2017
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import numpy as np
-from ..processing.process import Process, parallel_compute
-from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.dtype_utils import real_to_compound
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main
-from ..io.translators.utils import build_ind_val_dsets
-from ..io.io_hdf5 import ioHDF5
+from ..core.processing.process import Process, parallel_compute
+from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.dtype_utils import real_to_compound
+from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
+from ..core.io.translator import build_ind_val_dsets
+from ..core.io.io_hdf5 import ioHDF5
 from .utils.giv_utils import do_bayesian_inference
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
@@ -63,7 +63,7 @@ class GIVBayesian(Process):
         self.process_name = 'Bayesian_Inference'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
-        h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
 
         roll_cyc_fract = -0.25
@@ -149,28 +149,28 @@ class GIVBayesian(Process):
         self.hdf = ioHDF5(self.h5_main.file)
         h5_refs = self.hdf.writeData(bayes_grp, print_log=self.verbose)
 
-        self.h5_new_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_refs)[0]
-        h5_new_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_refs)[0]
-        h5_cap_spec_vals = getH5DsetRefs(['Spectroscopic_Values_Cap'], h5_refs)[0]
-        h5_cap_spec_inds = getH5DsetRefs(['Spectroscopic_Indices_Cap'], h5_refs)[0]
-        self.h5_cap = getH5DsetRefs(['Capacitance'], h5_refs)[0]
-        self.h5_variance = getH5DsetRefs(['R_variance'], h5_refs)[0]
-        self.h5_resistance = getH5DsetRefs(['Resistance'], h5_refs)[0]
-        self.h5_i_corrected = getH5DsetRefs(['Corrected_Current'], h5_refs)[0]
+        self.h5_new_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
+        h5_new_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]
+        h5_cap_spec_vals = get_h5_obj_refs(['Spectroscopic_Values_Cap'], h5_refs)[0]
+        h5_cap_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices_Cap'], h5_refs)[0]
+        self.h5_cap = get_h5_obj_refs(['Capacitance'], h5_refs)[0]
+        self.h5_variance = get_h5_obj_refs(['R_variance'], h5_refs)[0]
+        self.h5_resistance = get_h5_obj_refs(['Resistance'], h5_refs)[0]
+        self.h5_i_corrected = get_h5_obj_refs(['Corrected_Current'], h5_refs)[0]
         self.h5_results_grp = self.h5_cap.parent
 
         if self.verbose:
             print('Finished making room for the datasets. Now linking them')
 
         # Now link the datasets appropriately so that they become hubs:
-        h5_pos_vals = getAuxData(self.h5_main, auxDataName=['Position_Values'])[0]
-        h5_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
+        h5_pos_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Values'])[0]
+        h5_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
 
         # Capacitance main dataset:
         link_as_main(self.h5_cap, h5_pos_inds, h5_pos_vals, h5_cap_spec_inds, h5_cap_spec_vals)
 
         # the corrected current dataset is the same as the main dataset in every way
-        copyAttributes(self.h5_main, self.h5_i_corrected, skip_refs=False)
+        copy_attributes(self.h5_main, self.h5_i_corrected, skip_refs=False)
 
         # The resistance datasets get new spec datasets but reuse the old pos datasets:
         for new_dset in [self.h5_resistance, self.h5_variance]:

@@ -7,15 +7,12 @@ from . import gmode_line
 from . import gmode_tune
 from . import image
 from . import ndata_translator
-from . import numpy_translator
 from . import trKPFM_translator
 from . import igor_ibw
 from . import oneview
 from . import ptychography
 from . import sporc
 from . import time_series
-from . import translator
-from . import utils
 from . import df_utils
 from . import beps_data_generator
 from . import nanonis
@@ -30,19 +27,18 @@ from .gmode_tune import GTuneTranslator
 from .igor_ibw import IgorIBWTranslator
 from .image import ImageTranslator
 from .ndata_translator import NDataTranslator
-from .numpy_translator import NumpyTranslator
 from .trKPFM_translator import TRKPFMTranslator
 from .oneview import OneViewTranslator
 from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator
 from .time_series import MovieTranslator
-from .translator import Translator
+
 from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 from .nanonis import NanonisTranslator
 
-__all__ = ['Translator', 'BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
+__all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
-           'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator', 'NumpyTranslator',
+           'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
            'LabViewH5Patcher', 'TRKPFMTranslator']

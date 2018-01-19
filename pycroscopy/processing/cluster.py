@@ -10,12 +10,12 @@ import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from .process import Process
 from .proc_utils import get_component_slice
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
-from ..io.io_hdf5 import ioHDF5
-from ..io.dtype_utils import check_dtype, transform_to_target_dtype
-from ..io.microdata import MicroDataGroup, MicroDataset
+from ..core.processing.process import Process
+from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
+from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.microdata import MicroDataGroup, MicroDataset
 
 
 class Cluster(Process):
@@ -228,13 +228,12 @@ class Cluster(Process):
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)
 
-        # Get the h5 objects we just created
-        h5_labels = getH5DsetRefs(['Labels'], h5_clust_refs)[0]
-        h5_centroids = getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
-        h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
-        h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
-        h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
-        h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
+        h5_labels = get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
+        h5_centroids = get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]
+        h5_clust_inds = get_h5_obj_refs(['Cluster_Indices'], h5_clust_refs)[0]
+        h5_clust_vals = get_h5_obj_refs(['Cluster_Values'], h5_clust_refs)[0]
+        h5_label_inds = get_h5_obj_refs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
+        h5_label_vals = get_h5_obj_refs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
 
         # Add the attributes to label spectroscopic datasets
         h5_label_inds.attrs['labels'] = np.array([''], dtype='S')
@@ -245,8 +244,8 @@ class Cluster(Process):
         copy_main_attributes(self.h5_main, h5_centroids)
 
         if isinstance(self.data_slice[1], np.ndarray):
-            h5_mean_resp_inds = getH5DsetRefs(['Mean_Response_Indices'], h5_clust_refs)[0]
-            h5_mean_resp_vals = getH5DsetRefs(['Mean_Response_Values'], h5_clust_refs)[0]
+            h5_mean_resp_inds = get_h5_obj_refs(['Mean_Response_Indices'], h5_clust_refs)[0]
+            h5_mean_resp_vals = get_h5_obj_refs(['Mean_Response_Values'], h5_clust_refs)[0]
             h5_mean_resp_inds.attrs['labels'] = np.array([''], dtype='S')
             h5_mean_resp_inds.attrs['units'] = np.array([''], dtype='S')
             h5_mean_resp_vals.attrs['labels'] = np.array([''], dtype='S')
@@ -255,18 +254,18 @@ class Cluster(Process):
             h5_mean_resp_inds = h5_spec_inds
             h5_mean_resp_vals = h5_spec_vals
 
-        checkAndLinkAncillary(h5_labels,
+        check_and_link_ancillary(h5_labels,
                               ['Position_Indices', 'Position_Values'],
                               h5_main=self.h5_main)
-        checkAndLinkAncillary(h5_labels,
+        check_and_link_ancillary(h5_labels,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                               anc_refs=[h5_label_inds, h5_label_vals])
 
-        checkAndLinkAncillary(h5_centroids,
+        check_and_link_ancillary(h5_centroids,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
                               anc_refs=[h5_mean_resp_inds, h5_mean_resp_vals])
 
-        checkAndLinkAncillary(h5_centroids,
+        check_and_link_ancillary(h5_centroids,
                               ['Position_Indices', 'Position_Values'],
                               anc_refs=[h5_clust_inds, h5_clust_vals])
 

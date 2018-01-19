@@ -8,7 +8,7 @@ Created on Wed Sep 28 12:50:47 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np  # For array operations
 from os import path
-from .numpy_translator import NumpyTranslator
+from ...core.io.numpy_translator import NumpyTranslator
 
 
 class AscTranslator(NumpyTranslator):

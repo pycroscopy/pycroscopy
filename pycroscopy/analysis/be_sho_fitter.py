@@ -8,10 +8,10 @@ from warnings import warn
 import numpy as np
 
 from .fitter import Fitter
-from ..io.pycro_data import PycroDataset
-from ..io.hdf_utils import buildReducedSpec, copyRegionRefs, linkRefs, getAuxData, getH5DsetRefs, \
-            create_empty_dataset
-from ..io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.hdf_utils import build_reduced_spec_dsets, copy_region_refs, link_h5_objects_as_attrs, get_h5_obj_refs, \
+                                create_empty_dataset, get_auxillary_datasets
+from ..core.io.microdata import MicroDataset, MicroDataGroup
 
 '''
 Custom dtype for the datasets created during fitting.
@@ -74,7 +74,7 @@ class BESHOfitter(Fitter):
 
         not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
 
-        ds_sho_inds, ds_sho_vals = buildReducedSpec(self.h5_main.h5_spec_inds,
+        ds_sho_inds, ds_sho_vals = build_reduced_spec_dsets(self.h5_main.h5_spec_inds,
                                                     self.h5_main.h5_spec_vals,
                                                     not_freq, self.step_start_inds)
 
@@ -89,19 +89,19 @@ class BESHOfitter(Fitter):
 
         h5_sho_grp_refs = self.hdf.writeData(sho_grp, print_log=self._verbose)
 
-        self.h5_guess = getH5DsetRefs(['Guess'], h5_sho_grp_refs)[0]
-        h5_sho_inds = getH5DsetRefs(['Spectroscopic_Indices'],
+        self.h5_guess = get_h5_obj_refs(['Guess'], h5_sho_grp_refs)[0]
+        h5_sho_inds = get_h5_obj_refs(['Spectroscopic_Indices'],
                                     h5_sho_grp_refs)[0]
-        h5_sho_vals = getH5DsetRefs(['Spectroscopic_Values'],
+        h5_sho_vals = get_h5_obj_refs(['Spectroscopic_Values'],
                                     h5_sho_grp_refs)[0]
 
         # Reference linking before actual fitting
-        linkRefs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
+        link_h5_objects_as_attrs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
         # Linking ancillary position datasets:
-        aux_dsets = getAuxData(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
-        linkRefs(self.h5_guess, aux_dsets)
+        aux_dsets = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
+        link_h5_objects_as_attrs(self.h5_guess, aux_dsets)
 
-        copyRegionRefs(self.h5_main, self.h5_guess)
+        copy_region_refs(self.h5_main, self.h5_guess)
 
         self.h5_guess = PycroDataset(self.h5_guess)
 
@@ -443,7 +443,7 @@ def is_reshapable(h5_main, step_start_inds=None):
         Whether or not the number of bins per step are constant in this dataset
     """
     if step_start_inds is None:
-        h5_spec_inds = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        h5_spec_inds = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
         step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
     # Adding the size of the main dataset as the last (virtual) step
     step_start_inds = np.hstack((step_start_inds, h5_main.shape[1]))

@@ -1,37 +1,125 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov  3 15:11:33 2015
-Basic functions that can be used by any SPM translator class
+Created on Tue Nov  3 15:07:16 2015
 
 @author: Suhas Somnath
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import numpy as np  # For array operations
-import time as tm  # for getting time stamps
-from ..microdata import MicroDataset
+
+import abc
+import time as tm
+from os import path, remove
+
+import numpy as np
+
+from ..io_utils import get_available_memory
+from ..microdata import MicroDataGroup, MicroDataset
+from ..hdf_utils import getH5DsetRefs, linkRefs
+from pycroscopy.core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 
 
-def interpret_frequency(freq_str):
+class Translator(object):
     """
-    Interprets a string denoting frequency into its numerical equivalent.
-    For example "4 MHz" is translated to 4E+6
-    
-    Parameters
-    ----------
-    freq_str : unicode / string
-        Frequency as a string - eg '4 MHz'
-    
-    Returns
-    -------
-    frequency : float
-        Frequency in hertz
+    Abstract class that defines the most basic functionality of a data format translator.
+    A translator converts experimental data from binary / proprietary
+    data formats to a single standardized HDF5 data file
     """
-    components = freq_str.split()
-    if components[1] == 'MHz':
-        return int(components[0])*1.0E+6
-    elif components[1] == 'kHz':
-        return int(components[0])*1.0E+3
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, max_mem_mb=1024):
+        """
+        Parameters
+        -----------
+        max_mem_mb : unsigned integer (Optional. Default = 1024)
+            Maximum system memory (in megabytes) that the translator can use
+            
+        Returns
+        -------
+        Translator object
+        """
+        self.max_ram = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
+
+    @abc.abstractmethod
+    def translate(self, filepath):
+        """
+        Abstract method.
+        To be implemented by extensions of this class. God I miss Java!
+        """
+        pass
+
+    @abc.abstractmethod
+    def _parse_file_path(self, input_path):
+        """
+        Abstract method
+        Parses the `input_path` to determine the `basename` and find
+        the appropriate data files
+
+        """
+        pass
+
+    @abc.abstractmethod
+    def _read_data(self):
+        """
+        Abstract method
+        Reads the data into the hdf5 datasets.
+        """
+
+    @staticmethod
+    def simple_write(h5_path, data_name, translator_name, ds_main, aux_dset_list, parm_dict=None):
+        """
+        Writes the provided datasets and parameters to an h5 file
+        
+        Parameters
+        ----------
+        h5_path : String / Unicode
+            Absolute path of the h5 file to be written
+        data_name : String / Unicode
+            Name of the data type
+        translator_name : String / unicode
+            Name of the translator
+        ds_main : MicroDataset object
+            Main dataset
+        aux_dset_list : list of MicroDataset objects
+            auxillary datasets to be written to the file
+        parm_dict : dictionary (Optional)
+            Dictionary of parameters
+
+        Returns
+        -------
+        h5_path : String / unicode
+            Absolute path of the written h5 file
+
+        """
+        if parm_dict is None:
+            parm_dict = {}
+        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp.addChildren([ds_main])
+        chan_grp.addChildren(aux_dset_list)
+        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp.attrs = parm_dict
+        meas_grp.addChildren([chan_grp])
+        spm_data = MicroDataGroup('')
+        global_parms = generate_dummy_main_parms()
+        global_parms['data_type'] = data_name
+        global_parms['translator'] = translator_name
+        spm_data.attrs = global_parms
+        spm_data.addChildren([meas_grp])
+
+        aux_dset_names = list()
+        for dset in aux_dset_list:
+            if isinstance(dset, MicroDataset):
+                aux_dset_names.append(dset.name)
+
+        if path.exists(h5_path):
+            remove(h5_path)
+
+        hdf = ioHDF5(h5_path)
+        h5_refs = hdf.writeData(spm_data, print_log=False)
+        h5_raw = getH5DsetRefs([ds_main.name], h5_refs)[0]
+        linkRefs(h5_raw, getH5DsetRefs(aux_dset_names, h5_refs))
+        hdf.close()
+        return h5_path
 
 
 def generate_dummy_main_parms():
@@ -42,7 +130,7 @@ def generate_dummy_main_parms():
     ----------
     main_parms : dictionary
         Dictionary containing basic descriptors that describe a dataset
-    """        
+    """
     main_parms = dict()
     main_parms['translate_date'] = tm.strftime("%Y_%m_%d")
     main_parms['instrument'] = 'cypher_west'
@@ -63,7 +151,7 @@ def generate_dummy_main_parms():
     # Need to fill in the current X, Y, Z, Laser position here
     main_parms['current_position_x'] = 1
     main_parms['current_position_y'] = 1
-    
+
     return main_parms
 
 
@@ -71,7 +159,7 @@ def make_position_mat(num_steps):
     """
     Sets the position index matrices and labels for each of the spatial dimensions.
     It is intentionally generic so that it works for any SPM dataset.
-    
+
     Parameters
     ------------
     num_steps : List / numpy array
@@ -81,30 +169,30 @@ def make_position_mat(num_steps):
     Returns
     --------------
     pos_mat : 2D unsigned int numpy array
-        arranged as [steps, spatial dimension]  
+        arranged as [steps, spatial dimension]
     """
 
     num_steps = np.array(num_steps)
     spat_dims = max(1, len(np.where(num_steps > 1)[0]))
-    
+
     pos_mat = np.zeros(shape=(np.prod(num_steps), spat_dims), dtype=np.uint32)
     pos_ind = 0
-    
+
     for indx, curr_steps in enumerate(num_steps):
         if curr_steps > 1:
-            
+
             part1 = np.prod(num_steps[:indx+1])
-            
+
             if indx > 0:
                 part2 = np.prod(num_steps[:indx])
             else:
                 part2 = 1
-            
+
             if indx+1 == len(num_steps):
                 part3 = 1
             else:
-                part3 = np.prod(num_steps[indx+1:])           
-                                
+                part3 = np.prod(num_steps[indx+1:])
+
             pos_mat[:, pos_ind] = np.tile(np.floor(np.arange(part1)/part2), part3)
             pos_ind += 1
 
@@ -113,21 +201,21 @@ def make_position_mat(num_steps):
 
 def get_position_slicing(pos_lab, curr_pix=None):
     """
-    Returns a dictionary of slice objects to help in creating region references 
-    to the position indices and values H5 datasets 
-    
+    Returns a dictionary of slice objects to help in creating region references
+    to the position indices and values H5 datasets
+
     Parameters
     ------------
     pos_lab : List of strings
         Labels of each of the position axes
     curr_pix : (Optional) unsigned int
-        Last pixel in the positon matrix. Useful in experiments where the 
+        Last pixel in the positon matrix. Useful in experiments where the
         parameters have changed (eg. BEPS new data format)
-    
+
     Returns
     ------------
     slice_dict : dictionary
-        Dictionary of tuples containing slice objects corresponding to 
+        Dictionary of tuples containing slice objects corresponding to
         each position axis.
     """
     slice_dict = dict()

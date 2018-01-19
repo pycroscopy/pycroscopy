@@ -11,12 +11,13 @@ from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-from ..io.io_hdf5 import ioHDF5
-from ..io.pycro_data import PycroDataset
-from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, copy_main_attributes
-from ..io.microdata import MicroDataGroup, MicroDataset
-from ..viz.plot_utils import rainbow_plot, set_tick_font_size
-from ..io.translators.utils import build_ind_val_dsets
+from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes
+from ..core.io.microdata import MicroDataGroup, MicroDataset
+from ..core.viz.plot_utils import rainbow_plot, set_tick_font_size
+from ..core.io.translator import build_ind_val_dsets
+
 
 # TODO: Phase rotation not implemented correctly. Find and use excitation frequency
 
@@ -237,8 +238,8 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
 
     num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
-    h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-    h5_pos_vals = getAuxData(h5_main, auxDataName=['Position_Values'])[0]
+    h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0]
+    h5_pos_vals = get_auxillary_datasets(h5_main, auxDataName=['Position_Values'])[0]
     single_AO = h5_spec_vals[:, :pts_per_cycle]
 
     ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
@@ -261,10 +262,10 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     print('Starting to reshape G-mode line data. Please be patient')
     h5_refs = hdf.writeData(resh_grp)
 
-    h5_resh = getH5DsetRefs(['Reshaped_Data'], h5_refs)[0]
+    h5_resh = get_h5_obj_refs(['Reshaped_Data'], h5_refs)[0]
     # Link everything:
-    linkRefs(h5_resh,
-             getH5DsetRefs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
+    link_h5_objects_as_attrs(h5_resh,
+             get_h5_obj_refs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
                            h5_refs))
 
     # Copy the two attributes that are really important but ignored:

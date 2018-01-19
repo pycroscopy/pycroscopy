@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.buildReducedSpec``
+Examples using ``pycroscopy.hdf_utils.build_reduced_spec_dsets``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html
