@@ -8,7 +8,7 @@ from IPython.display import display
 import ipywidgets as widgets
 import numpy as np
 
-from pycroscopy.viz.plot_utils import plot_map
+from .plot_utils import plot_map
 
 
 def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
