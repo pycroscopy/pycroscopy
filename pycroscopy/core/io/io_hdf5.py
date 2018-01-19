@@ -17,8 +17,8 @@ from warnings import warn
 import h5py
 import numpy as np
 
-from pycroscopy.io.microdata import MicroDataGroup
-from pycroscopy.__version__ import version
+from .microdata import MicroDataGroup
+from ..__version__ import version
 
 if sys.version_info.major == 3:
     unicode = str

@@ -10,9 +10,9 @@ from . import dtype_utils
 
 from .io_hdf5 import ioHDF5
 from .microdata import *
-from .pycro_data import *
+from .pycro_data import PycroDataset
 from .translator import *
 from .numpy_translator import NumpyTranslator
 
 __all__ = ['ioHDF5', 'MicroDataset', 'MicroDataGroup', 'PycroDataset', 'hdf_utils', 'io_utils', 'dtype_utils',
-           'microdata']
+           'NumpyTranslator']

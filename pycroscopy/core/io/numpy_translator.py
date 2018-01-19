@@ -9,8 +9,8 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np  # For array operations
 
 from pycroscopy.core.io.translator import Translator, build_ind_val_dsets
-from ..hdf_utils import calc_chunks
-from ..microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
+from .hdf_utils import calc_chunks
+from .microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
 class NumpyTranslator(Translator):
