@@ -218,7 +218,7 @@ h5_path = os.path.join(folder_path, file_name + '.h5')
 # ancillary datasets to the main dataset etc. With a single call to the NumpyTranslator, we complete the translation
 # process.
 
-tran = px.io.NumpyTranslator()
+tran = px.NumpyTranslator()
 h5_path = tran.translate(h5_path, raw_data_2d, num_rows, num_cols,
                          qty_name='Current', data_unit='nA', spec_name='Bias',
                          spec_unit='V', spec_val=volt_vec, scan_height=100,
