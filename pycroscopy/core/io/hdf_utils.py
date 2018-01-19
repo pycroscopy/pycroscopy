@@ -11,7 +11,7 @@ import h5py
 import collections
 from warnings import warn
 import numpy as np
-from pycroscopy.io.microdata import MicroDataset
+from .microdata import MicroDataset
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
