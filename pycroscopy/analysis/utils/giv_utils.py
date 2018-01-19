@@ -10,8 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import sqrtm
 
-from ...io.hdf_utils import getAuxData
-from ...viz.plot_utils import set_tick_font_size
+from ...core.io.hdf_utils import get_auxillary_datasets
+from ...core.viz.plot_utils import set_tick_font_size
 
 
 def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, r_extra=110, gam=0.03, e=10.0, sigma=10., sigmaC=1.,
@@ -333,8 +333,8 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, **kwargs):
     h5_i_corrected = h5_bayesian_grp['Corrected_Current']
 
     i_meas = np.squeeze(h5_resh[pix_ind])
-    orig_bias = np.squeeze(getAuxData(h5_resh, auxDataName=['Spectroscopic_Values'])[0])
-    h5_pos = getAuxData(h5_resh, auxDataName=['Position_Indices'])[0]
+    orig_bias = np.squeeze(get_auxillary_datasets(h5_resh, auxDataName=['Spectroscopic_Values'])[0])
+    h5_pos = get_auxillary_datasets(h5_resh, auxDataName=['Position_Indices'])[0]
 
     resistance = h5_resistance[pix_ind]
     i_correct = h5_i_corrected[pix_ind]
