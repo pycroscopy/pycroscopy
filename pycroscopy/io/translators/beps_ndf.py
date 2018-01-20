@@ -19,7 +19,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
     normalizeBEresponse, createSpecVals, nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -165,12 +165,12 @@ class BEPSndfTranslator(Translator):
         # Writing only the root now:
         spm_data = MicroDataGroup('')
         spm_data.attrs = main_parms
-        self.hdf = ioHDF5(h5_path)
+        self.hdf = HDFwriter(h5_path)
         # self.hdf.clear()
 
         # cacheSettings = self.hdf.file.id.get_access_plist().get_cache()
 
-        self.hdf.writeData(spm_data)
+        self.hdf.write_data(spm_data)
 
         ########################################################
         # Reading and parsing the .dat file(s) 
@@ -320,7 +320,7 @@ class BEPSndfTranslator(Translator):
         meas_grp = MicroDataGroup(meas_grp.name, '/')
         meas_grp.add_children([ds_pos_ind, ds_pos_val])
 
-        h5_refs += self.hdf.writeData(meas_grp)
+        h5_refs += self.hdf.write_data(meas_grp)
 
         # Do all the reference linking:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values', 'UDVS_Indices',
@@ -497,7 +497,7 @@ class BEPSndfTranslator(Translator):
                                ds_spec_vals_mat, ds_udvs_inds])
 
         # meas_grp.showTree()
-        h5_refs = self.hdf.writeData(meas_grp)
+        h5_refs = self.hdf.write_data(meas_grp)
 
         self.ds_noise = get_h5_obj_refs(['Noise_Floor'], h5_refs)[0]
         self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]

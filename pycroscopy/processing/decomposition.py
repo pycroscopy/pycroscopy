@@ -12,7 +12,7 @@ import sklearn.decomposition as dec
 
 from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary
-from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..core.io.microdata import MicroDataGroup, MicroDataset
 
@@ -151,8 +151,8 @@ class Decomposition(Process):
         decomp_grp.attrs.update({'n_components': components.shape[0],
                                  'n_samples': self.h5_main.shape[0]})
         
-        hdf = ioHDF5(self.h5_main.file)
-        h5_decomp_refs = hdf.writeData(decomp_grp)
+        hdf = HDFwriter(self.h5_main.file)
+        h5_decomp_refs = hdf.write_data(decomp_grp)
 
         h5_components = get_h5_obj_refs(['Components'], h5_decomp_refs)[0]
         h5_projections = get_h5_obj_refs(['Projection'], h5_decomp_refs)[0]

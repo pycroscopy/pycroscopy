@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 from ...core.io.io_utils import recommend_cpu_cores
 from ...core.io.microdata import MicroDataset, MicroDataGroup
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.viz.plot_utils import cmap_jet_white_center
 
 
@@ -511,8 +511,8 @@ class Gauss_Fit(object):
         dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
                                         ds_motif_fits, ds_nearest_neighbors])
 
-        hdf = ioHDF5(self.atom_grp.file)
-        h5_atom_refs = hdf.writeData(dgrp_atom_finding)
+        hdf = HDFwriter(self.atom_grp.file)
+        h5_atom_refs = hdf.write_data(dgrp_atom_finding)
         hdf.flush()
         return self.atom_grp
 

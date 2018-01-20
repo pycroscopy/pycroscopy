@@ -105,13 +105,13 @@ root_group.show_tree()
 h5_path = 'microdata_test.h5'
 
 # Then we use the ioHDF5 class to build the file from our objects.
-hdf = px.ioHDF5(h5_path)
+hdf = px.HDFwriter(h5_path)
 
 ##############################################################################
 # The writeData method builds the hdf5 file using the structure defined by the
 # MicroData objects.  It returns a list of references to all h5py objects in the
 # new file.
-h5_refs = hdf.writeData(root_group, print_log=True)
+h5_refs = hdf.write_data(root_group, print_log=True)
 
 # We can use these references to get the h5py dataset and group objects
 h5_main = px.io.hdf_utils.getH5DsetRefs(['Main_Data'], h5_refs)[0]

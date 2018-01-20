@@ -17,7 +17,7 @@ import xlrd as xlreader
 
 from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
     get_attr, create_spec_inds_from_vals
-from ....core.io.io_hdf5 import ioHDF5
+from ....core.io.hdf_writer import HDFwriter
 from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....core.io.microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
@@ -411,7 +411,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         plot_grp.attrs['Name'] = col_name
         plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
 
-        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
+        h5_plt_grp_refs = hdf.write_data(plot_grp, print_log=debug)
 
         h5_mean_spec = get_h5_obj_refs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = get_h5_obj_refs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
@@ -464,7 +464,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
             hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
 
-            h5_hist_grp_refs = hdf.writeData(hist_grp)
+            h5_hist_grp_refs = hdf.write_data(hist_grp)
 
             h5_hist = get_h5_obj_refs(['Histograms'], h5_hist_grp_refs)[0]
             h5_hist_inds = get_h5_obj_refs(['Indices'], h5_hist_grp_refs)[0]
@@ -1224,7 +1224,7 @@ class BEHistogram:
         -------
         None
         """
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
         h5_file = hdf.file
 
         print('Adding Histograms to file {}'.format(h5_file.name))
@@ -1288,7 +1288,7 @@ class BEHistogram:
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
                 ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
                 plot_grp.add_children([ds_hist, ds_hist_indices, ds_hist_labels])
-                hdf.writeData(plot_grp)
+                hdf.write_data(plot_grp)
 
                 if show_plot or save_plot:
                     if save_plot:

@@ -14,7 +14,7 @@ from skimage.measure import block_reduce
 from .df_utils.io_image import read_image
 from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main, find_dataset
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -176,7 +176,7 @@ class ImageTranslator(Translator):
 
         # Open the hdf5 file and delete any contents
         try:
-            hdf = ioHDF5(self.h5_path)
+            hdf = HDFwriter(self.h5_path)
 
             '''
             See if existing Raw_Data exists
@@ -200,14 +200,14 @@ class ImageTranslator(Translator):
             # Just close, remove, and start new
             hdf.close()
             os.remove(self.h5_path)
-            hdf = ioHDF5(self.h5_path)
+            hdf = HDFwriter(self.h5_path)
 
         except:
             raise
 
         self.hdf = hdf
 
-        h5_refs = self.hdf.writeData(root_grp)
+        h5_refs = self.hdf.write_data(root_grp)
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         aux_ds_names = ['Position_Indices',
                         'Position_Values',

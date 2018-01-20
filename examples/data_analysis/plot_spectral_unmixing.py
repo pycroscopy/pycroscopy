@@ -82,7 +82,7 @@ data_file_path = 'temp_um.h5'
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 _ = wget.download(url, data_file_path, bar=None)
 
-hdf = px.ioHDF5(data_file_path)
+hdf = px.HDFwriter(data_file_path)
 h5_file = hdf.file
 
 print('Contents of data file:')

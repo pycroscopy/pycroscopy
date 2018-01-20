@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Oct 21 12:29:33 2015
-Main Class in charge of writing/reading to/from hdf5 file.
+
 @author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
-# cannot import unicode_literals since it is not compatible with h5py just yet
 from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 import subprocess
@@ -13,7 +12,6 @@ import sys
 from collections import Iterable
 from time import time, sleep
 from warnings import warn
-
 import h5py
 import numpy as np
 
@@ -24,12 +22,10 @@ if sys.version_info.major == 3:
     unicode = str
 
 
-class ioHDF5(object):
+class HDFwriter(object):
     def __init__(self, file_handle, cachemult=1):
         """
-        Handles:
-            + I/O operation from HDF5 file.
-            + Utilities to get data and associated auxiliary.
+        Main Class in charge of writing to hdf5 file.
 
         Parameters
         ----------
@@ -65,8 +61,7 @@ class ioHDF5(object):
         elif type(file_handle) == h5py.File:
             # file handle is actually an open hdf file
             if file_handle.mode == 'r':
-                warn('ioHDF5 cannot work with open HDF5 files in read mode. Change to r+ or w')
-                return
+                raise TypeError('ioHDF5 cannot work with open HDF5 files in read mode. Change to r+ or w')
             self.file = file_handle.file
             self.path = file_handle.filename
 
@@ -148,7 +143,7 @@ class ioHDF5(object):
         """
         self.file.flush()
 
-    def writeData(self, data, print_log=False):
+    def write_data(self, data, print_log=False):
         """
         Writes data into the hdf5 file and assigns data attributes such as region references.
         The tree structure is inferred from the AFMData Object.
@@ -172,15 +167,14 @@ class ioHDF5(object):
 
         # Checking if the data is an MicroDataGroup object
         if not isinstance(data, MicroDataGroup):
-            warn('Input of type: {} \n'.format(type(data)))
-            sys.exit("Input not of type MicroDataGroup.\n We're done here! \n")
+            raise TypeError('Input expected to be of type MicroDataGroup but is of type: {} \n'.format(type(data)))
 
         # Figuring out if the first item in AFMData tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
 
             for key, val in data.attrs.items():
-                h5_file.attrs[key] = self.clean_string_att(val)
+                h5_file.attrs[key] = clean_string_att(val)
             if print_log:
                 print('Wrote attributes of file {} \n'.format(h5_file.name))
             root = h5_file.name
@@ -219,7 +213,7 @@ class ioHDF5(object):
                     continue
                 if print_log:
                     print('Writing attribute: {} with value: {}'.format(key, val))
-                g.attrs[key] = self.clean_string_att(val)
+                g.attrs[key] = clean_string_att(val)
             if print_log:
                 print('Wrote attributes to group: {} \n'.format(data.name))
             root = g.name
@@ -270,7 +264,7 @@ class ioHDF5(object):
                         continue
                     if print_log:
                         print('Writing attribute: {} with value: {}'.format(key, val))
-                    itm.attrs[key] = self.clean_string_att(val)
+                    itm.attrs[key] = clean_string_att(val)
                 if print_log:
                     print('Wrote attributes to group {}\n'.format(itm.name))
                 # here we do the recursive function call
@@ -280,7 +274,7 @@ class ioHDF5(object):
                 if not child.resizable:
                     if not bool(child.maxshape):
                         # finite sized dataset and maxshape is not provided
-                        # Typically for small / ancilliary datasets
+                        # Typically for small / ancillary datasets
                         try:
                             itm = h5_file[parent].create_dataset(child.name,
                                                                  data=child.data,
@@ -336,7 +330,7 @@ class ioHDF5(object):
                     if key == 'labels':
                         # print('Found some region references')
                         labels = child.attrs[key]  # labels here is a dictionary
-                        self.write_region_references(itm, labels, print_log=print_log)
+                        write_region_references(itm, labels, print_log=print_log)
                         '''
                         Now make an attribute called 'labels' that is a list of strings 
                         First ascertain the dimension of the slicing:
@@ -354,7 +348,7 @@ class ioHDF5(object):
                             if print_log:
                                 print('Writing header attributes: {}'.format(key))
                             # Now write the list of col / row names as an attribute:
-                            itm.attrs[key] = self.clean_string_att(headers)
+                            itm.attrs[key] = clean_string_att(headers)
                         else:
                             warn('Unable to write region labels for %s' % (itm.name.split('/')[-1]))
 
@@ -363,7 +357,7 @@ class ioHDF5(object):
                     else:
                         if print_log:
                             print('Writing attribute: {} with value: {}'.format(key, val))
-                        itm.attrs[key] = self.clean_string_att(child.attrs[key])
+                        itm.attrs[key] = clean_string_att(child.attrs[key])
                         if print_log:
                             print('Wrote Attributes of Dataset %s \n' % (itm.name.split('/')[-1]))
                             # Make a dictionary of references
@@ -380,60 +374,59 @@ class ioHDF5(object):
                   'Make sure you do some reference linking to take advantage of the full power of HDF5.')
         return ref_list
 
-    @staticmethod
-    def clean_string_att(att_val):
-        """
-        Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
-        If the attribute is indeed a list of unicodes, the changes will be made in-place
+@staticmethod
+def clean_string_att(att_val):
+    """
+    Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
+    If the attribute is indeed a list of unicodes, the changes will be made in-place
 
-        Parameters
-        ----------
-        att_val : object
-            Attribute object
+    Parameters
+    ----------
+    att_val : object
+        Attribute object
 
-        Returns
-        -------
-        att_val : object
-            Attribute object
-        """
-        try:
-            if isinstance(att_val, Iterable):
-                if type(att_val) in [unicode, str]:
-                    return att_val
-                elif np.any([type(x) in [str, unicode, bytes] for x in att_val]):
-                    return np.array(att_val, dtype='S')
-            if type(att_val) == np.str_:
-                return str(att_val)
-            return att_val
-        except TypeError:
-            warn('Failed to clean: {}'.format(att_val))
-            raise
+    Returns
+    -------
+    att_val : object
+        Attribute object
+    """
+    try:
+        if isinstance(att_val, Iterable):
+            if type(att_val) in [unicode, str]:
+                return att_val
+            elif np.any([type(x) in [str, unicode, bytes] for x in att_val]):
+                return np.array(att_val, dtype='S')
+        if type(att_val) == np.str_:
+            return str(att_val)
+        return att_val
+    except TypeError:
+        raise TypeError('Failed to clean: {}'.format(att_val))
 
-    @staticmethod
-    def write_region_references(dataset, slices, print_log=False):
-        """
-        Creates attributes of a h5.Dataset that refer to regions in the arrays
+@staticmethod
+def write_region_references(dataset, slices, print_log=False):
+    """
+    Creates attributes of a h5.Dataset that refer to regions in the arrays
 
-        Parameters
-        ----------
-        dataset : h5.Dataset instance
-            Dataset to which region references will be added as attributes
-        slices : dictionary
-            The slicing information must be formatted using tuples of slice objects.
-            For example {'region_1':(slice(None, None), slice (0,1))}
-        print_log : Boolean (Optional. Default = False)
-            Whether or not to print status messages
-        """
+    Parameters
+    ----------
+    dataset : h5.Dataset instance
+        Dataset to which region references will be added as attributes
+    slices : dictionary
+        The slicing information must be formatted using tuples of slice objects.
+        For example {'region_1':(slice(None, None), slice (0,1))}
+    print_log : Boolean (Optional. Default = False)
+        Whether or not to print status messages
+    """
+    if print_log:
+        print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
+    for sl in slices.keys():
         if print_log:
-            print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
-        for sl in slices.keys():
+            print('About to write region reference:', sl, ':', slices[sl])
+        if len(slices[sl]) == len(dataset.shape):
+            dataset.attrs[sl] = dataset.regionref[slices[sl]]
             if print_log:
-                print('About to write region reference:', sl, ':', slices[sl])
-            if len(slices[sl]) == len(dataset.shape):
-                dataset.attrs[sl] = dataset.regionref[slices[sl]]
-                if print_log:
-                    print('Wrote Region Reference:%s' % sl)
-            else:
-                warn('Region reference %s could not be written since the object size was not equal to the dimensions of'
-                     ' the dataset' % sl)
-                raise ValueError
+                print('Wrote Region Reference:%s' % sl)
+        else:
+            warn('Region reference %s could not be written since the object size was not equal to the dimensions of'
+                 ' the dataset' % sl)
+            raise ValueError

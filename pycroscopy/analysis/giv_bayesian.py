@@ -14,7 +14,7 @@ from ..core.io.microdata import MicroDataset, MicroDataGroup
 from ..core.io.dtype_utils import real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
 from ..core.io.translator import build_ind_val_dsets
-from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.hdf_writer import HDFwriter
 from .utils.giv_utils import do_bayesian_inference
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
@@ -146,8 +146,8 @@ class GIVBayesian(Process):
         if self.verbose:
             bayes_grp.show_tree()
 
-        self.hdf = ioHDF5(self.h5_main.file)
-        h5_refs = self.hdf.writeData(bayes_grp, print_log=self.verbose)
+        self.hdf = HDFwriter(self.h5_main.file)
+        h5_refs = self.hdf.write_data(bayes_grp, print_log=self.verbose)
 
         self.h5_new_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
         h5_new_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]

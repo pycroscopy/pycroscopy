@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, buildReducedSpec
 from ...core.io.dtype_utils import real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
@@ -436,9 +436,9 @@ class FakeBEPSGenerator(Translator):
         meas_grp.add_children([chan_grp])
         root_grp.add_children([meas_grp])
 
-        hdf = ioHDF5(self.h5_path)
+        hdf = HDFwriter(self.h5_path)
         hdf.delete()
-        h5_refs = hdf.writeData(root_grp)
+        h5_refs = hdf.write_data(root_grp)
 
         # Delete the MicroDatasets to save memory
         del ds_raw_data, ds_spec_inds, ds_spec_vals, ds_pos_inds, ds_pos_vals
@@ -489,7 +489,7 @@ class FakeBEPSGenerator(Translator):
         sho_grp.add_children([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
 
         # Write the SHO group and datasets to the file and delete the MicroDataset objects
-        h5_sho_refs = hdf.writeData(sho_grp)
+        h5_sho_refs = hdf.write_data(sho_grp)
         del ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals
 
         # Get the dataset handles for the fit and guess
@@ -537,7 +537,7 @@ class FakeBEPSGenerator(Translator):
 
         # Add the datasets to the loop group then write it to the file
         loop_grp.add_children([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])
-        h5_loop_refs = hdf.writeData(loop_grp)
+        h5_loop_refs = hdf.write_data(loop_grp)
 
         # Delete the MicroDatasets
         del ds_loop_spec_vals, ds_loop_spec_inds, ds_loop_guess, ds_loop_fit

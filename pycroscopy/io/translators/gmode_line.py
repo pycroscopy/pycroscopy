@@ -15,7 +15,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import parmsToDict
 from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -120,9 +120,9 @@ class GLineTranslator(Translator):
         spm_data.attrs = global_parms
         spm_data.add_children([meas_grp])
         
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
         # hdf.clear()
-        hdf.writeData(spm_data)
+        hdf.write_data(spm_data)
         
         # Now that the file has been created, go over each raw data file:
         # 1. write all ancillary data. Link data. 2. Write main data sequentially
@@ -153,7 +153,7 @@ class GLineTranslator(Translator):
             
             # print('Writing following tree to file:')
             # chan_grp.showTree()
-            h5_refs = hdf.writeData(chan_grp)
+            h5_refs = hdf.write_data(chan_grp)
             
             h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
             

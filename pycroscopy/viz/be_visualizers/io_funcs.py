@@ -10,7 +10,7 @@ import h5py
 
 sys.path.append('../')
 from scipy.io import loadmat
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 
 
 def loadDataFunc(filePath, **kwargs):
@@ -44,7 +44,7 @@ def readData(h5_path, dset_name='SHO_Fit_Guess'):
 
     """
 
-    hdf = ioHDF5(h5_path)
+    hdf = HDFwriter(h5_path)
 
     h5_file = hdf.file
 

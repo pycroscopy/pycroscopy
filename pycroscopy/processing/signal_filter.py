@@ -15,7 +15,7 @@ from ..core.io.microdata import MicroDataset, MicroDataGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
 from pycroscopy.core.io.translator import build_ind_val_dsets
-from pycroscopy.core.io.io_hdf5 import ioHDF5
+from pycroscopy.core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
 # TODO: correct implementation of num_pix
@@ -177,8 +177,8 @@ class SignalFilter(Process):
 
         if self.verbose:
             grp_filt.show_tree()
-        hdf = ioHDF5(self.h5_main.file)
-        h5_filt_refs = hdf.writeData(grp_filt, print_log=self.verbose)
+        hdf = HDFwriter(self.h5_main.file)
+        h5_filt_refs = hdf.write_data(grp_filt, print_log=self.verbose)
 
         if isinstance(self.composite_filter, np.ndarray):
             h5_comp_filt = get_h5_obj_refs(['Composite_Filter'], h5_filt_refs)[0]

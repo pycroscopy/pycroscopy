@@ -15,7 +15,7 @@ import numpy as np  # For array operations
 
 from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
 
 
@@ -88,9 +88,9 @@ class GIVTranslator(Translator):
         meas_grp = MicroDataGroup('Measurement_000') 
         spm_data.add_children([meas_grp])
         
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
         # spm_data.showTree()
-        hdf.writeData(spm_data, print_log=False)
+        hdf.write_data(spm_data, print_log=False)
 
         self.raw_datasets = list()
         
@@ -100,7 +100,7 @@ class GIVTranslator(Translator):
             chan_grp.attrs = parm_dict
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                    ds_raw_data])
-            h5_refs = hdf.writeData(chan_grp, print_log=False)
+            h5_refs = hdf.write_data(chan_grp, print_log=False)
             h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
             self.raw_datasets.append(h5_raw)

@@ -87,7 +87,7 @@ class BESHOfitter(Fitter):
                               ds_sho_vals])
         sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
-        h5_sho_grp_refs = self.hdf.writeData(sho_grp, print_log=self._verbose)
+        h5_sho_grp_refs = self.hdf.write_data(sho_grp, print_log=self._verbose)
 
         self.h5_guess = get_h5_obj_refs(['Guess'], h5_sho_grp_refs)[0]
         h5_sho_inds = get_h5_obj_refs(['Spectroscopic_Indices'],

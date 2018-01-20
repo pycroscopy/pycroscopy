@@ -16,7 +16,7 @@ import numpy as np
 from .io_utils import get_available_memory
 from .microdata import MicroDataGroup, MicroDataset
 from .hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from pycroscopy.core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from pycroscopy.core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 
 
 class Translator(object):
@@ -114,8 +114,8 @@ class Translator(object):
         if path.exists(h5_path):
             remove(h5_path)
 
-        hdf = ioHDF5(h5_path)
-        h5_refs = hdf.writeData(spm_data, print_log=False)
+        hdf = HDFwriter(h5_path)
+        h5_refs = hdf.write_data(spm_data, print_log=False)
         h5_raw = get_h5_obj_refs([ds_main.name], h5_refs)[0]
         link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_dset_names, h5_refs))
         hdf.close()

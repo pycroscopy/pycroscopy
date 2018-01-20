@@ -17,7 +17,7 @@ from ...core.io.translator import Translator, \
     generate_dummy_main_parms, make_position_mat, \
     get_position_slicing  # Because this class extends the abstract Translator class
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
@@ -132,9 +132,9 @@ class GDMTranslator(Translator):
             remove(h5_path)
 
         # Write everything except for the main data.
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
 
-        h5_refs = hdf.writeData(spm_data)
+        h5_refs = hdf.write_data(spm_data)
 
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 

@@ -17,7 +17,7 @@ from ..core.processing.process import Process
 from .proc_utils import get_component_slice
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_results_groups, \
     get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes
-from pycroscopy.core.io.io_hdf5 import ioHDF5
+from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..core.io.microdata import MicroDataset, MicroDataGroup
@@ -125,8 +125,8 @@ class SVD(Process):
         '''
         Write the data and retrieve the HDF5 objects then delete the Microdatasets
         '''
-        hdf = ioHDF5(self.h5_main.file)
-        h5_svd_refs = hdf.writeData(svd_grp)
+        hdf = HDFwriter(self.h5_main.file)
+        h5_svd_refs = hdf.write_data(svd_grp)
 
         h5_U = get_h5_obj_refs(['U'], h5_svd_refs)[0]
         h5_S = get_h5_obj_refs(['S'], h5_svd_refs)[0]
@@ -241,7 +241,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
 
     """
 
-    hdf = ioHDF5(h5_main.file)
+    hdf = HDFwriter(h5_main.file)
     comp_slice, num_comps = get_component_slice(components, total_components=h5_main.shape[1])
     dset_name = h5_main.name.split('/')[-1]
 
@@ -320,7 +320,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         rebuilt_grp.attrs['components_used'] = components
 
-    h5_refs = hdf.writeData(rebuilt_grp)
+    h5_refs = hdf.write_data(rebuilt_grp)
 
     h5_rebuilt = get_h5_obj_refs(['Rebuilt_Data'], h5_refs)[0]
     copy_attributes(h5_main, h5_rebuilt, skip_refs=False)
