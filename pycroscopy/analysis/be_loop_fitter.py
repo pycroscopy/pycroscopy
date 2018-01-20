@@ -17,15 +17,15 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .fitter import Fitter
 from .utils.be_loop import projectLoop, fit_loop, generate_guess, calc_switching_coef_vec, switching32
-from .utils.tree import ClusterTree
+from ..processing.tree import ClusterTree
 from .be_sho_fitter import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..io.dtype_utils import compound_to_real, real_to_compound
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, linkRefAsAlias, \
-    get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
-    get_attr
-from ..io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.dtype_utils import compound_to_real, real_to_compound
+from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_region_refs, link_h5_objects_as_attrs, \
+    get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, build_reduced_spec_dsets, \
+    get_attr, link_h5_obj_as_alias, create_empty_dataset
+from ..core.io.microdata import MicroDataset, MicroDataGroup
 
 '''
 Custom dtypes for the datasets created during fitting.
@@ -153,9 +153,9 @@ class BELoopFitter(Fitter):
         '''
         Get the Spectroscopic and Position datasets from `self.h5_main`
         '''
-        self._sho_spec_inds = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-        self._sho_spec_vals = getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        self._sho_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
+        self._sho_spec_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        self._sho_spec_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        self._sho_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
 
         '''
         Find the Spectroscopic index for the DC_Offset
@@ -462,7 +462,7 @@ class BELoopFitter(Fitter):
         ds_loop_metrics = MicroDataset('Loop_Metrics', data=[], dtype=loop_metrics32,
                                        maxshape=(self.h5_main.shape[0], tot_cycles))
 
-        ds_loop_met_spec_inds, ds_loop_met_spec_vals = buildReducedSpec(self._sho_spec_inds, self._sho_spec_vals,
+        ds_loop_met_spec_inds, ds_loop_met_spec_vals = build_reduced_spec_dsets(self._sho_spec_inds, self._sho_spec_vals,
                                                                         not_fit_dim, cycle_start_inds,
                                                                         basename='Loop_Metrics')
 
@@ -476,26 +476,26 @@ class BELoopFitter(Fitter):
                               ds_loop_met_spec_inds, ds_loop_met_spec_vals])
 
         h5_proj_grp_refs = self.hdf.writeData(proj_grp)
-        self.h5_projected_loops = getH5DsetRefs(['Projected_Loops'], h5_proj_grp_refs)[0]
-        self.h5_loop_metrics = getH5DsetRefs(['Loop_Metrics'], h5_proj_grp_refs)[0]
-        self._met_spec_inds = getH5DsetRefs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]
-        h5_loop_met_spec_vals = getH5DsetRefs(['Loop_Metrics_Values'], h5_proj_grp_refs)[0]
+        self.h5_projected_loops = get_h5_obj_refs(['Projected_Loops'], h5_proj_grp_refs)[0]
+        self.h5_loop_metrics = get_h5_obj_refs(['Loop_Metrics'], h5_proj_grp_refs)[0]
+        self._met_spec_inds = get_h5_obj_refs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]
+        h5_loop_met_spec_vals = get_h5_obj_refs(['Loop_Metrics_Values'], h5_proj_grp_refs)[0]
         self._h5_group = h5_loop_met_spec_vals.parent
 
-        h5_pos_dsets = getAuxData(self.h5_main, auxDataName=['Position_Indices',
+        h5_pos_dsets = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices',
                                                              'Position_Values'])
         # do linking here
         # first the positions
-        linkRefs(self.h5_projected_loops, h5_pos_dsets)
-        linkRefs(self.h5_projected_loops, [self.h5_loop_metrics])
-        linkRefs(self.h5_loop_metrics, h5_pos_dsets)
+        link_h5_objects_as_attrs(self.h5_projected_loops, h5_pos_dsets)
+        link_h5_objects_as_attrs(self.h5_projected_loops, [self.h5_loop_metrics])
+        link_h5_objects_as_attrs(self.h5_loop_metrics, h5_pos_dsets)
         # then the spectroscopic
-        linkRefs(self.h5_projected_loops, [self._sho_spec_inds, self._sho_spec_vals])
-        linkRefAsAlias(self.h5_loop_metrics, self._met_spec_inds, 'Spectroscopic_Indices')
-        linkRefAsAlias(self.h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
+        link_h5_objects_as_attrs(self.h5_projected_loops, [self._sho_spec_inds, self._sho_spec_vals])
+        link_h5_obj_as_alias(self.h5_loop_metrics, self._met_spec_inds, 'Spectroscopic_Indices')
+        link_h5_obj_as_alias(self.h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
 
-        copyRegionRefs(self.h5_main, self.h5_projected_loops)
-        copyRegionRefs(self.h5_main, self.h5_loop_metrics)
+        copy_region_refs(self.h5_main, self.h5_projected_loops)
+        copy_region_refs(self.h5_main, self.h5_loop_metrics)
 
         self.hdf.flush()
 
@@ -610,7 +610,7 @@ class BELoopFitter(Fitter):
             Use the order_dc_offset_reverse after this reshape
         """
         # step 4: reshape to N dimensions
-        fit_nd, success = reshape_to_Ndims(raw_2d,
+        fit_nd, success = reshape_to_n_dims(raw_2d,
                                            h5_pos=None,
                                            h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
                                                                        self._current_sho_spec_slice])
@@ -678,7 +678,7 @@ class BELoopFitter(Fitter):
         if self._verbose:
             print('Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape)
         # step 11: reshape back to 2D
-        proj_loops_2d, success = reshape_from_Ndims(projected_loops_nd_2,
+        proj_loops_2d, success = reshape_from_n_dims(projected_loops_nd_2,
                                                     h5_pos=None,
                                                     h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
                                                                                 self._current_sho_spec_slice])
@@ -724,7 +724,7 @@ class BELoopFitter(Fitter):
             print('Loop metrics reshaped to N dimensions :', loop_metrics_nd.shape)
 
         # step 11: reshape back to 2D
-        metrics_2d, success = reshape_from_Ndims(loop_metrics_nd,
+        metrics_2d, success = reshape_from_n_dims(loop_metrics_nd,
                                                  h5_pos=None,
                                                  h5_spec=spec_inds)
         if not success:
@@ -757,7 +757,7 @@ class BELoopFitter(Fitter):
 
         # apply this knowledge to reshape the spectroscopic values
         # remember to reshape such that the dimensions are arranged in reverse order (slow to fast)
-        spec_vals_nd, success = reshape_to_Ndims(self._sho_spec_vals[self._sho_all_but_forc_inds,
+        spec_vals_nd, success = reshape_to_n_dims(self._sho_spec_vals[self._sho_all_but_forc_inds,
                                                                      self._current_sho_spec_slice],
                                                  h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
                                                                              self._current_sho_spec_slice])

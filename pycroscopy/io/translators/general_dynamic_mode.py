@@ -16,7 +16,7 @@ from .df_utils.gmode_utils import readGmodeParms
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms, make_position_mat, \
     get_position_slicing  # Because this class extends the abstract Translator class
-from ...core.io.hdf_utils import get_h5_obj_refs, linkRefs
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
 from ...core.io.microdata import MicroDataGroup, MicroDataset
@@ -138,11 +138,11 @@ class GDMTranslator(Translator):
 
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
-        # Now doing linkrefs:
+        # Now doing link_h5_objects_as_attrs:
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values',
                         'Excitation_Frequencies', 'Bin_Frequencies']
-        linkRefs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # Now read the raw data files:
         pos_ind = 0
