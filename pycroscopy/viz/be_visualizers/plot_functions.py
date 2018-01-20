@@ -4,7 +4,7 @@ Created on Apr 21, 2016
 @author: Chris Smith -- csmith55@utk.edu
 """
 import numpy as np
-from ioFuncs import readData
+from .io_funcs import readData
 import pyqtgraph as pg
 from pyqtgraph import QtGui
 
