@@ -166,17 +166,27 @@ class Process(object):
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
     @staticmethod
-    def _map_function(*args):
+    def _map_function(*args, **kwargs):
+        """
+        The function that manipulates the data on a single instance (position). This will be used by _unit_computation()
+        to process a chunk of data in parallel
+
+        Parameters
+        ----------
+        args : list
+            arguments to the function in the correct order
+        kwargs : dictionary
+            keyword arguments to the function
+
+        Returns
+        -------
+        object
+        """
         raise NotImplementedError('Please override the _unit_function specific to your process')
 
     def _read_data_chunk(self):
         """
         Reads a chunk of data for the intended computation into memory
-
-       Parameters
-        -----
-        verbose : bool, optional
-            Whether or not to print log statements
         """
         if self._start_pos < self.h5_main.shape[0]:
             self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
@@ -223,7 +233,7 @@ class Process(object):
         as well as multiple calls to parallel_compute if necessary
         """
         # TODO: Try to use the functools.partials to preconfigure the map function
-        self._results = parallel_compute(self.data, self._map_function(), cores=self._cores,
+        self._results = parallel_compute(self.data, self._map_function, cores=self._cores,
                                          lengthy_computation=False,
                                          func_args=args, func_kwargs=kwargs)
 
