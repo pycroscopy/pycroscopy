@@ -9,7 +9,7 @@ Loads data and views them using functions written with PyQtGraph
 
 """
 import sys
-from plotFunctions import BEPSwindow
+from .plot_functions import BEPSwindow
 import pyqtgraph as pg
 
 if __name__ == '__main__':
