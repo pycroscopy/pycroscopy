@@ -16,7 +16,7 @@ from sklearn.utils import gen_batches
 
 from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
     calc_chunks, link_as_main, check_for_old
-from pycroscopy.core.io.io_hdf5 import ioHDF5
+from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.microdata import MicroDataGroup, MicroDataset
 from ..core.io.translator import make_position_mat, get_position_slicing, get_spectral_slicing
@@ -57,7 +57,7 @@ class ImageWindow(object):
 
         """
         self.h5_file = h5_main.file
-        self.hdf = ioHDF5(h5_main.file)
+        self.hdf = HDFwriter(h5_main.file)
 
         # Ensuring that at least one core is available for use / 2 cores are available for other use
         max_cores = max(1, cpu_count() - 2)
@@ -353,7 +353,7 @@ class ImageWindow(object):
             ds_group.attrs['image_y'] = im_y
             ds_group.attrs['psf_width'] = psf_width
             ds_group.attrs['fft_mode'] = win_fft
-            image_refs = self.hdf.writeData(ds_group)
+            image_refs = self.hdf.write_data(ds_group)
 
             '''
             Get the hdf5 objects for the windows and ancillary datasets
@@ -597,7 +597,7 @@ class ImageWindow(object):
 
         clean_grp.add_children([ds_clean])
 
-        image_refs = self.hdf.writeData(clean_grp)
+        image_refs = self.hdf.write_data(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
@@ -914,7 +914,7 @@ class ImageWindow(object):
         else:
             clean_grp.attrs['components_used'] = comp_slice
 
-        image_refs = self.hdf.writeData(clean_grp)
+        image_refs = self.hdf.write_data(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
@@ -1076,7 +1076,7 @@ class ImageWindow(object):
         else:
             clean_grp.attrs['components_used'] = comp_slice
 
-        image_refs = self.hdf.writeData(clean_grp)
+        image_refs = self.hdf.write_data(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]

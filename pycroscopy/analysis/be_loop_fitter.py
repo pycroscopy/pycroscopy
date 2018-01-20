@@ -475,7 +475,7 @@ class BELoopFitter(Fitter):
         proj_grp.add_children([ds_projected_loops, ds_loop_metrics,
                                ds_loop_met_spec_inds, ds_loop_met_spec_vals])
 
-        h5_proj_grp_refs = self.hdf.writeData(proj_grp)
+        h5_proj_grp_refs = self.hdf.write_data(proj_grp)
         self.h5_projected_loops = get_h5_obj_refs(['Projected_Loops'], h5_proj_grp_refs)[0]
         self.h5_loop_metrics = get_h5_obj_refs(['Loop_Metrics'], h5_proj_grp_refs)[0]
         self._met_spec_inds = get_h5_obj_refs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]

@@ -20,7 +20,7 @@ import matplotlib.patches as patches
 from ...core.io.io_utils import recommend_cpu_cores
 from ...core.io.dtype_utils import real_to_compound
 from ...core.io.microdata import MicroDataset, MicroDataGroup
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 
 # atom_dtype = np.dtype([('x', np.float32),
 #                        ('y', np.float32),
@@ -333,8 +333,8 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     dgrp_atom_finding.attrs = fitting_parms
     dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits])
 
-    hdf = ioHDF5(h5_grp.file)
-    h5_atom_refs = hdf.writeData(dgrp_atom_finding)
+    hdf = HDFwriter(h5_grp.file)
+    h5_atom_refs = hdf.write_data(dgrp_atom_finding)
     return h5_grp
 
 

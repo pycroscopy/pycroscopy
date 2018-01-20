@@ -11,7 +11,7 @@ from warnings import warn
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.hdf_writer import HDFwriter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes
 from ..core.io.microdata import MicroDataGroup, MicroDataset
@@ -258,9 +258,9 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     resh_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
     resh_grp.add_children([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
 
-    hdf = ioHDF5(h5_main.file)
+    hdf = HDFwriter(h5_main.file)
     print('Starting to reshape G-mode line data. Please be patient')
-    h5_refs = hdf.writeData(resh_grp)
+    h5_refs = hdf.write_data(resh_grp)
 
     h5_resh = get_h5_obj_refs(['Reshaped_Data'], h5_refs)[0]
     # Link everything:

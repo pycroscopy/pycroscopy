@@ -147,7 +147,7 @@ h5_path = tran.translate(data_file_path)
 # instead.
 
 # opening the file:
-hdf = px.ioHDF5(h5_path)
+hdf = px.HDFwriter(h5_path)
 h5_file = hdf.file
 
 # Visualize the tree structure in the file
@@ -368,7 +368,7 @@ for at_name in cluster_grp.attrs:
 #
 # Once the tree is prepared (previous cell), ioHDF5 will handle all the file writing.
 
-h5_clust_refs = hdf.writeData(cluster_grp, print_log=True)
+h5_clust_refs = hdf.write_data(cluster_grp, print_log=True)
 
 h5_labels = px.hdf_utils.getH5DsetRefs(['Labels'], h5_clust_refs)[0]
 h5_centroids = px.hdf_utils.getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]

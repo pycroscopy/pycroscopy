@@ -13,7 +13,7 @@ from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
 from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
-from ..core.io.io_hdf5 import ioHDF5
+from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..core.io.microdata import MicroDataGroup, MicroDataset
 
@@ -225,8 +225,8 @@ class Cluster(Process):
 
             cluster_grp.add_children([ds_centroid_indices, ds_centroid_values])
 
-        hdf = ioHDF5(self.h5_main.file)
-        h5_clust_refs = hdf.writeData(cluster_grp)
+        hdf = HDFwriter(self.h5_main.file)
+        h5_clust_refs = hdf.write_data(cluster_grp)
 
         h5_labels = get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
         h5_centroids = get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]

@@ -14,7 +14,7 @@ from igor import binarywave as bw
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms, build_ind_val_dsets  # Because this class extends the abstract Translator class
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.microdata import MicroDataGroup, \
     MicroDataset  # The building blocks for defining hierarchical storage in the H5 file
 
@@ -139,9 +139,9 @@ class IgorIBWTranslator(Translator):
             remove(h5_path)
 
         # Write head of tree to file:
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
         # spm_data.showTree()
-        hdf.writeData(spm_data, print_log=verbose)
+        hdf.write_data(spm_data, print_log=verbose)
 
         if verbose:
             print('Finished writing tree trunk')
@@ -154,7 +154,7 @@ class IgorIBWTranslator(Translator):
             chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs['name'] = raw_dset.attrs['quantity']
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, raw_dset])
-            h5_refs = hdf.writeData(chan_grp, print_log=verbose)
+            h5_refs = hdf.write_data(chan_grp, print_log=verbose)
             h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
 

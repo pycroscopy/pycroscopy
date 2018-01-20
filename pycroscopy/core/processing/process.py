@@ -11,7 +11,7 @@ import joblib
 import time as tm
 
 from ..io.hdf_utils import check_if_main, check_for_old, get_attributes
-from pycroscopy.core.io.io_hdf5 import ioHDF5
+from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..io.io_utils import recommend_cpu_cores, get_available_memory, format_time
 
 
@@ -42,7 +42,7 @@ class Process(object):
         # Checking if dataset is "Main"
         if check_if_main(h5_main):
             self.h5_main = h5_main
-            self.hdf = ioHDF5(self.h5_main.file)
+            self.hdf = HDFwriter(self.h5_main.file)
         else:
             raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
 

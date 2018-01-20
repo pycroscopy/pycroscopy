@@ -62,7 +62,7 @@ h5_f = h5py.File(h5_path, mode='r')
 # We can also use the ioHDF5 class from Pycroscopy to open the file.  Note that you do need to close the
 # file in h5py before opening it again.
 h5_f.close()
-hdf = px.ioHDF5(h5_path)
+hdf = px.HDFwriter(h5_path)
 h5_f = hdf.file
 
 # Here, h5_f is an active handle to the open file

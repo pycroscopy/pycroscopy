@@ -17,7 +17,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
     createSpecVals, requires_conjugate, nf32
 from pycroscopy.core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
-from ...core.io.io_hdf5 import ioHDF5
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -321,9 +321,9 @@ class BEodfTranslator(Translator):
             remove(h5_path)
 
         # Write everything except for the main data.
-        self.hdf = ioHDF5(h5_path)
+        self.hdf = HDFwriter(h5_path)
 
-        h5_refs = self.hdf.writeData(spm_data, print_log=verbose)
+        h5_refs = self.hdf.write_data(spm_data, print_log=verbose)
 
         self.h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 

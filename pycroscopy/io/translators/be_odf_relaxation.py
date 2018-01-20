@@ -17,7 +17,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlot
     nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat, get_position_slicing  
 from ...core.io.hdf_utils import get_h5_obj_refs
-from ...core.io.io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining hierarchical storage in the H5 file
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
@@ -261,10 +261,10 @@ class BEodfRelaxationTranslator(Translator):
             remove(h5_path)
 
         # Write everything except for the main data.
-        self.hdf = ioHDF5(h5_path)
+        self.hdf = HDFwriter(h5_path)
         # self.hdf.clear() #Doesn't seem to work
 
-        h5_refs = self.hdf.writeData(spm_data)
+        h5_refs = self.hdf.write_data(spm_data)
 
         self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
