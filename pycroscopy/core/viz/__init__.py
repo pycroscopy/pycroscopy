@@ -1,4 +1,4 @@
-from . import plot_utils as plot
-from . import jupyter_utils as jupyter
+from . import plot_utils
+from . import jupyter_utils
 
-__all__ = ['plot', 'jupyter']
+__all__ = ['plot_utils', 'jupyter_utils']
