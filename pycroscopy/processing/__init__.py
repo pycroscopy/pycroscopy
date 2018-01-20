@@ -35,6 +35,7 @@ from . import image_processing
 from .image_processing import ImageWindow
 from pycroscopy.core.processing.process import Process
 from .signal_filter import SignalFilter
+from .tree import ClusterTree
 
 __all__ = ['Cluster', 'Decomposition', 'ImageWindow', 'SVD', 'fft', 'gmode_utils', 'histogram', 'svd_utils',
-           'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'SignalFilter']
+           'rebuild_svd', 'Process', 'parallel_compute', 'Process', 'SignalFilter', 'ClusterTree']
