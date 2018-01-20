@@ -256,7 +256,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
 
     # write this to H5 as some form of filtered data.
     resh_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
-    resh_grp.addChildren([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
+    resh_grp.add_children([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
 
     hdf = ioHDF5(h5_main.file)
     print('Starting to reshape G-mode line data. Please be patient')

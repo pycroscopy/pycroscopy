@@ -64,7 +64,7 @@ class MicroDataGroup(MicroData):
 
         pass
 
-    def addChildren(self, children):
+    def add_children(self, children):
         """
         Adds Children to the class to make a tree structure.
 
@@ -85,9 +85,9 @@ class MicroDataGroup(MicroData):
                 warn('Children must be of type MicroData.')
 
     def __str__(self):
-        self.showTree()
+        self.show_tree()
 
-    def showTree(self):
+    def show_tree(self):
         """
         Return the tree structure given by MicroDataGroup.
         

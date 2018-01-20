@@ -111,10 +111,10 @@ class GDMTranslator(Translator):
 
         chan_grp = MicroDataGroup('Channel_000')
         chan_grp.attrs = parm_dict
-        chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                              ds_ex_freqs, ds_bin_freq, ds_main_data])
+        chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
+                               ds_ex_freqs, ds_bin_freq, ds_main_data])
         meas_grp = MicroDataGroup('Measurement_000')
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
 
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
@@ -126,7 +126,7 @@ class GDMTranslator(Translator):
         global_parms['data_type'] = parm_dict['data_type']  # self.__class__.__name__
         global_parms['translator'] = 'W2'
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
 
         if path.exists(h5_path):
             remove(h5_path)

@@ -289,15 +289,15 @@ class BEodfTranslator(Translator):
 
         chan_grp = MicroDataGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
-        chan_grp.addChildren([ds_main_data, ds_noise_floor])
-        chan_grp.addChildren([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,
-                              ds_wfm_typ, ds_spec_vals_mat, ds_UDVS_inds])
+        chan_grp.add_children([ds_main_data, ds_noise_floor])
+        chan_grp.add_children([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
+                               ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,
+                               ds_wfm_typ, ds_spec_vals_mat, ds_UDVS_inds])
 
         # technically should change the date, etc.
         meas_grp = MicroDataGroup('Measurement_')
         meas_grp.attrs = parm_dict
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
 
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
@@ -315,7 +315,7 @@ class BEodfTranslator(Translator):
         global_parms['translator'] = 'ODF'
 
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
 
         if path.exists(h5_path):
             remove(h5_path)

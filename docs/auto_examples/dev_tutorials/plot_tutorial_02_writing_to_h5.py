@@ -344,11 +344,11 @@ print('New group to be created with name:', cluster_grp.name)
 print('This group (subtree) will be appended to the H5 file under the group:', subtree_root_path)
 
 # Making a tree structure by adding the MicroDataset objects as children of this group
-cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_labels_spec_inds,
-                         ds_labels_spec_vals])
+cluster_grp.add_children([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_labels_spec_inds,
+                          ds_labels_spec_vals])
 
 print('\nWill write the following tree:')
-cluster_grp.showTree()
+cluster_grp.show_tree()
 
 cluster_grp.attrs['num_clusters'] = num_clusters
 cluster_grp.attrs['num_samples'] = h5_main.shape[0]

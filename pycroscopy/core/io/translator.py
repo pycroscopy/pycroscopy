@@ -94,17 +94,17 @@ class Translator(object):
         if parm_dict is None:
             parm_dict = {}
         chan_grp = MicroDataGroup('Channel_000')
-        chan_grp.addChildren([ds_main])
-        chan_grp.addChildren(aux_dset_list)
+        chan_grp.add_children([ds_main])
+        chan_grp.add_children(aux_dset_list)
         meas_grp = MicroDataGroup('Measurement_000')
         meas_grp.attrs = parm_dict
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
         spm_data = MicroDataGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = data_name
         global_parms['translator'] = translator_name
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
 
         aux_dset_names = list()
         for dset in aux_dset_list:

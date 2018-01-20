@@ -343,8 +343,8 @@ class ImageWindow(object):
                                       compression='gzip')
 
             ds_group = MicroDataGroup(basename + '-Windowing_', parent.name[1:])
-            ds_group.addChildren([ds_windows, ds_pos_inds, ds_pix_inds,
-                                  ds_pos_vals, ds_pix_vals])
+            ds_group.add_children([ds_windows, ds_pos_inds, ds_pix_inds,
+                                   ds_pos_vals, ds_pix_vals])
             ds_group.attrs['win_x'] = win_x
             ds_group.attrs['win_y'] = win_y
             ds_group.attrs['win_step_x'] = win_step_x
@@ -595,7 +595,7 @@ class ImageWindow(object):
 
         ds_clean = MicroDataset('Cleaned_Image', clean_image)
 
-        clean_grp.addChildren([ds_clean])
+        clean_grp.add_children([ds_clean])
 
         image_refs = self.hdf.writeData(clean_grp)
         self.hdf.flush()
@@ -907,7 +907,7 @@ class ImageWindow(object):
         ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
         ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
 
-        clean_grp.addChildren([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
+        clean_grp.add_children([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
 
         if isinstance(comp_slice, slice):
             clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
@@ -1068,7 +1068,7 @@ class ImageWindow(object):
                                 chunking=clean_chunking,
                                 compression='gzip')
 
-        clean_grp.addChildren([ds_clean])
+        clean_grp.add_children([ds_clean])
 
         if isinstance(comp_slice, slice):
             clean_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start,

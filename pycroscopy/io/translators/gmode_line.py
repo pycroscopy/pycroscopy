@@ -118,7 +118,7 @@ class GLineTranslator(Translator):
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
         
         hdf = ioHDF5(h5_path)
         # hdf.clear()
@@ -149,7 +149,7 @@ class GLineTranslator(Translator):
         for f_index in data_paths.keys():
             
             chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
-            chan_grp.addChildren([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
+            chan_grp.add_children([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
             
             # print('Writing following tree to file:')
             # chan_grp.showTree()

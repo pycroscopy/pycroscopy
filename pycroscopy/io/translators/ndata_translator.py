@@ -156,8 +156,8 @@ class NDataTranslator(Translator):
         meas_grp = MicroDataGroup('Measurement_')
 
         chan_grp = MicroDataGroup('Channel_')
-        root_grp.addChildren([meas_grp])
-        meas_grp.addChildren([chan_grp])
+        root_grp.add_children([meas_grp])
+        meas_grp.add_children([chan_grp])
 
         '''
         Set the Measurement Group attributes
@@ -194,8 +194,8 @@ class NDataTranslator(Translator):
         ds_pos_vals.attrs['labels'] = pos_lab
         ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
 
-        chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
-                              ds_pos_inds, ds_pos_vals])
+        chan_grp.add_children([ds_rawimage, ds_spec_inds, ds_spec_vals,
+                               ds_pos_inds, ds_pos_vals])
 
         '''
         Write the data to file and get the handle for the image dataset
@@ -306,8 +306,8 @@ class NDataTranslator(Translator):
 
             # Add datasets as children of Measurement_000 data group
             ds_channel = MicroDataGroup(this_channel.name)
-            ds_channel.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                                    ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+            ds_channel.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                                     ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
 
             h5_refs = self.hdf.writeData(ds_channel)
             h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
@@ -519,8 +519,8 @@ class NDataTranslator(Translator):
                 meas_grp.attrs[key] = meas_parms[key]
             chan_grp = MicroDataGroup('Channel_000')
 
-            meas_grp.addChildren([chan_grp])
-            root_grp.addChildren([meas_grp])
+            meas_grp.add_children([chan_grp])
+            root_grp.add_children([meas_grp])
 
         # Write the groups to file
         h5_refs = self.hdf.writeData(root_grp)

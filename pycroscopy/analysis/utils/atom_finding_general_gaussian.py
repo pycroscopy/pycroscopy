@@ -508,8 +508,8 @@ class Gauss_Fit(object):
                                             data=self.closest_neighbors_mat, dtype=np.uint32)
         dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
         dgrp_atom_finding.attrs = self.fitting_parms
-        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
-                                       ds_motif_fits, ds_nearest_neighbors])
+        dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
+                                        ds_motif_fits, ds_nearest_neighbors])
 
         hdf = ioHDF5(self.atom_grp.file)
         h5_atom_refs = hdf.writeData(dgrp_atom_finding)

@@ -182,8 +182,8 @@ class OneViewTranslator(Translator):
         meas_grp = MicroDataGroup('Measurement_')
 
         chan_grp = MicroDataGroup('Channel_')
-        root_grp.addChildren([meas_grp])
-        meas_grp.addChildren([chan_grp])
+        root_grp.add_children([meas_grp])
+        meas_grp.add_children([chan_grp])
 
         '''
         Set the Measurement Group attributes
@@ -220,8 +220,8 @@ class OneViewTranslator(Translator):
         ds_pos_vals.attrs['labels'] = pos_lab
         ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
 
-        chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
-                              ds_pos_inds, ds_pos_vals])
+        chan_grp.add_children([ds_rawimage, ds_spec_inds, ds_spec_vals,
+                               ds_pos_inds, ds_pos_vals])
 
         '''
         Write the data to file and get the handle for the image dataset
@@ -487,11 +487,11 @@ class OneViewTranslator(Translator):
                                          data=np.zeros(num_files, dtype=np.float32),
                                          dtype=np.float32)
         # Add datasets as children of Measurement_000 data group
-        chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                              ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
-        meas_grp.addChildren([chan_grp])
+        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+        meas_grp.add_children([chan_grp])
 
-        root_grp.addChildren([meas_grp])
+        root_grp.add_children([meas_grp])
         # print('Writing following tree to this file:')
         # root_grp.showTree()
 

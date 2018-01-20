@@ -331,7 +331,7 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     ds_atom_fits = MicroDataset('Fit', data=fit_parms)
     dgrp_atom_finding = MicroDataGroup(h5_grp.name.split('/')[-1], parent=h5_grp.parent.name)
     dgrp_atom_finding.attrs = fitting_parms
-    dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits])
+    dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits])
 
     hdf = ioHDF5(h5_grp.file)
     h5_atom_refs = hdf.writeData(dgrp_atom_finding)

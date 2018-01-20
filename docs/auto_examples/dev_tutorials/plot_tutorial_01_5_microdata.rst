@@ -132,8 +132,8 @@ If the group's parent is not given, it will be set to root.
     root_group = px.MicroDataGroup('/')
 
     # After creating the group, we then add an existing object as its child.
-    data_group.addChildren([ds_empty])
-    root_group.addChildren([ds_main, data_group])
+    data_group.add_children([ds_empty])
+    root_group.add_children([ds_main, data_group])
 
 
 
@@ -141,14 +141,14 @@ If the group's parent is not given, it will be set to root.
 
 
 
-The showTree method allows us to view the data structure before the hdf5 file is
+The show_tree method allows us to view the data structure before the hdf5 file is
 created.
 
 
 
 .. code-block:: python
 
-    root_group.showTree()
+    root_group.show_tree()
 
 
 

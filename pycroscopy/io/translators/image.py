@@ -166,11 +166,11 @@ class ImageTranslator(Translator):
         ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pixels, 1),
                                     chunking=ds_chunking, dtype=data_type, compression='gzip')
         # Add datasets as children of Measurement_000 data group
-        chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                              ds_pos_val])
-        meas_grp.addChildren([chan_grp])
+        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                               ds_pos_val])
+        meas_grp.add_children([chan_grp])
 
-        root_grp.addChildren([meas_grp])
+        root_grp.add_children([meas_grp])
         # print('Writing following tree to this file:')
         # root_grp.showTree()
 

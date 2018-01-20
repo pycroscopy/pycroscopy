@@ -165,7 +165,7 @@ class SignalFilter(Process):
 
         if isinstance(self.composite_filter, np.ndarray):
             ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
-            grp_filt.addChildren([ds_comp_filt])
+            grp_filt.add_children([ds_comp_filt])
 
         if self.noise_threshold is not None:
             ds_noise_floors = MicroDataset('Noise_Floors',
@@ -175,12 +175,12 @@ class SignalFilter(Process):
                                                                          verbose=self.verbose)
             ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
             ds_noise_spec_vals.name = 'Noise_Spectral_Values'
-            grp_filt.addChildren([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
+            grp_filt.add_children([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
 
         if self.write_filtered:
             ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
                                         dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
-            grp_filt.addChildren([ds_filt_data])
+            grp_filt.add_children([ds_filt_data])
 
         self.hot_inds = None
 
@@ -197,7 +197,7 @@ class SignalFilter(Process):
             ds_cond_data = MicroDataset('Condensed_Data', data=[],
                                         maxshape=(self.num_effective_pix, len(self.hot_inds)),
                                         dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
-            grp_filt.addChildren([ds_spec_inds, ds_spec_vals, ds_cond_data])
+            grp_filt.add_children([ds_spec_inds, ds_spec_vals, ds_cond_data])
             if self.num_effective_pix > 1:
                 # need to make new position datasets by taking every n'th index / value:
                 new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
@@ -208,10 +208,10 @@ class SignalFilter(Process):
                                                                labels=h5_pos_inds.attrs['labels'],
                                                                units=h5_pos_inds.attrs['units'], verbose=self.verbose)
                 h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
-                grp_filt.addChildren([ds_pos_inds, ds_pos_vals])
+                grp_filt.add_children([ds_pos_inds, ds_pos_vals])
 
         if self.verbose:
-            grp_filt.showTree()
+            grp_filt.show_tree()
         hdf = ioHDF5(self.h5_main.file)
         h5_filt_refs = hdf.writeData(grp_filt, print_log=self.verbose)
 

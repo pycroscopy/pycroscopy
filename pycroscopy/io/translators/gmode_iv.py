@@ -86,7 +86,7 @@ class GIVTranslator(Translator):
         global_parms['translator'] = 'gIV'
         spm_data.attrs = global_parms
         meas_grp = MicroDataGroup('Measurement_000') 
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
         
         hdf = ioHDF5(h5_path)
         # spm_data.showTree()
@@ -98,8 +98,8 @@ class GIVTranslator(Translator):
             
             chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs = parm_dict
-            chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                                  ds_raw_data])
+            chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
+                                   ds_raw_data])
             h5_refs = hdf.writeData(chan_grp, print_log=False)
             h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))

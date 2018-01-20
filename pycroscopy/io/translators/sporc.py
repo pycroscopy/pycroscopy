@@ -95,8 +95,8 @@ class SporcTranslator(Translator):
 
         chan_grp = MicroDataGroup('Channel_000')
         chan_grp.attrs = parm_dict
-        chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                              ds_excit_wfm, ds_raw_data])
+        chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
+                               ds_excit_wfm, ds_raw_data])
 
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
@@ -108,10 +108,10 @@ class SporcTranslator(Translator):
         global_parms['translator'] = 'SPORC'
 
         meas_grp = MicroDataGroup('Measurement_000')
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
         spm_data = MicroDataGroup('')
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
 
         if path.exists(h5_path):
             remove(h5_path)
