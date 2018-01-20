@@ -114,7 +114,7 @@ class SVD(Process):
         '''
         grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
         svd_grp = MicroDataGroup(grp_name, self.h5_main.parent.name[1:])
-        svd_grp.addChildren([ds_V, ds_S, ds_U, ds_inds])
+        svd_grp.add_children([ds_V, ds_S, ds_U, ds_inds])
 
         '''
         Write the attributes to the group
@@ -313,7 +313,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     ds_rebuilt = MicroDataset('Rebuilt_Data', rebuild,
                               chunking=h5_main.chunks,
                               compression=h5_main.compression)
-    rebuilt_grp.addChildren([ds_rebuilt])
+    rebuilt_grp.add_children([ds_rebuilt])
 
     if isinstance(comp_slice, slice):
         rebuilt_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)

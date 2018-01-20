@@ -90,13 +90,13 @@ data_group = px.MicroDataGroup('Data_Group', parent='/')
 root_group = px.MicroDataGroup('/')
 
 # After creating the group, we then add an existing object as its child.
-data_group.addChildren([ds_empty])
-root_group.addChildren([ds_main, data_group])
+data_group.add_children([ds_empty])
+root_group.add_children([ds_main, data_group])
 
 ##############################################################################
 # The showTree method allows us to view the data structure before the hdf5 file is
 # created.
-root_group.showTree()
+root_group.show_tree()
 
 ##############################################################################
 # Now that we have created the objects, we can write them to an hdf5 file

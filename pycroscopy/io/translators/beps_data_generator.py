@@ -431,10 +431,10 @@ class FakeBEPSGenerator(Translator):
                                    chunking=raw_chunking,
                                    parent=meas_grp)
 
-        chan_grp.addChildren([ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals,
-                              ds_raw_data])
-        meas_grp.addChildren([chan_grp])
-        root_grp.addChildren([meas_grp])
+        chan_grp.add_children([ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals,
+                               ds_raw_data])
+        meas_grp.add_children([chan_grp])
+        root_grp.add_children([meas_grp])
 
         hdf = ioHDF5(self.h5_path)
         hdf.delete()
@@ -486,7 +486,7 @@ class FakeBEPSGenerator(Translator):
                                     chunking=sho_chunking,
                                     parent=sho_grp)
 
-        sho_grp.addChildren([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
+        sho_grp.add_children([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
 
         # Write the SHO group and datasets to the file and delete the MicroDataset objects
         h5_sho_refs = hdf.writeData(sho_grp)
@@ -536,7 +536,7 @@ class FakeBEPSGenerator(Translator):
                                      parent=loop_grp)
 
         # Add the datasets to the loop group then write it to the file
-        loop_grp.addChildren([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])
+        loop_grp.add_children([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])
         h5_loop_refs = hdf.writeData(loop_grp)
 
         # Delete the MicroDatasets

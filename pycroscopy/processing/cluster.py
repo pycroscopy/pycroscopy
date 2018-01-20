@@ -199,8 +199,8 @@ class Cluster(Process):
         ds_cluster_vals.attrs['units'] = ['']
 
         cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_', self.h5_main.parent.name[1:])
-        cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
-                                 ds_label_vals])
+        cluster_grp.add_children([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
+                                  ds_label_vals])
 
         # Write out all the parameters including those from the estimator
         cluster_grp.attrs.update(self.parms_dict)
@@ -222,7 +222,7 @@ class Cluster(Process):
 
             ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
 
-            cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
+            cluster_grp.add_children([ds_centroid_indices, ds_centroid_values])
 
         hdf = ioHDF5(self.h5_main.file)
         h5_clust_refs = hdf.writeData(cluster_grp)

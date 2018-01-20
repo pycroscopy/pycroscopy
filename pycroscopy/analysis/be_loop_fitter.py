@@ -472,8 +472,8 @@ class BELoopFitter(Fitter):
         proj_grp = MicroDataGroup('-'.join([dset_name, 'Loop_Fit_']),
                                   self.h5_main.parent.name[1:])
         proj_grp.attrs['projection_method'] = 'pycroscopy BE loop model'
-        proj_grp.addChildren([ds_projected_loops, ds_loop_metrics,
-                              ds_loop_met_spec_inds, ds_loop_met_spec_vals])
+        proj_grp.add_children([ds_projected_loops, ds_loop_metrics,
+                               ds_loop_met_spec_inds, ds_loop_met_spec_vals])
 
         h5_proj_grp_refs = self.hdf.writeData(proj_grp)
         self.h5_projected_loops = get_h5_obj_refs(['Projected_Loops'], h5_proj_grp_refs)[0]

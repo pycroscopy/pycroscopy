@@ -138,13 +138,13 @@ class GIVBayesian(Process):
 
         bayes_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
                                    parent=self.h5_main.parent.name)
-        bayes_grp.addChildren([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
-                               ds_cap_spec_inds, ds_cap_spec_vals])
+        bayes_grp.add_children([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
+                                ds_cap_spec_inds, ds_cap_spec_vals])
         bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}
         bayes_grp.attrs.update(self.parms_dict)
 
         if self.verbose:
-            bayes_grp.showTree()
+            bayes_grp.show_tree()
 
         self.hdf = ioHDF5(self.h5_main.file)
         h5_refs = self.hdf.writeData(bayes_grp, print_log=self.verbose)

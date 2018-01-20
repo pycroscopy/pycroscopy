@@ -409,7 +409,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
         plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
         plot_grp.attrs['Name'] = col_name
-        plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
+        plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
 
         h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
 
@@ -462,7 +462,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
             hist_grp = MicroDataGroup('Histogram', h5_mean_spec.parent.name[1:])
 
-            hist_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_values])
+            hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
 
             h5_hist_grp_refs = hdf.writeData(hist_grp)
 
@@ -481,7 +481,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             """
             ds_max_resp = MicroDataset('Max_Response', max_resp)
             ds_min_resp = MicroDataset('Min_Response', min_resp)
-            plot_grp.addChildren([ds_max_resp, ds_min_resp])
+            plot_grp.add_children([ds_max_resp, ds_min_resp])
 
         if save_plots or show_plots:
             fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
@@ -1287,7 +1287,7 @@ class BEHistogram:
                     hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
                 ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
-                plot_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_labels])
+                plot_grp.add_children([ds_hist, ds_hist_indices, ds_hist_labels])
                 hdf.writeData(plot_grp)
 
                 if show_plot or save_plot:

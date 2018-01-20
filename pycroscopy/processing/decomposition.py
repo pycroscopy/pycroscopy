@@ -145,7 +145,7 @@ class Decomposition(Process):
         ds_decomp_vals.attrs['units'] = ['']
 
         decomp_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-Decomposition_', self.h5_main.parent.name[1:])
-        decomp_grp.addChildren([ds_components, ds_projections, ds_decomp_inds, ds_decomp_vals])
+        decomp_grp.add_children([ds_components, ds_projections, ds_decomp_inds, ds_decomp_vals])
         
         decomp_grp.attrs.update(self.parms_dict)
         decomp_grp.attrs.update({'n_components': components.shape[0],

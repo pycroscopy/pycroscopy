@@ -82,9 +82,9 @@ class BESHOfitter(Fitter):
         sho_grp = MicroDataGroup('-'.join([dset_name,
                                            'SHO_Fit_']),
                                  self.h5_main.parent.name[1:])
-        sho_grp.addChildren([ds_guess,
-                             ds_sho_inds,
-                             ds_sho_vals])
+        sho_grp.add_children([ds_guess,
+                              ds_sho_inds,
+                              ds_sho_vals])
         sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
         h5_sho_grp_refs = self.hdf.writeData(sho_grp, print_log=self._verbose)

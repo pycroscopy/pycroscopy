@@ -318,7 +318,7 @@ class BEPSndfTranslator(Translator):
         ds_pos_val.attrs['units'] = self.pos_units
 
         meas_grp = MicroDataGroup(meas_grp.name, '/')
-        meas_grp.addChildren([ds_pos_ind, ds_pos_val])
+        meas_grp.add_children([ds_pos_ind, ds_pos_val])
 
         h5_refs += self.hdf.writeData(meas_grp)
 
@@ -424,7 +424,7 @@ class BEPSndfTranslator(Translator):
 
         chan_grp = MicroDataGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = curr_parm_dict['IO_Analog_Input_1']
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
 
         udvs_slices = dict()
         for col_ind, col_name in enumerate(self.udvs_labs):
@@ -492,9 +492,9 @@ class BEPSndfTranslator(Translator):
         # Allocate space for the first pixel for now and write along with the complete tree...
         # Positions CANNOT be written at this time since we don't know if the parameter changed
 
-        chan_grp.addChildren([ds_main_data, ds_noise, ds_ex_wfm, ds_spec_mat, ds_wfm_typ,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_fft, ds_udvs_mat,
-                              ds_spec_vals_mat, ds_udvs_inds])
+        chan_grp.add_children([ds_main_data, ds_noise, ds_ex_wfm, ds_spec_mat, ds_wfm_typ,
+                               ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_fft, ds_udvs_mat,
+                               ds_spec_vals_mat, ds_udvs_inds])
 
         # meas_grp.showTree()
         h5_refs = self.hdf.writeData(meas_grp)
