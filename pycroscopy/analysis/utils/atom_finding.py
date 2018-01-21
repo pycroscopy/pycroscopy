@@ -334,7 +334,7 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits])
 
     hdf = HDFwriter(h5_grp.file)
-    h5_atom_refs = hdf.write_data(dgrp_atom_finding)
+    h5_atom_refs = hdf.write(dgrp_atom_finding)
     return h5_grp
 
 

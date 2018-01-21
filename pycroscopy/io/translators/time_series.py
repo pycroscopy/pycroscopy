@@ -378,7 +378,7 @@ class MovieTranslator(Translator):
         # print('Writing following tree to this file:')
         # root_grp.showTree()
 
-        h5_refs = self.hdf.write_data(root_grp)
+        h5_refs = self.hdf.write(root_grp)
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
         h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]

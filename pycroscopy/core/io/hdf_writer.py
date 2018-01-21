@@ -146,7 +146,7 @@ class HDFwriter(object):
         """
         self.file.flush()
 
-    def write_data(self, data, print_log=False):
+    def write(self, data, print_log=False):
         """
         Writes data into the hdf5 file and assigns data attributes such as region references.
         The tree structure is inferred from the AFMData Object.

@@ -119,7 +119,7 @@ class SporcTranslator(Translator):
         # Write everything except for the main data.
         hdf = HDFwriter(h5_path)
 
-        h5_refs = hdf.write_data(spm_data)
+        h5_refs = hdf.write(spm_data)
 
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 

@@ -213,7 +213,7 @@ class SignalFilter(Process):
         if self.verbose:
             grp_filt.show_tree()
         hdf = HDFwriter(self.h5_main.file)
-        h5_filt_refs = hdf.write_data(grp_filt, print_log=self.verbose)
+        h5_filt_refs = hdf.write(grp_filt, print_log=self.verbose)
 
         if isinstance(self.composite_filter, np.ndarray):
             h5_comp_filt = get_h5_obj_refs(['Composite_Filter'], h5_filt_refs)[0]

@@ -264,7 +264,7 @@ class BEodfRelaxationTranslator(Translator):
         self.hdf = HDFwriter(h5_path)
         # self.hdf.clear() #Doesn't seem to work
 
-        h5_refs = self.hdf.write_data(spm_data)
+        h5_refs = self.hdf.write(spm_data)
 
         self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 

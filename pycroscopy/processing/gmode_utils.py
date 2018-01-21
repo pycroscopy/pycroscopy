@@ -260,7 +260,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
 
     hdf = HDFwriter(h5_main.file)
     print('Starting to reshape G-mode line data. Please be patient')
-    h5_refs = hdf.write_data(resh_grp)
+    h5_refs = hdf.write(resh_grp)
 
     h5_resh = get_h5_obj_refs(['Reshaped_Data'], h5_refs)[0]
     # Link everything:

@@ -115,7 +115,7 @@ class Translator(object):
             remove(h5_path)
 
         hdf = HDFwriter(h5_path)
-        h5_refs = hdf.write_data(spm_data, print_log=False)
+        h5_refs = hdf.write(spm_data, print_log=False)
         h5_raw = get_h5_obj_refs([ds_main.name], h5_refs)[0]
         link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_dset_names, h5_refs))
         hdf.close()
