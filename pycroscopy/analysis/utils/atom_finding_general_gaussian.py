@@ -512,7 +512,7 @@ class Gauss_Fit(object):
                                         ds_motif_fits, ds_nearest_neighbors])
 
         hdf = HDFwriter(self.atom_grp.file)
-        h5_atom_refs = hdf.write_data(dgrp_atom_finding)
+        h5_atom_refs = hdf.write(dgrp_atom_finding)
         hdf.flush()
         return self.atom_grp
 

@@ -90,7 +90,7 @@ class GIVTranslator(Translator):
         
         hdf = HDFwriter(h5_path)
         # spm_data.showTree()
-        hdf.write_data(spm_data, print_log=False)
+        hdf.write(spm_data, print_log=False)
 
         self.raw_datasets = list()
         
@@ -100,7 +100,7 @@ class GIVTranslator(Translator):
             chan_grp.attrs = parm_dict
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                    ds_raw_data])
-            h5_refs = hdf.write_data(chan_grp, print_log=False)
+            h5_refs = hdf.write(chan_grp, print_log=False)
             h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
             self.raw_datasets.append(h5_raw)

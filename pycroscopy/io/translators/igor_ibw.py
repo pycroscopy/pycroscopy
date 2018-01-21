@@ -137,7 +137,7 @@ class IgorIBWTranslator(Translator):
         # Write head of tree to file:
         hdf = HDFwriter(h5_path)
         # spm_data.showTree()
-        hdf.write_data(spm_data, print_log=verbose)
+        hdf.write(spm_data, print_log=verbose)
 
         if verbose:
             print('Finished writing tree trunk')
@@ -150,7 +150,7 @@ class IgorIBWTranslator(Translator):
             chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs['name'] = raw_dset.attrs['quantity']
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, raw_dset])
-            h5_refs = hdf.write_data(chan_grp, print_log=verbose)
+            h5_refs = hdf.write(chan_grp, print_log=verbose)
             h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
 

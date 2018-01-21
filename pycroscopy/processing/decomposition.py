@@ -152,7 +152,7 @@ class Decomposition(Process):
                                  'n_samples': self.h5_main.shape[0]})
         
         hdf = HDFwriter(self.h5_main.file)
-        h5_decomp_refs = hdf.write_data(decomp_grp)
+        h5_decomp_refs = hdf.write(decomp_grp)
 
         h5_components = get_h5_obj_refs(['Components'], h5_decomp_refs)[0]
         h5_projections = get_h5_obj_refs(['Projection'], h5_decomp_refs)[0]

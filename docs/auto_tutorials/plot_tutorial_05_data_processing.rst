@@ -160,7 +160,7 @@ Note that:
             sho_grp.add_children([ds_guess, ds_sho_inds, ds_sho_vals])
             sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
-            h5_sho_grp_refs = self.hdf.write_data(sho_grp)
+            h5_sho_grp_refs = self.hdf.write(sho_grp)
 
             self.h5_guess = px.hdf_utils.get_h5_obj_refs(['Guess'], h5_sho_grp_refs)[0]
             self.h5_results_grp = self.h5_guess.parent

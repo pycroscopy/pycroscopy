@@ -170,7 +170,7 @@ class BEPSndfTranslator(Translator):
 
         # cacheSettings = self.hdf.file.id.get_access_plist().get_cache()
 
-        self.hdf.write_data(spm_data)
+        self.hdf.write(spm_data)
 
         ########################################################
         # Reading and parsing the .dat file(s) 
@@ -320,7 +320,7 @@ class BEPSndfTranslator(Translator):
         meas_grp = MicroDataGroup(meas_grp.name, '/')
         meas_grp.add_children([ds_pos_ind, ds_pos_val])
 
-        h5_refs += self.hdf.write_data(meas_grp)
+        h5_refs += self.hdf.write(meas_grp)
 
         # Do all the reference linking:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values', 'UDVS_Indices',
@@ -497,7 +497,7 @@ class BEPSndfTranslator(Translator):
                                ds_spec_vals_mat, ds_udvs_inds])
 
         # meas_grp.showTree()
-        h5_refs = self.hdf.write_data(meas_grp)
+        h5_refs = self.hdf.write(meas_grp)
 
         self.ds_noise = get_h5_obj_refs(['Noise_Floor'], h5_refs)[0]
         self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]

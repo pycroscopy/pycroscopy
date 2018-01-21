@@ -182,7 +182,7 @@ Now that we have created the objects, we can write them to an hdf5 file
 
 
 
-The write_data method builds the hdf5 file using the structure defined by the
+The write method builds the hdf5 file using the structure defined by the
 MicroData objects.  It returns a list of references to all h5py objects in the
 new file.
 
@@ -190,7 +190,7 @@ new file.
 
 .. code-block:: python
 
-    h5_refs = hdf.write_data(root_group, print_log=True)
+    h5_refs = hdf.write(root_group, print_log=True)
 
     # We can use these references to get the h5py dataset and group objects
     h5_main = px.io.hdf_utils.get_h5_obj_refs(['Main_Data'], h5_refs)[0]

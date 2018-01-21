@@ -353,7 +353,7 @@ class ImageWindow(object):
             ds_group.attrs['image_y'] = im_y
             ds_group.attrs['psf_width'] = psf_width
             ds_group.attrs['fft_mode'] = win_fft
-            image_refs = self.hdf.write_data(ds_group)
+            image_refs = self.hdf.write(ds_group)
 
             '''
             Get the hdf5 objects for the windows and ancillary datasets
@@ -597,7 +597,7 @@ class ImageWindow(object):
 
         clean_grp.add_children([ds_clean])
 
-        image_refs = self.hdf.write_data(clean_grp)
+        image_refs = self.hdf.write(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
@@ -914,7 +914,7 @@ class ImageWindow(object):
         else:
             clean_grp.attrs['components_used'] = comp_slice
 
-        image_refs = self.hdf.write_data(clean_grp)
+        image_refs = self.hdf.write(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
@@ -1076,7 +1076,7 @@ class ImageWindow(object):
         else:
             clean_grp.attrs['components_used'] = comp_slice
 
-        image_refs = self.hdf.write_data(clean_grp)
+        image_refs = self.hdf.write(clean_grp)
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]

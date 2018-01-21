@@ -225,7 +225,7 @@ class Cluster(Process):
             cluster_grp.add_children([ds_centroid_indices, ds_centroid_values])
 
         hdf = HDFwriter(self.h5_main.file)
-        h5_clust_refs = hdf.write_data(cluster_grp)
+        h5_clust_refs = hdf.write(cluster_grp)
 
         h5_labels = get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
         h5_centroids = get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]

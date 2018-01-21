@@ -323,7 +323,7 @@ class BEodfTranslator(Translator):
         # Write everything except for the main data.
         self.hdf = HDFwriter(h5_path)
 
-        h5_refs = self.hdf.write_data(spm_data, print_log=verbose)
+        h5_refs = self.hdf.write(spm_data, print_log=verbose)
 
         self.h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 

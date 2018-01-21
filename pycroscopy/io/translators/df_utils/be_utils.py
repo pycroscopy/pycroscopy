@@ -411,7 +411,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         plot_grp.attrs['Name'] = col_name
         plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
 
-        h5_plt_grp_refs = hdf.write_data(plot_grp, print_log=debug)
+        h5_plt_grp_refs = hdf.write(plot_grp, print_log=debug)
 
         h5_mean_spec = get_h5_obj_refs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
         h5_step_avg = get_h5_obj_refs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
@@ -464,7 +464,7 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
             hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
 
-            h5_hist_grp_refs = hdf.write_data(hist_grp)
+            h5_hist_grp_refs = hdf.write(hist_grp)
 
             h5_hist = get_h5_obj_refs(['Histograms'], h5_hist_grp_refs)[0]
             h5_hist_inds = get_h5_obj_refs(['Indices'], h5_hist_grp_refs)[0]
@@ -1288,7 +1288,7 @@ class BEHistogram:
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
                 ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
                 plot_grp.add_children([ds_hist, ds_hist_indices, ds_hist_labels])
-                hdf.write_data(plot_grp)
+                hdf.write(plot_grp)
 
                 if show_plot or save_plot:
                     if save_plot:

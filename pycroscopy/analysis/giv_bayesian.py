@@ -147,7 +147,7 @@ class GIVBayesian(Process):
             bayes_grp.show_tree()
 
         self.hdf = HDFwriter(self.h5_main.file)
-        h5_refs = self.hdf.write_data(bayes_grp, print_log=self.verbose)
+        h5_refs = self.hdf.write(bayes_grp, print_log=self.verbose)
 
         self.h5_new_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
         h5_new_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]

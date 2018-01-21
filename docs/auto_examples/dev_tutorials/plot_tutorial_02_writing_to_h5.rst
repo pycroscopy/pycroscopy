@@ -528,7 +528,7 @@ Once the tree is prepared (previous cell), ioHDF5 will handle all the file writi
 .. code-block:: python
 
 
-    h5_clust_refs = hdf.write_data(cluster_grp, print_log=True)
+    h5_clust_refs = hdf.write(cluster_grp, print_log=True)
 
     h5_labels = px.hdf_utils.get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
     h5_centroids = px.hdf_utils.get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]

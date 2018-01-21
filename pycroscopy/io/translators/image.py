@@ -207,7 +207,7 @@ class ImageTranslator(Translator):
 
         self.hdf = hdf
 
-        h5_refs = self.hdf.write_data(root_grp)
+        h5_refs = self.hdf.write(root_grp)
         h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         aux_ds_names = ['Position_Indices',
                         'Position_Values',

@@ -122,7 +122,7 @@ class GLineTranslator(Translator):
         
         hdf = HDFwriter(h5_path)
         # hdf.clear()
-        hdf.write_data(spm_data)
+        hdf.write(spm_data)
         
         # Now that the file has been created, go over each raw data file:
         # 1. write all ancillary data. Link data. 2. Write main data sequentially
@@ -153,7 +153,7 @@ class GLineTranslator(Translator):
             
             # print('Writing following tree to file:')
             # chan_grp.showTree()
-            h5_refs = hdf.write_data(chan_grp)
+            h5_refs = hdf.write(chan_grp)
             
             h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
             

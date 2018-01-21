@@ -126,7 +126,7 @@ class SVD(Process):
         Write the data and retrieve the HDF5 objects then delete the Microdatasets
         '''
         hdf = HDFwriter(self.h5_main.file)
-        h5_svd_refs = hdf.write_data(svd_grp)
+        h5_svd_refs = hdf.write(svd_grp)
 
         h5_U = get_h5_obj_refs(['U'], h5_svd_refs)[0]
         h5_S = get_h5_obj_refs(['S'], h5_svd_refs)[0]
@@ -320,7 +320,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         rebuilt_grp.attrs['components_used'] = components
 
-    h5_refs = hdf.write_data(rebuilt_grp)
+    h5_refs = hdf.write(rebuilt_grp)
 
     h5_rebuilt = get_h5_obj_refs(['Rebuilt_Data'], h5_refs)[0]
     copy_attributes(h5_main, h5_rebuilt, skip_refs=False)
