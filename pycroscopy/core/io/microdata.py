@@ -82,7 +82,7 @@ class MicroDataGroup(MicroData):
                 child.parent = self.parent + self.name
                 self.children.append(child)
             else:
-                warn('Children must be of type MicroData.')
+                warn('Children must be of type MicroData. child ignored')
 
     def __str__(self):
         self.show_tree()
@@ -152,7 +152,7 @@ class MicroDataset(MicroData):
             
         3. Initializing large primary datasets of known sizes :
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', data=[], maxshape=(1024,16384), dtype=np.float16,
+        >>> ds_raw_data = MicroDataset('Raw_Data', None, maxshape=(1024,16384), dtype=np.float16,
         >>>                            chunking=(1,16384), compression='gzip')
                     
         4. Intializing large datasets whose size is unknown in one or more dimensions:
@@ -175,11 +175,14 @@ class MicroDataset(MicroData):
         self.resizable = resizable
         self.maxshape = _make_iterable(maxshape)
         if resizable is True:
+            # Case 3: Resizeable datasets
             self.maxshape = None  # Overridden
             self.shape = None
         elif maxshape is not None:
+            # Case 2: large empty datasets (allocation)
             self.shape = self.maxshape
         else:
+            # case 1: regular datasets
             self.shape = self.data.shape
 
     def __getitem__(self, item):
