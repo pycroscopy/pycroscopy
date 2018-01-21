@@ -25,12 +25,13 @@ if sys.version_info.major == 3:
 class HDFwriter(object):
     def __init__(self, file_handle, cachemult=1):
         """
-        Main Class in charge of writing to hdf5 file.
+        Main class that simplifies writing to pycroscopy hdf5 files.
 
         Parameters
         ----------
-        file_handle : Object - String or Unicode or open hdf5 file
-            Absolute path to the h5 file or an open hdf5 file
+        file_handle : h5py.File object or str or unicode
+            h5py.File - handle to an open file in 'w' or 'r+' mode
+            str or unicode - Absolute path to an unopened the hdf5 file
         cachemult : unsigned int (Optional. default = 1)
             Cache multiplier
         """
@@ -74,6 +75,7 @@ class HDFwriter(object):
         Because the file must be closed and reopened, it is best to call this
         function immediately after the creation of the ioHDF5 object.
         """
+        warn('This is unlikely to work on Windows due to driver issues')
         self.file.clear()
         self.repack()
 
@@ -83,6 +85,7 @@ class HDFwriter(object):
         h5repack can also be used to change chunking and compression, but these options have
         not yet been implemented here.
         """
+        warn('This is unlikely to work on Windows due to driver issues')
         self.close()
         tmpfile = self.path + '.tmp'
 
@@ -130,7 +133,7 @@ class HDFwriter(object):
 
     def delete(self):
         """
-        Delete h5.file
+        Delete's the existing file and creates an empty new file of the same path
         """
         self.close()
         os.remove(self.path)
