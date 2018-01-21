@@ -8,7 +8,7 @@ from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, buildReducedSpec
+from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, build_reduced_spec_dsets
 from ...core.io.dtype_utils import real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
 from ...core.io.microdata import MicroDataGroup, MicroDataset
@@ -464,7 +464,7 @@ class FakeBEPSGenerator(Translator):
         # Build the Spectroscopic datasets for the SHO Guess and Fit
         sho_spec_starts = np.where(h5_spec_inds[h5_spec_inds.attrs['Frequency']].squeeze() == 0)[0]
         sho_spec_labs = get_attr(h5_spec_inds, 'labels')
-        ds_sho_spec_inds, ds_sho_spec_vals = buildReducedSpec(h5_spec_inds,
+        ds_sho_spec_inds, ds_sho_spec_vals = build_reduced_spec_dsets(h5_spec_inds,
                                                               h5_spec_vals,
                                                               keep_dim=sho_spec_labs != 'Frequency',
                                                               step_starts=sho_spec_starts)
@@ -512,7 +512,7 @@ class FakeBEPSGenerator(Translator):
         # Build the Spectroscopic datasets for the loops
         loop_spec_starts = np.where(h5_sho_spec_inds[h5_sho_spec_inds.attrs['DC_Offset']].squeeze() == 0)[0]
         loop_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
-        ds_loop_spec_inds, ds_loop_spec_vals = buildReducedSpec(h5_sho_spec_inds,
+        ds_loop_spec_inds, ds_loop_spec_vals = build_reduced_spec_dsets(h5_sho_spec_inds,
                                                                 h5_sho_spec_vals,
                                                                 keep_dim=loop_spec_labs != 'DC_Offset',
                                                                 step_starts=loop_spec_starts)
