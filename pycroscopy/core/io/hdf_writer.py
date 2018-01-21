@@ -338,7 +338,7 @@ class HDFwriter(object):
             Newly created datset object
         """
         assert isinstance(microdset, MicroDataset)
-        assert isinstance(h5_group, h5py.Group)
+        assert type(h5_group) in [h5py.File, h5py.Group]
 
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
@@ -367,7 +367,7 @@ class HDFwriter(object):
             Newly created datset object
         """
         assert isinstance(microdset, MicroDataset)
-        assert isinstance(h5_group, h5py.Group)
+        assert type(h5_group) in [h5py.File, h5py.Group]
 
         h5_dset = h5_group.create_dataset(microdset.name, microdset.maxshape,
                                           compression=microdset.compression,
@@ -394,7 +394,7 @@ class HDFwriter(object):
             Newly created datset object
         """
         assert isinstance(microdset, MicroDataset)
-        assert isinstance(h5_group, h5py.Group)
+        assert type(h5_group) in [h5py.File, h5py.Group]
 
         max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
@@ -426,22 +426,25 @@ class HDFwriter(object):
             Newly created datset object
         """
         assert isinstance(microdset, MicroDataset)
-        assert isinstance(h5_group, h5py.Group)
+        assert type(h5_group) in [h5py.File, h5py.Group]
 
         h5_file = h5_group.file
 
         if microdset.name in h5_group.keys():
             raise ValueError('Dataset named {} already exists in group!'.format(h5_group[microdset.name].name))
 
+        # A standardized procedure for safely creating any kind of dataset:
         def __create_dset(h5_group, microdset, build_func):
             try:
                 h5_dset = build_func(h5_group, microdset)
             except:
+                # make sure to close the file before raising the exception
                 h5_file.flush()
                 h5_file.close()
                 raise
             return h5_dset
 
+        # Handle the different types of datasets
         if not microdset.resizable:
             if not bool(microdset.maxshape):
                 # finite sized dataset and maxshape is not provided
