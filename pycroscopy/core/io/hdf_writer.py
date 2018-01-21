@@ -307,6 +307,9 @@ class HDFwriter(object):
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
         """
+        assert isinstance(attrs, dict)
+        assert type(h5_obj) in [h5py.File, h5py.Group, h5py.Dataset]
+
         for key, val in attrs.items():
             if val is None:
                 continue
@@ -334,6 +337,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
+        assert isinstance(microdset, MicroDataset)
+        assert isinstance(h5_group, h5py.Group)
+
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
                                           compression=microdset.compression,
@@ -360,6 +366,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
+        assert isinstance(microdset, MicroDataset)
+        assert isinstance(h5_group, h5py.Group)
+
         h5_dset = h5_group.create_dataset(microdset.name, microdset.maxshape,
                                           compression=microdset.compression,
                                           dtype=microdset.dtype,
@@ -384,6 +393,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
+        assert isinstance(microdset, MicroDataset)
+        assert isinstance(h5_group, h5py.Group)
+
         max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
         h5_dset = h5_group.create_dataset(microdset.name,
@@ -465,6 +477,9 @@ class HDFwriter(object):
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
         """
+        assert isinstance(attrs, dict)
+        assert isinstance(h5_dset, h5py.Dataset)
+
         # First, set aside the complicated attribute(s)
         labels = attrs.pop('labels', None)
 
@@ -504,27 +519,30 @@ class HDFwriter(object):
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
     @staticmethod
-    def __write_region_references(dataset, slices, print_log=False):
+    def __write_region_references(h5_dset, slices, print_log=False):
         """
-        Creates attributes of a h5.Dataset that refer to regions in the arrays
+        Creates attributes of a h5py.Dataset that refer to regions in the dataset
 
         Parameters
         ----------
-        dataset : h5.Dataset instance
+        h5_dset : h5.Dataset instance
             Dataset to which region references will be added as attributes
-        slices : dictionary
+        slices : dict
             The slicing information must be formatted using tuples of slice objects.
             For example {'region_1':(slice(None, None), slice (0,1))}
         print_log : Boolean (Optional. Default = False)
             Whether or not to print status messages
         """
+        assert isinstance(slices, dict)
+        assert isinstance(h5_dset, h5py.Dataset)
+
         if print_log:
-            print('Starting to write Region References to Dataset', dataset.name, 'of shape:', dataset.shape)
+            print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
         for sl in slices.keys():
             if print_log:
                 print('About to write region reference:', sl, ':', slices[sl])
-            if len(slices[sl]) == len(dataset.shape):
-                dataset.attrs[sl] = dataset.regionref[slices[sl]]
+            if len(slices[sl]) == len(h5_dset.shape):
+                h5_dset.attrs[sl] = h5_dset.regionref[slices[sl]]
                 if print_log:
                     print('Wrote Region Reference:%s' % sl)
             else:
@@ -560,5 +578,3 @@ def clean_string_att(att_val):
         return att_val
     except TypeError:
         raise TypeError('Failed to clean: {}'.format(att_val))
-
-
