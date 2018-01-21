@@ -185,11 +185,7 @@ class HDFwriter(object):
         # Figuring out if the first item in MicroDataGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
-
-            for key, val in data.attrs.items():
-                h5_file.attrs[key] = clean_string_att(val)
-            if print_log:
-                print('Wrote attributes of file {} \n'.format(h5_file.name))
+            HDFwriter._write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
             root = h5_file.name
         else:
             # For a group we write it and its attributes
@@ -243,49 +239,101 @@ class HDFwriter(object):
         return ref_list
 
     @staticmethod
-    def _create_group(h5_group, micro_group, print_log=False):
+    def _create_group(h5_parent_group, micro_group, print_log=False):
+        """
+        Creates a h5py.Group object from the provided MicroDataGroup object under h5_new_group and writes all attributes
 
+        Parameters
+        ----------
+        h5_parent_group : h5py.Group object
+            Parent group under which the new group object will be created
+        micro_group : MicroDataGroup object
+            Definition for the new group
+        print_log : bool, optional. Default=False
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        h5_new_group : h5py.Group
+            The newly created group
+        """
         assert isinstance(micro_group, MicroDataGroup)
-        assert isinstance(h5_group, h5py.Group)
+        assert isinstance(h5_parent_group, h5py.Group)
 
-        h5_file = h5_group.file
+        h5_file = h5_parent_group.file
 
         # First complete the name of the group by adding the index suffix
         if micro_group.indexed:
-            previous = np.where([micro_group.name in key for key in h5_group.keys()])[0]
+            previous = np.where([micro_group.name in key for key in h5_parent_group.keys()])[0]
             if len(previous) == 0:
                 index = 0
             else:
-                last = h5_group.keys()[previous[-1]]
+                last = h5_parent_group.keys()[previous[-1]]
                 index = int(last.split('_')[-1]) + 1
             micro_group.name += '{:03d}'.format(index)
 
         # Now, try to write the group
         try:
-            h5_group = h5_group.create_group(micro_group.name)
+            h5_new_group = h5_parent_group.create_group(micro_group.name)
             if print_log:
-                print('Created Group {}'.format(h5_group.name))
+                print('Created Group {}'.format(h5_new_group.name))
         except ValueError:
-            h5_group = h5_group[micro_group.name]
+            h5_new_group = h5_parent_group[micro_group.name]
             if print_log:
-                print('Found Group already exists {}'.format(h5_group.name))
+                print('Found Group already exists {}'.format(h5_new_group.name))
         except:
             h5_file.flush()
             h5_file.close()
             raise
-        for key, val in micro_group.attrs.items():
+
+        # Write attributes
+        HDFwriter._write_simple_attrs(h5_new_group, micro_group.attrs, 'group', print_log=print_log)
+
+        return h5_new_group
+
+    @staticmethod
+    def _write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
+        """
+        Writes attributes to a h5py object
+
+        Parameters
+        ----------
+        h5_obj : h5py.File, h5py.Group, or h5py.Dataset object
+            h5py object to which the attributes will be written to
+        attrs : dict
+            Dictionary containing the attributes as key-value pairs
+        obj_type : str / unicode, optional. Default = ''
+            type of h5py.obj. Examples include 'group', 'file', 'dataset
+        print_log : bool, optional. Default=False
+            Whether or not to print debugging statements
+        """
+        for key, val in attrs.items():
             if val is None:
                 continue
             if print_log:
                 print('Writing attribute: {} with value: {}'.format(key, val))
-            h5_group.attrs[key] = clean_string_att(val)
+                h5_obj.attrs[key] = clean_string_att(val)
         if print_log:
-            print('Wrote attributes to group {}\n'.format(h5_group.name))
-
-        return h5_group
+            print('Wrote all (simple) attributes to {}: {}\n'.format(obj_type, h5_obj.name.split('/')[-1]))
 
     @staticmethod
     def _create_simple_dset(h5_group, microdset):
+        """
+        Creates a simple h5py.Dataset object in the file. This is for those cases where the dataset contains
+        small data matrices of known shape and value
+
+        Parameters
+        ----------
+        h5_group : h5py.File or h5py.Group object
+            Parent under which this dataset will be created
+        microdset : MicroDataset object
+            Definition for the dataset
+
+        Returns
+        -------
+        h5_dset : h5py.Dataset object
+            Newly created datset object
+        """
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
                                           compression=microdset.compression,
@@ -295,6 +343,23 @@ class HDFwriter(object):
 
     @staticmethod
     def _create_empty_dset(h5_group, microdset):
+        """
+        Creates a h5py.Dataset object in the file. This is for those cases where the dataset is expected to be
+        large and its contents cannot be held in memory. This function creates an empty dataset that can be filled in
+        manually / incrementally
+
+        Parameters
+        ----------
+        h5_group : h5py.File or h5py.Group object
+            Parent under which this dataset will be created
+        microdset : MicroDataset object
+            Definition for the dataset
+
+        Returns
+        -------
+        h5_dset : h5py.Dataset object
+            Newly created datset object
+        """
         h5_dset = h5_group.create_dataset(microdset.name, microdset.maxshape,
                                           compression=microdset.compression,
                                           dtype=microdset.dtype,
@@ -303,6 +368,22 @@ class HDFwriter(object):
 
     @staticmethod
     def _create_resizeable_dset(h5_group, microdset):
+        """
+        Creates a simple h5py.Dataset object in the file. This is for those datasets whose dimensions in one or more
+        dimensions are not known at the time of creation.
+
+        Parameters
+        ----------
+        h5_group : h5py.File or h5py.Group object
+            Parent under which this dataset will be created
+        microdset : MicroDataset object
+            Definition for the dataset
+
+        Returns
+        -------
+        h5_dset : h5py.Dataset object
+            Newly created datset object
+        """
         max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
         h5_dset = h5_group.create_dataset(microdset.name,
@@ -315,7 +396,23 @@ class HDFwriter(object):
 
     @staticmethod
     def _create_dataset(h5_group, microdset, print_log=False):
+        """
+        Creates a h5py.Dataset object in the file. This function handles all three kinds of dataset cases
 
+        Parameters
+        ----------
+        h5_group : h5py.File or h5py.Group object
+            Parent under which this dataset will be created
+        microdset : MicroDataset object
+            Definition for the dataset
+        print_log : bool, optional. Default=False
+            Whether or not to print debugging statements
+
+        Returns
+        -------
+        h5_dset : h5py.Dataset object
+            Newly created datset object
+        """
         assert isinstance(microdset, MicroDataset)
         assert isinstance(h5_group, h5py.Group)
 
@@ -349,47 +446,62 @@ class HDFwriter(object):
         if print_log:
             print('Created Dataset {}'.format(h5_dset.name))
 
-        HDFwriter.__write_attributes(microdset, h5_dset, print_log=print_log)
+        HDFwriter._write_dset_attributes(h5_dset, microdset.attrs, print_log=print_log)
 
         return h5_dset
 
     @staticmethod
-    def __write_attributes(microdset, h5_dset, print_log=False):
+    def _write_dset_attributes(h5_dset, attrs, print_log=False):
+        """
+        Writes attributes to a h5py dataset
 
-        for key, val in microdset.attrs.items():
-            if key == 'labels':
-                labels = microdset.attrs[key]  # labels here is a dictionary
-                HDFwriter.__write_region_references(h5_dset, labels, print_log=print_log)
-                '''
-                Now make an attribute called 'labels' that is a list of strings 
-                First ascertain the dimension of the slicing:
-                '''
-                found_dim = False
-                for dimen, slice_obj in enumerate(list(labels.values())[0]):
-                    # We make the assumption that checking the start is sufficient
-                    if slice_obj.start is not None:
-                        found_dim = True
-                        break
-                if found_dim:
-                    headers = [None] * len(labels)  # The list that will hold all the names
-                    for col_name in labels.keys():
-                        headers[labels[col_name][dimen].start] = col_name
-                    if print_log:
-                        print('Writing header attributes: {}'.format(key))
-                    # Now write the list of col / row names as an attribute:
-                    h5_dset.attrs[key] = clean_string_att(headers)
-                else:
-                    warn('Unable to write region labels for %s' % (h5_dset.name.split('/')[-1]))
+        Parameters
+        ----------
+        h5_dset : h5py.Dataset object
+            h5py dataset to which the attributes will be written to.
+            This function handles region references as well
+        attrs : dict
+            Dictionary containing the attributes as key-value pairs
+        print_log : bool, optional. Default=False
+            Whether or not to print debugging statements
+        """
+        # First, set aside the complicated attribute(s)
+        labels = attrs.pop('labels', None)
 
-                if print_log:
-                    print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
-            else:
-                if print_log:
-                    print('Writing attribute: {} with value: {}'.format(key, val))
-                h5_dset.attrs[key] = clean_string_att(microdset.attrs[key])
-                if print_log:
-                    print('Wrote Attributes of Dataset %s \n' % (h5_dset.name.split('/')[-1]))
-                    # Make a dictionary of references
+        # Next, write the simple ones using a centralized function
+        HDFwriter._write_simple_attrs(h5_dset, attrs, obj_type='dataset', print_log=print_log)
+
+        if labels is None:
+            if print_log:
+                print('Finished writing all attributes of dataset')
+            return
+
+        # Now, handle the region references attribute:
+        HDFwriter.__write_region_references(h5_dset, labels, print_log=print_log)
+        '''
+        Next, write these label names as an attribute called labels
+        Now make an attribute called 'labels' that is a list of strings 
+        First ascertain the dimension of the slicing:
+        '''
+        found_dim = False
+        for dimen, slice_obj in enumerate(list(labels.values())[0]):
+            # We make the assumption that checking the start is sufficient
+            if slice_obj.start is not None:
+                found_dim = True
+                break
+        if found_dim:
+            headers = [None] * len(labels)  # The list that will hold all the names
+            for col_name in labels.keys():
+                headers[labels[col_name][dimen].start] = col_name
+            if print_log:
+                print('Writing header attributes: {}'.format('labels'))
+            # Now write the list of col / row names as an attribute:
+            h5_dset.attrs['labels'] = clean_string_att(headers)
+        else:
+            warn('Unable to write region labels for %s' % (h5_dset.name.split('/')[-1]))
+
+        if print_log:
+            print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
     @staticmethod
     def __write_region_references(dataset, slices, print_log=False):
