@@ -184,7 +184,7 @@ class MicroDataset(MicroData):
                 raise ValueError('not all dimensions of maxshape are allowed to be None')
             if data is not None:
                 if len(data.shape) != len(maxshape):
-                    raise('Maxshape should have same number of dimensions as data')
+                    raise ValueError('Maxshape should have same number of dimensions as data')
                 # TODO: Additional check comparing individual sizes against data
 
         if chunking is not None:
