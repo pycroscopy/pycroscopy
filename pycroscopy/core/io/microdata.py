@@ -11,6 +11,7 @@ The MicroData classes
 from __future__ import division, print_function, absolute_import, unicode_literals
 import socket
 from warnings import warn
+import numpy as np
 
 from .io_utils import get_time_stamp
 
@@ -155,12 +156,11 @@ class MicroDataset(MicroData):
         >>> ds_raw_data = MicroDataset('Raw_Data', None, maxshape=(1024,16384), dtype=np.float16,
         >>>                            chunking=(1,16384), compression='gzip')
                     
-        4. Intializing large datasets whose size is unknown in one or more dimensions:
+        4. Initializing large datasets whose size is unknown in one or more dimensions:
         
         >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
-        >>>                            chunking=(1,16384), resizable=True,compression='gzip')
+        >>>                            chunking=(1,16384), resizable=True, compression='gzip')
         """
-
         def _make_iterable(item):
             if item is not None:
                 if type(item) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
@@ -168,22 +168,47 @@ class MicroDataset(MicroData):
             return item
 
         super(MicroDataset, self).__init__(name, parent)
+
+        maxshape = _make_iterable(maxshape)
+        chunking = _make_iterable(chunking)
+
+        valid_compressions = [None, 'gzip', 'lzf']
+        if compression not in valid_compressions:
+            raise ValueError('valid values for compression are: {}'.format(valid_compressions))
+
+        if maxshape is not None:
+            if np.all([_ is None for _ in maxshape]):
+                raise ValueError('not all dimensions of maxshape are allowed to be None')
+
+        if chunking is not None:
+            for item in chunking:
+                if item is None:
+                    raise ValueError('chunking cannot have None values')
+
+            if maxshape is not None:
+                data_shape = maxshape
+            else:
+                data = np.array(data)
+                data_shape = data.shape
+            if len(data_shape) != len(chunking):
+                raise ValueError('chunking should have the same number of dimensions as either maxshape or data')
+            # Now, they have the same number of dimensions:
+            # make sure that all its values are less than equal to the size of the data
+            for ch, mx in zip(chunking, data_shape):
+                if mx is not None:
+                    if ch > mx:
+                        raise ValueError('chunking shape ({}) must be less than or equal to the data shape ({}) in all '
+                                         'dimensions'.format(chunking, data_shape))
+
         self.data = data
         self.dtype = dtype
         self.compression = compression
-        self.chunking = _make_iterable(chunking)
+        self.chunking = chunking
         self.resizable = resizable
-        self.maxshape = _make_iterable(maxshape)
+        self.maxshape = maxshape
         if resizable is True:
             # Case 3: Resizeable datasets
             self.maxshape = None  # Overridden
-            self.shape = None
-        elif maxshape is not None:
-            # Case 2: large empty datasets (allocation)
-            self.shape = self.maxshape
-        else:
-            # case 1: regular datasets
-            self.shape = self.data.shape
 
     def __getitem__(self, item):
         return self.data[item]

@@ -396,7 +396,10 @@ class HDFwriter(object):
         assert isinstance(microdset, MicroDataset)
         assert type(h5_group) in [h5py.File, h5py.Group]
 
-        max_shape = tuple([None for _ in range(len(microdset.data.shape))])
+        # Allow user to specify maxshape to grow in specific dimensions only
+        max_shape = microdset.maxshape
+        if max_shape is None:
+            max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
