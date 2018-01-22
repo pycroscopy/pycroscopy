@@ -176,9 +176,16 @@ class MicroDataset(MicroData):
         if compression not in valid_compressions:
             raise ValueError('valid values for compression are: {}'.format(valid_compressions))
 
+        if data is not None:
+            data = np.array(data)
+
         if maxshape is not None:
             if np.all([_ is None for _ in maxshape]):
                 raise ValueError('not all dimensions of maxshape are allowed to be None')
+            if data is not None:
+                if len(data.shape) != len(maxshape):
+                    raise('Maxshape should have same number of dimensions as data')
+                # TODO: Additional check comparing individual sizes against data
 
         if chunking is not None:
             for item in chunking:
@@ -188,7 +195,6 @@ class MicroDataset(MicroData):
             if maxshape is not None:
                 data_shape = maxshape
             else:
-                data = np.array(data)
                 data_shape = data.shape
             if len(data_shape) != len(chunking):
                 raise ValueError('chunking should have the same number of dimensions as either maxshape or data')
