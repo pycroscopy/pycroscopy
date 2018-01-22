@@ -22,8 +22,7 @@ class TestMicroDataSet(unittest.TestCase):
         self.assertEqual(dset.data, data)
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
-        self.assertEqual(dset.maxshape, None)
-        self.assertEqual(dset.shape, data.shape)
+        self.assertEqual(dset.maxshape, maxshape)
 
 
 if __name__ == '__main__':
