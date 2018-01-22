@@ -13,7 +13,7 @@ Submodules
 from . import core
 from .core import *
 from warnings import warn
-from . import io
+
 from .io import translators
 from . import analysis
 from . import processing

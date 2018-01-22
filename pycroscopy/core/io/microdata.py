@@ -206,9 +206,6 @@ class MicroDataset(MicroData):
         self.chunking = chunking
         self.resizable = resizable
         self.maxshape = maxshape
-        if resizable is True:
-            # Case 3: Resizeable datasets
-            self.maxshape = None  # Overridden
 
     def __getitem__(self, item):
         return self.data[item]
