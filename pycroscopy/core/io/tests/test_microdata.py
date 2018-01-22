@@ -12,7 +12,6 @@ class TestMicroDataSet(unittest.TestCase):
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
         self.assertEqual(dset.maxshape, None)
-        self.assertEqual(dset.shape, data.shape)
 
     def test_large_empty(self):
         data = None
