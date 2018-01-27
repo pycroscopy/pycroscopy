@@ -166,6 +166,8 @@ class MicroDataset(MicroData):
         >>>                            chunking=(1,16384), resizable=True, compression='gzip')
         """
 
+        super(MicroDataset, self).__init__(name, parent)
+
         assert isinstance(name, (str, unicode)), 'Name should be a string'
 
         def _make_iterable(param):
@@ -173,8 +175,6 @@ class MicroDataset(MicroData):
                 if type(param) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
                     param = tuple([param])
             return param
-
-        super(MicroDataset, self).__init__(name, parent)
 
         maxshape = _make_iterable(maxshape)
         chunking = _make_iterable(chunking)
@@ -199,6 +199,9 @@ class MicroDataset(MicroData):
                     if m_size is not None:
                         if m_size < d_size:
                             raise ValueError('maxshape should not be smaller than the data shape')
+            else:
+                if np.any([item is None for item in maxshape]):
+                    raise ValueError('maxshape should not have any None values when data is not provided')
 
         if chunking is not None:
             for item in chunking:
