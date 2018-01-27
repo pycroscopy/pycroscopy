@@ -146,24 +146,32 @@ class MicroDataset(MicroData):
             
         Examples
         --------   
-        1. Small auxillary datasets :
-        
+        1. Small auxiliary datasets :
+            Make sure to specify the name and data. All other parameters are optional
+
         >>> ds_ex_efm = MicroDataset('Excitation_Waveform', np.arange(10))
-        
-        2. Datasets with slicing information :
-        
-        >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
-            ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
             
-        3. Initializing large primary datasets of known sizes :
+        2. Initializing large primary datasets of known sizes :
+            Ensure that the name, maxshape are specified and that maxshape does not have any elements that are None.
+            All other arguments are optional.
         
         >>> ds_raw_data = MicroDataset('Raw_Data', None, maxshape=(1024,16384), dtype=np.float16,
         >>>                            chunking=(1,16384), compression='gzip')
                     
-        4. Initializing large datasets whose size is unknown in one or more dimensions:
+        3. Initializing large datasets whose size is unknown in one or more dimensions:
+            Ensure to specify the name, set resizable to True, and some initial data (can be zeros but of appropriate
+            shape) to start with.
+            It is recommended that you allow the dataset to grow only in the necessary dimensions since HDFwriter will
+            assume that the dataset will grow in all dimensions by default. In the example below, the dataset will only
+            grow in the first dimension while the size in the second dimension is fixed because of maxshape.
         
-        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
-        >>>                            chunking=(1,16384), resizable=True, compression='gzip')
+        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), resizable=True,
+        >>>                            maxshape=(None, 16384), chunking=(1,16384), compression='gzip')
+
+        4. Datasets with region references :
+
+        >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
+            ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
         """
 
         super(MicroDataset, self).__init__(name, parent)
