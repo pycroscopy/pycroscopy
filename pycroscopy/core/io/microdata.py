@@ -168,6 +168,16 @@ class MicroDataset(MicroData):
         >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), resizable=True,
         >>>                            maxshape=(None, 16384), chunking=(1,16384), compression='gzip')
 
+        Once HDFwriter is used to write the dataset, you will need to use the resize function in h5py as:
+
+        >>> h5_dataset.resize(h5_dataset.shape[0] + 1, axis = 0)
+
+        This will increment the size of the dataset in the first axis from it's current value (of 1) to 2.
+
+        Note that the HDF5 file containing datasets that have been expanded this way are bound to be noticeably larger
+        in size compared to files with datasets that are not allowed to expand. Therefore, use this only when absolutely
+        necessary only.
+
         4. Datasets with region references :
 
         >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
