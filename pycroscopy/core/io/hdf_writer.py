@@ -38,12 +38,15 @@ class HDFwriter(object):
                 self.file = h5py.File(file_handle, 'r+')
             except IOError:
                 self.file = h5py.File(file_handle, 'w')
-            except Exception:
-                raise
 
             self.path = file_handle
         elif type(file_handle) == h5py.File:
             # file handle is actually an open hdf file
+            try:
+                _ = file_handle.mode
+            except ValueError:
+                raise ValueError('A closed h5py.File was provided')
+
             if file_handle.mode == 'r':
                 raise TypeError('HDFWriter cannot work with open HDF5 files in read mode. Change to r+ or w')
             self.file = file_handle.file
