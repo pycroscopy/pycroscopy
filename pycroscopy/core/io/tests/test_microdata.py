@@ -4,6 +4,18 @@ from pycroscopy import MicroDataGroup, MicroDataset
 
 
 class TestMicroDataSet(unittest.TestCase):
+
+    def test_insufficient_inputs(self):
+        name = 'test'
+        try:
+            dset = MicroDataset(name)
+        except ValueError:
+            assert True
+            return
+        except Exception:
+            raise
+            assert False
+
     def test_simple(self):
         data = np.arange(5)
         name = 'test'
@@ -13,7 +25,7 @@ class TestMicroDataSet(unittest.TestCase):
         self.assertEqual(dset.resizable, False)
         self.assertEqual(dset.maxshape, None)
 
-    def test_large_empty(self):
+    def test_large_empty_correct(self):
         data = None
         name = 'test'
         maxshape = (1024, 16384)
