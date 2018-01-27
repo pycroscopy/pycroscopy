@@ -219,6 +219,19 @@ class MicroDataset(MicroData):
                         raise ValueError('chunking shape ({}) must be less than or equal to the data shape ({}) in all '
                                          'dimensions'.format(chunking, data_shape))
 
+        if isinstance(dtype, (str, unicode)):
+            dtype = np.dtype(dtype)
+
+        if data is not None:
+            if dtype is None:
+                # inherit dtype from data by default
+                dtype = data.dtype
+            """   
+            else:
+                # cast data? or will h5py take care of this?
+                data = dtype(data)
+            """
+
         self.data = data
         self.dtype = dtype
         self.compression = compression

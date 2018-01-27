@@ -341,7 +341,7 @@ class HDFwriter(object):
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
                                           compression=microdset.compression,
-                                          dtype=microdset.data.dtype,
+                                          dtype=microdset.dtype,
                                           chunks=microdset.chunking)
         return h5_dset
 
@@ -402,7 +402,7 @@ class HDFwriter(object):
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
                                           compression=microdset.compression,
-                                          dtype=microdset.data.dtype,
+                                          dtype=microdset.dtype,
                                           chunks=microdset.chunking,
                                           maxshape=max_shape)
         return h5_dset

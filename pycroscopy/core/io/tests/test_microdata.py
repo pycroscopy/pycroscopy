@@ -37,6 +37,38 @@ class TestMicroDataSet(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = MicroDataset(name, data, compression=compression)
 
+    def test_simple_dset_inherit_dtype(self):
+        data = np.arange(5)
+        name = 'test'
+        dset = MicroDataset(name, data)
+        self.assertTrue(np.all(np.equal(dset.data, data)))
+        self.assertEqual(dset.name, name)
+        self.assertEqual(dset.resizable, False)
+        self.assertEqual(dset.maxshape, None)
+        self.assertEqual(dset.dtype, data.dtype)
+
+    def test_simple_dset_independent_dtype(self):
+        data = np.arange(5, dtype=np.complex64)
+        name = 'test'
+        dtype = np.uint8
+        dset = MicroDataset(name, data, dtype=dtype)
+        self.assertTrue(np.all(np.equal(dset.data, data)))
+        self.assertEqual(dset.name, name)
+        self.assertEqual(dset.resizable, False)
+        self.assertEqual(dset.maxshape, None)
+        self.assertEqual(dset.dtype, dtype)
+
+    def test_simple_dset_str_dtype_valid(self):
+        data = np.arange(5, dtype=np.complex64)
+        name = 'test'
+        dtype = 'uint8'
+        dset = MicroDataset(name, data, dtype=dtype)
+        self.assertTrue(np.all(np.equal(dset.data, data)))
+        self.assertEqual(dset.name, name)
+        self.assertEqual(dset.resizable, False)
+        self.assertEqual(dset.maxshape, None)
+        self.assertEqual(dset.dtype, np.dtype(dtype))
+
     def test_large_empty_correct_01(self):
         data = None
         name = 'test'
