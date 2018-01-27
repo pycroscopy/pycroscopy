@@ -79,6 +79,13 @@ class TestMicroDataSet(unittest.TestCase):
         self.assertEqual(dset.resizable, False)
         self.assertEqual(dset.maxshape, maxshape)
 
+    def test_empty_incorrect_01(self):
+        data = None
+        name = 'test'
+        maxshape = (None, 16384)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, data, maxshape=maxshape)
+
     def test_resizable_correct_01(self):
         dtype = np.uint16
         data = np.zeros(shape=(1, 7), dtype=dtype)
