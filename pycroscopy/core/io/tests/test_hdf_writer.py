@@ -105,6 +105,52 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_simple_dset_write_success_more_options_02(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            dset_name = 'test'
+            data = np.random.rand(16, 1024)
+            dtype = data.dtype
+            compression = 'gzip'
+            chunking=(1, 1024)
+            microdset = MicroDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
+
+            writer = HDFwriter(h5_f)
+            h5_d = writer._create_simple_dset(h5_f, microdset)
+            self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertTrue(np.allclose(h5_d[()], data))
+            self.assertEqual(h5_d.dtype, dtype)
+            self.assertEqual(h5_d.compression, compression)
+            self.assertEqual(h5_d.chunks, chunking)
+
+        os.remove(file_path)
+
+    def test_simple_dset_write_success_more_options_03(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            dset_name = 'test'
+            data = np.random.rand(16, 1024)
+            dtype = np.float16
+            compression = 'gzip'
+            chunking=(1, 1024)
+            microdset = MicroDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
+
+            writer = HDFwriter(h5_f)
+            h5_d = writer._create_simple_dset(h5_f, microdset)
+            self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.dtype, dtype)
+            self.assertEqual(h5_d.compression, compression)
+            self.assertEqual(h5_d.chunks, chunking)
+            self.assertTrue(np.all(h5_d[()] - data < 1E-3))
+
+        os.remove(file_path)
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
