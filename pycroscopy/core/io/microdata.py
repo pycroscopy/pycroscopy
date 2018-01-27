@@ -12,8 +12,12 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import socket
 from warnings import warn
 import numpy as np
+import sys
 
 from .io_utils import get_time_stamp
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class MicroData(object):
@@ -39,7 +43,7 @@ class MicroData(object):
 
 class MicroDataGroup(MicroData):
     """
-    Holds data that will be converted to a h5.Group by io.ioHDF5
+    Holds data that will be converted to a h5.Group by io.HDFwriter
     Note that it can also hold information (e.g. attributes) of an h5.File.
     This is consistent with class hierarchy of HDF5, i.e. h5.File extends h5.Group.
     """
@@ -101,14 +105,14 @@ class MicroDataGroup(MicroData):
                     __tree(ch, parent + '/' + child.name)
 
         # print(self.parent+self.name)
-        for child in self.children:
-            __tree(child, self.parent + self.name)
+        for curr_child in self.children:
+            __tree(curr_child, self.parent + self.name)
 
 
 class MicroDataset(MicroData):
     """
     Holds data (i.e. numpy.ndarray) as well as instructions on writing, attributes, etc...
-    This gets converted to a h5.Dataset by io.ioHDF5.\n    
+    This gets converted to a h5py.Dataset by io.HDFwriter
 
     Region references need to be specified using the 'labels' attribute. See example below    
     """
@@ -148,7 +152,7 @@ class MicroDataset(MicroData):
         
         2. Datasets with slicing information :
         
-        >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_ind_mat)
+        >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
             ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
             
         3. Initializing large primary datasets of known sizes :
@@ -161,11 +165,14 @@ class MicroDataset(MicroData):
         >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
         >>>                            chunking=(1,16384), resizable=True, compression='gzip')
         """
-        def _make_iterable(item):
-            if item is not None:
-                if type(item) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
-                    item = tuple([item])
-            return item
+
+        assert isinstance(name, (str, unicode)), 'Name should be a string'
+
+        def _make_iterable(param):
+            if param is not None:
+                if type(param) not in [list, tuple]:  # another (inelegant) way of asking if this object is iterable
+                    param = tuple([param])
+            return param
 
         super(MicroDataset, self).__init__(name, parent)
 
@@ -185,12 +192,15 @@ class MicroDataset(MicroData):
             if data is not None:
                 if len(data.shape) != len(maxshape):
                     raise ValueError('Maxshape should have same number of dimensions as data')
-                # TODO: Additional check comparing individual sizes against data
+                for d_size, m_size in zip(data.shape, maxshape):
+                    if m_size is not None:
+                        if m_size < d_size:
+                            raise ValueError('maxshape should not be smaller than the data shape')
 
         if chunking is not None:
             for item in chunking:
                 if item is None:
-                    raise ValueError('chunking cannot have None values')
+                    raise ValueError('chunking should not have None values at any dimension')
 
             if maxshape is not None:
                 data_shape = maxshape
