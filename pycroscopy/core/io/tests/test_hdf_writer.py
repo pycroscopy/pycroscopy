@@ -204,25 +204,43 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_empty_dset_write_failure_01(self):
+    def test_expandable_dset_write_success_01(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
 
             dset_name = 'test'
             maxshape = (None, 1024)
-            dtype = np.float16
-            microdset = MicroDataset(dset_name, None, maxshape=maxshape)
+            data = np.random.rand(1, 1024)
+            microdset = MicroDataset(dset_name, data, maxshape=maxshape)
 
             writer = HDFwriter(h5_f)
-            h5_d = writer._create_empty_dset(h5_f, microdset)
+            h5_d = writer._create_resizeable_dset(h5_f, microdset)
             self.assertIsInstance(h5_d, h5py.Dataset)
             self.assertEqual(h5_d.parent, h5_f)
             self.assertEqual(h5_d.name, '/' + dset_name)
-            self.assertEqual(h5_d.shape, maxshape)
-            # dtype is assigned automatically by h5py. Not to be tested here
+            self.assertEqual(h5_d.shape, data.shape)
+            self.assertEqual(h5_d.maxshape, maxshape)
+            self.assertTrue(np.allclose(h5_d[()], data))
+
+            # Now test to make sure that the dataset can be expanded:
+            # TODO: add this to the example!
+
+            expansion_axis = 0
+            h5_d.resize(h5_d.shape[expansion_axis] + 1, axis=expansion_axis)
+
+            self.assertEqual(h5_d.shape, (data.shape[0]+1, data.shape[1]))
+            self.assertEqual(h5_d.maxshape, maxshape)
+
+            # Finally try checking to see if this new data is also present in the file
+            new_data = np.random.rand(1024)
+            h5_d[1] = new_data
+
+            data = np.vstack((np.squeeze(data), new_data))
+            self.assertTrue(np.allclose(h5_d[()], data))
 
         os.remove(file_path)
+
 
 if __name__ == '__main__':
     unittest.main()
