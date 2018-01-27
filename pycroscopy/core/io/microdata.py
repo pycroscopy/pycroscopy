@@ -183,6 +183,9 @@ class MicroDataset(MicroData):
         if compression not in valid_compressions:
             raise ValueError('valid values for compression are: {}'.format(valid_compressions))
 
+        if np.all([_ is None for _ in [data, maxshape]]):
+            raise ValueError('both data and maxshape cannot be None')
+
         if data is not None:
             data = np.array(data)
 
