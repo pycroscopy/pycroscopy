@@ -23,7 +23,7 @@ if sys.version_info.major == 3:
 
 
 class HDFwriter(object):
-    def __init__(self, file_handle, cachemult=1):
+    def __init__(self, file_handle):
         """
         Main class that simplifies writing to pycroscopy hdf5 files.
 
@@ -32,30 +32,13 @@ class HDFwriter(object):
         file_handle : h5py.File object or str or unicode
             h5py.File - handle to an open file in 'w' or 'r+' mode
             str or unicode - Absolute path to an unopened the hdf5 file
-        cachemult : unsigned int (Optional. default = 1)
-            Cache multiplier
         """
         if type(file_handle) in [str, unicode]:
-            # file handle is actually a file path
-            # propfaid = h5py.h5p.create(h5py.h5p.FILE_ACCESS)
-            # if cachemult != 1:
-            #     settings = list(propfaid.get_cache())
-            #     settings[2] *= cachemult
-            #     propfaid.set_cache(*settings)
-            # try:
-            #     fid = h5py.h5f.open(file_handle, fapl=propfaid)
-            #     self.file = h5py.File(fid, mode = 'r+')
-            # except IOError:
-            #     #print('Unable to open file %s. \n Making a new one! \n' %(filename))
-            #     fid = h5py.h5f.create(file_handle, fapl=propfaid)
-            #     self.file = h5py.File(fid, mode = 'w')
-            # except:
-            #     raise
             try:
                 self.file = h5py.File(file_handle, 'r+')
             except IOError:
                 self.file = h5py.File(file_handle, 'w')
-            except:
+            except Exception:
                 raise
 
             self.path = file_handle
@@ -65,6 +48,8 @@ class HDFwriter(object):
                 raise TypeError('HDFWriter cannot work with open HDF5 files in read mode. Change to r+ or w')
             self.file = file_handle.file
             self.path = file_handle.filename
+        else:
+            raise TypeError('Please provide a file path as a string or a valid h5py.File object')
 
     def clear(self):
         """
@@ -104,7 +89,7 @@ class HDFwriter(object):
         except subprocess.CalledProcessError as err:
             print('Could not repack hdf5 file')
             raise Exception(err.output)
-        except:
+        except Exception:
             raise
 
         '''
@@ -114,7 +99,7 @@ class HDFwriter(object):
         try:
             os.remove(self.path)
             os.rename(tmpfile, self.path)
-        except:
+        except Exception:
             print('Could not copy repacked file to original path.')
             print('The original file is located {}'.format(self.path))
             print('The repacked file is located {}'.format(tmpfile))
@@ -182,6 +167,8 @@ class HDFwriter(object):
             h5_dset = HDFwriter._create_dataset(h5_parent, data, print_log=print_log)
             return [h5_dset]
 
+        assert isinstance(data, MicroDataGroup)  # just to avoid PEP8 warning
+
         # Figuring out if the first item in MicroDataGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
@@ -229,6 +216,7 @@ class HDFwriter(object):
             return ref_list
 
         # Recursive function is called at each stage beginning at the root
+
         for curr_child in data.children:
             __populate(curr_child, root)
 
@@ -237,6 +225,11 @@ class HDFwriter(object):
                   'Right now you got yourself a fancy folder structure. \n' +
                   'Make sure you do some reference linking to take advantage of the full power of HDF5.')
         return ref_list
+
+    @staticmethod
+    def check_param(param_name, param_obj, expected_type):
+        assert isinstance(param_obj, expected_type), 'parameter: {} expected to be of type: {} but was of type: ' \
+                                                     '{}'.format(param_name, expected_type, type(param_obj))
 
     @staticmethod
     def _create_group(h5_parent_group, micro_group, print_log=False):
@@ -257,8 +250,10 @@ class HDFwriter(object):
         h5_new_group : h5py.Group
             The newly created group
         """
-        assert isinstance(micro_group, MicroDataGroup)
-        assert isinstance(h5_parent_group, h5py.Group)
+        assert isinstance(micro_group, MicroDataGroup), 'micro_group should be a MicroDataGroup object but is ' \
+                                                        'instead of type {}'.format(type(micro_group))
+        assert isinstance(h5_parent_group, h5py.Group), 'h5_parent_group should be a h5py.Group object but is ' \
+                                                        'instead of type {}'.format(type(h5_parent_group))
 
         h5_file = h5_parent_group.file
 
@@ -281,7 +276,7 @@ class HDFwriter(object):
             h5_new_group = h5_parent_group[micro_group.name]
             if print_log:
                 print('Found Group already exists {}'.format(h5_new_group.name))
-        except:
+        except Exception:
             h5_file.flush()
             h5_file.close()
             raise
@@ -308,7 +303,7 @@ class HDFwriter(object):
             Whether or not to print debugging statements
         """
         assert isinstance(attrs, dict)
-        assert type(h5_obj) in [h5py.File, h5py.Group, h5py.Dataset]
+        assert isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset))
 
         for key, val in attrs.items():
             if val is None:
@@ -437,15 +432,15 @@ class HDFwriter(object):
             raise ValueError('Dataset named {} already exists in group!'.format(h5_group[microdset.name].name))
 
         # A standardized procedure for safely creating any kind of dataset:
-        def __create_dset(h5_group, microdset, build_func):
+        def __create_dset(h5_parent_group, microdset_obj, build_func):
             try:
-                h5_dset = build_func(h5_group, microdset)
-            except:
+                h5_new_dset = build_func(h5_parent_group, microdset_obj)
+            except Exception:
                 # make sure to close the file before raising the exception
                 h5_file.flush()
                 h5_file.close()
                 raise
-            return h5_dset
+            return h5_new_dset
 
         # Handle the different types of datasets
         if not microdset.resizable:
@@ -505,6 +500,7 @@ class HDFwriter(object):
         First ascertain the dimension of the slicing:
         '''
         found_dim = False
+        dimen = None
         for dimen, slice_obj in enumerate(list(labels.values())[0]):
             # We make the assumption that checking the start is sufficient
             if slice_obj.start is not None:
