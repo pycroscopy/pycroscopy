@@ -99,7 +99,10 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
             self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.shape, data.shape)
             self.assertTrue(np.allclose(h5_d[()], data))
             self.assertEqual(h5_d.dtype, dtype)
 
@@ -119,7 +122,10 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
             self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.shape, data.shape)
             self.assertTrue(np.allclose(h5_d[()], data))
             self.assertEqual(h5_d.dtype, dtype)
             self.assertEqual(h5_d.compression, compression)
@@ -141,7 +147,10 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
             self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.shape, data.shape)
             self.assertEqual(h5_d.dtype, dtype)
             self.assertEqual(h5_d.compression, compression)
             self.assertEqual(h5_d.chunks, chunking)
@@ -149,8 +158,71 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_empty_dset_write_success_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
 
+            dset_name = 'test'
+            maxshape = (16, 1024)
+            microdset = MicroDataset(dset_name, None, maxshape=maxshape)
 
+            writer = HDFwriter(h5_f)
+            h5_d = writer._create_empty_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
+            self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.shape, maxshape)
+            self.assertEqual(h5_d.maxshape, maxshape)
+            # dtype is assigned automatically by h5py. Not to be tested here
+
+        os.remove(file_path)
+
+    def test_empty_dset_write_success_w_options_02(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            dset_name = 'test'
+            maxshape = (16, 1024)
+            chunking = (1, 1024)
+            compression = 'gzip'
+            dtype = np.float16
+            microdset = MicroDataset(dset_name, None, maxshape=maxshape,
+                                     dtype=dtype, compression=compression, chunking=chunking)
+
+            writer = HDFwriter(h5_f)
+            h5_d = writer._create_empty_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
+            self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.dtype, dtype)
+            self.assertEqual(h5_d.compression, compression)
+            self.assertEqual(h5_d.chunks, chunking)
+            self.assertEqual(h5_d.shape, maxshape)
+            self.assertEqual(h5_d.maxshape, maxshape)
+
+        os.remove(file_path)
+
+    def test_empty_dset_write_failure_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            dset_name = 'test'
+            maxshape = (None, 1024)
+            dtype = np.float16
+            microdset = MicroDataset(dset_name, None, maxshape=maxshape)
+
+            writer = HDFwriter(h5_f)
+            h5_d = writer._create_empty_dset(h5_f, microdset)
+            self.assertIsInstance(h5_d, h5py.Dataset)
+            self.assertEqual(h5_d.parent, h5_f)
+            self.assertEqual(h5_d.name, '/' + dset_name)
+            self.assertEqual(h5_d.shape, maxshape)
+            # dtype is assigned automatically by h5py. Not to be tested here
+
+        os.remove(file_path)
 
 if __name__ == '__main__':
     unittest.main()
