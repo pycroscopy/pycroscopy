@@ -64,6 +64,8 @@ class MicroDataGroup(MicroData):
         self.attrs['machine_id'] = socket.getfqdn()
         self.attrs['timestamp'] = get_time_stamp()
 
+        self.indexed = False
+
         if name != '':
             self.indexed = self.name[-1] == '_'
 
@@ -82,6 +84,8 @@ class MicroDataGroup(MicroData):
         -------
         None
         """
+        if not isinstance(children, (tuple, list)):
+            children = [children]
         for child in children:
             if isinstance(child, MicroData):
                 child.parent = self.parent + self.name
@@ -95,7 +99,6 @@ class MicroDataGroup(MicroData):
     def show_tree(self):
         """
         Return the tree structure given by MicroDataGroup.
-        
         """
 
         def __tree(child, parent):
@@ -194,8 +197,25 @@ class MicroDataset(MicroData):
                     param = tuple([param])
             return param
 
+        def _valid_shapes(param, none_ok=False):
+            if param is None:
+                return True
+            tests = []
+            for item in param:
+                if item is None:
+                    tests.append(none_ok)
+                else:
+                    try:
+                        tests.append(item > 0 and item % 1 == 0)
+                    except TypeError:
+                        return False
+            return np.all(tests)
+
         maxshape = _make_iterable(maxshape)
         chunking = _make_iterable(chunking)
+
+        assert _valid_shapes(maxshape, none_ok=True), "maxshape should only contain positive integers or None"
+        assert _valid_shapes(chunking, none_ok=False), "chunking should only contain positive integers"
 
         valid_compressions = [None, 'gzip', 'lzf']
         if compression not in valid_compressions:
@@ -208,8 +228,6 @@ class MicroDataset(MicroData):
             data = np.array(data)
 
         if maxshape is not None:
-            if np.all([_ is None for _ in maxshape]):
-                raise ValueError('not all dimensions of maxshape are allowed to be None')
             if data is not None:
                 if len(data.shape) != len(maxshape):
                     raise ValueError('Maxshape should have same number of dimensions as data')
