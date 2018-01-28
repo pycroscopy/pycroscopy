@@ -243,6 +243,80 @@ class TestHDFWriter(unittest.TestCase):
 
     # TODO: will have to check to see if the parent is correctly declared for the group
 
+    def test_group_create_non_indexed_simple_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            grp_name = 'test'
+            micro_group = MicroDataGroup(grp_name)
+
+            writer = HDFwriter(h5_f)
+            h5_grp = writer._create_group(h5_f, micro_group)
+            self.assertIsInstance(h5_grp, h5py.Group)
+            self.assertEqual(h5_grp.parent, h5_f)
+            self.assertEqual(h5_grp.name, '/' + grp_name)
+            # self.assertEqual(len(h5_grp.items), 0)
+
+        os.remove(file_path)
+
+    def test_group_create_indexed_simple_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            grp_name = 'test_'
+            micro_group = MicroDataGroup(grp_name)
+
+            writer = HDFwriter(h5_f)
+            h5_grp = writer._create_group(h5_f, micro_group)
+            self.assertIsInstance(h5_grp, h5py.Group)
+            self.assertEqual(h5_grp.parent, h5_f)
+            self.assertEqual(h5_grp.name, '/' + grp_name + '000')
+            # self.assertEqual(len(h5_grp.items), 0)
+
+        os.remove(file_path)
+
+    def test_group_create_root_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            grp_name = ''
+            micro_group = MicroDataGroup(grp_name)
+
+            writer = HDFwriter(h5_f)
+            with self.assertRaises(ValueError):
+                _ = writer._create_group(h5_f, micro_group)
+
+        os.remove(file_path)
+
+    def test_group_create_indexed_nested_01(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            outer_grp_name = 'outer_'
+            micro_group = MicroDataGroup(outer_grp_name)
+
+            writer = HDFwriter(h5_f)
+            h5_outer_grp = writer._create_group(h5_f, micro_group)
+            self.assertIsInstance(h5_outer_grp, h5py.Group)
+            self.assertEqual(h5_outer_grp.parent, h5_f)
+            self.assertEqual(h5_outer_grp.name, '/' + outer_grp_name + '000')
+
+            inner_grp_name = 'inner_'
+            micro_group = MicroDataGroup(inner_grp_name)
+
+            h5_inner_grp = writer._create_group(h5_outer_grp, micro_group)
+            self.assertIsInstance(h5_inner_grp, h5py.Group)
+            self.assertEqual(h5_inner_grp.parent, h5_outer_grp)
+            self.assertEqual(h5_inner_grp.name, h5_outer_grp.name + '/' + inner_grp_name + '000')
+
+        os.remove(file_path)
+
+    def test_write_atts(self):
+        pass
 
 
 if __name__ == '__main__':
