@@ -1,6 +1,20 @@
 import unittest
+import sys
 import numpy as np
 from pycroscopy import MicroDataGroup, MicroDataset
+
+
+class MyOutput(object):
+    # http://pragmaticpython.com/2017/03/23/unittesting-print-statements/
+
+    def __init__(self):
+        self.data = []
+
+    def write(self, s):
+        self.data.append(s)
+
+    def __str__(self):
+        return "".join(self.data)
 
 
 class TestMicroDataSet(unittest.TestCase):
@@ -9,6 +23,69 @@ class TestMicroDataSet(unittest.TestCase):
         name = 'test'
         with self.assertRaises(ValueError):
             _ = MicroDataset(name, data=None)
+
+    def test_invalid_chunking_argument_01(self):
+        name = 'test'
+        chunking = (-1, 128)
+        data = np.random.rand(2, 128)
+        with self.assertRaises(AssertionError):
+            _ = MicroDataset(name, data, chunking=chunking)
+
+    def test_invalid_chunking_argument_02(self):
+        name = 'test'
+        chunking = ('a', range(5))
+        data = np.random.rand(2, 128)
+        with self.assertRaises(AssertionError):
+            _ = MicroDataset(name, data, chunking=chunking)
+
+    def test_incompatible_chunking_data(self):
+        name = 'test'
+        chunking = (4, 128)
+        data = np.random.rand(2, 128)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, data, chunking=chunking)
+
+    def test_incompatible_chunking_data_02(self):
+        name = 'test'
+        chunking = (4, 128)
+        maxshape = (2, 128)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, None, maxshape=maxshape, chunking=chunking)
+
+    def test_incompatible_chunking_data_03(self):
+        name = 'test'
+        chunking = (4, 128)
+        maxshape = (None, 128)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, None, maxshape=maxshape, chunking=chunking)
+
+    def test_incompatible_maxshape_chunking_01(self):
+        name = 'test'
+        chunking = (3, 128)
+        maxshape = (1,129)
+        data = np.random.rand(5, 128)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, data, chunking=chunking, maxshape=maxshape)
+
+    def test_only_chunking_provided(self):
+        name = 'test'
+        chunking = (1, 128)
+        with self.assertRaises(ValueError):
+            _ = MicroDataset(name, None, chunking=chunking)
+
+    def test_chunking_w_none(self):
+        name = 'test'
+        chunking = (None, 128)
+        data = np.random.rand(2, 128)
+        with self.assertRaises(AssertionError):
+            _ = MicroDataset(name, data, chunking=chunking)
+
+    def test_incompatible_maxshape_data_shapes(self):
+        name = 'test'
+        maxshape = 128
+        data = np.random.rand(2, 128)
+        with self.assertRaises(ValueError):
+           _ = MicroDataset(name, data, maxshape=maxshape)
 
     def test_simple_correct_01(self):
         data = np.arange(5)
@@ -91,11 +168,89 @@ class TestMicroDataSet(unittest.TestCase):
         data = np.zeros(shape=(1, 7), dtype=dtype)
         name = 'test'
         resizable = True
-        dset = MicroDataset(name, data, )
+        dset = MicroDataset(name, data, resizable=resizable)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
-        self.assertEqual(dset.resizable, False)
+        self.assertEqual(dset.resizable, resizable)
         self.assertEqual(dset.maxshape, None)
+
+
+class TestMicroDataGroup(unittest.TestCase):
+
+    def test_creation_non_indexed(self):
+        name = 'test_group'
+        group = MicroDataGroup(name)
+        self.assertEqual(group.name, name)
+        self.assertEqual(group.parent, '/')
+        self.assertEqual(group.children, [])
+        self.assertEqual(group.indexed, False)
+
+    def test_creation_indexed(self):
+        name = 'indexed_group_'
+        group = MicroDataGroup(name)
+        self.assertEqual(group.name, name)
+        self.assertEqual(group.parent, '/')
+        self.assertEqual(group.children, [])
+        self.assertEqual(group.indexed, True)
+
+    def test_add_single_child_legal_01(self):
+        group_name = 'indexed_group_'
+        group = MicroDataGroup(group_name)
+        dset_name_1 = 'dset_1'
+        data_1 = np.arange(3)
+        dset_1 = MicroDataset(dset_name_1, data_1)
+        group.add_children(dset_1)
+        group.show_tree()
+        self.assertEqual(len(group.children), 1)
+        in_dset = group.children[0]
+        self.assertIsInstance(in_dset, MicroDataset)
+        self.assertEqual(in_dset.name, dset_name_1)
+        self.assertTrue(np.all(np.equal(in_dset.data, data_1)))
+
+    def test_add_single_child_illegal_01(self):
+        group_name = 'indexed_group_'
+        group = MicroDataGroup(group_name)
+        # with self.assertWarns('Children must be of type MicroData. child ignored'):
+        group.add_children(np.arange(4))
+        self.assertEqual(len(group.children), 0)
+
+    def test_add_children_legal_01(self):
+        group_name = 'indexed_group_'
+        group = MicroDataGroup(group_name)
+        dset_name_1 = 'dset_1'
+        data_1 = np.arange(3)
+        dset_1 = MicroDataset(dset_name_1, data_1)
+        dset_name_2 = 'dset_2'
+        data_2 = np.random.rand(2, 3)
+        dset_2 = MicroDataset(dset_name_2, data_2)
+        group.add_children([dset_1, dset_2])
+        self.assertEqual(len(group.children), 2)
+
+    def test_print(self):
+        group_name = 'indexed_group_'
+        group = MicroDataGroup(group_name)
+        dset_name_1 = 'dset_1'
+        data_1 = np.arange(3)
+        dset_1 = MicroDataset(dset_name_1, data_1)
+        dset_name_2 = 'dset_2'
+        data_2 = np.random.rand(2, 3)
+        dset_2 = MicroDataset(dset_name_2, data_2)
+        inner_grp_name = 'other_indexed_group_'
+        inner_group = MicroDataGroup(inner_grp_name)
+        inner_group.add_children(dset_2)
+        group.add_children([dset_1, inner_group])
+
+        # http://pragmaticpython.com/2017/03/23/unittesting-print-statements/
+        stdout_org = sys.stdout
+        my_stdout = MyOutput()
+        try:
+            sys.stdout = my_stdout
+            group.show_tree()
+        finally:
+            sys.stdout = stdout_org
+
+        self.assertEqual(str(my_stdout), "/indexed_group_/dset_1\n/indexed_group_/other_indexed_group_\n/indexed_group_"
+                                         "/other_indexed_group_/dset_2\n")
 
 
 if __name__ == '__main__':

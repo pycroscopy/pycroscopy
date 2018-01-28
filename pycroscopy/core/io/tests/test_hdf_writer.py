@@ -241,6 +241,9 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    # TODO: will have to check to see if the parent is correctly declared for the group
+
+
 
 if __name__ == '__main__':
     unittest.main()
