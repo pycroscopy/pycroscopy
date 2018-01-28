@@ -230,11 +230,6 @@ class HDFwriter(object):
         return ref_list
 
     @staticmethod
-    def check_param(param_name, param_obj, expected_type):
-        assert isinstance(param_obj, expected_type), 'parameter: {} expected to be of type: {} but was of type: ' \
-                                                     '{}'.format(param_name, expected_type, type(param_obj))
-
-    @staticmethod
     def _create_group(h5_parent_group, micro_group, print_log=False):
         """
         Creates a h5py.Group object from the provided MicroDataGroup object under h5_new_group and writes all attributes
@@ -257,6 +252,9 @@ class HDFwriter(object):
                                                         'instead of type {}'.format(type(micro_group))
         assert isinstance(h5_parent_group, h5py.Group), 'h5_parent_group should be a h5py.Group object but is ' \
                                                         'instead of type {}'.format(type(h5_parent_group))
+
+        if micro_group.name == '':
+            raise ValueError('MicroDataGroup object with empty name will not be handled by this function')
 
         h5_file = h5_parent_group.file
 
