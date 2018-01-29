@@ -341,7 +341,7 @@ class HDFwriter(object):
                 continue
             if print_log:
                 print('Writing attribute: {} with value: {}'.format(key, val))
-                h5_obj.attrs[key] = clean_string_att(val)
+            h5_obj.attrs[key] = clean_string_att(val)
         if print_log:
             print('Wrote all (simple) attributes to {}: {}\n'.format(obj_type, h5_obj.name.split('/')[-1]))
 
