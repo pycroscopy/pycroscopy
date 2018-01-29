@@ -134,6 +134,28 @@ class HDFwriter(object):
         """
         self.file.flush()
 
+    @staticmethod
+    def __safe_abort(h5_file):
+        """
+        Performs the operations necessary to safely close oujt the file
+        Call this function before raising exceptions so that the rest of the file is at least safe.
+
+        Parameters
+        ----------
+        h5_file : h5py.File object
+            File that needs to be closed
+
+        Notes
+        -----
+        As of now, we feel that just flushing and closing is sufficient but this centralized function can be changed as
+        newer revelations are revealed
+        """
+        if not isinstance(h5_file, h5py.File):
+            raise ValueError('h5_obj should be a h5py File object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_file)))
+        h5_file.flush()
+        h5_file.close()
+
     def write(self, data, print_log=False):
         """
         Writes data into the hdf5 file and assigns data attributes such as region references.
@@ -248,12 +270,16 @@ class HDFwriter(object):
         h5_new_group : h5py.Group
             The newly created group
         """
-        assert isinstance(micro_group, MicroDataGroup), 'micro_group should be a MicroDataGroup object but is ' \
-                                                        'instead of type {}'.format(type(micro_group))
-        assert isinstance(h5_parent_group, h5py.Group), 'h5_parent_group should be a h5py.Group object but is ' \
-                                                        'instead of type {}'.format(type(h5_parent_group))
+        if not isinstance(micro_group, MicroDataGroup):
+            HDFwriter.__safe_abort(h5_parent_group.file)
+            raise ValueError('micro_group should be a MicroDataGroup object but is instead of type '
+                             '{}'.format(type(micro_group)))
+        if not isinstance(h5_parent_group, h5py.Group):
+            raise ValueError('h5_parent_group should be a h5py.Group object but is instead of type '
+                             '{}'.format(type(h5_parent_group)))
 
         if micro_group.name == '':
+            HDFwriter.__safe_abort(h5_parent_group.file)
             raise ValueError('MicroDataGroup object with empty name will not be handled by this function')
 
         h5_file = h5_parent_group.file
@@ -278,8 +304,7 @@ class HDFwriter(object):
             if print_log:
                 print('Found Group already exists {}'.format(h5_new_group.name))
         except Exception:
-            h5_file.flush()
-            h5_file.close()
+            HDFwriter.__safe_abort(h5_parent_group.file)
             raise
 
         # Write attributes
@@ -303,8 +328,13 @@ class HDFwriter(object):
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
         """
-        assert isinstance(attrs, dict)
-        assert isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset))
+        if not isinstance(attrs, dict):
+            HDFwriter.__safe_abort(h5_obj.file)
+            raise ValueError('attrs should be a dictionary but is instead of type '
+                             '{}'.format(type(attrs)))
+        if not isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset)):
+            raise ValueError('h5_obj should be a h5py File, Group or Dataset object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_obj)))
 
         for key, val in attrs.items():
             if val is None:
@@ -333,8 +363,13 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        assert isinstance(microdset, MicroDataset)
-        assert type(h5_group) in [h5py.File, h5py.Group]
+        if not isinstance(microdset, MicroDataset):
+            HDFwriter.__safe_abort(h5_group.file)
+            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+                             '{}'.format(type(microdset)))
+        if not isinstance(h5_group, (h5py.Group, h5py.File)):
+            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
@@ -362,8 +397,13 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        assert isinstance(microdset, MicroDataset)
-        assert type(h5_group) in [h5py.File, h5py.Group]
+        if not isinstance(microdset, MicroDataset):
+            HDFwriter.__safe_abort(h5_group.file)
+            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+                             '{}'.format(type(microdset)))
+        if not isinstance(h5_group, (h5py.Group, h5py.File)):
+            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_dset = h5_group.create_dataset(microdset.name, microdset.maxshape,
                                           compression=microdset.compression,
@@ -389,8 +429,13 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        assert isinstance(microdset, MicroDataset)
-        assert type(h5_group) in [h5py.File, h5py.Group]
+        if not isinstance(microdset, MicroDataset):
+            HDFwriter.__safe_abort(h5_group.file)
+            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+                             '{}'.format(type(microdset)))
+        if not isinstance(h5_group, (h5py.Group, h5py.File)):
+            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         # Allow user to specify maxshape to grow in specific dimensions only
         max_shape = microdset.maxshape
@@ -424,12 +469,18 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        assert isinstance(microdset, MicroDataset)
-        assert type(h5_group) in [h5py.File, h5py.Group]
+        if not isinstance(microdset, MicroDataset):
+            HDFwriter.__safe_abort(h5_group.file)
+            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+                             '{}'.format(type(microdset)))
+        if not isinstance(h5_group, (h5py.Group, h5py.File)):
+            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_file = h5_group.file
 
         if microdset.name in h5_group.keys():
+            HDFwriter.__safe_abort(h5_file)
             raise ValueError('Dataset named {} already exists in group!'.format(h5_group[microdset.name].name))
 
         # A standardized procedure for safely creating any kind of dataset:
@@ -437,9 +488,7 @@ class HDFwriter(object):
             try:
                 h5_new_dset = build_func(h5_parent_group, microdset_obj)
             except Exception:
-                # make sure to close the file before raising the exception
-                h5_file.flush()
-                h5_file.close()
+                HDFwriter.__safe_abort(h5_file)
                 raise
             return h5_new_dset
 
@@ -479,8 +528,13 @@ class HDFwriter(object):
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
         """
-        assert isinstance(attrs, dict)
-        assert isinstance(h5_dset, h5py.Dataset)
+        if not isinstance(attrs, dict):
+            HDFwriter.__safe_abort(h5_dset.file)
+            raise ValueError('attrs should be a dictionary but is instead of type '
+                             '{}'.format(type(attrs)))
+        if not isinstance(h5_dset, h5py.Dataset):
+            raise ValueError('h5_dset should be a h5py Dataset object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         # First, set aside the complicated attribute(s)
         labels = attrs.pop('labels', None)
@@ -516,7 +570,7 @@ class HDFwriter(object):
             # Now write the list of col / row names as an attribute:
             h5_dset.attrs['labels'] = clean_string_att(headers)
         else:
-            warn('Unable to write region labels for %s' % (h5_dset.name.split('/')[-1]))
+            warn('Unable to write region references for %s' % (h5_dset.name.split('/')[-1]))
 
         if print_log:
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
@@ -536,8 +590,13 @@ class HDFwriter(object):
         print_log : Boolean (Optional. Default = False)
             Whether or not to print status messages
         """
-        assert isinstance(slices, dict)
-        assert isinstance(h5_dset, h5py.Dataset)
+        if not isinstance(slices, dict):
+            HDFwriter.__safe_abort(h5_dset.file)
+            raise ValueError('slices should be a dictionary but is instead of type '
+                             '{}'.format(type(slices)))
+        if not isinstance(h5_dset, h5py.Dataset):
+            raise ValueError('h5_dset should be a h5py.Dataset object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         if print_log:
             print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
@@ -549,10 +608,10 @@ class HDFwriter(object):
                 if print_log:
                     print('Wrote Region Reference:%s' % sl)
             else:
-                warn(
+                HDFwriter.__safe_abort(h5_dset.file)
+                raise ValueError(
                     'Region reference %s could not be written since the object size was not equal to the dimensions of'
                     ' the dataset' % sl)
-                raise ValueError
 
 
 def clean_string_att(att_val):
