@@ -280,3 +280,67 @@ class MicroDataset(MicroData):
 
     def __getitem__(self, item):
         return self.data[item]
+
+
+class EmptyMicroDataset(MicroDataset):
+
+    def __init__(self, name, maxshape, dtype=None, compression=None, chunking=None, parent=None):
+        """
+        Parameters
+        ----------
+        name : String
+            Name of the dataset
+        maxshape : tuple of ints
+            Maximum size in each axis this dataset is expected to be
+        dtype : datatype, (optional)
+            typically a datatype of a numpy array =None
+        compression : (Optional) String
+            See h5py compression. Leave as 'gzip' as a default mode of compression
+        chunking : (Optional) tuple of ints
+            Chunking in each dimension of the dataset. If not provided,
+            default chunking is used by h5py when writing this dataset
+        parent : (Optional) String
+                HDF5 path to the parent of this object. This value is overwritten
+                when this dataset is made the child of a datagroup.
+
+        Examples
+        --------
+        >>> ds_empty = EmptyMicroDataset('Empty', (128,16384), dtype=np.float16, chunking=(1,16384), compression='gzip')
+
+        """
+        super(EmptyMicroDataset, self).__init__(name, None, dtype=dtype, compression=compression, chunking=chunking,
+                                                parent=parent, resizable=False, maxshape=maxshape)
+
+
+class ExpandableMicroDataset(MicroDataset):
+
+    def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, maxshape=None):
+        """
+        Parameters
+        ----------
+        name : String
+            Name of the dataset
+        data : Object
+            See supported objects in h5py
+        dtype : datatype,
+            typically a datatype of a numpy array =None
+        compression : (Optional) String
+            See h5py compression. Leave as 'gzip' as a default mode of compression
+        chunking : (Optional) tuple of ints
+            Chunking in each dimension of the dataset. If not provided,
+            default chunking is used by h5py when writing this dataset
+        parent : (Optional) String
+                HDF5 path to the parent of this object. This value is overwritten
+                when this dataset is made the child of a datagroup.
+        maxshape : (Optional) tuple of ints
+            Maximum size in each axis this dataset is expected to be
+            if this parameter is provided, io will ONLY allocate space.
+            Make sure to specify the dtype appropriately. The provided data will be ignored
+
+        Examples
+        --------
+        >>> ds_raw_data = ExpandableMicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
+        >>>                            chunking=(1,16384), resizable=True, compression='gzip')
+        """
+        super(ExpandableMicroDataset, self).__init__(name, data, dtype=dtype, compression=compression, resizable=True,
+                                                     chunking=chunking, parent=parent, maxshape=maxshape)
