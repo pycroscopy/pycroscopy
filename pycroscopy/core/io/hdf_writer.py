@@ -187,7 +187,7 @@ class HDFwriter(object):
             try:
                 h5_parent = h5_file[data.parent]
             except KeyError:
-                raise ValueError('Parent ({}) of provided MicroDataset ({}) does not exist in the file'
+                raise KeyError('Parent ({}) of provided MicroDataset ({}) does not exist in the file'
                                  .format(data.parent, data.name))
             h5_dset = HDFwriter._create_dataset(h5_parent, data, print_log=print_log)
             return [h5_dset]
