@@ -151,7 +151,7 @@ class HDFwriter(object):
         newer revelations are revealed
         """
         if not isinstance(h5_file, h5py.File):
-            raise ValueError('h5_obj should be a h5py File object but is instead of type '
+            raise TypeError('h5_obj should be a h5py File object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_file)))
         h5_file.flush()
         h5_file.close()
@@ -272,10 +272,10 @@ class HDFwriter(object):
         """
         if not isinstance(micro_group, MicroDataGroup):
             HDFwriter.__safe_abort(h5_parent_group.file)
-            raise ValueError('micro_group should be a MicroDataGroup object but is instead of type '
+            raise TypeError('micro_group should be a MicroDataGroup object but is instead of type '
                              '{}'.format(type(micro_group)))
         if not isinstance(h5_parent_group, h5py.Group):
-            raise ValueError('h5_parent_group should be a h5py.Group object but is instead of type '
+            raise TypeError('h5_parent_group should be a h5py.Group object but is instead of type '
                              '{}'.format(type(h5_parent_group)))
 
         if micro_group.name == '':
@@ -330,10 +330,10 @@ class HDFwriter(object):
         """
         if not isinstance(attrs, dict):
             HDFwriter.__safe_abort(h5_obj.file)
-            raise ValueError('attrs should be a dictionary but is instead of type '
+            raise TypeError('attrs should be a dictionary but is instead of type '
                              '{}'.format(type(attrs)))
         if not isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset)):
-            raise ValueError('h5_obj should be a h5py File, Group or Dataset object but is instead of type '
+            raise TypeError('h5_obj should be a h5py File, Group or Dataset object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_obj)))
 
         for key, val in attrs.items():
@@ -365,10 +365,10 @@ class HDFwriter(object):
         """
         if not isinstance(microdset, MicroDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
                              '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
-            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+            raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_dset = h5_group.create_dataset(microdset.name,
@@ -399,10 +399,10 @@ class HDFwriter(object):
         """
         if not isinstance(microdset, MicroDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
                              '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
-            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+            raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_dset = h5_group.create_dataset(microdset.name, microdset.maxshape,
@@ -431,10 +431,10 @@ class HDFwriter(object):
         """
         if not isinstance(microdset, MicroDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
                              '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
-            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+            raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         # Allow user to specify maxshape to grow in specific dimensions only
@@ -471,10 +471,10 @@ class HDFwriter(object):
         """
         if not isinstance(microdset, MicroDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise ValueError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
                              '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
-            raise ValueError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
+            raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_group)))
 
         h5_file = h5_group.file
@@ -530,10 +530,10 @@ class HDFwriter(object):
         """
         if not isinstance(attrs, dict):
             HDFwriter.__safe_abort(h5_dset.file)
-            raise ValueError('attrs should be a dictionary but is instead of type '
+            raise TypeError('attrs should be a dictionary but is instead of type '
                              '{}'.format(type(attrs)))
         if not isinstance(h5_dset, h5py.Dataset):
-            raise ValueError('h5_dset should be a h5py Dataset object but is instead of type '
+            raise TypeError('h5_dset should be a h5py Dataset object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         # First, set aside the complicated attribute(s)
@@ -597,29 +597,82 @@ class HDFwriter(object):
         """
         if not isinstance(reg_ref_dict, dict):
             HDFwriter.__safe_abort(h5_dset.file)
-            raise ValueError('slices should be a dictionary but is instead of type '
+            raise TypeError('slices should be a dictionary but is instead of type '
                              '{}'.format(type(reg_ref_dict)))
         if not isinstance(h5_dset, h5py.Dataset):
-            raise ValueError('h5_dset should be a h5py.Dataset object but is instead of type '
+            raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         if print_log:
             print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
         for reg_ref_name, reg_ref_tuple in reg_ref_dict.items():
-            if isinstance(reg_ref_tuple, slice):
-                # 1D dataset
-                reg_ref_tuple = [reg_ref_tuple]
             if print_log:
                 print('About to write region reference:', reg_ref_name, ':', reg_ref_tuple)
-            if len(reg_ref_tuple) == len(h5_dset.shape):
-                h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
-                if print_log:
-                    print('Wrote Region Reference:%s' % reg_ref_name)
-            else:
+
+            reg_ref_tuple = HDFwriter.__clean_reg_ref(h5_dset, reg_ref_tuple, print_log=print_log)
+
+            h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
+
+            if print_log:
+                print('Wrote Region Reference:%s' % reg_ref_name)
+
+    @staticmethod
+    def __clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
+        """
+        Makes sure that the provided instructions for a region reference are indeed valid
+        This method has become necessary since h5py allows the writing of region references larger than the maxshape
+
+        Parameters
+        ----------
+        h5_dset : h5.Dataset instance
+            Dataset to which region references will be added as attributes
+        reg_ref_tuple : list / tuple
+            The slicing information formatted using tuples of slice objects.
+        print_log : Boolean (Optional. Default = False)
+            Whether or not to print status messages
+
+        Returns
+        -------
+        is_valid : bool
+            Whether or not this
+        """
+        if not isinstance(reg_ref_tuple, (tuple, dict, slice)):
+            HDFwriter.__safe_abort(h5_dset.file)
+            raise TypeError('slices should be a tuple, list, or slice but is instead of type '
+                             '{}'.format(type(reg_ref_tuple)))
+        if not isinstance(h5_dset, h5py.Dataset):
+            raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
+                             '{}. UNABLE to safely abort'.format(type(h5_dset)))
+
+        if isinstance(reg_ref_tuple, slice):
+            # 1D dataset
+            reg_ref_tuple = [reg_ref_tuple]
+
+        if len(reg_ref_tuple) != len(h5_dset.shape):
+            HDFwriter.__safe_abort(h5_dset.file)
+            raise ValueError('Region reference tuple did not have the same dimensions as the h5 dataset')
+
+        if print_log:
+            print('Comparing {} with h5 dataset maxshape of {}'.format(reg_ref_tuple, h5_dset.maxshape))
+
+        new_reg_refs = list()
+
+        for reg_ref_slice, max_size in zip(reg_ref_tuple, h5_dset.maxshape):
+            if not isinstance(reg_ref_slice, slice):
                 HDFwriter.__safe_abort(h5_dset.file)
-                raise ValueError(
-                    'Region reference %s could not be written since the object size was not equal to the dimensions of'
-                    ' the dataset' % reg_ref_name)
+                raise ValueError('slices should be a tuple or a list but is instead of type '
+                                 '{}'.format(type(reg_ref_slice)))
+
+            # For now we will simply make sure that the end of the slice is <= maxshape
+            if max_size is not None and reg_ref_slice.stop is not None:
+                reg_ref_slice = slice(reg_ref_slice.start, min(reg_ref_slice.stop, max_size), reg_ref_slice.step)
+
+            new_reg_refs.append(reg_ref_slice)
+
+        if print_log:
+            print('Region reference tuple now: {}'.format(new_reg_refs))
+
+        return tuple(new_reg_refs)
 
 
 def clean_string_att(att_val):
