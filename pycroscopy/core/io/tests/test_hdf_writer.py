@@ -597,6 +597,135 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_write_invalid_input(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            with self.assertRaises(TypeError):
+               _ = writer.write(np.arange(5))
+
+    def test_write_dset_under_root(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3'],
+                     'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                'odd_rows': (slice(1, None, 2), slice(None))}
+                     }
+            micro_dset = MicroDataset('test', data)
+            micro_dset.attrs = attrs.copy()
+            [h5_dset] = writer.write(micro_dset)
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            reg_ref = attrs.pop('labels')
+
+            self.assertEqual(len(h5_dset.attrs), len(attrs) + 1 + len(reg_ref))
+
+            for key, expected_val in attrs.items():
+                self.assertTrue(np.all(get_attr(h5_dset, key) == expected_val))
+
+            self.assertTrue(np.all([x in list(reg_ref.keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
+    def test_write_dset_under_existing_group(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            h5_g = writer._create_group(h5_f, MicroDataGroup('test_group'))
+
+            self.assertIsInstance(h5_g, h5py.Group)
+
+            data = np.random.rand(5, 7)
+            attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3'],
+                     'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                'odd_rows': (slice(1, None, 2), slice(None))}
+                     }
+            micro_dset = MicroDataset('test', data, parent='/test_group')
+            micro_dset.attrs = attrs.copy()
+            [h5_dset] = writer.write(micro_dset)
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            self.assertEqual(h5_dset.parent, h5_g)
+
+            reg_ref = attrs.pop('labels')
+
+            self.assertEqual(len(h5_dset.attrs), len(attrs) + 1 + len(reg_ref))
+
+            for key, expected_val in attrs.items():
+                self.assertTrue(np.all(get_attr(h5_dset, key) == expected_val))
+
+            self.assertTrue(np.all([x in list(reg_ref.keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
+    def test_write_dset_under_invalid_group(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+
+            with self.assertRaises(KeyError):
+                _ = writer.write(MicroDataset('test', np.random.rand(5, 7), parent='/does_not_exist'))
+
+        os.remove(file_path)
+
+    def test_write_root(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3']}
+
+            micro_group = MicroDataGroup('')
+            micro_group.attrs = attrs
+            writer = HDFwriter(h5_f)
+            ret_val = writer.write(micro_group)
+
+            self.assertIsInstance(ret_val, list)
+            self.assertEqual(len(ret_val), 0)
+
+            for key, expected_val in attrs.items():
+                self.assertTrue(np.all(get_attr(h5_f, key) == expected_val))
+
+        os.remove(file_path)
+
+    """       
+    def test_write_empty_group(self):
+        assert False
+                
+    def test_write_legal_tree(self):
+        assert False
+    """
+
 
 if __name__ == '__main__':
     unittest.main()
