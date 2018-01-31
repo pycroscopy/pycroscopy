@@ -138,7 +138,7 @@ class MicroDataset(MicroData):
             default chunking is used by h5py when writing this dataset
         parent : (Optional) String
                 HDF5 path to the parent of this object. This value is overwritten
-                when this dataset is made the child of a datagroup.
+                when this dataset is made the child of a datagroup. Default = under root
         resizable : Boolean (Optional. default = False)
             Whether or not this dataset is expected to be resizeable.
             Note - if the dataset is resizable the specified maxsize will be ignored. 
@@ -186,6 +186,8 @@ class MicroDataset(MicroData):
         >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
             ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
         """
+        if parent is None:
+            parent = '/'  # by default assume it is under root
 
         super(MicroDataset, self).__init__(name, parent)
 
