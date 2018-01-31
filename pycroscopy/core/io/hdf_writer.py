@@ -537,34 +537,39 @@ class HDFwriter(object):
                              '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         # First, set aside the complicated attribute(s)
-        labels = attrs.pop('labels', None)
+        labels_dict = attrs.pop('labels', None)
 
         # Next, write the simple ones using a centralized function
         HDFwriter._write_simple_attrs(h5_dset, attrs, obj_type='dataset', print_log=print_log)
 
-        if labels is None:
+        if labels_dict is None:
             if print_log:
                 print('Finished writing all attributes of dataset')
             return
 
         # Now, handle the region references attribute:
-        HDFwriter.__write_region_references(h5_dset, labels, print_log=print_log)
+        HDFwriter.__write_region_references(h5_dset, labels_dict, print_log=print_log)
         '''
         Next, write these label names as an attribute called labels
         Now make an attribute called 'labels' that is a list of strings 
         First ascertain the dimension of the slicing:
         '''
         found_dim = False
-        dimen = None
-        for dimen, slice_obj in enumerate(list(labels.values())[0]):
+        dimen_index = None
+
+        for key, val in labels_dict.items():
+            if not isinstance(val, (list, tuple)):
+                labels_dict[key] = [val]
+
+        for dimen_index, slice_obj in enumerate(list(labels_dict.values())[0]):
             # We make the assumption that checking the start is sufficient
             if slice_obj.start is not None:
                 found_dim = True
                 break
         if found_dim:
-            headers = [None] * len(labels)  # The list that will hold all the names
-            for col_name in labels.keys():
-                headers[labels[col_name][dimen].start] = col_name
+            headers = [None] * len(labels_dict)  # The list that will hold all the names
+            for col_name in labels_dict.keys():
+                headers[labels_dict[col_name][dimen_index].start] = col_name
             if print_log:
                 print('Writing header attributes: {}'.format('labels'))
             # Now write the list of col / row names as an attribute:
@@ -576,7 +581,7 @@ class HDFwriter(object):
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
     @staticmethod
-    def __write_region_references(h5_dset, slices, print_log=False):
+    def __write_region_references(h5_dset, reg_ref_dict, print_log=False):
         """
         Creates attributes of a h5py.Dataset that refer to regions in the dataset
 
@@ -584,34 +589,37 @@ class HDFwriter(object):
         ----------
         h5_dset : h5.Dataset instance
             Dataset to which region references will be added as attributes
-        slices : dict
+        reg_ref_dict : dict
             The slicing information must be formatted using tuples of slice objects.
             For example {'region_1':(slice(None, None), slice (0,1))}
         print_log : Boolean (Optional. Default = False)
             Whether or not to print status messages
         """
-        if not isinstance(slices, dict):
+        if not isinstance(reg_ref_dict, dict):
             HDFwriter.__safe_abort(h5_dset.file)
             raise ValueError('slices should be a dictionary but is instead of type '
-                             '{}'.format(type(slices)))
+                             '{}'.format(type(reg_ref_dict)))
         if not isinstance(h5_dset, h5py.Dataset):
             raise ValueError('h5_dset should be a h5py.Dataset object but is instead of type '
                              '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         if print_log:
             print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
-        for sl in slices.keys():
+        for reg_ref_name, reg_ref_tuple in reg_ref_dict.items():
+            if isinstance(reg_ref_tuple, slice):
+                # 1D dataset
+                reg_ref_tuple = [reg_ref_tuple]
             if print_log:
-                print('About to write region reference:', sl, ':', slices[sl])
-            if len(slices[sl]) == len(h5_dset.shape):
-                h5_dset.attrs[sl] = h5_dset.regionref[slices[sl]]
+                print('About to write region reference:', reg_ref_name, ':', reg_ref_tuple)
+            if len(reg_ref_tuple) == len(h5_dset.shape):
+                h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
                 if print_log:
-                    print('Wrote Region Reference:%s' % sl)
+                    print('Wrote Region Reference:%s' % reg_ref_name)
             else:
                 HDFwriter.__safe_abort(h5_dset.file)
                 raise ValueError(
                     'Region reference %s could not be written since the object size was not equal to the dimensions of'
-                    ' the dataset' % sl)
+                    ' the dataset' % reg_ref_name)
 
 
 def clean_string_att(att_val):
