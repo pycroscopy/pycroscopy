@@ -513,8 +513,7 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    """
-    def test_write_illegal_reg_ref_slice_dim_larger_than_data(self):
+    def test_write_reg_ref_slice_dim_larger_than_data(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
@@ -526,12 +525,25 @@ class TestHDFWriter(unittest.TestCase):
             attrs = {'labels': {'even_rows': (slice(0, 15, 2), slice(None)),
                                 'odd_rows': (slice(1, 15, 2), slice(None))}}
 
-            with self.assertRaises(ValueError):
-                writer._write_dset_attributes(h5_dset, attrs.copy())
+            writer._write_dset_attributes(h5_dset, attrs.copy())
+            h5_f.flush()
+
+            # two atts point to region references. one for labels
+            self.assertEqual(len(h5_dset.attrs), 1 + len(attrs['labels']))
+
+            # check if the labels attribute was written:
+
+            self.assertTrue(np.all([x in list(attrs['labels'].keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
 
         os.remove(file_path)
 
-    
+    """
     def test_write_illegal_reg_ref_not_slice_objs(self):
         # incorrect format of inputs
         assert False
