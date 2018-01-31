@@ -387,7 +387,7 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_write_legal_reg_ref_01(self):
+    def test_write_legal_reg_ref_multi_dim_data(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
@@ -418,23 +418,125 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_write_legal_reg_ref_multi_dim_data_2nd_dim(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 3)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(None), slice(0, None, 2)),
+                                'odd_rows': (slice(None), slice(1, None, 2))}}
+
+            writer._write_dset_attributes(h5_dset, attrs.copy())
+            h5_f.flush()
+
+            # two atts point to region references. one for labels
+            self.assertEqual(len(h5_dset.attrs), 1 + len(attrs['labels']))
+
+            # check if the labels attribute was written:
+
+            self.assertTrue(np.all([x in list(attrs['labels'].keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:, 0:None:2], data[:, 1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
+    def test_write_legal_reg_ref_one_dim_data(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(0, None, 2)),
+                                'odd_rows': (slice(1, None, 2))}}
+
+            writer._write_dset_attributes(h5_dset, attrs.copy())
+            h5_f.flush()
+
+            # two atts point to region references. one for labels
+            self.assertEqual(len(h5_dset.attrs), 1 + len(attrs['labels']))
+
+            # check if the labels attribute was written:
+            self.assertTrue(np.all([x in list(attrs['labels'].keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
+    def test_write_illegal_reg_ref_too_many_slices(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None), slice(None)),
+                                'odd_rows': (slice(1, None, 2), slice(None), slice(None))}}
+
+            with self.assertRaises(ValueError):
+                writer._write_dset_attributes(h5_dset, attrs.copy())
+
+        os.remove(file_path)
+
+    def test_write_illegal_reg_ref_too_few_slices(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(0, None, 2)),
+                                'odd_rows': (slice(1, None, 2))}}
+
+            with self.assertRaises(ValueError):
+                writer._write_dset_attributes(h5_dset, attrs.copy())
+
+        os.remove(file_path)
+
     """
-    def test_write_illegal_reg_ref_01(self):
-        # too many dimensions
-        assert False
+    def test_write_illegal_reg_ref_slice_dim_larger_than_data(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
 
-    def test_write_illegal_reg_ref_02(self):
-        # too few dimensions
-        assert False
+            attrs = {'labels': {'even_rows': (slice(0, 15, 2), slice(None)),
+                                'odd_rows': (slice(1, 15, 2), slice(None))}}
 
-    def test_write_illegal_reg_ref_03(self):
-        # size mismatch
-        assert False
+            with self.assertRaises(ValueError):
+                writer._write_dset_attributes(h5_dset, attrs.copy())
 
-    def test_write_illegal_reg_ref_04(self):
+        os.remove(file_path)
+
+    
+    def test_write_illegal_reg_ref_not_slice_objs(self):
         # incorrect format of inputs
         assert False
     """
+
 
 if __name__ == '__main__':
     unittest.main()
