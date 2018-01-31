@@ -560,6 +560,43 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_write_simple_atts_reg_ref_to_dset(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3'],
+                     'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                'odd_rows': (slice(1, None, 2), slice(None))}
+                     }
+
+            writer._write_dset_attributes(h5_dset, attrs.copy())
+
+            reg_ref = attrs.pop('labels')
+
+            self.assertEqual(len(h5_dset.attrs), len(attrs) + 1 + len(reg_ref))
+
+            for key, expected_val in attrs.items():
+                self.assertTrue(np.all(get_attr(h5_dset, key) == expected_val))
+
+            self.assertTrue(np.all([x in list(reg_ref.keys()) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
 
 if __name__ == '__main__':
     unittest.main()
