@@ -543,11 +543,22 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    """
     def test_write_illegal_reg_ref_not_slice_objs(self):
-        # incorrect format of inputs
-        assert False
-    """
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(0, None, 2), 15),
+                                'odd_rows': (slice(1, None, 2), 'hello')}}
+
+            with self.assertRaises(TypeError):
+                writer._write_dset_attributes(h5_dset, attrs.copy())
+
+        os.remove(file_path)
 
 
 if __name__ == '__main__':

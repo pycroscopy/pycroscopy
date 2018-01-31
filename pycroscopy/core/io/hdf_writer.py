@@ -660,7 +660,7 @@ class HDFwriter(object):
         for reg_ref_slice, max_size in zip(reg_ref_tuple, h5_dset.maxshape):
             if not isinstance(reg_ref_slice, slice):
                 HDFwriter.__safe_abort(h5_dset.file)
-                raise ValueError('slices should be a tuple or a list but is instead of type '
+                raise TypeError('slices should be a tuple or a list but is instead of type '
                                  '{}'.format(type(reg_ref_slice)))
 
             # For now we will simply make sure that the end of the slice is <= maxshape
