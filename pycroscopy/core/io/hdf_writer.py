@@ -194,18 +194,20 @@ class HDFwriter(object):
 
         assert isinstance(data, MicroDataGroup)  # just to avoid PEP8 warning
 
+        # Populating the tree structure recursively
+        ref_list = []
+
         # Figuring out if the first item in MicroDataGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
             HDFwriter._write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
             root = h5_file.name
+            ref_list.append(h5_file)
         else:
             # For a group we write it and its attributes
             h5_grp = self._create_group(h5_file[data.parent], data, print_log=print_log)
             root = h5_grp.name
-
-        # Populating the tree structure recursively
-        ref_list = []
+            ref_list.append(h5_grp)
 
         # Recursive function
         def __populate(child, parent):
