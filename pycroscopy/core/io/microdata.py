@@ -25,7 +25,7 @@ class MicroData(object):
     Generic class that is extended by the MicroDataGroup and MicroDataset objects
     """
 
-    def __init__(self, name, parent):
+    def __init__(self, name, parent, attrs=None):
         """
         Parameters
         ----------
@@ -34,9 +34,16 @@ class MicroData(object):
         parent : String
             HDF5 path to the parent of this object. Typically used when
             appending to an existing HDF5 file
+        attrs : dict (Optional). Default = None
+            Attributes of the object
         """
+        if attrs is not None:
+            if not isinstance(attrs, dict):
+                raise TypeError('attrs should be of type: dict')
+            self.attrs = attrs
+        else:
+            self.attrs = dict()
         self.name = name
-        self.attrs = dict()
         self.parent = parent
         self.indexed = False
 
@@ -48,7 +55,7 @@ class MicroDataGroup(MicroData):
     This is consistent with class hierarchy of HDF5, i.e. h5.File extends h5.Group.
     """
 
-    def __init__(self, name, parent='/'):
+    def __init__(self, name, parent='/', attrs=None, children=None):
         """
         Parameters
         ----------
@@ -58,8 +65,12 @@ class MicroDataGroup(MicroData):
             HDF5 path to the parent of this object. Typically used when
             appending to an existing HDF5 file
             Default value assumes that this group sits at the root of the file
+        attrs : dict (Optional). Default = None
+            Attributes to be attached to the h5py.Group object
+         children : MicroData or list of MicroData objects. (Optional)
+            Children can be a mixture of groups and datasets
         """
-        super(MicroDataGroup, self).__init__(name, parent)
+        super(MicroDataGroup, self).__init__(name, parent, attrs=attrs)
         self.children = list()
         self.attrs['machine_id'] = socket.getfqdn()
         self.attrs['timestamp'] = get_time_stamp()
@@ -69,7 +80,8 @@ class MicroDataGroup(MicroData):
         if name != '':
             self.indexed = self.name[-1] == '_'
 
-        pass
+        if children is not None:
+            self.add_children(children)
 
     def add_children(self, children):
         """
@@ -77,7 +89,7 @@ class MicroDataGroup(MicroData):
 
         Parameters
         ----------
-        children : list of MicroData objects
+        children : MicroData or list of MicroData objects
             Children can be a mixture of groups and datasets
 
         Returns
@@ -121,7 +133,7 @@ class MicroDataset(MicroData):
     """
 
     def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, resizable=False,
-                 maxshape=None):
+                 maxshape=None, attrs=None):
         """
         Parameters
         ----------
@@ -146,6 +158,8 @@ class MicroDataset(MicroData):
             Maximum size in each axis this dataset is expected to be
             if this parameter is provided, io will ONLY allocate space. 
             Make sure to specify the dtype appropriately. The provided data will be ignored
+        attrs : dict (Optional). Default = None
+            Attributes to be attached to the h5py.Dataset object
             
         Examples
         --------   
@@ -189,7 +203,7 @@ class MicroDataset(MicroData):
         if parent is None:
             parent = '/'  # by default assume it is under root
 
-        super(MicroDataset, self).__init__(name, parent)
+        super(MicroDataset, self).__init__(name, parent, attrs=attrs)
 
         assert isinstance(name, (str, unicode)), 'Name should be a string'
 
@@ -286,7 +300,7 @@ class MicroDataset(MicroData):
 
 class EmptyMicroDataset(MicroDataset):
 
-    def __init__(self, name, maxshape, dtype=None, compression=None, chunking=None, parent=None):
+    def __init__(self, name, maxshape, dtype=None, compression=None, chunking=None, parent=None, attrs=None):
         """
         Parameters
         ----------
@@ -304,6 +318,8 @@ class EmptyMicroDataset(MicroDataset):
         parent : (Optional) String
                 HDF5 path to the parent of this object. This value is overwritten
                 when this dataset is made the child of a datagroup.
+        attrs : dict (Optional). Default = None
+            Attributes to be attached to the h5py.Dataset object
 
         Examples
         --------
@@ -311,12 +327,12 @@ class EmptyMicroDataset(MicroDataset):
 
         """
         super(EmptyMicroDataset, self).__init__(name, None, dtype=dtype, compression=compression, chunking=chunking,
-                                                parent=parent, resizable=False, maxshape=maxshape)
+                                                parent=parent, resizable=False, maxshape=maxshape, attrs=attrs)
 
 
 class ExpandableMicroDataset(MicroDataset):
 
-    def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, maxshape=None):
+    def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, maxshape=None, attrs=None):
         """
         Parameters
         ----------
@@ -338,6 +354,8 @@ class ExpandableMicroDataset(MicroDataset):
             Maximum size in each axis this dataset is expected to be
             if this parameter is provided, io will ONLY allocate space.
             Make sure to specify the dtype appropriately. The provided data will be ignored
+        attrs : dict (Optional). Default = None
+            Attributes to be attached to the h5py.Dataset object
 
         Examples
         --------
@@ -345,4 +363,4 @@ class ExpandableMicroDataset(MicroDataset):
         >>>                            chunking=(1,16384), resizable=True, compression='gzip')
         """
         super(ExpandableMicroDataset, self).__init__(name, data, dtype=dtype, compression=compression, resizable=True,
-                                                     chunking=chunking, parent=parent, maxshape=maxshape)
+                                                     chunking=chunking, parent=parent, maxshape=maxshape, attrs=attrs)
