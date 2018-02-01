@@ -1,5 +1,6 @@
 import unittest
 import sys
+sys.path.append("../../../pycroscopy/")
 import numpy as np
 from pycroscopy import MicroDataGroup, MicroDataset
 
@@ -23,6 +24,26 @@ class TestMicroDataSet(unittest.TestCase):
         name = 'test'
         with self.assertRaises(ValueError):
             _ = MicroDataset(name, data=None)
+
+    def test_children_for_microgroup_legal(self):
+        child = MicroDataGroup('blah')
+        mg = MicroDataGroup('test_group', children=child)
+        self.assertEqual(len(mg.children), 1)
+        self.assertEqual(child, mg.children[0])
+
+    def test_children_for_microgroup_illegal(self):
+        mg = MicroDataGroup('test_group', children=np.arange(4))
+        self.assertEqual(len(mg.children), 0)
+
+    def test_attrs_for_microgroup_legal(self):
+        attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3']}
+        mg = MicroDataGroup('test_group', attrs=attrs)
+        self.assertEqual(len(mg.attrs), len(attrs))
+        for key, expected_val in attrs.items():
+            self.assertEqual(expected_val, mg.attrs[key])
 
     def test_invalid_chunking_argument_01(self):
         name = 'test'
@@ -194,11 +215,11 @@ class TestMicroDataGroup(unittest.TestCase):
         self.assertEqual(group.indexed, True)
 
     def test_add_single_child_legal_01(self):
-        group_name = 'indexed_group_'
-        group = MicroDataGroup(group_name)
         dset_name_1 = 'dset_1'
         data_1 = np.arange(3)
         dset_1 = MicroDataset(dset_name_1, data_1)
+        group_name = 'indexed_group_'
+        group = MicroDataGroup(group_name)
         group.add_children(dset_1)
         group.show_tree()
         self.assertEqual(len(group.children), 1)
