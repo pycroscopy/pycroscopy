@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Nov  3 15:07:16 2017
+
+@author: Suhas Somnath
+"""
+
 import unittest
 import os
 import h5py
