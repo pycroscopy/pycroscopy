@@ -63,7 +63,7 @@ class GIVBayesian(Process):
         self.process_name = 'Bayesian_Inference'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
-        h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0]
+        h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
 
         roll_cyc_fract = -0.25
@@ -163,8 +163,8 @@ class GIVBayesian(Process):
             print('Finished making room for the datasets. Now linking them')
 
         # Now link the datasets appropriately so that they become hubs:
-        h5_pos_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Values'])[0]
-        h5_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
+        h5_pos_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Values'])[0]
+        h5_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
 
         # Capacitance main dataset:
         link_as_main(self.h5_cap, h5_pos_inds, h5_pos_vals, h5_cap_spec_inds, h5_cap_spec_vals)

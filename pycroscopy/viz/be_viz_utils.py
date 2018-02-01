@@ -243,7 +243,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     sho_spec_dims = np.array(spec_nd.shape[1:])
     sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
 
-    h5_pos_inds = get_auxillary_datasets(h5_sho_dset, auxDataName='Position_Indices')[-1]
+    h5_pos_inds = get_auxillary_datasets(h5_sho_dset, aux_dset_name='Position_Indices')[-1]
     pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
     pos_labels = get_attr(h5_pos_inds, 'labels')
@@ -396,13 +396,13 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     """
     cmap = get_cmap_object(cmap)
 
-    h5_pos_inds = get_auxillary_datasets(h5_main, auxDataName='Position_Indices')[-1]
+    h5_pos_inds = get_auxillary_datasets(h5_main, aux_dset_name='Position_Indices')[-1]
     pos_sort = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
     pos_labels = np.array(get_attr(h5_pos_inds, 'labels'))[pos_sort]
 
-    h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName='Spectroscopic_Values')[-1]
-    h5_spec_inds = get_auxillary_datasets(h5_main, auxDataName='Spectroscopic_Indices')[-1]
+    h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name='Spectroscopic_Values')[-1]
+    h5_spec_inds = get_auxillary_datasets(h5_main, aux_dset_name='Spectroscopic_Indices')[-1]
     spec_sort = get_sort_order(h5_spec_inds)
     spec_dims = get_dimensionality(h5_spec_inds, spec_sort)
     spec_labels = np.array(get_attr(h5_spec_inds, 'labels'))[spec_sort]
@@ -606,11 +606,11 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     h5_projected_loops = h5_loop_guess.parent['Projected_Loops']
     h5_proj_spec_inds = get_auxillary_datasets(h5_projected_loops,
-                                               auxDataName='Spectroscopic_Indices')[-1]
+                                               aux_dset_name='Spectroscopic_Indices')[-1]
     h5_proj_spec_vals = get_auxillary_datasets(h5_projected_loops,
-                                               auxDataName='Spectroscopic_Values')[-1]
+                                               aux_dset_name='Spectroscopic_Values')[-1]
     h5_pos_inds = get_auxillary_datasets(h5_projected_loops,
-                                         auxDataName='Position_Indices')[-1]
+                                         aux_dset_name='Position_Indices')[-1]
     pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
     pos_labels = get_attr(h5_pos_inds, 'labels')

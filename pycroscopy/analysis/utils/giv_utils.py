@@ -333,8 +333,8 @@ def plot_bayesian_spot_from_h5(h5_bayesian_grp, h5_resh, pix_ind, **kwargs):
     h5_i_corrected = h5_bayesian_grp['Corrected_Current']
 
     i_meas = np.squeeze(h5_resh[pix_ind])
-    orig_bias = np.squeeze(get_auxillary_datasets(h5_resh, auxDataName=['Spectroscopic_Values'])[0])
-    h5_pos = get_auxillary_datasets(h5_resh, auxDataName=['Position_Indices'])[0]
+    orig_bias = np.squeeze(get_auxillary_datasets(h5_resh, aux_dset_name=['Spectroscopic_Values'])[0])
+    h5_pos = get_auxillary_datasets(h5_resh, aux_dset_name=['Position_Indices'])[0]
 
     resistance = h5_resistance[pix_ind]
     i_correct = h5_i_corrected[pix_ind]

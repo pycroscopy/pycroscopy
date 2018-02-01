@@ -184,8 +184,8 @@ class SignalFilter(Process):
 
         self.hot_inds = None
 
-        h5_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
-        h5_pos_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Values'])[0]
+        h5_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
+        h5_pos_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Values'])[0]
 
         if self.write_condensed:
             self.hot_inds = np.where(self.composite_filter > 0)[0]

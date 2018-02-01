@@ -98,7 +98,7 @@ class BESHOfitter(Fitter):
         # Reference linking before actual fitting
         link_h5_objects_as_attrs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
         # Linking ancillary position datasets:
-        aux_dsets = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
+        aux_dsets = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices', 'Position_Values'])
         link_h5_objects_as_attrs(self.h5_guess, aux_dsets)
 
         copy_region_refs(self.h5_main, self.h5_guess)
@@ -443,7 +443,7 @@ def is_reshapable(h5_main, step_start_inds=None):
         Whether or not the number of bins per step are constant in this dataset
     """
     if step_start_inds is None:
-        h5_spec_inds = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        h5_spec_inds = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
         step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
     # Adding the size of the main dataset as the last (virtual) step
     step_start_inds = np.hstack((step_start_inds, h5_main.shape[1]))
