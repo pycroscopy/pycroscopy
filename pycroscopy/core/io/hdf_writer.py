@@ -284,16 +284,23 @@ class HDFwriter(object):
             HDFwriter.__safe_abort(h5_parent_group.file)
             raise ValueError('MicroDataGroup object with empty name will not be handled by this function')
 
-        h5_file = h5_parent_group.file
-
         # First complete the name of the group by adding the index suffix
         if micro_group.indexed:
-            previous = np.where([micro_group.name in key for key in h5_parent_group.keys()])[0]
-            if len(previous) == 0:
+            temp = [key for key in h5_parent_group.keys()]
+            if print_log:
+                print('Looking for group names starting with {} in parent containing items: '
+                      '{}'.format(micro_group.name, temp))
+            previous_indices = []
+            for item_name in temp:
+                if isinstance(h5_parent_group[item_name], h5py.Group) and item_name.startswith(micro_group.name):
+                    previous_indices.append(int(item_name.replace(micro_group.name, '')))
+            previous_indices = np.sort(previous_indices)
+            if print_log:
+                print('indices of existing groups with the same prefix: {}'.format(previous_indices))
+            if len(previous_indices) == 0:
                 index = 0
             else:
-                last = h5_parent_group.keys()[previous[-1]]
-                index = int(last.split('_')[-1]) + 1
+                index = previous_indices[-1] + 1
             micro_group.name += '{:03d}'.format(index)
 
         # Now, try to write the group
