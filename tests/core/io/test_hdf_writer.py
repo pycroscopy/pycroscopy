@@ -4,11 +4,11 @@ import h5py
 import numpy as np
 
 import sys
-sys.path.append("../../../")
+sys.path.append("../../../pycroscopy/")
 from pycroscopy import MicroDataGroup, MicroDataset
 from pycroscopy import HDFwriter
 from pycroscopy.core.io.hdf_writer import clean_string_att
-from pycroscopy.core.io.hdf_utils import get_attr
+from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
 
 
 class TestHDFWriter(unittest.TestCase):
@@ -708,23 +708,182 @@ class TestHDFWriter(unittest.TestCase):
             micro_group = MicroDataGroup('')
             micro_group.attrs = attrs
             writer = HDFwriter(h5_f)
-            ret_val = writer.write(micro_group)
+            [ret_val] = writer.write(micro_group)
 
-            self.assertIsInstance(ret_val, list)
-            self.assertEqual(len(ret_val), 0)
+            self.assertIsInstance(ret_val, h5py.File)
+            self.assertEqual(h5_f, ret_val)
 
             for key, expected_val in attrs.items():
                 self.assertTrue(np.all(get_attr(h5_f, key) == expected_val))
 
         os.remove(file_path)
 
-    """       
-    def test_write_empty_group(self):
-        assert False
-                
-    def test_write_legal_tree(self):
-        assert False
-    """
+    def test_write_single_group(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            attrs = {'att_1': 'string_val',
+                     'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4],
+                     'att_4': ['str_1', 'str_2', 'str_3']}
+
+            micro_group = MicroDataGroup('Test_')
+            micro_group.attrs = attrs
+            writer = HDFwriter(h5_f)
+            [h5_group] = writer.write(micro_group)
+
+            for key, expected_val in attrs.items():
+                self.assertTrue(np.all(get_attr(h5_group, key) == expected_val))
+
+        os.remove(file_path)
+
+    def test_group_indexing_sequential(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            micro_group_0 = MicroDataGroup('Test_', attrs={'att_1': 'string_val', 'att_2': 1.2345})
+            [h5_group_0] = writer.write(micro_group_0)
+
+            self.assertIsInstance(h5_group_0, h5py.Group)
+            self.assertEqual(h5_group_0.name, '/Test_000')
+            for key, expected_val in micro_group_0.attrs.items():
+                self.assertTrue(np.all(get_attr(h5_group_0, key) == expected_val))
+
+            micro_group_1 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
+            [h5_group_1] = writer.write(micro_group_1)
+
+            self.assertIsInstance(h5_group_1, h5py.Group)
+            self.assertEqual(h5_group_1.name, '/Test_001')
+            for key, expected_val in micro_group_1.attrs.items():
+                self.assertTrue(np.all(get_attr(h5_group_1, key) == expected_val))
+
+    def test_group_indexing_simultaneous(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            micro_group_1 = MicroDataGroup('Test_', attrs = {'att_1': 'string_val', 'att_2': 1.2345})
+            micro_group_2 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
+            root_group = MicroDataGroup('', children=[micro_group_1, micro_group_2])
+
+            writer = HDFwriter(h5_f)
+            h5_refs_list = writer.write(root_group, print_log=True)
+
+            [h5_group_1] = get_h5_obj_refs(['Test_001'], h5_refs_list)
+            [h5_group_0] = get_h5_obj_refs(['Test_000'], h5_refs_list)
+
+            self.assertEqual(h5_group_0, h5py.Group)
+            self.assertEqual(h5_group_1, h5py.Group)
+
+
+
+        os.remove(file_path)
+
+    def test_write_simple_tree(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            inner_dset_data = np.random.rand(5, 7)
+            inner_dset_attrs = {'att_1': 'string_val',
+                                'att_2': 1.2345,
+                                'att_3': [1, 2, 3, 4],
+                                'att_4': ['str_1', 'str_2', 'str_3'],
+                                'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                           'odd_rows': (slice(1, None, 2), slice(None))}
+                                }
+            inner_dset = MicroDataset('inner_dset', inner_dset_data)
+            inner_dset.attrs = inner_dset_attrs.copy()
+
+            attrs_inner_grp = {'att_1': 'string_val',
+                               'att_2': 1.2345,
+                               'att_3': [1, 2, 3, 4],
+                               'att_4': ['str_1', 'str_2', 'str_3']}
+            inner_group = MicroDataGroup('indexed_inner_group_')
+            inner_group.attrs = attrs_inner_grp
+            inner_group.add_children(inner_dset)
+
+            outer_dset_data = np.random.rand(5, 7)
+            outer_dset_attrs = {'att_1': 'string_val',
+                                'att_2': 1.2345,
+                                'att_3': [1, 2, 3, 4],
+                                'att_4': ['str_1', 'str_2', 'str_3'],
+                                'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                           'odd_rows': (slice(1, None, 2), slice(None))}
+                                }
+            outer_dset = MicroDataset('test', outer_dset_data, parent='/test_group')
+            outer_dset.attrs = outer_dset_attrs.copy()
+
+            attrs_outer_grp = {'att_1': 'string_val',
+                               'att_2': 1.2345,
+                               'att_3': [1, 2, 3, 4],
+                               'att_4': ['str_1', 'str_2', 'str_3']}
+            outer_group = MicroDataGroup('unindexed_outer_group')
+            outer_group.attrs = attrs_outer_grp
+            outer_group.add_children([inner_group, outer_dset])
+
+            writer = HDFwriter(h5_f)
+            h5_refs_list = writer.write(outer_group)
+
+            # I don't know of a more elegant way to do this:
+            [h5_outer_dset] = get_h5_obj_refs([outer_dset.name], h5_refs_list)
+            [h5_inner_dset] = get_h5_obj_refs([inner_dset.name], h5_refs_list)
+            [h5_outer_group] = get_h5_obj_refs([outer_group.name], h5_refs_list)
+            [h5_inner_group] = get_h5_obj_refs(['indexed_inner_group_000'], h5_refs_list)
+
+            self.assertIsInstance(h5_outer_dset, h5py.Dataset)
+            self.assertIsInstance(h5_inner_dset, h5py.Dataset)
+            self.assertIsInstance(h5_outer_group, h5py.Group)
+            self.assertIsInstance(h5_inner_group, h5py.Group)
+
+            # check assertions for the inner dataset first
+            self.assertEqual(h5_inner_dset.parent, h5_inner_group)
+
+            reg_ref = inner_dset_attrs.pop('labels')
+
+            self.assertEqual(len(h5_inner_dset.attrs), len(inner_dset_attrs) + 1 + len(reg_ref))
+
+            for key, expected_val in inner_dset_attrs.items():
+                self.assertTrue(np.all(get_attr(h5_inner_dset, key) == expected_val))
+
+            self.assertTrue(np.all([x in list(reg_ref.keys()) for x in get_attr(h5_inner_dset, 'labels')]))
+
+            expected_data = [inner_dset_data[:None:2], inner_dset_data[1:None:2]]
+            written_data = [h5_inner_dset[h5_inner_dset.attrs['even_rows']], h5_inner_dset[h5_inner_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+            # check assertions for the inner data group next:
+            self.assertEqual(h5_inner_group.parent, h5_outer_group)
+            for key, expected_val in attrs_inner_grp.items():
+                self.assertTrue(np.all(get_attr(h5_inner_group, key) == expected_val))
+
+            # check the outer dataset next:
+            self.assertEqual(h5_outer_dset.parent, h5_outer_group)
+
+            reg_ref = outer_dset_attrs.pop('labels')
+
+            self.assertEqual(len(h5_outer_dset.attrs), len(outer_dset_attrs) + 1 + len(reg_ref))
+
+            for key, expected_val in outer_dset_attrs.items():
+                self.assertTrue(np.all(get_attr(h5_outer_dset, key) == expected_val))
+
+            self.assertTrue(np.all([x in list(reg_ref.keys()) for x in get_attr(h5_outer_dset, 'labels')]))
+
+            expected_data = [outer_dset_data[:None:2], outer_dset_data[1:None:2]]
+            written_data = [h5_outer_dset[h5_outer_dset.attrs['even_rows']],
+                            h5_outer_dset[h5_outer_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+            # Finally check the outer group:
+            self.assertEqual(h5_outer_group.parent, h5_f)
+            for key, expected_val in attrs_outer_grp.items():
+                self.assertTrue(np.all(get_attr(h5_outer_group, key) == expected_val))
+
+        os.remove(file_path)
 
 
 if __name__ == '__main__':
