@@ -99,7 +99,7 @@ def get_all_main(parent, verbose=False):
     return main_list
 
 
-def get_auxillary_datasets(parent_data, auxDataName=None):
+def get_auxillary_datasets(parent_data, aux_dset_name=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
@@ -107,29 +107,27 @@ def get_auxillary_datasets(parent_data, auxDataName=None):
     ----------
     parent_data : h5py.Dataset
         Dataset object reference.
-    auxDataName : str or list of strings, optional, default = all (DataSet.attrs).
+    aux_dset_name : str or list of strings, optional, default = all (DataSet.attrs).
         Name of auxiliary Dataset objects to return.
 
     Returns
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
-    if auxDataName is None:
-        auxDataName = parent_data.attrs.keys()
-    elif type(auxDataName) not in [list, tuple, set]:
-        auxDataName = [auxDataName]  # typically a single string
+    if aux_dset_name is None:
+        aux_dset_name = parent_data.attrs.keys()
+    elif type(aux_dset_name) not in [list, tuple, set]:
+        aux_dset_name = [aux_dset_name]  # typically a single string
     data_list = list()
     try:
         file_ref = parent_data.file
-        for auxName in auxDataName:
+        for auxName in aux_dset_name:
             ref = parent_data.attrs[auxName]
             if isinstance(ref, h5py.Reference) and isinstance(file_ref[ref], h5py.Dataset):
                 data_list.append(file_ref[ref])
     except KeyError:
         warn('%s is not an attribute of %s'
              % (str(auxName), parent_data.name))
-    except:
-        raise
 
     return data_list
 
@@ -475,7 +473,7 @@ def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
         elif isinstance(h5_ref, h5py.Dataset):
             h5_dset.attrs[ref_name] = h5_ref.ref
         elif h5_main is not None:
-            h5_anc = get_auxillary_datasets(h5_main, auxDataName=[ref_name])
+            h5_anc = get_auxillary_datasets(h5_main, aux_dset_name=[ref_name])
             if len(h5_anc) == 1:
                 link_h5_obj_as_alias(h5_dset, h5_anc[0], ref_name)
         else:

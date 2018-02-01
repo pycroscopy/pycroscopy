@@ -153,9 +153,9 @@ class BELoopFitter(Fitter):
         '''
         Get the Spectroscopic and Position datasets from `self.h5_main`
         '''
-        self._sho_spec_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-        self._sho_spec_vals = get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
-        self._sho_pos_inds = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices'])[0]
+        self._sho_spec_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
+        self._sho_spec_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
+        self._sho_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
 
         '''
         Find the Spectroscopic index for the DC_Offset
@@ -482,7 +482,7 @@ class BELoopFitter(Fitter):
         h5_loop_met_spec_vals = get_h5_obj_refs(['Loop_Metrics_Values'], h5_proj_grp_refs)[0]
         self._h5_group = h5_loop_met_spec_vals.parent
 
-        h5_pos_dsets = get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices',
+        h5_pos_dsets = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices',
                                                              'Position_Values'])
         # do linking here
         # first the positions

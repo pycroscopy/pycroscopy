@@ -1343,13 +1343,13 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        spec_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        spec_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
         self.N_spectral_steps = np.shape(spec_ind_mat)[0]
 
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = get_auxillary_datasets(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Frequencies'])[0]
         x_hist = np.array(spec_ind_mat)
 
         self.N_bins = np.size(freqs_mat)
@@ -1428,8 +1428,8 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        step_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['UDVS_Indices'])[0].value
-        spec_ind_mat = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0].value
+        step_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['UDVS_Indices'])[0].value
+        spec_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0].value
         self.N_spectral_steps = np.size(step_ind_mat)
 
         active_udvs_steps = np.unique(step_ind_mat[active_spec_steps])
@@ -1438,7 +1438,7 @@ class BEHistogram:
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = get_auxillary_datasets(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Frequencies'])[0]
         x_hist = np.array([spec_ind_mat[0], step_ind_mat], dtype=np.int32)
 
         self.N_bins = np.size(freqs_mat)
@@ -1670,7 +1670,7 @@ def getActiveUDVSsteps(h5_raw):
     steps : 1D numpy array
         Active UDVS steps
     """
-    udvs_step_vec = get_auxillary_datasets(h5_raw, auxDataName=['UDVS_Indices'])[0].value
+    udvs_step_vec = get_auxillary_datasets(h5_raw, aux_dset_name=['UDVS_Indices'])[0].value
     return np.unique(udvs_step_vec)
 
 
@@ -1759,7 +1759,7 @@ def getForExcitWfm(h5_main, h5_other, wave_type):
     freq_vec : 1D numpy array
         data specific to specified excitation waveform
     """
-    h5_bin_wfm_type = get_auxillary_datasets(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
+    h5_bin_wfm_type = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Wfm_Type'])[0]
     inds = np.where(h5_bin_wfm_type.value == wave_type)[0]
     return h5_other[slice(inds[0], inds[-1] + 1)]
 
@@ -1877,7 +1877,7 @@ def isSimpleDataset(h5_main, isBEPS=True):
         else:
             # Could be user defined or some other kind I am not aware of
             # In many cases, some of these datasets could also potentially be simple datasets
-            ds_udvs = get_auxillary_datasets(h5_main, auxDataName=['UDVS'])[0]
+            ds_udvs = get_auxillary_datasets(h5_main, aux_dset_name=['UDVS'])[0]
             excit_wfms = ds_udvs[ds_udvs.attrs.get('wave_mod')]
             wfm_types = np.unique(excit_wfms)
             if len(wfm_types) == 1:
@@ -1891,7 +1891,7 @@ def isSimpleDataset(h5_main, isBEPS=True):
                     # eg - excitaiton waveforms 1, 2, 3 NOT -1, +1
                     return False
                 # In this case a single excitation waveform with forward and reverse was used.
-                h5_bin_wfm_type = get_auxillary_datasets(h5_main, auxDataName=['Bin_Wfm_Type'])[0]
+                h5_bin_wfm_type = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Wfm_Type'])[0]
                 # Now for each wfm type, count number of bins.
                 wfm_bin_count = []
                 for wfm in wfm_types:

@@ -238,8 +238,8 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
 
     num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
-    h5_spec_vals = get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-    h5_pos_vals = get_auxillary_datasets(h5_main, auxDataName=['Position_Values'])[0]
+    h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
+    h5_pos_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Position_Values'])[0]
     single_AO = h5_spec_vals[:, :pts_per_cycle]
 
     ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
