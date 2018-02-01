@@ -745,6 +745,8 @@ class TestHDFWriter(unittest.TestCase):
             micro_group_0 = MicroDataGroup('Test_', attrs={'att_1': 'string_val', 'att_2': 1.2345})
             [h5_group_0] = writer.write(micro_group_0)
 
+            _ = writer.write(MicroDataGroup('blah'))
+
             self.assertIsInstance(h5_group_0, h5py.Group)
             self.assertEqual(h5_group_0.name, '/Test_000')
             for key, expected_val in micro_group_0.attrs.items():
@@ -758,24 +760,32 @@ class TestHDFWriter(unittest.TestCase):
             for key, expected_val in micro_group_1.attrs.items():
                 self.assertTrue(np.all(get_attr(h5_group_1, key) == expected_val))
 
+        os.remove(file_path)
+
     def test_group_indexing_simultaneous(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
-            micro_group_1 = MicroDataGroup('Test_', attrs = {'att_1': 'string_val', 'att_2': 1.2345})
-            micro_group_2 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
-            root_group = MicroDataGroup('', children=[micro_group_1, micro_group_2])
+            micro_group_0 = MicroDataGroup('Test_', attrs = {'att_1': 'string_val', 'att_2': 1.2345})
+            micro_group_1 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
+            root_group = MicroDataGroup('', children=[MicroDataGroup('blah'), micro_group_0,
+                                                      MicroDataGroup('meh'), micro_group_1])
 
             writer = HDFwriter(h5_f)
-            h5_refs_list = writer.write(root_group, print_log=True)
+            h5_refs_list = writer.write(root_group)
 
             [h5_group_1] = get_h5_obj_refs(['Test_001'], h5_refs_list)
             [h5_group_0] = get_h5_obj_refs(['Test_000'], h5_refs_list)
 
-            self.assertEqual(h5_group_0, h5py.Group)
-            self.assertEqual(h5_group_1, h5py.Group)
+            self.assertIsInstance(h5_group_0, h5py.Group)
+            self.assertEqual(h5_group_0.name, '/Test_000')
+            for key, expected_val in micro_group_0.attrs.items():
+                self.assertTrue(np.all(get_attr(h5_group_0, key) == expected_val))
 
-
+            self.assertIsInstance(h5_group_1, h5py.Group)
+            self.assertEqual(h5_group_1.name, '/Test_001')
+            for key, expected_val in micro_group_1.attrs.items():
+                self.assertTrue(np.all(get_attr(h5_group_1, key) == expected_val))
 
         os.remove(file_path)
 
