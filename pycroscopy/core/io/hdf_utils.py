@@ -10,8 +10,10 @@ import sys
 import h5py
 import collections
 from warnings import warn
+from collections import Iterable
 import numpy as np
 from .microdata import MicroDataset
+from .pycro_data import PycroDataset
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -99,13 +101,13 @@ def get_all_main(parent, verbose=False):
     return main_list
 
 
-def get_auxillary_datasets(parent_data, aux_dset_name=None):
+def get_auxillary_datasets(h5_object, aux_dset_name=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
 
     Parameters
     ----------
-    parent_data : h5py.Dataset
+    h5_object : h5py.Dataset, h5py.Group or h5py.File object
         Dataset object reference.
     aux_dset_name : str or list of strings, optional, default = all (DataSet.attrs).
         Name of auxiliary Dataset objects to return.
@@ -114,20 +116,24 @@ def get_auxillary_datasets(parent_data, aux_dset_name=None):
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
+    assert isinstance(h5_object, (h5py.Dataset, h5py.Group, h5py.File))
+    if aux_dset_name is not None:
+        assert isinstance(aux_dset_name, (list, tuple, str, unicode))
+
     if aux_dset_name is None:
-        aux_dset_name = parent_data.attrs.keys()
+        aux_dset_name = h5_object.attrs.keys()
     elif type(aux_dset_name) not in [list, tuple, set]:
         aux_dset_name = [aux_dset_name]  # typically a single string
     data_list = list()
+    curr_name = None
     try:
-        file_ref = parent_data.file
-        for auxName in aux_dset_name:
-            ref = parent_data.attrs[auxName]
-            if isinstance(ref, h5py.Reference) and isinstance(file_ref[ref], h5py.Dataset):
-                data_list.append(file_ref[ref])
+        h5_file = h5_object.file
+        for curr_name in aux_dset_name:
+            h5_ref = h5_object.attrs[curr_name]
+            if isinstance(h5_ref, h5py.Reference) and isinstance(h5_file[h5_ref], h5py.Dataset):
+                data_list.append(h5_file[h5_ref])
     except KeyError:
-        warn('%s is not an attribute of %s'
-             % (str(auxName), parent_data.name))
+        raise KeyError('%s is not an attribute of %s' % (str(curr_name), h5_object.name))
 
     return data_list
 
@@ -138,8 +144,8 @@ def get_attr(h5_object, attr_name):
 
     Parameters
     ----------
-    h5_object : h5py object
-        dataset or datagroup object
+    h5_object : h5py.Dataset, h5py.Group or h5py.File object
+        object whose attribute is desired
     attr_name : str
         Name of the attribute of interest
 
@@ -148,6 +154,9 @@ def get_attr(h5_object, attr_name):
     att_val : object
         value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
     """
+    assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
+    assert isinstance(attr_name, (str, unicode))
+
     att_val = h5_object.attrs.get(attr_name)
     if att_val is None:
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
@@ -163,13 +172,13 @@ def get_attr(h5_object, attr_name):
     return att_val
 
 
-def get_attributes(parent_data, attr_names=None):
+def get_attributes(h5_object, attr_names=None):
     """
     Returns attribute associated with some DataSet.
 
     Parameters
     ----------
-    parent_data : h5py.Dataset
+    h5_object : h5py.Dataset
         Dataset object reference.
     attr_names : string or list of strings, optional, default = all (DataSet.attrs).
         Name of attribute object to return.
@@ -178,22 +187,23 @@ def get_attributes(parent_data, attr_names=None):
     -------
     Dictionary containing (name,value) pairs of attributes
     """
-    if attr_names is None:
-        attr_names = parent_data.attrs.keys()
+    assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
+    if attr_names is not None:
+        assert isinstance(attr_names, (str, unicode, list, tuple))
 
-    if type(attr_names) == str:
+    if attr_names is None:
+        attr_names = h5_object.attrs.keys()
+
+    if isinstance(attr_names, (str, unicode)):
         attr_names = [attr_names]
 
     att_dict = {}
 
     for attr in attr_names:
         try:
-            att_dict[attr] = get_attr(parent_data, attr)
+            att_dict[attr] = get_attr(h5_object, attr)
         except KeyError:
-            warn('%s is not an attribute of %s'
-                 % (str(attr), parent_data.name))
-        except:
-            raise
+            raise KeyError('%s is not an attribute of %s' % (str(attr), h5_object.name))
 
     return att_dict
 
@@ -215,17 +225,20 @@ def get_h5_obj_refs(obj_names, h5_refs):
     found_objects : List of HDF5 dataset references
         Corresponding references
     """
-    from .pycro_data import PycroDataset
+    assert isinstance(obj_names, (list, tuple))
+    assert isinstance(h5_refs, (list, tuple))
+
     found_objects = []
-    for ds_name in obj_names:
-        for dset in h5_refs:
-            if dset.name.split('/')[-1] == ds_name:
+    for target_name in obj_names:
+        for h5_object in h5_refs:
+            if not isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset)):
+                continue
+            if h5_object.name.split('/')[-1] == target_name:
                 try:
-                    found_objects.append(PycroDataset(dset))
+                    found_objects.append(PycroDataset(h5_object))
                 except TypeError:
-                    found_objects.append(dset)
-                except:
-                    raise
+                    found_objects.append(h5_object)
+
     return found_objects
 
 
@@ -234,27 +247,35 @@ def get_group_refs(group_name, h5_refs):
     Given a list of H5 references and a group name,
     this method returns H5 Datagroup object corresponding to the names.
     This function is especially useful when the suffix of the written group
-    is unknown (due to the autoindexing in ioHDF5)
+    is unknown (due to the autoindexing in HDFwriter)
 
     Parameters
     ----------
     group_name : unicode / string
-        Names of the datagroup
-    h5_refs : List of H5 dataset references
+        Name of the datagroup. If the index suffix is left out, all groups matching the basename will be returned
+    h5_refs : list
+        List of h5 object references
+
 
     Returns
     -------
-    h5_grp : HDF5 Object Reference
-        reference to group that matches the `group_name`
+    group_list : list
+        A list of h5py.Group objects whose name matched with the provided group_name
     """
+
+    assert isinstance(group_name, (str, unicode))
+    assert isinstance(h5_refs, (list, tuple))
+
     group_list = list()
-    for item in h5_refs:
-        if item.name.split('/')[-1].startswith(group_name):
-            group_list.append(item)
+    for h5_object in h5_refs:
+        if not isinstance(h5_object, h5py.Group):
+            continue
+        if h5_object.name.split('/')[-1].startswith(group_name):
+            group_list.append(h5_object)
     return group_list
 
 
-def find_dataset(h5_group, ds_name):
+def find_dataset(h5_group, dset_name):
     """
     Uses visit() to find all datasets with the desired name
 
@@ -262,7 +283,7 @@ def find_dataset(h5_group, ds_name):
     ----------
     h5_group : h5py.Group
         Group to search within for the Dataset
-    ds_name : str
+    dset_name : str
         Name of the dataset to search for
 
     Returns
@@ -271,19 +292,18 @@ def find_dataset(h5_group, ds_name):
         List of [Name, object] pairs corresponding to datasets that match `ds_name`.
 
     """
-    from .pycro_data import PycroDataset
+    assert isinstance(h5_group, (h5py.File, h5py.Group))
+    assert isinstance(dset_name, (str, unicode))
 
     # print 'Finding all instances of', ds_name
     datasets = []
 
     def __find_name(name, obj):
-        if ds_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
+        if dset_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
             try:
                 datasets.append([name, PycroDataset(obj)])
             except TypeError:
                 datasets.append([name, obj])
-            except:
-                raise
         return
 
     h5_group.visititems(__find_name)
@@ -293,7 +313,7 @@ def find_dataset(h5_group, ds_name):
 
 def find_results_groups(h5_main, tool_name):
     """
-    Given a dataset and a tool name, return the list of all groups
+    Finds a list of all groups containing results of the process of name tool_name being applied to the dataset
 
     Parameters
     ----------
@@ -307,16 +327,19 @@ def find_results_groups(h5_main, tool_name):
     groups : list of references to h5 group objects
         groups whose name contains the tool name and the dataset name
     """
+    assert isinstance(h5_main, h5py.Dataset)
+    assert isinstance(tool_name, (str, unicode))
+
     dset_name = h5_main.name.split('/')[-1]
-    parent_grp = h5_main.parent
+    h5_parent_group = h5_main.parent
     groups = []
-    for key in parent_grp.keys():
+    for key in h5_parent_group.keys():
         if dset_name in key and tool_name in key:
-            groups.append(parent_grp[key])
+            groups.append(h5_parent_group[key])
     return groups
 
 
-def get_indices_for_region_ref(ref, h5_main, return_method='slices'):
+def get_indices_for_region_ref(h5_main, ref, return_method='slices'):
     """
     Given an hdf5 region reference and the dataset it refers to,
     return an array of indices within that dataset that
@@ -324,9 +347,10 @@ def get_indices_for_region_ref(ref, h5_main, return_method='slices'):
 
     Parameters
     ----------
-    ref : HDF5 Region Reference
     h5_main : HDF5 Dataset
         dataset that the reference can be returned from
+    ref : HDF5 Region Reference
+        Region reference object
     return_method : {'slices', 'corners', 'points'}
         slices : the reference is return as pairs of slices
 
@@ -341,6 +365,10 @@ def get_indices_for_region_ref(ref, h5_main, return_method='slices'):
         array of indices in the source dataset that ref accesses
 
     """
+    assert isinstance(h5_main, h5py.Dataset)
+    assert isinstance(ref, h5py.RegionReference)
+    if return_method is not None:
+        assert isinstance(return_method, (str, unicode))
 
     if return_method == 'points':
         def __corners_to_point_array(start, stop):
@@ -404,30 +432,27 @@ def get_indices_for_region_ref(ref, h5_main, return_method='slices'):
 
         return_func = __corners_to_slices
 
-    if isinstance(ref, h5py.RegionReference):
-        region = h5py.h5r.get_region(ref, h5_main.id)
-        reg_type = region.get_select_type()
-        if reg_type == 2:
-            """
-            Reference is hyperslabs
-            """
-            ref_inds = []
-            for start, end in region.get_select_hyper_blocklist():
-                ref_inds.append(return_func(start, end))
-            ref_inds = np.array(ref_inds).reshape(-1, len(start))
+    region = h5py.h5r.get_region(ref, h5_main.id)
+    reg_type = region.get_select_type()
+    if reg_type == 2:
+        """
+        Reference is hyperslabs
+        """
+        ref_inds = []
+        for start, end in region.get_select_hyper_blocklist():
+            ref_inds.append(return_func(start, end))
+        ref_inds = np.array(ref_inds).reshape(-1, len(start))
 
-        elif reg_type == 3:
-            """
-            Reference is single block
-            """
-            start, end = region.get_select_bounds()
+    elif reg_type == 3:
+        """
+        Reference is single block
+        """
+        start, end = region.get_select_bounds()
 
-            ref_inds = return_func(start, end)
-        else:
-            warn('No method currently exists for converting this type of reference.')
-            ref_inds = np.empty(0)
+        ref_inds = return_func(start, end)
     else:
-        raise TypeError('Input ref must be an HDF5 Region Reference')
+        warn('No method currently exists for converting this type of reference.')
+        ref_inds = np.empty(0)
 
     return ref_inds
 
@@ -466,18 +491,24 @@ def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     Either `h5_main` or `anc_refs` MUST be provided and `anc_refs` has the
     higher priority if both are present.
     """
+    assert isinstance(h5_dset, h5py.Dataset)
+    assert isinstance(anc_names, (list, tuple))
+    if h5_main is not None:
+        assert isinstance(h5_main, h5py.Dataset)
+    if anc_refs is not None:
+        assert isinstance(anc_refs, (list, tuple))
 
-    def __check_and_link_single(h5_ref, ref_name):
-        if isinstance(h5_ref, h5py.Reference):
-            h5_dset.attrs[ref_name] = h5_ref
-        elif isinstance(h5_ref, h5py.Dataset):
-            h5_dset.attrs[ref_name] = h5_ref.ref
+    def __check_and_link_single(h5_obj_ref, target_ref_name):
+        if isinstance(h5_obj_ref, h5py.Reference):
+            h5_dset.attrs[target_ref_name] = h5_obj_ref
+        elif isinstance(h5_obj_ref, h5py.Dataset):
+            h5_dset.attrs[target_ref_name] = h5_obj_ref.ref
         elif h5_main is not None:
-            h5_anc = get_auxillary_datasets(h5_main, aux_dset_name=[ref_name])
+            h5_anc = get_auxillary_datasets(h5_main, aux_dset_name=[target_ref_name])
             if len(h5_anc) == 1:
-                link_h5_obj_as_alias(h5_dset, h5_anc[0], ref_name)
+                link_h5_obj_as_alias(h5_dset, h5_anc[0], target_ref_name)
         else:
-            warnstring = '{} is not a valid h5py Reference and will be skipped.'.format(repr(h5_ref))
+            warnstring = '{} is not a valid h5py Reference and will be skipped.'.format(repr(h5_obj_ref))
             warn(warnstring)
 
     if bool(np.iterable(anc_refs) and not isinstance(anc_refs, h5py.Dataset)):
@@ -524,6 +555,9 @@ def create_region_reference(h5_main, ref_inds):
     new_ref : HDF5 Region reference
         reference in `h5_main` for the blocks of points defined by `ref_inds`
     """
+    assert isinstance(h5_main, h5py.Dataset)
+    assert isinstance(ref_inds, Iterable)
+
     h5_space = h5_main.id.get_space()
     h5_space.select_none()
 
@@ -553,6 +587,8 @@ def get_data_descriptor(h5_dset):
     descriptor : String
         string of the form 'quantity (unit)'
     """
+    assert isinstance(h5_dset, h5py.Dataset)
+
     try:
         quant = get_attr(h5_dset, 'quantity')
     except KeyError:
@@ -579,6 +615,8 @@ def get_formatted_labels(h5_dset):
     labels : list
         list of strings formatted as 'label k (unit k)'
     """
+    assert isinstance(h5_dset, h5py.Dataset)
+
     try:
         labs = get_attr(h5_dset, 'labels')
         try:
@@ -642,6 +680,12 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     generate dummy values for them.
 
     """
+    assert isinstance(h5_main, h5py.Dataset)
+    if h5_pos is not None:
+        assert isinstance(h5_pos, h5py.Dataset)
+    if h5_spec is not None:
+        assert isinstance(h5_spec, h5py.Dataset)
+
     pos_labs = np.array(['Positions'])
     spec_labs = np.array(['Spectral_Step'])
     if h5_pos is None:
@@ -660,8 +704,6 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
                     pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
                 else:
                     ds_pos = np.array(0, dtype=np.uint8).reshape(-1, 1)
-            except:
-                raise
         else:
             ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
             pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
@@ -695,8 +737,6 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
                     spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
                 else:
                     ds_spec = np.array(0, dtype=np.uint8).reshape([1, 1])
-            except:
-                raise
         else:
             ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
             spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
@@ -815,14 +855,14 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     return results
 
 
-def reshape_from_n_dims(ds_Nd, h5_pos=None, h5_spec=None):
+def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
 
     Parameters
     ----------
-    ds_Nd : numpy.array
+    data_n_dim : numpy.array
         N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
     h5_pos : HDF5 Dataset
         Position indices corresponding to rows in the final 2d array
@@ -848,12 +888,17 @@ def reshape_from_n_dims(ds_Nd, h5_pos=None, h5_spec=None):
     in order from fastest to slowest.
 
     """
+    assert isinstance(data_n_dim, np.ndarray)
+    if h5_pos is not None:
+        assert isinstance(h5_pos, h5py.Dataset)
+    if h5_spec is not None:
+        assert isinstance(h5_spec, h5py.Dataset)
 
     if h5_pos is None:
         '''
     Get the Position datasets from the references if possible
         '''
-        ds_pos = np.arange(ds_Nd.shape[0], dtype=np.uint8).reshape(-1, 1)
+        ds_pos = np.arange(data_n_dim.shape[0], dtype=np.uint8).reshape(-1, 1)
     elif isinstance(h5_pos, h5py.Dataset):
         '''
     Position Indices dataset was provided
@@ -871,7 +916,7 @@ def reshape_from_n_dims(ds_Nd, h5_pos=None, h5_spec=None):
         '''
     Get the Spectroscopic datasets from the references if possible
         '''
-        ds_spec = np.atleast_2d(np.arange(ds_Nd.shape[1], dtype=np.uint8))
+        ds_spec = np.atleast_2d(np.arange(data_n_dim.shape[1], dtype=np.uint8))
 
     elif isinstance(h5_spec, h5py.Dataset):
         '''
@@ -897,18 +942,16 @@ def reshape_from_n_dims(ds_Nd, h5_pos=None, h5_spec=None):
     swap_axes = np.append(np.argsort(pos_sort),
                           spec_sort[::-1] + len(pos_sort))
 
-    ds_Nd = np.transpose(ds_Nd, swap_axes)
+    data_n_dim = np.transpose(data_n_dim, swap_axes)
 
     '''
     Now we reshape the dataset based on those dimensions
     We must use the spectroscopic dimensions in reverse order
     '''
     try:
-        ds_2d = np.reshape(ds_Nd, [ds_pos.shape[0], ds_spec.shape[1]])
+        ds_2d = np.reshape(data_n_dim, [ds_pos.shape[0], ds_spec.shape[1]])
     except ValueError:
         warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
-        raise
-    except:
         raise
 
     return ds_2d, True
@@ -930,8 +973,12 @@ def get_dimensionality(ds_index, index_sort=None):
     sorted_dims : list of unsigned integers
         Dimensionality of each row in ds_index.  If index_sort is supplied, it will be in the sorted order
     """
+    assert isinstance(ds_index, (np.ndarray, h5py.Dataset))
+
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
+    else:
+        assert isinstance(index_sort, Iterable)
 
     sorted_dims = [len(np.unique(col)) for col in np.array(ds_index, ndmin=2)[index_sort]]
 
@@ -953,13 +1000,15 @@ def get_sort_order(ds_spec):
     change_sort : List of unsigned integers
         Order of rows sorted from fastest changing to slowest
     """
+    assert isinstance(ds_spec, (np.ndarray, h5py.Dataset))
+
     change_count = [len(np.where([row[i] != row[i - 1] for i in range(len(row))])[0]) for row in ds_spec]
     change_sort = np.argsort(change_count)[::-1]
 
     return change_sort
 
 
-def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_refs=False):
+def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=None, skip_refs=False):
     """
     Creates an empty dataset in the h5 file based in the same group as the provided dataset
 
@@ -982,6 +1031,13 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=dict(), skip_r
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
+    assert isinstance(source_dset, h5py.Dataset)
+    assert isinstance(dtype, (h5py.Datatype, np.dtype))
+    if new_attrs is not None:
+        assert isinstance(new_attrs, dict)
+    else:
+        new_attrs = dict()
+
     h5_group = source_dset.parent
     try:
         # Check if the dataset already exists
@@ -1017,10 +1073,10 @@ def copy_attributes(source, dest, skip_refs=True):
         Dataset to which the attributes need to be copied to
     skip_refs : bool, optional. default = True
         Whether or not the references (dataset and region) should be skipped
-    Returns
-    -------
-
     """
+    assert isinstance(source, h5py.Dataset)
+    assert isinstance(dest, h5py.Dataset)
+
     for attr in source.attrs.keys():
         atval = source.attrs[attr]
         """
@@ -1126,7 +1182,7 @@ def link_h5_objects_as_attrs(src, h5_objects):
 
     Parameters
     -----------
-    src : Reference to h5.objects
+    src : Reference to h5.object
         Reference to the the object to which attributes will be added
     h5_objects : list of references to h5.objects
         objects whose references that can be accessed from src.attrs
@@ -1135,11 +1191,13 @@ def link_h5_objects_as_attrs(src, h5_objects):
     --------
     None
     """
+    assert isinstance(src, (h5py.Dataset, h5py.File, h5py.Group))
     for itm in h5_objects:
+        assert isinstance(itm, (h5py.Dataset, h5py.File, h5py.Group))
         src.attrs[itm.name.split('/')[-1]] = itm.ref
 
 
-def link_h5_obj_as_alias(src, trg, trg_name):
+def link_h5_obj_as_alias(h5_main, h5_ancillary, alias_name):
     """
     Creates Dataset attributes that contain references to other Dataset Objects.
     This function is useful when the reference attribute must have a reserved name.
@@ -1147,14 +1205,17 @@ def link_h5_obj_as_alias(src, trg, trg_name):
 
     Parameters
     ------------
-    src : h5py.Dataset
+    h5_main : h5py.Dataset
         Reference to the the object to which attributes will be added
-    trg : h5py.Dataset
+    h5_ancillary : h5py.Dataset
         object whose reference that can be accessed from src.attrs
-    trg_name : String
+    alias_name : String
         Alias / alternate name for trg
     """
-    src.attrs[trg_name] = trg.ref
+    assert isinstance(h5_main, (h5py.Dataset, h5py.File, h5py.Group))
+    assert isinstance(h5_ancillary, (h5py.Dataset, h5py.File, h5py.Group))
+    assert isinstance(alias_name, (str, unicode))
+    h5_main.attrs[alias_name] = h5_ancillary.ref
 
 
 def copy_region_refs(h5_source, h5_target):
@@ -1168,10 +1229,6 @@ def copy_region_refs(h5_source, h5_target):
             source dataset to copy references from
     h5_target : HDF5 Dataset
             target dataset the references from h5_source are copied to
-
-    Returns
-    -------
-    None
     """
     '''
     Check both h5_source and h5_target to ensure that are Main
@@ -1240,6 +1297,9 @@ def copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_target_ind
             reference
 
     """
+    for param in [h5_source, h5_target, h5_source_inds, h5_target_inds]:
+        assert isinstance(param, h5py.Dataset)
+    assert isinstance(key, (str, unicode))
 
     '''
     Determine which dimension is missing from the target
@@ -1249,7 +1309,7 @@ def copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_target_ind
         if dim not in h5_target_inds.attrs['labels']:
             lost_dim.append(np.where(h5_source_inds.attrs['labels'] == dim)[0])
     ref = h5_source.attrs[key]
-    ref_inds = get_indices_for_region_ref(ref, h5_source, return_method='corners')
+    ref_inds = get_indices_for_region_ref(h5_source, ref, return_method='corners')
     '''
     Convert to proper spectroscopic dimensions
     First is special case for a region reference that spans the entire dataset
@@ -1305,9 +1365,12 @@ def simple_region_ref_copy(h5_source, h5_target, key):
             reference
 
     """
+    for param in [h5_source, h5_target]:
+        assert isinstance(param, h5py.Dataset)
+    assert isinstance(key, (str, unicode))
 
     ref = h5_source.attrs[key]
-    ref_inds = get_indices_for_region_ref(ref, h5_source, return_method='corners')
+    ref_inds = get_indices_for_region_ref(h5_source, ref, return_method='corners')
     ref_inds = ref_inds.reshape([-1, 2, 2])
     ref_inds[:, 1, 1] = h5_target.shape[1] - 1
     target_ref = create_region_reference(h5_target, ref_inds)
@@ -1341,6 +1404,13 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
     ds_vals : MicroDataset
             Reduces Spectroscopic values dataset
     """
+    for param in [h5_spec_inds, h5_spec_vals]:
+        assert isinstance(param, h5py.Dataset)
+    assert isinstance(keep_dim, (bool, np.ndarray))
+    assert isinstance(step_starts, (list, np.ndarray))
+    if basename is not None:
+        assert isinstance(basename, (str, unicode))
+
     if h5_spec_inds.shape[0] > 1:
         '''
         Extract all rows that we want to keep from input indices and values
@@ -1403,6 +1473,11 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
         requested `max_chunk_mem` as posible while having steps based on the input
         `unit_chunks`.
     """
+    assert isinstance(dimensions, Iterable)
+    assert isinstance(data_size, int)
+    if unit_chunks is not None:
+        assert isinstance(unit_chunks, Iterable)
+
     '''
     Ensure that dimensions is an array
     '''
@@ -1453,7 +1528,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     return chunking
 
 
-def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=[]):
+def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=None):
     """
     Links the object references to the four position and spectrosocpic datasets as
     attributes of `h5_main`
@@ -1473,12 +1548,21 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     anc_dsets : (Optional) list of h5py.Dataset objects
         Datasets that will be linked with their own names
     """
+    for param in [h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]:
+        assert isinstance(param, h5py.Dataset)
+
     link_h5_obj_as_alias(h5_main, h5_pos_inds, 'Position_Indices')
     link_h5_obj_as_alias(h5_main, h5_pos_vals, 'Position_Values')
     link_h5_obj_as_alias(h5_main, h5_spec_inds, 'Spectroscopic_Indices')
     link_h5_obj_as_alias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
-    for dset in anc_dsets:
-        link_h5_objects_as_attrs(h5_main, dset)
+
+    if anc_dsets is not None:
+        assert isinstance(anc_dsets, Iterable)
+        anc_dsets = list(anc_dsets)
+        np.all([isinstance(item, h5py.Dataset) for item in anc_dsets])
+
+        for dset in anc_dsets:
+            link_h5_objects_as_attrs(h5_main, dset)
 
 
 def copy_main_attributes(h5_main, h5_new):
@@ -1492,14 +1576,17 @@ def copy_main_attributes(h5_main, h5_new):
     h5_new : h5py.Dataset
         Dataset to which the target attributes are to be copied
     """
+    for param in [h5_main, h5_new]:
+        assert isinstance(param, h5py.Dataset)
+
     for att_name, default_val in zip(['quantity', 'units'], ['Unknown', '']):
         val = default_val
         if att_name in h5_main.attrs:
-            val = h5_main.attrs[att_name]
+            val = get_attr(h5_main, att_name)
         h5_new.attrs[att_name] = val
 
 
-def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbose=False):
+def check_for_old(h5_base, tool_name, new_parms=None, target_dset=None, verbose=False):
     """
     Check to see if the results of a tool already exist and if they 
     were performed with the same parameters.
@@ -1512,7 +1599,7 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbos
            process or analysis name
     new_parms : dict, optional
            Parameters with which this tool will be performed.
-    target_dset : str, optional, defaukt = None
+    target_dset : str, optional, default = None
             Name of the dataset whose attributes will be compared against new_parms.
             Default - checking against the group
     verbose : bool, optional, default = False
@@ -1523,6 +1610,15 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbos
     group : list
            List of all groups with parameters matching those in `new_parms`
     """
+    assert isinstance(h5_base, h5py.Dataset)
+    assert isinstance(tool_name, (str, unicode))
+    if new_parms is None:
+        new_parms = dict()
+    else:
+        assert isinstance(new_parms, dict)
+    if target_dset is not None:
+        assert isinstance(target_dset, (str, unicode))
+
     matching_groups = []
     groups = find_results_groups(h5_base, tool_name)
 
@@ -1547,7 +1643,7 @@ def check_for_old(h5_base, tool_name, new_parms=dict(), target_dset=None, verbos
     return matching_groups
 
 
-def check_for_matching_attrs(h5_obj, new_parms=dict(), verbose=False):
+def check_for_matching_attrs(h5_obj, new_parms=None, verbose=False):
     """
     Compares attributes in the given H5 object against those in the provided dictionary and returns True if
     the parameters match, and False otherwise
@@ -1565,6 +1661,12 @@ def check_for_matching_attrs(h5_obj, new_parms=dict(), verbose=False):
     -------
 
     """
+    assert isinstance(h5_obj, (h5py.Dataset, h5py.Group, h5py.File))
+    if new_parms is None:
+        new_parms = dict()
+    else:
+        assert isinstance(new_parms, dict)
+
     tests = []
     for key in new_parms.keys():
 
