@@ -166,7 +166,7 @@ class SVD(Process):
             if '_Plot_Group' not in key:
                 continue
 
-            ref_inds = get_indices_for_region_ref(self.h5_main.attrs[key], self.h5_main, return_method='corners')
+            ref_inds = get_indices_for_region_ref(self.h5_main, self.h5_main.attrs[key], return_method='corners')
             ref_inds = ref_inds.reshape([-1, 2, 2])
             ref_inds[:, 1, 0] = h5_V.shape[0] - 1
 
