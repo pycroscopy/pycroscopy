@@ -486,7 +486,7 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_generate_and_write_reg_ref(self):
+    def test_generate_and_write_reg_ref_legal(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
@@ -513,6 +513,41 @@ class TestHDFWriter(unittest.TestCase):
 
             for exp, act in zip(expected_data, written_data):
                 self.assertTrue(np.allclose(np.squeeze(exp), np.squeeze(act)))
+
+        os.remove(file_path)
+
+    def test_generate_and_write_reg_ref_illegal(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(3, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            # with self.assertWarns(UserWarning):
+            writer._write_dset_attributes(h5_dset, {'labels': ['row_1', 'row_2']})
+
+            self.assertEqual(len(h5_dset.attrs), 0)
+
+            h5_f.flush()
+
+        os.remove(file_path)
+
+    def test_generate_and_write_reg_ref_illegal(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(2, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            # with self.assertWarns(UserWarning):
+            with self.assertRaises(TypeError):
+                writer._write_dset_attributes(h5_dset, {'labels': [1, np.arange(3)]})
 
         os.remove(file_path)
 
