@@ -20,7 +20,7 @@ pycroscopy\.io\.io\_utils
       recommendCores
       transformToReal
       transformToTargetType
-      uiGetFile
+      file_dialog
    
    
 
