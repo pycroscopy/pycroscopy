@@ -13,7 +13,6 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 from .microdata import MicroDataset
-from .pycro_data import PycroDataset
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -187,6 +186,8 @@ def get_attributes(h5_object, attr_names=None):
     -------
     Dictionary containing (name,value) pairs of attributes
     """
+    from .pycro_data import PycroDataset
+
     assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
     if attr_names is not None:
         assert isinstance(attr_names, (str, unicode, list, tuple))
@@ -225,6 +226,8 @@ def get_h5_obj_refs(obj_names, h5_refs):
     found_objects : List of HDF5 dataset references
         Corresponding references
     """
+    from .pycro_data import PycroDataset
+
     assert isinstance(obj_names, (list, tuple))
     assert isinstance(h5_refs, (list, tuple))
 
@@ -292,6 +295,8 @@ def find_dataset(h5_group, dset_name):
         List of [Name, object] pairs corresponding to datasets that match `ds_name`.
 
     """
+    from .pycro_data import PycroDataset
+
     assert isinstance(h5_group, (h5py.File, h5py.Group))
     assert isinstance(dset_name, (str, unicode))
 
@@ -1548,6 +1553,7 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     anc_dsets : (Optional) list of h5py.Dataset objects
         Datasets that will be linked with their own names
     """
+    # TODO: Make sure that the dimensions of spec and pos match with the data!
     for param in [h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]:
         assert isinstance(param, h5py.Dataset)
 
