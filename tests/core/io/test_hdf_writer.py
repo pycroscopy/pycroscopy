@@ -486,6 +486,36 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_generate_and_write_reg_ref(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(2, 7)
+            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_dset, h5py.Dataset)
+
+            attrs = {'labels': ['row_1', 'row_2']}
+
+            writer._write_dset_attributes(h5_dset, attrs.copy())
+            h5_f.flush()
+
+            # two atts point to region references. one for labels
+            self.assertEqual(len(h5_dset.attrs), 1 + len(attrs['labels']))
+
+            # check if the labels attribute was written:
+
+            self.assertTrue(np.all([x in list(attrs['labels']) for x in get_attr(h5_dset, 'labels')]))
+
+            expected_data = [data[0], data[1]]
+            written_data = [h5_dset[h5_dset.attrs['row_1']], h5_dset[h5_dset.attrs['row_2']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(np.squeeze(exp), np.squeeze(act)))
+
+        os.remove(file_path)
+
     def test_write_illegal_reg_ref_too_many_slices(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
