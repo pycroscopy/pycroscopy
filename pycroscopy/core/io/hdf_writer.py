@@ -559,8 +559,12 @@ class HDFwriter(object):
         if isinstance(labels_dict, (tuple, list)):
             # What if the labels dictionary is just a list of names? make a dictionary using the names
             # This is the most that can be done.
-            labels_dict = HDFwriter.__attempt_reg_ref_build(h5_dset, labels_dict)
+            labels_dict = HDFwriter.__attempt_reg_ref_build(h5_dset, labels_dict, print_log=print_log)
 
+        if len(labels_dict) == 0:
+            if print_log:
+                warn('No region references to write')
+            return
         # Now, handle the region references attribute:
         HDFwriter.__write_region_references(h5_dset, labels_dict, print_log=print_log)
         '''
@@ -595,7 +599,7 @@ class HDFwriter(object):
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
     @staticmethod
-    def __attempt_reg_ref_build(h5_dset, dim_names):
+    def __attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
         """
 
         Parameters
@@ -604,6 +608,8 @@ class HDFwriter(object):
             Dataset to which region references need to be added as attributes
         dim_names : list or tuple
             List of the names of the region references (typically names of dimensions)
+        print_log : bool, optional. Default=False
+            Whether or not to print debugging statements
 
         Returns
         -------
@@ -628,18 +634,23 @@ class HDFwriter(object):
 
         labels_dict = dict()
         if len(dim_names) == h5_dset.shape[0]:
-            # Most likely a spectroscopic indices / values dataset
+            if print_log:
+                print('Most likely a spectroscopic indices / values dataset')
             for dim_index, curr_name in enumerate(dim_names):
                 labels_dict[curr_name] = (slice(dim_index, dim_index+1), slice(None))
         elif len(dim_names) == h5_dset.shape[1]:
-            # Most likely a position indices / values dataset
+            if print_log:
+                print('Most likely a position indices / values dataset')
             for dim_index, curr_name in enumerate(dim_names):
                 labels_dict[curr_name] = (slice(None), slice(dim_index, dim_index + 1))
 
         if len(labels_dict) > 0:
             warn('Attempted to automatically build region reference dictionary for dataset: {}.\n'
                  'Please specify region references as a tuple of slice objects for each attribute'.format(h5_dset.name))
-
+        else:
+            if print_log:
+                print('Could not build region references since dataset had shape:{} and number of region references is '
+                      '{}'.format(h5_dset.shape, len(dim_names)))
         return labels_dict
 
     @staticmethod
