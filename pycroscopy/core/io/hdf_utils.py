@@ -105,6 +105,7 @@ def get_all_main(parent, verbose=False):
 def get_auxillary_datasets(h5_object, aux_dset_name=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
+    Note - region references will be ignored.
 
     Parameters
     ----------
@@ -131,7 +132,8 @@ def get_auxillary_datasets(h5_object, aux_dset_name=None):
         h5_file = h5_object.file
         for curr_name in aux_dset_name:
             h5_ref = h5_object.attrs[curr_name]
-            if isinstance(h5_ref, h5py.Reference) and isinstance(h5_file[h5_ref], h5py.Dataset):
+            if isinstance(h5_ref, h5py.Reference) and isinstance(h5_file[h5_ref], h5py.Dataset) and not \
+               isinstance(h5_ref, h5py.RegionReference):
                 data_list.append(h5_file[h5_ref])
     except KeyError:
         raise KeyError('%s is not an attribute of %s' % (str(curr_name), h5_object.name))
@@ -258,6 +260,8 @@ def get_group_refs(group_name, h5_refs):
     ----------
     group_name : unicode / string
         Name of the datagroup. If the index suffix is left out, all groups matching the basename will be returned
+        Example - provide 'SourceDataset_ProcessName'
+        if a specific group is required, provide - 'SourceDataset_ProcessName_017'
     h5_refs : list
         List of h5 object references
 
