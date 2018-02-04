@@ -77,6 +77,8 @@ def get_all_main(parent, verbose=False):
         The datasets found in the file that meet the 'Main Data' criteria.
 
     """
+    assert isinstance(parent, (h5py.Group, h5py.File))
+
     from .pycro_data import PycroDataset
 
     main_list = list()
@@ -156,10 +158,10 @@ def get_attr(h5_object, attr_name):
     assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
     assert isinstance(attr_name, (str, unicode))
 
-    att_val = h5_object.attrs.get(attr_name)
-    if att_val is None:
+    if attr_name not in h5_object.attrs.keys():
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
 
+    att_val = h5_object.attrs.get(attr_name)
     if isinstance(att_val, np.bytes_) or isinstance(att_val, bytes):
         att_val = att_val.decode('utf-8')
 
@@ -597,7 +599,7 @@ def get_data_descriptor(h5_dset):
     try:
         quant = get_attr(h5_dset, 'quantity')
     except KeyError:
-        quant = 'Unknown quantity'
+        quant = 'unknown quantity'
     try:
         unit = get_attr(h5_dset, 'units')
     except KeyError:
@@ -971,7 +973,8 @@ def get_dimensionality(ds_index, index_sort=None):
     ds_index : 2D HDF5 Dataset or numpy array
         Row matrix of indices
     index_sort : Iterable of unsigned integers (Optional)
-        Order of rows sorted from fastest to slowest
+        Sort that can be applied to dimensionality.
+        For example - Order of rows sorted from fastest to slowest
 
     Returns
     -------
@@ -980,13 +983,18 @@ def get_dimensionality(ds_index, index_sort=None):
     """
     assert isinstance(ds_index, (np.ndarray, h5py.Dataset))
 
+    if ds_index.shape[0] > ds_index.shape[1]:
+        # must be spectroscopic like in shape (few rows, more cols)
+        ds_index = np.transpose(ds_index)
+
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
     else:
         assert isinstance(index_sort, Iterable)
+        assert np.array(index_sort).ndim == 1
+        assert np.max(index_sort) < ds_index.shape[0]
 
-    sorted_dims = [len(np.unique(col)) for col in np.array(ds_index, ndmin=2)[index_sort]]
-
+    sorted_dims = [len(np.unique(row)) for row in np.array(ds_index, ndmin=2)[index_sort]]
     return sorted_dims
 
 
@@ -1134,6 +1142,10 @@ def check_if_main(h5_main, verbose=False):
     Spectroscopic_Indices
     Spectroscopic_Values
 
+    In addition the shapes of the ancillary matricies should match with that of h5_main
+
+    In addition, it should have the 'quantity' and 'units' attributes
+
     Parameters
     ----------
     h5_main : HDF5 Dataset
@@ -1167,16 +1179,43 @@ def check_if_main(h5_main, verbose=False):
     # Check for Datasets
     dset_names = ['Position_Indices', 'Position_Values',
                   'Spectroscopic_Indices', 'Spectroscopic_Values']
-
     for name in dset_names:
         try:
-            ds = h5_main.file[h5_main.attrs[name]]
-            success = np.all([success, isinstance(ds, h5py.Dataset)])
+            h5_anc_dset = h5_main.file[h5_main.attrs[name]]
+            success = np.all([success, isinstance(h5_anc_dset, h5py.Dataset)])
         except:
             if verbose:
                 print('{} not found as an attribute of {}.'.format(name, h5_name))
-            success = False
-            break
+            return False
+
+    attr_success = np.all([att in h5_main.attrs for att in ['quantity', 'units']])
+    if not attr_success:
+        if verbose:
+            print('{} does not have the mandatory "quantity" and "units" attributes'.format(h5_main.name))
+        return False
+
+    # Blindly linking four datasets is still not sufficient. The sizes need to match:
+    anc_shape_match = list()
+    h5_pos_inds = h5_main.file[h5_main.attrs['Position_Indices']]
+    h5_pos_vals = h5_main.file[h5_main.attrs['Position_Values']]
+    anc_shape_match.append(np.all(h5_pos_vals.shape == h5_pos_inds.shape))
+    for anc_dset in [h5_pos_vals, h5_pos_inds]:
+        anc_shape_match.append(np.all(h5_main.shape[0] == anc_dset.shape[0]))
+    if not np.all(anc_shape_match):
+        if verbose:
+            print('The shapes of the Position datasets did not match with that of the main dataset')
+        return False
+
+    anc_shape_match = list()
+    h5_spec_inds = h5_main.file[h5_main.attrs['Spectroscopic_Indices']]
+    h5_spec_vals = h5_main.file[h5_main.attrs['Spectroscopic_Values']]
+    anc_shape_match.append(np.all(h5_spec_inds.shape == h5_spec_vals.shape))
+    for anc_dset in [h5_spec_inds, h5_spec_vals]:
+        anc_shape_match.append(np.all(h5_main.shape[1] == anc_dset.shape[1]))
+    if not np.all(anc_shape_match):
+        if verbose:
+            print('The shapes of the Spectroscopic datasets did not match with that of the main dataset')
+        return False
 
     return success
 
