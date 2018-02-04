@@ -395,6 +395,20 @@ class TestHDFUtils(unittest.TestCase):
             for dset in not_main_dsets:
                 self.assertFalse(hdf_utils.check_if_main(dset))
 
+    def test_get_sort_order_simple(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/Position_Indices']]
+            expected_order = [[0, 1], [0], [0, 1]]
+            for h5_dset, exp_order in zip(h5_dsets, expected_order):
+                self.assertTrue(np.all(exp_order == hdf_utils.get_sort_order(h5_dset)))
+
+    """           
+    def test_get_region_ref_indices(self):
+        assert False
+
     def test_get_all_main_legal(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
@@ -404,7 +418,7 @@ class TestHDFUtils(unittest.TestCase):
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
             for dset in main_dsets:
                 self.assertTrue(dset in expected_dsets)
-
+    """
 
 if __name__ == '__main__':
     unittest.main()

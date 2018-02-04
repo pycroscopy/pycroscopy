@@ -1019,6 +1019,10 @@ def get_sort_order(ds_spec):
     """
     assert isinstance(ds_spec, (np.ndarray, h5py.Dataset))
 
+    if ds_spec.shape[0] > ds_spec.shape[1]:
+        # must be spectroscopic like in shape (few rows, more cols)
+        ds_spec = np.transpose(ds_spec)
+
     change_count = [len(np.where([row[i] != row[i - 1] for i in range(len(row))])[0]) for row in ds_spec]
     change_sort = np.argsort(change_count)[::-1]
 
