@@ -61,7 +61,7 @@ class LabViewH5Patcher(Translator):
         Loop over the list and update the needed attributes
         '''
         raw_list = find_dataset(h5_file, 'Raw_Data')
-        for _, h5_raw in raw_list:
+        for h5_raw in raw_list:
             # Grab the channel and measurement group of the data to check some needed attributes
             h5_chan = h5_raw.parent
             try:
