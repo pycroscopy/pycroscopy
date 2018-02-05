@@ -582,11 +582,32 @@ class TestHDFUtils(unittest.TestCase):
                      'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
             self.assertTrue(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
-    def test_check_for_matching_attrs_grp_mismatched_types(self):
+    def test_check_for_matching_attrs_grp_mismatched_types_01(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_4': 'string_val'}
+            self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
+
+    def test_check_for_matching_attrs_grp_mismatched_types_02(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
+            attrs = {'att_1': ['str_1', 'str_2', 'str_3']}
+            self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
+
+    def test_check_for_matching_attrs_grp_mismatched_types_03(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
+            attrs = {'att_4': [1, 4.234, 'str_3']}
+            self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
+
+    def test_check_for_matching_attrs_grp_mismatched_types_04(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
+            attrs = {'att_4': [1, 4.234, 45]}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     """           
