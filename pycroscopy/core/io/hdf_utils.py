@@ -1902,16 +1902,23 @@ def get_source_dataset(h5_group):
 
     Returns
     -------
-    h5_source : h5py.Dataset
-
+    h5_source : Pycrodataset object
+        Main dataset from which this group was generated
     """
+    assert isinstance(h5_group, h5py.Group)
+
     from .pycro_data import PycroDataset
 
     h5_parent_group = h5_group.parent
-    h5_source = h5_parent_group[h5_group.name.split('/')[-1].split('-')[0]]
+    group_name = h5_group.name.split('/')[-1]
+    # What if the group name was not formatted according to Pycroscopy rules?
+    name_split = group_name.split('-')
+    if len(name_split) != 2:
+        raise ValueError("The provided group's name could not be split by '-' as expected in "
+                         "SourceDataset-ProcessName_000")
+    h5_source = h5_parent_group[name_split[0]]
 
-    if isinstance(h5_source, h5py.Group):
-        warn('No source dataset was found.')
-        return None
-    else:
-        return PycroDataset(h5_source)
+    if not isinstance(h5_source, h5py.Dataset):
+        raise ValueError('Source object was not a dataset!')
+
+    return PycroDataset(h5_source)

@@ -68,7 +68,8 @@ class TestHDFUtils(unittest.TestCase):
 
             group_source = MicroDataGroup('Raw_Measurement',
                                           children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
-                                                    dset_source_pos_vals, dset_source_pos_inds, dset_ancillary],
+                                                    dset_source_pos_vals, dset_source_pos_inds, dset_ancillary,
+                                                    MicroDataGroup('Misc')],
                                           attrs={'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4],
                                                  'att_4': ['str_1', 'str_2', 'str_3']})
 
@@ -101,7 +102,7 @@ class TestHDFUtils(unittest.TestCase):
             dset_results_1_main = MicroDataset('results_main', results_1_main_data,
                                                attrs={'units': 'pF', 'quantity': 'Capacitance'})
 
-            group_results_1 = MicroDataGroup(source_dset_name + '_' + tool_name + '_',
+            group_results_1 = MicroDataGroup(source_dset_name + '-' + tool_name + '_',
                                              parent=h5_source_group.name,
                                              children=[dset_results_1_main, dset_results_spec_inds,
                                                        dset_results_spec_vals],
@@ -124,7 +125,7 @@ class TestHDFUtils(unittest.TestCase):
             dset_results_2_main = MicroDataset('results_main', results_2_main_data,
                                                attrs={'units': 'pF', 'quantity': 'Capacitance'})
 
-            group_results_2 = MicroDataGroup(source_dset_name + '_' + tool_name + '_',
+            group_results_2 = MicroDataGroup(source_dset_name + '-' + tool_name + '_',
                                              parent=h5_source_group.name,
                                              children=[dset_results_2_main, dset_results_spec_inds,
                                                        dset_results_spec_vals],
@@ -182,7 +183,7 @@ class TestHDFUtils(unittest.TestCase):
         attrs = {'att_1': 'string_val', 'att_2': 1.2345,
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            h5_group = h5_f['/Raw_Measurement/source_main_Fitter_000']
+            h5_group = h5_f['/Raw_Measurement/source_main-Fitter_000']
             for key, expected_value in attrs.items():
                 self.assertTrue(np.all(hdf_utils.get_attr(h5_group, key) == expected_value))
 
@@ -192,7 +193,7 @@ class TestHDFUtils(unittest.TestCase):
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         sub_attrs = ['att_1', 'att_4', 'att_3']
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            h5_group = h5_f['/Raw_Measurement/source_main_Fitter_000']
+            h5_group = h5_f['/Raw_Measurement/source_main-Fitter_000']
             returned_attrs = hdf_utils.get_attributes(h5_group, sub_attrs)
             self.assertIsInstance(returned_attrs, dict)
             for key in sub_attrs:
@@ -203,7 +204,7 @@ class TestHDFUtils(unittest.TestCase):
         attrs = {'att_1': 'string_val', 'att_2': 1.2345,
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            h5_group = h5_f['/Raw_Measurement/source_main_Fitter_000']
+            h5_group = h5_f['/Raw_Measurement/source_main-Fitter_000']
             returned_attrs = hdf_utils.get_attributes(h5_group)
             self.assertIsInstance(returned_attrs, dict)
             for key in attrs.keys():
@@ -213,7 +214,7 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         sub_attrs = ['att_1', 'att_4', 'does_not_exist']
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            h5_group = h5_f['/Raw_Measurement/source_main_Fitter_000']
+            h5_group = h5_f['/Raw_Measurement/source_main-Fitter_000']
             with self.assertRaises(KeyError):
                 _ = hdf_utils.get_attributes(h5_group, sub_attrs)
 
@@ -277,7 +278,7 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
-                        h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/Position_Indices']]
             expected_shapes = [[7, 2],
                                [7],
@@ -289,7 +290,7 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
-                        h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/Position_Indices']]
             expected_shapes = [[2, 7],
                                [7],
@@ -304,7 +305,7 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
-                        h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/Position_Indices']]
             expected_labels = [['Bias (V)', 'Cycle ()'], ['Bias (V)'], ['X (nm)', 'Y (nm)']]
             for h5_dset, exp_labs in zip(h5_dsets, expected_labels):
@@ -323,12 +324,12 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_refs = [h5_f['/Raw_Measurement/Ancillary'],
-                       h5_f['/Raw_Measurement/source_main_Fitter_000'],
-                       h5_f['/Raw_Measurement/source_main_Fitter_001'],
-                       h5_f['/Raw_Measurement/source_main_Fitter_000/results_main']]
-            group_prefix = 'source_main_Fitter'
-            expected_objs = set([h5_f['/Raw_Measurement/source_main_Fitter_000'],
-                                 h5_f['/Raw_Measurement/source_main_Fitter_001']])
+                       h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                       h5_f['/Raw_Measurement/source_main-Fitter_001'],
+                       h5_f['/Raw_Measurement/source_main-Fitter_000/results_main']]
+            group_prefix = 'source_main-Fitter'
+            expected_objs = set([h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                                 h5_f['/Raw_Measurement/source_main-Fitter_001']])
             ret_vals = set(hdf_utils.get_group_refs(group_prefix, h5_refs))
             self.assertTrue(ret_vals == expected_objs)
 
@@ -338,7 +339,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_refs = [h5_f['/Raw_Measurement/Ancillary'],
                        h5_f,
                        np.arange(15),
-                       h5_f['/Raw_Measurement/source_main_Fitter_000/results_main']]
+                       h5_f['/Raw_Measurement/source_main-Fitter_000/results_main']]
             group_prefix = 'source_main_Blah'
             self.assertTrue(hdf_utils.get_group_refs(group_prefix, h5_refs) == [])
 
@@ -349,14 +350,14 @@ class TestHDFUtils(unittest.TestCase):
                               4.123,
                               np.arange(6),
                               h5_f['/Raw_Measurement/Position_Indices'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                               h5_f['/Raw_Measurement/Spectroscopic_Values']]
             chosen_objs = [h5_f['/Raw_Measurement/Position_Indices'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices']]
+                              h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices']]
 
-            target_ref_names = ['Position_Indices', 'source_main_Fitter_000', 'Spectroscopic_Indices']
+            target_ref_names = ['Position_Indices', 'source_main-Fitter_000', 'Spectroscopic_Indices']
 
             returned_h5_objs = hdf_utils.get_h5_obj_refs(target_ref_names, h5_obj_refs)
 
@@ -365,11 +366,11 @@ class TestHDFUtils(unittest.TestCase):
     def test_get_h5_obj_refs_same_name(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            h5_obj_refs = [h5_f['/Raw_Measurement/source_main_Fitter_001/Spectroscopic_Indices'],
-                           h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+            h5_obj_refs = [h5_f['/Raw_Measurement/source_main-Fitter_001/Spectroscopic_Indices'],
+                           h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                            h5_f['/Raw_Measurement/Spectroscopic_Values']]
-            expected_objs = [h5_f['/Raw_Measurement/source_main_Fitter_001/Spectroscopic_Indices'],
-                             h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices']]
+            expected_objs = [h5_f['/Raw_Measurement/source_main-Fitter_001/Spectroscopic_Indices'],
+                             h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices']]
 
             target_ref_names = ['Spectroscopic_Indices']
 
@@ -381,14 +382,14 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             expected_dsets = [h5_f['/Raw_Measurement/source_main'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000/results_main'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_001/results_main']]
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
             not_main_dsets = [h5_f,
                               4.123,
                               np.arange(6),
                               h5_f['/Raw_Measurement/Position_Indices'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                               h5_f['/Raw_Measurement/Spectroscopic_Values']]
             for dset in expected_dsets:
                 self.assertTrue(hdf_utils.check_if_main(dset))
@@ -399,11 +400,36 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
-                        h5_f['/Raw_Measurement/source_main_Fitter_000/Spectroscopic_Indices'],
+                        h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/Position_Indices']]
             expected_order = [[0, 1], [0], [0, 1]]
             for h5_dset, exp_order in zip(h5_dsets, expected_order):
                 self.assertTrue(np.all(exp_order == hdf_utils.get_sort_order(h5_dset)))
+
+    def test_get_sort_order_reversed(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_dsets = [np.flipud(h5_f['/Raw_Measurement/Spectroscopic_Indices']),
+                        h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
+                        np.fliplr(h5_f['/Raw_Measurement/Position_Indices'])]
+            expected_order = [[1, 0], [0], [1, 0]]
+            for h5_dset, exp_order in zip(h5_dsets, expected_order):
+                self.assertTrue(np.all(exp_order == hdf_utils.get_sort_order(h5_dset)))
+
+    def test_get_source_dataset_legal(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_groups = [h5_f['/Raw_Measurement/source_main-Fitter_000'],
+                        h5_f['/Raw_Measurement/source_main-Fitter_001']]
+            h5_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            for h5_grp in h5_groups:
+                self.assertEqual(h5_main, hdf_utils.get_source_dataset(h5_grp))
+
+    def test_get_source_dataset_illegal(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.get_source_dataset(h5_f['/Raw_Measurement/Misc'])
 
     """           
     def test_get_region_ref_indices(self):
@@ -413,8 +439,8 @@ class TestHDFUtils(unittest.TestCase):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             expected_dsets = [h5_f['/Raw_Measurement/source_main'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_000/results_main'],
-                              h5_f['/Raw_Measurement/source_main_Fitter_001/results_main']]
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
             for dset in main_dsets:
                 self.assertTrue(dset in expected_dsets)
