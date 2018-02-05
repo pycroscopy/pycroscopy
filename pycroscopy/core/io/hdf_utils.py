@@ -345,7 +345,7 @@ def find_results_groups(h5_main, tool_name):
     h5_parent_group = h5_main.parent
     groups = []
     for key in h5_parent_group.keys():
-        if dset_name in key and tool_name in key:
+        if dset_name in key and tool_name in key and isinstance(h5_parent_group[key], h5py.Group):
             groups.append(h5_parent_group[key])
     return groups
 
@@ -1714,7 +1714,8 @@ def check_for_matching_attrs(h5_obj, new_parms=None, verbose=False):
 
     Returns
     -------
-
+    tests: bool
+        Whether or not all paramters in new_parms matched with those in h5_obj's attributes
     """
     assert isinstance(h5_obj, (h5py.Dataset, h5py.Group, h5py.File))
     if new_parms is None:
@@ -1724,6 +1725,9 @@ def check_for_matching_attrs(h5_obj, new_parms=None, verbose=False):
 
     tests = []
     for key in new_parms.keys():
+
+        if verbose:
+            print('Looking for new attribute named: {}'.format(key))
 
         # HDF5 cannot store None as an attribute anyway. ignore
         if new_parms[key] is None:
@@ -1750,7 +1754,15 @@ def check_for_matching_attrs(h5_obj, new_parms=None, verbose=False):
                     print('New parm: {} \t- are of different sizes ****'.format(key))
                 tests.append(False)
             else:
-                answer = np.all(np.isclose(old_value, new_array))
+                try:
+                    answer = np.allclose(old_value, new_array)
+                except TypeError:
+                    # comes here when comparing string arrays
+                    # Not sure of a better way
+                    answer = []
+                    for old_val, new_val in zip(old_value, new_array):
+                        answer.append(old_val == new_val)
+                    answer = np.all(answer)
                 if verbose:
                     print('New parm: {} \t- match: {}'.format(key, answer))
                 tests.append(answer)
