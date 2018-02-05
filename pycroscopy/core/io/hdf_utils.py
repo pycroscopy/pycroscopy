@@ -312,9 +312,9 @@ def find_dataset(h5_group, dset_name):
     def __find_name(name, obj):
         if dset_name in name.split('/')[-1] and isinstance(obj, h5py.Dataset):
             try:
-                datasets.append([name, PycroDataset(obj)])
+                datasets.append(PycroDataset(obj))
             except TypeError:
-                datasets.append([name, obj])
+                datasets.append(obj)
         return
 
     h5_group.visititems(__find_name)
@@ -1211,7 +1211,8 @@ def check_if_main(h5_main, verbose=False):
         anc_shape_match.append(np.all(h5_main.shape[0] == anc_dset.shape[0]))
     if not np.all(anc_shape_match):
         if verbose:
-            print('The shapes of the Position datasets did not match with that of the main dataset')
+            print('The shapes of the Position indices:{}, values:{} datasets did not match with that of the main '
+                  'dataset: {}'.format(h5_pos_inds.shape, h5_pos_vals.shape, h5_main.shape))
         return False
 
     anc_shape_match = list()
@@ -1222,7 +1223,8 @@ def check_if_main(h5_main, verbose=False):
         anc_shape_match.append(np.all(h5_main.shape[1] == anc_dset.shape[1]))
     if not np.all(anc_shape_match):
         if verbose:
-            print('The shapes of the Spectroscopic datasets did not match with that of the main dataset')
+            print('The shapes of the Spectroscopic indices:{}, values:{} datasets did not match with that of the main '
+                  'dataset: {}'.format(h5_spec_inds.shape, h5_spec_vals.shape, h5_main.shape))
         return False
 
     return success
@@ -1852,6 +1854,12 @@ def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
         Dictionary containing the unit array for each dimension. The name of the dimensions are the keys.
 
     """
+    assert isinstance(h5_inds, h5py.Dataset)
+    assert isinstance(h5_vals, h5py.Dataset)
+
+    # Do we need to check that the provided inds and vals correspond to the same main dataset
+    assert h5_inds.shape == h5_vals.shape
+
     # First load to memory
     inds_mat = h5_inds[()]
     vals_mat = h5_vals[()]
@@ -1870,8 +1878,16 @@ def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
     full_dim_names = get_attr(h5_inds, 'labels')
     if dim_names is None:
         dim_names = full_dim_names
-    elif not isinstance(dim_names, list):
-        dim_names = [dim_names]
+    else:
+        if isinstance(dim_names, (str, unicode)):
+            dim_names = [dim_names]
+        assert isinstance(dim_names, (list, tuple))
+
+        # check to make sure that the dimension names exist in the datasets:
+        for dim_name in dim_names:
+            assert isinstance(dim_name, (str, unicode))
+            if dim_name not in full_dim_names:
+                raise KeyError('Dimension {} does not exist in the provided ancillary datasets'.format(dim_name))
 
     unit_values = dict()
     for dim_name in dim_names:
