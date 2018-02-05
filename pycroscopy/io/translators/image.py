@@ -187,7 +187,7 @@ class ImageTranslator(Translator):
             Check in the list to see if any match the chosen parameters.
             Return the first that matches.  Clear file if none foound.
             '''
-            for _, h5_raw in raw_list:
+            for h5_raw in raw_list:
                 h5_meas = h5_raw.parent.parent
                 old_parms = h5_meas.attrs
                 old_parms.pop('machine_id', None)
