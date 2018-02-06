@@ -1502,7 +1502,7 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
     return ds_inds, ds_vals
 
 
-def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
+def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=10240):
     """
     Calculate the chunk size for the HDF5 dataset based on the dimensions and the
     maximum chunk size in memory
@@ -1511,14 +1511,14 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     ----------
     dimensions : array_like of int
         Shape of the data to be chunked
-    data_size : int
+    dtype_byte_size : unsigned int
         Size of an entry in the data in bytes
     unit_chunks : array_like of int, optional
         Unit size of the chunking in each dimension.  Must be the same size as
         the shape of `ds_main`.  Default None, `unit_chunks` is set to 1 in all
         dimensions
     max_chunk_mem : int, optional
-        Maximum size of the chunk in memory in bytes.  Default 10240b or 10kb
+        Maximum size of the chunk in memory in bytes.  Default 10240b or 10kb per h5py recommendations
 
     Returns
     -------
@@ -1528,7 +1528,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
         `unit_chunks`.
     """
     assert isinstance(dimensions, Iterable)
-    assert isinstance(data_size, int)
+    assert isinstance(dtype_byte_size, int)
     if unit_chunks is not None:
         assert isinstance(unit_chunks, Iterable)
 
@@ -1557,7 +1557,7 @@ def calc_chunks(dimensions, data_size, unit_chunks=None, max_chunk_mem=10240):
     Loop until chunk_size is greater than the maximum chunk_mem or the chunk_size is equal to
     that of dimensions
     '''
-    while np.prod(unit_chunks) * data_size <= max_chunk_mem:
+    while np.prod(unit_chunks) * dtype_byte_size <= max_chunk_mem:
         '''
         Check if all chunk dimensions are greater or equal to the
         actual dimensions.  Exit the loop if true.
@@ -1605,6 +1605,9 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     # TODO: Make sure that the dimensions of spec and pos match with the data!
     for param in [h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]:
         assert isinstance(param, h5py.Dataset)
+
+    assert h5_pos_vals.shape == h5_pos_inds.shape
+    assert h5_spec_vals.shape == h5_spec_inds.shape
 
     link_h5_obj_as_alias(h5_main, h5_pos_inds, 'Position_Indices')
     link_h5_obj_as_alias(h5_main, h5_pos_vals, 'Position_Values')
