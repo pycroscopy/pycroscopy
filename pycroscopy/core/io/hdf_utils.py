@@ -701,8 +701,11 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
 
     if h5_pos is not None:
         assert isinstance(h5_pos, (h5py.Dataset, np.ndarray))
+        assert h5_pos.shape[0] == h5_main.shape[0]
+
     if h5_spec is not None:
         assert isinstance(h5_spec, (h5py.Dataset, np.ndarray))
+        assert h5_spec.shape[1] == h5_main.shape[1]
 
     pos_labs = np.array(['Positions'])
     spec_labs = np.array(['Spectral_Step'])
