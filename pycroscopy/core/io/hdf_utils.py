@@ -1246,8 +1246,11 @@ def link_h5_objects_as_attrs(src, h5_objects):
     None
     """
     assert isinstance(src, (h5py.Dataset, h5py.File, h5py.Group))
+    if isinstance(h5_objects, (h5py.Dataset, h5py.Group)):
+        h5_objects = [h5_objects]
+
     for itm in h5_objects:
-        assert isinstance(itm, (h5py.Dataset, h5py.File, h5py.Group))
+        assert isinstance(itm, (h5py.Dataset, h5py.Group))
         src.attrs[itm.name.split('/')[-1]] = itm.ref
 
 
@@ -1267,7 +1270,7 @@ def link_h5_obj_as_alias(h5_main, h5_ancillary, alias_name):
         Alias / alternate name for trg
     """
     assert isinstance(h5_main, (h5py.Dataset, h5py.File, h5py.Group))
-    assert isinstance(h5_ancillary, (h5py.Dataset, h5py.File, h5py.Group))
+    assert isinstance(h5_ancillary, (h5py.Dataset, h5py.Group))
     assert isinstance(alias_name, (str, unicode))
     h5_main.attrs[alias_name] = h5_ancillary.ref
 
