@@ -749,6 +749,72 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_link_h5_obj_as_alias(self):
+        file_path = 'link_as_alias.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            h5_main = writer._create_dataset(h5_f, MicroDataset('main', np.arange(5)))
+            h5_anc = writer._create_dataset(h5_f, MicroDataset('Ancillary', np.arange(3)))
+            h5_group = writer._create_group(h5_f, MicroDataGroup('Results'))
+
+            # Linking to dataset:
+            hdf_utils.link_h5_obj_as_alias(h5_main, h5_anc, 'Blah')
+            hdf_utils.link_h5_obj_as_alias(h5_main, h5_group, 'Something')
+            self.assertEqual(h5_f[h5_main.attrs['Blah']], h5_anc)
+            self.assertEqual(h5_f[h5_main.attrs['Something']], h5_group)
+
+            # Linking ot Group:
+            hdf_utils.link_h5_obj_as_alias(h5_group, h5_main, 'Center')
+            hdf_utils.link_h5_obj_as_alias(h5_group, h5_anc, 'South')
+            self.assertEqual(h5_f[h5_group.attrs['Center']], h5_main)
+            self.assertEqual(h5_f[h5_group.attrs['South']], h5_anc)
+
+            # Linking to file:
+            hdf_utils.link_h5_obj_as_alias(h5_f, h5_main, 'Paris')
+            hdf_utils.link_h5_obj_as_alias(h5_f, h5_group, 'France')
+            self.assertEqual(h5_f[h5_f.attrs['Paris']], h5_main)
+            self.assertEqual(h5_f[h5_f.attrs['France']], h5_group)
+
+            # Non h5 object
+            with self.assertRaises(AssertionError):
+                hdf_utils.link_h5_obj_as_alias(h5_group, np.arange(5), 'Center')
+
+            # H5 reference but not the object
+            with self.assertRaises(AssertionError):
+                hdf_utils.link_h5_obj_as_alias(h5_group, h5_f.attrs['Paris'], 'Center')
+
+        os.remove(file_path)
+
+    def test_link_h5_objects_as_attrs(self):
+        file_path = 'link_h5_objects_as_attrs.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+
+            writer = HDFwriter(h5_f)
+            h5_main = writer._create_dataset(h5_f, MicroDataset('main', np.arange(5)))
+            h5_anc = writer._create_dataset(h5_f, MicroDataset('Ancillary', np.arange(3)))
+            h5_group = writer._create_group(h5_f, MicroDataGroup('Results'))
+
+            hdf_utils.link_h5_objects_as_attrs(h5_f, [h5_anc, h5_main, h5_group])
+            for exp, name in zip([h5_main, h5_anc, h5_group], ['main', 'Ancillary', 'Results']):
+                self.assertEqual(exp, h5_f[h5_f.attrs[name]])
+
+            # Single object
+            hdf_utils.link_h5_objects_as_attrs(h5_main, h5_anc)
+            self.assertEqual(h5_f[h5_main.attrs['Ancillary']], h5_anc)
+
+            # Linking to a group:
+            hdf_utils.link_h5_objects_as_attrs(h5_group, [h5_anc, h5_main])
+            for exp, name in zip([h5_main, h5_anc], ['main', 'Ancillary']):
+                self.assertEqual(exp, h5_group[h5_group.attrs[name]])
+
+            with self.assertRaises(AssertionError):
+                hdf_utils.link_h5_objects_as_attrs(h5_main, np.arange(4))
+
+        os.remove(file_path)
+
 
     """  
     def test_calc_chunks(self):
