@@ -691,11 +691,18 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     generate dummy values for them.
 
     """
-    assert isinstance(h5_main, h5py.Dataset)
+
+    # TODO: sort_dims does not appear to do much. Functions as though it was always True
+
+    if h5_pos is None and h5_spec is None:
+        assert isinstance(h5_main, h5py.Dataset)
+    else:
+        assert isinstance(h5_main, (h5py.Dataset, np.ndarray))
+
     if h5_pos is not None:
-        assert isinstance(h5_pos, h5py.Dataset)
+        assert isinstance(h5_pos, (h5py.Dataset, np.ndarray))
     if h5_spec is not None:
-        assert isinstance(h5_spec, h5py.Dataset)
+        assert isinstance(h5_spec, (h5py.Dataset, np.ndarray))
 
     pos_labs = np.array(['Positions'])
     spec_labs = np.array(['Spectral_Step'])
