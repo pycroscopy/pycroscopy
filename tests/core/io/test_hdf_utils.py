@@ -610,8 +610,156 @@ class TestHDFUtils(unittest.TestCase):
             attrs = {'att_4': [1, 4.234, 45]}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
-    """           
-        def test_get_indices_for_region_ref(self):
+    def test_check_for_old_exact_match(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            attrs = {'att_1': 'string_val', 'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
+            [h5_ret_grp] = hdf_utils.check_for_old(h5_main, 'Fitter', new_parms=attrs, target_dset=None)
+            self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_000'])
+
+    def test_check_for_old_subset_but_match(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            attrs = {'att_2': 1.2345,
+                     'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
+            [h5_ret_grp] = hdf_utils.check_for_old(h5_main, 'Fitter', new_parms=attrs, target_dset=None)
+            self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_000'])
+
+    def test_check_for_old_exact_match_02(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            attrs = {'att_1': 'other_string_val', 'att_2': 5.4321,
+                     'att_3': [4, 1, 3], 'att_4': ['s', 'str_2', 'str_3']}
+            [h5_ret_grp] = hdf_utils.check_for_old(h5_main, 'Fitter', new_parms=attrs, target_dset=None)
+            self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_001'])
+
+    def test_check_for_old_fail_01(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            attrs = {'att_1': [4, 1, 3], 'att_2': ['s', 'str_2', 'str_3'],
+                     'att_3': 'other_string_val', 'att_4': 5.4321}
+            ret_val = hdf_utils.check_for_old(h5_main, 'Fitter', new_parms=attrs, target_dset=None)
+            self.assertIsInstance(ret_val, list)
+            self.assertEqual(len(ret_val), 0)
+
+    def test_check_for_old_fail_02(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            attrs = {'att_x': [4, 1, 3], 'att_z': ['s', 'str_2', 'str_3'],
+                     'att_y': 'other_string_val', 'att_4': 5.4321}
+            ret_val = hdf_utils.check_for_old(h5_main, 'Fitter', new_parms=attrs, target_dset=None)
+            self.assertIsInstance(ret_val, list)
+            self.assertEqual(len(ret_val), 0)
+
+    def test_link_as_main(self):
+        file_path = 'link_as_main.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            num_rows = 3
+            num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+
+            source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                         np.repeat(np.arange(num_rows), num_cols))).T
+            dset_source_pos_inds = MicroDataset('PosIndices', source_pos_data, dtype=np.uint16,
+                                                attrs={'labels': ['X', 'Y'], 'units': ['nm', 'um']})
+            dset_source_pos_vals = MicroDataset('PosValues', source_pos_data, dtype=np.float16,
+                                                attrs={'labels': ['X', 'Y'], 'units': ['nm', 'um']})
+
+            source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+            dset_source_main = MicroDataset('source_main', source_main_data,
+                                            attrs={'units': 'A', 'quantity': 'Current',
+                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                              'odd_rows': (slice(1, None, 2), slice(None))}
+                                                   })
+            # make spectroscopic axis interesting as well
+            source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
+            dset_source_spec_inds = MicroDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                                 attrs={'labels': ['Bias', 'Cycle'], 'units': ['V', '']})
+            dset_source_spec_vals = MicroDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                                 attrs={'labels': ['Bias', 'Cycle'], 'units': ['V', '']})
+
+            writer = HDFwriter(h5_f)
+            h5_main = writer._create_dataset(h5_f, dset_source_main)
+            h5_pos_inds = writer._create_dataset(h5_f, dset_source_pos_inds)
+            h5_pos_vals = writer._create_dataset(h5_f, dset_source_pos_vals)
+            h5_spec_inds = writer._create_dataset(h5_f, dset_source_spec_inds)
+            h5_spec_vals = writer._create_dataset(h5_f, dset_source_spec_vals)
+
+            self.assertFalse(hdf_utils.check_if_main(h5_main))
+
+            # Now need to link as main!
+            hdf_utils.link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
+
+            # Finally:
+            self.assertTrue(hdf_utils.check_if_main(h5_main))
+
+        os.remove(file_path)
+
+    def test_link_as_main_size_mismatch(self):
+        file_path = 'link_as_main.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            num_rows = 3
+            num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+
+            source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                         np.repeat(np.arange(num_rows), num_cols))).T
+            dset_source_pos_inds = MicroDataset('PosIndices', source_pos_data, dtype=np.uint16,
+                                                attrs={'labels': ['X', 'Y'], 'units': ['nm', 'um']})
+            dset_source_pos_vals = MicroDataset('PosValues', source_pos_data, dtype=np.float16,
+                                                attrs={'labels': ['X', 'Y'], 'units': ['nm', 'um']})
+
+            source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+            dset_source_main = MicroDataset('source_main', source_main_data,
+                                            attrs={'units': 'A', 'quantity': 'Current',
+                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                              'odd_rows': (slice(1, None, 2), slice(None))}
+                                                   })
+            # make spectroscopic axis interesting as well
+            source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
+            dset_source_spec_inds = MicroDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                                 attrs={'labels': ['Bias', 'Cycle'], 'units': ['V', '']})
+            dset_source_spec_vals = MicroDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                                 attrs={'labels': ['Bias', 'Cycle'], 'units': ['V', '']})
+
+            writer = HDFwriter(h5_f)
+            h5_main = writer._create_dataset(h5_f, dset_source_main)
+            h5_pos_inds = writer._create_dataset(h5_f, dset_source_pos_inds)
+            h5_pos_vals = writer._create_dataset(h5_f, dset_source_pos_vals)
+            h5_spec_inds = writer._create_dataset(h5_f, dset_source_spec_inds)
+            h5_spec_vals = writer._create_dataset(h5_f, dset_source_spec_vals)
+
+            self.assertFalse(hdf_utils.check_if_main(h5_main))
+
+            # Now need to link as main!
+            with self.assertRaises(AssertionError):
+                hdf_utils.link_as_main(h5_main, h5_spec_inds, h5_pos_vals, h5_pos_inds, h5_spec_vals)
+
+        os.remove(file_path)
+
+
+    """  
+    def test_calc_chunks(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = None
+        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+        print(ret_val)
+        assert False  
+               
+    def test_get_indices_for_region_ref(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
@@ -635,6 +783,8 @@ class TestHDFUtils(unittest.TestCase):
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
             for dset in main_dsets:
                 self.assertTrue(dset in expected_dsets)
+                
+                h5_main.attrs[alias_name] = h5_ancillary.ref
     """
 
 
