@@ -815,6 +815,134 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_reshape_to_n_dims_h5_no_sort_reqd(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            num_rows = 3
+            num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+
+            n_dim, success, labels = hdf_utils.reshape_to_n_dims(h5_main, get_labels=True, sort_dims=False)
+            self.assertTrue(np.all([x == y for x, y in zip(labels, ['X', 'Y', 'Bias', 'Cycle'])]))
+            expected_n_dim = np.reshape(h5_main[()], (num_rows, num_cols, num_cycles, num_cycle_pts))
+            expected_n_dim = np.transpose(expected_n_dim, (1, 0, 3, 2))
+            self.assertTrue(np.allclose(expected_n_dim, n_dim))
+
+            n_dim, success, labels = hdf_utils.reshape_to_n_dims(h5_main, get_labels=True, sort_dims=True)
+            self.assertTrue(np.all([x == y for x, y in zip(labels, ['X', 'Y', 'Bias', 'Cycle'])]))
+            expected_n_dim = np.reshape(h5_main[()], (num_rows, num_cols, num_cycles, num_cycle_pts))
+            expected_n_dim = np.transpose(expected_n_dim, (1, 0, 3, 2))
+            self.assertTrue(np.allclose(expected_n_dim, n_dim))
+
+    def test_reshape_to_n_dims_h5_not_main_dset(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/Ancillary']
+            h5_pos = h5_f['/Raw_Measurement/Position_Indices']
+            h5_spec = h5_f['/Raw_Measurement/Spectroscopic_Indices']
+
+            # Not main
+            with self.assertRaises(AssertionError):
+                _ = hdf_utils.reshape_to_n_dims(h5_main)
+
+            # Not main and not helping that we are supplign incompatible ancillary datasets
+            with self.assertRaises(AssertionError):
+                _ = hdf_utils.reshape_to_n_dims(h5_main, h5_pos=h5_pos, h5_spec=h5_spec)
+
+            # main but we are supplign incompatible ancillary datasets
+            h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000/results_main']
+            with self.assertRaises(AssertionError):
+                _ = hdf_utils.reshape_to_n_dims(h5_main, h5_pos=h5_pos, h5_spec=h5_spec)
+
+    def test_reshape_to_n_dim_numpy(self):
+        num_rows = 3
+        num_cols = 5
+        num_cycles = 2
+        num_cycle_pts = 7
+        # arrange as slow, fast instead of fast, slow
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+
+        source_main_data = np.zeros(shape=(num_rows * num_cols, num_cycle_pts * num_cycles), dtype=np.float16)
+        for row_ind in range(num_rows):
+            for col_ind in range(num_cols):
+                for cycle_ind in range(num_cycles):
+                    for bias_ind in range(num_cycle_pts):
+                        val = 1E+3*row_ind + 1E+2*col_ind + 1E+1*cycle_ind + bias_ind
+                        source_main_data[row_ind*num_cols + col_ind, cycle_ind*num_cycle_pts + bias_ind] = val
+
+        # make spectroscopic slow, fast instead of fast, slow
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles)))
+        n_dim, success = hdf_utils.reshape_to_n_dims(source_main_data, h5_pos = source_pos_data,
+                                                             h5_spec=source_spec_data, get_labels=False)
+        expected_n_dim = np.reshape(source_main_data, (num_rows, num_cols, num_cycles, num_cycle_pts))
+        self.assertTrue(np.allclose(expected_n_dim, n_dim))
+
+    def test_reshape_to_n_dim_sort_required(self):
+        file_path = 'reshape_to_n_dim_sort_required.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            num_rows = 3
+            num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+            # arrange as slow, fast instead of fast, slow
+            source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                         np.tile(np.arange(num_cols), num_rows))).T
+            dset_source_pos_inds = MicroDataset('Position_Indices', source_pos_data, dtype=np.uint16,
+                                                attrs={'labels': ['Y', 'X'], 'units': ['nm', 'um']})
+            dset_source_pos_vals = MicroDataset('Position_Values', source_pos_data, dtype=np.float16,
+                                                attrs={'labels': ['Y', 'X'], 'units': ['nm', 'um']})
+
+            source_main_data = np.zeros(shape=(num_rows * num_cols, num_cycle_pts * num_cycles), dtype=np.float16)
+            for row_ind in range(num_rows):
+                for col_ind in range(num_cols):
+                    for cycle_ind in range(num_cycles):
+                        for bias_ind in range(num_cycle_pts):
+                            val = 1E+3*row_ind + 1E+2*col_ind + 1E+1*cycle_ind + bias_ind
+                            source_main_data[row_ind*num_cols + col_ind, cycle_ind*num_cycle_pts + bias_ind] = val
+
+            # source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+            dset_source_main = MicroDataset('source_main', source_main_data,
+                                            attrs={'units': 'A', 'quantity': 'Current',
+                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                              'odd_rows': (slice(1, None, 2), slice(None))}})
+            # make spectroscopic slow, fast instead of fast, slow
+            source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                          np.tile(np.arange(num_cycle_pts), num_cycles)))
+            dset_source_spec_inds = MicroDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
+                                                 attrs={'labels': ['Cycle', 'Bias'], 'units': ['', 'V', ]})
+            dset_source_spec_vals = MicroDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
+                                                 attrs={'labels': ['Cycle', 'Bias'], 'units': ['', 'V', ]})
+            group_source = MicroDataGroup('Raw_Measurement',
+                                          children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
+                                                    dset_source_pos_vals, dset_source_pos_inds])
+
+            writer = HDFwriter(h5_f)
+            h5_refs_list = writer.write(group_source)
+
+            [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
+            [h5_pos_inds] = hdf_utils.get_h5_obj_refs([dset_source_pos_inds.name], h5_refs_list)
+            [h5_pos_vals] = hdf_utils.get_h5_obj_refs([dset_source_pos_vals.name], h5_refs_list)
+            [h5_source_spec_inds] = hdf_utils.get_h5_obj_refs([dset_source_spec_inds.name], h5_refs_list)
+            [h5_source_spec_vals] = hdf_utils.get_h5_obj_refs([dset_source_spec_vals.name], h5_refs_list)
+
+            # Now need to link as main!
+            for dset in [h5_pos_inds, h5_pos_vals, h5_source_spec_inds, h5_source_spec_vals]:
+                h5_source_main.attrs[dset.name.split('/')[-1]] = dset.ref
+
+            n_dim, success, labels = hdf_utils.reshape_to_n_dims(h5_source_main, get_labels=True, sort_dims=True)
+            self.assertTrue(np.all([x == y for x, y in zip(labels, ['Y', 'X', 'Cycle', 'Bias'])]))
+            expected_n_dim = np.reshape(source_main_data, (num_rows, num_cols, num_cycles, num_cycle_pts))
+            self.assertTrue(np.allclose(expected_n_dim, n_dim))
+
+        os.remove(file_path)
+
+
+
 
     """  
     def test_calc_chunks(self):

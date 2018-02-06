@@ -695,7 +695,7 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     # TODO: sort_dims does not appear to do much. Functions as though it was always True
 
     if h5_pos is None and h5_spec is None:
-        assert isinstance(h5_main, h5py.Dataset)
+        assert check_if_main(h5_main)
     else:
         assert isinstance(h5_main, (h5py.Dataset, np.ndarray))
 
