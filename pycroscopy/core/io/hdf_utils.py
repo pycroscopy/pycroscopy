@@ -876,7 +876,7 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     return results
 
 
-def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
+def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     """
     Reshape the input 2D matrix to be N-dimensions based on the
     position and spectroscopic datasets.
@@ -884,11 +884,22 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
     Parameters
     ----------
     data_n_dim : numpy.array
-        N dimensional numpy array arranged as [positions slowest to fastest, spectroscopic slowest to fastest]
-    h5_pos : HDF5 Dataset
+        N dimensional numpy array arranged as [positions dimensions..., spectroscopic dimensions]
+        If h5_pos and h5_spec are not provided, this function will have to assume that the dimensions
+        are arranged as [positions slowest to fastest, spectroscopic slowest to fastest].
+        This restriction is removed if h5_pos and h5_spec are provided
+    h5_pos : HDF5 Dataset, numpy.array
         Position indices corresponding to rows in the final 2d array
-    h5_spec : HDF5 Dataset
+        The dimensions should be arranged in terms of rate of change corresponding to data_n_dim.
+        In other words if data_n_dim had two position dimensions arranged as [pos_fast, pos_slow, spec_dim_1....],
+        h5_pos should be arranged as [pos_fast, pos_slow]
+    h5_spec : HDF5 Dataset, numpy. array
         Spectroscopic indices corresponding to columns in the final 2d array
+        The dimensions should be arranged in terms of rate of change corresponding to data_n_dim.
+        In other words if data_n_dim had two spectral dimensions arranged as [pos_dim_1,..., spec_fast, spec_slow],
+        h5_spec should be arranged as [pos_slow, pos_fast]
+    verbose : bool, optional. Default = False
+        Whether or not to print log statements
 
     Returns
     -------
@@ -910,10 +921,6 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
 
     """
     assert isinstance(data_n_dim, np.ndarray)
-    if h5_pos is not None:
-        assert isinstance(h5_pos, h5py.Dataset)
-    if h5_spec is not None:
-        assert isinstance(h5_spec, h5py.Dataset)
 
     if h5_pos is None:
         '''
@@ -950,20 +957,31 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
+    assert ds_pos.shape[0] * ds_spec.shape[1] == np.product(data_n_dim.shape)
+
     '''
     Sort the indices from fastest to slowest
     '''
     pos_sort = get_sort_order(np.transpose(ds_pos))
     spec_sort = get_sort_order(ds_spec)
 
+    if verbose:
+        print('Position sort order: {}'.format(pos_sort))
+        print('Spectroscopic sort order: {}'.format(spec_sort))
+
     '''
     Now we transpose the axes associated with the spectroscopic dimensions
     so that they are in the same order as in the index array
     '''
-    swap_axes = np.append(np.argsort(pos_sort),
-                          spec_sort[::-1] + len(pos_sort))
+    swap_axes = np.append(np.argsort(pos_sort), spec_sort + len(pos_sort))
+
+    if verbose:
+        print('swap axes: {} to be applied to N dimensional data of shape {}'.format(swap_axes, data_n_dim.shape))
 
     data_n_dim = np.transpose(data_n_dim, swap_axes)
+
+    if verbose:
+        print('N dimensional data shape after axes swap: {}'.format(data_n_dim.shape))
 
     '''
     Now we reshape the dataset based on those dimensions
@@ -972,8 +990,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None):
     try:
         ds_2d = np.reshape(data_n_dim, [ds_pos.shape[0], ds_spec.shape[1]])
     except ValueError:
-        warn('Could not reshape dataset to full N-dimensional form.  Attempting reshape based on position only.')
-        raise
+        raise ValueError('Could not reshape dataset to full N-dimensional form')
 
     return ds_2d, True
 
