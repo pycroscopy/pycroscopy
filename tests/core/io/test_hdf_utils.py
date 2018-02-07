@@ -941,6 +941,69 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
+    def test_reshape_from_n_dims_pos_and_spec_provided(self):
+        num_rows = 3
+        num_cols = 5
+        num_cycles = 2
+        num_cycle_pts = 7
+
+        # the N dimensional dataset should be arranged in the following order:
+        # [positions slowest to fastest, spectroscopic slowest to fastest]
+        source_nd = np.zeros(shape=(num_rows, num_cols, num_cycles, num_cycle_pts), dtype=np.float16)
+        expected_2d = np.zeros(shape=(num_rows * num_cols, num_cycle_pts * num_cycles), dtype=np.float16)
+        for row_ind in range(num_rows):
+            for col_ind in range(num_cols):
+                for cycle_ind in range(num_cycles):
+                    for bias_ind in range(num_cycle_pts):
+                        val = 1E+3 * row_ind + 1E+2 * col_ind + 1E+1 * cycle_ind + bias_ind
+                        expected_2d[row_ind * num_cols + col_ind, cycle_ind * num_cycle_pts + bias_ind] = val
+                        source_nd[row_ind, col_ind, cycle_ind, bias_ind] = val
+
+        # case 1: Pos and Spec both arranged as slow to fast:
+        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                     np.repeat(np.arange(num_rows), num_cols))).T
+        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                      np.repeat(np.arange(num_cycles), num_cycle_pts)))
+
+        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_pos=source_pos_data, h5_spec=source_spec_data)
+        self.assertTrue(success)
+        self.assertTrue(np.allclose(ret_2d, expected_2d))
+
+        # case 2: Only Pos arranged as slow to fast:
+        main_pos_sorted = np.transpose(source_nd, (0, 1, 3, 2))
+        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                     np.repeat(np.arange(num_rows), num_cols))).T
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles),))
+
+        ret_2d, success = hdf_utils.reshape_from_n_dims(main_pos_sorted, h5_pos=source_pos_data,
+                                                        h5_spec=source_spec_data)
+        self.assertTrue(success)
+        self.assertTrue(np.allclose(ret_2d, expected_2d))
+
+        # case 3: only Spec both arranged as slow to fast:
+        main_spec_sorted = np.transpose(source_nd, (1, 0, 2, 3))
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                      np.repeat(np.arange(num_cycles), num_cycle_pts)))
+
+        ret_2d, success = hdf_utils.reshape_from_n_dims(main_spec_sorted, h5_pos=source_pos_data,
+                                                        h5_spec=source_spec_data)
+        self.assertTrue(success)
+        self.assertTrue(np.allclose(ret_2d, expected_2d))
+
+        # case 4: neither pos nor spec arranged as slow to fast:
+        main_not_sorted = np.transpose(source_nd, (1, 0, 3, 2))
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles),))
+
+        ret_2d, success = hdf_utils.reshape_from_n_dims(main_not_sorted, h5_pos=source_pos_data,
+                                                        h5_spec=source_spec_data)
+        self.assertTrue(success)
+        self.assertTrue(np.allclose(ret_2d, expected_2d))
 
 
 
