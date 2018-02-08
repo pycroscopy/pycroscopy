@@ -32,6 +32,15 @@ If it does not work try reinstalling the package:
 
   pip uninstall pycroscopy
   pip install pycroscopy
+  
+Installing from a specific branch (advanced users ONLY)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here, we are installing pycroscopy from the latest development branch. Note that we do not recommend installing pycroscopy this way. 
+
+.. code :: bash
+
+	pip install -U git+https://github.com/pycroscopy/pycroscopy@dev
 
 Compatibility
 ~~~~~~~~~~~~~
