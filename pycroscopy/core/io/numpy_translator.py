@@ -8,7 +8,8 @@ Created on Fri Jan 27 17:58:35 2017
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np  # For array operations
 
-from pycroscopy.core.io.translator import Translator, build_ind_val_dsets
+from .translator import Translator
+from .write_utils import build_ind_val_dsets
 from .hdf_utils import calc_chunks
 from .microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
 

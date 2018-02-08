@@ -12,7 +12,8 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io import loadmat
 
-from ...core.io.translator import Translator, build_ind_val_dsets
+from ...core.io.translator import Translator
+from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
 
 

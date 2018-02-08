@@ -10,12 +10,12 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import numpy as np
 from collections import Iterable
-from pycroscopy.core.processing.process import Process, parallel_compute
+from ..core.processing.process import Process, parallel_compute
 from ..core.io.microdata import MicroDataset, MicroDataGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
-from pycroscopy.core.io.translator import build_ind_val_dsets
-from pycroscopy.core.io.hdf_writer import HDFwriter
+from ..core.io.write_utils import build_ind_val_dsets
+from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
 # TODO: correct implementation of num_pix
