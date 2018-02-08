@@ -1,6 +1,7 @@
 import numpy as np
-
+from collections import Iterable
 from .microdata import MicroDataset
+import warnings
 
 __all__ = ['build_ind_val_dsets', 'get_position_slicing', 'get_spectral_slicing', 'make_indices_matrix']
 
@@ -9,14 +10,14 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
                         units=None, verbose=False):
     """
     Builds the MicroDatasets for the position OR spectroscopic indices and values
-    of the data
+    of the data.
 
     Parameters
     ----------
-    is_spectral : Boolean
-        Spectroscopic (True) or Position (False)
     dimensions : array_like of numpy.uint
         Integer values for the length of each dimension
+    is_spectral : bool, optional. default = True
+        Spectroscopic (True) or Position (False)
     steps : array_like of float, optional
         Floating point values for the step-size in each dimension.  One
         if not specified.
@@ -46,12 +47,16 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     Dimensions should be in the order from fastest varying to slowest.
     """
+    assert isinstance(dimensions, Iterable)
 
     if steps is None:
         steps = np.ones_like(dimensions)
-    elif len(steps) != len(dimensions):
-        raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
-    steps = np.atleast_2d(steps)
+    else:
+        assert isinstance(steps, Iterable)
+        if len(steps) != len(dimensions):
+            raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
+        steps = np.atleast_2d(steps)
+
     if verbose:
         print('Steps')
         print(steps.shape)
@@ -59,9 +64,11 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     if initial_values is None:
         initial_values = np.zeros_like(dimensions)
-    elif len(initial_values) != len(dimensions):
-        raise ValueError('The arrays for initial values and dimension sizes must be the same.')
-    initial_values = np.atleast_2d(initial_values)
+    else:
+        assert isinstance(initial_values, Iterable)
+        if len(initial_values) != len(dimensions):
+            raise ValueError('The arrays for initial values and dimension sizes must be the same.')
+        initial_values = np.atleast_2d(initial_values)
 
     if verbose:
         print('Initial Values')
@@ -69,12 +76,16 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         print(initial_values)
 
     if labels is None:
-        labels = ['' for _ in dimensions]
-    elif len(labels) != len(dimensions):
-        raise ValueError('The arrays for labels and dimension sizes must be the same.')
+        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels')
+        labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
+    else:
+        assert isinstance(labels, Iterable)
+        if len(labels) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
 
     # Get the indices for all dimensions
     indices = make_indices_matrix(dimensions)
+    assert isinstance(indices, np.ndarray)
     if verbose:
         print('Indices')
         print(indices.shape)
@@ -101,12 +112,15 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     ds_values.attrs['labels'] = region_slices
 
     if units is None:
-        pass
-    elif len(units) != len(dimensions):
-        raise ValueError('The arrays for labels and dimension sizes must be the same.')
+        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units')
+        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
     else:
-        ds_indices.attrs['units'] = units
-        ds_values.attrs['units'] = units
+        assert isinstance(units, Iterable)
+        if len(units) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
+    ds_indices.attrs['units'] = units
+    ds_values.attrs['units'] = units
 
     return ds_indices, ds_values
 
@@ -130,6 +144,8 @@ def get_position_slicing(pos_lab, curr_pix=None):
         Dictionary of tuples containing slice objects corresponding to
         each position axis.
     """
+    assert isinstance(pos_lab, Iterable)
+
     slice_dict = dict()
     for spat_ind, spat_dim in enumerate(pos_lab):
         slice_dict[spat_dim] = (slice(curr_pix), slice(spat_ind, spat_ind+1))
@@ -155,6 +171,8 @@ def get_spectral_slicing(spec_lab, curr_spec=None):
         Dictionary of tuples containing slice objects corresponding to
         each Spectroscopic axis.
     """
+    assert isinstance(spec_lab, Iterable)
+
     slice_dict = dict()
     for spat_ind, spat_dim in enumerate(spec_lab):
         slice_dict[spat_dim] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
@@ -180,7 +198,7 @@ def make_indices_matrix(num_steps, is_position=True):
     indices_matrix : 2D unsigned int numpy array
         arranged as [steps, spatial dimension]
     """
-    assert isinstance(num_steps, (list, tuple))
+    assert isinstance(num_steps, Iterable)
     # assert np.all([isinstance(x, int) for x in num_steps])
 
     num_steps = np.array(num_steps)
