@@ -11,7 +11,7 @@ import joblib
 import time as tm
 
 from ..io.hdf_utils import check_if_main, check_for_old, get_attributes
-from pycroscopy.core.io.hdf_writer import HDFwriter
+from ..io.hdf_writer import HDFwriter
 from ..io.io_utils import recommend_cpu_cores, get_available_memory, format_time
 
 

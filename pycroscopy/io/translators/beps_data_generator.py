@@ -10,7 +10,8 @@ from skimage.measure import block_reduce
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, build_reduced_spec_dsets
 from ...core.io.dtype_utils import real_to_compound
-from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 from ...core.io.pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function

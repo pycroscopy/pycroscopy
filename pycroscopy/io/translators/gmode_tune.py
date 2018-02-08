@@ -3,7 +3,7 @@
 """
 Created on Wed Jul 27 3:19:46 2017
 
-@author: anugrahsaxena
+@author: anugrahsaxena, Suhas Somnath, Chris R. Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -16,7 +16,8 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from ...core.io.translator import generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.translator import generate_dummy_main_parms
+from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset

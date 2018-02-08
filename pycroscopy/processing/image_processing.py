@@ -16,10 +16,10 @@ from sklearn.utils import gen_batches
 
 from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
     calc_chunks, link_as_main, check_for_old
-from pycroscopy.core.io.hdf_writer import HDFwriter
+from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.microdata import MicroDataGroup, MicroDataset
-from ..core.io.translator import make_position_mat, get_position_slicing, get_spectral_slicing
+from ..core.io.write_utils import make_indices_matrix, get_position_slicing, get_spectral_slicing
 from .svd_utils import get_component_slice
 
 windata32 = np.dtype({'names': ['Image Data'],
@@ -408,7 +408,7 @@ class ImageWindow(object):
         nx = len(x_steps)
         ny = len(y_steps)
         win_pos_mat = np.array([np.repeat(x_steps, ny), np.tile(y_steps, nx)], dtype=np.uint32).T
-        win_pix_mat = make_position_mat([win_x, win_y]).T
+        win_pix_mat = make_indices_matrix([win_x, win_y]).T
 
         '''
         Set up the HDF5 Group and Datasets for the windowed data

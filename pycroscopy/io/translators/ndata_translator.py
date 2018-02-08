@@ -16,8 +16,9 @@ from skimage.measure import block_reduce
 from skimage.util import crop
 
 from .df_utils.io_image import unnest_parm_dicts, read_dm3
-from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat, \
-    get_position_slicing, get_spectral_slicing, build_ind_val_dsets
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import make_indices_matrix, get_position_slicing, get_spectral_slicing, \
+    build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
@@ -179,7 +180,7 @@ class NDataTranslator(Translator):
         '''
         Build Spectroscopic and Position datasets for the image
         '''
-        pos_mat = make_position_mat(image.shape)
+        pos_mat = make_indices_matrix(image.shape)
         spec_mat = np.array([[0]], dtype=np.uint8)
 
         ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)

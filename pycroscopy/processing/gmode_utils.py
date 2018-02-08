@@ -16,7 +16,7 @@ from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes
 from ..core.io.microdata import MicroDataGroup, MicroDataset
 from ..core.viz.plot_utils import rainbow_plot, set_tick_font_size
-from ..core.io.translator import build_ind_val_dsets
+from ..core.io.write_utils import build_ind_val_dsets
 
 
 # TODO: Phase rotation not implemented correctly. Find and use excitation frequency

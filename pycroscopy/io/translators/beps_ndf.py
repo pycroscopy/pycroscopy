@@ -17,7 +17,8 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import make_indices_matrix
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
@@ -145,7 +146,7 @@ class BEPSndfTranslator(Translator):
         s_pixels = np.array(parsers[0].get_spatial_pixels())
         self.pos_labels = ['Laser Spot', 'Z', 'Y', 'X']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
-        self.pos_mat = make_position_mat(s_pixels)
+        self.pos_mat = make_indices_matrix(s_pixels)
         self.pos_units = ['um' for _ in range(len(self.pos_labels))]
         #         self.pos_mat = np.int32(self.pos_mat)
 

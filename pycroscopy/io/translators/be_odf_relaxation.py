@@ -15,10 +15,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
     nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms, make_position_mat, get_position_slicing  
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import make_indices_matrix, get_position_slicing
 from ...core.io.hdf_utils import get_h5_obj_refs
-from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-# The building blocks for defining hierarchical storage in the H5 file
+from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
 
 
@@ -123,7 +123,7 @@ class BEodfRelaxationTranslator(Translator):
         ex_wfm = np.float32(ex_wfm)
 
         self.FFT_BE_wave = bin_FFT
-        pos_mat = make_position_mat([num_cols, num_rows])
+        pos_mat = make_indices_matrix([num_cols, num_rows])
         pos_slices = get_position_slicing(['X', 'Y'], num_pix)
 
         ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
