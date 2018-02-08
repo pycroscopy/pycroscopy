@@ -1039,11 +1039,69 @@ class TestHDFUtils(unittest.TestCase):
         self.assertTrue(np.allclose(ret_2d, expected_2d))
 
         # case 3: neither pos nor spec provided:
-        with self.assertWarns(UserWarning):
-            ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd)
-        self.assertTrue(success)
+        if sys.version_info.major == 3:
+            # Until I figure out how to check for warnings in python 2, test only on python 3
+            with self.assertWarns(UserWarning):
+                ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd)
+            self.assertTrue(success)
+
+    def test_simple_region_ref_copy(self):
+        # based on test_hdf_writer.test_write_legal_reg_ref_multi_dim_data()
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            writer = HDFwriter(h5_f)
+            data = np.random.rand(5, 7)
+            h5_orig_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            self.assertIsInstance(h5_orig_dset, h5py.Dataset)
+
+            attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                'odd_rows': (slice(1, None, 2), slice(None))}}
+
+            writer._write_dset_attributes(h5_orig_dset, attrs.copy())
+            h5_f.flush()
+
+            # two atts point to region references. one for labels
+            self.assertEqual(len(h5_orig_dset.attrs), 1 + len(attrs['labels']))
+
+            # check if the labels attribute was written:
+
+            self.assertTrue(np.all([x in list(attrs['labels'].keys()) for x in hdf_utils.get_attr(h5_orig_dset,
+                                                                                                  'labels')]))
+
+            expected_data = [data[:None:2], data[1:None:2]]
+            written_data = [h5_orig_dset[h5_orig_dset.attrs['even_rows']], h5_orig_dset[h5_orig_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+            # Now write a new dataset without the region reference:
+            h5_new_dset = writer._create_simple_dset(h5_f, MicroDataset('other', data))
+            self.assertIsInstance(h5_orig_dset, h5py.Dataset)
+            h5_f.flush()
+
+            for key in attrs['labels'].keys():
+                hdf_utils.simple_region_ref_copy(h5_orig_dset, h5_new_dset, key)
+
+            # now check to make sure that this dataset also has the same region references:
+            written_data = [h5_new_dset[h5_new_dset.attrs['even_rows']], h5_new_dset[h5_new_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
 
     """  
+    def test_get_all_main_legal(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            expected_dsets = [h5_f['/Raw_Measurement/source_main'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
+                              h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
+            main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
+            for dset in main_dsets:
+                self.assertTrue(dset in expected_dsets)
+    
     def test_calc_chunks(self):
         dimensions = (16384, 16384 * 4)
         dtype_bytesize = 4
@@ -1066,18 +1124,10 @@ class TestHDFUtils(unittest.TestCase):
             data_slices = np.vstack(data_slices)
             print(data_slices.shape, expected_data.shape)
             self.assertTrue(np.allclose(data_slices, expected_data))
+            
+    
 
-    def test_get_all_main_legal(self):
-        self.__ensure_test_h5_file()
-        with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            expected_dsets = [h5_f['/Raw_Measurement/source_main'],
-                              h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
-                              h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
-            main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
-            for dset in main_dsets:
-                self.assertTrue(dset in expected_dsets)
-                
-                h5_main.attrs[alias_name] = h5_ancillary.ref
+    
     """
 
 
