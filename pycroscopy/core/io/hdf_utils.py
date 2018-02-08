@@ -13,6 +13,7 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 from .microdata import MicroDataset
+from .write_utils import make_indices_matrix
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -922,14 +923,14 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     """
     assert isinstance(data_n_dim, np.ndarray)
 
+    if data_n_dim.ndim < 2:
+        return data_n_dim, True
+
     if h5_pos is None:
-        '''
-    Get the Position datasets from the references if possible
-        '''
-        ds_pos = np.arange(data_n_dim.shape[0], dtype=np.uint8).reshape(-1, 1)
+        pass
     elif isinstance(h5_pos, h5py.Dataset):
         '''
-    Position Indices dataset was provided
+        Position Indices dataset was provided
         '''
         ds_pos = h5_pos[()]
 
@@ -941,14 +942,10 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     ##################################################
 
     if h5_spec is None:
-        '''
-    Get the Spectroscopic datasets from the references if possible
-        '''
-        ds_spec = np.atleast_2d(np.arange(data_n_dim.shape[1], dtype=np.uint8))
-
+        pass
     elif isinstance(h5_spec, h5py.Dataset):
         '''
-    Spectroscopic Indices dataset was provided
+        Spectroscopic Indices dataset was provided
         '''
         ds_spec = h5_spec[()]
 
@@ -957,7 +954,46 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     else:
         raise TypeError('Spectroscopic Indices must be either h5py.Dataset or None')
 
-    assert ds_pos.shape[0] * ds_spec.shape[1] == np.product(data_n_dim.shape)
+    if h5_spec is None and h5_pos is not None:
+        if verbose:
+            print('Spectral indices not provided but position indices provided.\n'
+                  'Building spectral indices assuming that dimensions are arranged as slow -> fast')
+        pos_dims = get_dimensionality(ds_pos, index_sort=get_sort_order(ds_pos))
+        assert np.all([x in data_n_dim.shape for x in pos_dims])
+        spec_dims = [col for col in list(data_n_dim.shape) if col not in pos_dims]
+        if verbose:
+            print('data has dimensions: {}. Provided position indices had dimensions of size: {}. Spectral dimensions '
+                  'will built with dimensions: {}'.format(data_n_dim.shape, pos_dims, spec_dims))
+        ds_spec = make_indices_matrix(spec_dims, is_position=False)
+
+    elif h5_pos is None and h5_spec is not None:
+        if verbose:
+            print('Position indices not provided but spectral indices provided.\n'
+                  'Building position indices assuming that dimensions are arranged as slow -> fast')
+        spec_dims = get_dimensionality(ds_spec, index_sort=get_sort_order(ds_spec))
+        assert np.all([x in data_n_dim.shape for x in spec_dims])
+        pos_dims = [col for col in list(data_n_dim.shape) if col not in spec_dims]
+        if verbose:
+            print('data has dimensions: {}. Spectroscopic position indices had dimensions of size: {}. Position '
+                  'dimensions will built with dimensions: {}'.format(data_n_dim.shape, spec_dims, pos_dims))
+        ds_pos = make_indices_matrix(pos_dims, is_position=True)
+
+    elif h5_pos is None and h5_spec is None:
+        if verbose:
+            print('Neither spectral nor position indices were provided.\n'
+                  'Building both position and spectral indices assuming that dimensions are arranged as slow -> fast')
+        num_pos_dims = data_n_dim.ndim // 2
+        if verbose:
+            print('data has dimensions: {}. Will build indices of shape: position: {}, spectroscopic: '
+                  '{}'.format(data_n_dim.shape, data_n_dim.shape[:num_pos_dims], data_n_dim.shape[num_pos_dims:]))
+        ds_pos = make_indices_matrix(data_n_dim.shape[:num_pos_dims], is_position=True)
+        ds_spec = make_indices_matrix(data_n_dim.shape[num_pos_dims:], is_position=False)
+        warn('Attempted to build Position and Spectroscopic Indices assuming equal number of position and spectroscopic'
+             'dimensions. Results may be meaningless if this assumption was not true. Provide position and'
+             'spectroscopic indices if available for best results')
+
+    elif h5_spec is not None and h5_pos is not None:
+        assert ds_pos.shape[0] * ds_spec.shape[1] == np.product(data_n_dim.shape)
 
     '''
     Sort the indices from fastest to slowest

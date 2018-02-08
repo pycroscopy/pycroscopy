@@ -1029,19 +1029,19 @@ class TestHDFUtils(unittest.TestCase):
                                       np.repeat(np.arange(num_cycles), num_cycle_pts)))
 
         # case 1: only pos provided:
-        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_pos=source_pos_data, verbose=True)
+        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_pos=source_pos_data)
         self.assertTrue(success)
         self.assertTrue(np.allclose(ret_2d, expected_2d))
 
         # case 2: only spec provided:
-        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_spec=source_spec_data, verbose=True)
+        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_spec=source_spec_data)
         self.assertTrue(success)
         self.assertTrue(np.allclose(ret_2d, expected_2d))
 
         # case 3: neither pos nor spec provided:
-        ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, verbose=True)
+        with self.assertWarns(UserWarning):
+            ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd)
         self.assertTrue(success)
-        self.assertTrue(np.allclose(ret_2d, expected_2d))
 
     """  
     def test_calc_chunks(self):
