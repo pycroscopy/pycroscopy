@@ -546,10 +546,11 @@ class HDFwriter(object):
                             '{}. UNABLE to safely abort'.format(type(h5_dset)))
 
         # First, set aside the complicated attribute(s)
-        labels_dict = attrs.pop('labels', None)
+        attr_dict = attrs.copy()
+        labels_dict = attr_dict.pop('labels', None)
 
         # Next, write the simple ones using a centralized function
-        HDFwriter._write_simple_attrs(h5_dset, attrs, obj_type='dataset', print_log=print_log)
+        HDFwriter._write_simple_attrs(h5_dset, attr_dict, obj_type='dataset', print_log=print_log)
 
         if labels_dict is None:
             if print_log:
