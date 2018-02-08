@@ -126,7 +126,7 @@ def format_quantity(value, units, factors, decimals=2):
         String with value formatted correctly
     """
     # assert isinstance(value, (int, float))
-    assert isinstance(unicode, Iterable)
+    assert isinstance(units, Iterable)
     assert isinstance(factors, Iterable)
     index = None
 
@@ -265,6 +265,6 @@ def interpret_frequency(freq_str):
     """
     components = freq_str.split()
     if components[1] == 'MHz':
-        return int(components[0])*1.0E+6
+        return int(components[0]) * 1.0E+6
     elif components[1] == 'kHz':
-        return int(components[0])*1.0E+3
+        return int(components[0]) * 1.0E+3
