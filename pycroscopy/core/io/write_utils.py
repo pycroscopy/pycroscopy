@@ -1,6 +1,6 @@
 import numpy as np
 
-from pycroscopy import MicroDataset
+from .microdata import MicroDataset
 
 __all__ = ['build_ind_val_dsets', 'get_position_slicing', 'get_spectral_slicing', 'make_indices_matrix']
 
