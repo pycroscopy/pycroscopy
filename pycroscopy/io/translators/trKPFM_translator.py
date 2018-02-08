@@ -11,7 +11,8 @@ from os import path, remove, listdir  # File Path formatting
 
 import numpy as np  # For array operations
 from scipy.io import loadmat
-from ...core.io.translator import Translator, generate_dummy_main_parms, build_ind_val_dsets
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
