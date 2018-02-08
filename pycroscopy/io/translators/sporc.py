@@ -14,8 +14,8 @@ import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from ...core.io.translator import Translator, \
-    generate_dummy_main_parms, make_position_mat, \
-    get_position_slicing  # Because this class extends the abstract Translator class
+    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from ...core.io.write_utils import make_indices_matrix, get_position_slicing
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
@@ -61,7 +61,7 @@ class SporcTranslator(Translator):
         num_cols = parm_dict['grid_num_cols']
         num_pix = num_rows * num_cols
 
-        pos_mat = make_position_mat([num_cols, num_rows])
+        pos_mat = make_indices_matrix([num_cols, num_rows])
         pos_slices = get_position_slicing(['X', 'Y'], num_pix)
 
         # new data format
