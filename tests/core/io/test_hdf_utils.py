@@ -1050,11 +1050,8 @@ class TestHDFUtils(unittest.TestCase):
         self.assertTrue(np.allclose(ret_2d, expected_2d))
 
         # case 3: neither pos nor spec provided:
-        if sys.version_info.major == 3:
-            # Until I figure out how to check for warnings in python 2, test only on python 3
-            with self.assertWarns(UserWarning):
-                ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd)
-            self.assertTrue(success)
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.reshape_from_n_dims(source_nd)
 
     def test_simple_region_ref_copy(self):
         # based on test_hdf_writer.test_write_legal_reg_ref_multi_dim_data()
