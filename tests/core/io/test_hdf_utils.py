@@ -1102,7 +1102,6 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
-    """  
     def test_get_all_main_legal(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
@@ -1110,9 +1109,9 @@ class TestHDFUtils(unittest.TestCase):
                               h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
                               h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
-            for dset in main_dsets:
-                self.assertTrue(dset in expected_dsets)
-    
+            self.assertEqual(len(main_dsets), len(expected_dsets))
+            self.assertTrue(np.all([x.name == y.name for x, y in zip(main_dsets, expected_dsets)]))
+    """      
     def test_calc_chunks(self):
         dimensions = (16384, 16384 * 4)
         dtype_bytesize = 4
