@@ -106,8 +106,9 @@ Acknowledgements
 Besides the packages used in pycroscopy, we would like to thank the developers of the following software
 packages:
 
-+ `Python <https://www.python.org>`_
 + `Anaconda Python <https://www.continuum.io/anaconda-overview>`_
 + `jupyter <http://jupyter.org/>`_
 + `PyCharm <https://www.jetbrains.com/pycharm/>`_
 + `GitKraken <https://www.gitkraken.com/>`_
+
+Special thanks to `Stefan Van Der Walt <https://bids.berkeley.edu/people/stéfan-van-der-walt>`_ (`@stefanv <https://github.com/stefanv>`_) and `Brett Naul <https://www.linkedin.com/in/brett-naul-46845b66>`_ (`@bnaul <https://github.com/bnaul>`_) for their guidance.
