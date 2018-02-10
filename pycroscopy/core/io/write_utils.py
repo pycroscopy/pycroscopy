@@ -1,9 +1,10 @@
 import numpy as np
 from collections import Iterable
 from .microdata import MicroDataset
+from .dtype_utils import contains_integers
 import warnings
 
-__all__ = ['build_ind_val_dsets', 'get_position_slicing', 'get_spectral_slicing', 'make_indices_matrix']
+__all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix']
 
 
 def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
@@ -99,10 +100,10 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         mode = 'Spectroscopic_'
         indices = indices.transpose()
         values = values.transpose()
-        region_slices = get_spectral_slicing(labels)
     else:
         mode = 'Position_'
-        region_slices = get_position_slicing(labels)
+
+    region_slices = get_aux_dset_slicing(labels, is_spectroscopic=is_spectral)
 
     # Create the MicroDatasets for both Indices and Values
     ds_indices = MicroDataset(mode + 'Indices', indices, dtype=np.uint32)
@@ -125,57 +126,35 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     return ds_indices, ds_values
 
 
-def get_position_slicing(pos_lab, curr_pix=None):
+def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
     """
-    Returns a dictionary of slice objects to help in creating region references
-    to the position indices and values H5 datasets
+    Returns a dictionary of slice objects to help in creating region references in the position or spectroscopic
+    indices and values datasets
 
     Parameters
     ------------
-    pos_lab : List of strings
-        Labels of each of the position axes
-    curr_pix : (Optional) unsigned int
-        Last pixel in the positon matrix. Useful in experiments where the
-        parameters have changed (eg. BEPS new data format)
-
+    dim_names : iterable
+        List of strings denoting the names of the position axes or spectroscopic dimensions arranged in the same order
+        that matches the dimensions in the indices / values dataset
+    last_ind : (Optional) unsigned int, default = None
+        Last pixel in the positon or spectroscopic matrix. Useful in experiments where the
+        parameters have changed (eg. BEPS new data format) during the experiment.
+    is_spectroscopic : bool, optional. default = True
+        set to True for position datasets and False for spectroscopic datasets
     Returns
     ------------
     slice_dict : dictionary
         Dictionary of tuples containing slice objects corresponding to
         each position axis.
     """
-    assert isinstance(pos_lab, Iterable)
+    assert isinstance(dim_names, Iterable)
 
     slice_dict = dict()
-    for spat_ind, spat_dim in enumerate(pos_lab):
-        slice_dict[spat_dim] = (slice(curr_pix), slice(spat_ind, spat_ind+1))
-    return slice_dict
-
-
-def get_spectral_slicing(spec_lab, curr_spec=None):
-    """
-    Returns a dictionary of slice objects to help in creating region references
-    to the spectroscopic indices and values H5 datasets
-
-    Parameters
-    ------------
-    spec_lab : List of strings
-        Labels of each of the Spectroscopic axes
-    curr_spec : (Optional) unsigned int
-        Last position in the spectroscopic matrix. Useful in experiments where the
-        parameters have changed (eg. BEPS new data format)
-
-    Returns
-    ------------
-    slice_dict : dictionary
-        Dictionary of tuples containing slice objects corresponding to
-        each Spectroscopic axis.
-    """
-    assert isinstance(spec_lab, Iterable)
-
-    slice_dict = dict()
-    for spat_ind, spat_dim in enumerate(spec_lab):
-        slice_dict[spat_dim] = (slice(spat_ind, spat_ind + 1), slice(curr_spec))
+    for spat_ind, curr_dim_name in enumerate(dim_names):
+        val = (slice(last_ind), slice(spat_ind, spat_ind + 1))
+        if is_spectroscopic:
+            val = val[::-1]
+        slice_dict[str(curr_dim_name)] = val
     return slice_dict
 
 
@@ -198,8 +177,7 @@ def make_indices_matrix(num_steps, is_position=True):
     indices_matrix : 2D unsigned int numpy array
         arranged as [steps, spatial dimension]
     """
-    assert isinstance(num_steps, Iterable)
-    # assert np.all([isinstance(x, int) for x in num_steps])
+    assert contains_integers(num_steps, min_val=2)
 
     num_steps = np.array(num_steps)
     spat_dims = max(1, len(np.where(num_steps > 1)[0]))
