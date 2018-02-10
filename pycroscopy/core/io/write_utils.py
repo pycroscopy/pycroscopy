@@ -1,3 +1,4 @@
+import sys
 import numpy as np
 from collections import Iterable
 from .microdata import MicroDataset
@@ -5,6 +6,9 @@ from .dtype_utils import contains_integers
 import warnings
 
 __all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix']
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
@@ -48,7 +52,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     Dimensions should be in the order from fastest varying to slowest.
     """
-    assert isinstance(dimensions, Iterable)
+    assert contains_integers(dimensions)
 
     if steps is None:
         steps = np.ones_like(dimensions)
@@ -77,11 +81,21 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         print(initial_values)
 
     if labels is None:
-        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels')
+        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
+                      DeprecationWarning)
         labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
     else:
         assert isinstance(labels, Iterable)
         if len(labels) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
+    if units is None:
+        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units',
+                      DeprecationWarning)
+        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
+    else:
+        assert isinstance(units, Iterable)
+        if len(units) != len(dimensions):
             raise ValueError('The arrays for labels and dimension sizes must be the same.')
 
     # Get the indices for all dimensions
@@ -112,14 +126,6 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     ds_values = MicroDataset(mode + 'Values', np.float32(values), dtype=np.float32)
     ds_values.attrs['labels'] = region_slices
 
-    if units is None:
-        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units')
-        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(units, Iterable)
-        if len(units) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
     ds_indices.attrs['units'] = units
     ds_values.attrs['units'] = units
 
@@ -148,6 +154,8 @@ def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
         each position axis.
     """
     assert isinstance(dim_names, Iterable)
+    assert len(dim_names) > 0
+    assert np.all([isinstance(x, (str, unicode)) for x in dim_names])
 
     slice_dict = dict()
     for spat_ind, curr_dim_name in enumerate(dim_names):
