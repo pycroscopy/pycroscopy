@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_object
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.microdata import MicroDataGroup, MicroDataset
-from ..core.io.write_utils import make_indices_matrix, get_position_slicing, get_spectral_slicing
+from ..core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
 from .svd_utils import get_component_slice
 
 windata32 = np.dtype({'names': ['Image Data'],
@@ -417,12 +417,12 @@ class ImageWindow(object):
         ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
         ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
         ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
-        pos_labels = get_position_slicing(['Window Origin X', 'Window Origin Y'])
+        pos_labels = get_aux_dset_slicing(['Window Origin X', 'Window Origin Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_labels
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pos_vals.attrs['labels'] = pos_labels
         ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-        pix_labels = get_spectral_slicing(['U', 'V'])
+        pix_labels = get_aux_dset_slicing(['U', 'V'], is_spectroscopic=True)
         ds_pix_inds.attrs['labels'] = pix_labels
         ds_pix_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pix_vals.attrs['labels'] = pix_labels

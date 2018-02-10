@@ -17,8 +17,7 @@ from skimage.util import crop
 
 from .df_utils.io_image import unnest_parm_dicts, read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, get_position_slicing, get_spectral_slicing, \
-    build_ind_val_dsets
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.microdata import MicroDataGroup, MicroDataset
@@ -185,7 +184,7 @@ class NDataTranslator(Translator):
 
         ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
         ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
-        spec_lab = get_spectral_slicing(['Image'])
+        spec_lab = get_aux_dset_slicing(['Image'], is_spectroscopic=True)
         ds_spec_inds.attrs['labels'] = spec_lab
         ds_spec_inds.attrs['units'] = ''
         ds_spec_vals.attrs['labels'] = spec_lab
@@ -194,7 +193,7 @@ class NDataTranslator(Translator):
         ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
         ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
 
-        pos_lab = get_position_slicing(['X', 'Y'])
+        pos_lab = get_aux_dset_slicing(['X', 'Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_lab
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
         ds_pos_vals.attrs['labels'] = pos_lab
