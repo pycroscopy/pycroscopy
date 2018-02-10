@@ -7,9 +7,38 @@ Created on Tue Nov  3 21:14:25 2015
 
 import h5py
 import numpy as np
+from collections import Iterable
 
 __all__ = ['complex_to_real', 'get_compound_subdtypes', 'compound_to_real', 'check_dtype', 'real_to_complex',
            'real_to_compound', 'transform_to_target_dtype', 'transform_to_real']
+
+
+def contains_integers(num_steps, min_val=None):
+    """
+    Checks if the provided object is iterable (list, tuple etc.) and contains integers optionally greater than equal to
+    the provided min_val
+
+    Parameters
+    ----------
+    num_steps : Iterable of integers
+        Iterable of integers
+    min_val : int, optional, default = None
+        The value above which each element of iterable must possess. By default, this is ignored.
+
+    Returns
+    -------
+    bool
+        Whether or not the provided object is an iterable of integers
+    """
+    assert isinstance(num_steps, Iterable)
+    try:
+        if min_val is not None:
+            assert min_val % 1 == 0
+            return np.all([x % 1 == 0 and x >=min_val for x in num_steps])
+        else:
+            return np.all([x % 1 == 0 for x in num_steps])
+    except TypeError:
+        return False
 
 
 def complex_to_real(ds_main):
