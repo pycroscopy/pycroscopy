@@ -13,14 +13,14 @@ __all__ = ['complex_to_real', 'get_compound_subdtypes', 'compound_to_real', 'che
            'real_to_compound', 'transform_to_target_dtype', 'transform_to_real']
 
 
-def contains_integers(num_steps, min_val=None):
+def contains_integers(iter_int, min_val=None):
     """
     Checks if the provided object is iterable (list, tuple etc.) and contains integers optionally greater than equal to
     the provided min_val
 
     Parameters
     ----------
-    num_steps : Iterable of integers
+    iter_int : Iterable of integers
         Iterable of integers
     min_val : int, optional, default = None
         The value above which each element of iterable must possess. By default, this is ignored.
@@ -30,13 +30,15 @@ def contains_integers(num_steps, min_val=None):
     bool
         Whether or not the provided object is an iterable of integers
     """
-    assert isinstance(num_steps, Iterable)
+    assert isinstance(iter_int, Iterable)
+    if len(iter_int) == 0:
+        return False
     try:
         if min_val is not None:
             assert min_val % 1 == 0
-            return np.all([x % 1 == 0 and x >=min_val for x in num_steps])
+            return np.all([x % 1 == 0 and x >= min_val for x in iter_int])
         else:
-            return np.all([x % 1 == 0 for x in num_steps])
+            return np.all([x % 1 == 0 for x in iter_int])
     except TypeError:
         return False
 
