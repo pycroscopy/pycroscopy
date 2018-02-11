@@ -55,7 +55,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     Dimensions should be in the order from fastest varying to slowest.
     """
-    assert contains_integers(dimensions)
+    assert contains_integers(dimensions, min_val=2)
 
     if labels is None:
         warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
