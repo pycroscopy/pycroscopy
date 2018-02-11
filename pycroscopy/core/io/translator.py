@@ -12,7 +12,7 @@ import time as tm
 from os import path, remove
 
 from .io_utils import get_available_memory
-from .microdata import MicroDataGroup, MicroDataset
+from .virtual_data import VirtualGroup, VirtualDataset
 from .hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from .hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 
@@ -76,9 +76,9 @@ class Translator(object):
             Name of the data type
         translator_name : String / unicode
             Name of the translator
-        ds_main : MicroDataset object
+        ds_main : VirtualDataset object
             Main dataset
-        aux_dset_list : list of MicroDataset objects
+        aux_dset_list : list of VirtualDataset objects
             auxillary datasets to be written to the file
         parm_dict : dictionary (Optional)
             Dictionary of parameters
@@ -91,13 +91,13 @@ class Translator(object):
         """
         if parm_dict is None:
             parm_dict = {}
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         chan_grp.add_children([ds_main])
         chan_grp.add_children(aux_dset_list)
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = parm_dict
         meas_grp.add_children([chan_grp])
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = data_name
         global_parms['translator'] = translator_name
@@ -106,7 +106,7 @@ class Translator(object):
 
         aux_dset_names = list()
         for dset in aux_dset_list:
-            if isinstance(dset, MicroDataset):
+            if isinstance(dset, VirtualDataset):
                 aux_dset_names.append(dset.name)
 
         if path.exists(h5_path):

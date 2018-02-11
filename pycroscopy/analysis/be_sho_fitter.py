@@ -11,7 +11,7 @@ from .fitter import Fitter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import build_reduced_spec_dsets, copy_region_refs, link_h5_objects_as_attrs, get_h5_obj_refs, \
                                 create_empty_dataset, get_auxillary_datasets
-from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 
 '''
 Custom dtype for the datasets created during fitting.
@@ -67,9 +67,9 @@ class BESHOfitter(Fitter):
         links the guess dataset to the spectroscopic datasets.
         """
         # Create all the ancilliary datasets, allocate space.....
-        ds_guess = MicroDataset('Guess', data=[],
-                                maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
-                                chunking=(1, self.num_udvs_steps), dtype=sho32)
+        ds_guess = VirtualDataset('Guess', data=[],
+                                  maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
+                                  chunking=(1, self.num_udvs_steps), dtype=sho32)
         ds_guess.attrs = self._parms_dict
 
         not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
@@ -79,7 +79,7 @@ class BESHOfitter(Fitter):
                                                     not_freq, self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
-        sho_grp = MicroDataGroup('-'.join([dset_name,
+        sho_grp = VirtualGroup('-'.join([dset_name,
                                            'SHO_Fit_']),
                                  self.h5_main.parent.name[1:])
         sho_grp.add_children([ds_guess,

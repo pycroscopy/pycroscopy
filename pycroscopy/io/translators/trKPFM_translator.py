@@ -15,7 +15,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-from ...core.io.microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset  # building blocks for defining heirarchical storage in the H5 file
 
 
 class TRKPFMTranslator(Translator):
@@ -122,9 +122,9 @@ class TRKPFMTranslator(Translator):
                                                      is_spectral=False,
                                                      labels=['X', 'Y'], units=['au', 'au'], verbose=False)
 
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=(ds_pos_ind.shape[0], spectrogram_size - 5),
-                                   dtype=np.complex64, chunking=(1, spectrogram_size - 5), compression='gzip')
+        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+                                     maxshape=(ds_pos_ind.shape[0], spectrogram_size - 5),
+                                     dtype=np.complex64, chunking=(1, spectrogram_size - 5), compression='gzip')
         ds_raw_data.attrs['quantity'] = ['Complex']
 
         aux_ds_names = ['Position_Indices', 'Position_Values',
@@ -133,12 +133,12 @@ class TRKPFMTranslator(Translator):
         num_ai_chans = np.int(num_dat_files / 2)  # Division by 2 due to real/imaginary
 
         # technically should change the date, etc.
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'trKPFM'
         global_parms['translator'] = 'trKPFM'
         spm_data.attrs = global_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = parm_dict
         spm_data.add_children([meas_grp])
 
@@ -149,7 +149,7 @@ class TRKPFMTranslator(Translator):
         self.raw_datasets = list()
 
         for chan_index in range(num_ai_chans):
-            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
+            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
 
             if chan_index == 0:
 

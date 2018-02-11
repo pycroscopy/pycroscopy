@@ -25,7 +25,7 @@ from ..core.io.dtype_utils import compound_to_real, real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_region_refs, link_h5_objects_as_attrs, \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, build_reduced_spec_dsets, \
     get_attr, link_h5_obj_as_alias, create_empty_dataset
-from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 
 '''
 Custom dtypes for the datasets created during fitting.
@@ -456,11 +456,11 @@ class BELoopFitter(Fitter):
         tot_cycles = cycle_start_inds.size
 
         # Prepare containers for the dataets
-        ds_projected_loops = MicroDataset('Projected_Loops', data=[], dtype=np.float32,
-                                          maxshape=self.h5_main.shape, chunking=self.h5_main.chunks,
-                                          compression='gzip')
-        ds_loop_metrics = MicroDataset('Loop_Metrics', data=[], dtype=loop_metrics32,
-                                       maxshape=(self.h5_main.shape[0], tot_cycles))
+        ds_projected_loops = VirtualDataset('Projected_Loops', data=[], dtype=np.float32,
+                                            maxshape=self.h5_main.shape, chunking=self.h5_main.chunks,
+                                            compression='gzip')
+        ds_loop_metrics = VirtualDataset('Loop_Metrics', data=[], dtype=loop_metrics32,
+                                         maxshape=(self.h5_main.shape[0], tot_cycles))
 
         ds_loop_met_spec_inds, ds_loop_met_spec_vals = build_reduced_spec_dsets(self._sho_spec_inds, self._sho_spec_vals,
                                                                         not_fit_dim, cycle_start_inds,
@@ -469,7 +469,7 @@ class BELoopFitter(Fitter):
         # name of the dataset being projected.
         dset_name = self.h5_main.name.split('/')[-1]
 
-        proj_grp = MicroDataGroup('-'.join([dset_name, 'Loop_Fit_']),
+        proj_grp = VirtualGroup('-'.join([dset_name, 'Loop_Fit_']),
                                   self.h5_main.parent.name[1:])
         proj_grp.attrs['projection_method'] = 'pycroscopy BE loop model'
         proj_grp.add_children([ds_projected_loops, ds_loop_metrics,

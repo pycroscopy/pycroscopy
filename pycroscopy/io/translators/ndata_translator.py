@@ -20,7 +20,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class NDataTranslator(Translator):
@@ -156,11 +156,11 @@ class NDataTranslator(Translator):
         Create the Measurement and Channel Groups to hold the
         image Datasets
         '''
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
 
-        meas_grp = MicroDataGroup('Measurement_')
+        meas_grp = VirtualGroup('Measurement_')
 
-        chan_grp = MicroDataGroup('Channel_')
+        chan_grp = VirtualGroup('Channel_')
         root_grp.add_children([meas_grp])
         meas_grp.add_children([chan_grp])
 
@@ -174,7 +174,7 @@ class NDataTranslator(Translator):
         meas_grp.attrs['translator'] = 'OneView'
         meas_grp.attrs['num_pixels'] = image.size
 
-        ds_rawimage = MicroDataset('Raw_Data', np.reshape(image, (-1, 1)))
+        ds_rawimage = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
 
         '''
         Build Spectroscopic and Position datasets for the image
@@ -182,16 +182,16 @@ class NDataTranslator(Translator):
         pos_mat = make_indices_matrix(image.shape)
         spec_mat = np.array([[0]], dtype=np.uint8)
 
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', spec_mat)
+        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
         spec_lab = get_aux_dset_slicing(['Image'], is_spectroscopic=True)
         ds_spec_inds.attrs['labels'] = spec_lab
         ds_spec_inds.attrs['units'] = ''
         ds_spec_vals.attrs['labels'] = spec_lab
         ds_spec_vals.attrs['units'] = ''
 
-        ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
-        ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
+        ds_pos_inds = VirtualDataset('Position_Indices', pos_mat)
+        ds_pos_vals = VirtualDataset('Position_Values', pos_mat, dtype=np.float32)
 
         pos_lab = get_aux_dset_slicing(['X', 'Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_lab
@@ -289,17 +289,17 @@ class NDataTranslator(Translator):
                                       unit_chunks=(1, num_pixels))
 
             # Allocate space for Main_Data and Pixel averaged Data
-            ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_images, num_pixels),
-                                        chunking=ds_chunking, dtype=np.float32, compression='gzip')
-            ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
-                                              data=np.zeros(num_pixels, dtype=np.float32),
-                                              dtype=np.float32)
-            ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
-                                             data=np.zeros(num_images, dtype=np.float32),
-                                             dtype=np.float32)
+            ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_images, num_pixels),
+                                          chunking=ds_chunking, dtype=np.float32, compression='gzip')
+            ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
+                                                data=np.zeros(num_pixels, dtype=np.float32),
+                                                dtype=np.float32)
+            ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
+                                               data=np.zeros(num_images, dtype=np.float32),
+                                               dtype=np.float32)
 
             # Add datasets as children of Measurement_000 data group
-            ds_channel = MicroDataGroup(this_channel.name)
+            ds_channel = VirtualGroup(this_channel.name)
             ds_channel.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
                                      ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
 
@@ -482,17 +482,17 @@ class NDataTranslator(Translator):
         root_parms['data_type'] = 'PtychographyData'
 
         # Create the hdf5 data Group
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
 
         dg_channels = list()
         for meas_parms in image_parms:
             # Create new measurement group for each set of parameters
-            meas_grp = MicroDataGroup('Measurement_')
+            meas_grp = VirtualGroup('Measurement_')
             # Write the parameters as attributes of the group
             for key in meas_parms.keys():
                 meas_grp.attrs[key] = meas_parms[key]
-            chan_grp = MicroDataGroup('Channel_000')
+            chan_grp = VirtualGroup('Channel_000')
 
             meas_grp.add_children([chan_grp])
             root_grp.add_children([meas_grp])

@@ -16,7 +16,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main, find_dataset
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class ImageTranslator(Translator):
@@ -144,11 +144,11 @@ class ImageTranslator(Translator):
                       'translator': 'Image'}
 
         # Create the hdf5 data Group
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
         #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
         ds_spec_ind, ds_spec_vals = build_ind_val_dsets([1],
@@ -164,8 +164,8 @@ class ImageTranslator(Translator):
                                   unit_chunks=[1, 1])
 
         # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pixels, 1),
-                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
+        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pixels, 1),
+                                      chunking=ds_chunking, dtype=data_type, compression='gzip')
         # Add datasets as children of Measurement_000 data group
         chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
                                ds_pos_val])

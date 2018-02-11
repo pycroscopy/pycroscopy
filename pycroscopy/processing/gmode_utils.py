@@ -14,7 +14,7 @@ from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_f
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes
-from ..core.io.microdata import MicroDataGroup, MicroDataset
+from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.viz.plot_utils import rainbow_plot, set_tick_font_size
 from ..core.io.write_utils import build_ind_val_dsets
 
@@ -251,11 +251,11 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
                                                    steps=[scan_step_x_m, h5_pos_vals[1, 0]],
                                                    labels=['X', 'Y'], units=['m', 'm'], verbose=False)
     # TODO: Create empty datasets and then write for very large datasets
-    ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
-                                    compression='gzip', chunking=(10, pts_per_cycle))
+    ds_reshaped_data = VirtualDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
+                                      compression='gzip', chunking=(10, pts_per_cycle))
 
     # write this to H5 as some form of filtered data.
-    resh_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
+    resh_grp = VirtualGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
     resh_grp.add_children([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
 
     hdf = HDFwriter(h5_main.file)

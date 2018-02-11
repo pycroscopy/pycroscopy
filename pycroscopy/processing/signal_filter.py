@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 from collections import Iterable
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
 from ..core.io.write_utils import build_ind_val_dsets
@@ -123,18 +123,18 @@ class SignalFilter(Process):
         """
 
         grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        grp_filt = MicroDataGroup(grp_name, self.h5_main.parent.name)
+        grp_filt = VirtualGroup(grp_name, self.h5_main.parent.name)
 
         self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
         grp_filt.attrs = self.parms_dict
 
         if isinstance(self.composite_filter, np.ndarray):
-            ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
+            ds_comp_filt = VirtualDataset('Composite_Filter', np.float32(self.composite_filter))
             grp_filt.add_children([ds_comp_filt])
 
         if self.noise_threshold is not None:
-            ds_noise_floors = MicroDataset('Noise_Floors',
-                                           data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
+            ds_noise_floors = VirtualDataset('Noise_Floors',
+                                             data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
             ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets([1], is_spectral=True,
                                                                          labels=['arb'], units=[''],
                                                                          verbose=self.verbose)
@@ -143,8 +143,8 @@ class SignalFilter(Process):
             grp_filt.add_children([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
 
         if self.write_filtered:
-            ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
-                                        dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
+            ds_filt_data = VirtualDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
+                                          dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
             grp_filt.add_children([ds_filt_data])
 
         self.hot_inds = None
@@ -159,9 +159,9 @@ class SignalFilter(Process):
                                                              labels=['hot_frequencies'], units=[''],
                                                              verbose=self.verbose)
             ds_spec_vals.data = np.atleast_2d(self.hot_inds)  # The data generated above varies linearly. Override.
-            ds_cond_data = MicroDataset('Condensed_Data', data=[],
-                                        maxshape=(self.num_effective_pix, len(self.hot_inds)),
-                                        dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
+            ds_cond_data = VirtualDataset('Condensed_Data', data=[],
+                                          maxshape=(self.num_effective_pix, len(self.hot_inds)),
+                                          dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
             grp_filt.add_children([ds_spec_inds, ds_spec_vals, ds_cond_data])
             if self.num_effective_pix > 1:
                 # need to make new position datasets by taking every n'th index / value:

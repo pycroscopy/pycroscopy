@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import numpy as np
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.dtype_utils import real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
 from ..core.io.write_utils import build_ind_val_dsets
@@ -116,8 +116,8 @@ class GIVBayesian(Process):
                                                          labels=['Bias'], units=['V'], verbose=self.verbose)
 
         cap_shape = (num_pos, 1)
-        ds_cap = MicroDataset('Capacitance', data=[], maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
-                              compression='gzip')
+        ds_cap = VirtualDataset('Capacitance', data=[], maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
+                                compression='gzip')
         ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'pF'}
         ds_cap_spec_inds, ds_cap_spec_vals = build_ind_val_dsets([1], is_spectral=True,
                                                                  labels=['Direction'], units=[''], verbose=self.verbose)
@@ -125,19 +125,19 @@ class GIVBayesian(Process):
         ds_cap_spec_inds.name = 'Spectroscopic_Indices_Cap'
         ds_cap_spec_vals.name = 'Spectroscopic_Values_Cap'
 
-        ds_r_var = MicroDataset('R_variance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
-                                chunking=(1, self.num_x_steps), compression='gzip')
+        ds_r_var = VirtualDataset('R_variance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
+                                  chunking=(1, self.num_x_steps), compression='gzip')
         ds_r_var.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_res = MicroDataset('Resistance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
-                              chunking=(1, self.num_x_steps), compression='gzip')
+        ds_res = VirtualDataset('Resistance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
+                                chunking=(1, self.num_x_steps), compression='gzip')
         ds_res.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_i_corr = MicroDataset('Corrected_Current', data=[], maxshape=(num_pos, self.single_ao.size),
-                                 dtype=np.float32,
-                                 chunking=(1, self.single_ao.size), compression='gzip')
+        ds_i_corr = VirtualDataset('Corrected_Current', data=[], maxshape=(num_pos, self.single_ao.size),
+                                   dtype=np.float32,
+                                   chunking=(1, self.single_ao.size), compression='gzip')
         # don't bother adding any other attributes, all this will be taken from h5_main
 
-        bayes_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
-                                   parent=self.h5_main.parent.name)
+        bayes_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
+                                 parent=self.h5_main.parent.name)
         bayes_grp.add_children([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
                                 ds_cap_spec_inds, ds_cap_spec_vals])
         bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}

@@ -9,7 +9,7 @@ import unittest
 import sys
 sys.path.append("../../../pycroscopy/")
 import numpy as np
-from pycroscopy import MicroDataGroup, MicroDataset
+from pycroscopy import VirtualGroup, VirtualDataset
 
 
 class MyOutput(object):
@@ -30,16 +30,16 @@ class TestMicroDataSet(unittest.TestCase):
     def test_insufficient_inputs(self):
         name = 'test'
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, data=None)
+            _ = VirtualDataset(name, data=None)
 
     def test_children_for_microgroup_legal(self):
-        child = MicroDataGroup('blah')
-        mg = MicroDataGroup('test_group', children=child)
+        child = VirtualGroup('blah')
+        mg = VirtualGroup('test_group', children=child)
         self.assertEqual(len(mg.children), 1)
         self.assertEqual(child, mg.children[0])
 
     def test_children_for_microgroup_illegal(self):
-        mg = MicroDataGroup('test_group', children=np.arange(4))
+        mg = VirtualGroup('test_group', children=np.arange(4))
         self.assertEqual(len(mg.children), 0)
 
     def test_attrs_for_microgroup_legal(self):
@@ -47,7 +47,7 @@ class TestMicroDataSet(unittest.TestCase):
                      'att_2': 1.2345,
                      'att_3': [1, 2, 3, 4],
                      'att_4': ['str_1', 'str_2', 'str_3']}
-        mg = MicroDataGroup('test_group', attrs=attrs)
+        mg = VirtualGroup('test_group', attrs=attrs)
         self.assertEqual(len(mg.attrs), len(attrs))
         for key, expected_val in attrs.items():
             self.assertEqual(expected_val, mg.attrs[key])
@@ -57,35 +57,35 @@ class TestMicroDataSet(unittest.TestCase):
         chunking = (-1, 128)
         data = np.random.rand(2, 128)
         with self.assertRaises(AssertionError):
-            _ = MicroDataset(name, data, chunking=chunking)
+            _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_invalid_chunking_argument_02(self):
         name = 'test'
         chunking = ('a', range(5))
         data = np.random.rand(2, 128)
         with self.assertRaises(AssertionError):
-            _ = MicroDataset(name, data, chunking=chunking)
+            _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_incompatible_chunking_data(self):
         name = 'test'
         chunking = (4, 128)
         data = np.random.rand(2, 128)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, data, chunking=chunking)
+            _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_incompatible_chunking_data_02(self):
         name = 'test'
         chunking = (4, 128)
         maxshape = (2, 128)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, None, maxshape=maxshape, chunking=chunking)
+            _ = VirtualDataset(name, None, maxshape=maxshape, chunking=chunking)
 
     def test_incompatible_chunking_data_03(self):
         name = 'test'
         chunking = (4, 128)
         maxshape = (None, 128)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, None, maxshape=maxshape, chunking=chunking)
+            _ = VirtualDataset(name, None, maxshape=maxshape, chunking=chunking)
 
     def test_incompatible_maxshape_chunking_01(self):
         name = 'test'
@@ -93,32 +93,32 @@ class TestMicroDataSet(unittest.TestCase):
         maxshape = (1,129)
         data = np.random.rand(5, 128)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, data, chunking=chunking, maxshape=maxshape)
+            _ = VirtualDataset(name, data, chunking=chunking, maxshape=maxshape)
 
     def test_only_chunking_provided(self):
         name = 'test'
         chunking = (1, 128)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, None, chunking=chunking)
+            _ = VirtualDataset(name, None, chunking=chunking)
 
     def test_chunking_w_none(self):
         name = 'test'
         chunking = (None, 128)
         data = np.random.rand(2, 128)
         with self.assertRaises(AssertionError):
-            _ = MicroDataset(name, data, chunking=chunking)
+            _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_incompatible_maxshape_data_shapes(self):
         name = 'test'
         maxshape = 128
         data = np.random.rand(2, 128)
         with self.assertRaises(ValueError):
-           _ = MicroDataset(name, data, maxshape=maxshape)
+           _ = VirtualDataset(name, data, maxshape=maxshape)
 
     def test_simple_correct_01(self):
         data = np.arange(5)
         name = 'test'
-        dset = MicroDataset(name, data)
+        dset = VirtualDataset(name, data)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -128,7 +128,7 @@ class TestMicroDataSet(unittest.TestCase):
         data = np.arange(5)
         name = 'test'
         compression = 'gzip'
-        dset = MicroDataset(name, data, compression=compression)
+        dset = VirtualDataset(name, data, compression=compression)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -140,12 +140,12 @@ class TestMicroDataSet(unittest.TestCase):
         name = 'test'
         compression = 'blah'
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, data, compression=compression)
+            _ = VirtualDataset(name, data, compression=compression)
 
     def test_simple_dset_inherit_dtype(self):
         data = np.arange(5)
         name = 'test'
-        dset = MicroDataset(name, data)
+        dset = VirtualDataset(name, data)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -156,7 +156,7 @@ class TestMicroDataSet(unittest.TestCase):
         data = np.arange(5, dtype=np.complex64)
         name = 'test'
         dtype = np.uint8
-        dset = MicroDataset(name, data, dtype=dtype)
+        dset = VirtualDataset(name, data, dtype=dtype)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -167,7 +167,7 @@ class TestMicroDataSet(unittest.TestCase):
         data = np.arange(5, dtype=np.complex64)
         name = 'test'
         dtype = 'uint8'
-        dset = MicroDataset(name, data, dtype=dtype)
+        dset = VirtualDataset(name, data, dtype=dtype)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -178,7 +178,7 @@ class TestMicroDataSet(unittest.TestCase):
         data = None
         name = 'test'
         maxshape = (1024, 16384)
-        dset = MicroDataset(name, data, maxshape=maxshape)
+        dset = VirtualDataset(name, data, maxshape=maxshape)
         self.assertEqual(dset.data, data)
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, False)
@@ -189,14 +189,14 @@ class TestMicroDataSet(unittest.TestCase):
         name = 'test'
         maxshape = (None, 16384)
         with self.assertRaises(ValueError):
-            _ = MicroDataset(name, data, maxshape=maxshape)
+            _ = VirtualDataset(name, data, maxshape=maxshape)
 
     def test_resizable_correct_01(self):
         dtype = np.uint16
         data = np.zeros(shape=(1, 7), dtype=dtype)
         name = 'test'
         resizable = True
-        dset = MicroDataset(name, data, resizable=resizable)
+        dset = VirtualDataset(name, data, resizable=resizable)
         self.assertTrue(np.all(np.equal(dset.data, data)))
         self.assertEqual(dset.name, name)
         self.assertEqual(dset.resizable, resizable)
@@ -207,7 +207,7 @@ class TestMicroDataGroup(unittest.TestCase):
 
     def test_creation_non_indexed(self):
         name = 'test_group'
-        group = MicroDataGroup(name)
+        group = VirtualGroup(name)
         self.assertEqual(group.name, name)
         self.assertEqual(group.parent, '/')
         self.assertEqual(group.children, [])
@@ -215,7 +215,7 @@ class TestMicroDataGroup(unittest.TestCase):
 
     def test_creation_indexed(self):
         name = 'indexed_group_'
-        group = MicroDataGroup(name)
+        group = VirtualGroup(name)
         self.assertEqual(group.name, name)
         self.assertEqual(group.parent, '/')
         self.assertEqual(group.children, [])
@@ -224,47 +224,47 @@ class TestMicroDataGroup(unittest.TestCase):
     def test_add_single_child_legal_01(self):
         dset_name_1 = 'dset_1'
         data_1 = np.arange(3)
-        dset_1 = MicroDataset(dset_name_1, data_1)
+        dset_1 = VirtualDataset(dset_name_1, data_1)
         group_name = 'indexed_group_'
-        group = MicroDataGroup(group_name)
+        group = VirtualGroup(group_name)
         group.add_children(dset_1)
         group.show_tree()
         self.assertEqual(len(group.children), 1)
         in_dset = group.children[0]
-        self.assertIsInstance(in_dset, MicroDataset)
+        self.assertIsInstance(in_dset, VirtualDataset)
         self.assertEqual(in_dset.name, dset_name_1)
         self.assertTrue(np.all(np.equal(in_dset.data, data_1)))
 
     def test_add_single_child_illegal_01(self):
         group_name = 'indexed_group_'
-        group = MicroDataGroup(group_name)
+        group = VirtualGroup(group_name)
         # with self.assertWarns('Children must be of type MicroData. child ignored'):
         group.add_children(np.arange(4))
         self.assertEqual(len(group.children), 0)
 
     def test_add_children_legal_01(self):
         group_name = 'indexed_group_'
-        group = MicroDataGroup(group_name)
+        group = VirtualGroup(group_name)
         dset_name_1 = 'dset_1'
         data_1 = np.arange(3)
-        dset_1 = MicroDataset(dset_name_1, data_1)
+        dset_1 = VirtualDataset(dset_name_1, data_1)
         dset_name_2 = 'dset_2'
         data_2 = np.random.rand(2, 3)
-        dset_2 = MicroDataset(dset_name_2, data_2)
+        dset_2 = VirtualDataset(dset_name_2, data_2)
         group.add_children([dset_1, dset_2])
         self.assertEqual(len(group.children), 2)
 
     def test_print(self):
         group_name = 'indexed_group_'
-        group = MicroDataGroup(group_name)
+        group = VirtualGroup(group_name)
         dset_name_1 = 'dset_1'
         data_1 = np.arange(3)
-        dset_1 = MicroDataset(dset_name_1, data_1)
+        dset_1 = VirtualDataset(dset_name_1, data_1)
         dset_name_2 = 'dset_2'
         data_2 = np.random.rand(2, 3)
-        dset_2 = MicroDataset(dset_name_2, data_2)
+        dset_2 = VirtualDataset(dset_name_2, data_2)
         inner_grp_name = 'other_indexed_group_'
-        inner_group = MicroDataGroup(inner_grp_name)
+        inner_group = VirtualGroup(inner_grp_name)
         inner_group.add_children(dset_2)
         group.add_children([dset_1, inner_group])
 

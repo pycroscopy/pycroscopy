@@ -14,7 +14,7 @@ from scipy.io import loadmat
 
 from ...core.io.translator import Translator
 from ...core.io.write_utils import build_ind_val_dsets
-from ...core.io.microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
+from ...core.io.virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
 class ForcIVTranslator(Translator):
@@ -83,8 +83,8 @@ class ForcIVTranslator(Translator):
 
         parm_dict = self._read_parms(h5_f)
 
-        ds_main = MicroDataset('Raw_Data', data=current_data, dtype=np.float32, compression='gzip',
-                               chunking=(min(num_cols * num_rows, 100), num_iv_pts))
+        ds_main = VirtualDataset('Raw_Data', data=current_data, dtype=np.float32, compression='gzip',
+                                 chunking=(min(num_cols * num_rows, 100), num_iv_pts))
         ds_main.attrs = {'quantity': 'Current', 'units': '1E-9 A'}
 
         ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,

@@ -19,7 +19,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
 from ...core.io.hdf_utils import get_h5_obj_refs
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class BEodfRelaxationTranslator(Translator):
@@ -126,10 +126,10 @@ class BEodfRelaxationTranslator(Translator):
         pos_mat = make_indices_matrix([num_cols, num_rows])
         pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
 
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
-        ds_pos_ind = MicroDataset('Position_Indices', pos_mat, dtype=np.uint32)
+        ds_ex_wfm = VirtualDataset('Excitation_Waveform', ex_wfm)
+        ds_pos_ind = VirtualDataset('Position_Indices', pos_mat, dtype=np.uint32)
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
 
         (UDVS_labs, UDVS_units, UDVS_mat) = self.__buildUDVSTable(parm_dict)
@@ -171,21 +171,21 @@ class BEodfRelaxationTranslator(Translator):
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
             udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind + 1))
-        ds_UDVS = MicroDataset('UDVS', UDVS_mat)
+        ds_UDVS = VirtualDataset('UDVS', UDVS_mat)
         ds_UDVS.attrs['labels'] = udvs_slices
         ds_UDVS.attrs['units'] = UDVS_units
 
-        ds_spec_mat = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
         ds_spec_mat.attrs['labels'] = {'UDVS_Step': (slice(1, 2), slice(None)), 'Bin': (slice(0, 1), slice(None))}
-        ds_bin_steps = MicroDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
+        ds_bin_steps = VirtualDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
 
         # Need to add the Bin Waveform type - infer from UDVS        
         exec_bin_vec = self.signal_type * np.ones(len(bin_inds), dtype=np.int32)
 
-        ds_bin_inds = MicroDataset('Bin_Indices', bin_inds, dtype=np.uint32)
-        ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
-        ds_bin_FFT = MicroDataset('Bin_FFT', bin_FFT)
-        ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
+        ds_bin_inds = VirtualDataset('Bin_Indices', bin_inds, dtype=np.uint32)
+        ds_bin_freq = VirtualDataset('Bin_Frequencies', bin_freqs)
+        ds_bin_FFT = VirtualDataset('Bin_FFT', bin_FFT)
+        ds_wfm_typ = VirtualDataset('Bin_Wfm_Type', exec_bin_vec)
 
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
         spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_names = createSpecVals(UDVS_mat, spec_inds,
@@ -197,13 +197,13 @@ class BEodfRelaxationTranslator(Translator):
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
-        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
-                                      chunking=(1, num_actual_udvs_steps))
+        ds_noise_floor = VirtualDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
+                                        chunking=(1, num_actual_udvs_steps))
 
         """ 
         ONLY ALLOCATING SPACE FOR MAIN DATA HERE!
@@ -228,21 +228,21 @@ class BEodfRelaxationTranslator(Translator):
         chunking = np.floor(np.sqrt(pixel_chunking))
         chunking = max(1, chunking)
         chunking = min(num_actual_udvs_steps, num_pix, chunking)
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix, tot_bins), dtype=np.complex64,
-                                    chunking=(chunking, chunking * bins_per_step), compression='gzip')
+        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pix, tot_bins), dtype=np.complex64,
+                                      chunking=(chunking, chunking * bins_per_step), compression='gzip')
 
-        chan_grp = MicroDataGroup('Channel_')
+        chan_grp = VirtualGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
         chan_grp.add_children([ds_main_data, ds_noise_floor])
         chan_grp.add_children([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
                                ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT, ds_wfm_typ, ds_spec_vals_mat])
 
         # technically should change the date, etc.
-        meas_grp = MicroDataGroup('Measurement_')
+        meas_grp = VirtualGroup('Measurement_')
         meas_grp.attrs = parm_dict
         meas_grp.add_children([chan_grp])
 
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']

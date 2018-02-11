@@ -11,7 +11,7 @@ import numpy as np  # For array operations
 from .translator import Translator
 from .write_utils import build_ind_val_dsets
 from .hdf_utils import calc_chunks
-from .microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
+from .virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
 class NumpyTranslator(Translator):
@@ -59,8 +59,8 @@ class NumpyTranslator(Translator):
 
         spectra_length = main_data.shape[1]
 
-        ds_main = MicroDataset('Raw_Data', data=main_data, dtype=np.float32, compression='gzip',
-                               chunking=calc_chunks(main_data.shape, np.float32(0).itemsize,
+        ds_main = VirtualDataset('Raw_Data', data=main_data, dtype=np.float32, compression='gzip',
+                                 chunking=calc_chunks(main_data.shape, np.float32(0).itemsize,
                                                     unit_chunks=(1, spectra_length)))
         ds_main.attrs = {'quantity': qty_name, 'units': data_unit}
 

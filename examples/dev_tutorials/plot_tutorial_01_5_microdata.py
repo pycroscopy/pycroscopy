@@ -75,19 +75,19 @@ data1 = np.random.rand(5, 7)
 # Now use the array to build the dataset.  This dataset will live
 # directly under the root of the file.  The MicroDataset class also implements the
 # compression and chunking parameters from h5py.Dataset.
-ds_main = px.MicroDataset('Main_Data', data=data1, parent='/')
+ds_main = px.VirtualDataset('Main_Data', data=data1, parent='/')
 
 ##############################################################################
 # We can also create an empty dataset and write the values in later
 # With this method, it is neccessary to specify the dtype and maxshape kwarg parameters.
-ds_empty = px.MicroDataset('Empty_Data', data=[], dtype=np.float32, maxshape=[7, 5, 3])
+ds_empty = px.VirtualDataset('Empty_Data', data=[], dtype=np.float32, maxshape=[7, 5, 3])
 
 ##############################################################################
 # We can also create groups and add other MicroData objects as children.
 # If the group's parent is not given, it will be set to root.
-data_group = px.MicroDataGroup('Data_Group', parent='/')
+data_group = px.VirtualGroup('Data_Group', parent='/')
 
-root_group = px.MicroDataGroup('/')
+root_group = px.VirtualGroup('/')
 
 # After creating the group, we then add an existing object as its child.
 data_group.add_children([ds_empty])

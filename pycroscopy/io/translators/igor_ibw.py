@@ -16,8 +16,8 @@ from ...core.io.translator import Translator, \
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-from ...core.io.microdata import MicroDataGroup, \
-    MicroDataset  # The building blocks for defining hierarchical storage in the H5 file
+from ...core.io.virtual_data import VirtualGroup, \
+    VirtualDataset  # The building blocks for defining hierarchical storage in the H5 file
 
 
 class IgorIBWTranslator(Translator):
@@ -107,7 +107,7 @@ class IgorIBWTranslator(Translator):
         # Prepare the list of raw_data datasets
         chan_raw_dsets = list()
         for chan_data, chan_name, chan_unit in zip(images, chan_labels, chan_units):
-            ds_raw_data = MicroDataset('Raw_Data', data=np.atleast_2d(chan_data), dtype=np.float32, compression='gzip')
+            ds_raw_data = VirtualDataset('Raw_Data', data=np.atleast_2d(chan_data), dtype=np.float32, compression='gzip')
             ds_raw_data.attrs['quantity'] = chan_name
             ds_raw_data.attrs['units'] = [chan_unit]
             chan_raw_dsets.append(ds_raw_data)
@@ -116,12 +116,12 @@ class IgorIBWTranslator(Translator):
 
         # Prepare the tree structure
         # technically should change the date, etc.
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'IgorIBW_' + type_suffix
         global_parms['translator'] = 'IgorIBW'
         spm_data.attrs = global_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = parm_dict
         spm_data.add_children([meas_grp])
 
@@ -148,7 +148,7 @@ class IgorIBWTranslator(Translator):
 
         # Create Channels, populate and then link:
         for chan_index, raw_dset in enumerate(chan_raw_dsets):
-            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
+            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs['name'] = raw_dset.attrs['quantity']
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, raw_dset])
             h5_refs = hdf.write(chan_grp, print_log=verbose)
