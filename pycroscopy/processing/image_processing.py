@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_object
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
-from ..core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
+from ..core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
 from .svd_utils import get_component_slice
 
 windata32 = np.dtype({'names': ['Image Data'],
@@ -413,10 +413,10 @@ class ImageWindow(object):
         '''
         Set up the HDF5 Group and Datasets for the windowed data
         '''
-        ds_pos_inds = VirtualDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
-        ds_pix_inds = VirtualDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
-        ds_pos_vals = VirtualDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
-        ds_pix_vals = VirtualDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+        ds_pos_inds = VirtualDataset('Position_Indices', data=win_pos_mat, dtype=INDICES_DTYPE)
+        ds_pix_inds = VirtualDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=INDICES_DTYPE)
+        ds_pos_vals = VirtualDataset('Position_Values', data=win_pos_mat, dtype=VALUES_DTYPE)
+        ds_pix_vals = VirtualDataset('Spectroscopic_Values', data=win_pix_mat, dtype=VALUES_DTYPE)
         pos_labels = get_aux_dset_slicing(['Window Origin X', 'Window Origin Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_labels
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']

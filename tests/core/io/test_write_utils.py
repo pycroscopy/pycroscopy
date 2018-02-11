@@ -210,8 +210,6 @@ class TestWriteUtils(unittest.TestCase):
                                                 initial_values=[col_initial, row_initial], labels=[dim_names[0]],
                                                 units=[dim_units[1]])
 
-    # TODO: use new dtype constants for all writing!
-
 
 if __name__ == '__main__':
     unittest.main()

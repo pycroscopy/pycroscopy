@@ -5,7 +5,7 @@ from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
 import warnings
 
-__all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix']
+__all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE']
 
 if sys.version_info.major == 3:
     unicode = str

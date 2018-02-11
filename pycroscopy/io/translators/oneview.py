@@ -16,7 +16,7 @@ from skimage.util import crop
 from .df_utils import dm4reader
 from .df_utils.io_image import read_image, read_dm3, parse_dm4_parms
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, build_ind_val_dsets
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, build_ind_val_dsets, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -204,7 +204,7 @@ class OneViewTranslator(Translator):
         spec_mat = np.array([[0]], dtype=np.uint8)
 
         ds_spec_inds = VirtualDataset('Spectroscopic_Indices', spec_mat)
-        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
+        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_mat, dtype=VALUES_DTYPE)
         spec_lab = get_aux_dset_slicing(['Image'], is_spectroscopic=True)
         ds_spec_inds.attrs['labels'] = spec_lab
         ds_spec_inds.attrs['units'] = ''
@@ -212,7 +212,7 @@ class OneViewTranslator(Translator):
         ds_spec_vals.attrs['units'] = ''
 
         ds_pos_inds = VirtualDataset('Position_Indices', pos_mat)
-        ds_pos_vals = VirtualDataset('Position_Values', pos_mat, dtype=np.float32)
+        ds_pos_vals = VirtualDataset('Position_Values', pos_mat, dtype=VALUES_DTYPE)
 
         pos_lab = get_aux_dset_slicing(['X', 'Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_lab

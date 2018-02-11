@@ -18,7 +18,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix
+from ...core.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -282,7 +282,7 @@ class BEPSndfTranslator(Translator):
         ds_pos_ind = VirtualDataset('Position_Indices',
                                   self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
                                                self.ds_pixel_index, :],
-                                    dtype=np.uint)
+                                    dtype=INDICES_DTYPE)
 
         ds_pos_ind.attrs['labels'] = pos_slice_dict
         ds_pos_ind.attrs['units'] = self.pos_units
@@ -305,7 +305,7 @@ class BEPSndfTranslator(Translator):
             # Z spectroscopy
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
-        pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+        pos_val_mat = VALUES_DTYPE(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
                                               self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
@@ -391,7 +391,7 @@ class BEPSndfTranslator(Translator):
         del pixl, stind
 
         # Make the index matrix that has the UDVS step number and bin indices
-        spec_inds = np.zeros(shape=(2, tot_pts), dtype=np.uint32)
+        spec_inds = np.zeros(shape=(2, tot_pts), dtype=INDICES_DTYPE)
         stind = 0
         # Need to go through the UDVS file and reconstruct chronologically
         for step_index, wave_type in enumerate(self.excit_type_vec):
@@ -457,10 +457,10 @@ class BEPSndfTranslator(Translator):
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
-        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=VALUES_DTYPE))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
-        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=INDICES_DTYPE)
         ds_spec_mat.attrs['labels'] = spec_vals_slices
         ds_spec_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:

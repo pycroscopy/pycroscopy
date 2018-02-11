@@ -15,7 +15,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.gmode_utils import readGmodeParms
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
@@ -69,7 +69,7 @@ class GDMTranslator(Translator):
         w_vec = np.arange(-0.5 * samp_rate, 0.5 * samp_rate, np.float32(samp_rate / num_bins))
 
         # There is most likely a more elegant solution to this but I don't have the time... Maybe np.meshgrid
-        spec_val_mat = np.zeros((len(freq_array) * num_bins, 2), dtype=np.float32)
+        spec_val_mat = np.zeros((len(freq_array) * num_bins, 2), dtype=VALUES_DTYPE)
         spec_val_mat[:, 0] = np.tile(w_vec, len(freq_array))
         spec_val_mat[:, 1] = np.repeat(freq_array, num_bins)
 
@@ -87,12 +87,12 @@ class GDMTranslator(Translator):
         pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
 
         # Now start creating datasets and populating:
-        ds_pos_ind = VirtualDataset('Position_Indices', np.uint32(pos_mat))
+        ds_pos_ind = VirtualDataset('Position_Indices', INDICES_DTYPE(pos_mat))
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', VALUES_DTYPE(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
 
-        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', INDICES_DTYPE(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = {'Response Bin Index': (slice(0, 1), slice(None)),
                                         'Excitation Frequency Index': (slice(1, 2), slice(None))}
 

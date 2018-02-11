@@ -6,8 +6,8 @@ from . import gmode_iv
 from . import gmode_line
 from . import gmode_tune
 from . import image
-from . import ndata_translator
-from . import trKPFM_translator
+from . import ndata
+from . import tr_kpfm
 from . import igor_ibw
 from . import oneview
 from . import ptychography
@@ -26,8 +26,8 @@ from .gmode_line import GLineTranslator
 from .gmode_tune import GTuneTranslator
 from .igor_ibw import IgorIBWTranslator
 from .image import ImageTranslator
-from .ndata_translator import NDataTranslator
-from .trKPFM_translator import TRKPFMTranslator
+from .ndata import NDataTranslator
+from .tr_kpfm import TRKPFMTranslator
 from .oneview import OneViewTranslator
 from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator

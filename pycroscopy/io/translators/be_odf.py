@@ -16,7 +16,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -169,7 +169,7 @@ class BEodfTranslator(Translator):
             #             Remove the unused plot group columns before proceeding:
             (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
-            spec_inds = np.zeros(shape=(2, tot_bins), dtype=np.uint)
+            spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
 
             #             Will assume that all excitation waveforms have same number of bins
             num_actual_udvs_steps = UDVS_mat.shape[0] / udvs_denom
@@ -188,9 +188,9 @@ class BEodfTranslator(Translator):
                 if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
                     continue
                 # Bin step
-                spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=np.uint32)
+                spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=INDICES_DTYPE)
                 # UDVS step
-                spec_inds[1, stind:stind + bins_per_step] = step_index * np.ones(bins_per_step, dtype=np.uint32)
+                spec_inds[1, stind:stind + bins_per_step] = step_index * np.ones(bins_per_step, dtype=INDICES_DTYPE)
                 stind += bins_per_step
             del stind, step_index
 
@@ -204,7 +204,7 @@ class BEodfTranslator(Translator):
             UDVS_mat = np.array([1, 0, parm_dict['BE_amplitude_[V]'], 1, 1, 1],
                                 dtype=np.float32).reshape(1, len(UDVS_labs))
 
-            spec_inds = np.vstack((np.arange(tot_bins, dtype=np.uint), np.zeros(tot_bins, dtype=np.uint32)))
+            spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE), np.zeros(tot_bins, dtype=INDICES_DTYPE)))
 
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
@@ -221,7 +221,7 @@ class BEodfTranslator(Translator):
         ds_UDVS_inds = VirtualDataset('UDVS_Indices', spec_inds[1])
 
         #         ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
-        ds_bin_steps = VirtualDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
+        ds_bin_steps = VirtualDataset('Bin_Step', np.arange(bins_per_step, dtype=INDICES_DTYPE), dtype=INDICES_DTYPE)
 
         # Need to add the Bin Waveform type - infer from UDVS        
         exec_bin_vec = self.signal_type * np.ones(len(bin_inds), dtype=np.int32)
@@ -234,7 +234,7 @@ class BEodfTranslator(Translator):
             # This is wrong but I don't know what else to do
             bin_FFT = np.hstack((bin_FFT, bin_FFT))
 
-        ds_bin_inds = VirtualDataset('Bin_Indices', bin_inds, dtype=np.uint32)
+        ds_bin_inds = VirtualDataset('Bin_Indices', bin_inds, dtype=INDICES_DTYPE)
         ds_bin_freq = VirtualDataset('Bin_Frequencies', bin_freqs)
         ds_bin_FFT = VirtualDataset('Bin_FFT', bin_FFT)
         ds_wfm_typ = VirtualDataset('Bin_Wfm_Type', exec_bin_vec)
@@ -256,10 +256,10 @@ class BEodfTranslator(Translator):
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
 
-        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=INDICES_DTYPE)
         ds_spec_mat.attrs['labels'] = spec_vals_slices
         ds_spec_mat.attrs['units'] = spec_vals_units
-        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=VALUES_DTYPE))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:

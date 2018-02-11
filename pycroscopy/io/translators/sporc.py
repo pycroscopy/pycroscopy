@@ -15,7 +15,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
@@ -65,12 +65,12 @@ class SporcTranslator(Translator):
         pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
 
         # new data format
-        spec_ind_mat = np.transpose(np.float32(spec_ind_mat))
+        spec_ind_mat = np.transpose(VALUES_DTYPE(spec_ind_mat))
 
         # Now start creating datasets and populating:
-        ds_pos_ind = VirtualDataset('Position_Indices', np.uint32(pos_mat))
+        ds_pos_ind = VirtualDataset('Position_Indices', INDICES_DTYPE(pos_mat))
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', VALUES_DTYPE(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
         ds_pos_val.attrs['units'] = ['um', 'um']
 
@@ -78,7 +78,7 @@ class SporcTranslator(Translator):
         spec_ind_dict = dict()
         for col_ind, col_name in enumerate(spec_ind_labels):
             spec_ind_dict[col_name] = (slice(col_ind, col_ind + 1), slice(None))
-        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', INDICES_DTYPE(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = spec_ind_dict
         ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_ind_mat)
         ds_spec_vals.attrs['labels'] = spec_ind_dict
@@ -205,7 +205,7 @@ class SporcTranslator(Translator):
             second_path = path.join(fold, 'SPORC_wave.mat')
             h5_sporc_parms = h5py.File(second_path, 'r')  # Use this for v7.3 and beyond.
             excit_wfm = np.squeeze(h5_sporc_parms['FORC_vec'].value)
-            spec_ind_mat = np.float32(h5_sporc_parms['ind_vecs'].value)
+            spec_ind_mat = VALUES_DTYPE(h5_sporc_parms['ind_vecs'].value)
             h5_sporc_parms.close()
 
         return parm_dict, excit_wfm, spec_ind_mat

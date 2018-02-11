@@ -13,7 +13,7 @@ from igor import binarywave as bw
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.virtual_data import VirtualGroup, \
@@ -99,11 +99,11 @@ class IgorIBWTranslator(Translator):
             # Find the channel that corresponds to either Z sensor or Raw:
             try:
                 chan_ind = chan_labels.index('ZSnsr')
-                ds_spec_vals.data = np.atleast_2d(np.float32(images[chan_ind]))
+                ds_spec_vals.data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
             except ValueError:
                 try:
                     chan_ind = chan_labels.index('Raw')
-                    ds_spec_vals.data = np.atleast_2d(np.float32(images[chan_ind]))
+                    ds_spec_vals.data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
                 except ValueError:
                     # We don't expect to come here. If we do, spectroscopic values remains as is
                     pass
