@@ -11,7 +11,7 @@ import sys
 import h5py
 import numpy as np
 sys.path.append("../../../pycroscopy/")
-from pycroscopy import MicroDataGroup, MicroDataset
+from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
 from pycroscopy.core.io import hdf_utils
 from pycroscopy.core.io.pycro_data import PycroDataset
@@ -45,17 +45,17 @@ class TestHDFUtils(unittest.TestCase):
                                          np.repeat(np.arange(num_rows), num_cols))).T
             pos_attrs = {'units': ['nm', 'um'],
                          'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = MicroDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            dset_source_pos_inds = VirtualDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
             # make the values more interesting:
             source_pos_data = np.vstack((source_pos_data[:, 0] * 50, source_pos_data[:, 1] * 1.25)).T
-            dset_source_pos_vals = MicroDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+            dset_source_pos_vals = VirtualDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
 
             num_cycles = 2
             num_cycle_pts = 7
 
             source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = MicroDataset(source_dset_name, source_main_data,
-                                            attrs={'units': 'A', 'quantity': 'Current',
+            dset_source_main = VirtualDataset(source_dset_name, source_main_data,
+                                              attrs={'units': 'A', 'quantity': 'Current',
                                                    'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                                               'odd_rows': (slice(1, None, 2), slice(None))}
                                                    })
@@ -64,21 +64,21 @@ class TestHDFUtils(unittest.TestCase):
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
             source_spec_attrs = {'units': ['V', ''],
                                  'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = MicroDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
-                                                 attrs=source_spec_attrs)
+            dset_source_spec_inds = VirtualDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
+                                                   attrs=source_spec_attrs)
             source_spec_data = np.vstack((np.tile(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)),
                                                   num_cycles),
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
-            dset_source_spec_vals = MicroDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
-                                                 attrs=source_spec_attrs)
+            dset_source_spec_vals = VirtualDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
+                                                   attrs=source_spec_attrs)
 
-            dset_ancillary = MicroDataset('Ancillary', np.arange(5))
+            dset_ancillary = VirtualDataset('Ancillary', np.arange(5))
 
-            group_source = MicroDataGroup('Raw_Measurement',
-                                          children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
-                                                    dset_source_pos_vals, dset_source_pos_inds, dset_ancillary,
-                                                    MicroDataGroup('Misc')],
-                                          attrs={'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4],
+            group_source = VirtualGroup('Raw_Measurement',
+                                        children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
+                                                  dset_source_pos_vals, dset_source_pos_inds, dset_ancillary,
+                                                  VirtualGroup('Misc')],
+                                        attrs={'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4],
                                                  'att_4': ['str_1', 'str_2', 'str_3']})
 
             writer = HDFwriter(h5_f)
@@ -102,21 +102,21 @@ class TestHDFUtils(unittest.TestCase):
 
             results_spec_inds = np.expand_dims(np.arange(num_cycle_pts), 0)
             results_spec_attrs = {'units': ['V'], 'labels': {'Bias': (slice(0, 1), slice(None))}}
-            dset_results_spec_inds = MicroDataset('Spectroscopic_Indices', results_spec_inds, dtype=np.uint16,
-                                                  attrs=results_spec_attrs)
+            dset_results_spec_inds = VirtualDataset('Spectroscopic_Indices', results_spec_inds, dtype=np.uint16,
+                                                    attrs=results_spec_attrs)
             results_spec_vals = np.expand_dims(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)), 0)
-            dset_results_spec_vals = MicroDataset('Spectroscopic_Values', results_spec_vals, dtype=np.float16,
-                                                  attrs=results_spec_attrs)
+            dset_results_spec_vals = VirtualDataset('Spectroscopic_Values', results_spec_vals, dtype=np.float16,
+                                                    attrs=results_spec_attrs)
 
             results_1_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_results_1_main = MicroDataset('results_main', results_1_main_data,
-                                               attrs={'units': 'pF', 'quantity': 'Capacitance'})
+            dset_results_1_main = VirtualDataset('results_main', results_1_main_data,
+                                                 attrs={'units': 'pF', 'quantity': 'Capacitance'})
 
-            group_results_1 = MicroDataGroup(source_dset_name + '-' + tool_name + '_',
-                                             parent=h5_source_group.name,
-                                             children=[dset_results_1_main, dset_results_spec_inds,
+            group_results_1 = VirtualGroup(source_dset_name + '-' + tool_name + '_',
+                                           parent=h5_source_group.name,
+                                           children=[dset_results_1_main, dset_results_spec_inds,
                                                        dset_results_spec_vals],
-                                             attrs={'att_1': 'string_val', 'att_2': 1.2345,
+                                           attrs={'att_1': 'string_val', 'att_2': 1.2345,
                                                     'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
 
             h5_refs_list = writer.write(group_results_1, print_log=False)
@@ -132,14 +132,14 @@ class TestHDFUtils(unittest.TestCase):
             # add another result with different parameters
 
             results_2_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_results_2_main = MicroDataset('results_main', results_2_main_data,
-                                               attrs={'units': 'pF', 'quantity': 'Capacitance'})
+            dset_results_2_main = VirtualDataset('results_main', results_2_main_data,
+                                                 attrs={'units': 'pF', 'quantity': 'Capacitance'})
 
-            group_results_2 = MicroDataGroup(source_dset_name + '-' + tool_name + '_',
-                                             parent=h5_source_group.name,
-                                             children=[dset_results_2_main, dset_results_spec_inds,
+            group_results_2 = VirtualGroup(source_dset_name + '-' + tool_name + '_',
+                                           parent=h5_source_group.name,
+                                           children=[dset_results_2_main, dset_results_spec_inds,
                                                        dset_results_spec_vals],
-                                             attrs={'att_1': 'other_string_val', 'att_2': 5.4321,
+                                           attrs={'att_1': 'other_string_val', 'att_2': 5.4321,
                                                     'att_3': [4, 1, 3], 'att_4': ['s', 'str_2', 'str_3']})
 
             h5_refs_list = writer.write(group_results_2, print_log=False)
@@ -674,12 +674,12 @@ class TestHDFUtils(unittest.TestCase):
                                          np.repeat(np.arange(num_rows), num_cols))).T
             pos_attrs = {'units': ['nm', 'um'],
                          'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = MicroDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
-            dset_source_pos_vals = MicroDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+            dset_source_pos_inds = VirtualDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            dset_source_pos_vals = VirtualDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
 
             source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = MicroDataset('source_main', source_main_data,
-                                            attrs={'units': 'A', 'quantity': 'Current',
+            dset_source_main = VirtualDataset('source_main', source_main_data,
+                                              attrs={'units': 'A', 'quantity': 'Current',
                                                    'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                                               'odd_rows': (slice(1, None, 2), slice(None))}
                                                    })
@@ -688,10 +688,10 @@ class TestHDFUtils(unittest.TestCase):
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
             source_spec_attrs = {'units': ['V', ''],
                                  'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = MicroDataset('SpecIndices', source_spec_data, dtype=np.uint16,
-                                                 attrs=source_spec_attrs)
-            dset_source_spec_vals = MicroDataset('SpecValues', source_spec_data, dtype=np.float16,
-                                                 attrs=source_spec_attrs)
+            dset_source_spec_inds = VirtualDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                                   attrs=source_spec_attrs)
+            dset_source_spec_vals = VirtualDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                                   attrs=source_spec_attrs)
 
             writer = HDFwriter(h5_f)
             h5_main = writer._create_dataset(h5_f, dset_source_main)
@@ -723,12 +723,12 @@ class TestHDFUtils(unittest.TestCase):
                                          np.repeat(np.arange(num_rows), num_cols))).T
             pos_attrs = {'units': ['nm', 'um'],
                          'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = MicroDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
-            dset_source_pos_vals = MicroDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+            dset_source_pos_inds = VirtualDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            dset_source_pos_vals = VirtualDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
 
             source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = MicroDataset('source_main', source_main_data,
-                                            attrs={'units': 'A', 'quantity': 'Current',
+            dset_source_main = VirtualDataset('source_main', source_main_data,
+                                              attrs={'units': 'A', 'quantity': 'Current',
                                                    'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                                               'odd_rows': (slice(1, None, 2), slice(None))}
                                                    })
@@ -737,10 +737,10 @@ class TestHDFUtils(unittest.TestCase):
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
             source_spec_attrs = {'units': ['V', ''],
                                  'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = MicroDataset('SpecIndices', source_spec_data, dtype=np.uint16,
-                                                 attrs=source_spec_attrs)
-            dset_source_spec_vals = MicroDataset('SpecValues', source_spec_data, dtype=np.float16,
-                                                 attrs=source_spec_attrs)
+            dset_source_spec_inds = VirtualDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                                   attrs=source_spec_attrs)
+            dset_source_spec_vals = VirtualDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                                   attrs=source_spec_attrs)
 
             writer = HDFwriter(h5_f)
             h5_main = writer._create_dataset(h5_f, dset_source_main)
@@ -763,9 +763,9 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             writer = HDFwriter(h5_f)
-            h5_main = writer._create_dataset(h5_f, MicroDataset('main', np.arange(5)))
-            h5_anc = writer._create_dataset(h5_f, MicroDataset('Ancillary', np.arange(3)))
-            h5_group = writer._create_group(h5_f, MicroDataGroup('Results'))
+            h5_main = writer._create_dataset(h5_f, VirtualDataset('main', np.arange(5)))
+            h5_anc = writer._create_dataset(h5_f, VirtualDataset('Ancillary', np.arange(3)))
+            h5_group = writer._create_group(h5_f, VirtualGroup('Results'))
 
             # Linking to dataset:
             hdf_utils.link_h5_obj_as_alias(h5_main, h5_anc, 'Blah')
@@ -801,9 +801,9 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             writer = HDFwriter(h5_f)
-            h5_main = writer._create_dataset(h5_f, MicroDataset('main', np.arange(5)))
-            h5_anc = writer._create_dataset(h5_f, MicroDataset('Ancillary', np.arange(3)))
-            h5_group = writer._create_group(h5_f, MicroDataGroup('Results'))
+            h5_main = writer._create_dataset(h5_f, VirtualDataset('main', np.arange(5)))
+            h5_anc = writer._create_dataset(h5_f, VirtualDataset('Ancillary', np.arange(3)))
+            h5_group = writer._create_group(h5_f, VirtualGroup('Results'))
 
             hdf_utils.link_h5_objects_as_attrs(h5_f, [h5_anc, h5_main, h5_group])
             for exp, name in zip([h5_main, h5_anc, h5_group], ['main', 'Ancillary', 'Results']):
@@ -903,8 +903,8 @@ class TestHDFUtils(unittest.TestCase):
                                          np.tile(np.arange(num_cols), num_rows))).T
             pos_attrs = {'units': ['nm', 'um'],
                          'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = MicroDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
-            dset_source_pos_vals = MicroDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+            dset_source_pos_inds = VirtualDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            dset_source_pos_vals = VirtualDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
 
             source_main_data = np.zeros(shape=(num_rows * num_cols, num_cycle_pts * num_cycles), dtype=np.float16)
             for row_ind in range(num_rows):
@@ -915,8 +915,8 @@ class TestHDFUtils(unittest.TestCase):
                             source_main_data[row_ind*num_cols + col_ind, cycle_ind*num_cycle_pts + bias_ind] = val
 
             # source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = MicroDataset('source_main', source_main_data,
-                                            attrs={'units': 'A', 'quantity': 'Current',
+            dset_source_main = VirtualDataset('source_main', source_main_data,
+                                              attrs={'units': 'A', 'quantity': 'Current',
                                                    'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                                               'odd_rows': (slice(1, None, 2), slice(None))}})
             # make spectroscopic slow, fast instead of fast, slow
@@ -924,12 +924,12 @@ class TestHDFUtils(unittest.TestCase):
                                           np.tile(np.arange(num_cycle_pts), num_cycles)))
             source_spec_attrs = {'units': ['V', ''],
                                  'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = MicroDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
-                                                 attrs=source_spec_attrs)
-            dset_source_spec_vals = MicroDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
-                                                 attrs=source_spec_attrs)
-            group_source = MicroDataGroup('Raw_Measurement',
-                                          children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
+            dset_source_spec_inds = VirtualDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
+                                                   attrs=source_spec_attrs)
+            dset_source_spec_vals = VirtualDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
+                                                   attrs=source_spec_attrs)
+            group_source = VirtualGroup('Raw_Measurement',
+                                        children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
                                                     dset_source_pos_vals, dset_source_pos_inds])
 
             writer = HDFwriter(h5_f)
@@ -1060,7 +1060,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_orig_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_orig_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_orig_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None)),
@@ -1084,7 +1084,7 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, act))
 
             # Now write a new dataset without the region reference:
-            h5_new_dset = writer._create_simple_dset(h5_f, MicroDataset('other', data))
+            h5_new_dset = writer._create_simple_dset(h5_f, VirtualDataset('other', data))
             self.assertIsInstance(h5_orig_dset, h5py.Dataset)
             h5_f.flush()
 

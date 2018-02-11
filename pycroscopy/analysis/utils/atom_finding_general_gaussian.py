@@ -12,7 +12,7 @@ import time as tm
 import matplotlib.pyplot as plt
 
 from ...core.io.io_utils import recommend_cpu_cores
-from ...core.io.microdata import MicroDataset, MicroDataGroup
+from ...core.io.virtual_data import VirtualDataset, VirtualGroup
 from ...core.io.hdf_writer import HDFwriter
 from ...core.viz.plot_utils import cmap_jet_white_center
 
@@ -500,13 +500,13 @@ class Gauss_Fit(object):
                 Nearest_Neighbor_Indices
         """
 
-        ds_atom_guesses = MicroDataset('Gaussian_Guesses', data=self.guess_dataset)
-        ds_atom_fits = MicroDataset('Gaussian_Fits', data=self.fit_dataset)
-        ds_motif_guesses = MicroDataset('Motif_Guesses', data=self.motif_guess_dataset)
-        ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_dataset)
-        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices',
-                                            data=self.closest_neighbors_mat, dtype=np.uint32)
-        dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
+        ds_atom_guesses = VirtualDataset('Gaussian_Guesses', data=self.guess_dataset)
+        ds_atom_fits = VirtualDataset('Gaussian_Fits', data=self.fit_dataset)
+        ds_motif_guesses = VirtualDataset('Motif_Guesses', data=self.motif_guess_dataset)
+        ds_motif_fits = VirtualDataset('Motif_Fits', data=self.motif_converged_dataset)
+        ds_nearest_neighbors = VirtualDataset('Nearest_Neighbor_Indices',
+                                              data=self.closest_neighbors_mat, dtype=np.uint32)
+        dgrp_atom_finding = VirtualGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
         dgrp_atom_finding.attrs = self.fitting_parms
         dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
                                         ds_motif_fits, ds_nearest_neighbors])

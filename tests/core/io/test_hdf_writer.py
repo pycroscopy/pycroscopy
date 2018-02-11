@@ -12,7 +12,7 @@ import numpy as np
 
 import sys
 sys.path.append("../../../pycroscopy/")
-from pycroscopy import MicroDataGroup, MicroDataset
+from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
 from pycroscopy.core.io.hdf_writer import clean_string_att
 from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
@@ -104,7 +104,7 @@ class TestHDFWriter(unittest.TestCase):
             dtype = np.uint16
             dset_name = 'test'
             data = np.random.randint(0, high=15, size=5, dtype=dtype)
-            microdset = MicroDataset(dset_name, data)
+            microdset = VirtualDataset(dset_name, data)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
@@ -127,7 +127,7 @@ class TestHDFWriter(unittest.TestCase):
             dtype = data.dtype
             compression = 'gzip'
             chunking=(1, 1024)
-            microdset = MicroDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
+            microdset = VirtualDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
@@ -152,7 +152,7 @@ class TestHDFWriter(unittest.TestCase):
             dtype = np.float16
             compression = 'gzip'
             chunking=(1, 1024)
-            microdset = MicroDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
+            microdset = VirtualDataset(dset_name, data, dtype=dtype, compression=compression, chunking=chunking)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_simple_dset(h5_f, microdset)
@@ -174,7 +174,7 @@ class TestHDFWriter(unittest.TestCase):
 
             dset_name = 'test'
             maxshape = (16, 1024)
-            microdset = MicroDataset(dset_name, None, maxshape=maxshape)
+            microdset = VirtualDataset(dset_name, None, maxshape=maxshape)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_empty_dset(h5_f, microdset)
@@ -197,8 +197,8 @@ class TestHDFWriter(unittest.TestCase):
             chunking = (1, 1024)
             compression = 'gzip'
             dtype = np.float16
-            microdset = MicroDataset(dset_name, None, maxshape=maxshape,
-                                     dtype=dtype, compression=compression, chunking=chunking)
+            microdset = VirtualDataset(dset_name, None, maxshape=maxshape,
+                                       dtype=dtype, compression=compression, chunking=chunking)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_empty_dset(h5_f, microdset)
@@ -221,7 +221,7 @@ class TestHDFWriter(unittest.TestCase):
             dset_name = 'test'
             maxshape = (None, 1024)
             data = np.random.rand(1, 1024)
-            microdset = MicroDataset(dset_name, data, maxshape=maxshape)
+            microdset = VirtualDataset(dset_name, data, maxshape=maxshape)
 
             writer = HDFwriter(h5_f)
             h5_d = writer._create_resizeable_dset(h5_f, microdset)
@@ -258,7 +258,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             grp_name = 'test'
-            micro_group = MicroDataGroup(grp_name)
+            micro_group = VirtualGroup(grp_name)
 
             writer = HDFwriter(h5_f)
             h5_grp = writer._create_group(h5_f, micro_group)
@@ -275,7 +275,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             grp_name = 'test_'
-            micro_group = MicroDataGroup(grp_name)
+            micro_group = VirtualGroup(grp_name)
 
             writer = HDFwriter(h5_f)
             h5_grp = writer._create_group(h5_f, micro_group)
@@ -292,7 +292,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             grp_name = ''
-            micro_group = MicroDataGroup(grp_name)
+            micro_group = VirtualGroup(grp_name)
 
             writer = HDFwriter(h5_f)
             with self.assertRaises(ValueError):
@@ -306,7 +306,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             outer_grp_name = 'outer_'
-            micro_group = MicroDataGroup(outer_grp_name)
+            micro_group = VirtualGroup(outer_grp_name)
 
             writer = HDFwriter(h5_f)
             h5_outer_grp = writer._create_group(h5_f, micro_group)
@@ -315,7 +315,7 @@ class TestHDFWriter(unittest.TestCase):
             self.assertEqual(h5_outer_grp.name, '/' + outer_grp_name + '000')
 
             inner_grp_name = 'inner_'
-            micro_group = MicroDataGroup(inner_grp_name)
+            micro_group = VirtualGroup(inner_grp_name)
 
             h5_inner_grp = writer._create_group(h5_outer_grp, micro_group)
             self.assertIsInstance(h5_inner_grp, h5py.Group)
@@ -355,7 +355,7 @@ class TestHDFWriter(unittest.TestCase):
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
             grp_name = 'test_group_'
-            micro_group = MicroDataGroup(grp_name)
+            micro_group = VirtualGroup(grp_name)
 
             writer = HDFwriter(h5_f)
             h5_group = writer._create_group(h5_f, micro_group)
@@ -377,7 +377,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             writer = HDFwriter(h5_f)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', np.arange(3)))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', np.arange(3)))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'att_1': 'string_val',
@@ -401,7 +401,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None)),
@@ -432,7 +432,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 3)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(None), slice(0, None, 2)),
@@ -463,7 +463,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2)),
@@ -493,7 +493,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(2, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': ['row_1', 'row_2']}
@@ -523,7 +523,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(3, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             # with self.assertWarns(UserWarning):
@@ -542,7 +542,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(2, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             # with self.assertWarns(UserWarning):
@@ -557,7 +557,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None), slice(None)),
@@ -574,7 +574,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2)),
@@ -591,7 +591,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, 15, 2), slice(None)),
@@ -621,7 +621,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': {'even_rows': (slice(0, None, 2), 15),
@@ -639,7 +639,7 @@ class TestHDFWriter(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             data = np.random.rand(5, 7)
-            h5_dset = writer._create_simple_dset(h5_f, MicroDataset('test', data))
+            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', data))
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'att_1': 'string_val',
@@ -692,7 +692,7 @@ class TestHDFWriter(unittest.TestCase):
                      'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                 'odd_rows': (slice(1, None, 2), slice(None))}
                      }
-            micro_dset = MicroDataset('test', data)
+            micro_dset = VirtualDataset('test', data)
             micro_dset.attrs = attrs.copy()
             [h5_dset] = writer.write(micro_dset)
             self.assertIsInstance(h5_dset, h5py.Dataset)
@@ -720,7 +720,7 @@ class TestHDFWriter(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
 
             writer = HDFwriter(h5_f)
-            h5_g = writer._create_group(h5_f, MicroDataGroup('test_group'))
+            h5_g = writer._create_group(h5_f, VirtualGroup('test_group'))
 
             self.assertIsInstance(h5_g, h5py.Group)
 
@@ -732,7 +732,7 @@ class TestHDFWriter(unittest.TestCase):
                      'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                 'odd_rows': (slice(1, None, 2), slice(None))}
                      }
-            micro_dset = MicroDataset('test', data, parent='/test_group')
+            micro_dset = VirtualDataset('test', data, parent='/test_group')
             micro_dset.attrs = attrs.copy()
             [h5_dset] = writer.write(micro_dset)
             self.assertIsInstance(h5_dset, h5py.Dataset)
@@ -764,7 +764,7 @@ class TestHDFWriter(unittest.TestCase):
             writer = HDFwriter(h5_f)
 
             with self.assertRaises(KeyError):
-                _ = writer.write(MicroDataset('test', np.random.rand(5, 7), parent='/does_not_exist'))
+                _ = writer.write(VirtualDataset('test', np.random.rand(5, 7), parent='/does_not_exist'))
 
         os.remove(file_path)
 
@@ -777,7 +777,7 @@ class TestHDFWriter(unittest.TestCase):
                      'att_3': [1, 2, 3, 4],
                      'att_4': ['str_1', 'str_2', 'str_3']}
 
-            micro_group = MicroDataGroup('')
+            micro_group = VirtualGroup('')
             micro_group.attrs = attrs
             writer = HDFwriter(h5_f)
             [ret_val] = writer.write(micro_group)
@@ -799,7 +799,7 @@ class TestHDFWriter(unittest.TestCase):
                      'att_3': [1, 2, 3, 4],
                      'att_4': ['str_1', 'str_2', 'str_3']}
 
-            micro_group = MicroDataGroup('Test_')
+            micro_group = VirtualGroup('Test_')
             micro_group.attrs = attrs
             writer = HDFwriter(h5_f)
             [h5_group] = writer.write(micro_group)
@@ -814,17 +814,17 @@ class TestHDFWriter(unittest.TestCase):
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
             writer = HDFwriter(h5_f)
-            micro_group_0 = MicroDataGroup('Test_', attrs={'att_1': 'string_val', 'att_2': 1.2345})
+            micro_group_0 = VirtualGroup('Test_', attrs={'att_1': 'string_val', 'att_2': 1.2345})
             [h5_group_0] = writer.write(micro_group_0)
 
-            _ = writer.write(MicroDataGroup('blah'))
+            _ = writer.write(VirtualGroup('blah'))
 
             self.assertIsInstance(h5_group_0, h5py.Group)
             self.assertEqual(h5_group_0.name, '/Test_000')
             for key, expected_val in micro_group_0.attrs.items():
                 self.assertTrue(np.all(get_attr(h5_group_0, key) == expected_val))
 
-            micro_group_1 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
+            micro_group_1 = VirtualGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
             [h5_group_1] = writer.write(micro_group_1)
 
             self.assertIsInstance(h5_group_1, h5py.Group)
@@ -838,10 +838,10 @@ class TestHDFWriter(unittest.TestCase):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
-            micro_group_0 = MicroDataGroup('Test_', attrs = {'att_1': 'string_val', 'att_2': 1.2345})
-            micro_group_1 = MicroDataGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
-            root_group = MicroDataGroup('', children=[MicroDataGroup('blah'), micro_group_0,
-                                                      MicroDataGroup('meh'), micro_group_1])
+            micro_group_0 = VirtualGroup('Test_', attrs = {'att_1': 'string_val', 'att_2': 1.2345})
+            micro_group_1 = VirtualGroup('Test_', attrs={'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
+            root_group = VirtualGroup('', children=[VirtualGroup('blah'), micro_group_0,
+                                                    VirtualGroup('meh'), micro_group_1])
 
             writer = HDFwriter(h5_f)
             h5_refs_list = writer.write(root_group)
@@ -874,14 +874,14 @@ class TestHDFWriter(unittest.TestCase):
                                 'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                            'odd_rows': (slice(1, None, 2), slice(None))}
                                 }
-            inner_dset = MicroDataset('inner_dset', inner_dset_data)
+            inner_dset = VirtualDataset('inner_dset', inner_dset_data)
             inner_dset.attrs = inner_dset_attrs.copy()
 
             attrs_inner_grp = {'att_1': 'string_val',
                                'att_2': 1.2345,
                                'att_3': [1, 2, 3, 4],
                                'att_4': ['str_1', 'str_2', 'str_3']}
-            inner_group = MicroDataGroup('indexed_inner_group_')
+            inner_group = VirtualGroup('indexed_inner_group_')
             inner_group.attrs = attrs_inner_grp
             inner_group.add_children(inner_dset)
 
@@ -893,14 +893,14 @@ class TestHDFWriter(unittest.TestCase):
                                 'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                            'odd_rows': (slice(1, None, 2), slice(None))}
                                 }
-            outer_dset = MicroDataset('test', outer_dset_data, parent='/test_group')
+            outer_dset = VirtualDataset('test', outer_dset_data, parent='/test_group')
             outer_dset.attrs = outer_dset_attrs.copy()
 
             attrs_outer_grp = {'att_1': 'string_val',
                                'att_2': 1.2345,
                                'att_3': [1, 2, 3, 4],
                                'att_4': ['str_1', 'str_2', 'str_3']}
-            outer_group = MicroDataGroup('unindexed_outer_group')
+            outer_group = VirtualGroup('unindexed_outer_group')
             outer_group.attrs = attrs_outer_grp
             outer_group.add_children([inner_group, outer_dset])
 

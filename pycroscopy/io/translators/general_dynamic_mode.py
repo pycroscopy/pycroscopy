@@ -19,7 +19,7 @@ from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class GDMTranslator(Translator):
@@ -87,36 +87,36 @@ class GDMTranslator(Translator):
         pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
 
         # Now start creating datasets and populating:
-        ds_pos_ind = MicroDataset('Position_Indices', np.uint32(pos_mat))
+        ds_pos_ind = VirtualDataset('Position_Indices', np.uint32(pos_mat))
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
 
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = {'Response Bin Index': (slice(0, 1), slice(None)),
                                         'Excitation Frequency Index': (slice(1, 2), slice(None))}
 
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_val_mat)
+        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_val_mat)
         ds_spec_vals.attrs['labels'] = {'Response Bin': (slice(0, 1), slice(None)),
                                         'Excitation Frequency': (slice(1, 2), slice(None))}
 
-        ds_ex_freqs = MicroDataset('Excitation_Frequencies', freq_array)
-        ds_bin_freq = MicroDataset('Bin_Frequencies', w_vec)
+        ds_ex_freqs = VirtualDataset('Excitation_Frequencies', freq_array)
+        ds_bin_freq = VirtualDataset('Bin_Frequencies', w_vec)
 
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
         # For some reason, compression is more effective on time series data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pix, len(freq_array) * num_bins),
-                                    dtype=np.float32, chunking=(1, num_bins), compression='gzip')
+        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pix, len(freq_array) * num_bins),
+                                      dtype=np.float32, chunking=(1, num_bins), compression='gzip')
 
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         chan_grp.attrs = parm_dict
         chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                ds_ex_freqs, ds_bin_freq, ds_main_data])
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.add_children([chan_grp])
 
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']

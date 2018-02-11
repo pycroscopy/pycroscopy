@@ -12,7 +12,7 @@ import collections
 from warnings import warn
 from collections import Iterable
 import numpy as np
-from .microdata import MicroDataset
+from .virtual_data import VirtualDataset
 from .write_utils import make_indices_matrix
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
@@ -1508,9 +1508,9 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
 
     Returns
     -------
-    ds_inds : MicroDataset
+    ds_inds : VirtualDataset
             Reduced Spectroscopic indices dataset
-    ds_vals : MicroDataset
+    ds_vals : VirtualDataset
             Reduces Spectroscopic values dataset
     """
     for param in [h5_spec_inds, h5_spec_vals]:
@@ -1527,11 +1527,11 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
         ind_mat = h5_spec_inds[keep_dim, :][:, step_starts]
         val_mat = h5_spec_vals[keep_dim, :][:, step_starts]
         '''
-        Create new MicroDatasets to hold the data
+        Create new VirtualDatasets to hold the data
         Name them based on basename
         '''
-        ds_inds = MicroDataset(basename + '_Indices', ind_mat, dtype=h5_spec_inds.dtype)
-        ds_vals = MicroDataset(basename + '_Values', val_mat, dtype=h5_spec_vals.dtype)
+        ds_inds = VirtualDataset(basename + '_Indices', ind_mat, dtype=h5_spec_inds.dtype)
+        ds_vals = VirtualDataset(basename + '_Values', val_mat, dtype=h5_spec_vals.dtype)
         # Extracting the labels from the original spectroscopic data sets
         sho_inds_labs = h5_spec_inds.attrs['labels'][keep_dim]
         # Creating the dimension slices for the new spectroscopic data sets
@@ -1546,8 +1546,8 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
         ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
 
     else:  # Single spectroscopic dimension:
-        ds_inds = MicroDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
-        ds_vals = MicroDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
+        ds_inds = VirtualDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
+        ds_vals = VirtualDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
 
         ds_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
         ds_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}

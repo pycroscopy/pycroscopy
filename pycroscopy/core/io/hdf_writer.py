@@ -15,7 +15,7 @@ from warnings import warn
 import h5py
 import numpy as np
 
-from .microdata import MicroDataGroup, MicroDataset, MicroData
+from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 
 if sys.version_info.major == 3:
@@ -178,26 +178,26 @@ class HDFwriter(object):
 
         h5_file.attrs['Pycroscopy version'] = version
 
-        # Checking if the data is a MicroDataGroup object
-        if not isinstance(data, MicroData):
+        # Checking if the data is a VirtualGroup object
+        if not isinstance(data, VirtualData):
             raise TypeError('Input expected to be of type MicroData but is of type: {} \n'.format(type(data)))
 
-        if isinstance(data, MicroDataset):
+        if isinstance(data, VirtualDataset):
             # just want to write a single dataset:
             try:
                 h5_parent = h5_file[data.parent]
             except KeyError:
-                raise KeyError('Parent ({}) of provided MicroDataset ({}) does not exist in the '
+                raise KeyError('Parent ({}) of provided VirtualDataset ({}) does not exist in the '
                                'file'.format(data.parent, data.name))
             h5_dset = HDFwriter._create_dataset(h5_parent, data, print_log=print_log)
             return [h5_dset]
 
-        assert isinstance(data, MicroDataGroup)  # just to avoid PEP8 warning
+        assert isinstance(data, VirtualGroup)  # just to avoid PEP8 warning
 
         # Populating the tree structure recursively
         ref_list = []
 
-        # Figuring out if the first item in MicroDataGroup tree is file or group
+        # Figuring out if the first item in VirtualGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
             HDFwriter._write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
@@ -216,7 +216,7 @@ class HDFwriter(object):
 
             Parameters
             ----------
-            child : MicroDataGroup object
+            child : VirtualGroup object
                 tree to be written
             parent : h5py.Group or h5py.File object
                 HDF5 object to build tree under
@@ -231,7 +231,7 @@ class HDFwriter(object):
 
             h5_parent_group = h5_file[parent]
 
-            if isinstance(child, MicroDataGroup):
+            if isinstance(child, VirtualGroup):
                 h5_obj = HDFwriter._create_group(h5_parent_group, child, print_log=print_log)
                 # here we do the recursive function call
                 for ch in child.children:
@@ -256,13 +256,13 @@ class HDFwriter(object):
     @staticmethod
     def _create_group(h5_parent_group, micro_group, print_log=False):
         """
-        Creates a h5py.Group object from the provided MicroDataGroup object under h5_new_group and writes all attributes
+        Creates a h5py.Group object from the provided VirtualGroup object under h5_new_group and writes all attributes
 
         Parameters
         ----------
         h5_parent_group : h5py.Group object
             Parent group under which the new group object will be created
-        micro_group : MicroDataGroup object
+        micro_group : VirtualGroup object
             Definition for the new group
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
@@ -272,9 +272,9 @@ class HDFwriter(object):
         h5_new_group : h5py.Group
             The newly created group
         """
-        if not isinstance(micro_group, MicroDataGroup):
+        if not isinstance(micro_group, VirtualGroup):
             HDFwriter.__safe_abort(h5_parent_group.file)
-            raise TypeError('micro_group should be a MicroDataGroup object but is instead of type '
+            raise TypeError('micro_group should be a VirtualGroup object but is instead of type '
                             '{}'.format(type(micro_group)))
         if not isinstance(h5_parent_group, h5py.Group):
             raise TypeError('h5_parent_group should be a h5py.Group object but is instead of type '
@@ -282,7 +282,7 @@ class HDFwriter(object):
 
         if micro_group.name == '':
             HDFwriter.__safe_abort(h5_parent_group.file)
-            raise ValueError('MicroDataGroup object with empty name will not be handled by this function')
+            raise ValueError('VirtualGroup object with empty name will not be handled by this function')
 
         # First complete the name of the group by adding the index suffix
         if micro_group.indexed:
@@ -364,7 +364,7 @@ class HDFwriter(object):
         ----------
         h5_group : h5py.File or h5py.Group object
             Parent under which this dataset will be created
-        microdset : MicroDataset object
+        microdset : VirtualDataset object
             Definition for the dataset
 
         Returns
@@ -372,9 +372,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        if not isinstance(microdset, MicroDataset):
+        if not isinstance(microdset, VirtualDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a VirtualGroup object but is instead of type '
                             '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
@@ -398,7 +398,7 @@ class HDFwriter(object):
         ----------
         h5_group : h5py.File or h5py.Group object
             Parent under which this dataset will be created
-        microdset : MicroDataset object
+        microdset : VirtualDataset object
             Definition for the dataset
 
         Returns
@@ -406,9 +406,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        if not isinstance(microdset, MicroDataset):
+        if not isinstance(microdset, VirtualDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a VirtualGroup object but is instead of type '
                             '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
@@ -430,7 +430,7 @@ class HDFwriter(object):
         ----------
         h5_group : h5py.File or h5py.Group object
             Parent under which this dataset will be created
-        microdset : MicroDataset object
+        microdset : VirtualDataset object
             Definition for the dataset
 
         Returns
@@ -438,9 +438,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        if not isinstance(microdset, MicroDataset):
+        if not isinstance(microdset, VirtualDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a VirtualGroup object but is instead of type '
                             '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '
@@ -468,7 +468,7 @@ class HDFwriter(object):
         ----------
         h5_group : h5py.File or h5py.Group object
             Parent under which this dataset will be created
-        microdset : MicroDataset object
+        microdset : VirtualDataset object
             Definition for the dataset
         print_log : bool, optional. Default=False
             Whether or not to print debugging statements
@@ -478,9 +478,9 @@ class HDFwriter(object):
         h5_dset : h5py.Dataset object
             Newly created datset object
         """
-        if not isinstance(microdset, MicroDataset):
+        if not isinstance(microdset, VirtualDataset):
             HDFwriter.__safe_abort(h5_group.file)
-            raise TypeError('microdset should be a MicroDataGroup object but is instead of type '
+            raise TypeError('microdset should be a VirtualGroup object but is instead of type '
                             '{}'.format(type(microdset)))
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object but is instead of type '

@@ -300,11 +300,11 @@ print('Labels', labels_mat.shape)
 # Remember that it is important to either inherit or add the `quantity` and `units` attributes to each **main** dataset
 
 # The two main datasets
-ds_label_mat = px.MicroDataset('Labels', labels_mat, dtype=np.uint32)
+ds_label_mat = px.VirtualDataset('Labels', labels_mat, dtype=np.uint32)
 # Adding the mandatory attributes
 ds_label_mat.attrs = {'quantity': 'Cluster ID', 'units': 'a. u.'}
 
-ds_cluster_centroids = px.MicroDataset('Mean_Response', centroids, dtype=h5_main.dtype)
+ds_cluster_centroids = px.VirtualDataset('Mean_Response', centroids, dtype=h5_main.dtype)
 # Inhereting / copying the mandatory attributes
 px.hdf_utils.copy_main_attributes(h5_main, ds_cluster_centroids)
 
@@ -337,8 +337,8 @@ operation_name = 'Cluster'
 
 subtree_root_path = h5_main.parent.name[1:]
 
-cluster_grp = px.MicroDataGroup(source_dset_name + '-' + operation_name + '_',
-                                subtree_root_path)
+cluster_grp = px.VirtualGroup(source_dset_name + '-' + operation_name + '_',
+                              subtree_root_path)
 print('New group to be created with name:', cluster_grp.name)
 print('This group (subtree) will be appended to the H5 file under the group:', subtree_root_path)
 

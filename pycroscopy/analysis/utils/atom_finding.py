@@ -19,7 +19,7 @@ import matplotlib.patches as patches
 
 from ...core.io.io_utils import recommend_cpu_cores
 from ...core.io.dtype_utils import real_to_compound
-from ...core.io.microdata import MicroDataset, MicroDataGroup
+from ...core.io.virtual_data import VirtualDataset, VirtualGroup
 from ...core.io.hdf_writer import HDFwriter
 
 # atom_dtype = np.dtype([('x', np.float32),
@@ -327,9 +327,9 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
         guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(guess_coeff, guess_parms.dtype))
         fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(fit_coeff, guess_parms.dtype))
 
-    ds_atom_guesses = MicroDataset('Guess', data=guess_parms)
-    ds_atom_fits = MicroDataset('Fit', data=fit_parms)
-    dgrp_atom_finding = MicroDataGroup(h5_grp.name.split('/')[-1], parent=h5_grp.parent.name)
+    ds_atom_guesses = VirtualDataset('Guess', data=guess_parms)
+    ds_atom_fits = VirtualDataset('Fit', data=fit_parms)
+    dgrp_atom_finding = VirtualGroup(h5_grp.name.split('/')[-1], parent=h5_grp.parent.name)
     dgrp_atom_finding.attrs = fitting_parms
     dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits])
 

@@ -9,7 +9,7 @@ import unittest
 import sys
 import numpy as np
 sys.path.append("../../../pycroscopy/")
-from pycroscopy import MicroDataset
+from pycroscopy import VirtualDataset
 from pycroscopy.core.io import write_utils
 
 test_h5_file_path = 'test_hdf_utils.h5'
@@ -88,12 +88,12 @@ class TestWriteUtils(unittest.TestCase):
                               np.repeat(np.arange(num_rows), num_cols)))
         with self.assertWarns(DeprecationWarning):
             ds_inds, ds_vals = write_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True)
-        exp_inds = MicroDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_data),
-                                attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_data),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
                                        'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
                                                   'Unknown Dimension 1': (slice(1, 2), slice(None))}})
-        exp_vals = MicroDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_data),
-                                attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_data),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
                                        'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
                                                   'Unknown Dimension 1': (slice(1, 2), slice(None))}})
         self.assertEqual(exp_inds, ds_inds)
@@ -114,12 +114,12 @@ class TestWriteUtils(unittest.TestCase):
             ds_inds, ds_vals = write_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True,
                                                                steps=[col_step, row_step],
                                                                initial_values=[col_initial, row_initial])
-        exp_inds = MicroDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
-                                attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
                                        'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
                                                   'Unknown Dimension 1': (slice(1, 2), slice(None))}})
-        exp_vals = MicroDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
-                                attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
                                        'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
                                                   'Unknown Dimension 1': (slice(1, 2), slice(None))}})
         self.assertEqual(exp_inds, ds_inds)
@@ -142,12 +142,12 @@ class TestWriteUtils(unittest.TestCase):
                                                            steps=[col_step, row_step],
                                                            initial_values=[col_initial, row_initial],
                                                            labels=dim_names, units=dim_units)
-        exp_inds = MicroDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
-                                attrs={'units': dim_units,
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
+                                  attrs={'units': dim_units,
                                        'labels': {dim_names[0]: (slice(0, 1), slice(None)),
                                                   dim_names[1]: (slice(1, 2), slice(None))}})
-        exp_vals = MicroDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
-                                attrs={'units': dim_units,
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
+                                  attrs={'units': dim_units,
                                        'labels': {dim_names[0]: (slice(0, 1), slice(None)),
                                                   dim_names[1]: (slice(1, 2), slice(None))}})
         self.assertEqual(exp_inds, ds_inds)
@@ -170,12 +170,12 @@ class TestWriteUtils(unittest.TestCase):
                                                            steps=[col_step, row_step],
                                                            initial_values=[col_initial, row_initial],
                                                            labels=dim_names, units=dim_units)
-        exp_inds = MicroDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(pos_inds),
-                                attrs={'units': dim_units,
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(pos_inds),
+                                  attrs={'units': dim_units,
                                        'labels': {dim_names[0]: (slice(None), slice(0, 1)),
                                                   dim_names[1]: (slice(None), slice(1, 2))}})
-        exp_vals = MicroDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(pos_vals),
-                                attrs={'units': dim_units,
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(pos_vals),
+                                  attrs={'units': dim_units,
                                        'labels': {dim_names[0]: (slice(None), slice(0, 1)),
                                                   dim_names[1]: (slice(None), slice(1, 2))}})
         self.assertEqual(exp_inds, ds_inds)
@@ -210,7 +210,6 @@ class TestWriteUtils(unittest.TestCase):
                                                 initial_values=[col_initial, row_initial], labels=[dim_names[0]],
                                                 units=[dim_units[1]])
 
-    # TODO: rename microdata to virtualdata or something better
     # TODO: use new dtype constants for all writing!
 
 

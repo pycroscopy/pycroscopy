@@ -12,7 +12,7 @@ from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get
 from ...core.io.dtype_utils import real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 from ...core.io.pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
@@ -328,13 +328,13 @@ class FakeBEPSGenerator(Translator):
 
         Returns
         -------
-        ds_pos_inds : MicroDataset
+        ds_pos_inds : VirtualDataset
             Position Indices
-        ds_pos_vals : MicroDataset
+        ds_pos_vals : VirtualDataset
             Position Values
-        ds_spec_inds : MicroDataset
+        ds_spec_inds : VirtualDataset
             Spectrosocpic Indices
-        ds_spec_vals : MicroDataset
+        ds_spec_vals : VirtualDataset
             Spectroscopic Values
 
         """
@@ -406,14 +406,14 @@ class FakeBEPSGenerator(Translator):
         Build the group structure down to the channel group
         '''
         # Set up the basic group structure
-        root_grp = MicroDataGroup('')
+        root_grp = VirtualGroup('')
         root_parms = generate_dummy_main_parms()
         root_parms['translator'] = 'FAKEBEPS'
         root_parms['data_type'] = data_gen_parms['data_type']
         root_grp.attrs = root_parms
 
-        meas_grp = MicroDataGroup('Measurement_')
-        chan_grp = MicroDataGroup('Channel_')
+        meas_grp = VirtualGroup('Measurement_')
+        chan_grp = VirtualGroup('Channel_')
 
         meas_grp.attrs.update(data_gen_parms)
 
@@ -425,12 +425,12 @@ class FakeBEPSGenerator(Translator):
                                    np.complex64(0).itemsize,
                                    unit_chunks=[1, self.n_bins])
 
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=[self.n_pixels, self.n_spec_bins],
-                                   dtype=np.complex64,
-                                   compression='gzip',
-                                   chunking=raw_chunking,
-                                   parent=meas_grp)
+        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+                                     maxshape=[self.n_pixels, self.n_spec_bins],
+                                     dtype=np.complex64,
+                                     compression='gzip',
+                                     chunking=raw_chunking,
+                                     parent=meas_grp)
 
         chan_grp.add_children([ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals,
                                ds_raw_data])
@@ -460,7 +460,7 @@ class FakeBEPSGenerator(Translator):
         '''
         Build the SHO Group
         '''
-        sho_grp = MicroDataGroup('Raw_Data-SHO_Fit_', parent=h5_chan_grp.name)
+        sho_grp = VirtualGroup('Raw_Data-SHO_Fit_', parent=h5_chan_grp.name)
 
         # Build the Spectroscopic datasets for the SHO Guess and Fit
         sho_spec_starts = np.where(h5_spec_inds[h5_spec_inds.attrs['Frequency']].squeeze() == 0)[0]
@@ -474,18 +474,18 @@ class FakeBEPSGenerator(Translator):
                                     self.n_sho_bins],
                                    sho32.itemsize,
                                    unit_chunks=[1, 1])
-        ds_sho_fit = MicroDataset('Fit', data=[],
-                                  maxshape=[self.n_pixels, self.n_sho_bins],
-                                  dtype=sho32,
-                                  compression='gzip',
-                                  chunking=sho_chunking,
-                                  parent=sho_grp)
-        ds_sho_guess = MicroDataset('Guess', data=[],
+        ds_sho_fit = VirtualDataset('Fit', data=[],
                                     maxshape=[self.n_pixels, self.n_sho_bins],
                                     dtype=sho32,
                                     compression='gzip',
                                     chunking=sho_chunking,
                                     parent=sho_grp)
+        ds_sho_guess = VirtualDataset('Guess', data=[],
+                                      maxshape=[self.n_pixels, self.n_sho_bins],
+                                      dtype=sho32,
+                                      compression='gzip',
+                                      chunking=sho_chunking,
+                                      parent=sho_grp)
 
         sho_grp.add_children([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
 
@@ -508,7 +508,7 @@ class FakeBEPSGenerator(Translator):
         '''
         Build the loop group
         '''
-        loop_grp = MicroDataGroup('Fit-Loop_Fit_', parent=h5_sho_fit.parent.name)
+        loop_grp = VirtualGroup('Fit-Loop_Fit_', parent=h5_sho_fit.parent.name)
 
         # Build the Spectroscopic datasets for the loops
         loop_spec_starts = np.where(h5_sho_spec_inds[h5_sho_spec_inds.attrs['DC_Offset']].squeeze() == 0)[0]
@@ -522,19 +522,19 @@ class FakeBEPSGenerator(Translator):
         loop_chunking = calc_chunks([self.n_pixels, self.n_loops],
                                     loop_fit32.itemsize,
                                     unit_chunks=[1, 1])
-        ds_loop_fit = MicroDataset('Fit', data=[],
-                                   maxshape=[self.n_pixels, self.n_loops],
-                                   dtype=loop_fit32,
-                                   compression='gzip',
-                                   chunking=loop_chunking,
-                                   parent=loop_grp)
-
-        ds_loop_guess = MicroDataset('Guess', data=[],
+        ds_loop_fit = VirtualDataset('Fit', data=[],
                                      maxshape=[self.n_pixels, self.n_loops],
                                      dtype=loop_fit32,
                                      compression='gzip',
                                      chunking=loop_chunking,
                                      parent=loop_grp)
+
+        ds_loop_guess = VirtualDataset('Guess', data=[],
+                                       maxshape=[self.n_pixels, self.n_loops],
+                                       dtype=loop_fit32,
+                                       compression='gzip',
+                                       chunking=loop_chunking,
+                                       parent=loop_grp)
 
         # Add the datasets to the loop group then write it to the file
         loop_grp.add_children([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])

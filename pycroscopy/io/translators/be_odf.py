@@ -19,7 +19,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class BEodfTranslator(Translator):
@@ -156,7 +156,7 @@ class BEodfTranslator(Translator):
         bin_FFT = np.complex64(bin_FFT)
         ex_wfm = np.float32(ex_wfm)
 
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
+        ds_ex_wfm = VirtualDataset('Excitation_Waveform', ex_wfm)
 
         self.FFT_BE_wave = bin_FFT
 
@@ -214,14 +214,14 @@ class BEodfTranslator(Translator):
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
             udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind + 1))
-        ds_UDVS = MicroDataset('UDVS', UDVS_mat)
+        ds_UDVS = VirtualDataset('UDVS', UDVS_mat)
         ds_UDVS.attrs['labels'] = udvs_slices
         ds_UDVS.attrs['units'] = UDVS_units
         #         ds_udvs_labs = MicroDataset('UDVS_Labels',np.array(UDVS_labs))
-        ds_UDVS_inds = MicroDataset('UDVS_Indices', spec_inds[1])
+        ds_UDVS_inds = VirtualDataset('UDVS_Indices', spec_inds[1])
 
         #         ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
-        ds_bin_steps = MicroDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
+        ds_bin_steps = VirtualDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
 
         # Need to add the Bin Waveform type - infer from UDVS        
         exec_bin_vec = self.signal_type * np.ones(len(bin_inds), dtype=np.int32)
@@ -234,10 +234,10 @@ class BEodfTranslator(Translator):
             # This is wrong but I don't know what else to do
             bin_FFT = np.hstack((bin_FFT, bin_FFT))
 
-        ds_bin_inds = MicroDataset('Bin_Indices', bin_inds, dtype=np.uint32)
-        ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
-        ds_bin_FFT = MicroDataset('Bin_FFT', bin_FFT)
-        ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
+        ds_bin_inds = VirtualDataset('Bin_Indices', bin_inds, dtype=np.uint32)
+        ds_bin_freq = VirtualDataset('Bin_Frequencies', bin_freqs)
+        ds_bin_FFT = VirtualDataset('Bin_FFT', bin_FFT)
+        ds_wfm_typ = VirtualDataset('Bin_Wfm_Type', exec_bin_vec)
 
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
         spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat,
@@ -256,10 +256,10 @@ class BEodfTranslator(Translator):
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
 
-        ds_spec_mat = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
         ds_spec_mat.attrs['labels'] = spec_vals_slices
         ds_spec_mat.attrs['units'] = spec_vals_units
-        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:
@@ -269,8 +269,8 @@ class BEodfTranslator(Translator):
             ds_spec_vals_mat.attrs[label] = names
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
-                                      chunking=(1, num_actual_udvs_steps))
+        ds_noise_floor = VirtualDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
+                                        chunking=(1, num_actual_udvs_steps))
 
         """
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
@@ -282,13 +282,13 @@ class BEodfTranslator(Translator):
         BEPS_chunks = calc_chunks([num_pix, tot_bins],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, bins_per_step))
-        ds_main_data = MicroDataset('Raw_Data', data=[],
-                                    maxshape=(num_pix, tot_bins),
-                                    dtype=np.complex64,
-                                    chunking=BEPS_chunks,
-                                    compression='gzip')
+        ds_main_data = VirtualDataset('Raw_Data', data=[],
+                                      maxshape=(num_pix, tot_bins),
+                                      dtype=np.complex64,
+                                      chunking=BEPS_chunks,
+                                      compression='gzip')
 
-        chan_grp = MicroDataGroup('Channel_')
+        chan_grp = VirtualGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
         chan_grp.add_children([ds_main_data, ds_noise_floor])
         chan_grp.add_children([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
@@ -296,11 +296,11 @@ class BEodfTranslator(Translator):
                                ds_wfm_typ, ds_spec_vals_mat, ds_UDVS_inds])
 
         # technically should change the date, etc.
-        meas_grp = MicroDataGroup('Measurement_')
+        meas_grp = VirtualGroup('Measurement_')
         meas_grp.attrs = parm_dict
         meas_grp.add_children([chan_grp])
 
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']

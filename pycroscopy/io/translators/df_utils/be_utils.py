@@ -19,7 +19,7 @@ from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_o
     get_attr, create_spec_inds_from_vals
 from ....core.io.hdf_writer import HDFwriter
 from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
-from ....core.io.microdata import MicroDataset, MicroDataGroup
+from ....core.io.virtual_data import VirtualDataset, VirtualGroup
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
@@ -400,14 +400,14 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
         pg_data = np.repeat(UDVS[ref], num_bins)
 
-        ds_mean_spec = MicroDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
-        ds_step_avg = MicroDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
+        ds_mean_spec = VirtualDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
+        ds_step_avg = VirtualDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
         # cannot assume that this is DC offset, could be AC amplitude....
-        ds_spec_parm = MicroDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
+        ds_spec_parm = VirtualDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
         ds_spec_parm.attrs = {'name': spec_label}
-        ds_freq = MicroDataset('Bin_Frequencies', freq_vec)
+        ds_freq = VirtualDataset('Bin_Frequencies', freq_vec)
 
-        plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
+        plot_grp = VirtualGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
         plot_grp.attrs['Name'] = col_name
         plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
 
@@ -445,22 +445,22 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             hist_mat, hist_labels, hist_indices, hist_indices_labels = \
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
                                         min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
-            ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
-                                   chunking=(1, hist_mat.shape[1]), compression='gzip')
+            ds_hist = VirtualDataset('Histograms', hist_mat, dtype=np.int32,
+                                     chunking=(1, hist_mat.shape[1]), compression='gzip')
             hist_slice_dict = dict()
             for hist_ind, hist_dim in enumerate(hist_labels):
                 hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
             ds_hist.attrs['labels'] = hist_slice_dict
             ds_hist.attrs['units'] = ['V', '', 'V', 'V']
-            ds_hist_indices = MicroDataset('Indices', hist_indices, dtype=np.uint)
-            ds_hist_values = MicroDataset('Values', hist_indices, dtype=np.float32)
+            ds_hist_indices = VirtualDataset('Indices', hist_indices, dtype=np.uint)
+            ds_hist_values = VirtualDataset('Values', hist_indices, dtype=np.float32)
             hist_ind_dict = dict()
             for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
                 hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
             ds_hist_indices.attrs['labels'] = hist_ind_dict
             ds_hist_values.attrs['labels'] = hist_ind_dict
 
-            hist_grp = MicroDataGroup('Histogram', h5_mean_spec.parent.name[1:])
+            hist_grp = VirtualGroup('Histogram', h5_mean_spec.parent.name[1:])
 
             hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
 
@@ -479,8 +479,8 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             """
             Write the min and max response vectors so that histograms can be generated later.
             """
-            ds_max_resp = MicroDataset('Max_Response', max_resp)
-            ds_min_resp = MicroDataset('Min_Response', min_resp)
+            ds_max_resp = VirtualDataset('Max_Response', max_resp)
+            ds_min_resp = VirtualDataset('Min_Response', min_resp)
             plot_grp.add_children([ds_max_resp, ds_min_resp])
 
         if save_plots or show_plots:
@@ -1264,7 +1264,7 @@ class BEHistogram:
                 """
                 Add the BEHistogram for the current plot group
                 """
-                plot_grp = MicroDataGroup(p_group.name.split('/')[-1], group.name[1:])
+                plot_grp = VirtualGroup(p_group.name.split('/')[-1], group.name[1:])
                 plot_grp.attrs['Name'] = udvs_lab
                 hist = BEHistogram()
                 hist_mat, hist_labels, hist_indices, hist_indices_labels = \
@@ -1274,19 +1274,19 @@ class BEHistogram:
                                             min_response=min_resp,
                                             max_mem_mb=max_mem)
 
-                ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
-                                       chunking=(1, hist_mat.shape[1]), compression='gzip')
+                ds_hist = VirtualDataset('Histograms', hist_mat, dtype=np.int32,
+                                         chunking=(1, hist_mat.shape[1]), compression='gzip')
 
                 hist_slice_dict = dict()
                 for hist_ind, hist_dim in enumerate(hist_labels):
                     hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
                 ds_hist.attrs['labels'] = hist_slice_dict
-                ds_hist_indices = MicroDataset('Histograms_Indices', hist_indices, dtype=np.int32)
+                ds_hist_indices = VirtualDataset('Histograms_Indices', hist_indices, dtype=np.int32)
                 hist_ind_dict = dict()
                 for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
                     hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
-                ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
+                ds_hist_labels = VirtualDataset('Histograms_Labels', np.array(hist_labels))
                 plot_grp.add_children([ds_hist, ds_hist_indices, ds_hist_labels])
                 hdf.write(plot_grp)
 

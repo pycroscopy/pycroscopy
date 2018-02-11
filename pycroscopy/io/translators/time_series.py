@@ -16,7 +16,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class MovieTranslator(Translator):
@@ -341,11 +341,11 @@ class MovieTranslator(Translator):
         main_parms['num_pixels'] = num_pixels
         main_parms['translator'] = 'Movie'
         # Create the hdf5 data Group
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
         #     ds_spec_ind, ds_spec_vals = buildspectroscopicdatasets(usize, vsize, num_pixels)
         ds_spec_ind, ds_spec_vals = build_ind_val_dsets([num_images],
@@ -362,14 +362,14 @@ class MovieTranslator(Translator):
                                   unit_chunks=(num_pixels, 1))
 
         # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_pixels, num_images),
-                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
-        ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
-                                          data=np.zeros(num_pixels, dtype=np.float32),
-                                          dtype=np.float32)
-        ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
-                                         data=np.zeros(num_images, dtype=np.float32),
-                                         dtype=np.float32)
+        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pixels, num_images),
+                                      chunking=ds_chunking, dtype=data_type, compression='gzip')
+        ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
+                                            data=np.zeros(num_pixels, dtype=np.float32),
+                                            dtype=np.float32)
+        ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
+                                           data=np.zeros(num_images, dtype=np.float32),
+                                           dtype=np.float32)
         # Add datasets as children of Measurement_000 data group
         chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
                                ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])

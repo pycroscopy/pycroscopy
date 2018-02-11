@@ -18,7 +18,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_object
     calc_chunks, link_as_main, check_for_old
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
-from ..core.io.microdata import MicroDataGroup, MicroDataset
+from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
 from .svd_utils import get_component_slice
 
@@ -335,14 +335,14 @@ class ImageWindow(object):
             '''
             Create the Windows Dataset and Datagroup
             '''
-            ds_windows = MicroDataset('Image_Windows',
-                                      data=[],
-                                      maxshape=[n_wins, win_pix],
-                                      dtype=win_type,
-                                      chunking=win_chunks,
-                                      compression='gzip')
+            ds_windows = VirtualDataset('Image_Windows',
+                                        data=[],
+                                        maxshape=[n_wins, win_pix],
+                                        dtype=win_type,
+                                        chunking=win_chunks,
+                                        compression='gzip')
 
-            ds_group = MicroDataGroup(basename + '-Windowing_', parent.name[1:])
+            ds_group = VirtualGroup(basename + '-Windowing_', parent.name[1:])
             ds_group.add_children([ds_windows, ds_pos_inds, ds_pix_inds,
                                    ds_pos_vals, ds_pix_vals])
             ds_group.attrs['win_x'] = win_x
@@ -390,13 +390,13 @@ class ImageWindow(object):
 
         Returns
         -------
-        ds_pix_inds : MicroDataset
+        ds_pix_inds : VirtualDataset
             Spectroscopic Indices of the windows
-        ds_pix_vals : MicroDataset
+        ds_pix_vals : VirtualDataset
             Spectroscopic Values of the windows
-        ds_pos_inds : MicroDataset
+        ds_pos_inds : VirtualDataset
             Position Indices of the windows
-        ds_pos_vals : MicroDataset
+        ds_pos_vals : VirtualDataset
             Position Values of the windows
         win_pos_mat : numpy.ndarray
             Array containing the positions of the window origins
@@ -413,10 +413,10 @@ class ImageWindow(object):
         '''
         Set up the HDF5 Group and Datasets for the windowed data
         '''
-        ds_pos_inds = MicroDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
-        ds_pix_inds = MicroDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
-        ds_pos_vals = MicroDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
-        ds_pix_vals = MicroDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
+        ds_pos_inds = VirtualDataset('Position_Indices', data=win_pos_mat, dtype=np.int32)
+        ds_pix_inds = VirtualDataset('Spectroscopic_Indices', data=win_pix_mat, dtype=np.int32)
+        ds_pos_vals = VirtualDataset('Position_Values', data=win_pos_mat, dtype=np.float32)
+        ds_pix_vals = VirtualDataset('Spectroscopic_Values', data=win_pix_mat, dtype=np.float32)
         pos_labels = get_aux_dset_slicing(['Window Origin X', 'Window Origin Y'], is_spectroscopic=False)
         ds_pos_inds.attrs['labels'] = pos_labels
         ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
@@ -591,9 +591,9 @@ class ImageWindow(object):
 
         clean_image[np.isnan(clean_image)] = 0
 
-        clean_grp = MicroDataGroup('Cleaned_Image', h5_win.parent.name[1:])
+        clean_grp = VirtualGroup('Cleaned_Image', h5_win.parent.name[1:])
 
-        ds_clean = MicroDataset('Cleaned_Image', clean_image)
+        ds_clean = VirtualDataset('Cleaned_Image', clean_image)
 
         clean_grp.add_children([ds_clean])
 
@@ -901,11 +901,11 @@ class ImageWindow(object):
         '''
         Create datasets for results, link them properly, and write them to file
         '''
-        clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
-        ds_clean = MicroDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
-        ds_noise = MicroDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
-        ds_fft_clean = MicroDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
-        ds_fft_noise = MicroDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
+        clean_grp = VirtualGroup('Cleaned_Image_', win_svd.name[1:])
+        ds_clean = VirtualDataset('Cleaned_Image', clean_image.reshape(self.h5_raw.shape))
+        ds_noise = VirtualDataset('Removed_Noise', removed_noise.reshape(self.h5_raw.shape))
+        ds_fft_clean = VirtualDataset('FFT_Cleaned_Image', fft_clean.reshape(self.h5_raw.shape))
+        ds_fft_noise = VirtualDataset('FFT_Removed_Noise', fft_noise.reshape(self.h5_raw.shape))
 
         clean_grp.add_children([ds_clean, ds_noise, ds_fft_clean, ds_fft_noise])
 
@@ -1059,14 +1059,14 @@ class ImageWindow(object):
         '''
         Create datasets for results, link them properly, and write them to file
         '''
-        clean_grp = MicroDataGroup('Cleaned_Image_', win_svd.name[1:])
+        clean_grp = VirtualGroup('Cleaned_Image_', win_svd.name[1:])
 
         clean_chunking = calc_chunks([im_x * im_y, num_comps],
                                      clean_image.dtype.itemsize)
-        ds_clean = MicroDataset('Cleaned_Image',
-                                data=clean_image.reshape(im_x * im_y, num_comps),
-                                chunking=clean_chunking,
-                                compression='gzip')
+        ds_clean = VirtualDataset('Cleaned_Image',
+                                  data=clean_image.reshape(im_x * im_y, num_comps),
+                                  chunking=clean_chunking,
+                                  compression='gzip')
 
         clean_grp.add_children([ds_clean])
 

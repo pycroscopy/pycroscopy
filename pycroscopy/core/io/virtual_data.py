@@ -20,9 +20,9 @@ if sys.version_info.major == 3:
     unicode = str
 
 
-class MicroData(object):
+class VirtualData(object):
     """
-    Generic class that is extended by the MicroDataGroup and MicroDataset objects
+    Generic class that is extended by the VirtualGroup and VirtualDataset objects
     """
 
     def __init__(self, name, parent, attrs=None):
@@ -48,7 +48,7 @@ class MicroData(object):
         self.indexed = False
 
 
-class MicroDataGroup(MicroData):
+class VirtualGroup(VirtualData):
     """
     Holds data that will be converted to a h5.Group by io.HDFwriter
     Note that it can also hold information (e.g. attributes) of an h5.File.
@@ -70,7 +70,7 @@ class MicroDataGroup(MicroData):
          children : MicroData or list of MicroData objects. (Optional)
             Children can be a mixture of groups and datasets
         """
-        super(MicroDataGroup, self).__init__(name, parent, attrs=attrs)
+        super(VirtualGroup, self).__init__(name, parent, attrs=attrs)
         self.children = list()
         self.attrs['machine_id'] = socket.getfqdn()
         self.attrs['timestamp'] = get_time_stamp()
@@ -99,7 +99,7 @@ class MicroDataGroup(MicroData):
         if not isinstance(children, (tuple, list)):
             children = [children]
         for child in children:
-            if isinstance(child, MicroData):
+            if isinstance(child, VirtualData):
                 child.parent = self.parent + self.name
                 self.children.append(child)
             else:
@@ -110,12 +110,12 @@ class MicroDataGroup(MicroData):
 
     def show_tree(self):
         """
-        Return the tree structure given by MicroDataGroup.
+        Return the tree structure given by VirtualGroup.
         """
 
         def __tree(child, parent):
             print(parent + '/' + child.name)
-            if isinstance(child, MicroDataGroup):
+            if isinstance(child, VirtualGroup):
                 for ch in child.children:
                     __tree(ch, parent + '/' + child.name)
 
@@ -124,7 +124,7 @@ class MicroDataGroup(MicroData):
             __tree(curr_child, self.parent + self.name)
 
 
-class MicroDataset(MicroData):
+class VirtualDataset(VirtualData):
     """
     Holds data (i.e. numpy.ndarray) as well as instructions on writing, attributes, etc...
     This gets converted to a h5py.Dataset by io.HDFwriter
@@ -166,44 +166,21 @@ class MicroDataset(MicroData):
         1. Small auxiliary datasets :
             Make sure to specify the name and data. All other parameters are optional
 
-        >>> ds_ex_efm = MicroDataset('Excitation_Waveform', np.arange(10))
+        >>> ds_ex_efm = VirtualDataset('Excitation_Waveform', np.arange(10))
             
-        2. Initializing large primary datasets of known sizes :
-            Ensure that the name, maxshape are specified and that maxshape does not have any elements that are None.
-            All other arguments are optional.
-        
-        >>> ds_raw_data = MicroDataset('Raw_Data', None, maxshape=(1024,16384), dtype=np.float16,
-        >>>                            chunking=(1,16384), compression='gzip')
+        2. Initializing large primary datasets of known sizes : See EmptyVirtualDataset
                     
-        3. Initializing large datasets whose size is unknown in one or more dimensions:
-            Ensure to specify the name, set resizable to True, and some initial data (can be zeros but of appropriate
-            shape) to start with.
-            It is recommended that you allow the dataset to grow only in the necessary dimensions since HDFwriter will
-            assume that the dataset will grow in all dimensions by default. In the example below, the dataset will only
-            grow in the first dimension while the size in the second dimension is fixed because of maxshape.
-        
-        >>> ds_raw_data = MicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64), resizable=True,
-        >>>                            maxshape=(None, 16384), chunking=(1,16384), compression='gzip')
-
-        Once HDFwriter is used to write the dataset, you will need to use the resize function in h5py as:
-
-        >>> h5_dataset.resize(h5_dataset.shape[0] + 1, axis = 0)
-
-        This will increment the size of the dataset in the first axis from it's current value (of 1) to 2.
-
-        Note that the HDF5 file containing datasets that have been expanded this way are bound to be noticeably larger
-        in size compared to files with datasets that are not allowed to expand. Therefore, use this only when absolutely
-        necessary only.
+        3. Initializing large datasets whose size is unknown in one or more dimensions: See ExpandableVirtualDataset
 
         4. Datasets with region references :
 
-        >>> ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.random.random(1, 10))
+        >>> ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.random.random(1, 10))
             ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
         """
         if parent is None:
             parent = '/'  # by default assume it is under root
 
-        super(MicroDataset, self).__init__(name, parent, attrs=attrs)
+        super(VirtualDataset, self).__init__(name, parent, attrs=attrs)
 
         assert isinstance(name, (str, unicode)), 'Name should be a string'
 
@@ -303,7 +280,7 @@ class MicroDataset(MicroData):
 
         Parameters
         ----------
-        other : MicroDataset object
+        other : VirtualDataset object
             The other MicroDatset object to compare to
 
         Returns
@@ -323,7 +300,7 @@ class MicroDataset(MicroData):
             else:
                 return True
 
-        assert isinstance(other, MicroDataset)
+        assert isinstance(other, VirtualDataset)
         tests = []
         if self.data.shape != other.data.shape:
             return False
@@ -341,7 +318,7 @@ class MicroDataset(MicroData):
             return np.allclose(self.data, other.data)
 
 
-class EmptyMicroDataset(MicroDataset):
+class EmptyVirtualDataset(VirtualDataset):
 
     def __init__(self, name, maxshape, dtype=None, compression=None, chunking=None, parent=None, attrs=None):
         """
@@ -366,14 +343,18 @@ class EmptyMicroDataset(MicroDataset):
 
         Examples
         --------
-        >>> ds_empty = EmptyMicroDataset('Empty', (128,16384), dtype=np.float16, chunking=(1,16384), compression='gzip')
+        Ensure that the name, maxshape are specified and that maxshape does not have any elements that are None.
+            All other arguments are optional.
+
+        >>> ds_raw_data = EmptyVirtualDataset('Raw_Data', (1024,16384), dtype=np.float16, chunking=(1,16384),
+        >>>                                   compression='gzip')
 
         """
-        super(EmptyMicroDataset, self).__init__(name, None, dtype=dtype, compression=compression, chunking=chunking,
-                                                parent=parent, resizable=False, maxshape=maxshape, attrs=attrs)
+        super(EmptyVirtualDataset, self).__init__(name, None, dtype=dtype, compression=compression, chunking=chunking,
+                                                  parent=parent, resizable=False, maxshape=maxshape, attrs=attrs)
 
 
-class ExpandableMicroDataset(MicroDataset):
+class ExpandableVirtualDataset(VirtualDataset):
 
     def __init__(self, name, data, dtype=None, compression=None, chunking=None, parent=None, maxshape=None, attrs=None):
         """
@@ -402,8 +383,22 @@ class ExpandableMicroDataset(MicroDataset):
 
         Examples
         --------
-        >>> ds_raw_data = ExpandableMicroDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
-        >>>                            chunking=(1,16384), resizable=True, compression='gzip')
+        It is recommended that you allow the dataset to grow only in the necessary dimensions since HDFwriter will
+        assume that the dataset will grow in all dimensions by default. In the example below, the dataset will only
+        grow in the first dimension while the size in the second dimension is fixed because of maxshape.
+
+        >>> ds_raw_data = ExpandableVirtualDataset('Raw_Data', np.zeros(shape=(1,16384), dtype=np.complex64),
+        >>>                            maxshape=(None, 16384), chunking=(1,16384), compression='gzip')
+
+        Once HDFwriter is used to write the dataset, you will need to use the resize function in h5py as:
+
+        >>> h5_dataset.resize(h5_dataset.shape[0] + 1, axis = 0)
+
+        This will increment the size of the dataset in the first axis from it's current value (of 1) to 2.
+
+        Note that the HDF5 file containing datasets that have been expanded this way are bound to be noticeably larger
+        in size compared to files with datasets that are not allowed to expand. Therefore, use this only when absolutely
+        necessary only.
         """
-        super(ExpandableMicroDataset, self).__init__(name, data, dtype=dtype, compression=compression, resizable=True,
-                                                     chunking=chunking, parent=parent, maxshape=maxshape, attrs=attrs)
+        super(ExpandableVirtualDataset, self).__init__(name, data, dtype=dtype, compression=compression, resizable=True,
+                                                       chunking=chunking, parent=parent, maxshape=maxshape, attrs=attrs)

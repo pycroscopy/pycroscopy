@@ -20,7 +20,7 @@ from ...core.io.translator import generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class GTuneTranslator(GLineTranslator):
@@ -119,10 +119,10 @@ class GTuneTranslator(GLineTranslator):
         self.__bytes_per_row__ = int(file_size / self.num_rows)
 
         # First finish writing all global parameters, create the file too:
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = parm_dict
 
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
@@ -142,9 +142,9 @@ class GTuneTranslator(GLineTranslator):
         The auxiliary datasets will not change with each raw data file since
         only one excitation waveform is used
         """
-        ds_main_data = MicroDataset('Raw_Data', data=[],
-                                    maxshape=(self.num_rows, self.points_per_pixel * num_cols),
-                                    chunking=(1, self.points_per_pixel), dtype=np.float16)
+        ds_main_data = VirtualDataset('Raw_Data', data=[],
+                                      maxshape=(self.num_rows, self.points_per_pixel * num_cols),
+                                      chunking=(1, self.points_per_pixel), dtype=np.float16)
         ds_main_data.attrs['quantity'] = ['Deflection']
         ds_main_data.attrs['units'] = ['V']
 
@@ -158,7 +158,7 @@ class GTuneTranslator(GLineTranslator):
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
 
         for f_index in data_paths.keys():
-            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
+            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
             chan_grp.add_children([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
 
             # print('Writing following tree to file:')

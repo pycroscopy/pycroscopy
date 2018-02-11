@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 from collections import Iterable
-from .microdata import MicroDataset
+from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
 import warnings
 
@@ -17,7 +17,7 @@ VALUES_DTYPE = np.float32
 def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
                         units=None, verbose=False):
     """
-    Builds the MicroDatasets for the position OR spectroscopic indices and values
+    Builds the VirtualDatasets for the position OR spectroscopic indices and values
     of the data.
 
     Parameters
@@ -43,9 +43,9 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     Returns
     -------
-    ds_spec_inds : Microdataset of numpy.uint
+    ds_spec_inds : VirtualDataset of numpy.uint
         Dataset containing the position indices
-    ds_spec_vals : Microdataset of float
+    ds_spec_vals : VirtualDataset of float
         Dataset containing the value at each position
 
     Notes
@@ -122,11 +122,11 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
 
     region_slices = get_aux_dset_slicing(labels, is_spectroscopic=is_spectral)
 
-    # Create the MicroDatasets for both Indices and Values
-    ds_indices = MicroDataset(mode + 'Indices', indices, dtype=np.uint32)
+    # Create the VirtualDatasets for both Indices and Values
+    ds_indices = VirtualDataset(mode + 'Indices', indices, dtype=np.uint32)
     ds_indices.attrs['labels'] = region_slices
 
-    ds_values = MicroDataset(mode + 'Values', np.float32(values), dtype=np.float32)
+    ds_values = VirtualDataset(mode + 'Values', np.float32(values), dtype=np.float32)
     ds_values.attrs['labels'] = region_slices
 
     ds_indices.attrs['units'] = units

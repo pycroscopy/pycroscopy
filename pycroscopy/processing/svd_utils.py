@@ -20,7 +20,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_
 from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
-from ..core.io.microdata import MicroDataset, MicroDataGroup
+from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 
 
 class SVD(Process):
@@ -91,21 +91,21 @@ class SVD(Process):
             eigenvector matrix
         """
 
-        ds_S = MicroDataset('S', data=np.float32(S))
+        ds_S = VirtualDataset('S', data=np.float32(S))
         ds_S.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_S.attrs['units'] = ['']
-        ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
+        ds_S.attrs['units'] = ''
+        ds_inds = VirtualDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
         ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
         ds_inds.attrs['units'] = ['']
         del S
 
         u_chunks = calc_chunks(U.shape, np.float32(0).itemsize)
-        ds_U = MicroDataset('U', data=np.float32(U), chunking=u_chunks)
+        ds_U = VirtualDataset('U', data=np.float32(U), chunking=u_chunks)
         del U
 
         V = transform_to_target_dtype(V, self.h5_main.dtype)
         v_chunks = calc_chunks(V.shape, self.h5_main.dtype.itemsize)
-        ds_V = MicroDataset('V', data=V, chunking=v_chunks)
+        ds_V = VirtualDataset('V', data=V, chunking=v_chunks)
         del V
 
         '''
@@ -113,7 +113,7 @@ class SVD(Process):
         children
         '''
         grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        svd_grp = MicroDataGroup(grp_name, self.h5_main.parent.name[1:])
+        svd_grp = VirtualGroup(grp_name, self.h5_main.parent.name[1:])
         svd_grp.add_children([ds_V, ds_S, ds_U, ds_inds])
 
         '''
@@ -308,11 +308,11 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     '''
     Create the Group and dataset to hold the rebuild data
     '''
-    rebuilt_grp = MicroDataGroup('Rebuilt_Data_', h5_svd.name[1:])
+    rebuilt_grp = VirtualGroup('Rebuilt_Data_', h5_svd.name[1:])
 
-    ds_rebuilt = MicroDataset('Rebuilt_Data', rebuild,
-                              chunking=h5_main.chunks,
-                              compression=h5_main.compression)
+    ds_rebuilt = VirtualDataset('Rebuilt_Data', rebuild,
+                                chunking=h5_main.chunks,
+                                compression=h5_main.compression)
     rebuilt_grp.add_children([ds_rebuilt])
 
     if isinstance(comp_slice, slice):

@@ -17,7 +17,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-from ...core.io.microdata import MicroDataGroup, MicroDataset  # building blocks for defining heirarchical storage in the H5 file
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset  # building blocks for defining heirarchical storage in the H5 file
 
 
 class GIVTranslator(Translator):
@@ -66,9 +66,9 @@ class GIVTranslator(Translator):
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
         # For some reason, compression is effective only on time series data
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=(parm_dict['grid_num_rows'], excit_wfm.size),
-                                   dtype=np.float16, chunking=(1, excit_wfm.size), compression='gzip')
+        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+                                     maxshape=(parm_dict['grid_num_rows'], excit_wfm.size),
+                                     dtype=np.float16, chunking=(1, excit_wfm.size), compression='gzip')
         ds_raw_data.attrs['quantity'] = ['Current']
         ds_raw_data.attrs['units'] = ['1E-{} A'.format(parm_dict['IO_amplifier_gain'])]
         
@@ -81,12 +81,12 @@ class GIVTranslator(Translator):
         h5_f.close()        
                 
         # technically should change the date, etc.              
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'gIV'
         global_parms['translator'] = 'gIV'
         spm_data.attrs = global_parms
-        meas_grp = MicroDataGroup('Measurement_000') 
+        meas_grp = VirtualGroup('Measurement_000') 
         spm_data.add_children([meas_grp])
         
         hdf = HDFwriter(h5_path)
@@ -97,7 +97,7 @@ class GIVTranslator(Translator):
         
         for chan_index in range(num_ai_chans):
             
-            chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
+            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
             chan_grp.attrs = parm_dict
             chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                    ds_raw_data])

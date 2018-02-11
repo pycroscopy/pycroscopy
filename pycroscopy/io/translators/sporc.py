@@ -19,7 +19,7 @@ from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
-from ...core.io.microdata import MicroDataGroup, MicroDataset
+from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class SporcTranslator(Translator):
@@ -68,9 +68,9 @@ class SporcTranslator(Translator):
         spec_ind_mat = np.transpose(np.float32(spec_ind_mat))
 
         # Now start creating datasets and populating:
-        ds_pos_ind = MicroDataset('Position_Indices', np.uint32(pos_mat))
+        ds_pos_ind = VirtualDataset('Position_Indices', np.uint32(pos_mat))
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
         ds_pos_val.attrs['units'] = ['um', 'um']
 
@@ -78,22 +78,22 @@ class SporcTranslator(Translator):
         spec_ind_dict = dict()
         for col_ind, col_name in enumerate(spec_ind_labels):
             spec_ind_dict[col_name] = (slice(col_ind, col_ind + 1), slice(None))
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = spec_ind_dict
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_ind_mat)
+        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_ind_mat)
         ds_spec_vals.attrs['labels'] = spec_ind_dict
         ds_spec_vals.attrs['units'] = ['V', 'V', '', '', '']
 
-        ds_excit_wfm = MicroDataset('Excitation_Waveform', np.float32(excit_wfm))
+        ds_excit_wfm = VirtualDataset('Excitation_Waveform', np.float32(excit_wfm))
 
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=(num_pix, len(excit_wfm)),
-                                   dtype=np.float16, chunking=(1, len(excit_wfm)),
-                                   compression='gzip')
+        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+                                     maxshape=(num_pix, len(excit_wfm)),
+                                     dtype=np.float16, chunking=(1, len(excit_wfm)),
+                                     compression='gzip')
 
         # technically should change the date, etc.
 
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         chan_grp.attrs = parm_dict
         chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                ds_excit_wfm, ds_raw_data])
@@ -107,9 +107,9 @@ class SporcTranslator(Translator):
         global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'SPORC'
 
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.add_children([chan_grp])
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         spm_data.attrs = global_parms
         spm_data.add_children([meas_grp])
 

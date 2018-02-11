@@ -128,9 +128,9 @@ class ShoGuess(px.Process):
         self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
         
-        ds_guess = px.MicroDataset('Guess', data=[],
-                                             maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
-                                             chunking=(1, self.num_udvs_steps), dtype=sho32)
+        ds_guess = px.VirtualDataset('Guess', data=[],
+                                     maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
+                                     chunking=(1, self.num_udvs_steps), dtype=sho32)
 
         not_freq = px.hdf_utils.get_attr(h5_spec_inds, 'labels') != 'Frequency'
 
@@ -138,7 +138,7 @@ class ShoGuess(px.Process):
                                                                  self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
-        sho_grp = px.MicroDataGroup('-'.join([dset_name, 'SHO_Fit_']), self.h5_main.parent.name[1:])
+        sho_grp = px.VirtualGroup('-'.join([dset_name, 'SHO_Fit_']), self.h5_main.parent.name[1:])
         sho_grp.add_children([ds_guess, ds_sho_inds, ds_sho_vals])
         sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
