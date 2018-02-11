@@ -21,6 +21,7 @@ from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
+from ..core.io.write_utils import INDICES_DTYPE
 
 
 class SVD(Process):
@@ -94,7 +95,7 @@ class SVD(Process):
         ds_S = VirtualDataset('S', data=np.float32(S))
         ds_S.attrs['labels'] = {'Principal Component': [slice(0, None)]}
         ds_S.attrs['units'] = ''
-        ds_inds = VirtualDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
+        ds_inds = VirtualDataset('Component_Indices', data=INDICES_DTYPE(np.arange(len(S))))
         ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
         ds_inds.attrs['units'] = ''
         del S

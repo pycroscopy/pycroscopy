@@ -14,7 +14,7 @@ from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
-from ..core.io.write_utils import build_ind_val_dsets
+from ..core.io.write_utils import build_ind_val_dsets, VALUES_DTYPE
 from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation
@@ -158,7 +158,7 @@ class SignalFilter(Process):
             ds_spec_inds, ds_spec_vals = build_ind_val_dsets([int(0.5 * len(self.hot_inds))], is_spectral=True,
                                                              labels=['hot_frequencies'], units=[''],
                                                              verbose=self.verbose)
-            ds_spec_vals.data = np.atleast_2d(self.hot_inds)  # The data generated above varies linearly. Override.
+            ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(self.hot_inds))  # The data generated above varies linearly. Override.
             ds_cond_data = VirtualDataset('Condensed_Data', data=[],
                                           maxshape=(self.num_effective_pix, len(self.hot_inds)),
                                           dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')

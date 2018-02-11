@@ -9,7 +9,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np  # For array operations
 
 from .translator import Translator
-from .write_utils import build_ind_val_dsets
+from .write_utils import build_ind_val_dsets, VALUES_DTYPE
 from .hdf_utils import calc_chunks
 from .virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
@@ -59,9 +59,9 @@ class NumpyTranslator(Translator):
 
         spectra_length = main_data.shape[1]
 
-        ds_main = VirtualDataset('Raw_Data', data=main_data, dtype=np.float32, compression='gzip',
-                                 chunking=calc_chunks(main_data.shape, np.float32(0).itemsize,
-                                                    unit_chunks=(1, spectra_length)))
+        ds_main = VirtualDataset('Raw_Data', data=main_data, dtype=VALUES_DTYPE, compression='gzip',
+                                 chunking=calc_chunks(main_data.shape, VALUES_DTYPE(0).itemsize,
+                                 unit_chunks=(1, spectra_length)))
         ds_main.attrs = {'quantity': qty_name, 'units': data_unit}
 
         pos_steps = None
@@ -75,7 +75,7 @@ class NumpyTranslator(Translator):
                                                          labels=[spec_name], units=[spec_unit], verbose=False)
         if spec_val is not None:
             if type(spec_val) in [list, np.ndarray]:
-                ds_spec_vals.data = np.float32(np.atleast_2d(spec_val))
+                ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(spec_val))
 
         parms_dict.update({'translator': 'NumpyTranslator'})
 

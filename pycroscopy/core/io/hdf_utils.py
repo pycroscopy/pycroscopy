@@ -13,7 +13,7 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 from .virtual_data import VirtualDataset
-from .write_utils import make_indices_matrix
+from .write_utils import make_indices_matrix, INDICES_DTYPE, VALUES_DTYPE
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -722,12 +722,12 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
             except KeyError:
                 print('No position datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
-                    ds_pos = np.arange(h5_main.shape[0], dtype=np.uint8).reshape(-1, 1)
+                    ds_pos = np.arange(h5_main.shape[0], dtype=INDICES_DTYPE).reshape(-1, 1)
                     pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
                 else:
-                    ds_pos = np.array(0, dtype=np.uint8).reshape(-1, 1)
+                    ds_pos = np.array(0, dtype=INDICES_DTYPE).reshape(-1, 1)
         else:
-            ds_pos = np.arange(h5_main.shape[0], dtype=np.uint32).reshape(-1, 1)
+            ds_pos = np.arange(h5_main.shape[0], dtype=INDICES_DTYPE).reshape(-1, 1)
             pos_labs = np.array(['Position Dimension {}'.format(ipos) for ipos in range(ds_pos.shape[1])])
     elif isinstance(h5_pos, h5py.Dataset):
         """
@@ -755,12 +755,12 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
             except KeyError:
                 print('No spectroscopic datasets found as attributes of {}'.format(h5_main.name))
                 if len(h5_main.shape) > 1:
-                    ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+                    ds_spec = np.arange(h5_main.shape[1], dtype=INDICES_DTYPE).reshape([1, -1])
                     spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
                 else:
-                    ds_spec = np.array(0, dtype=np.uint8).reshape([1, 1])
+                    ds_spec = np.array(0, dtype=INDICES_DTYPE).reshape([1, 1])
         else:
-            ds_spec = np.arange(h5_main.shape[1], dtype=np.uint8).reshape([1, -1])
+            ds_spec = np.arange(h5_main.shape[1], dtype=INDICES_DTYPE).reshape([1, -1])
             spec_labs = np.array(['Spectral Dimension {}'.format(ispec) for ispec in range(ds_spec.shape[0])])
 
     elif isinstance(h5_spec, h5py.Dataset):
@@ -1546,8 +1546,8 @@ def build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, keep_dim, step_starts, 
         ds_vals.attrs['units'] = h5_spec_vals.attrs['units'][keep_dim]
 
     else:  # Single spectroscopic dimension:
-        ds_inds = VirtualDataset('Spectroscopic_Indices', np.array([[0]], dtype=np.uint32))
-        ds_vals = VirtualDataset('Spectroscopic_Values', np.array([[0]], dtype=np.float32))
+        ds_inds = VirtualDataset('Spectroscopic_Indices', np.array([[0]], dtype=INDICES_DTYPE))
+        ds_vals = VirtualDataset('Spectroscopic_Values', np.array([[0]], dtype=VALUES_DTYPE))
 
         ds_inds.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}
         ds_vals.attrs['labels'] = {'Single_Step': (slice(0, None), slice(None))}

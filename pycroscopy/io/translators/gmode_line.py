@@ -14,7 +14,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import parmsToDict
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -142,7 +142,7 @@ class GLineTranslator(Translator):
                                                      labels=['Y'], units=['m'])
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets([self.points_per_pixel * num_cols], is_spectral=True,
                                                          labels=['Excitation'], units=['V'])
-        ds_spec_vals.data = np.atleast_2d(np.tile(np.float32(be_wave), num_cols))  # Override the default waveform
+        ds_spec_vals.data = np.atleast_2d(np.tile(VALUES_DTYPE(be_wave), num_cols))  # Override the default waveform
         
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']

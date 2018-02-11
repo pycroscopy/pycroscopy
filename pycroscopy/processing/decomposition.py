@@ -13,6 +13,7 @@ import sklearn.decomposition as dec
 from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary
 from ..core.io.hdf_writer import HDFwriter
+from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
 from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 
@@ -134,8 +135,8 @@ class Decomposition(Process):
 
         decomp_ind_mat = np.transpose(np.atleast_2d(np.arange(components.shape[0])))
 
-        ds_decomp_inds = VirtualDataset('Decomposition_Indices', np.uint32(decomp_ind_mat))
-        ds_decomp_vals = VirtualDataset('Decomposition_Values', np.float32(decomp_ind_mat))
+        ds_decomp_inds = VirtualDataset('Decomposition_Indices', INDICES_DTYPE(decomp_ind_mat))
+        ds_decomp_vals = VirtualDataset('Decomposition_Values', VALUES_DTYPE(decomp_ind_mat))
 
         # write the labels and the mean response to h5
         decomp_slices = {'Decomp': (slice(None), slice(0, 1))}

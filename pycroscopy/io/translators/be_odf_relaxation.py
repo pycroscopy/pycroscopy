@@ -16,7 +16,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
     nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -127,9 +127,9 @@ class BEodfRelaxationTranslator(Translator):
         pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
 
         ds_ex_wfm = VirtualDataset('Excitation_Waveform', ex_wfm)
-        ds_pos_ind = VirtualDataset('Position_Indices', pos_mat, dtype=np.uint32)
+        ds_pos_ind = VirtualDataset('Position_Indices', pos_mat, dtype=INDICES_DTYPE)
         ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = VirtualDataset('Position_Values', np.float32(pos_mat))
+        ds_pos_val = VirtualDataset('Position_Values', VALUES_DTYPE(pos_mat))
         ds_pos_val.attrs['labels'] = pos_slices
 
         (UDVS_labs, UDVS_units, UDVS_mat) = self.__buildUDVSTable(parm_dict)
@@ -137,7 +137,7 @@ class BEodfRelaxationTranslator(Translator):
         # Remove the unused plot group columns before proceeding:
         (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
-        spec_inds = np.zeros(shape=(2, tot_bins), dtype=np.uint)
+        spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
 
         # Will assume that all excitation waveforms have same number of bins
         # Here, the denominator is 2 because only out of field measruements. For IF + OF, should be 1
@@ -157,9 +157,9 @@ class BEodfRelaxationTranslator(Translator):
         for step_index in range(UDVS_mat.shape[0]):
             if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
                 continue  # skip
-            spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=np.uint32)  # Bin step
+            spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=INDICES_DTYPE)  # Bin step
             spec_inds[1, stind:stind + bins_per_step] = step_index * np.ones(bins_per_step,
-                                                                             dtype=np.uint32)  # UDVS step
+                                                                             dtype=INDICES_DTYPE)  # UDVS step
             stind += bins_per_step
         del stind, step_index
 
@@ -175,7 +175,7 @@ class BEodfRelaxationTranslator(Translator):
         ds_UDVS.attrs['labels'] = udvs_slices
         ds_UDVS.attrs['units'] = UDVS_units
 
-        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=INDICES_DTYPE)
         ds_spec_mat.attrs['labels'] = {'UDVS_Step': (slice(1, 2), slice(None)), 'Bin': (slice(0, 1), slice(None))}
         ds_bin_steps = VirtualDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
 
@@ -197,7 +197,7 @@ class BEodfRelaxationTranslator(Translator):
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
-        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=VALUES_DTYPE))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
 
