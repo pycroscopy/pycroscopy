@@ -10,6 +10,9 @@ __all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix']
 if sys.version_info.major == 3:
     unicode = str
 
+INDICES_DTYPE = np.uint32
+VALUES_DTYPE = np.float32
+
 
 def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
                         units=None, verbose=False):
@@ -54,6 +57,24 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
     """
     assert contains_integers(dimensions)
 
+    if labels is None:
+        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
+                      DeprecationWarning)
+        labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
+    else:
+        assert isinstance(labels, Iterable)
+        if len(labels) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
+    if units is None:
+        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units',
+                      DeprecationWarning)
+        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
+    else:
+        assert isinstance(units, Iterable)
+        if len(units) != len(dimensions):
+            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+
     if steps is None:
         steps = np.ones_like(dimensions)
     else:
@@ -80,24 +101,6 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         print(initial_values.shape)
         print(initial_values)
 
-    if labels is None:
-        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
-                      DeprecationWarning)
-        labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(labels, Iterable)
-        if len(labels) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
-    if units is None:
-        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units',
-                      DeprecationWarning)
-        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(units, Iterable)
-        if len(units) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
     # Get the indices for all dimensions
     indices = make_indices_matrix(dimensions)
     assert isinstance(indices, np.ndarray)
@@ -107,7 +110,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values
         print(indices)
 
     # Convert the indices to values
-    values = initial_values + np.float32(indices)*steps
+    values = initial_values + VALUES_DTYPE(indices)*steps
 
     # Create the slices that will define the labels
     if is_spectral:
@@ -190,7 +193,7 @@ def make_indices_matrix(num_steps, is_position=True):
     num_steps = np.array(num_steps)
     spat_dims = max(1, len(np.where(num_steps > 1)[0]))
 
-    indices_matrix = np.zeros(shape=(np.prod(num_steps), spat_dims), dtype=np.uint32)
+    indices_matrix = np.zeros(shape=(np.prod(num_steps), spat_dims), dtype=INDICES_DTYPE)
     dim_ind = 0
 
     for indx, curr_steps in enumerate(num_steps):
