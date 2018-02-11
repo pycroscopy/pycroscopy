@@ -25,7 +25,7 @@ class MyOutput(object):
         return "".join(self.data)
 
 
-class TestMicroDataSet(unittest.TestCase):
+class TestVirtualDataSet(unittest.TestCase):
 
     def test_insufficient_inputs(self):
         name = 'test'
@@ -203,7 +203,7 @@ class TestMicroDataSet(unittest.TestCase):
         self.assertEqual(dset.maxshape, None)
 
 
-class TestMicroDataGroup(unittest.TestCase):
+class TestVirtualGroup(unittest.TestCase):
 
     def test_creation_non_indexed(self):
         name = 'test_group'
