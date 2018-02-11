@@ -297,6 +297,49 @@ class MicroDataset(MicroData):
     def __getitem__(self, item):
         return self.data[item]
 
+    def __eq__(self, other):
+        """
+        Overriding the python equality function
+
+        Parameters
+        ----------
+        other : MicroDataset object
+            The other MicroDatset object to compare to
+
+        Returns
+        -------
+        bool
+            Whether or not the objects are equal
+        """
+        def __tuple_test(obj_1, obj_2):
+            if obj_1 is None and obj_2 is not None:
+                return False
+            elif obj_1 is not None and obj_2 is None:
+                return False
+            elif obj_1 is not None and obj_2 is not None:
+                if len(obj_1) != len(obj_2):
+                    return False
+                return tests.append(np.all([x == y for x, y in zip(obj_1, obj_2)]))
+            else:
+                return True
+
+        assert isinstance(other, MicroDataset)
+        tests = []
+        if self.data.shape != other.data.shape:
+            return False
+
+        tests.append(self.dtype == other.dtype)
+        tests.append(__tuple_test(self.chunking, other.chunking))
+        tests.append(__tuple_test(self.maxshape, other.maxshape))
+        tests.append(self.compression == other.compression)
+        tests.append(self.resizable == other.resizable)
+        tests.append(self.attrs == other.attrs)
+        if not np.all(tests):
+            return False
+        else:
+            # now the expensive test:
+            return np.allclose(self.data, other.data)
+
 
 class EmptyMicroDataset(MicroDataset):
 
