@@ -7,10 +7,10 @@ v 1.0 goals
   * This is perhaps the last oppurtunity for major restructuring and renaming
   * Think about whether the rest of the code should be organized by instrument
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
-2. Make core as robust as possible with type / value checking, raising exceptions. 
-3. test utils for .core - 2+ weeks
+2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
+3. 50% done - test utils for .core - 2+ months (assuming work on weekends only)
 4. DONE - good utilities for interrogating data - pycro data
-5. barely done - good documentation for both users and developers
+5. partly done - good documentation for both users and developers
 
   * Need one per module in .core + finish plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
@@ -18,6 +18,7 @@ v 1.0 goals
 7. mostly done - good utils for generating publishable plots - easy ~ 1 day
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions
+10. a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
 
 Documentation
 -------------
