@@ -14,6 +14,7 @@ v 1.0 goals
 
   * Need one per module in .core + finish plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
+  * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
 6. mostly done - generic visualizer. Re-enable this in pycrodata
 7. mostly done - good utils for generating publishable plots - easy ~ 1 day
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
