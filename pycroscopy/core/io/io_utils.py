@@ -234,37 +234,53 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
         requested_cores = max_cores
     else:
         # Respecting the explicit request
-        requested_cores = min(int(abs(requested_cores)), cpu_count())
+        requested_cores = max(min(int(abs(requested_cores)), cpu_count()), 1)
 
-    recom_chunks = max(int(num_jobs / requested_cores), 1)
+    jobs_per_core = max(int(num_jobs / requested_cores), 1)
+    min_jobs_per_core = 20  # I don't like to hard-code things here but I don't have a better idea for now
 
     if not lengthy_computation:
-        if requested_cores > 1 and recom_chunks < 10:
-            recom_chunks = 20
+        if requested_cores > 1 and jobs_per_core < min_jobs_per_core:
+            # cut down the number of cores if there are too few jobs
+            jobs_per_core = 2 * min_jobs_per_core
             # intelligently set the cores now.
-            requested_cores = max(1, min(requested_cores, int(num_jobs / recom_chunks)))
+            requested_cores = max(1, min(requested_cores, int(num_jobs / jobs_per_core)))
             # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
     return int(requested_cores)
 
 
-def interpret_frequency(freq_str):
+def formatted_str_to_number(str_val, magnitude_names, magnitude_values, separator=' '):
     """
-    Interprets a string denoting frequency into its numerical equivalent.
-    For example "4 MHz" is translated to 4E+6
+    Takes a formatted string like '4.32 MHz' to 4.32 E+6
 
     Parameters
     ----------
-    freq_str : unicode / string
-        Frequency as a string - eg '4 MHz'
+    str_val : str / unicode
+        String value of the quantity. Example '4.32 MHz'
+    magnitude_names : Iterable
+        List of names of units like ['seconds', 'minutes', 'hours']
+    magnitude_values : Iterable
+        List of values (corresponding to magnitude_names) that scale the numeric value. Example [1, 60, 3600]
+    separator : str / unicode, optional. Default = ' ' (space)
+        The text that separates the numeric value and the units.
 
     Returns
     -------
-    frequency : float
-        Frequency in hertz
+    number
+        Numeric value of the string
     """
-    components = freq_str.split()
-    if components[1] == 'MHz':
-        return int(components[0]) * 1.0E+6
-    elif components[1] == 'kHz':
-        return int(components[0]) * 1.0E+3
+    assert isinstance(str_val, (str, unicode))
+    assert isinstance(separator, (str, unicode))
+    assert isinstance(magnitude_names, Iterable)
+    assert isinstance(magnitude_values, Iterable)
+    assert np.all([isinstance(_, (str, unicode)) for _ in magnitude_names])
+    assert len(magnitude_names) == len(magnitude_values)
+
+    components = str_val.split(separator)
+    assert len(components) == 2
+
+    for unit_name, scaling in zip(magnitude_names, magnitude_values):
+        if unit_name == components[1]:
+            # Let it raise an exception. Don't catch
+            return scaling * float(components[0])
