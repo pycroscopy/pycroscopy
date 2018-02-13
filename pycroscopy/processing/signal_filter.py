@@ -117,6 +117,41 @@ class SignalFilter(Process):
         self.h5_condensed = None
         self.h5_noise_floors = None
 
+    def _set_memory_and_cores(self, cores=1, mem=1024):
+        """
+        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
+        number of cores to be used by analysis methods.
+
+        Parameters
+        ----------
+        cores : uint, optional
+            Default - 1
+            How many cores to use for the computation
+        mem : uint, optional
+            Default - 1024
+            The amount a memory in Mb to use in the computation
+        """
+        verbose = self.verbose
+        self.verbose = False
+
+        super(SignalFilter, self)._set_memory_and_cores(cores, mem)
+
+        self.verbose = verbose
+
+        max_data_chunk = self._max_mem_mb / self._cores
+
+        # Now calculate the number of positions that can be stored in memory in one go.
+        # Mem for initial data and final data before writing to file
+        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1e6 * 2
+        # Mem for fft of data
+        mb_per_position += np.complex128.dtype.__sizeof__() * self.h5_main.shape[1] / 1e6
+
+        self._max_pos_per_read = max_data_chunk // mb_per_position
+
+        if self.verbose:
+            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
+            print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
+
     def _create_results_datasets(self):
         """
         Creates all the datasets necessary for holding all parameters + data.
