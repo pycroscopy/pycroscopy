@@ -105,7 +105,7 @@ def get_time_stamp():
     return strftime('%Y_%m_%d-%H_%M_%S')
 
 
-def format_quantity(value, units, factors, decimals=2):
+def format_quantity(value, unit_names, factors, decimals=2):
     """
     Formats the provided quantity such as time or size to appropriate strings
 
@@ -113,7 +113,7 @@ def format_quantity(value, units, factors, decimals=2):
     ----------
     value : number
         value in some base units. For example - time in seconds
-    units : array-like
+    unit_names : array-like
         List of names of units for each scale of the value
     factors : array-like
         List of scaling factors for each scale of the value
@@ -126,8 +126,10 @@ def format_quantity(value, units, factors, decimals=2):
         String with value formatted correctly
     """
     # assert isinstance(value, (int, float))
-    assert isinstance(units, Iterable)
+    assert isinstance(unit_names, Iterable)
     assert isinstance(factors, Iterable)
+    assert len(unit_names) == len(factors)
+    assert np.all([isinstance(_, (str, unicode)) for _ in unit_names])
     index = None
 
     for index, val in enumerate(factors):
@@ -137,7 +139,7 @@ def format_quantity(value, units, factors, decimals=2):
 
     index = max(0, index)  # handles sub msec
 
-    return '{} {}'.format(np.round(value / factors[index], decimals), units[index])
+    return '{} {}'.format(np.round(value / factors[index], decimals), unit_names[index])
 
 
 def format_time(time_in_seconds, decimals=2):
@@ -156,7 +158,7 @@ def format_time(time_in_seconds, decimals=2):
     str
         String with time formatted correctly
     """
-    units = ['msec', 'sec', 'min', 'hours']
+    units = ['msec', 'sec', 'mins', 'hours']
     factors = [0.001, 1, 60, 3600]
     return format_quantity(time_in_seconds, units, factors, decimals=decimals)
 
