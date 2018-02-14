@@ -14,7 +14,7 @@ from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
-from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
@@ -80,7 +80,7 @@ class Decomposition(Process):
         """
         self._fit()
         self._transform()
-        return self._write_results_chunk(transform_to_target_dtype(self.estimator.components_, self.h5_main.dtype),
+        return self._write_results_chunk(stack_real_to_target_dtype(self.estimator.components_, self.h5_main.dtype),
                                          self.projection)
 
     def _fit(self):

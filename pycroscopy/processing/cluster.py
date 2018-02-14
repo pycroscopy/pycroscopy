@@ -15,7 +15,7 @@ from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
 from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
 from ..core.io.hdf_writer import HDFwriter
-from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
@@ -158,7 +158,7 @@ class Cluster(Process):
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
-            mean_resp[clust_ind] = transform_to_target_dtype(avg_data, self.h5_main.dtype)
+            mean_resp[clust_ind] = stack_real_to_target_dtype(avg_data, self.h5_main.dtype)
         return mean_resp
 
     def _write_results_chunk(self, labels, mean_response):

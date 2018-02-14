@@ -21,7 +21,7 @@ from ..processing.tree import ClusterTree
 from .be_sho_fitter import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..core.io.dtype_utils import compound_to_real, real_to_compound
+from ..core.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_region_refs, link_h5_objects_as_attrs, \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, build_reduced_spec_dsets, \
     get_attr, link_h5_obj_as_alias, create_empty_dataset
@@ -426,7 +426,7 @@ class BELoopFitter(Fitter):
                                                   dset_name=dset_name,
                                                   new_attrs={'nuc_threshold': nuc_threshold})
 
-        loop_coef_vec = compound_to_real(np.reshape(h5_loop_fit, [-1, 1]))
+        loop_coef_vec = flatten_compound_to_real(np.reshape(h5_loop_fit, [-1, 1]))
         switching_coef_vec = calc_switching_coef_vec(loop_coef_vec, nuc_threshold)
 
         h5_loop_parameters[:, :] = switching_coef_vec.reshape(h5_loop_fit.shape)
@@ -966,7 +966,7 @@ class BELoopFitter(Fitter):
 
         guess = self.h5_guess[self._start_pos:self._end_pos,
                               self._current_met_spec_slice].reshape([-1, 1])
-        self.guess = compound_to_real(guess)[:, :-1]
+        self.guess = flatten_compound_to_real(guess)[:, :-1]
 
     def _create_guess_datasets(self):
         """
@@ -1073,7 +1073,7 @@ class BELoopFitter(Fitter):
             temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
             # convert to the appropriate dtype as well:
             r2 = 1 - np.sum(np.abs(loop_fit_results[clust_id][0].fun ** 2))
-            guess_parms[pix_inds] = real_to_compound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
+            guess_parms[pix_inds] = stack_real_to_compound(np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
 
         return guess_parms
 
@@ -1138,7 +1138,7 @@ class BELoopFitter(Fitter):
 
         if strategy in ['BE_LOOP']:
             temp = np.array([np.hstack([result.x, result.fun]) for result in results])
-            temp = real_to_compound(temp, loop_fit32)
+            temp = stack_real_to_compound(temp, loop_fit32)
         return temp
 
 

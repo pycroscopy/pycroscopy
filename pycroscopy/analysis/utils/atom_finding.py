@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
 from ...core.io.io_utils import recommend_cpu_cores
-from ...core.io.dtype_utils import real_to_compound
+from ...core.io.dtype_utils import stack_real_to_compound
 from ...core.io.virtual_data import VirtualDataset, VirtualGroup
 from ...core.io.hdf_writer import HDFwriter
 
@@ -324,8 +324,8 @@ def fit_atom_positions_dset(h5_grp, fitting_parms=None, num_cores=None):
     for atom_ind, single_atom_results in enumerate(fitting_results):
         guess_coeff, fit_coeff = single_atom_results
         num_neighbors_used = guess_coeff.shape[0]
-        guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(guess_coeff, guess_parms.dtype))
-        fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(real_to_compound(fit_coeff, guess_parms.dtype))
+        guess_parms[atom_ind, :num_neighbors_used] = np.squeeze(stack_real_to_compound(guess_coeff, guess_parms.dtype))
+        fit_parms[atom_ind, :num_neighbors_used] = np.squeeze(stack_real_to_compound(fit_coeff, guess_parms.dtype))
 
     ds_atom_guesses = VirtualDataset('Guess', data=guess_parms)
     ds_atom_fits = VirtualDataset('Fit', data=fit_parms)
