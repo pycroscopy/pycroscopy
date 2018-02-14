@@ -9,7 +9,7 @@ from skimage.measure import block_reduce
 # Pycroscopy imports
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, build_reduced_spec_dsets
-from ...core.io.dtype_utils import real_to_compound
+from ...core.io.dtype_utils import stack_real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import build_ind_val_dsets
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -280,11 +280,11 @@ class FakeBEPSGenerator(Translator):
         coef_mat = np.hstack([coef_IF_mat[:, np.newaxis, :], coef_OF_mat[:, np.newaxis, :]])
         coef_mat = np.rollaxis(coef_mat, 1, coef_mat.ndim).reshape([coef_mat.shape[0], -1])
 
-        self.h5_loop_fit[:] = np.tile(real_to_compound(coef_mat, loop_fit32),
+        self.h5_loop_fit[:] = np.tile(stack_real_to_compound(coef_mat, loop_fit32),
                                       [1, int(self.n_loops / self.n_fields)])
 
-        self.h5_loop_guess[:] = np.tile(real_to_compound(coef_mat * get_noise_vec(coef_mat.shape, 0.1),
-                                                         loop_fit32),
+        self.h5_loop_guess[:] = np.tile(stack_real_to_compound(coef_mat * get_noise_vec(coef_mat.shape, 0.1),
+                                                               loop_fit32),
                                         [1, int(self.n_loops / self.n_fields)])
 
         self.h5_file.flush()
@@ -660,23 +660,23 @@ class FakeBEPSGenerator(Translator):
             q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat)*10
             phase = np.sign(R_mat) * np.pi / 2
 
-            self.h5_sho_fit[pix_batch, :] = real_to_compound(np.hstack([amp,
-                                                                        resp,
-                                                                        q_val,
-                                                                        phase,
-                                                                        np.ones_like(R_mat)]),
-                                                             sho32)
+            self.h5_sho_fit[pix_batch, :] = stack_real_to_compound(np.hstack([amp,
+                                                                              resp,
+                                                                              q_val,
+                                                                              phase,
+                                                                              np.ones_like(R_mat)]),
+                                                                   sho32)
 
-            self.h5_sho_guess[pix_batch, :] = real_to_compound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
-                                                                                              amp_noise),
-                                                                          resp * get_noise_vec(self.n_sho_bins,
+            self.h5_sho_guess[pix_batch, :] = stack_real_to_compound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
+                                                                                                    amp_noise),
+                                                                                resp * get_noise_vec(self.n_sho_bins,
                                                                                              resp_noise),
-                                                                          q_val * get_noise_vec(self.n_sho_bins,
+                                                                                q_val * get_noise_vec(self.n_sho_bins,
                                                                                               q_noise),
-                                                                          phase * get_noise_vec(self.n_sho_bins,
+                                                                                phase * get_noise_vec(self.n_sho_bins,
                                                                                               phase_noise),
-                                                                          np.ones_like(R_mat)]),
-                                                               sho32)
+                                                                                np.ones_like(R_mat)]),
+                                                                     sho32)
 
             self.h5_file.flush()
 

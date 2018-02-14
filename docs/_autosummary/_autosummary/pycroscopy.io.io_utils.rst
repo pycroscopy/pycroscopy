@@ -11,7 +11,7 @@ pycroscopy\.io\.io\_utils
    
       check_dtype
       check_ssh
-      complex_to_real
+      flatten_complex_to_real
       compound_to_scalar
       getAvailableMem
       getTimeStamp

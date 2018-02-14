@@ -11,7 +11,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.dtype_utils import real_to_compound
+from ..core.io.dtype_utils import stack_real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
 from ..core.io.write_utils import build_ind_val_dsets
 from ..core.io.hdf_writer import HDFwriter
@@ -244,7 +244,7 @@ class GIVBayesian(Process):
             self.h5_new_spec_vals[0, :] = full_results['x']  # Technically this needs to only be done once
 
         pos_slice = slice(self._start_pos, self._end_pos)
-        self.h5_cap[pos_slice] = np.atleast_2d(real_to_compound(cap_mat, cap_dtype)).T
+        self.h5_cap[pos_slice] = np.atleast_2d(stack_real_to_compound(cap_mat, cap_dtype)).T
         self.h5_variance[pos_slice] = r_var_mat
         self.h5_resistance[pos_slice] = r_inf_mat
         self.h5_i_corrected[pos_slice] = i_cor_sin_mat

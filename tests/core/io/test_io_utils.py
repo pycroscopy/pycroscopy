@@ -10,7 +10,6 @@ import sys
 from multiprocessing import cpu_count
 sys.path.append("../../../pycroscopy/")
 from pycroscopy.core.io import io_utils
-import numpy as np
 
 MAX_CPU_CORES = cpu_count()
 

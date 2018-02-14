@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_
     get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes
 from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
-from ..core.io.dtype_utils import check_dtype, transform_to_target_dtype
+from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.write_utils import INDICES_DTYPE
 
@@ -104,7 +104,7 @@ class SVD(Process):
         ds_U = VirtualDataset('U', data=np.float32(U), chunking=u_chunks)
         del U
 
-        V = transform_to_target_dtype(V, self.h5_main.dtype)
+        V = stack_real_to_target_dtype(V, self.h5_main.dtype)
         v_chunks = calc_chunks(V.shape, self.h5_main.dtype.itemsize)
         ds_V = VirtualDataset('V', data=V, chunking=v_chunks)
         del V
@@ -303,7 +303,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     for ibatch, batch in enumerate(batch_slices):
         rebuild[batch, :] += np.dot(h5_U[batch, comp_slice], ds_V)
 
-    rebuild = transform_to_target_dtype(rebuild, h5_V.dtype)
+    rebuild = stack_real_to_target_dtype(rebuild, h5_V.dtype)
 
     print('Completed reconstruction of data from SVD results.  Writing to file.')
     '''

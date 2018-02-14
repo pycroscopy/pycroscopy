@@ -9,8 +9,9 @@ import h5py
 import numpy as np
 from collections import Iterable
 
-__all__ = ['complex_to_real', 'get_compound_subdtypes', 'compound_to_real', 'check_dtype', 'real_to_complex',
-           'real_to_compound', 'transform_to_target_dtype', 'transform_to_real']
+__all__ = ['flatten_complex_to_real', 'get_compound_sub_dtypes', 'flatten_compound_to_real', 'check_dtype',
+           'stack_real_to_complex',
+           'stack_real_to_compound', 'stack_real_to_target_dtype', 'flatten_to_real', 'contains_integers']
 
 
 def contains_integers(iter_int, min_val=None):
@@ -43,9 +44,10 @@ def contains_integers(iter_int, min_val=None):
         return False
 
 
-def complex_to_real(ds_main):
+def flatten_complex_to_real(ds_main):
     """
-    Stacks the real values followed by the imaginary values in an N dimensional matrix
+    Stacks the real values followed by the imaginary values in the last dimension of the given N dimensional matrix.
+    Thus a complex matrix of shape (2, 3, 5) will turn into a matrix of shape (2, 3, 10)
 
     Parameters
     ----------
@@ -56,10 +58,14 @@ def complex_to_real(ds_main):
     -------
     retval : ND real numpy array
     """
-    return np.hstack([np.real(ds_main), np.imag(ds_main)])
+    axis = np.array(ds_main).ndim - 1
+    if axis == -1:
+        return np.hstack([np.real(ds_main), np.imag(ds_main)])
+    else:  # along the last axis
+        return np.concatenate([np.real(ds_main), np.imag(ds_main)], axis=axis)
 
 
-def get_compound_subdtypes(struct_dtype):
+def get_compound_sub_dtypes(struct_dtype):
     """
     Returns a dictionary of the dtypes of each of the fields in the given structured array dtype
 
@@ -73,13 +79,14 @@ def get_compound_subdtypes(struct_dtype):
     dtypes : dict
         Dictionary whose keys are the field names and values are the corresponding dtypes
     """
+    assert isinstance(struct_dtype, np.dtype)
     dtypes = dict()
     for field_name in struct_dtype.fields:
         dtypes[field_name] = struct_dtype.fields[field_name][0]
     return dtypes
 
 
-def compound_to_real(ds_main):
+def flatten_compound_to_real(ds_main):
     """
     Stacks the individual components in a structured array or compound valued hdf5 dataset to form a real valued array
 
@@ -138,7 +145,7 @@ def check_dtype(ds_main):
         is_complex = True
         new_dtype = np.real(ds_main[0, 0]).dtype
         type_mult = new_dtype.itemsize * 2
-        func = complex_to_real
+        func = flatten_complex_to_real
         n_features *= 2
     elif len(ds_main.dtype) > 0:
         """
@@ -148,7 +155,7 @@ def check_dtype(ds_main):
         is_compound = True
         new_dtype = np.float32
         type_mult = len(in_dtype) * new_dtype(0).itemsize
-        func = compound_to_real
+        func = flatten_compound_to_real
         n_features *= len(in_dtype)
     else:
         if ds_main.dtype not in [np.float32, np.float64]:
@@ -163,7 +170,7 @@ def check_dtype(ds_main):
     return func, is_complex, is_compound, n_features, n_samples, type_mult
 
 
-def real_to_complex(ds_real):
+def stack_real_to_complex(ds_real):
     """
     Puts the real and imaginary sections together to make complex dataset
 
@@ -179,10 +186,12 @@ def real_to_complex(ds_real):
     ds_compound : 2D complex numpy array
         Data arranged as [sample, features]
     """
+    # TODO: check that the last dimension is even sized
+    # TODO: ensure that we do NOT hard code things for 2D only
     return ds_real[:, :int(0.5 * ds_real.shape[1])] + 1j * ds_real[:, int(0.5 * ds_real.shape[1]):]
 
 
-def real_to_compound(ds_real, compound_type):
+def stack_real_to_compound(ds_real, compound_type):
     """
     Converts a real dataset to a compound dataset of the provided compound d-type
 
@@ -214,7 +223,7 @@ def real_to_compound(ds_real, compound_type):
     return np.squeeze(ds_compound)
 
 
-def transform_to_target_dtype(ds_real, new_dtype):
+def stack_real_to_target_dtype(ds_real, new_dtype):
     """
     Transforms real data into the target dtype
 
@@ -231,14 +240,14 @@ def transform_to_target_dtype(ds_real, new_dtype):
         Data of the target data type
     """
     if new_dtype in [np.complex64, np.complex128, np.complex]:
-        return real_to_complex(ds_real)
+        return stack_real_to_complex(ds_real)
     elif len(new_dtype) > 0:
-        return real_to_compound(ds_real, new_dtype)
+        return stack_real_to_compound(ds_real, new_dtype)
     else:
         return new_dtype.type(ds_real)
 
 
-def transform_to_real(ds_main):
+def flatten_to_real(ds_main):
     """
     Transforms complex / compound / real valued arrays to real valued arrays
 
@@ -253,8 +262,8 @@ def transform_to_real(ds_main):
         Data raveled to a float data type
     """
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
-        return complex_to_real(ds_main)
+        return flatten_complex_to_real(ds_main)
     elif len(ds_main.dtype) > 0:
-        return compound_to_real(ds_main)
+        return flatten_compound_to_real(ds_main)
     else:
         return ds_main
