@@ -251,7 +251,7 @@ class ioHDF5(object):
                     if len(previous) == 0:
                         index = 0
                     else:
-                        last = h5_file[parent].keys()[previous[-1]]
+                        last = list(h5_file[parent].keys())[previous[-1]]
                         index = int(last.split('_')[-1]) + 1
                     child.name += '{:03d}'.format(index)
                 try:
