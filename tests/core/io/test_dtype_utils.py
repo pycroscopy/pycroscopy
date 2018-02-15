@@ -8,6 +8,8 @@ Created on Tue Nov  3 15:07:16 2017
 import unittest
 import sys
 import numpy as np
+import os
+import h5py
 sys.path.append("../../../pycroscopy/")
 from pycroscopy.core.io import dtype_utils
 
@@ -30,6 +32,22 @@ def compare_structured_arrays(arr_1, arr_2):
     for name in arr_1.dtype.names:
         tests.append(np.allclose(arr_1[name], arr_2[name]))
     return np.all(tests)
+
+
+def get_h5_file_path():
+    file_path = 'test_dtype_utils.h5'
+    if not os.path.exists(file_path):
+        with h5py.File(file_path) as h5_f:
+            _ = h5_f.create_dataset('complex', data=5 * np.random.rand(2, 3, 5) + 7j * np.random.rand(2, 3, 5))
+            num_elems = (2, 3, 6)
+            structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+            structured_array['r'] = 450 * np.random.random(size=num_elems)
+            structured_array['g'] = np.random.randint(0, high=1024, size=num_elems)
+            structured_array['b'] = 3178 * np.random.random(size=num_elems)
+            _ = h5_f.create_dataset('compound', data=structured_array)
+            _ = h5_f.create_dataset('real', data=450 * np.random.random(size=num_elems))
+            h5_f.flush()
+    return file_path
 
 
 class TestDtypeUtils(unittest.TestCase):
@@ -86,11 +104,41 @@ class TestDtypeUtils(unittest.TestCase):
         expected = np.concatenate([np.real(complex_array), np.imag(complex_array)], axis=3)
         self.assertTrue(np.allclose(actual, expected))
 
+    def test_complex_to_real_h5_legal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            h5_comp = h5_f['complex']
+            actual = dtype_utils.flatten_complex_to_real(h5_comp)
+            expected = np.concatenate([np.real(h5_comp[()]), np.imag(h5_comp[()])], axis=len(h5_comp.shape) - 1)
+            self.assertTrue(np.allclose(actual, expected))
+
+    def test_complex_to_real_h5_illegal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.flatten_complex_to_real(h5_f['real'])
+
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.flatten_complex_to_real(h5_f['compound'])
+
     def test_stack_real_nd_to_complex_array(self):
         expected = 5 * np.random.rand(2, 3, 5, 8) + 7j * np.random.rand(2, 3, 5, 8)
         real_val = np.concatenate([np.real(expected), np.imag(expected)], axis=3)
         actual = dtype_utils.stack_real_to_complex(real_val)
         self.assertTrue(np.allclose(actual, expected))
+
+    def test_stack_real_nd_to_complex_h5_legal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            h5_real = h5_f['real']
+            expected = h5_real[:, :, :3] + 1j * h5_real[:, :, 3:]
+            actual = dtype_utils.stack_real_to_complex(h5_real)
+            self.assertTrue(np.allclose(actual, expected))
+
+    def test_stack_real_nd_to_complex_h5_illegal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.stack_real_to_complex(h5_f['complex'])
+
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.stack_real_to_complex(h5_f['compound'])
 
     def test_complex_to_real_compound_illegal(self):
         num_elems = 5
@@ -171,6 +219,21 @@ class TestDtypeUtils(unittest.TestCase):
         actual = dtype_utils.flatten_compound_to_real(structured_array)
         self.assertTrue(np.allclose(actual, expected))
 
+    def test_compound_to_real_nd_h5_legal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            h5_comp = h5_f['compound']
+            actual = dtype_utils.flatten_compound_to_real(h5_comp)
+            expected = np.concatenate([h5_comp['r'], h5_comp['g'], h5_comp['b']], axis=len(h5_comp.shape) - 1)
+            self.assertTrue(np.allclose(actual, expected))
+
+    def test_compound_to_real_nd_h5_illegal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.flatten_compound_to_real(h5_f['real'])
+
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.flatten_compound_to_real(h5_f['complex'])
+
     def test_real_to_compound_nd(self):
         num_elems = (2, 3, 5, 7)
         structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
@@ -180,6 +243,26 @@ class TestDtypeUtils(unittest.TestCase):
         real_val = np.concatenate((r_vals, g_vals, b_vals), axis=len(num_elems) - 1)
         actual = dtype_utils.stack_real_to_compound(real_val, struc_dtype)
         self.assertTrue(compare_structured_arrays(actual, structured_array))
+
+    def test_real_to_compound_nd_h5_legal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            h5_real = h5_f['real']
+            structured_array = np.zeros(shape=list(h5_real.shape)[:-1] + [h5_real.shape[-1] // len(struc_dtype.names)],
+                                        dtype=struc_dtype)
+            for name_ind, name in enumerate(struc_dtype.names):
+                i_start = name_ind * structured_array.shape[-1]
+                i_end = (name_ind + 1) * structured_array.shape[-1]
+                structured_array[name] = h5_real[..., i_start:i_end]
+            actual = dtype_utils.stack_real_to_compound(h5_real, struc_dtype)
+            self.assertTrue(compare_structured_arrays(actual, structured_array))
+
+    def test_real_to_compound_nd_h5_illegal(self):
+        with h5py.File(get_h5_file_path(), mode='r') as h5_f:
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.stack_real_to_compound(h5_f['compound'], struc_dtype)
+
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.stack_real_to_compound(h5_f['complex'], struc_dtype)
 
     def test_compound_to_real_illegal(self):
         num_elems = (2, 3)

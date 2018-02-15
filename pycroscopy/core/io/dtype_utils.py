@@ -256,9 +256,9 @@ def stack_real_to_compound(ds_real, compound_type):
         if not isinstance(ds_real, Iterable):
             raise TypeError("Expected at least an iterable like a list or tuple")
         ds_real = np.array(ds_real)
-    if isinstance(ds_real.dtype, np.void):
+    if len(ds_real.dtype) > 0:
         raise TypeError("Array cannot have a compound dtype")
-    if ds_real.dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+    elif ds_real.dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
         raise TypeError("Array cannot have complex dtype")
     if not isinstance(compound_type, np.dtype):
         raise TypeError('Provided object must be a structured array dtype')
