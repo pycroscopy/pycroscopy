@@ -94,7 +94,10 @@ def flatten_compound_to_real(ds_main):
     elif isinstance(ds_main, np.ndarray):
         if len(ds_main.dtype) == 0:
             raise TypeError("Expected structured numpy array")
-        return np.concatenate([ds_main[name] for name in ds_main.dtype.names], axis=ds_main.ndim - 1)
+        if ds_main.ndim > 0:
+            return np.concatenate([ds_main[name] for name in ds_main.dtype.names], axis=ds_main.ndim - 1)
+        else:
+            return np.hstack([ds_main[name] for name in ds_main.dtype.names])
     elif isinstance(ds_main, np.void):
         return np.hstack([ds_main[name] for name in ds_main.dtype.names])
     else:
@@ -115,6 +118,8 @@ def flatten_to_real(ds_main):
     ds_main : nD numpy array
         Data raveled to a float data type
     """
+    if not isinstance(ds_main, (h5py.Dataset, np.ndarray)):
+        ds_main = np.array(ds_main)
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         return flatten_complex_to_real(ds_main)
     elif len(ds_main.dtype) > 0:
