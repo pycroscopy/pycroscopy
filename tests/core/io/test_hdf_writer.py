@@ -14,7 +14,7 @@ import sys
 sys.path.append("../../../pycroscopy/")
 from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
-from pycroscopy.core.io.hdf_writer import clean_string_att
+from pycroscopy.core.io.write_utils import clean_string_att
 from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
 
 
@@ -364,7 +364,7 @@ class TestHDFWriter(unittest.TestCase):
             attrs = {'att_1': 'string_val', 'att_2': 1.234, 'att_3': [1, 2, 3.14, 4],
                      'att_4': ['s', 'tr', 'str_3']}
 
-            writer._write_simple_attrs(h5_group, attrs)
+            writer.write_simple_attrs(h5_group, attrs)
 
             for key, expected_val in attrs.items():
                 self.assertTrue(np.all(get_attr(h5_group, key) == expected_val))
@@ -385,7 +385,7 @@ class TestHDFWriter(unittest.TestCase):
                      'att_3': [1, 2, 3, 4],
                      'att_4': ['str_1', 'str_2', 'str_3']}
 
-            writer._write_simple_attrs(h5_dset, attrs)
+            writer.write_simple_attrs(h5_dset, attrs)
 
             self.assertEqual(len(h5_dset.attrs), len(attrs))
 
