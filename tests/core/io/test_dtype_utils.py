@@ -346,7 +346,5 @@ class TestDtypeUtils(unittest.TestCase):
         self.assertTrue(compare_structured_arrays(actual, structured_array))
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
