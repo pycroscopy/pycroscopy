@@ -281,6 +281,72 @@ class TestDtypeUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = dtype_utils.stack_real_to_compound(r_vals, struc_dtype)
 
+    def test_flatten_to_real_complex_nd(self):
+        complex_array = 5 * np.random.rand(2, 3, 5, 7) + 7j * np.random.rand(2, 3, 5, 7)
+        actual = dtype_utils.flatten_to_real(complex_array)
+        expected = np.concatenate([np.real(complex_array), np.imag(complex_array)], axis=3)
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_flatten_to_real_complex_single(self):
+        complex_val = 4.32 + 5.67j
+        expected = [np.real(complex_val), np.imag(complex_val)]
+        actual = dtype_utils.flatten_to_real(complex_val)
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_flatten_to_real_compound_nd(self):
+        num_elems = (5, 7, 2, 3)
+        structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+        structured_array['r'] = r_vals = np.random.random(size=num_elems)
+        structured_array['g'] = g_vals = np.random.randint(0, high=1024, size=num_elems)
+        structured_array['b'] = b_vals = np.random.random(size=num_elems)
+        expected = np.concatenate((r_vals, g_vals, b_vals), axis=len(num_elems) - 1)
+        actual = dtype_utils.flatten_to_real(structured_array)
+        self.assertTrue(np.allclose(actual, expected))
+
+    def test_flatten_to_real_compound_single(self):
+        num_elems = 1
+        structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+        structured_array['r'] = r_vals = np.random.random(size=num_elems)
+        structured_array['g'] = g_vals = np.random.randint(0, high=1024, size=num_elems)
+        structured_array['b'] = b_vals = np.random.random(size=num_elems)
+        expected = np.concatenate((r_vals, g_vals, b_vals))
+        actual = dtype_utils.flatten_to_real(structured_array[0])
+        self.assertTrue(np.allclose(actual, expected))
+
+    def stack_real_to_target_complex_single(self):
+        expected = 4.32 + 5.67j
+        real_val = [np.real(expected), np.imag(expected)]
+        actual = dtype_utils.stack_real_to_target_dtype(real_val, np.complex)
+        self.assertTrue(np.allclose(actual, expected))
+
+    def stack_real_to_target_complex_nd(self):
+        expected = 5 * np.random.rand(2, 3, 5, 8) + 7j * np.random.rand(2, 3, 5, 8)
+        real_val = np.concatenate([np.real(expected), np.imag(expected)], axis=3)
+        actual = dtype_utils.stack_real_to_target_dtype(real_val, np.complex)
+        self.assertTrue(np.allclose(actual, expected))
+
+    def stack_real_to_target_compound_single(self):
+        num_elems = 1
+        structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+        structured_array['r'] = r_vals = np.random.random(size=num_elems)
+        structured_array['g'] = g_vals = np.random.randint(0, high=1024, size=num_elems)
+        structured_array['b'] = b_vals = np.random.random(size=num_elems)
+        real_val = np.concatenate((r_vals, g_vals, b_vals))
+        actual = dtype_utils.stack_real_to_target_dtype(real_val, struc_dtype)
+        self.assertTrue(compare_structured_arrays(actual, structured_array[0]))
+
+    def stack_real_to_target_compound_nd(self):
+        num_elems = (2, 3, 5, 7)
+        structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+        structured_array['r'] = r_vals = np.random.random(size=num_elems)
+        structured_array['g'] = g_vals = np.random.randint(0, high=1024, size=num_elems)
+        structured_array['b'] = b_vals = np.random.random(size=num_elems)
+        real_val = np.concatenate((r_vals, g_vals, b_vals), axis=len(num_elems) - 1)
+        actual = dtype_utils.stack_real_to_target_dtype(real_val, struc_dtype)
+        self.assertTrue(compare_structured_arrays(actual, structured_array))
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
