@@ -9,12 +9,11 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 import subprocess
 import sys
-from collections import Iterable
 from time import time, sleep
 from warnings import warn
 import h5py
-import numpy as np
 
+from pycroscopy.core.io.write_utils import clean_string_att, assign_group_index
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 
@@ -200,7 +199,7 @@ class HDFwriter(object):
         # Figuring out if the first item in VirtualGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
-            HDFwriter._write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
+            HDFwriter.write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
             root = h5_file.name
             ref_list.append(h5_file)
         else:
@@ -286,22 +285,7 @@ class HDFwriter(object):
 
         # First complete the name of the group by adding the index suffix
         if micro_group.indexed:
-            temp = [key for key in h5_parent_group.keys()]
-            if print_log:
-                print('Looking for group names starting with {} in parent containing items: '
-                      '{}'.format(micro_group.name, temp))
-            previous_indices = []
-            for item_name in temp:
-                if isinstance(h5_parent_group[item_name], h5py.Group) and item_name.startswith(micro_group.name):
-                    previous_indices.append(int(item_name.replace(micro_group.name, '')))
-            previous_indices = np.sort(previous_indices)
-            if print_log:
-                print('indices of existing groups with the same prefix: {}'.format(previous_indices))
-            if len(previous_indices) == 0:
-                index = 0
-            else:
-                index = previous_indices[-1] + 1
-            micro_group.name += '{:03d}'.format(index)
+            micro_group.name = assign_group_index(h5_parent_group, micro_group.name, print_log=print_log)
 
         # Now, try to write the group
         try:
@@ -317,42 +301,10 @@ class HDFwriter(object):
             raise
 
         # Write attributes
-        HDFwriter._write_simple_attrs(h5_new_group, micro_group.attrs, 'group', print_log=print_log)
+        HDFwriter.write_simple_attrs(h5_new_group, micro_group.attrs, 'group', print_log=print_log)
 
         return h5_new_group
 
-    @staticmethod
-    def _write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
-        """
-        Writes attributes to a h5py object
-
-        Parameters
-        ----------
-        h5_obj : h5py.File, h5py.Group, or h5py.Dataset object
-            h5py object to which the attributes will be written to
-        attrs : dict
-            Dictionary containing the attributes as key-value pairs
-        obj_type : str / unicode, optional. Default = ''
-            type of h5py.obj. Examples include 'group', 'file', 'dataset
-        print_log : bool, optional. Default=False
-            Whether or not to print debugging statements
-        """
-        if not isinstance(attrs, dict):
-            HDFwriter.__safe_abort(h5_obj.file)
-            raise TypeError('attrs should be a dictionary but is instead of type '
-                            '{}'.format(type(attrs)))
-        if not isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset)):
-            raise TypeError('h5_obj should be a h5py File, Group or Dataset object but is instead of type '
-                            '{}. UNABLE to safely abort'.format(type(h5_obj)))
-
-        for key, val in attrs.items():
-            if val is None:
-                continue
-            if print_log:
-                print('Writing attribute: {} with value: {}'.format(key, val))
-            h5_obj.attrs[key] = clean_string_att(val)
-        if print_log:
-            print('Wrote all (simple) attributes to {}: {}\n'.format(obj_type, h5_obj.name.split('/')[-1]))
 
     @staticmethod
     def _create_simple_dset(h5_group, microdset):
@@ -550,7 +502,7 @@ class HDFwriter(object):
         labels_dict = attr_dict.pop('labels', None)
 
         # Next, write the simple ones using a centralized function
-        HDFwriter._write_simple_attrs(h5_dset, attr_dict, obj_type='dataset', print_log=print_log)
+        HDFwriter.write_simple_attrs(h5_dset, attr_dict, obj_type='dataset', print_log=print_log)
 
         if labels_dict is None:
             if print_log:
@@ -560,14 +512,14 @@ class HDFwriter(object):
         if isinstance(labels_dict, (tuple, list)):
             # What if the labels dictionary is just a list of names? make a dictionary using the names
             # This is the most that can be done.
-            labels_dict = HDFwriter.__attempt_reg_ref_build(h5_dset, labels_dict, print_log=print_log)
+            labels_dict = HDFwriter.attempt_reg_ref_build(h5_dset, labels_dict, print_log=print_log)
 
         if len(labels_dict) == 0:
             if print_log:
                 warn('No region references to write')
             return
         # Now, handle the region references attribute:
-        HDFwriter.__write_region_references(h5_dset, labels_dict, print_log=print_log)
+        HDFwriter.write_region_references(h5_dset, labels_dict, print_log=print_log)
         '''
         Next, write these label names as an attribute called labels
         Now make an attribute called 'labels' that is a list of strings 
@@ -599,179 +551,4 @@ class HDFwriter(object):
         if print_log:
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
-    @staticmethod
-    def __attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
-        """
 
-        Parameters
-        ----------
-        h5_dset : h5.Dataset instance
-            Dataset to which region references need to be added as attributes
-        dim_names : list or tuple
-            List of the names of the region references (typically names of dimensions)
-        print_log : bool, optional. Default=False
-            Whether or not to print debugging statements
-
-        Returns
-        -------
-        labels_dict : dict
-            The slicing information must be formatted using tuples of slice objects.
-            For example {'region_1':(slice(None, None), slice (0,1))}
-        """
-        if not isinstance(h5_dset, h5py.Dataset):
-            raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
-                            '{}. UNABLE to safely abort'.format(type(h5_dset)))
-        if not isinstance(dim_names, (list, tuple)):
-            HDFwriter.__safe_abort(h5_dset.file)
-            raise TypeError('slices should be a list or tuple but is instead of type '
-                            '{}'.format(type(dim_names)))
-
-        if len(h5_dset.shape) != 2:
-            return dict()
-
-        if not np.all([isinstance(obj, (str, unicode)) for obj in dim_names]):
-            raise TypeError('Unable to automatically generate region references for dataset: {} since one or more names'
-                            ' of the region references was not a string'.format(h5_dset.name))
-
-        labels_dict = dict()
-        if len(dim_names) == h5_dset.shape[0]:
-            if print_log:
-                print('Most likely a spectroscopic indices / values dataset')
-            for dim_index, curr_name in enumerate(dim_names):
-                labels_dict[curr_name] = (slice(dim_index, dim_index+1), slice(None))
-        elif len(dim_names) == h5_dset.shape[1]:
-            if print_log:
-                print('Most likely a position indices / values dataset')
-            for dim_index, curr_name in enumerate(dim_names):
-                labels_dict[curr_name] = (slice(None), slice(dim_index, dim_index + 1))
-
-        if len(labels_dict) > 0:
-            warn('Attempted to automatically build region reference dictionary for dataset: {}.\n'
-                 'Please specify region references as a tuple of slice objects for each attribute'.format(h5_dset.name))
-        else:
-            if print_log:
-                print('Could not build region references since dataset had shape:{} and number of region references is '
-                      '{}'.format(h5_dset.shape, len(dim_names)))
-        return labels_dict
-
-    @staticmethod
-    def __write_region_references(h5_dset, reg_ref_dict, print_log=False):
-        """
-        Creates attributes of a h5py.Dataset that refer to regions in the dataset
-
-        Parameters
-        ----------
-        h5_dset : h5.Dataset instance
-            Dataset to which region references will be added as attributes
-        reg_ref_dict : dict
-            The slicing information must be formatted using tuples of slice objects.
-            For example {'region_1':(slice(None, None), slice (0,1))}
-        print_log : Boolean (Optional. Default = False)
-            Whether or not to print status messages
-        """
-        if not isinstance(reg_ref_dict, dict):
-            HDFwriter.__safe_abort(h5_dset.file)
-            raise TypeError('slices should be a dictionary but is instead of type '
-                            '{}'.format(type(reg_ref_dict)))
-        if not isinstance(h5_dset, h5py.Dataset):
-            raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
-                            '{}. UNABLE to safely abort'.format(type(h5_dset)))
-
-        if print_log:
-            print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
-        for reg_ref_name, reg_ref_tuple in reg_ref_dict.items():
-            if print_log:
-                print('About to write region reference:', reg_ref_name, ':', reg_ref_tuple)
-
-            reg_ref_tuple = HDFwriter.__clean_reg_ref(h5_dset, reg_ref_tuple, print_log=print_log)
-
-            h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
-
-            if print_log:
-                print('Wrote Region Reference:%s' % reg_ref_name)
-
-    @staticmethod
-    def __clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
-        """
-        Makes sure that the provided instructions for a region reference are indeed valid
-        This method has become necessary since h5py allows the writing of region references larger than the maxshape
-
-        Parameters
-        ----------
-        h5_dset : h5.Dataset instance
-            Dataset to which region references will be added as attributes
-        reg_ref_tuple : list / tuple
-            The slicing information formatted using tuples of slice objects.
-        print_log : Boolean (Optional. Default = False)
-            Whether or not to print status messages
-
-        Returns
-        -------
-        is_valid : bool
-            Whether or not this
-        """
-        if not isinstance(reg_ref_tuple, (tuple, dict, slice)):
-            HDFwriter.__safe_abort(h5_dset.file)
-            raise TypeError('slices should be a tuple, list, or slice but is instead of type '
-                            '{}'.format(type(reg_ref_tuple)))
-        if not isinstance(h5_dset, h5py.Dataset):
-            raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
-                            '{}. UNABLE to safely abort'.format(type(h5_dset)))
-
-        if isinstance(reg_ref_tuple, slice):
-            # 1D dataset
-            reg_ref_tuple = [reg_ref_tuple]
-
-        if len(reg_ref_tuple) != len(h5_dset.shape):
-            HDFwriter.__safe_abort(h5_dset.file)
-            raise ValueError('Region reference tuple did not have the same dimensions as the h5 dataset')
-
-        if print_log:
-            print('Comparing {} with h5 dataset maxshape of {}'.format(reg_ref_tuple, h5_dset.maxshape))
-
-        new_reg_refs = list()
-
-        for reg_ref_slice, max_size in zip(reg_ref_tuple, h5_dset.maxshape):
-            if not isinstance(reg_ref_slice, slice):
-                HDFwriter.__safe_abort(h5_dset.file)
-                raise TypeError('slices should be a tuple or a list but is instead of type '
-                                '{}'.format(type(reg_ref_slice)))
-
-            # For now we will simply make sure that the end of the slice is <= maxshape
-            if max_size is not None and reg_ref_slice.stop is not None:
-                reg_ref_slice = slice(reg_ref_slice.start, min(reg_ref_slice.stop, max_size), reg_ref_slice.step)
-
-            new_reg_refs.append(reg_ref_slice)
-
-        if print_log:
-            print('Region reference tuple now: {}'.format(new_reg_refs))
-
-        return tuple(new_reg_refs)
-
-
-def clean_string_att(att_val):
-    """
-    Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
-    If the attribute is indeed a list of unicodes, the changes will be made in-place
-
-    Parameters
-    ----------
-    att_val : object
-        Attribute object
-
-    Returns
-    -------
-    att_val : object
-        Attribute object
-    """
-    try:
-        if isinstance(att_val, Iterable):
-            if type(att_val) in [unicode, str]:
-                return att_val
-            elif np.any([type(x) in [str, unicode, bytes] for x in att_val]):
-                return np.array(att_val, dtype='S')
-        if type(att_val) == np.str_:
-            return str(att_val)
-        return att_val
-    except TypeError:
-        raise TypeError('Failed to clean: {}'.format(att_val))
