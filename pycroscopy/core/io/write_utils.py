@@ -7,7 +7,7 @@ import numbers
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
-           'INDICES_DTYPE', 'VALUES_DTYPE']
+           'INDICES_DTYPE', 'VALUES_DTYPE', 'AuxillaryDescriptor']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -18,6 +18,24 @@ VALUES_DTYPE = np.float32
 
 class AuxillaryDescriptor(object):
     def __init__(self, dim_sizes, dim_names, dim_units, dim_step_sizes=None, dim_initial_vals=None):
+        """
+        Object that provides the instructions necessary for building ancillary datasets
+
+        Parameters
+        ----------
+        dim_sizes : list / tuple of of unsigned ints.
+            Sizes of all dimensions arranged from fastest to slowest.
+            For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
+        dim_names : list / tuple of str / unicode
+            Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
+        dim_units : list / tuple of str / unicode
+            Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
+        dim_step_sizes : list / tuple of numbers, optional
+            step-size in each dimension.  One if not specified.
+        dim_initial_vals : list / tuple of numbers, optional
+            Floating point for the zeroth value in each dimension.  Zero if not specified.
+
+        """
         lengths = []
         for val, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes, dim_initial_vals],
                                             [0, 2, 2, 1, 1],
@@ -37,6 +55,12 @@ class AuxillaryDescriptor(object):
             raise ValueError('All the arguments should have the same number of elements')
         if num_elems[0] == 0:
             raise ValueError('Argument should not be empty')
+
+        self.sizes = dim_sizes
+        self.names = dim_names
+        self.units = dim_units
+        self.steps = dim_step_sizes
+        self.initial_vals = dim_initial_vals
 
 
 def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
