@@ -324,32 +324,6 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_clean_string_att_float(self):
-        expected = 5.321
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_str(self):
-        expected = 'test'
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_num_array(self):
-        expected = [1, 2, 3.456]
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_str_list(self):
-        expected = ['a', 'bc', 'def']
-        returned = clean_string_att(expected)
-        expected = np.array(expected, dtype='S')
-        for exp, act in zip(expected, returned):
-            self.assertEqual(exp, act)
-
-    def test_clean_string_att_str_tuple(self):
-        expected = ('a', 'bc', 'def')
-        returned = clean_string_att(expected)
-        expected = np.array(expected, dtype='S')
-        for exp, act in zip(expected, returned):
-            self.assertEqual(exp, act)
-
     def test_write_legal_atts_to_grp(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
