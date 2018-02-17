@@ -1257,12 +1257,19 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_assign_group_index_01(self):
+    def test_assign_group_index_existing(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
-            ret_val = hdf_utils.assign_group_index(h5_group, 'source_main-Fitter', print_log=True)
+            ret_val = hdf_utils.assign_group_index(h5_group, 'source_main-Fitter')
             self.assertEqual(ret_val, 'source_main-Fitter_002')
+
+    def test_assign_group_index_new(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_group = h5_f['/Raw_Measurement']
+            ret_val = hdf_utils.assign_group_index(h5_group, 'blah_')
+            self.assertEqual(ret_val, 'blah_000')
 
     def test_write_legal_atts_to_grp(self):
         file_path = 'test.h5'
