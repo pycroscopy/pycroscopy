@@ -2,6 +2,7 @@ import sys
 
 import numpy as np
 from collections import Iterable
+import numbers
 
 from .dtype_utils import contains_integers
 
@@ -13,6 +14,29 @@ if sys.version_info.major == 3:
 
 INDICES_DTYPE = np.uint32
 VALUES_DTYPE = np.float32
+
+
+class AuxillaryDescriptor(object):
+    def __init__(self, dim_sizes, dim_names, dim_units, dim_step_sizes=None, dim_initial_vals=None):
+        lengths = []
+        for val, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes, dim_initial_vals],
+                                            [0, 2, 2, 1, 1],
+                                            [True, True, True, False, False]):
+            if not required and val is None:
+                continue
+            assert isinstance(val, (list, tuple, np.ndarray))
+            lengths.append(len(val))
+            if elem_type == 2:
+                assert np.all([isinstance(_, (str, unicode)) for _ in val])
+            elif elem_type == 0:
+                assert contains_integers(val, min_val=2)
+            else:
+                assert np.all([isinstance(_, numbers.Number) for _ in val])
+        num_elems = np.unique(lengths)
+        if len(num_elems) != 1:
+            raise ValueError('All the arguments should have the same number of elements')
+        if num_elems[0] == 0:
+            raise ValueError('Argument should not be empty')
 
 
 def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
