@@ -176,11 +176,10 @@ def check_dtype(ds_main):
         multiplier that converts from the typesize of the input dtype to the
         typesize of the data after func is run on it
     """
-    # TODO: Avoid hard-coding to float32
+    # TODO: avoid assuming 2d shape
     is_complex = False
     is_compound = False
     in_dtype = ds_main.dtype
-    new_dtype = ds_main.dtype
     n_samples, n_features = ds_main.shape
     if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
         is_complex = True
@@ -194,6 +193,7 @@ def check_dtype(ds_main):
         We only support real scalars for the component types at the current time
         """
         is_compound = True
+        # TODO: Avoid hard-coding to float32
         new_dtype = np.float32
         type_mult = len(in_dtype) * new_dtype(0).itemsize
         func = flatten_compound_to_real
