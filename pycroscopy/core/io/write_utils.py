@@ -59,7 +59,11 @@ class AuxillaryDescriptor(object):
         self.sizes = dim_sizes
         self.names = dim_names
         self.units = dim_units
+        if dim_step_sizes is None:
+            dim_step_sizes = np.ones_like(dim_sizes)
         self.steps = dim_step_sizes
+        if dim_initial_vals is None:
+            dim_initial_vals = np.zeros_like(dim_sizes)
         self.initial_vals = dim_initial_vals
 
 
