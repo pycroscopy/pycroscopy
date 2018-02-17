@@ -10,6 +10,7 @@ import os
 import sys
 import h5py
 import numpy as np
+import shutil
 sys.path.append("../../../pycroscopy/")
 from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
@@ -1114,13 +1115,15 @@ class TestHDFUtils(unittest.TestCase):
         num_rows = 2
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
+
+        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+
         pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols))).T
         file_path = 'test_build_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], dim_names, dim_units,
-                                                             is_spectral=False)
+            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_f, descriptor, is_spectral=False)
             for h5_dset, exp_dtype, exp_name in zip([h5_inds, h5_vals],
                                                     [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
                                                     ['Position_Indices', 'Position_Values']):
@@ -1143,14 +1146,16 @@ class TestHDFUtils(unittest.TestCase):
         num_rows = 2
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
+
+        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+
         spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols)))
         file_path = 'test_build_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
             h5_group = h5_f.create_group("Blah")
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, [num_cols, num_rows], dim_names, dim_units,
-                                                             is_spectral=True)
+            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, descriptor, is_spectral=True)
             for h5_dset, exp_dtype, exp_name in zip([h5_inds, h5_vals],
                                                     [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
                                                     ['Spectroscopic_Indices', 'Spectroscopic_Values']):
@@ -1178,6 +1183,11 @@ class TestHDFUtils(unittest.TestCase):
         row_step = 0.05
         col_initial = 1
         row_initial = 0.2
+
+        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units,
+                                                     dim_step_sizes=[col_step, row_step],
+                                                     dim_initial_vals=[col_initial, row_initial])
+
         new_base_name = 'Overriden'
         spec_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols)))
@@ -1188,9 +1198,7 @@ class TestHDFUtils(unittest.TestCase):
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
             h5_group = h5_f.create_group("Blah")
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, [num_cols, num_rows], dim_names, dim_units,
-                                                             steps=[col_step, row_step], is_spectral=True,
-                                                             initial_values=[col_initial, row_initial],
+            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, descriptor, is_spectral=True,
                                                              base_name=new_base_name)
             for h5_dset, exp_dtype, exp_name, ref_data in zip([h5_inds, h5_vals],
                                                               [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
@@ -1211,49 +1219,22 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_build_ind_val_dsets_illegal_input_sizes(self):
-        num_cols = 2
-        num_rows = 3
-        col_step = 0.25
-        row_step = 0.05
-        col_initial = 1
-        row_initial = 0.2
+    def test_build_ind_val_dsets_illegal(self):
+        num_cols = 3
+        num_rows = 2
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
+
+        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
 
         file_path = 'test_build_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
+            pass
 
-            with self.assertRaises(ValueError):
-                # too few steps
-                _ = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], dim_names, dim_units, is_spectral=True,
-                                                  steps=[col_step], initial_values=[col_initial, row_initial])
-
-            with self.assertRaises(ValueError):
-                # too few dimension sizes
-                _ = hdf_utils.build_ind_val_dsets(h5_f, [num_cols], dim_names, dim_units, is_spectral=True,
-                                                  steps=[col_step, row_step], initial_values=[col_initial, row_initial])
-
-            with self.assertRaises(ValueError):
-                # too few names
-                _ = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], [dim_names[0]], dim_units,
-                                                  is_spectral=True, steps=[col_step, row_step],
-                                                  initial_values=[col_initial, row_initial])
-
-            with self.assertRaises(ValueError):
-                # too few names and units
-                _ = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], [dim_names[0]], [dim_units[1]],
-                                                  is_spectral=True, steps=[col_step, row_step],
-                                                  initial_values=[col_initial, row_initial])
-
-            with self.assertRaises(AssertionError):
-                # Swapped names (strs) with sizes (uints)
-                _ = hdf_utils.build_ind_val_dsets(h5_f, dim_names, [num_cols, num_rows], dim_units, is_spectral=True,
-                                                  steps=[col_step, row_step], initial_values=[col_initial, row_initial])
         with self.assertRaises(ValueError):
             # h5_f should be valid in terms of type but closed
-            _ = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], dim_names, dim_units)
+            _ = hdf_utils.build_ind_val_dsets(h5_f, descriptor)
 
         os.remove(file_path)
 
@@ -1309,7 +1290,175 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
-    """      
+    def test_is_editable_h5_read_only(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_group = h5_f['/Raw_Measurement']
+            h5_main = h5_f['/Raw_Measurement/Ancillary']
+            self.assertFalse(hdf_utils.is_editable_h5(h5_group))
+            self.assertFalse(hdf_utils.is_editable_h5(h5_f))
+            self.assertFalse(hdf_utils.is_editable_h5(h5_main))
+
+    def test_is_editable_h5_r_plus(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r+') as h5_f:
+            h5_group = h5_f['/Raw_Measurement']
+            h5_main = h5_f['/Raw_Measurement/Ancillary']
+            self.assertTrue(hdf_utils.is_editable_h5(h5_group))
+            self.assertTrue(hdf_utils.is_editable_h5(h5_f))
+            self.assertTrue(hdf_utils.is_editable_h5(h5_main))
+
+    def test_is_editable_h5_w(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.arange(3))
+            h5_group = h5_f.create_group('blah')
+            self.assertTrue(hdf_utils.is_editable_h5(h5_group))
+            self.assertTrue(hdf_utils.is_editable_h5(h5_f))
+            self.assertTrue(hdf_utils.is_editable_h5(h5_dset))
+
+        os.remove(file_path)
+
+    def test_is_editable_h5_illegal(self):
+        # wrong kind of object
+        with self.assertRaises(TypeError):
+            _ = hdf_utils.is_editable_h5(np.arange(4))
+
+        # closed file
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_group = h5_f['/Raw_Measurement']
+
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.is_editable_h5(h5_group)
+
+    def test_write_main_dset(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        main_data = np.random.rand(15, 14)
+        main_data_name = 'Test_Main'
+        quantity = 'Current'
+        units = 'nA'
+
+        pos_sizes = [5, 3]
+        pos_names = ['X', 'Y']
+        pos_units = ['nm', 'um']
+        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+        pos_data = np.vstack((np.tile(np.arange(5), 3),
+                              np.repeat(np.arange(3), 5))).T
+
+        spec_sizes = [7, 2]
+        spec_names = ['Bias', 'Cycle']
+        spec_units = ['V', '']
+        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_data = np.vstack((np.tile(np.arange(7), 2),
+                              np.repeat(np.arange(2), 7)))
+
+        with h5py.File(file_path) as h5_f:
+            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
+                                                      main_dset_attrs=None)
+            self.assertIsInstance(pycro_main, PycroDataset)
+            self.assertEqual(pycro_main.name.split('/')[-1], main_data_name)
+            self.assertEqual(pycro_main.parent, h5_f)
+            self.assertTrue(np.allclose(main_data, pycro_main[()]))
+
+            for h5_dset, exp_dtype, exp_name in zip([pycro_main.h5_pos_inds, pycro_main.h5_pos_vals],
+                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    ['Position_Indices', 'Position_Values']):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_f)
+                self.assertEqual(h5_f[pycro_main.attrs[exp_name]], h5_dset)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(pos_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(pos_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(pos_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(pos_names):
+                    self.assertTrue(np.allclose(np.squeeze(pos_data[:, dim_ind]),
+                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+
+            for h5_dset, exp_dtype, exp_name in zip([pycro_main.h5_spec_inds, pycro_main.h5_spec_vals],
+                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    ['Spectroscopic_Indices', 'Spectroscopic_Values']):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_f)
+                self.assertEqual(h5_f[pycro_main.attrs[exp_name]], h5_dset)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(spec_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(spec_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(spec_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(spec_names):
+                    self.assertTrue(np.allclose(np.squeeze(spec_data[dim_ind]),
+                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+
+
+
+
+    """  
+                for h5_dset, exp_dtype, exp_name, ref_data in zip([h5_inds, h5_vals],
+                                                              [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                              [new_base_name + '_Indices', new_base_name + '_Values'],
+                                                              [spec_inds, spec_vals]):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_group)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(ref_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(dim_names):
+                    self.assertTrue(np.allclose(np.squeeze(ref_data[dim_ind]),
+                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+    
+    
+    
+    
+    
+    def test_build_reduced_spec_dsets_2d_to_1d(self):
+        self.__ensure_test_h5_file()
+        duplicate_path = 'copy_test_hdf_utils.h5'
+        self.__delete_existing_file(duplicate_path)
+        shutil.copy(test_h5_file_path, duplicate_path)
+        with h5py.File(duplicate_path) as h5_f:
+            h5_spec_inds_orig = h5_f['/Raw_Measurement/Spectroscopic_Indices']
+            h5_spec_vals_orig = h5_f['/Raw_Measurement/Spectroscopic_Values']
+            new_base_name = 'Blah'
+            cycle_starts = np.where(h5_spec_inds_orig[0] == 0)[0]
+            h5_spec_inds_new, h5_spec_vals_new = hdf_utils.build_reduced_spec_dsets(h5_spec_inds_orig.parent,
+                                                                                    h5_spec_inds_orig,
+                                                                                    h5_spec_vals_orig,
+                                                                                    [False, True], cycle_starts,
+                                                                                    basename=new_base_name)
+            print(h5_spec_inds_new[()])
+
+            dim_names = ['Cycle']
+            dim_units = ['']
+            ref_data = np.expand_dims(np.arange(2), axis=0)
+            for h5_dset, exp_dtype, exp_name in zip([h5_spec_inds_new, h5_spec_vals_new],
+                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    [new_base_name + '_Indices', new_base_name + '_Values']):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_spec_inds_orig.parent)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(ref_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(dim_names):
+                    self.assertTrue(np.allclose(np.squeeze(ref_data[dim_ind]),
+                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+        os.remove(duplicate_path)
+        
     def test_calc_chunks(self):
         dimensions = (16384, 16384 * 4)
         dtype_bytesize = 4
