@@ -530,6 +530,9 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
     base_name : str / unicode
         Base name of the new group with the next available index as a suffix
     """
+    assert isinstance(h5_parent_group, h5py.Group)
+    assert isinstance(base_name, (str, unicode))
+
     temp = [key for key in h5_parent_group.keys()]
     if print_log:
         print('Looking for group names starting with {} in parent containing items: '
@@ -674,8 +677,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         __validate_anc_dict(pos_dims)
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
         assert main_data.shape[0] == np.product(pos_dims['sizes'])
-        h5_pos_inds, h5_pos_vals = build_ind_val_dsets(h5_parent_group, pos_dims['sizes'], is_spectral=False,
-                                                       labels=pos_dims['names'], units=pos_dims['units'],
+        h5_pos_inds, h5_pos_vals = build_ind_val_dsets(h5_parent_group, pos_dims['sizes'],
+                                                       pos_dims['names'], pos_dims['units'], is_spectral=False,
                                                        steps=pos_dims.get('steps', None), verbose=False,
                                                        initial_values=pos_dims.get('initial_values', None))
 
@@ -688,8 +691,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         __validate_anc_dict(spec_dims)
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
         assert main_data.shape[1] == np.product(spec_dims['sizes'])
-        h5_spec_inds, h5_spec_vals = build_ind_val_dsets(h5_parent_group, spec_dims['sizes'], is_spectral=True,
-                                                         labels=spec_dims['names'], units=spec_dims['units'],
+        h5_spec_inds, h5_spec_vals = build_ind_val_dsets(h5_parent_group, spec_dims['sizes'],
+                                                         spec_dims['names'], spec_dims['units'], is_spectral=True,
                                                          steps=spec_dims.get('steps', None), verbose=False,
                                                          initial_values=spec_dims.get('initial_values', None))
 
