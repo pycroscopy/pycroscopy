@@ -14,7 +14,7 @@ import numpy as np  # For array operations
 
 from .dtype_utils import contains_integers
 from .translator import Translator, generate_dummy_main_parms
-from .write_utils import write_main_dataset
+from pycroscopy.core.io.hdf_utils import write_main_dataset
 
 if sys.version_info.major == 3:
     unicode = str

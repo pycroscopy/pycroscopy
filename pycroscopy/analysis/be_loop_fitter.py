@@ -24,7 +24,7 @@ from .optimize import Optimize
 from ..core.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_region_refs, link_h5_objects_as_attrs, \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, link_h5_obj_as_alias, create_empty_dataset
-from pycroscopy.core.io.write_utils import build_reduced_spec_dsets
+from pycroscopy.core.io.hdf_utils import build_reduced_spec_dsets
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 
 '''

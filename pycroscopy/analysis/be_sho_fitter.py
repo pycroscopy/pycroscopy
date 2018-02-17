@@ -11,7 +11,7 @@ from .fitter import Fitter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import copy_region_refs, link_h5_objects_as_attrs, get_h5_obj_refs, \
                                 create_empty_dataset, get_auxillary_datasets
-from pycroscopy.core.io.write_utils import build_reduced_spec_dsets
+from pycroscopy.core.io.hdf_utils import build_reduced_spec_dsets
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 
 '''

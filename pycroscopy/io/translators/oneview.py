@@ -16,7 +16,8 @@ from skimage.util import crop
 from .df_utils import dm4reader
 from .df_utils.io_image import read_image, read_dm3, parse_dm4_parms
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, build_ind_val_dsets, INDICES_DTYPE, VALUES_DTYPE
+from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset

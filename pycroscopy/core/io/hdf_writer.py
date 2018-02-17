@@ -13,7 +13,8 @@ from time import time, sleep
 from warnings import warn
 import h5py
 
-from pycroscopy.core.io.write_utils import clean_string_att, assign_group_index
+from .write_utils import clean_string_att
+from .hdf_utils import assign_group_index
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 

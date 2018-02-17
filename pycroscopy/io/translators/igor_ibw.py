@@ -13,7 +13,8 @@ from igor import binarywave as bw
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import build_ind_val_dsets, VALUES_DTYPE
+from ...core.io.write_utils import VALUES_DTYPE
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.virtual_data import VirtualGroup, \
