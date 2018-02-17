@@ -6,12 +6,18 @@ Created on Fri Jan 27 17:58:35 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+
+from os import path, remove
+import sys
+import h5py
 import numpy as np  # For array operations
 
-from .translator import Translator
-from .write_utils import build_ind_val_dsets, VALUES_DTYPE
-from .hdf_utils import calc_chunks
-from .virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
+from .dtype_utils import contains_integers
+from .translator import Translator, generate_dummy_main_parms
+from .write_utils import write_main_dataset
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class NumpyTranslator(Translator):
@@ -19,66 +25,93 @@ class NumpyTranslator(Translator):
     Writes a numpy array to .h5
     """
 
-    def _read_data(self):
-        pass
-
-    def _parse_file_path(self, input_path):
-        pass
-
-    def translate(self, h5_path, main_data, num_rows, num_cols, qty_name='Unknown', data_unit='a. u.',
-                  spec_name='Spectroscopic_Variable', spec_val=None, spec_unit='a. u.', data_type='generic',
-                  translator_name='numpy', scan_height=None, scan_width=None, spatial_unit='m', parms_dict={}):
+    def translate(self, h5_path, data_name, raw_data, quantity, units, pos_dims, spec_dims,
+                  translator_name='NumpyTranslator', parm_dict=None):
         """
-        The main function that translates the provided data into a .h5 file
+        Writes the provided datasets and parameters to an h5 file
 
         Parameters
         ----------
-        h5_path
-        main_data
-        num_rows
-        num_cols
-        qty_name
-        data_unit
-        spec_name
-        spec_val
-        spec_unit
-        data_type
-        translator_name
-        scan_height
-        scan_width
-        spatial_unit
-        parms_dict
+        h5_path : String / Unicode
+            Absolute path of the h5 file to be written
+        data_name : String / Unicode
+            Name of the data type. Example - 'SEM'
+        raw_data : np.ndarray
+            2D matrix formatted as [position, spectral]
+        quantity : String / Unicode
+            Name of the physical quantity stored in the dataset. Example - 'Current'
+        units : String / Unicode
+            Name of units for the quantity stored in the dataset. Example - 'A' for amperes
+        pos_dims : dict
+            Dictionary specifying the names, units, and sizes for position dimensions
+
+            'sizes' : list of unsigned ints.
+                Sizes of all dimensions arranged from fastest to slowest.
+                For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
+            'units' : list / tuple of str / unicode
+                Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
+            'names' : list / tuple of str / unicode
+                Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
+
+        spec_dims : dict
+            Dictionary specifying the names, units, and sizes for spectroscopic dimensions
+        translator_name : String / unicode, Optional
+            Name of the translator. Example - 'HitachiSEMTranslator'
+        parm_dict : dictionary (Optional)
+            Dictionary of parameters that will be written under the group 'Measurement_000'
 
         Returns
         -------
-        h5_path : string / unicode
-            Absolute path of the translated h5 file
+        h5_path : String / unicode
+            Absolute path of the written h5 file
+
         """
-        if main_data.ndim != 2:
-            raise ValueError('Main dataset must be a 2-dimensional array arranged as [positions x spectra]')
+        for arg in [h5_path, data_name, translator_name, quantity, units]:
+            assert isinstance(arg, (str, unicode))
+            assert len(arg) > 0
+        assert isinstance(raw_data, np.ndarray)
+        assert raw_data.ndim == 2
+        for anc_dict in [pos_dims, spec_dims]:
+            assert isinstance(anc_dict, dict)
+            lens = []
+            for key, str_elem in zip(['names', 'units', 'sizes'], [True, True, False]):
+                assert key in anc_dict.keys()
+                val = anc_dict[key]
+                assert isinstance(val, (list, tuple))
+                lens.append(len(val))
+                if str_elem:
+                    assert np.all([isinstance(_, (str, unicode)) for _ in val])
+                else:
+                    assert contains_integers(val, min_val=2)
+            num_elems = np.unique(lens)
+            assert len(num_elems) == 1
+            assert num_elems[0] > 0
 
-        spectra_length = main_data.shape[1]
+        # Check to make sure that the product of the position and spectroscopic dimension sizes match with
+        # that of raw_data
+        assert raw_data.shape[0] == np.product(pos_dims['sizes'])
+        assert raw_data.shape[1] == np.product(spec_dims['sizes'])
 
-        ds_main = VirtualDataset('Raw_Data', data=main_data, dtype=VALUES_DTYPE, compression='gzip',
-                                 chunking=calc_chunks(main_data.shape, VALUES_DTYPE(0).itemsize,
-                                 unit_chunks=(1, spectra_length)))
-        ds_main.attrs = {'quantity': qty_name, 'units': data_unit}
+        if path.exists(h5_path):
+            remove(h5_path)
 
-        pos_steps = None
-        if scan_width is not None and scan_height is not None:
-            pos_steps = [1.0 * scan_height / num_rows, 1.0 * scan_width / num_cols]
+        if parm_dict is None:
+            parm_dict = {}
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False, steps=pos_steps,
-                                                     labels=['Y', 'X'], units=[spatial_unit, spatial_unit],
-                                                     verbose=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([spectra_length], is_spectral=True,
-                                                         labels=[spec_name], units=[spec_unit], verbose=False)
-        if spec_val is not None:
-            if type(spec_val) in [list, np.ndarray]:
-                ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(spec_val))
+        with h5py.File(h5_path) as h5_f:
+            # Root attributes first:
+            global_parms = generate_dummy_main_parms()
+            global_parms['data_type'] = data_name
+            global_parms['translator'] = translator_name
+            h5_f.attrs = global_parms
 
-        parms_dict.update({'translator': 'NumpyTranslator'})
+            # measurement group next
+            meas_grp = h5_f.create_group('Measurement_000')
+            meas_grp.attrs = parm_dict
 
-        return super(NumpyTranslator, self).simple_write(h5_path, data_type, translator_name, ds_main,
-                                                         [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
-                                                         parm_dict=parms_dict)
+            # channel group next
+            chan_grp = meas_grp.create_group('Channel_000')
+
+            _ = write_main_dataset(chan_grp, raw_data, 'Raw_Dara', quantity, units, pos_dims, spec_dims)
+
+        return h5_path
