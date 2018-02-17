@@ -324,50 +324,6 @@ class TestHDFWriter(unittest.TestCase):
 
         os.remove(file_path)
 
-    def test_write_legal_atts_to_grp(self):
-        file_path = 'test.h5'
-        self.__delete_existing_file(file_path)
-        with h5py.File(file_path) as h5_f:
-            grp_name = 'test_group_'
-            micro_group = VirtualGroup(grp_name)
-
-            writer = HDFwriter(h5_f)
-            h5_group = writer._create_group(h5_f, micro_group)
-            self.assertIsInstance(h5_group, h5py.Group)
-
-            attrs = {'att_1': 'string_val', 'att_2': 1.234, 'att_3': [1, 2, 3.14, 4],
-                     'att_4': ['s', 'tr', 'str_3']}
-
-            writer.write_simple_attrs(h5_group, attrs)
-
-            for key, expected_val in attrs.items():
-                self.assertTrue(np.all(get_attr(h5_group, key) == expected_val))
-
-        os.remove(file_path)
-
-    def test_write_legal_atts_to_dset_01(self):
-        file_path = 'test.h5'
-        self.__delete_existing_file(file_path)
-        with h5py.File(file_path) as h5_f:
-
-            writer = HDFwriter(h5_f)
-            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', np.arange(3)))
-            self.assertIsInstance(h5_dset, h5py.Dataset)
-
-            attrs = {'att_1': 'string_val',
-                     'att_2': 1.2345,
-                     'att_3': [1, 2, 3, 4],
-                     'att_4': ['str_1', 'str_2', 'str_3']}
-
-            writer.write_simple_attrs(h5_dset, attrs)
-
-            self.assertEqual(len(h5_dset.attrs), len(attrs))
-
-            for key, expected_val in attrs.items():
-                self.assertTrue(np.all(get_attr(h5_dset, key) == expected_val))
-
-        os.remove(file_path)
-
     def test_write_legal_reg_ref_multi_dim_data(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
