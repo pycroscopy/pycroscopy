@@ -14,7 +14,7 @@ from warnings import warn
 import h5py
 
 from .write_utils import clean_string_att
-from .hdf_utils import assign_group_index
+from .hdf_utils import assign_group_index, write_simple_attrs, attempt_reg_ref_build, write_region_references
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 
@@ -200,7 +200,7 @@ class HDFwriter(object):
         # Figuring out if the first item in VirtualGroup tree is file or group
         if data.name == '' and data.parent == '/':
             # For file we just write the attributes
-            HDFwriter.write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
+            write_simple_attrs(h5_file, data.attrs, obj_type='file', print_log=print_log)
             root = h5_file.name
             ref_list.append(h5_file)
         else:
@@ -302,7 +302,7 @@ class HDFwriter(object):
             raise
 
         # Write attributes
-        HDFwriter.write_simple_attrs(h5_new_group, micro_group.attrs, 'group', print_log=print_log)
+        write_simple_attrs(h5_new_group, micro_group.attrs, 'group', print_log=print_log)
 
         return h5_new_group
 
@@ -503,7 +503,7 @@ class HDFwriter(object):
         labels_dict = attr_dict.pop('labels', None)
 
         # Next, write the simple ones using a centralized function
-        HDFwriter.write_simple_attrs(h5_dset, attr_dict, obj_type='dataset', print_log=print_log)
+        write_simple_attrs(h5_dset, attr_dict, obj_type='dataset', print_log=print_log)
 
         if labels_dict is None:
             if print_log:
@@ -513,14 +513,14 @@ class HDFwriter(object):
         if isinstance(labels_dict, (tuple, list)):
             # What if the labels dictionary is just a list of names? make a dictionary using the names
             # This is the most that can be done.
-            labels_dict = HDFwriter.attempt_reg_ref_build(h5_dset, labels_dict, print_log=print_log)
+            labels_dict = attempt_reg_ref_build(h5_dset, labels_dict, print_log=print_log)
 
         if len(labels_dict) == 0:
             if print_log:
                 warn('No region references to write')
             return
         # Now, handle the region references attribute:
-        HDFwriter.write_region_references(h5_dset, labels_dict, print_log=print_log)
+        write_region_references(h5_dset, labels_dict, print_log=print_log)
         '''
         Next, write these label names as an attribute called labels
         Now make an attribute called 'labels' that is a list of strings 
