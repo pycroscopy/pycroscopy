@@ -107,6 +107,70 @@ class TestWriteUtils(unittest.TestCase):
         for exp, act in zip(expected, returned):
             self.assertEqual(exp, act)
 
+    def test_aux_dset_descriptor_minimum(self):
+        sizes = [3, 2]
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        steps = [1, 1]
+        inits = [0, 0]
+
+        descriptor = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units)
+        for expected, actual in zip([sizes, dim_names, dim_units, steps, inits],
+                                    [descriptor.sizes, descriptor.names, descriptor.units,
+                                     descriptor.steps, descriptor.initial_vals]):
+            self.assertTrue(np.all([x == y for x, y in zip(expected, actual)]))
+
+    def test_aux_dset_descriptor_full_legal(self):
+        sizes = [3, 2]
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        steps = [0.25, -0.1]
+        inits = [1500, 1E-6]
+
+        descriptor = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units, dim_step_sizes=steps,
+                                                     dim_initial_vals=inits)
+        for expected, actual in zip([sizes, dim_names, dim_units, steps, inits],
+                                    [descriptor.sizes, descriptor.names, descriptor.units,
+                                     descriptor.steps, descriptor.initial_vals]):
+            self.assertTrue(np.all([x == y for x, y in zip(expected, actual)]))
+
+    def test_aux_dset_descriptor_illegal(self):
+        sizes = [3, 2]
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        steps = [0.25, -0.1]
+        inits = [1500, 1E-6]
+        
+        with self.assertRaises(ValueError):
+            # too few steps
+            _ = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units, dim_step_sizes=[5], 
+                                                dim_initial_vals=inits)
+
+        with self.assertRaises(ValueError):
+            # too few dimension sizes
+            _ = write_utils.AuxillaryDescriptor([5], dim_names, dim_units,
+                                                dim_step_sizes=steps, dim_initial_vals=inits)
+
+        with self.assertRaises(ValueError):
+            # too few names
+            _ = write_utils.AuxillaryDescriptor(sizes, [dim_names[0]], dim_units,
+                                                dim_step_sizes=steps, dim_initial_vals=inits)
+
+        with self.assertRaises(ValueError):
+            # too few names and units
+            _ = write_utils.AuxillaryDescriptor(sizes, [dim_names[0]], [dim_units[1]],
+                                                dim_step_sizes=steps, dim_initial_vals=inits)
+
+        with self.assertRaises(AssertionError):
+            # Swapped names (strs) with sizes (uints)
+            _ = write_utils.AuxillaryDescriptor(dim_names, sizes, dim_units,
+                                                dim_step_sizes=steps, dim_initial_vals=inits)
+
+        with self.assertRaises(AssertionError):
+            # Swapped names (strs) with sizes (uints)
+            _ = write_utils.AuxillaryDescriptor(dim_names, sizes, steps,
+                                                dim_step_sizes=dim_units, dim_initial_vals=dim_names)
+
 
 if __name__ == '__main__':
     unittest.main()
