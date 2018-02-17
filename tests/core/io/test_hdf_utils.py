@@ -1109,23 +1109,64 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(len(main_dsets), len(expected_dsets))
             self.assertTrue(np.all([x.name == y.name for x, y in zip(main_dsets, expected_dsets)]))
     
-    def test_build_ind_val_dsets_legal_bare_minimum(self):
-        num_cols = 2
-        num_rows = 3
+    def test_build_ind_val_dsets_legal_bare_minimum_pos(self):
+        num_cols = 3
+        num_rows = 2
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                              np.repeat(np.arange(num_rows), num_cols))).T
+        file_path = 'test_build_ind_val_dsets.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path, mode='w') as h5_f:
+            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], dim_names, dim_units,
+                                                             is_spectral=False)
+            for h5_dset, exp_dtype, exp_name in zip([h5_inds, h5_vals],
+                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    ['Position_Indices', 'Position_Values']):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_f)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(pos_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(dim_names):
+                    self.assertTrue(np.allclose(np.squeeze(pos_data[:, dim_ind]), np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+
+        os.remove(file_path)
+
+    def test_build_ind_val_dsets_legal_bare_minimum_spec(self):
+        num_cols = 3
+        num_rows = 2
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
         spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols)))
-        with self.assertWarns(DeprecationWarning):
-            ds_inds, ds_vals = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True)
-        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_data),
-                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
-                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
-                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
-        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_data),
-                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
-                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
-                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
-        self.assertEqual(exp_inds, ds_inds)
-        self.assertEqual(exp_vals, ds_vals)
+        file_path = 'test_build_ind_val_dsets.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path, mode='w') as h5_f:
+            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_f, [num_cols, num_rows], dim_names, dim_units,
+                                                             is_spectral=True)
+            for h5_dset, exp_dtype, exp_name in zip([h5_inds, h5_vals],
+                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    ['Spectroscopic_Indices', 'Spectroscopic_Values']):
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertEqual(h5_dset.parent, h5_f)
+                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
+                self.assertTrue(np.allclose(spec_data, h5_dset[()]))
+                self.assertEqual(h5_dset.dtype, exp_dtype)
+                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
+                self.assertTrue(np.all([x == y for x, y in zip(dim_units, hdf_utils.get_attr(h5_dset, 'units'))]))
+                # assert region references
+                for dim_ind, curr_name in enumerate(dim_names):
+                    self.assertTrue(np.allclose(np.squeeze(spec_data[dim_ind]),
+                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+
+        os.remove(file_path)
 
     def test_build_ind_val_dsets_legal_override_steps_offsets(self):
         num_cols = 2
@@ -1237,6 +1278,14 @@ class TestHDFUtils(unittest.TestCase):
             _ = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True, steps=[col_step, row_step],
                                                                  initial_values=[col_initial, row_initial], labels=[dim_names[0]],
                                                                  units=[dim_units[1]])
+
+    def test_assign_group_index_01(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_group = h5_f['/Raw_Measurement']
+            ret_val = hdf_utils.assign_group_index(h5_group, 'source_main-Fitter', print_log=True)
+            self.assertEqual(ret_val, 'source_main-Fitter_002')
+
 
     """      
     def test_calc_chunks(self):

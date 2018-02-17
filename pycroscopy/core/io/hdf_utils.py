@@ -13,10 +13,9 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 
-from pycroscopy.core.io.dtype_utils import contains_integers
-from pycroscopy.core.io.write_utils import unicode, make_indices_matrix, VALUES_DTYPE, get_aux_dset_slicing, \
-    INDICES_DTYPE, clean_string_att
-from .write_utils import make_indices_matrix, INDICES_DTYPE
+from .dtype_utils import contains_integers
+from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix
+
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -2091,8 +2090,7 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
 
     for h5_dset in [h5_indices, h5_values]:
         write_region_references(h5_dset, region_slices, print_log=verbose)
-        h5_dset.attrs['units'] = units
-        h5_dset.attrs['labels'] = labels
+        write_simple_attrs(h5_dset, {'units': units, 'labels': labels})
 
     return h5_indices, h5_values
 
