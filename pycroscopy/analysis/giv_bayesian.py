@@ -13,7 +13,7 @@ from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.dtype_utils import stack_real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
-from ..core.io.write_utils import build_ind_val_dsets
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ..core.io.hdf_writer import HDFwriter
 from .utils.giv_utils import do_bayesian_inference
 

@@ -13,7 +13,7 @@ import numpy as np  # For array operations
 from scipy.io import loadmat
 
 from ...core.io.translator import Translator
-from ...core.io.write_utils import build_ind_val_dsets
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ...core.io.virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
