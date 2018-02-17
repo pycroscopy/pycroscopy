@@ -1958,7 +1958,10 @@ def is_editable_h5(h5_obj):
     if not isinstance(h5_obj, (h5py.File, h5py.Group, h5py.Dataset)):
         raise TypeError('h5_obj should be a h5py File, Group or Dataset object but is instead of type '
                         '{}t'.format(type(h5_obj)))
-    file_handle = h5_obj.file
+    try:
+        file_handle = h5_obj.file
+    except RuntimeError:
+        return False
     # file handle is actually an open hdf file
     try:
         _ = file_handle.mode
@@ -2017,6 +2020,8 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
     """
     assert contains_integers(dimensions, min_val=2)
     assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
+    if not is_editable_h5(h5_parent_group):
+        raise ValueError('The provided h5 object is not valid / open')
 
     if base_name is not None:
         assert isinstance(base_name, (str, unicode))
