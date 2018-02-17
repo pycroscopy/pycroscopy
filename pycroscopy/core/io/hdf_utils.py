@@ -2203,6 +2203,12 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
     assert isinstance(h5_parent_group, h5py.Group)
     assert isinstance(base_name, (str, unicode))
 
+    if len(base_name) == 0:
+        raise ValueError('base_name should not be an empty string')
+
+    if not base_name.endswith('_'):
+        base_name += '_'
+
     temp = [key for key in h5_parent_group.keys()]
     if print_log:
         print('Looking for group names starting with {} in parent containing items: '
