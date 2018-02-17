@@ -13,7 +13,7 @@ import numpy as np
 sys.path.append("../../../pycroscopy/")
 from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
-from pycroscopy.core.io import hdf_utils
+from pycroscopy.core.io import hdf_utils, write_utils
 from pycroscopy.core.io.pycro_data import PycroDataset
 
 test_h5_file_path = 'test_hdf_utils.h5'
@@ -1108,6 +1108,136 @@ class TestHDFUtils(unittest.TestCase):
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
             self.assertEqual(len(main_dsets), len(expected_dsets))
             self.assertTrue(np.all([x.name == y.name for x, y in zip(main_dsets, expected_dsets)]))
+    
+    def test_build_ind_val_dsets_legal_bare_minimum(self):
+        num_cols = 2
+        num_rows = 3
+        spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                              np.repeat(np.arange(num_rows), num_cols)))
+        with self.assertWarns(DeprecationWarning):
+            ds_inds, ds_vals = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True)
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_data),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
+                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_data),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
+                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
+        self.assertEqual(exp_inds, ds_inds)
+        self.assertEqual(exp_vals, ds_vals)
+
+    def test_build_ind_val_dsets_legal_override_steps_offsets(self):
+        num_cols = 2
+        num_rows = 3
+        col_step = 0.25
+        row_step = 0.05
+        col_initial = 1
+        row_initial = 0.2
+        spec_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                              np.repeat(np.arange(num_rows), num_cols)))
+        spec_vals = np.vstack((np.tile(np.arange(num_cols), num_rows) * col_step + col_initial,
+                              np.repeat(np.arange(num_rows), num_cols) * row_step + row_initial))
+        with self.assertWarns(DeprecationWarning):
+            ds_inds, ds_vals = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True,
+                                                                                steps=[col_step, row_step],
+                                                                                initial_values=[col_initial, row_initial])
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
+                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
+                                  attrs={'units': ['Arb Unit 0', 'Arb Unit 1'],
+                                       'labels': {'Unknown Dimension 0': (slice(0, 1), slice(None)),
+                                                  'Unknown Dimension 1': (slice(1, 2), slice(None))}})
+        self.assertEqual(exp_inds, ds_inds)
+        self.assertEqual(exp_vals, ds_vals)
+
+    def test_build_ind_val_dsets_legal_all_inputs_spec(self):
+        num_cols = 2
+        num_rows = 3
+        col_step = 0.25
+        row_step = 0.05
+        col_initial = 1
+        row_initial = 0.2
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        spec_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                              np.repeat(np.arange(num_rows), num_cols)))
+        spec_vals = np.vstack((np.tile(np.arange(num_cols), num_rows) * col_step + col_initial,
+                              np.repeat(np.arange(num_rows), num_cols) * row_step + row_initial))
+        ds_inds, ds_vals = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True,
+                                                                            steps=[col_step, row_step],
+                                                                            initial_values=[col_initial, row_initial],
+                                                                            labels=dim_names, units=dim_units)
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(spec_inds),
+                                  attrs={'units': dim_units,
+                                       'labels': {dim_names[0]: (slice(0, 1), slice(None)),
+                                                  dim_names[1]: (slice(1, 2), slice(None))}})
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(spec_vals),
+                                  attrs={'units': dim_units,
+                                       'labels': {dim_names[0]: (slice(0, 1), slice(None)),
+                                                  dim_names[1]: (slice(1, 2), slice(None))}})
+        self.assertEqual(exp_inds, ds_inds)
+        self.assertEqual(exp_vals, ds_vals)
+
+    def test_build_ind_val_dsets_legal_all_inputs_pos(self):
+        num_cols = 2
+        num_rows = 3
+        col_step = 0.25
+        row_step = -0.05
+        col_initial = 1
+        row_initial = 0.2
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        pos_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                              np.repeat(np.arange(num_rows), num_cols))).T
+        pos_vals = np.vstack((np.tile(np.arange(num_cols), num_rows) * col_step + col_initial,
+                              np.repeat(np.arange(num_rows), num_cols) * row_step + row_initial)).T
+        ds_inds, ds_vals = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
+                                                                            steps=[col_step, row_step],
+                                                                            initial_values=[col_initial, row_initial],
+                                                                            labels=dim_names, units=dim_units)
+        exp_inds = VirtualDataset('Spectroscopic_Indices', write_utils.INDICES_DTYPE(pos_inds),
+                                  attrs={'units': dim_units,
+                                       'labels': {dim_names[0]: (slice(None), slice(0, 1)),
+                                                  dim_names[1]: (slice(None), slice(1, 2))}})
+        exp_vals = VirtualDataset('Spectroscopic_Values', write_utils.VALUES_DTYPE(pos_vals),
+                                  attrs={'units': dim_units,
+                                       'labels': {dim_names[0]: (slice(None), slice(0, 1)),
+                                                  dim_names[1]: (slice(None), slice(1, 2))}})
+        self.assertEqual(exp_inds, ds_inds)
+        self.assertEqual(exp_vals, ds_vals)
+
+    def test_build_ind_val_dsets_illegal_input_sizes(self):
+        num_cols = 2
+        num_rows = 3
+        col_step = 0.25
+        row_step = 0.05
+        col_initial = 1
+        row_initial = 0.2
+        dim_names = ['X', 'Y']
+        dim_units = ['nm', 'um']
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True, steps=[col_step],
+                                                                 initial_values=[col_initial, row_initial], labels=dim_names,
+                                                                 units=dim_units)
+
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.build_ind_val_dsets([num_cols], is_spectral=True, steps=[col_step, row_step],
+                                                                 initial_values=[col_initial, row_initial], labels=dim_names,
+                                                                 units=dim_units)
+
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True, steps=[col_step, row_step],
+                                                                 initial_values=[col_initial, row_initial], labels=[dim_names[0]],
+                                                                 units=dim_units)
+
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.build_ind_val_dsets([num_cols, num_rows], is_spectral=True, steps=[col_step, row_step],
+                                                                 initial_values=[col_initial, row_initial], labels=[dim_names[0]],
+                                                                 units=[dim_units[1]])
+
     """      
     def test_calc_chunks(self):
         dimensions = (16384, 16384 * 4)
