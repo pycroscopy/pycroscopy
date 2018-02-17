@@ -47,10 +47,13 @@ def is_editable_h5(h5_obj):
     return True
 
 
-def build_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
-                        units=None, verbose=False, base_name=None):
+def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=True, steps=None,
+                        initial_values=None, verbose=False, base_name=None):
     """
     Creates h5py.Datasets for the position OR spectroscopic indices and values of the data.
+    Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
+    For example if one of the spectroscopic dimensions (e.g. - Bias) was sinusoidal and not linear, The specific
+    dimension in the Spectroscopic_Values dataset can be manually overwritten.
 
     Parameters
     ----------
@@ -58,6 +61,10 @@ def build_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, steps=Non
         Group under which the indices and values datasets will be created
     dimensions : array_like of numpy.uint
         Integer values for the length of each dimension
+    labels : array_like of str
+        The names of each dimension.
+    units : array_like of str
+        The units of each dimension.
     is_spectral : bool, optional. default = True
         Spectroscopic (True) or Position (False)
     steps : array_like of float, optional
@@ -66,12 +73,6 @@ def build_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, steps=Non
     initial_values : array_like of float, optional
         Floating point for the zeroth value in each dimension.  Zero if
         not specified.
-    labels : array_like of str, optional
-        The names of each dimension.  Empty strings will be used if not
-        specified.
-    units : array_like of str, optional
-        The units of each dimension.  Empty strings will be used if not
-        specified.
     verbose : Boolean, optional
         Whether or not to print statements for debugging purposes
     base_name : str / unicode, optional
@@ -109,23 +110,12 @@ def build_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, steps=Non
             raise KeyError('Dataset: {} already exists in provided group: {}'.format(base_name + sub_name,
                                                                                        h5_parent_group.name))
 
-    if labels is None:
-        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
-                      DeprecationWarning)
-        labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(labels, Iterable)
-        if len(labels) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
-    if units is None:
-        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units',
-                      DeprecationWarning)
-        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(units, Iterable)
-        if len(units) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
+    assert isinstance(labels, Iterable)
+    assert isinstance(units, Iterable)
+    if len(labels) != len(dimensions):
+        raise ValueError('The arrays for labels and dimension sizes must be the same.')
+    for param in [labels, units]:
+        assert np.all([isinstance(_, (str, unicode)) for _ in param])
 
     if steps is None:
         steps = np.ones_like(dimensions)
@@ -591,8 +581,7 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
 
 
 def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
-                       main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None,
-                       h5_spec_vals=None):
+                       main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None, h5_spec_vals=None):
     """
     Writes the provided data as a 'Main' dataset with all appropriate linking.
     By default, the instructions for generating the ancillary datasets should be specified using the pos_dims and
@@ -680,6 +669,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, is_spectroscopic=False)
     else:
+        for dset_name in ['Position_Indices', 'Position_Values']:
+            assert dset_name not in h5_parent_group.keys()
         __validate_anc_dict(pos_dims)
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
         assert main_data.shape[0] == np.product(pos_dims['sizes'])
@@ -692,6 +683,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_spec_inds, h5_spec_vals, is_spectroscopic=True)
     else:
+        for dset_name in ['Spectroscopic_Indices', 'Spectroscopic_Values']:
+            assert dset_name not in h5_parent_group.keys()
         __validate_anc_dict(spec_dims)
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
         assert main_data.shape[1] == np.product(spec_dims['sizes'])
