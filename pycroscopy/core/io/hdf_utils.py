@@ -13,9 +13,8 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 
-from .dtype_utils import contains_integers
-from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix
-
+from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
+    AuxillaryDescriptor
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -1961,7 +1960,7 @@ def is_editable_h5(h5_obj):
     try:
         file_handle = h5_obj.file
     except RuntimeError:
-        return False
+        raise ValueError('Encountered a RuntimeError possibly due to a closed file')
     # file handle is actually an open hdf file
     try:
         _ = file_handle.mode
@@ -1973,8 +1972,7 @@ def is_editable_h5(h5_obj):
     return True
 
 
-def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=True, steps=None,
-                        initial_values=None, verbose=False, base_name=None):
+def build_ind_val_dsets(h5_parent_group, descriptor, is_spectral=True, verbose=False, base_name=None):
     """
     Creates h5py.Datasets for the position OR spectroscopic indices and values of the data.
     Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
@@ -1985,20 +1983,10 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
     ----------
     h5_parent_group : h5py.Group or h5py.File
         Group under which the indices and values datasets will be created
-    dimensions : array_like of numpy.uint
-        Integer values for the length of each dimension
-    labels : array_like of str
-        The names of each dimension.
-    units : array_like of str
-        The units of each dimension.
+    descriptor : AuxillaryDescriptor
+        Object that provides all necessary instructions for constructing the indices and values datasets
     is_spectral : bool, optional. default = True
         Spectroscopic (True) or Position (False)
-    steps : array_like of float, optional
-        Floating point values for the step-size in each dimension.  One
-        if not specified.
-    initial_values : array_like of float, optional
-        Floating point for the zeroth value in each dimension.  Zero if
-        not specified.
     verbose : Boolean, optional
         Whether or not to print statements for debugging purposes
     base_name : str / unicode, optional
@@ -2018,7 +2006,7 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
 
     Dimensions should be in the order from fastest varying to slowest.
     """
-    assert contains_integers(dimensions, min_val=2)
+    assert isinstance(descriptor, AuxillaryDescriptor)
     assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
     if not is_editable_h5(h5_parent_group):
         raise ValueError('The provided h5 object is not valid / open')
@@ -2038,33 +2026,14 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
             raise KeyError('Dataset: {} already exists in provided group: {}'.format(base_name + sub_name,
                                                                                        h5_parent_group.name))
 
-    assert isinstance(labels, Iterable)
-    assert isinstance(units, Iterable)
-    if len(labels) != len(dimensions):
-        raise ValueError('The arrays for labels and dimension sizes must be the same.')
-    for param in [labels, units]:
-        assert np.all([isinstance(_, (str, unicode)) for _ in param])
-
-    if steps is None:
-        steps = np.ones_like(dimensions)
-    else:
-        assert isinstance(steps, Iterable)
-        if len(steps) != len(dimensions):
-            raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
-        steps = np.atleast_2d(steps)
+    steps = np.atleast_2d(descriptor.steps)
 
     if verbose:
         print('Steps')
         print(steps.shape)
         print(steps)
 
-    if initial_values is None:
-        initial_values = np.zeros_like(dimensions)
-    else:
-        assert isinstance(initial_values, Iterable)
-        if len(initial_values) != len(dimensions):
-            raise ValueError('The arrays for initial values and dimension sizes must be the same.')
-        initial_values = np.atleast_2d(initial_values)
+    initial_values = np.atleast_2d(descriptor.initial_vals)
 
     if verbose:
         print('Initial Values')
@@ -2072,7 +2041,7 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
         print(initial_values)
 
     # Get the indices for all dimensions
-    indices = make_indices_matrix(dimensions)
+    indices = make_indices_matrix(descriptor.sizes)
     assert isinstance(indices, np.ndarray)
     if verbose:
         print('Indices')
@@ -2087,7 +2056,7 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
         indices = indices.transpose()
         values = values.transpose()
 
-    region_slices = get_aux_dset_slicing(labels, is_spectroscopic=is_spectral)
+    region_slices = get_aux_dset_slicing(descriptor.names, is_spectroscopic=is_spectral)
 
     # Create the Datasets for both Indices and Values
     h5_indices = h5_parent_group.create_dataset(base_name + 'Indices', data=INDICES_DTYPE(indices), dtype=INDICES_DTYPE)
@@ -2095,7 +2064,7 @@ def build_ind_val_dsets(h5_parent_group, dimensions, labels, units, is_spectral=
 
     for h5_dset in [h5_indices, h5_values]:
         write_region_references(h5_dset, region_slices, print_log=verbose)
-        write_simple_attrs(h5_dset, {'units': units, 'labels': labels})
+        write_simple_attrs(h5_dset, {'units': descriptor.units, 'labels': descriptor.names})
 
     return h5_indices, h5_values
 
@@ -2140,13 +2109,14 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
 
     for param in [h5_spec_inds, h5_spec_vals]:
         assert isinstance(param, h5py.Dataset)
-    assert isinstance(keep_dim, (bool, np.ndarray))
-    assert isinstance(step_starts, (list, np.ndarray))
+    assert isinstance(keep_dim, (bool, np.ndarray, list, tuple))
+    assert isinstance(step_starts, (list, np.ndarray, list, tuple))
 
     if h5_spec_inds.shape[0] > 1:
         '''
         Extract all rows that we want to keep from input indices and values
         '''
+        # TODO: handle TypeError: Indexing elements must be in increasing order
         ind_mat = h5_spec_inds[keep_dim, :][:, step_starts]
         val_mat = h5_spec_vals[keep_dim, :][:, step_starts]
         '''
@@ -2280,24 +2250,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Name of the physical quantity stored in the dataset. Example - 'Current'
     units : String / Unicode
         Name of units for the quantity stored in the dataset. Example - 'A' for amperes
-    pos_dims : dict
-        Dictionary specifying the names, units, and sizes for position dimensions
-
-        'sizes' : list / tuple of of unsigned ints.
-            Sizes of all dimensions arranged from fastest to slowest.
-            For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
-        'units' : list / tuple of str / unicode
-            Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
-        'names' : list / tuple of str / unicode
-            Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
-        'steps' : list / tuple of numbers, optional
-            step-size in each dimension.  One if not specified.
-        'initial_values' : list / tuple of numbers, optional
-            Floating point for the zeroth value in each dimension.  Zero if not specified.
-
-    spec_dims : dict
-        Dictionary specifying the names, units, and sizes for spectroscopic dimensions. Follow the same instructions as
-        for pos_dims
+    pos_dims : AuxillaryDescriptor
+        Object specifying the instructions necessary for building the Position indices and values datasets
+    spec_dims : AuxillaryDescriptor
+        Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
     main_dset_attrs : dictionary, Optional
         Dictionary of parameters that will be written to the main dataset
     h5_pos_inds : h5py.Dataset, Optional
@@ -2314,21 +2270,6 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     h5_main : h5py.Dataset
         Reference to the main dataset
     """
-    def __validate_anc_dict(anc_dict):
-        assert isinstance(anc_dict, dict)
-        lens = []
-        for key, str_elem in zip(['names', 'units', 'sizes'], [True, True, False]):
-            assert key in anc_dict.keys()
-            val = anc_dict[key]
-            assert isinstance(val, (list, tuple))
-            lens.append(len(val))
-            if str_elem:
-                assert np.all([isinstance(_, (str, unicode)) for _ in val])
-            else:
-                assert contains_integers(val, min_val=2)
-        num_elems = np.unique(lens)
-        assert len(num_elems) == 1
-        assert num_elems[0] > 0
 
     def __validate_anc_h5_dsets(inds, vals, is_spectroscopic=True):
         assert isinstance(inds, h5py.Dataset)
@@ -2352,13 +2293,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     else:
         for dset_name in ['Position_Indices', 'Position_Values']:
             assert dset_name not in h5_parent_group.keys()
-        __validate_anc_dict(pos_dims)
+        assert isinstance(pos_dims, AuxillaryDescriptor)
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
-        assert main_data.shape[0] == np.product(pos_dims['sizes'])
-        h5_pos_inds, h5_pos_vals = build_ind_val_dsets(h5_parent_group, pos_dims['sizes'],
-                                                       pos_dims['names'], pos_dims['units'], is_spectral=False,
-                                                       steps=pos_dims.get('steps', None), verbose=False,
-                                                       initial_values=pos_dims.get('initial_values', None))
+        assert main_data.shape[0] == np.product(pos_dims.sizes)
+        h5_pos_inds, h5_pos_vals = build_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False)
 
     if h5_spec_inds is not None and h5_spec_vals is not None:
         # The provided datasets override fresh building instructions.
@@ -2366,13 +2304,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     else:
         for dset_name in ['Spectroscopic_Indices', 'Spectroscopic_Values']:
             assert dset_name not in h5_parent_group.keys()
-        __validate_anc_dict(spec_dims)
+            assert isinstance(spec_dims, AuxillaryDescriptor)
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
-        assert main_data.shape[1] == np.product(spec_dims['sizes'])
-        h5_spec_inds, h5_spec_vals = build_ind_val_dsets(h5_parent_group, spec_dims['sizes'],
-                                                         spec_dims['names'], spec_dims['units'], is_spectral=True,
-                                                         steps=spec_dims.get('steps', None), verbose=False,
-                                                         initial_values=spec_dims.get('initial_values', None))
+        assert main_data.shape[1] == np.product(spec_dims.sizes)
+        h5_spec_inds, h5_spec_vals = build_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False)
 
     # Raw data - assuming simple small dataset
     h5_main = h5_parent_group.create_dataset(main_data_name, data=main_data)
@@ -2383,7 +2318,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     # make it main
     link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
 
-    return h5_main
+    from .pycro_data import PycroDataset
+    return PycroDataset(h5_main)
 
 
 def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
