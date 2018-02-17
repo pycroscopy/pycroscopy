@@ -52,6 +52,10 @@ class NumpyTranslator(Translator):
                 Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
             'names' : list / tuple of str / unicode
                 Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
+            'steps' : list / tuple of numbers, optional
+                step-size in each dimension.  One if not specified.
+            'initial_values' : list / tuple of numbers, optional
+                Floating point for the zeroth value in each dimension.  Zero if not specified.
 
         spec_dims : dict
             Dictionary specifying the names, units, and sizes for spectroscopic dimensions
@@ -71,7 +75,8 @@ class NumpyTranslator(Translator):
             assert len(arg) > 0
         assert isinstance(raw_data, np.ndarray)
         assert raw_data.ndim == 2
-        for anc_dict in [pos_dims, spec_dims]:
+
+        def __validate_anc_dict(anc_dict):
             assert isinstance(anc_dict, dict)
             lens = []
             for key, str_elem in zip(['names', 'units', 'sizes'], [True, True, False]):
@@ -87,10 +92,11 @@ class NumpyTranslator(Translator):
             assert len(num_elems) == 1
             assert num_elems[0] > 0
 
-        # Check to make sure that the product of the position and spectroscopic dimension sizes match with
-        # that of raw_data
-        assert raw_data.shape[0] == np.product(pos_dims['sizes'])
-        assert raw_data.shape[1] == np.product(spec_dims['sizes'])
+        for ind, anc_dic in enumerate([pos_dims, spec_dims]):
+            __validate_anc_dict(anc_dic)
+            # Check to make sure that the product of the position and spectroscopic dimension sizes match with
+            # that of raw_data
+            assert raw_data.shape[ind] == np.product(anc_dic['sizes'])
 
         if path.exists(h5_path):
             remove(h5_path)
@@ -112,6 +118,6 @@ class NumpyTranslator(Translator):
             # channel group next
             chan_grp = meas_grp.create_group('Channel_000')
 
-            _ = write_main_dataset(chan_grp, raw_data, 'Raw_Dara', quantity, units, pos_dims, spec_dims)
+            _ = write_main_dataset(chan_grp, raw_data, 'Raw_Data', quantity, units, pos_dims, spec_dims)
 
         return h5_path

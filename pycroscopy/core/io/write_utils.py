@@ -666,8 +666,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     for arg in [quantity, units, main_data_name]:
         assert isinstance(arg, (str, unicode))
         assert len(arg) > 0
+
     assert isinstance(main_data, np.ndarray)
     assert main_data.ndim == 2
+
     if h5_pos_inds is not None and h5_pos_vals is not None:
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, is_spectroscopic=False)
