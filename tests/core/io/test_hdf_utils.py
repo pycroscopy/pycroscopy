@@ -1404,7 +1404,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7))
             reg_ref = (slice(0, None, 2))
             cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref)
-            self.assertTrue(np.all([x == y for x, y in zip(reg_ref, cleaned)]))
+            self.assertEqual(reg_ref, cleaned[0])
         os.remove(file_path)
 
     def test_clean_reg_refs_2d(self):
@@ -1496,13 +1496,67 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(ret_val, dict())
         os.remove(file_path)
 
-    def test_write_reg_ref(self):
+    def test_write_reg_ref_main_one_dim(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
+        data = np.random.rand(7)
         with h5py.File(file_path) as h5_f:
-            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(5, 2))
+            h5_dset = h5_f.create_dataset('Main', data=data)
+            reg_refs = {'even_rows': (slice(0, None, 2)),
+                        'odd_rows': (slice(1, None, 2))}
+            hdf_utils.write_region_references(h5_dset, reg_refs, add_labels_attr=True)
+            self.assertEqual(len(h5_dset.attrs), 1 + len(reg_refs))
+            actual = hdf_utils.get_attr(h5_dset, 'labels')
+            self.assertTrue(np.all([x == y for x, y in zip(actual, ['even_rows', 'odd_rows'])]))
+
+            expected_data = [data[0:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
         os.remove(file_path)
-        assert False
+
+    def test_write_reg_ref_main_1st_dim(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Main', data=data)
+            reg_refs = {'even_rows': (slice(0, None, 2), slice(None)),
+                        'odd_rows': (slice(1, None, 2), slice(None))}
+            hdf_utils.write_region_references(h5_dset, reg_refs, add_labels_attr=True)
+            self.assertEqual(len(h5_dset.attrs), 1 + len(reg_refs))
+            actual = hdf_utils.get_attr(h5_dset, 'labels')
+            self.assertTrue(np.all([x == y for x, y in zip(actual, ['even_rows', 'odd_rows'])]))
+
+            expected_data = [data[0:None:2], data[1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
+
+    def test_write_reg_ref_main_2nd_dim(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Main', data=data)
+            reg_refs = {'even_rows': (slice(None), slice(0, None, 2)),
+                        'odd_rows': (slice(None), slice(1, None, 2))}
+            hdf_utils.write_region_references(h5_dset, reg_refs, add_labels_attr=False)
+            self.assertEqual(len(h5_dset.attrs), len(reg_refs))
+            self.assertTrue('labels' not in h5_dset.attrs.keys())
+
+            expected_data = [data[:, 0:None:2], data[:, 1:None:2]]
+            written_data = [h5_dset[h5_dset.attrs['even_rows']], h5_dset[h5_dset.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
 
     """  
      
