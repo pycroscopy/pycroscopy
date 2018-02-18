@@ -1366,6 +1366,7 @@ class TestHDFUtils(unittest.TestCase):
 
             self.__validate_aux_dset_pair(h5_f, pycro_main.h5_spec_inds, pycro_main.h5_spec_vals, spec_names, spec_units,
                                           spec_data, h5_main=pycro_main, is_spectral=True)
+        os.remove(file_path)
 
     def test_write_main_existing_spec_aux(self):
         file_path = 'test.h5'
@@ -1400,6 +1401,8 @@ class TestHDFUtils(unittest.TestCase):
 
             self.__validate_aux_dset_pair(h5_f, pycro_main.h5_pos_inds, pycro_main.h5_pos_vals, pos_names, pos_units,
                                           pos_data, h5_main=pycro_main, is_spectral=False)
+
+        os.remove(file_path)
 
     def test_write_main_existing_both_aux(self):
         file_path = 'test.h5'
@@ -1437,6 +1440,30 @@ class TestHDFUtils(unittest.TestCase):
 
             self.__validate_aux_dset_pair(h5_f, h5_spec_inds, h5_spec_vals, spec_names,spec_units,
                                           spec_data, h5_main=pycro_main, is_spectral=True)
+        os.remove(file_path)
+
+    def test_write_main_dset_prod_sizes_mismatch(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        main_data = np.random.rand(15, 14)
+        main_data_name = 'Test_Main'
+        quantity = 'Current'
+        units = 'nA'
+
+        pos_sizes = [5, 15]  # too many steps in the Y direction
+        pos_names = ['X', 'Y']
+        pos_units = ['nm', 'um']
+        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+
+        spec_sizes = [7, 2]
+        spec_names = ['Bias', 'Cycle']
+        spec_units = ['V', '']
+        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+
+        with h5py.File(file_path) as h5_f:
+            with self.assertRaises(AssertionError):
+                _ = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, pos_dims, spec_dims)
+        os.remove(file_path)
 
     def test_clean_reg_refs_1d(self):
         file_path = 'test.h5'
