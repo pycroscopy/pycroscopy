@@ -14,7 +14,6 @@ import sys
 sys.path.append("../../../pycroscopy/")
 from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
-from pycroscopy.core.io.write_utils import clean_string_att
 from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
 
 
