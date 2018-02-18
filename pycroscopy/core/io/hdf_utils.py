@@ -2376,7 +2376,7 @@ def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
     return labels_dict
 
 
-def write_region_references(h5_dset, reg_ref_dict, print_log=False):
+def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, print_log=False):
     """
     Creates attributes of a h5py.Dataset that refer to regions in the dataset
 
@@ -2387,6 +2387,8 @@ def write_region_references(h5_dset, reg_ref_dict, print_log=False):
     reg_ref_dict : dict
         The slicing information must be formatted using tuples of slice objects.
         For example {'region_1':(slice(None, None), slice (0,1))}
+    add_labels_attr : bool, optional, default = True
+        Whether or not to write an attribute named 'labels' with the
     print_log : Boolean (Optional. Default = False)
         Whether or not to print status messages
     """
@@ -2409,6 +2411,38 @@ def write_region_references(h5_dset, reg_ref_dict, print_log=False):
 
         if print_log:
             print('Wrote Region Reference:%s' % reg_ref_name)
+
+    '''
+    Next, write these label names as an attribute called labels
+    Now make an attribute called 'labels' that is a list of strings 
+    First ascertain the dimension of the slicing:
+    '''
+    if add_labels_attr:
+        found_dim = False
+        dimen_index = None
+
+        for key, val in reg_ref_dict.items():
+            if not isinstance(val, (list, tuple)):
+                reg_ref_dict[key] = [val]
+
+        for dimen_index, slice_obj in enumerate(list(reg_ref_dict.values())[0]):
+            # We make the assumption that checking the start is sufficient
+            if slice_obj.start is not None:
+                found_dim = True
+                break
+        if found_dim:
+            headers = [None] * len(reg_ref_dict)  # The list that will hold all the names
+            for col_name in reg_ref_dict.keys():
+                headers[reg_ref_dict[col_name][dimen_index].start] = col_name
+            if print_log:
+                print('Writing header attributes: {}'.format('labels'))
+            # Now write the list of col / row names as an attribute:
+            h5_dset.attrs['labels'] = clean_string_att(headers)
+        else:
+            warn('Unable to write region references for %s' % (h5_dset.name.split('/')[-1]))
+
+        if print_log:
+            print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
 
 def clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):

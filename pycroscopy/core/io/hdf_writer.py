@@ -521,35 +521,3 @@ class HDFwriter(object):
             return
         # Now, handle the region references attribute:
         write_region_references(h5_dset, labels_dict, print_log=print_log)
-        '''
-        Next, write these label names as an attribute called labels
-        Now make an attribute called 'labels' that is a list of strings 
-        First ascertain the dimension of the slicing:
-        '''
-        found_dim = False
-        dimen_index = None
-
-        for key, val in labels_dict.items():
-            if not isinstance(val, (list, tuple)):
-                labels_dict[key] = [val]
-
-        for dimen_index, slice_obj in enumerate(list(labels_dict.values())[0]):
-            # We make the assumption that checking the start is sufficient
-            if slice_obj.start is not None:
-                found_dim = True
-                break
-        if found_dim:
-            headers = [None] * len(labels_dict)  # The list that will hold all the names
-            for col_name in labels_dict.keys():
-                headers[labels_dict[col_name][dimen_index].start] = col_name
-            if print_log:
-                print('Writing header attributes: {}'.format('labels'))
-            # Now write the list of col / row names as an attribute:
-            h5_dset.attrs['labels'] = clean_string_att(headers)
-        else:
-            warn('Unable to write region references for %s' % (h5_dset.name.split('/')[-1]))
-
-        if print_log:
-            print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
-
-
