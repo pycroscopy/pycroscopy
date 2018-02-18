@@ -12,9 +12,9 @@ import sys
 import h5py
 import numpy as np  # For array operations
 
-from .dtype_utils import contains_integers
+from .write_utils import AuxillaryDescriptor
 from .translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import write_main_dataset
+from .hdf_utils import write_main_dataset, write_simple_attrs
 
 if sys.version_info.major == 3:
     unicode = str
@@ -42,23 +42,10 @@ class NumpyTranslator(Translator):
             Name of the physical quantity stored in the dataset. Example - 'Current'
         units : String / Unicode
             Name of units for the quantity stored in the dataset. Example - 'A' for amperes
-        pos_dims : dict
-            Dictionary specifying the names, units, and sizes for position dimensions
-
-            'sizes' : list of unsigned ints.
-                Sizes of all dimensions arranged from fastest to slowest.
-                For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
-            'units' : list / tuple of str / unicode
-                Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
-            'names' : list / tuple of str / unicode
-                Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
-            'steps' : list / tuple of numbers, optional
-                step-size in each dimension.  One if not specified.
-            'initial_values' : list / tuple of numbers, optional
-                Floating point for the zeroth value in each dimension.  Zero if not specified.
-
-        spec_dims : dict
-            Dictionary specifying the names, units, and sizes for spectroscopic dimensions
+        pos_dims : AuxillaryDescriptor
+            Object specifying the instructions necessary for building the Position indices and values datasets
+        spec_dims : AuxillaryDescriptor
+            Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
         translator_name : String / unicode, Optional
             Name of the translator. Example - 'HitachiSEMTranslator'
         parm_dict : dictionary (Optional)
@@ -76,27 +63,11 @@ class NumpyTranslator(Translator):
         assert isinstance(raw_data, np.ndarray)
         assert raw_data.ndim == 2
 
-        def __validate_anc_dict(anc_dict):
-            assert isinstance(anc_dict, dict)
-            lens = []
-            for key, str_elem in zip(['names', 'units', 'sizes'], [True, True, False]):
-                assert key in anc_dict.keys()
-                val = anc_dict[key]
-                assert isinstance(val, (list, tuple))
-                lens.append(len(val))
-                if str_elem:
-                    assert np.all([isinstance(_, (str, unicode)) for _ in val])
-                else:
-                    assert contains_integers(val, min_val=2)
-            num_elems = np.unique(lens)
-            assert len(num_elems) == 1
-            assert num_elems[0] > 0
-
         for ind, anc_dic in enumerate([pos_dims, spec_dims]):
-            __validate_anc_dict(anc_dic)
+            assert isinstance(anc_dic, AuxillaryDescriptor)
             # Check to make sure that the product of the position and spectroscopic dimension sizes match with
             # that of raw_data
-            assert raw_data.shape[ind] == np.product(anc_dic['sizes'])
+            assert raw_data.shape[ind] == np.product(anc_dic.sizes)
 
         if path.exists(h5_path):
             remove(h5_path)
@@ -104,16 +75,19 @@ class NumpyTranslator(Translator):
         if parm_dict is None:
             parm_dict = {}
 
+        global_parms = generate_dummy_main_parms()
+        global_parms['data_type'] = data_name
+        global_parms['translator'] = translator_name
+
+        # Begin writing to file:
         with h5py.File(h5_path) as h5_f:
+
             # Root attributes first:
-            global_parms = generate_dummy_main_parms()
-            global_parms['data_type'] = data_name
-            global_parms['translator'] = translator_name
-            h5_f.attrs = global_parms
+            write_simple_attrs(h5_f, global_parms)
 
             # measurement group next
             meas_grp = h5_f.create_group('Measurement_000')
-            meas_grp.attrs = parm_dict
+            write_simple_attrs(meas_grp, parm_dict)
 
             # channel group next
             chan_grp = meas_grp.create_group('Channel_000')
