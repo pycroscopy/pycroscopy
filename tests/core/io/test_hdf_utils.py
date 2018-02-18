@@ -1397,31 +1397,115 @@ class TestHDFUtils(unittest.TestCase):
                     self.assertTrue(np.allclose(np.squeeze(spec_data[dim_ind]),
                                                 np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
 
+    def test_clean_reg_refs_1d(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7))
+            reg_ref = (slice(0, None, 2))
+            cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref)
+            self.assertTrue(np.all([x == y for x, y in zip(reg_ref, cleaned)]))
+        os.remove(file_path)
 
+    def test_clean_reg_refs_2d(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7, 5))
+            reg_ref = (slice(0, None, 2), slice(None))
+            cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref)
+            self.assertTrue(np.all([x == y for x, y in zip(reg_ref, cleaned)]))
+        os.remove(file_path)
 
+    def test_clean_reg_refs_illegal_too_many_slices(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7, 5))
+            reg_ref = (slice(0, None, 2), slice(None), slice(1, None, 2))
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.clean_reg_ref(h5_dset, reg_ref)
+
+        os.remove(file_path)
+
+    def test_clean_reg_refs_illegal_too_few_slices(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7, 5))
+            reg_ref = (slice(0, None, 2))
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.clean_reg_ref(h5_dset, reg_ref)
+
+        os.remove(file_path)
+
+    def test_clean_reg_refs_out_of_bounds(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7, 5))
+            reg_ref = (slice(0, 13, 2), slice(None))
+            expected = (slice(0, 7, 2), slice(None))
+            cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref, print_log=False)
+            self.assertTrue(np.all([x == y for x, y in zip(expected, cleaned)]))
+        os.remove(file_path)
+
+    def test_attempt_reg_ref_build_spec(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(2, 5))
+            dim_names = ['Bias', 'Cycle']
+            expected = {'Bias': (slice(0, 1), slice(None)),
+                        'Cycle': (slice(1, 2), slice(None))}
+            cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            for key, value in expected.items():
+                self.assertEqual(value, cleaned[key])
+        os.remove(file_path)
+
+    def test_attempt_reg_ref_build_pos(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(5, 2))
+            dim_names = ['Bias', 'Cycle']
+            expected = {'Bias': (slice(None), slice(0, 1)),
+                        'Cycle': (slice(None), slice(1, 2))}
+            cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            for key, value in expected.items():
+                self.assertEqual(value, cleaned[key])
+        os.remove(file_path)
+
+    def test_attempt_reg_ref_build_pos_too_many_dims(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(5, 2))
+            dim_names = ['Bias', 'Cycle', 'Blah']
+            ret_val = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            self.assertEqual(ret_val, dict())
+        os.remove(file_path)
+
+    def test_attempt_reg_ref_build_pos_too_few_dims(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(5, 2))
+            dim_names = ['Bias']
+            ret_val = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            self.assertEqual(ret_val, dict())
+        os.remove(file_path)
+
+    def test_write_reg_ref(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Indices', data=np.random.rand(5, 2))
+        os.remove(file_path)
+        assert False
 
     """  
-                for h5_dset, exp_dtype, exp_name, ref_data in zip([h5_inds, h5_vals],
-                                                              [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
-                                                              [new_base_name + '_Indices', new_base_name + '_Values'],
-                                                              [spec_inds, spec_vals]):
-                self.assertIsInstance(h5_dset, h5py.Dataset)
-                self.assertEqual(h5_dset.parent, h5_group)
-                self.assertEqual(h5_dset.name.split('/')[-1], exp_name)
-                self.assertTrue(np.allclose(ref_data, h5_dset[()]))
-                self.assertEqual(h5_dset.dtype, exp_dtype)
-                self.assertTrue(np.all([_ in h5_dset.attrs.keys() for _ in ['labels', 'units']]))
-                self.assertTrue(np.all([x == y for x, y in zip(dim_names, hdf_utils.get_attr(h5_dset, 'labels'))]))
-                self.assertTrue(np.all([x == y for x, y in zip(dim_units, hdf_utils.get_attr(h5_dset, 'units'))]))
-                # assert region references
-                for dim_ind, curr_name in enumerate(dim_names):
-                    self.assertTrue(np.allclose(np.squeeze(ref_data[dim_ind]),
-                                                np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
-    
-    
-    
-    
-    
+     
     def test_build_reduced_spec_dsets_2d_to_1d(self):
         self.__ensure_test_h5_file()
         duplicate_path = 'copy_test_hdf_utils.h5'
