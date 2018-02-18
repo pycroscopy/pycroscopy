@@ -309,7 +309,7 @@ class Process(object):
         return self.h5_results_grp
 
 
-def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=list(), func_kwargs=dict()):
+def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=None, func_kwargs=None):
     """
     Computes the guess function using multiple cores
 
@@ -339,6 +339,18 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=l
 
     if not callable(func):
         raise TypeError('Function argument is not callable')
+    if not isinstance(data, np.ndarray):
+        raise TypeError('data must be a numpy array')
+    if func_args is None:
+        func_args = list()
+    else:
+        if not isinstance(func_args, list):
+            raise TypeError('Arguments to the mapped function should be specified as a list')
+    if func_kwargs is None:
+        func_kwargs = dict()
+    else:
+        if not isinstance(func_kwargs, dict):
+            raise TypeError('Keyword arguments to the mapped function should be specified via a dictionary')
 
     cores = recommend_cpu_cores(data.shape[0], requested_cores=cores,
                                 lengthy_computation=lengthy_computation)

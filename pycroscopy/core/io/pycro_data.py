@@ -86,7 +86,7 @@ class PycroDataset(h5py.Dataset):
         self.__pos_dim_labels = get_attr(self.h5_pos_inds, 'labels')
         self.__spec_dim_labels = get_attr(self.h5_spec_inds, 'labels')
 
-        # Data desciptors
+        # Data descriptors
         self.data_descriptor = get_data_descriptor(self)
         self.pos_dim_descriptors = get_formatted_labels(self.h5_pos_inds)
         self.spec_dim_descriptors = get_formatted_labels(self.h5_spec_inds)
@@ -99,7 +99,7 @@ class PycroDataset(h5py.Dataset):
         self.__pos_sort_order = get_sort_order(np.transpose(self.h5_pos_inds))
         self.__spec_sort_order = get_sort_order(np.atleast_2d(self.h5_spec_inds))
 
-        # iternal book-keeping / we don't want users to mess with these?
+        # internal book-keeping / we don't want users to mess with these?
         self.__n_dim_sizes = np.append(self.__pos_dim_sizes, self.__spec_dim_sizes)
         self.__n_dim_labs = np.append(self.__pos_dim_labels, self.__spec_dim_labels)
         self.__n_dim_sort_order = np.append(self.__pos_sort_order, self.__spec_sort_order)
@@ -111,10 +111,7 @@ class PycroDataset(h5py.Dataset):
         self.__set_labels_and_sizes()
 
     def __eq__(self, other):
-        if isinstance(other, PycroDataset):
-            if isinstance(other, h5py.Dataset):
-                warn('Comparing PycroData object with h5py.Dataset')
-
+        if isinstance(other, h5py.Dataset):
             return super(PycroDataset, self).__eq__(other)
 
         return False
@@ -254,7 +251,7 @@ class PycroDataset(h5py.Dataset):
 
         return self.__n_dim_data
 
-    def slice(self, as_scalar=False, slice_dict=dict()):
+    def slice(self, as_scalar=False, slice_dict=None):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -277,6 +274,9 @@ class PycroDataset(h5py.Dataset):
             Informs the user as to how the data_slice has been shaped.
 
         """
+        if slice_dict is None:
+            slice_dict = dict()
+
         # Convert the slice dictionary into lists of indices for each dimension
         pos_slice, spec_slice = self.get_pos_spec_slices(slice_dict)
 
@@ -290,9 +290,7 @@ class PycroDataset(h5py.Dataset):
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
-        data_slice, success = reshape_to_n_dims(data_slice,
-                                                h5_pos=pos_inds,
-                                                h5_spec=spec_inds)
+        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds)
 
         if as_scalar:
             return flatten_to_real(data_slice), success
