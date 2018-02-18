@@ -2067,7 +2067,7 @@ def build_ind_val_dsets(h5_parent_group, descriptor, is_spectral=True, verbose=F
     h5_values = h5_parent_group.create_dataset(base_name + 'Values', data=VALUES_DTYPE(values), dtype=VALUES_DTYPE)
 
     for h5_dset in [h5_indices, h5_values]:
-        write_region_references(h5_dset, region_slices, print_log=verbose)
+        write_region_references(h5_dset, region_slices, verbose=verbose)
         write_simple_attrs(h5_dset, {'units': descriptor.units, 'labels': descriptor.names})
 
     return h5_indices, h5_values
@@ -2138,7 +2138,7 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
 
         # Adding the labels and units to the new spectroscopic data sets
         for dset in [ds_inds, ds_vals]:
-            write_region_references(dset, reg_ref_slices, print_log=False)
+            write_region_references(dset, reg_ref_slices, verbose=False)
             dset.attrs['labels'] = labels
             dset.attrs['units'] = h5_spec_inds.attrs['units'][keep_dim]
 
@@ -2149,14 +2149,14 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
         reg_ref_slices = {'Single_Step': (slice(0, None), slice(None))}
 
         for dset in [ds_inds, ds_vals]:
-            write_region_references(dset, reg_ref_slices, print_log=False)
+            write_region_references(dset, reg_ref_slices, verbose=False)
             dset.attrs['labels'] = 'Single_Step'
             dset.attrs['units'] = ['']
 
     return ds_inds, ds_vals
 
 
-def assign_group_index(h5_parent_group, base_name, print_log=False):
+def assign_group_index(h5_parent_group, base_name, verbose=False):
     """
     Searches the parent h5 group to find the next available index for the group
 
@@ -2166,7 +2166,7 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
         Parent group under which the new group object will be created
     base_name : str / unicode
         Base name of the new group without index
-    print_log : bool, optional. Default=False
+    verbose : bool, optional. Default=False
         Whether or not to print debugging statements
 
     Returns
@@ -2184,7 +2184,7 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
         base_name += '_'
 
     temp = [key for key in h5_parent_group.keys()]
-    if print_log:
+    if verbose:
         print('Looking for group names starting with {} in parent containing items: '
               '{}'.format(base_name, temp))
     previous_indices = []
@@ -2192,7 +2192,7 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
         if isinstance(h5_parent_group[item_name], h5py.Group) and item_name.startswith(base_name):
             previous_indices.append(int(item_name.replace(base_name, '')))
     previous_indices = np.sort(previous_indices)
-    if print_log:
+    if verbose:
         print('indices of existing groups with the same prefix: {}'.format(previous_indices))
     if len(previous_indices) == 0:
         index = 0
@@ -2201,7 +2201,7 @@ def assign_group_index(h5_parent_group, base_name, print_log=False):
     return base_name + '{:03d}'.format(index)
 
 
-def write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
+def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
     """
     Writes attributes to a h5py object
 
@@ -2213,7 +2213,7 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
         Dictionary containing the attributes as key-value pairs
     obj_type : str / unicode, optional. Default = ''
         type of h5py.obj. Examples include 'group', 'file', 'dataset
-    print_log : bool, optional. Default=False
+    verbose : bool, optional. Default=False
         Whether or not to print debugging statements
     """
     if not isinstance(attrs, dict):
@@ -2226,10 +2226,10 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', print_log=False):
     for key, val in attrs.items():
         if val is None:
             continue
-        if print_log:
+        if verbose:
             print('Writing attribute: {} with value: {}'.format(key, val))
         h5_obj.attrs[key] = clean_string_att(val)
-    if print_log:
+    if verbose:
         print('Wrote all (simple) attributes to {}: {}\n'.format(obj_type, h5_obj.name.split('/')[-1]))
 
 
@@ -2326,7 +2326,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     return PycroDataset(h5_main)
 
 
-def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
+def attempt_reg_ref_build(h5_dset, dim_names, verbose=False):
     """
 
     Parameters
@@ -2335,7 +2335,7 @@ def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
         Dataset to which region references need to be added as attributes
     dim_names : list or tuple
         List of the names of the region references (typically names of dimensions)
-    print_log : bool, optional. Default=False
+    verbose : bool, optional. Default=False
         Whether or not to print debugging statements
 
     Returns
@@ -2360,12 +2360,12 @@ def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
 
     labels_dict = dict()
     if len(dim_names) == h5_dset.shape[0]:
-        if print_log:
+        if verbose:
             print('Most likely a spectroscopic indices / values dataset')
         for dim_index, curr_name in enumerate(dim_names):
             labels_dict[curr_name] = (slice(dim_index, dim_index+1), slice(None))
     elif len(dim_names) == h5_dset.shape[1]:
-        if print_log:
+        if verbose:
             print('Most likely a position indices / values dataset')
         for dim_index, curr_name in enumerate(dim_names):
             labels_dict[curr_name] = (slice(None), slice(dim_index, dim_index + 1))
@@ -2374,13 +2374,13 @@ def attempt_reg_ref_build(h5_dset, dim_names, print_log=False):
         warn('Attempted to automatically build region reference dictionary for dataset: {}.\n'
              'Please specify region references as a tuple of slice objects for each attribute'.format(h5_dset.name))
     else:
-        if print_log:
+        if verbose:
             print('Could not build region references since dataset had shape:{} and number of region references is '
                   '{}'.format(h5_dset.shape, len(dim_names)))
     return labels_dict
 
 
-def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, print_log=False):
+def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, verbose=False):
     """
     Creates attributes of a h5py.Dataset that refer to regions in the dataset
 
@@ -2393,7 +2393,7 @@ def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, print_l
         For example {'region_1':(slice(None, None), slice (0,1))}
     add_labels_attr : bool, optional, default = True
         Whether or not to write an attribute named 'labels' with the
-    print_log : Boolean (Optional. Default = False)
+    verbose : Boolean (Optional. Default = False)
         Whether or not to print status messages
     """
     if not isinstance(reg_ref_dict, dict):
@@ -2403,17 +2403,17 @@ def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, print_l
         raise TypeError('h5_dset should be a h5py.Dataset object but is instead of type '
                         '{}'.format(type(h5_dset)))
 
-    if print_log:
+    if verbose:
         print('Starting to write Region References to Dataset', h5_dset.name, 'of shape:', h5_dset.shape)
     for reg_ref_name, reg_ref_tuple in reg_ref_dict.items():
-        if print_log:
+        if verbose:
             print('About to write region reference:', reg_ref_name, ':', reg_ref_tuple)
 
-        reg_ref_tuple = clean_reg_ref(h5_dset, reg_ref_tuple, print_log=print_log)
+        reg_ref_tuple = clean_reg_ref(h5_dset, reg_ref_tuple, verbose=verbose)
 
         h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
 
-        if print_log:
+        if verbose:
             print('Wrote Region Reference:%s' % reg_ref_name)
 
     '''
@@ -2438,18 +2438,18 @@ def write_region_references(h5_dset, reg_ref_dict, add_labels_attr=True, print_l
             headers = [None] * len(reg_ref_dict)  # The list that will hold all the names
             for col_name in reg_ref_dict.keys():
                 headers[reg_ref_dict[col_name][dimen_index].start] = col_name
-            if print_log:
+            if verbose:
                 print('Writing header attributes: {}'.format('labels'))
             # Now write the list of col / row names as an attribute:
             h5_dset.attrs['labels'] = clean_string_att(headers)
         else:
             warn('Unable to write region references for %s' % (h5_dset.name.split('/')[-1]))
 
-        if print_log:
+        if verbose:
             print('Wrote Region References of Dataset %s' % (h5_dset.name.split('/')[-1]))
 
 
-def clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
+def clean_reg_ref(h5_dset, reg_ref_tuple, verbose=False):
     """
     Makes sure that the provided instructions for a region reference are indeed valid
     This method has become necessary since h5py allows the writing of region references larger than the maxshape
@@ -2460,7 +2460,7 @@ def clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
         Dataset to which region references will be added as attributes
     reg_ref_tuple : list / tuple
         The slicing information formatted using tuples of slice objects.
-    print_log : Boolean (Optional. Default = False)
+    verbose : Boolean (Optional. Default = False)
         Whether or not to print status messages
 
     Returns
@@ -2482,7 +2482,7 @@ def clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
     if len(reg_ref_tuple) != len(h5_dset.shape):
         raise ValueError('Region reference tuple did not have the same dimensions as the h5 dataset')
 
-    if print_log:
+    if verbose:
         print('Comparing {} with h5 dataset maxshape of {}'.format(reg_ref_tuple, h5_dset.maxshape))
 
     new_reg_refs = list()
@@ -2498,7 +2498,7 @@ def clean_reg_ref(h5_dset, reg_ref_tuple, print_log=False):
 
         new_reg_refs.append(reg_ref_slice)
 
-    if print_log:
+    if verbose:
         print('Region reference tuple now: {}'.format(new_reg_refs))
 
     return tuple(new_reg_refs)
