@@ -24,7 +24,11 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
            'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'create_spec_inds_from_vals',
            'check_for_old', 'get_source_dataset', 'get_unit_values', 'get_data_descriptor',
-           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy']
+           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy',
+           'is_editable_h5', 'build_ind_val_dsets', 'build_reduced_spec_dsets', 'assign_group_index',
+           'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
+           'clean_reg_ref'
+           ]
 
 if sys.version_info.major == 3:
     unicode = str
