@@ -86,7 +86,7 @@ class TestHDFUtils(unittest.TestCase):
                                                  'att_4': ['str_1', 'str_2', 'str_3']})
 
             writer = HDFwriter(h5_f)
-            h5_refs_list = writer.write(group_source, print_log=False)
+            h5_refs_list = writer.write(group_source, verbose=False)
 
             [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
             h5_source_group = h5_source_main.parent
@@ -123,7 +123,7 @@ class TestHDFUtils(unittest.TestCase):
                                            attrs={'att_1': 'string_val', 'att_2': 1.2345,
                                                     'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
 
-            h5_refs_list = writer.write(group_results_1, print_log=False)
+            h5_refs_list = writer.write(group_results_1, verbose=False)
 
             [h5_results_1_main] = hdf_utils.get_h5_obj_refs([dset_results_1_main.name], h5_refs_list)
             [h5_results_1_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
@@ -146,7 +146,7 @@ class TestHDFUtils(unittest.TestCase):
                                            attrs={'att_1': 'other_string_val', 'att_2': 5.4321,
                                                     'att_3': [4, 1, 3], 'att_4': ['s', 'str_2', 'str_3']})
 
-            h5_refs_list = writer.write(group_results_2, print_log=False)
+            h5_refs_list = writer.write(group_results_2, verbose=False)
 
             [h5_results_2_main] = hdf_utils.get_h5_obj_refs([dset_results_2_main.name], h5_refs_list)
             [h5_results_2_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
@@ -1514,7 +1514,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_dset = h5_f.create_dataset('Test', data=np.random.rand(7, 5))
             reg_ref = (slice(0, 13, 2), slice(None))
             expected = (slice(0, 7, 2), slice(None))
-            cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref, print_log=False)
+            cleaned = hdf_utils.clean_reg_ref(h5_dset, reg_ref, verbose=False)
             self.assertTrue(np.all([x == y for x, y in zip(expected, cleaned)]))
         os.remove(file_path)
 
