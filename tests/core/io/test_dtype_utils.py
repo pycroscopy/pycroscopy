@@ -345,6 +345,40 @@ class TestDtypeUtils(unittest.TestCase):
         actual = dtype_utils.stack_real_to_target_dtype(real_val, struc_dtype)
         self.assertTrue(compare_structured_arrays(actual, structured_array))
 
+    def test_check_dtype_real_numpy(self):
+        real_matrix = np.random.rand(5, 7)
+        func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(real_matrix)
+        self.assertEqual(func, real_matrix.dtype.type)
+        self.assertEqual(is_complex, False)
+        self.assertEqual(is_compound, False)
+        self.assertEqual(n_features, real_matrix.shape[1])
+        self.assertEqual(n_samples, real_matrix.shape[0])
+        self.assertEqual(type_mult, real_matrix.dtype.type(0).itemsize)
+
+    def test_check_dtype_complex_numpy(self):
+        complex_matrix = np.random.rand(5, 7) + 1j * np.random.rand(5, 7)
+        func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(complex_matrix)
+        self.assertEqual(func, dtype_utils.flatten_complex_to_real)
+        self.assertEqual(is_complex, True)
+        self.assertEqual(is_compound, False)
+        self.assertEqual(n_features, 2 * complex_matrix.shape[1])
+        self.assertEqual(n_samples, complex_matrix.shape[0])
+        self.assertEqual(type_mult, 2 * np.real(complex_matrix[0, 0]).dtype.itemsize)
+
+    def test_check_dtype_compound_numpy(self):
+        num_elems = (2, 5)
+        structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
+        structured_array['r'] = np.random.random(size=num_elems)
+        structured_array['g'] = np.random.randint(0, high=1024, size=num_elems)
+        structured_array['b'] = np.random.random(size=num_elems)
+        func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(structured_array)
+        self.assertEqual(func, dtype_utils.flatten_compound_to_real)
+        self.assertEqual(is_complex, False)
+        self.assertEqual(is_compound, True)
+        self.assertEqual(n_features, 3 * structured_array.shape[1])
+        self.assertEqual(n_samples, structured_array.shape[0])
+        self.assertEqual(type_mult, 3 * np.float32(0).itemsize)
+
 
 if __name__ == '__main__':
     unittest.main()

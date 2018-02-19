@@ -1,11 +1,13 @@
 import sys
+
 import numpy as np
 from collections import Iterable
-from .virtual_data import VirtualDataset
-from .dtype_utils import contains_integers
-import warnings
+import numbers
 
-__all__ = ['build_ind_val_dsets', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE']
+from .dtype_utils import contains_integers
+
+__all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
+           'INDICES_DTYPE', 'VALUES_DTYPE', 'AuxillaryDescriptor']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -14,125 +16,55 @@ INDICES_DTYPE = np.uint32
 VALUES_DTYPE = np.float32
 
 
-def build_ind_val_dsets(dimensions, is_spectral=True, steps=None, initial_values=None, labels=None,
-                        units=None, verbose=False):
-    """
-    Builds the VirtualDatasets for the position OR spectroscopic indices and values
-    of the data.
+class AuxillaryDescriptor(object):
+    def __init__(self, dim_sizes, dim_names, dim_units, dim_step_sizes=None, dim_initial_vals=None):
+        """
+        Object that provides the instructions necessary for building ancillary datasets
 
-    Parameters
-    ----------
-    dimensions : array_like of numpy.uint
-        Integer values for the length of each dimension
-    is_spectral : bool, optional. default = True
-        Spectroscopic (True) or Position (False)
-    steps : array_like of float, optional
-        Floating point values for the step-size in each dimension.  One
-        if not specified.
-    initial_values : array_like of float, optional
-        Floating point for the zeroth value in each dimension.  Zero if
-        not specified.
-    labels : array_like of str, optional
-        The names of each dimension.  Empty strings will be used if not
-        specified.
-    units : array_like of str, optional
-        The units of each dimension.  Empty strings will be used if not
-        specified.
-    verbose : Boolean, optional
-        Whether or not to print statements for debugging purposes
+        Parameters
+        ----------
+        dim_sizes : list / tuple of of unsigned ints.
+            Sizes of all dimensions arranged from fastest to slowest.
+            For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
+        dim_names : list / tuple of str / unicode
+            Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
+        dim_units : list / tuple of str / unicode
+            Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
+        dim_step_sizes : list / tuple of numbers, optional
+            step-size in each dimension.  One if not specified.
+        dim_initial_vals : list / tuple of numbers, optional
+            Floating point for the zeroth value in each dimension.  Zero if not specified.
 
-    Returns
-    -------
-    ds_spec_inds : VirtualDataset of numpy.uint
-        Dataset containing the position indices
-    ds_spec_vals : VirtualDataset of float
-        Dataset containing the value at each position
+        """
+        lengths = []
+        for val, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes, dim_initial_vals],
+                                            [0, 2, 2, 1, 1],
+                                            [True, True, True, False, False]):
+            if not required and val is None:
+                continue
+            assert isinstance(val, (list, tuple, np.ndarray))
+            lengths.append(len(val))
+            if elem_type == 2:
+                assert np.all([isinstance(_, (str, unicode)) for _ in val])
+            elif elem_type == 0:
+                assert contains_integers(val, min_val=2)
+            else:
+                assert np.all([isinstance(_, numbers.Number) for _ in val])
+        num_elems = np.unique(lengths)
+        if len(num_elems) != 1:
+            raise ValueError('All the arguments should have the same number of elements')
+        if num_elems[0] == 0:
+            raise ValueError('Argument should not be empty')
 
-    Notes
-    -----
-    `steps`, `initial_values`, `labels`, and 'units' must be the same length as
-    `dimensions` when they are specified.
-
-    Dimensions should be in the order from fastest varying to slowest.
-    """
-    assert contains_integers(dimensions, min_val=2)
-
-    if labels is None:
-        warnings.warn('Arbitrary names provided to dimensions. Please provide legitimate values for parameter - labels',
-                      DeprecationWarning)
-        labels = ['Unknown Dimension {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(labels, Iterable)
-        if len(labels) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
-    if units is None:
-        warnings.warn('Arbitrary units provided to dimensions. Please provide legitimate values for parameter - units',
-                      DeprecationWarning)
-        units = ['Arb Unit {}'.format(ind) for ind in range(len(dimensions))]
-    else:
-        assert isinstance(units, Iterable)
-        if len(units) != len(dimensions):
-            raise ValueError('The arrays for labels and dimension sizes must be the same.')
-
-    if steps is None:
-        steps = np.ones_like(dimensions)
-    else:
-        assert isinstance(steps, Iterable)
-        if len(steps) != len(dimensions):
-            raise ValueError('The arrays for step sizes and dimension sizes must be the same.')
-        steps = np.atleast_2d(steps)
-
-    if verbose:
-        print('Steps')
-        print(steps.shape)
-        print(steps)
-
-    if initial_values is None:
-        initial_values = np.zeros_like(dimensions)
-    else:
-        assert isinstance(initial_values, Iterable)
-        if len(initial_values) != len(dimensions):
-            raise ValueError('The arrays for initial values and dimension sizes must be the same.')
-        initial_values = np.atleast_2d(initial_values)
-
-    if verbose:
-        print('Initial Values')
-        print(initial_values.shape)
-        print(initial_values)
-
-    # Get the indices for all dimensions
-    indices = make_indices_matrix(dimensions)
-    assert isinstance(indices, np.ndarray)
-    if verbose:
-        print('Indices')
-        print(indices.shape)
-        print(indices)
-
-    # Convert the indices to values
-    values = initial_values + VALUES_DTYPE(indices)*steps
-
-    # Create the slices that will define the labels
-    if is_spectral:
-        mode = 'Spectroscopic_'
-        indices = indices.transpose()
-        values = values.transpose()
-    else:
-        mode = 'Position_'
-
-    region_slices = get_aux_dset_slicing(labels, is_spectroscopic=is_spectral)
-
-    # Create the VirtualDatasets for both Indices and Values
-    ds_indices = VirtualDataset(mode + 'Indices', indices, dtype=np.uint32)
-    ds_indices.attrs['labels'] = region_slices
-
-    ds_values = VirtualDataset(mode + 'Values', np.float32(values), dtype=np.float32)
-    ds_values.attrs['labels'] = region_slices
-
-    ds_indices.attrs['units'] = units
-    ds_values.attrs['units'] = units
-
-    return ds_indices, ds_values
+        self.sizes = dim_sizes
+        self.names = dim_names
+        self.units = dim_units
+        if dim_step_sizes is None:
+            dim_step_sizes = np.ones_like(dim_sizes)
+        self.steps = dim_step_sizes
+        if dim_initial_vals is None:
+            dim_initial_vals = np.zeros_like(dim_sizes)
+        self.initial_vals = dim_initial_vals
 
 
 def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
@@ -218,3 +150,33 @@ def make_indices_matrix(num_steps, is_position=True):
         indices_matrix = indices_matrix.T
 
     return indices_matrix
+
+
+def clean_string_att(att_val):
+    """
+    Replaces any unicode objects within lists with their string counterparts to ensure compatibility with python 3.
+    If the attribute is indeed a list of unicodes, the changes will be made in-place
+
+    Parameters
+    ----------
+    att_val : object
+        Attribute object
+
+    Returns
+    -------
+    att_val : object
+        Attribute object
+    """
+    try:
+        if isinstance(att_val, Iterable):
+            if type(att_val) in [unicode, str]:
+                return att_val
+            elif np.any([type(x) in [str, unicode, bytes] for x in att_val]):
+                return np.array(att_val, dtype='S')
+        if type(att_val) == np.str_:
+            return str(att_val)
+        return att_val
+    except TypeError:
+        raise TypeError('Failed to clean: {}'.format(att_val))
+
+

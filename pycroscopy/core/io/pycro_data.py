@@ -8,14 +8,11 @@ Created on Thu Sep  7 21:14:25 2017
 from __future__ import division, print_function, absolute_import, unicode_literals
 import h5py
 import six
-from warnings import warn
 import numpy as np
 from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
 from .dtype_utils import flatten_to_real
-
-
-# from ..viz.jupyter_utils import simple_ndim_visualizer
+from ..viz.jupyter_utils import simple_ndim_visualizer
 
 
 class PycroDataset(h5py.Dataset):
@@ -86,7 +83,7 @@ class PycroDataset(h5py.Dataset):
         self.__pos_dim_labels = get_attr(self.h5_pos_inds, 'labels')
         self.__spec_dim_labels = get_attr(self.h5_spec_inds, 'labels')
 
-        # Data desciptors
+        # Data descriptors
         self.data_descriptor = get_data_descriptor(self)
         self.pos_dim_descriptors = get_formatted_labels(self.h5_pos_inds)
         self.spec_dim_descriptors = get_formatted_labels(self.h5_spec_inds)
@@ -99,7 +96,7 @@ class PycroDataset(h5py.Dataset):
         self.__pos_sort_order = get_sort_order(np.transpose(self.h5_pos_inds))
         self.__spec_sort_order = get_sort_order(self.h5_spec_inds)
 
-        # iternal book-keeping / we don't want users to mess with these?
+        # internal book-keeping / we don't want users to mess with these?
         self.__n_dim_sizes = np.append(self.__pos_dim_sizes, self.__spec_dim_sizes)
         self.__n_dim_labs = np.append(self.__pos_dim_labels, self.__spec_dim_labels)
         self.__n_dim_sort_order = np.append(self.__pos_sort_order, self.__spec_sort_order)
@@ -111,10 +108,7 @@ class PycroDataset(h5py.Dataset):
         self.__set_labels_and_sizes()
 
     def __eq__(self, other):
-        if isinstance(other, PycroDataset):
-            if isinstance(other, h5py.Dataset):
-                warn('Comparing PycroData object with h5py.Dataset')
-
+        if isinstance(other, h5py.Dataset):
             return super(PycroDataset, self).__eq__(other)
 
         return False
@@ -254,7 +248,7 @@ class PycroDataset(h5py.Dataset):
 
         return self.__n_dim_data
 
-    def slice(self, as_scalar=False, slice_dict=dict()):
+    def slice(self, as_scalar=False, slice_dict=None):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -277,6 +271,9 @@ class PycroDataset(h5py.Dataset):
             Informs the user as to how the data_slice has been shaped.
 
         """
+        if slice_dict is None:
+            slice_dict = dict()
+
         # Convert the slice dictionary into lists of indices for each dimension
         pos_slice, spec_slice = self.get_pos_spec_slices(slice_dict)
 
@@ -290,9 +287,7 @@ class PycroDataset(h5py.Dataset):
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
-        data_slice, success = reshape_to_n_dims(data_slice,
-                                                h5_pos=pos_inds,
-                                                h5_spec=spec_inds)
+        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds)
 
         if as_scalar:
             return flatten_to_real(data_slice), success
@@ -367,25 +362,25 @@ class PycroDataset(h5py.Dataset):
 
         return pos_slice, spec_slice
 
-    # def visualize(self, slice_dict=None, **kwargs):
-    #     """
-    #     Interactive visualization of this dataset. Only available on jupyter notebooks
-    #
-    #     Parameters
-    #     ----------
-    #     slice_dict : dictionary, optional
-    #         Slicing instructions
-    #     """
-    #     # TODO: Robust implementation that allows slicing
-    #     if len(self.pos_dim_labels + self.spec_dim_labels) > 4:
-    #         raise NotImplementedError('Unable to support visualization of more than 4 dimensions. Try slicing')
-    #     data_mat = self.get_n_dim_form()
-    #     pos_dim_names = self.pos_dim_labels[::-1]
-    #     spec_dim_names = self.spec_dim_labels
-    #     pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
-    #     spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
-    #     pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals, is_spec=False)
-    #     spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals, is_spec=True)
-    #
-    #     simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
-    #                            pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)
+    def visualize(self, slice_dict=None, **kwargs):
+        """
+        Interactive visualization of this dataset. Only available on jupyter notebooks
+
+        Parameters
+        ----------
+        slice_dict : dictionary, optional
+            Slicing instructions
+        """
+        # TODO: Robust implementation that allows slicing
+        if len(self.pos_dim_labels + self.spec_dim_labels) > 4:
+            raise NotImplementedError('Unable to support visualization of more than 4 dimensions. Try slicing')
+        data_mat = self.get_n_dim_form()
+        pos_dim_names = self.pos_dim_labels[::-1]
+        spec_dim_names = self.spec_dim_labels
+        pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
+        spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
+        pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals, is_spec=False)
+        spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals, is_spec=True)
+
+        simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
+                               pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)

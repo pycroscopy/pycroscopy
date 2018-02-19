@@ -14,7 +14,6 @@ import sys
 sys.path.append("../../../pycroscopy/")
 from pycroscopy import VirtualGroup, VirtualDataset
 from pycroscopy import HDFwriter
-from pycroscopy.core.io.hdf_writer import clean_string_att
 from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
 
 
@@ -321,76 +320,6 @@ class TestHDFWriter(unittest.TestCase):
             self.assertIsInstance(h5_inner_grp, h5py.Group)
             self.assertEqual(h5_inner_grp.parent, h5_outer_grp)
             self.assertEqual(h5_inner_grp.name, h5_outer_grp.name + '/' + inner_grp_name + '000')
-
-        os.remove(file_path)
-
-    def test_clean_string_att_float(self):
-        expected = 5.321
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_str(self):
-        expected = 'test'
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_num_array(self):
-        expected = [1, 2, 3.456]
-        self.assertEqual(expected, clean_string_att(expected))
-
-    def test_clean_string_att_str_list(self):
-        expected = ['a', 'bc', 'def']
-        returned = clean_string_att(expected)
-        expected = np.array(expected, dtype='S')
-        for exp, act in zip(expected, returned):
-            self.assertEqual(exp, act)
-
-    def test_clean_string_att_str_tuple(self):
-        expected = ('a', 'bc', 'def')
-        returned = clean_string_att(expected)
-        expected = np.array(expected, dtype='S')
-        for exp, act in zip(expected, returned):
-            self.assertEqual(exp, act)
-
-    def test_write_legal_atts_to_grp(self):
-        file_path = 'test.h5'
-        self.__delete_existing_file(file_path)
-        with h5py.File(file_path) as h5_f:
-            grp_name = 'test_group_'
-            micro_group = VirtualGroup(grp_name)
-
-            writer = HDFwriter(h5_f)
-            h5_group = writer._create_group(h5_f, micro_group)
-            self.assertIsInstance(h5_group, h5py.Group)
-
-            attrs = {'att_1': 'string_val', 'att_2': 1.234, 'att_3': [1, 2, 3.14, 4],
-                     'att_4': ['s', 'tr', 'str_3']}
-
-            writer._write_simple_attrs(h5_group, attrs)
-
-            for key, expected_val in attrs.items():
-                self.assertTrue(np.all(get_attr(h5_group, key) == expected_val))
-
-        os.remove(file_path)
-
-    def test_write_legal_atts_to_dset_01(self):
-        file_path = 'test.h5'
-        self.__delete_existing_file(file_path)
-        with h5py.File(file_path) as h5_f:
-
-            writer = HDFwriter(h5_f)
-            h5_dset = writer._create_simple_dset(h5_f, VirtualDataset('test', np.arange(3)))
-            self.assertIsInstance(h5_dset, h5py.Dataset)
-
-            attrs = {'att_1': 'string_val',
-                     'att_2': 1.2345,
-                     'att_3': [1, 2, 3, 4],
-                     'att_4': ['str_1', 'str_2', 'str_3']}
-
-            writer._write_simple_attrs(h5_dset, attrs)
-
-            self.assertEqual(len(h5_dset.attrs), len(attrs))
-
-            for key, expected_val in attrs.items():
-                self.assertTrue(np.all(get_attr(h5_dset, key) == expected_val))
 
         os.remove(file_path)
 

@@ -14,7 +14,8 @@ from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
-from ..core.io.write_utils import build_ind_val_dsets, VALUES_DTYPE
+from ..core.io.write_utils import VALUES_DTYPE
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 # TODO: implement phase compensation

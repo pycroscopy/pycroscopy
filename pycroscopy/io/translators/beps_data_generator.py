@@ -8,10 +8,10 @@ from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
 from ...core.io.hdf_writer import HDFwriter
-from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr, build_reduced_spec_dsets
+from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr
 from ...core.io.dtype_utils import stack_real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets
+from pycroscopy.core.io.hdf_utils import build_ind_val_dsets, build_reduced_spec_dsets
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 from ...core.io.pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function

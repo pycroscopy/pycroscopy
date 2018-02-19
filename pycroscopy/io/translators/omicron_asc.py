@@ -64,11 +64,12 @@ class AscTranslator(NumpyTranslator):
 
         # pass on the the necessary pieces of information onto the numpy translate that will handle the creation and
         # writing to the h5 file.
-        h5_path = super(AscTranslator, self).translate(h5_path, raw_data_2d, num_rows, num_cols, qty_name='Current',
-                                                       data_unit='nA', spec_name='Bias', spec_unit='V',
-                                                       spec_val=volt_vec, scan_height=100, scan_width=200,
-                                                       spatial_unit='nm', data_type='STS', translator_name='ASC',
-                                                       parms_dict=parm_dict)
+        h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Current', 'nA',
+                                                       {'sizes': [num_cols, num_rows], 'units': ['nm', 'nm'],
+                                                        'names': ['X', 'Y']},
+                                                       {'sizes': [spectra_length], 'units': ['V'], 'names': ['Bias'],
+                                                        'initial_value': [-1], 'steps': [2 * max_v / spectra_length]},
+                                                       translator_name='ASC', parms_dict=parm_dict)
 
         return h5_path
 
