@@ -8,8 +8,8 @@ v 1.0 goals
   * Think about whether the rest of the code should be organized by instrument
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
 2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
-3. 50% done - test utils for .core - 2+ months (assuming work on weekends only)
-4. DONE - good utilities for interrogating data - pycro data
+3. mostly done - test utils for .core io
+4. mostly done - good utilities for interrogating data - pycro data, what about the rest of the file?
 5. partly done - good documentation for both users and developers
 
   * Need one per module in .core + finish plot_utils tour
@@ -18,8 +18,8 @@ v 1.0 goals
 6. mostly done - generic visualizer. Re-enable this in pycrodata
 7. mostly done - good utils for generating publishable plots - easy ~ 1 day
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
-9. Examples within docs for popular functions
-10. a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
+9. Examples within docs for popular functions <-- just use the examples from the tests!
+10. DONE - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
 
 Documentation
 -------------
@@ -60,6 +60,7 @@ Core development
 
 Long-term
 ^^^^^^^^^
+* A sister package with the base labview subvis that enable writing pycroscopy compatible hdf5 files. The actual acquisition can be ignored.
 * multi-node computing capability in parallel_compute
 * Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
