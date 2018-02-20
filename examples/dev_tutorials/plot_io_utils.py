@@ -47,6 +47,22 @@ print('Available memory in this machine: {}'.format(px.io_utils.format_size(px.i
 print('{} seconds = {}'.format(14497.34, px.io_utils.format_time(14497.34)))
 
 ################################################################################################
+# You can generate your own formatting function based using the generic function: format_quantity():
+# For example, if format_time() were not available, we could get the same functionality via:
+units = ['msec', 'sec', 'mins', 'hours']
+factors = [0.001, 1, 60, 3600]
+time_value = 14497.34
+print('{} seconds = {}'.format(14497.34, px.io_utils.format_quantity(time_value, units, factors)))
+
+################################################################################################
+# Pycroscopy also has a handy function for the inverse problem of getting a numeric value from a formatted string:
+unit_names = ["MHz", "kHz"]
+unit_magnitudes = [1E+6, 1E+3]
+str_value = "4.32 MHz"
+num_value = px.io_utils.formatted_str_to_number(str_value, unit_names, unit_magnitudes, separator=' ')
+print('formatted_str_to_number says: {} = {}'.format(str_value, num_value))
+
+################################################################################################
 # Time is of the essence and every developer wants to make the best use of all available cores in a CPU for massively
 # parallel computations. recommend_cpu_cores() is a popular function that looks at the number of parallel operations,
 # available CPU cores, duration of each computation to recommend the number of cores that should be used for any
