@@ -1,32 +1,26 @@
 from codecs import open
 import os
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
-
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
-if on_rtd:
-    requirements = ['psutil',
-                    'xlrd>=1.0.0']
-else:
-    requirements = ['numpy_groupies>=0.9.6',
-                    'pyqtgraph>=0.10',
-                    'h5py>=2.6.0',
-                    'igor',
-                    'matplotlib>=2.0.0',
-                    'scikit-learn>=0.17.1',
-                    'xlrd>=1.0.0',
-                    'joblib>=0.11',
-                    'psutil',
-                    'scikit-image>=0.12.3',
-                    'scipy>=0.17.1',
-                    'numpy>=1.11.0',
-                    'ipywidgets>=5.2.2',
-                    'ipython>=5.1.0']
+requirements = ['numpy_groupies>=0.9.6',
+                'pyqtgraph>=0.10',
+                'h5py>=2.6.0',
+                'igor',
+                'matplotlib>=2.0.0',
+                'scikit-learn>=0.17.1',
+                'xlrd>=1.0.0',
+                'joblib>=0.11.0',
+                'psutil',
+                'scikit-image>=0.12.3',
+                'scipy>=0.17.1',
+                'numpy>=1.11.0',
+                'ipywidgets>=5.2.2',
+                'ipython>=5.1.0']
 
 setup(
     name='pycroscopy',
