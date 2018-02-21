@@ -5,6 +5,7 @@ v 1.0 goals
 1. mostly done - reogranize to have a .core submodule with the core functionality, .contrib to have non-verified code
 
   * This is perhaps the last oppurtunity for major restructuring and renaming
+  * hdf_utils is becoming very big and all the functions deal with h5 in some form whether it is for reading or writing. Perhaps it should be split into read_utils and write_utils? hdf is implied.
   * Think about whether the rest of the code should be organized by instrument
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
 2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
@@ -19,7 +20,14 @@ v 1.0 goals
 7. mostly done - good utils for generating publishable plots - easy ~ 1 day
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
-10. DONE - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
+10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
+ 
+  * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions. 
+11. Restructure Process such that:
+  * It allows the user to apply the process to a single unit of the data to tweak the parameters
+  * This requires a new function to update the parameters and does whatever init already does
+  * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
+    
 
 Documentation
 -------------
@@ -32,10 +40,14 @@ Fundamental tutorials on how to use pycroscopy
 * A tour of what is where and why
 
  * pycroscopy pacakge organization - a short writeup on what is where and why
-* A tour of the hdf_utils functions used for writing h5 files since these functions need data to show / explain them.
+* A tour of all utils in core.io at the very minimum:
   
-  * chunking the main dataset
-* A tour of the io_utils functions since these functions need data to show / explain them.
+  * hdf_utils: paartially done - functions used for writing h5 files since these functions need data to show / explain them - chunking the main dataset
+  * io_utils: DONE
+  * dtype_utils : in progress
+  * hdf_writer + VirtualData : we already have something. Needs to be updated
+  * Numpy translator : Done in some way
+  * write_utils: Not done
 * How to write your own analysis class based on the (to-be simplified) Model class
 * Links to tutorials on how to use pycharm, Git, 
 
