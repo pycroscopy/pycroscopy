@@ -13,7 +13,7 @@ from .plot_utils import plot_map
 
 def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
                            pos_ref_vals=None, spec_ref_vals=None, pos_plot_2d=True, spec_plot_2d=True, spec_xdim=None,
-                           pos_xdim=None):
+                           pos_xdim=None, verbose=False):
     """
     Generates a simple visualizer for visualizing simple datasets (up to 4 dimensions). The visualizer will ONLY work
     within the context of a jupyter notebook!
@@ -47,27 +47,30 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
         Name of dimension with respect to which the spectral data will be plotted for 1D plots
     pos_xdim : str, optional
         Name of dimension with respect to which the position data will be plotted for 1D plots
+    verbose : bool, optional
+        Whether or not to print log statements
     """
+
     def check_data_type(data_mat):
         if data_mat.dtype.names is not None:
             return 2, list(data_mat.dtype.names), None
         if data_mat.dtype in [np.complex64, np.complex128, np.complex]:
-            return 1, ['Real','Imaginary', 'Amplitude','Phase'], [np.real, np.imag, np.abs, np.angle]
+            return 1, ['Real', 'Imaginary', 'Amplitude', 'Phase'], [np.real, np.imag, np.abs, np.angle]
         else:
             return 0, None, None
 
     def get_clims(data, stdev=2):
         avg = np.mean(data)
         std = np.std(data)
-        return (avg -stdev*std, avg + stdev*std)
+        return avg - stdev * std, avg + stdev * std
 
     def get_slice_string(slice_dict, dim_names, values_dict, units_dict):
         slice_str = ''
         for cur_name in dim_names:
             if cur_name in dim_names:
                 slice_str += '{} = {} {}\n'.format(cur_name,
-                                                 values_dict[cur_name][slice_dict[cur_name]],
-                                                 units_dict[cur_name])
+                                                   values_dict[cur_name][slice_dict[cur_name]],
+                                                   units_dict[cur_name])
         slice_str = slice_str[:-1]
         return slice_str
 
@@ -76,7 +79,7 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
         for dim_name in pos_dim_names + spec_dim_names:
             cur_slice = slice(None)
             if slice_dict[dim_name] is not None:
-                cur_slice = slice(slice_dict[dim_name], slice_dict[dim_name]+1)
+                cur_slice = slice(slice_dict[dim_name], slice_dict[dim_name] + 1)
             slice_list.append(cur_slice)
         return tuple(slice_list)
 
@@ -115,24 +118,34 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
 
     pos_plot_2d = pos_plot_2d and len(pos_dim_names) > 1
     spec_plot_2d = spec_plot_2d and len(spec_dim_names) > 1
+    if verbose:
+        print('Plot 2D: Positions: {}, Spectroscopic: {}'.format(pos_plot_2d, spec_plot_2d))
 
     if not spec_plot_2d and spec_xdim is None:
         # Take the largest dimension you can find:
         spec_xdim = spec_dim_names[np.argmax(data_mat.shape[len(pos_dim_names):])]
+        if verbose:
+            print('automatically chose X axis for 1D Spectroscopic plot as {}'.format(spec_xdim))
 
     if not pos_plot_2d and pos_xdim is None:
         # Take the largest dimension you can find:
         pos_xdim = pos_dim_names[np.argmax(data_mat.shape[:len(pos_dim_names)])]
-
-    if pos_ref_vals is None:
-        spec_ref_vals = {}
-        for ind, name in enumerate(pos_dim_names):
-            spec_ref_vals[name] = np.arange(data_mat.shape[ind + len(pos_dim_names)])
+        if verbose:
+            print('automatically chose X axis for 1D Position plot as {}'.format(pos_xdim))
 
     if spec_ref_vals is None:
+        spec_ref_vals = {}
+        for ind, name in enumerate(spec_dim_names):
+            spec_ref_vals[name] = np.arange(data_mat.shape[ind + len(pos_dim_names)])
+        if verbose:
+            print('automatically generated reference Spectroscopic values'.format(spec_ref_vals))
+
+    if pos_ref_vals is None:
         pos_ref_vals = {}
         for ind, name in enumerate(pos_dim_names):
             pos_ref_vals[name] = np.arange(data_mat.shape[ind])
+        if verbose:
+            print('automatically generated reference Position values'.format(pos_ref_vals))
 
     pos_dim_units = {}
     spec_dim_units = {}
@@ -140,6 +153,9 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
         pos_dim_units[name] = unit
     for name, unit in zip(spec_dim_names, spec_dim_units_old):
         spec_dim_units[name] = unit
+    if verbose:
+        print('(re)generated units for positions as: {}'.format(pos_dim_units))
+        print('(re)generated units for spectroscopic as: {}'.format(spec_dim_units))
 
     data_type, data_names, data_funcs = check_data_type(data_mat)
 
@@ -147,29 +163,44 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
     component_name = 'Real'
 
     if data_type == 1:
+        if verbose:
+            print('Data found to be of type: complex')
         sub_data = data_funcs[0](data_mat)
         component_name = data_names[0]
     elif data_type == 2:
+        if verbose:
+            print('Data found to be of type: compound')
         component_name = data_names[0]
         sub_data = data_mat[component_name]
+    else:
+        if verbose:
+            print('Data found to be of type: scalar / real')
 
     component_title = 'Component: ' + component_name
+    if verbose:
+        print('default component name: {}'.format(component_name))
 
     clims = get_clims(sub_data)
+    if verbose:
+        print('Default clims: {}'.format(clims))
 
     spatmap_slicing = get_spatmap_slice_dict()
-    current_spatmap = naive_slice(sub_data, spatmap_slicing)
     spgram_slicing = get_spgram_slice_dict()
+    if verbose:
+        print('Slicing: Spatial: {}, Spectrogram: {}'.format(spatmap_slicing, spgram_slicing))
+    current_spatmap = naive_slice(sub_data, spatmap_slicing)
     current_spgram = naive_slice(sub_data, spgram_slicing)
+    if verbose:
+        print('Spatial map data shape: {}, Spectrogram data shape: {}'.format(current_spatmap.shape,
+                                                                              current_spgram.shape))
 
-    # print(current_spatmap.shape, current_spgram.shape)
-
-    fig, axes = plt.subplots(ncols=2, figsize=(14,7))
+    fig, axes = plt.subplots(ncols=2, figsize=(15.5, 7))
     # axes[0].hold(True)
     spec_titles = get_slice_string(spatmap_slicing, spec_dim_names, spec_ref_vals, spec_dim_units)
     axes[0].set_title('Spatial Map for\n' + component_title + '\n' + spec_titles)
     if pos_plot_2d:
-        img_spat, cbar_spat = plot_map(axes[0], current_spatmap, x_size=data_mat.shape[1], y_size=data_mat.shape[0],
+        img_spat, cbar_spat = plot_map(axes[0], current_spatmap, aspect='auto',
+                                       x_size=data_mat.shape[1], y_size=data_mat.shape[0],
                                        clim=clims)
         axes[0].set_xlabel(pos_dim_names[1] + ' (' + pos_dim_units_old[1] + ')')
         axes[0].set_ylabel(pos_dim_names[0] + ' (' + pos_dim_units_old[0] + ')')
@@ -183,6 +214,9 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
         if current_spatmap.ndim > 1:
             other_pos_dim = pos_dim_names.copy()
             other_pos_dim.remove(pos_xdim)
+            if verbose:
+                print('(Taking the first of) all other position dimensions indices: {} in {}'.format(other_pos_dim,
+                                                                                                     pos_ref_vals))
             other_pos_dim = other_pos_dim[0]
             axes[0].legend(pos_ref_vals[other_pos_dim])
 
@@ -191,10 +225,10 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
     if spec_plot_2d:
         axes[1].set_xlabel(spec_dim_names[1] + ' (' + spec_dim_units_old[1] + ')')
         axes[1].set_ylabel(spec_dim_names[0] + ' (' + spec_dim_units_old[0] + ')')
-        img_spec, cbar_spec = plot_map(axes[1], current_spgram,
+        img_spec, cbar_spec = plot_map(axes[1], current_spgram, aspect='auto',
                                        x_size=data_mat.shape[len(pos_dim_names) + 1],
                                        y_size=data_mat.shape[len(pos_dim_names)],
-                                        cbar_label=component_name, clim=clims)
+                                       cbar_label=component_name, clim=clims)
     else:
         axes[1].set_xlabel(spec_xdim + ' (' + spec_dim_units[spec_xdim] + ')')
         if current_spgram.shape[0] != spec_ref_vals[spec_xdim].size:
@@ -210,7 +244,7 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
 
     slice_dict = {}
     for dim_ind, dim_name in enumerate(pos_dim_names):
-        slice_dict[dim_name] = (0, sub_data.shape[dim_ind] -1, 1)
+        slice_dict[dim_name] = (0, sub_data.shape[dim_ind] - 1, 1)
     for dim_ind, dim_name in enumerate(spec_dim_names):
         slice_dict[dim_name] = (0, sub_data.shape[dim_ind + len(pos_dim_names)] - 1, 1)
     if data_type > 0:
