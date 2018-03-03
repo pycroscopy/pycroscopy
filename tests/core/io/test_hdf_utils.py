@@ -460,7 +460,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True)
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -473,7 +473,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Bias'])
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -484,7 +484,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             with self.assertRaises(KeyError):
-                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Does not exist'])
+                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Does not exist'])
 
     def test_get_unit_values_illegal_dset(self):
         self.__ensure_test_h5_file()
@@ -492,7 +492,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Ancillary']
             with self.assertRaises(AssertionError):
-                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Bias'])
+                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
 
     def test_get_unit_values_source_spec_single(self):
         self.__ensure_test_h5_file()
@@ -501,7 +501,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)))}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names='Bias')
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names='Bias')
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -515,7 +515,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cols = 5
             expected = {'X': np.float16(np.arange(num_cols) * 50),
                         'Y': np.float16(np.arange(num_rows) * 1.25)}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=False)
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -527,7 +527,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_vals = h5_f['/Raw_Measurement/Position_Values']
             num_rows = 3
             expected = {'Y': np.float16(np.arange(num_rows) * 1.25)}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=False, dim_names='Y')
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names='Y')
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))

@@ -379,8 +379,8 @@ class PycroDataset(h5py.Dataset):
         spec_dim_names = self.spec_dim_labels
         pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
         spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
-        pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals, is_spec=False)
-        spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals, is_spec=True)
+        pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals)
+        spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals)
 
         simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
                                pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)

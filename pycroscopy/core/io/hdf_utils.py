@@ -1861,7 +1861,7 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
     return ds_spec_inds_mat
 
 
-def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
+def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
     """
     Gets the unit arrays of values that describe the spectroscopic dimensions
 
@@ -1871,10 +1871,10 @@ def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
         Spectroscopic or Position Indices dataset
     h5_vals : h5py.Dataset
         Spectroscopic or Position Values dataset
-    is_spec : bool, recommended
-        Are the provided datasets spectral. Default = True
     dim_names : str, or list of str, Optional
         Names of the dimensions of interest. Default = all
+    verbose : bool, optional
+        Whether or not to print debugging statements. Default - off
 
     Note - this function can be extended / modified for ancillary position dimensions as well
 
@@ -1893,25 +1893,48 @@ def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
     # First load to memory
     inds_mat = h5_inds[()]
     vals_mat = h5_vals[()]
+
+    is_spec = False
+    if inds_mat.shape[0] < inds_mat.shape[1]:
+        is_spec = True
+
+    if verbose:
+        print(
+            'Ancillary matrices of shape: {}, hence determined to be Spectroscopic:{}'.format(inds_mat.shape, is_spec))
+
     if not is_spec:
         # Convert to spectral shape
         inds_mat = np.transpose(inds_mat)
         vals_mat = np.transpose(vals_mat)
 
+    full_dim_names = get_attr(h5_inds, 'labels')
+    if verbose:
+        print('Found dimensions of names: {}'.format(full_dim_names))
+
+    if len(full_dim_names) != inds_mat.shape[0]:
+        raise ValueError('Length of dimension names list: {} not matching with shape of dataset: {}'
+                         '.'.format(len(full_dim_names), inds_mat.shape[0]))
+
     # For all dimensions, find where the index = 0
     # basically, we are indexing all dimensions to 0
     first_indices = []
-    for dim_ind in range(inds_mat.shape[0]):
+    for dim_ind, dim_name in enumerate(full_dim_names):
+        # things are too big to print out here
         first_indices.append(inds_mat[dim_ind] == 0)
     first_indices = np.vstack(first_indices)
 
-    full_dim_names = get_attr(h5_inds, 'labels')
     if dim_names is None:
         dim_names = full_dim_names
+        if verbose:
+            print('Going to return unit values for all dimensions: {}'.format(full_dim_names))
     else:
         if isinstance(dim_names, (str, unicode)):
             dim_names = [dim_names]
         assert isinstance(dim_names, (list, tuple))
+
+        if verbose:
+            print('Checking to make sure that the target dimension names: {} exist in the datasets attributes: {}'
+                  '.'.format(dim_names, full_dim_names))
 
         # check to make sure that the dimension names exist in the datasets:
         for dim_name in dim_names:
@@ -1927,6 +1950,10 @@ def get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=None):
         # Find indices of all other dimensions
         remaining_dims = list(range(inds_mat.shape[0]))
         remaining_dims.remove(desired_row_ind)
+
+        if verbose:
+            print('{} was found at position: {}. Indices of all other dimensions: {}'.format(dim_name, desired_row_ind,
+                                                                                             remaining_dims))
 
         # The intersection of all these indices should give the desired index for the desired row
         intersections = np.all(first_indices[remaining_dims, :], axis=0)
