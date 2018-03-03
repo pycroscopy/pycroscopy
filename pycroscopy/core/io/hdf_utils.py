@@ -219,6 +219,31 @@ def get_attributes(h5_object, attr_names=None):
     return att_dict
 
 
+def get_region(h5_dset, reg_ref_name):
+    """
+    Gets the region in a dataset specified by a region reference
+
+    Parameters
+    ----------
+    h5_dset : h5py.Dataset
+        Dataset containing the region reference
+    reg_ref_name : str / unicode
+        Name of the region reference
+
+    Returns
+    -------
+    value : np.ndarray
+        Data specified by the region reference. Note that a squeeze is applied by default.
+    """
+    if not isinstance(reg_ref_name, (str, unicode)):
+        raise TypeError('reg_ref_name should be a string')
+    if not isinstance(h5_dset, h5py.Dataset):
+        raise TypeError('h5_dset should be of type h5py.Dataset')
+    # this may raise KeyErrors. Let it
+    reg_ref = h5_dset.attrs[reg_ref_name]
+    return np.squeeze(h5_dset[reg_ref])
+
+
 def get_h5_obj_refs(obj_names, h5_refs):
     """
     Given a list of H5 references and a list of names,
