@@ -12,7 +12,7 @@ import numpy as np
 from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
 from .dtype_utils import flatten_to_real
-from ..viz.jupyter_utils import simple_ndim_visualizer
+from ..viz.jupyter_utils import simple_ndim_visualizer, VizDimension
 
 
 class PycroDataset(h5py.Dataset):
@@ -372,15 +372,20 @@ class PycroDataset(h5py.Dataset):
             Slicing instructions
         """
         # TODO: Robust implementation that allows slicing
-        if len(self.pos_dim_labels + self.spec_dim_labels) > 4:
-            raise NotImplementedError('Unable to support visualization of more than 4 dimensions. Try slicing')
-        data_mat = self.get_n_dim_form()
-        pos_dim_names = self.pos_dim_labels[::-1]
-        spec_dim_names = self.spec_dim_labels
-        pos_dim_units_old = get_attr(self.h5_pos_inds, 'units')
-        spec_dim_units_old = get_attr(self.h5_spec_inds, 'units')
-        pos_ref_vals = get_unit_values(self.h5_pos_inds, self.h5_pos_vals)
-        spec_ref_vals = get_unit_values(self.h5_spec_inds, self.h5_spec_vals)
+        if len(self.pos_dim_labels) > 2 or len(self.spec_dim_labels) > 2:
+            raise NotImplementedError('Unable to support visualization of more than 2 position / spectroscopic '
+                                      'dimensions. Try slicing')
 
-        simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
-                               pos_ref_vals=pos_ref_vals, spec_ref_vals=spec_ref_vals, **kwargs)
+        pos_dims = []
+        for name, units, values in zip(self.pos_dim_labels,
+                                       get_attr(self.h5_pos_inds, 'units'),
+                                       get_unit_values(self.h5_pos_inds, self.h5_pos_vals)):
+            pos_dims.append(VizDimension(name, units, values=values))
+
+        spec_dims = []
+        for name, units, values in zip(self.spec_dim_labels,
+                                       get_attr(self.h5_spec_inds, 'units'),
+                                       get_unit_values(self.h5_spec_inds, self.h5_spec_vals)):
+            spec_dims.append(VizDimension(name, units, values=values))
+
+        simple_ndim_visualizer(self.get_n_dim_form(), pos_dims, spec_dims, **kwargs)
