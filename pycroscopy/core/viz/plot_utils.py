@@ -11,6 +11,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import inspect
 import os
 import sys
+from numbers import Number
 from warnings import warn
 import h5py
 import ipywidgets as widgets
@@ -386,8 +387,8 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
         _ = cbar_for_line_plot(axis, num_lines, **kwargs)
 
 
-def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=None, num_ticks=4,
-             stdevs=None, cbar_label=None, tick_font_size=14, origin='lower', **kwargs):
+def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=None, x_size=None, y_size=None,
+             num_ticks=4, stdevs=None, cbar_label=None, tick_font_size=14, origin='lower', **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
@@ -401,6 +402,10 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
+    x_vec : array-like, 1D, optional
+        The references values that will be used for tick values on the X axis
+    y_vec : array-like, 1D, optional
+        The references values that will be used for tick values on the Y axis
     x_size : float, optional, default = number of pixels in x direction
         Extent of tick marks in the X axis. This could be something like 1.5 for 1.5 microns
     y_size : float, optional, default = number of pixels in y direction
@@ -437,14 +442,34 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_size=None, y_size=
     im_handle = axis.imshow(img, **kwargs)
 
     if show_xy_ticks is True:
-        if x_size is not None and y_size is not None:
-            x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
-            y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
-            axis.set_xticks(x_ticks)
-            axis.set_yticks(y_ticks)
-            axis.set_xticklabels([str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks])
-            axis.set_yticklabels([str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks])
-            set_tick_font_size(axis, tick_font_size)
+
+        x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
+        if x_vec is not None:
+            if not isinstance(x_vec, (np.ndarray, list, tuple)) or len(x_vec) != img.shape[1]:
+                raise ValueError('x_vec should be array-like with shape equal to the second axis of img')
+            x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
+        elif isinstance(x_size, Number):
+            x_tick_labs = [str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks]
+        else:
+            x_tick_labs = [str(ind) for ind in x_ticks]
+
+        axis.set_xticks(x_ticks)
+        axis.set_xticklabels(x_tick_labs)
+
+        y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
+        if y_vec is not None:
+            if not isinstance(y_vec, (np.ndarray, list, tuple)) or len(y_vec) == img.shape[0]:
+                raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
+            y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
+        elif isinstance(x_size, Number):
+            y_tick_labs = [str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks]
+        else:
+            y_tick_labs = [str(ind) for ind in y_ticks]
+
+        axis.set_yticks(y_ticks)
+        axis.set_yticklabels(y_tick_labs)
+
+        set_tick_font_size(axis, tick_font_size)
     else:
         axis.set_xticks([])
         axis.set_yticks([])

@@ -86,7 +86,7 @@ class TestHDFUtils(unittest.TestCase):
                                                  'att_4': ['str_1', 'str_2', 'str_3']})
 
             writer = HDFwriter(h5_f)
-            h5_refs_list = writer.write(group_source, verbose=False)
+            h5_refs_list = writer.write(group_source, print_log=False)
 
             [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
             h5_source_group = h5_source_main.parent
@@ -123,7 +123,7 @@ class TestHDFUtils(unittest.TestCase):
                                            attrs={'att_1': 'string_val', 'att_2': 1.2345,
                                                     'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
 
-            h5_refs_list = writer.write(group_results_1, verbose=False)
+            h5_refs_list = writer.write(group_results_1, print_log=False)
 
             [h5_results_1_main] = hdf_utils.get_h5_obj_refs([dset_results_1_main.name], h5_refs_list)
             [h5_results_1_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
@@ -146,7 +146,7 @@ class TestHDFUtils(unittest.TestCase):
                                            attrs={'att_1': 'other_string_val', 'att_2': 5.4321,
                                                     'att_3': [4, 1, 3], 'att_4': ['s', 'str_2', 'str_3']})
 
-            h5_refs_list = writer.write(group_results_2, verbose=False)
+            h5_refs_list = writer.write(group_results_2, print_log=False)
 
             [h5_results_2_main] = hdf_utils.get_h5_obj_refs([dset_results_2_main.name], h5_refs_list)
             [h5_results_2_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
@@ -173,6 +173,9 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(AssertionError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], ['quantity', 'units'])
+
+    def test_get_region(self):
+        assert False
 
     def test_get_attr_illegal_04(self):
         self.__ensure_test_h5_file()
@@ -457,7 +460,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True)
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -470,7 +473,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Bias'])
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -481,7 +484,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             with self.assertRaises(KeyError):
-                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Does not exist'])
+                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Does not exist'])
 
     def test_get_unit_values_illegal_dset(self):
         self.__ensure_test_h5_file()
@@ -489,7 +492,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Ancillary']
             with self.assertRaises(AssertionError):
-                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names=['Cycle', 'Bias'])
+                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
 
     def test_get_unit_values_source_spec_single(self):
         self.__ensure_test_h5_file()
@@ -498,7 +501,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             num_cycle_pts = 7
             expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)))}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=True, dim_names='Bias')
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names='Bias')
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -512,7 +515,7 @@ class TestHDFUtils(unittest.TestCase):
             num_cols = 5
             expected = {'X': np.float16(np.arange(num_cols) * 50),
                         'Y': np.float16(np.arange(num_rows) * 1.25)}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=False)
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -524,7 +527,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_vals = h5_f['/Raw_Measurement/Position_Values']
             num_rows = 3
             expected = {'Y': np.float16(np.arange(num_rows) * 1.25)}
-            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, is_spec=False, dim_names='Y')
+            ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names='Y')
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
                 self.assertTrue(np.allclose(exp, ret_val[key]))
@@ -1147,7 +1150,7 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(expected,
                                             np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
 
-    def test_build_ind_val_dsets_legal_bare_minimum_pos(self):
+    def test_write_ind_val_dsets_legal_bare_minimum_pos(self):
         num_cols = 3
         num_rows = 2
         dim_names = ['X', 'Y']
@@ -1157,17 +1160,17 @@ class TestHDFUtils(unittest.TestCase):
 
         pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols))).T
-        file_path = 'test_build_ind_val_dsets.h5'
+        file_path = 'test_write_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_f, descriptor, is_spectral=False)
+            h5_inds, h5_vals = hdf_utils.write_ind_val_dsets(h5_f, descriptor, is_spectral=False)
 
             self. __validate_aux_dset_pair(h5_f, h5_inds, h5_vals, dim_names, dim_units, pos_data,
                                            is_spectral=False)
 
         os.remove(file_path)
 
-    def test_build_ind_val_dsets_legal_bare_minimum_spec(self):
+    def test_write_ind_val_dsets_legal_bare_minimum_spec(self):
         num_cols = 3
         num_rows = 2
         dim_names = ['X', 'Y']
@@ -1177,17 +1180,17 @@ class TestHDFUtils(unittest.TestCase):
 
         spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols)))
-        file_path = 'test_build_ind_val_dsets.h5'
+        file_path = 'test_write_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
             h5_group = h5_f.create_group("Blah")
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, descriptor, is_spectral=True)
+            h5_inds, h5_vals = hdf_utils.write_ind_val_dsets(h5_group, descriptor, is_spectral=True)
 
             self.__validate_aux_dset_pair(h5_group, h5_inds, h5_vals, dim_names, dim_units, spec_data,
                                           is_spectral=True)
         os.remove(file_path)
 
-    def test_build_ind_val_dsets_legal_override_steps_offsets_base_name(self):
+    def test_write_ind_val_dsets_legal_override_steps_offsets_base_name(self):
         num_cols = 2
         num_rows = 3
         dim_names = ['X', 'Y']
@@ -1207,17 +1210,17 @@ class TestHDFUtils(unittest.TestCase):
         spec_vals = np.vstack((np.tile(np.arange(num_cols), num_rows) * col_step + col_initial,
                               np.repeat(np.arange(num_rows), num_cols) * row_step + row_initial))
 
-        file_path = 'test_build_ind_val_dsets.h5'
+        file_path = 'test_write_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
             h5_group = h5_f.create_group("Blah")
-            h5_inds, h5_vals = hdf_utils.build_ind_val_dsets(h5_group, descriptor, is_spectral=True,
+            h5_inds, h5_vals = hdf_utils.write_ind_val_dsets(h5_group, descriptor, is_spectral=True,
                                                              base_name=new_base_name)
             self.__validate_aux_dset_pair(h5_group, h5_inds, h5_vals, dim_names, dim_units, spec_inds,
                                           vals_matrix=spec_vals, base_name=new_base_name, is_spectral=True)
         os.remove(file_path)
 
-    def test_build_ind_val_dsets_illegal(self):
+    def test_write_ind_val_dsets_illegal(self):
         num_cols = 3
         num_rows = 2
         dim_names = ['X', 'Y']
@@ -1225,14 +1228,14 @@ class TestHDFUtils(unittest.TestCase):
 
         descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
 
-        file_path = 'test_build_ind_val_dsets.h5'
+        file_path = 'test_write_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path, mode='w') as h5_f:
             pass
 
         with self.assertRaises(ValueError):
             # h5_f should be valid in terms of type but closed
-            _ = hdf_utils.build_ind_val_dsets(h5_f, descriptor)
+            _ = hdf_utils.write_ind_val_dsets(h5_f, descriptor)
 
         os.remove(file_path)
 
@@ -1391,7 +1394,7 @@ class TestHDFUtils(unittest.TestCase):
                                np.repeat(np.arange(2), 7)))
 
         with h5py.File(file_path) as h5_f:
-            h5_spec_inds, h5_spec_vals = hdf_utils.build_ind_val_dsets(h5_f, spec_dims, is_spectral=True)
+            h5_spec_inds, h5_spec_vals = hdf_utils.write_ind_val_dsets(h5_f, spec_dims, is_spectral=True)
             self.__validate_aux_dset_pair(h5_f, h5_spec_inds, h5_spec_vals, spec_names, spec_units, spec_data,
                                           is_spectral=True)
 
@@ -1427,8 +1430,8 @@ class TestHDFUtils(unittest.TestCase):
                                np.repeat(np.arange(2), 7)))
 
         with h5py.File(file_path) as h5_f:
-            h5_spec_inds, h5_spec_vals = hdf_utils.build_ind_val_dsets(h5_f, spec_dims, is_spectral=True)
-            h5_pos_inds, h5_pos_vals = hdf_utils.build_ind_val_dsets(h5_f, pos_dims, is_spectral=False)
+            h5_spec_inds, h5_spec_vals = hdf_utils.write_ind_val_dsets(h5_f, spec_dims, is_spectral=True)
+            h5_pos_inds, h5_pos_vals = hdf_utils.write_ind_val_dsets(h5_f, pos_dims, is_spectral=False)
 
             pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, None,
                                                       None, h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
@@ -1628,7 +1631,7 @@ class TestHDFUtils(unittest.TestCase):
 
     """  
      
-    def test_build_reduced_spec_dsets_2d_to_1d(self):
+    def test_write_reduced_spec_dsets_2d_to_1d(self):
         self.__ensure_test_h5_file()
         duplicate_path = 'copy_test_hdf_utils.h5'
         self.__delete_existing_file(duplicate_path)
@@ -1638,7 +1641,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_spec_vals_orig = h5_f['/Raw_Measurement/Spectroscopic_Values']
             new_base_name = 'Blah'
             cycle_starts = np.where(h5_spec_inds_orig[0] == 0)[0]
-            h5_spec_inds_new, h5_spec_vals_new = hdf_utils.build_reduced_spec_dsets(h5_spec_inds_orig.parent,
+            h5_spec_inds_new, h5_spec_vals_new = hdf_utils.write_reduced_spec_dsets(h5_spec_inds_orig.parent,
                                                                                     h5_spec_inds_orig,
                                                                                     h5_spec_vals_orig,
                                                                                     [False, True], cycle_starts,
