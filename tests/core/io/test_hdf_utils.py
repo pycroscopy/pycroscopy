@@ -174,6 +174,9 @@ class TestHDFUtils(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], ['quantity', 'units'])
 
+    def test_get_region(self):
+        assert False
+
     def test_get_attr_illegal_04(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
