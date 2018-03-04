@@ -447,9 +447,15 @@ class PycroDataset(h5py.Dataset):
         pos_dims = []
         for name, units in zip(pos_labels, pos_units):
             pos_dims.append(VizDimension(name, units, values=pos_unit_values[name]))
-
         spec_dims = []
         for name, units in zip(spec_labels, spec_units):
             spec_dims.append(VizDimension(name, units, values=spec_unit_values[name]))
 
-        simple_ndim_visualizer(data_slice, pos_dims, spec_dims, **kwargs)
+        if verbose:
+            print('Position VizDimensions:')
+            for item in pos_dims: print('{}\n{}'.format(len(item.values), item))
+            print('Spectroscopic VizDimensions:')
+            for item in spec_dims: print('{}\n{}'.format(len(item.values), item))
+            print('N dimensional data sent to visualizer of shape: {}'.format(data_slice.shape))
+
+        simple_ndim_visualizer(data_slice, pos_dims, spec_dims, verbose=verbose, **kwargs)
