@@ -39,6 +39,9 @@ class VizDimension(object):
         self.units = units
         self.values = values
 
+    def __repr__(self):
+        return '{} ({}) : {}'.format(self.name, self.units, self.values)
+
 
 def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xdim=None, verbose=False):
     """
