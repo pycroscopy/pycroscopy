@@ -236,17 +236,17 @@ class PycroDataset(h5py.Dataset):
 
         """
 
-        n_dim_data, success = reshape_to_n_dims(self, sort_dims=self.__sort_dims)
+        if self.__n_dim_data is None:
+            self.__n_dim_data, success = reshape_to_n_dims(self, sort_dims=self.__sort_dims)
 
-        if success is not True:
-            raise ValueError('Unable to reshape data to N-dimensional form.')
+            if success is not True:
+                raise ValueError('Unable to reshape data to N-dimensional form.')
 
+        n_dim_data = self.__n_dim_data
         if as_scalar:
-            self.__n_dim_data = flatten_to_real(n_dim_data)
-        else:
-            self.__n_dim_data = n_dim_data
+            n_dim_data = flatten_to_real(self.__n_dim_data)
 
-        return self.__n_dim_data
+        return n_dim_data
 
     def slice(self, as_scalar=False, slice_dict=None):
         """
@@ -287,6 +287,8 @@ class PycroDataset(h5py.Dataset):
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
+
+        # TODO: if data is already loaded into memory, try to avoid I/O and slice in memory!!!!
         data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds)
 
         if as_scalar:
@@ -362,7 +364,7 @@ class PycroDataset(h5py.Dataset):
 
         return pos_slice, spec_slice
 
-    def visualize(self, slice_dict=None, **kwargs):
+    def visualize(self, slice_dict=None, verbose=False, **kwargs):
         """
         Interactive visualization of this dataset. Only available on jupyter notebooks
 
@@ -370,22 +372,84 @@ class PycroDataset(h5py.Dataset):
         ----------
         slice_dict : dictionary, optional
             Slicing instructions
+        verbose : bool, optional
+            Whether or not to print debugging statements. Default = Off
         """
-        # TODO: Robust implementation that allows slicing
-        if len(self.pos_dim_labels) > 2 or len(self.spec_dim_labels) > 2:
-            raise NotImplementedError('Unable to support visualization of more than 2 position / spectroscopic '
-                                      'dimensions. Try slicing')
+        pos_labels = self.pos_dim_labels
+        pos_units = get_attr(self.h5_pos_inds, 'units')
+        spec_labels = self.spec_dim_labels
+        spec_units = get_attr(self.h5_spec_inds, 'units')
+
+        if slice_dict is None:
+            if len(self.pos_dim_labels) > 2 or len(self.spec_dim_labels) > 2:
+                raise NotImplementedError('Unable to support visualization of more than 2 position / spectroscopic '
+                                          'dimensions. Try slicing the dataset')
+            data_slice = self.get_n_dim_form()
+            spec_unit_values = get_unit_values(self.h5_spec_inds, self.h5_spec_vals)
+            pos_unit_values = get_unit_values(self.h5_pos_inds, self.h5_pos_vals)
+
+        else:
+            if not isinstance(slice_dict, dict):
+                raise TypeError('slice_dict should be a dictionary')
+
+            # First work on slicing the ancillary matricies. Determine dimensionality before slicing n dims:
+            pos_slices, spec_slices = self.get_pos_spec_slices(slice_dict)
+            # Things are too big to print here.
+
+            pos_unit_values = get_unit_values(self.h5_pos_inds[np.squeeze(pos_slices), :],
+                                              self.h5_pos_vals[np.squeeze(pos_slices), :],
+                                              all_dim_names=self.pos_dim_labels, verbose=False)
+            spec_unit_values = get_unit_values(self.h5_spec_inds[:, np.squeeze(spec_slices)],
+                                               self.h5_spec_vals[:, np.squeeze(spec_slices)],
+                                               all_dim_names=self.spec_dim_labels, verbose=False)
+            if verbose:
+                print('Position unit values:')
+                print(pos_unit_values)
+                print('Spectroscopic unit values:')
+                print(spec_unit_values)
+
+            # Now unit values will be correct for this slicing
+
+            # additional benefit - remove those dimensions which have at most 1 value:
+            def assemble_dimensions(full_labels, full_units, full_values):
+                new_labels = []
+                new_units = []
+                for dim_ind, dim_name in enumerate(full_labels):
+                    if len(full_values[dim_name]) < 2:
+                        del (full_values[dim_name])
+                    else:
+                        new_labels.append(dim_name)
+                        new_units.append(full_units[dim_ind])
+                return np.array(new_labels), np.array(new_units), full_values
+
+            pos_labels, pos_units, pos_unit_values = assemble_dimensions(pos_labels, pos_units, pos_unit_values)
+            spec_labels, spec_units, spec_unit_values = assemble_dimensions(spec_labels, spec_units, spec_unit_values)
+
+            if verbose:
+                print('After removing singular dimensions:')
+                print('Position: Labels: {}, Units: {}, Values:'.format(pos_labels, pos_units))
+                print(pos_unit_values)
+                print('Spectroscopic: Labels: {}, Units: {}, Values:'.format(spec_labels, spec_units))
+                print(spec_unit_values)
+
+            # see if the total number of pos and spec keys are either 1 or 2
+            if not (0 < len(pos_unit_values) < 3) or not (0 < len(spec_unit_values) < 3):
+                raise ValueError('Number of position ({}) / spectroscopic dimensions ({}) not 1 or 2'
+                                 '. Try slicing again'.format(len(pos_unit_values), len(spec_unit_values)))
+
+            # now should be safe to slice:
+            data_slice, success = self.slice(slice_dict=slice_dict)
+            if success != True:
+                raise ValueError('Something went wrong when slicing the dataset. slice message: {}'.format(success))
+            # don't forget to remove singular dimensions via a squeeze
+            data_slice = np.squeeze(data_slice)
 
         pos_dims = []
-        for name, units, values in zip(self.pos_dim_labels,
-                                       get_attr(self.h5_pos_inds, 'units'),
-                                       get_unit_values(self.h5_pos_inds, self.h5_pos_vals)):
-            pos_dims.append(VizDimension(name, units, values=values))
+        for name, units in zip(pos_labels, pos_units):
+            pos_dims.append(VizDimension(name, units, values=pos_unit_values[name]))
 
         spec_dims = []
-        for name, units, values in zip(self.spec_dim_labels,
-                                       get_attr(self.h5_spec_inds, 'units'),
-                                       get_unit_values(self.h5_spec_inds, self.h5_spec_vals)):
-            spec_dims.append(VizDimension(name, units, values=values))
+        for name, units in zip(spec_labels, spec_units):
+            spec_dims.append(VizDimension(name, units, values=spec_unit_values[name]))
 
-        simple_ndim_visualizer(self.get_n_dim_form(), pos_dims, spec_dims, **kwargs)
+        simple_ndim_visualizer(data_slice, pos_dims, spec_dims, **kwargs)
