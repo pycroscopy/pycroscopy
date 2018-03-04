@@ -1932,8 +1932,9 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbos
     # basically, we are indexing all dimensions to 0
     first_indices = []
     for dim_ind, dim_name in enumerate(all_dim_names):
-        # things are too big to print out here
-        first_indices.append(inds_mat[dim_ind] == 0)
+        # check equality against the minimum value instead of 0 to account for cases when a dimension does not start
+        # from 0 (already been sliced) - think of multi-dimensional slicing!
+        first_indices.append(inds_mat[dim_ind] == np.min(inds_mat[dim_ind]))
     first_indices = np.vstack(first_indices)
 
     if dim_names is None:
@@ -1976,6 +1977,7 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbos
         # apply this slicing to the values dataset:
         unit_values[dim_name] = vals_mat[desired_row_ind, intersections]
 
+    return unit_values
 
 
 def get_source_dataset(h5_group):
