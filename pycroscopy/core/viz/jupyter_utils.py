@@ -17,6 +17,17 @@ if sys.version_info.major == 3:
 
 class VizDimension(object):
     def __init__(self, name, units, values=None):
+        """
+        Simple object that describes a dimension in a dataset by its name, units, and values
+        Parameters
+        ----------
+        name : str / unicode
+            Name of the dimension. For example 'Bias'
+        units : str / unicode
+            Units for this dimension. For example: 'V'
+        values : array-like, optional
+            Values over which this dimension was varied. A linearly increasing set of values will be assumed as default.
+        """
         if not isinstance(name, (str, unicode)):
             raise TypeError('name should be a string')
         if not isinstance(units, (str, unicode)):
@@ -66,7 +77,7 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
     def get_clims(data, stdev=2):
         avg = np.mean(data)
         std = np.std(data)
-        return (avg - stdev * std, avg + stdev * std)
+        return avg - stdev * std, avg + stdev * std
 
     def get_slice_string(slice_dict, dim_list):
         slice_str = ''
@@ -122,6 +133,9 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
         return img_handle
 
     def plot_2d(axis, image_mat, clims, dim_list):
+        if verbose:
+            print('image shape: {}, x_vec: {}, y_vec: {}'.format(image_mat.shape, dim_list[1].values.shape,
+                                                                 dim_list[0].values.shape))
         img, cbar = plot_map(axis, image_mat, aspect='auto', clim=clims,
                              x_vec=dim_list[1].values, y_vec=dim_list[0].values)
         axis.set_xlabel(dim_list[1].name + ' (' + dim_list[1].units + ')', fontsize=16)
