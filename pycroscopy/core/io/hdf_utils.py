@@ -1861,18 +1861,21 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
     return ds_spec_inds_mat
 
 
-def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
+def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbose=False):
     """
     Gets the unit arrays of values that describe the spectroscopic dimensions
 
     Parameters
     ----------
-    h5_inds : h5py.Dataset
+    h5_inds : h5py.Dataset or numpy.ndarray
         Spectroscopic or Position Indices dataset
-    h5_vals : h5py.Dataset
+    h5_vals : h5py.Dataset or numpy.ndarray
         Spectroscopic or Position Values dataset
     dim_names : str, or list of str, Optional
         Names of the dimensions of interest. Default = all
+    all_dim_names : list of str, Optional
+        Names of all the dimensions in these datasets. Use this if supplying numpy arrays instead of h5py.Dataset
+        objects for h5_inds, h5_vals since there is no other way of getting the dimension names.
     verbose : bool, optional
         Whether or not to print debugging statements. Default - off
 
@@ -1884,11 +1887,25 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
         Dictionary containing the unit array for each dimension. The name of the dimensions are the keys.
 
     """
-    assert isinstance(h5_inds, h5py.Dataset)
-    assert isinstance(h5_vals, h5py.Dataset)
+    if all_dim_names is None:
+        allowed_types = h5py.Dataset
+    else:
+        if isinstance(all_dim_names, (list, tuple)):
+            if not np.all([isinstance(obj, (str, unicode)) for obj in all_dim_names]):
+                raise TypeError('all_dim_names should be a list of strings')
+        all_dim_names = np.array(all_dim_names)
+        allowed_types = (h5py.Dataset, np.ndarray)
 
-    # Do we need to check that the provided inds and vals correspond to the same main dataset
+    for dset in [h5_inds, h5_vals]:
+        assert isinstance(dset, allowed_types)
+
+    # Do we need to check that the provided inds and vals correspond to the same main dataset?
     assert h5_inds.shape == h5_vals.shape
+
+    if all_dim_names is None:
+        all_dim_names = get_attr(h5_inds, 'labels')
+    if verbose:
+        print('All dimensions: {}'.format(all_dim_names))
 
     # First load to memory
     inds_mat = h5_inds[()]
@@ -1907,26 +1924,22 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
         inds_mat = np.transpose(inds_mat)
         vals_mat = np.transpose(vals_mat)
 
-    full_dim_names = get_attr(h5_inds, 'labels')
-    if verbose:
-        print('Found dimensions of names: {}'.format(full_dim_names))
-
-    if len(full_dim_names) != inds_mat.shape[0]:
+    if len(all_dim_names) != inds_mat.shape[0]:
         raise ValueError('Length of dimension names list: {} not matching with shape of dataset: {}'
-                         '.'.format(len(full_dim_names), inds_mat.shape[0]))
+                         '.'.format(len(all_dim_names), inds_mat.shape[0]))
 
     # For all dimensions, find where the index = 0
     # basically, we are indexing all dimensions to 0
     first_indices = []
-    for dim_ind, dim_name in enumerate(full_dim_names):
+    for dim_ind, dim_name in enumerate(all_dim_names):
         # things are too big to print out here
         first_indices.append(inds_mat[dim_ind] == 0)
     first_indices = np.vstack(first_indices)
 
     if dim_names is None:
-        dim_names = full_dim_names
+        dim_names = all_dim_names
         if verbose:
-            print('Going to return unit values for all dimensions: {}'.format(full_dim_names))
+            print('Going to return unit values for all dimensions: {}'.format(all_dim_names))
     else:
         if isinstance(dim_names, (str, unicode)):
             dim_names = [dim_names]
@@ -1934,18 +1947,20 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
 
         if verbose:
             print('Checking to make sure that the target dimension names: {} exist in the datasets attributes: {}'
-                  '.'.format(dim_names, full_dim_names))
+                  '.'.format(dim_names, all_dim_names))
 
         # check to make sure that the dimension names exist in the datasets:
         for dim_name in dim_names:
             assert isinstance(dim_name, (str, unicode))
-            if dim_name not in full_dim_names:
+            if dim_name not in all_dim_names:
                 raise KeyError('Dimension {} does not exist in the provided ancillary datasets'.format(dim_name))
 
     unit_values = dict()
     for dim_name in dim_names:
         # Find the row in the spectroscopic indices that corresponds to the dimensions we want to slice:
-        desired_row_ind = np.where(full_dim_names == dim_name)[0][0]
+        if verbose:
+            print('Looking for dimension: {} in {}'.format(dim_name, dim_names))
+        desired_row_ind = np.where(all_dim_names == dim_name)[0][0]
 
         # Find indices of all other dimensions
         remaining_dims = list(range(inds_mat.shape[0]))
@@ -1961,7 +1976,6 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, verbose=False):
         # apply this slicing to the values dataset:
         unit_values[dim_name] = vals_mat[desired_row_ind, intersections]
 
-    return unit_values
 
 
 def get_source_dataset(h5_group):
