@@ -458,7 +458,7 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         if y_vec is not None:
-            if not isinstance(y_vec, (np.ndarray, list, tuple)) or len(y_vec) == img.shape[0]:
+            if not isinstance(y_vec, (np.ndarray, list, tuple)) or len(y_vec) != img.shape[0]:
                 raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
             y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
         elif isinstance(x_size, Number):
