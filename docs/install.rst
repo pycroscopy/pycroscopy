@@ -7,7 +7,7 @@ Installation
 
    2. Install Anaconda 4.2 (Python 3.5) 64-bit -  `Mac <https://repo.continuum.io/archive/Anaconda3-4.2.0-MacOSX-x86_64.pkg>`_ / `Windows <https://repo.continuum.io/archive/Anaconda3-4.2.0-Windows-x86_64.exe>`_ / `Linux <https://repo.continuum.io/archive/Anaconda3-4.2.0-Linux-x86_64.sh>`_
 	  
-   3. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - if possible with administrator priveleges) and type:
+   3. Install pycroscopy - Open a terminal (mac / linux) or command prompt (windows - be sure to install in a location where you have write access.  Don't install as administrator unless you are required to do so.) and type:
    	
 	.. code:: bash
 
@@ -32,13 +32,28 @@ If it does not work try reinstalling the package:
 
   pip uninstall pycroscopy
   pip install pycroscopy
+
+We also recommend periodically updating your anaconda distribution.  To fully update run the following commands.
+
+.. code:: bash
+
+    conda upgrade anaconda
+    conda update --all
   
 Installing from a specific branch (advanced users ONLY)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here, we are installing pycroscopy from the latest development branch. Note that we do not recommend installing pycroscopy this way. 
 
-.. code :: bash
+Before you can install pycroscopy, you need to install git.
+
+.. code:: bash
+
+    conda install git
+
+Once git has installed, you can install pycroscopy from our repository.
+
+.. code:: bash
 
 	pip install -U git+https://github.com/pycroscopy/pycroscopy@dev
 
