@@ -310,9 +310,10 @@ def save_fig_filebox_button(fig, filename):
                             layout={'width': '50%'})
     save_button = widgets.Button(description='Save figure')
 
-    def _save_fig():
+    def _save_fig(junk):
+        filename = name_box.value
         save_path = os.path.join(file_dir, filename)
-        fig.save_fig(save_path, dpi='figure')
+        fig.savefig(save_path, dpi='figure')
         print('Figure saved to "{}".'.format(save_path))
 
     widget_box = widgets.HBox([name_box, save_button])

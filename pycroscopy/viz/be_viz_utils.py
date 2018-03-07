@@ -374,7 +374,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     cid = img_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
-    display(save_fig_filebox_button(fig, h5_sho_dset.file.filename))
+    fig_filename, _ = os.path.splitext(h5_sho_dset.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_sho_plots, sho_quantity=sho_quantity_picker, step_ind=bias_step_picker)
 
 def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
@@ -468,7 +469,8 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         fig.tight_layout()
 
         plt.show()
-        display(save_fig_filebox_button(fig, h5_main.file.filename))
+        fig_filename, _ = os.path.splitext(h5_main.file.filename)
+        display(save_fig_filebox_button(fig, fig_filename+'.png'))
 
         def index_unpacker(step):
             spatial_map = np.abs(np.reshape(h5_main[:, step], pos_dims[::-1]))
@@ -679,8 +681,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     fig.tight_layout()
 
     plt.show()
-
-    display(save_fig_filebox_button(fig, h5_projected_loops.file.filename))
+    fig_filename, _ = os.path.splitext(h5_projected_loops.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
 
     loop_slider = widgets.IntSlider(min=0, max=bias_vec.shape[1]-1, description='Loop Number')
 
@@ -802,8 +804,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
         fig.canvas.draw()
 
     plt.show()
-
-    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_parameters.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
 
 
@@ -1037,8 +1039,8 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
         plt_sho_fit_amp.set_ydata(np.amp(current_sho_fit))
         plt_sho_fit_phase.set_ydata(np.angle(current_sho_fit))
 
-
-    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_parameters.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     display(fig)
     x_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[0]), step=pos_dims[0]/100, value=selected_loop_pos[0])
     y_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[1]), step=pos_dims[1] / 100, value=selected_loop_pos[1])
@@ -1418,7 +1420,8 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
     cid = loop_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
-    display(save_fig_filebox_button(fig, h5_loop_projections.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_projections.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
     widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
     widgets.interact(_update_spec_step, selected_step=spec_step_widget)
