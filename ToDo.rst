@@ -27,6 +27,7 @@ v 1.0 goals
   * It allows the user to apply the process to a single unit of the data to tweak the parameters
   * This requires a new function to update the parameters and does whatever init already does
   * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
+12. Lower the communication barrier by starting a twitter account - Rama?
     
 
 Documentation

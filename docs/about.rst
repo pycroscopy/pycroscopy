@@ -64,7 +64,7 @@ As we see it, there are a few  opportunities in microscopy / imaging and materia
 
 **4. Disjoint communities**
   * Similar analysis routines written by each community (SPM, STEM, TOF SIMs, XRD...) *independently*!
-  * *Need: Centralized repository, instrument agonistic analysis routines that bring communities together*
+  * *Need: Centralized repository, instrument agnoistic analysis routines that bring communities together*
 
 **5. Expensive analysis software**
   * Software supplied with instruments often insufficient / incapable of custom analysis routines
