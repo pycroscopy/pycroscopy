@@ -248,7 +248,7 @@ class PycroDataset(h5py.Dataset):
 
         return n_dim_data
 
-    def slice(self, as_scalar=False, slice_dict=None):
+    def slice(self, slice_dict=None, as_scalar=False, verbose=False):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -256,10 +256,12 @@ class PycroDataset(h5py.Dataset):
 
         Parameters
         ----------
-        as_scalar : bool
-            Should the data be returned as scalar values only.
-        slice_dict : dict
+        slice_dict : dict, optional
             Dictionary of array-likes.
+        as_scalar : bool, optional
+            Should the data be returned as scalar values only.
+        verbose : bool, optionbal
+            Whether or not to print debugging statements
 
         Returns
         -------
@@ -287,9 +289,33 @@ class PycroDataset(h5py.Dataset):
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
+        if verbose:
+            print('Sliced position indices:')
+            print(pos_inds)
+            print('Spectroscopic Indices (transposed)')
+            print(spec_inds.T)
+
+        # At this point, the empty dimensions MUST be removed in order to avoid problems with dimension sort etc.
+        def remove_singular_dims(anc_inds):
+            new_inds = []
+            for dim_values in anc_inds:
+                if len(np.unique(dim_values)) > 1:
+                    new_inds.append(dim_values)
+            new_inds = np.array(new_inds)
+            return new_inds
+
+        pos_inds = remove_singular_dims(pos_inds.T).T
+        spec_inds = remove_singular_dims(spec_inds)
+
+        if verbose:
+            print('After removing any singular dimensions')
+            print('Sliced position indices:')
+            print(pos_inds)
+            print('Spectroscopic Indices (transposed)')
+            print(spec_inds.T)
 
         # TODO: if data is already loaded into memory, try to avoid I/O and slice in memory!!!!
-        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds)
+        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds, verbose=verbose)
 
         if as_scalar:
             return flatten_to_real(data_slice), success
