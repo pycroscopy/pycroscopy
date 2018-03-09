@@ -41,6 +41,7 @@ v 1.0 goals
  * SVD, Cluster, Decomposition should only write results if the user is happy and not otherwise. This is one of the main reasons for wanting to delete sub-trees.
  
 15. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
+16. Test all translators, Processes and Analyses to make sure they still work.
 
 v 1.1 goals
 -----------
