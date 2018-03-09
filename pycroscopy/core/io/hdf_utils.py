@@ -16,6 +16,7 @@ import numpy as np
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
     AuxillaryDescriptor
 from .virtual_data import VirtualDataset
+from .dtype_utils import contains_integers
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -1076,9 +1077,9 @@ def get_dimensionality(ds_index, index_sort=None):
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
     else:
-        assert isinstance(index_sort, Iterable)
+        assert contains_integers(index_sort, min_val=0)
         assert np.array(index_sort).ndim == 1
-        assert np.max(index_sort) < ds_index.shape[0]
+        assert len(np.unique(index_sort)) == ds_index.shape[0]
 
     sorted_dims = [len(np.unique(row)) for row in np.array(ds_index, ndmin=2)[index_sort]]
     return sorted_dims
