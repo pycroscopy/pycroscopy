@@ -9,15 +9,21 @@ v 1.0 goals
   * Think about whether the rest of the code should be organized by instrument
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
 2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
-3. mostly done - test utils for .core io
+3. mostly done - unit tests for .core io
+
+ * measure coverage using codecov.io and codecov package
 4. mostly done - good utilities for interrogating data - pycro data, what about the rest of the file?
 5. partly done - good documentation for both users and developers
 
   * Need one per module in .core + finish plot_utils tour
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
   * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
-6. mostly done - generic visualizer. Re-enable this in pycrodata
-7. mostly done - good utils for generating publishable plots - easy ~ 1 day
+  * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
+  * Upload clean exports of paper notebooks
+  * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
+  
+6. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
+7. mostly done - good utils for generating publishable plots - make certain functions more generic / extendable - easy < 1 day
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
 10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
@@ -28,19 +34,24 @@ v 1.0 goals
   * This requires a new function to update the parameters and does whatever init already does
   * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
 12. Lower the communication barrier by starting a twitter account - Rama?
-    
+13. file dialog for Jupyter not working on Mac OS
+14. More amenable Process classes:
+
+ * allow user to try out parameters on a single instance of a dataset and use the same instance object to compute.
+ * SVD, Cluster, Decomposition should only write results if the user is happy and not otherwise. This is one of the main reasons for wanting to delete sub-trees.
+ 
+15. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
+
+v 1.1 goals
+-----------
+1. Deploy on cluster - consider MPI4py or ipyparallel....
 
 Documentation
 -------------
-* Upload clean exports of paper notebooks - Stephen and Chris
-*	Include examples in documentation
-* Links to references for all functions and methods used in our workflows.
 
 Fundamental tutorials on how to use pycroscopy
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * A tour of what is where and why
-
- * pycroscopy pacakge organization - a short writeup on what is where and why
 * A tour of all utils in core.io at the very minimum:
   
   * hdf_utils: paartially done - functions used for writing h5 files since these functions need data to show / explain them - chunking the main dataset
@@ -50,7 +61,6 @@ Fundamental tutorials on how to use pycroscopy
   * Numpy translator : Done in some way
   * write_utils: Not done
 * How to write your own analysis class based on the (to-be simplified) Model class
-* Links to tutorials on how to use pycharm, Git, 
 
 Rama's (older and more applied / specific) tutorial goals
 ~~~~~~~~~~~~~~~~~~~~
@@ -64,7 +74,6 @@ New features
 ------------
 Core development
 ~~~~~~~~~~~~~~~~
-* file dialog for Jupyter
 * function for saving sub-tree to new h5 file
 * Windows compatible function for deleting sub-tree
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
@@ -80,12 +89,6 @@ Long-term
 
 GUI
 ~~~~~~~~~~~
-* Make the generic interactive visualizer for 3 and 4D float numpy arrays ROBUST
-
-  * Allow slicing at the pycrodataset level to handle > 4D datasets - 20 mins
-  * Need to handle appropriate reference values for the tick marks in 2D plots - 20 mins
-  * Handle situation when only one position and one spectral axis are present. - low priority - 20 mins
-* TRULY Generic visualizer in plot.lly / dash? that can use the PycroDataset class
 *	Switch to using plot.ly and dash for interactive elements
 *	Possibly use MayaVi for 3d plotting
 
@@ -135,18 +138,11 @@ Formatting changes
 ------------------
 *	Fix remaining PEP8 problems
 *	Ensure code and documentation is standardized
-*	Classes and major Functions should check to see if the results already exist
-
-Notebooks
----------
-*	Investigate using JupyterLab
 
 Testing
 -------
-*	Write test code
-*	Unit tests for simple functions
+*	Write test code for scientific functions in addition to just core
 *	Longer tests using data (real or generated) for the workflow tests
-*  measure coverage using codecov.io and codecov package
 
 Software Engineering
 --------------------
