@@ -20,10 +20,11 @@ Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 Who?
 -----------
-This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase
-**M**\aterials **S**\ciences (`CNMS <https://www.ornl.gov/facility/cnms>`_) to implement a python library
+This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional
+**I**\maging of **M**\materials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library
 that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes
-generate (thanks to the large CNMS users community!).
+generate (thanks to the large IFIM users community!). It is now being developed by the **A**\dvanced **D**\ata &
+**W**\orkflows **G**\roup (ADWG) at the **O**\ak Ridge National Laboratory **L**\eadership **C**\omputing **F**\acility (`OLCF <https://www.olcf.ornl.gov>`_)
 
 By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
 community of materials science/physics. We also hope, quite ardently, that other materials scientists would
