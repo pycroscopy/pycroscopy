@@ -16,7 +16,7 @@ from pycroscopy.core.io import PycroDataset, VirtualDataset, VirtualGroup, hdf_u
 if sys.version_info.major == 3:
     unicode = str
 
-test_h5_file_path = 'test_pycro_dataset.h5'
+test_h5_file_path = 'test_hdf_utils.h5'
 
 
 class TestPycroDataset(unittest.TestCase):
@@ -316,7 +316,7 @@ class TestPycroDataset(unittest.TestCase):
             self.assertTrue(np.allclose(expected_spec, actual_spec))
             self.assertTrue(np.allclose(expected_pos, actual_pos))
 
-    def test_get_pos_spec_slices_two_pos_removed(self):
+    def test_get_pos_spec_slices_both_pos_removed(self):
         self.__ensure_test_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
@@ -324,6 +324,25 @@ class TestPycroDataset(unittest.TestCase):
             # we want every fifth position starting from 3
             expected_pos = np.expand_dims([1 * 5 + 3], axis=1)
             expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+    def test_get_pos_spec_slices_pos_and_spec_sliced_list(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': [1, 2, 4], 'Bias': slice(1, 7, 3)})
+            # we want every fifth position starting from 3
+            positions = []
+            for row_ind in range(3):
+                for col_ind in [1, 2, 4]:
+                    positions.append(5 * row_ind + col_ind)
+            specs = []
+            for cycle_ind in range(2):
+                for bias_ind in range(1, 7, 3):
+                    specs.append(7 * cycle_ind + bias_ind)
+            expected_pos = np.expand_dims(positions, axis=1)
+            expected_spec = np.expand_dims(specs, axis=1)
             self.assertTrue(np.allclose(expected_spec, actual_spec))
             self.assertTrue(np.allclose(expected_pos, actual_pos))
 
