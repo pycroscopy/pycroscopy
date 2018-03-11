@@ -286,6 +286,11 @@ class PycroDataset(h5py.Dataset):
 
         # Convert the slice dictionary into lists of indices for each dimension
         pos_slice, spec_slice = self._get_pos_spec_slices(slice_dict)
+        if verbose:
+            print('Position slice:')
+            print(pos_slice)
+            print('Spectroscopic slice:')
+            print(spec_slice)
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
@@ -294,6 +299,12 @@ class PycroDataset(h5py.Dataset):
             data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
         else:
             data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
+
+        if verbose:
+            print('data_slice of shape: {} after slicing'.format(data_slice.shape))
+        data_slice = np.atleast_2d(np.squeeze(data_slice))
+        if verbose:
+            print('data_slice of shape: {} after squeezing'.format(data_slice.shape))
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
@@ -309,7 +320,11 @@ class PycroDataset(h5py.Dataset):
             for dim_values in anc_inds:
                 if len(np.unique(dim_values)) > 1:
                     new_inds.append(dim_values)
-            new_inds = np.array(new_inds)
+            # if all dimensions are removed?
+            if len(new_inds) == 0:
+                new_inds = np.arange(1)
+            else:
+                new_inds = np.array(new_inds)
             return new_inds
 
         pos_inds = remove_singular_dims(pos_inds.T).T
@@ -321,6 +336,8 @@ class PycroDataset(h5py.Dataset):
             print(pos_inds)
             print('Spectroscopic Indices (transposed)')
             print(spec_inds.T)
+            print('data slice of shape: {}. Position indices of shape: {}, Spectroscopic indices of shape: {}'
+                  '.'.format(data_slice.shape, pos_inds.shape, spec_inds.shape))
 
         # TODO: if data is already loaded into memory, try to avoid I/O and slice in memory!!!!
         data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds, verbose=verbose)
