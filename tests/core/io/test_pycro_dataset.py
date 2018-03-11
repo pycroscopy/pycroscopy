@@ -222,6 +222,113 @@ class TestPycroDataset(unittest.TestCase):
             pycro_dset.toggle_sorting()
             self.assertTrue(np.allclose(expected, pycro_dset.get_n_dim_form()))
 
+    def test_get_pos_spec_slices_empty_dict(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({})
+            self.assertTrue(np.allclose(np.expand_dims(np.arange(14), axis=1), actual_spec))
+            self.assertTrue(np.allclose(np.expand_dims(np.arange(15), axis=1), actual_pos))
+
+    def test_get_pos_spec_slices_non_existent_dim(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(KeyError):
+                _ = pycro_main._get_pos_spec_slices({'blah': 4, 'X': 3, 'Y': 1})
+
+    def test_get_pos_spec_slices_incorrect_type(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(TypeError):
+                _ = pycro_main._get_pos_spec_slices({'X': 'fdfd', 'Y': 1})
+
+    def test_get_pos_spec_slices_negative_index(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(ValueError):
+                _ = pycro_main._get_pos_spec_slices({'X': -4, 'Y': 1})
+
+    def test_get_pos_spec_slices_out_of_bounds(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(ValueError):
+                _ = pycro_main._get_pos_spec_slices({'X': 15, 'Y': 1})
+
+    def test_get_pos_spec_slices_one_pos_dim_removed(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            # orig_pos = np.vstack([np.tile(np.arange(5), 3), np.repeat(np.arange(3), 5)]).T
+            # orig_spec = np.vstack([np.tile(np.arange(7), 2), np.repeat(np.arange(2), 7)])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': 3})
+            # we want every fifth position starting from 3
+            expected_pos = np.expand_dims(np.arange(3, 15, 5), axis=1)
+            expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+    def test_get_pos_spec_slices_one_pos_dim_sliced(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': slice(1, 5, 2)})
+            # we want every fifth position starting from 3
+            positions = []
+            for row_ind in range(3):
+                for col_ind in range(1, 5, 2):
+                    positions.append(5 * row_ind + col_ind)
+            expected_pos = np.expand_dims(positions, axis=1)
+            expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+    def test_get_pos_spec_slices_two_pos_dim_sliced(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': slice(1, 5, 2), 'Y': 1})
+            # we want every fifth position starting from 3
+            positions = []
+            for row_ind in range(1, 2):
+                for col_ind in range(1, 5, 2):
+                    positions.append(5 * row_ind + col_ind)
+            expected_pos = np.expand_dims(positions, axis=1)
+            expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+    def test_get_pos_spec_slices_two_pos_dim_sliced_list(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': [1, 2, 4], 'Y': 1})
+            # we want every fifth position starting from 3
+            positions = []
+            for row_ind in range(1, 2):
+                for col_ind in [1, 2, 4]:
+                    positions.append(5 * row_ind + col_ind)
+            expected_pos = np.expand_dims(positions, axis=1)
+            expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+    def test_get_pos_spec_slices_two_pos_removed(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual_pos, actual_spec = pycro_main._get_pos_spec_slices({'X': 3, 'Y': 1})
+            # we want every fifth position starting from 3
+            expected_pos = np.expand_dims([1 * 5 + 3], axis=1)
+            expected_spec = np.expand_dims(np.arange(14), axis=1)
+            self.assertTrue(np.allclose(expected_spec, actual_spec))
+            self.assertTrue(np.allclose(expected_pos, actual_pos))
+
+
+
 
 
 
