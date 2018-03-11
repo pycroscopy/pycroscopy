@@ -346,9 +346,158 @@ class TestPycroDataset(unittest.TestCase):
             self.assertTrue(np.allclose(expected_spec, actual_spec))
             self.assertTrue(np.allclose(expected_pos, actual_pos))
 
+    def test_get_pos_values(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            expected = pycro_main.h5_pos_vals[:5, 0]
+            actual = pycro_main.get_pos_values('X')
+            self.assertTrue(np.allclose(expected, actual))
+            expected = pycro_main.h5_pos_vals[0:None:5, 1]
+            actual = pycro_main.get_pos_values('Y')
+            self.assertTrue(np.allclose(expected, actual))
 
+    def test_get_pos_values_illegal(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(KeyError):
+                _ = pycro_main.get_pos_values('blah')
+            with self.assertRaises(TypeError):
+                _ = pycro_main.get_pos_values(np.array(5))
 
+    def test_get_spec_values(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            expected = pycro_main.h5_spec_vals[0, :7]
+            actual = pycro_main.get_spec_values('Bias')
+            self.assertTrue(np.allclose(expected, actual))
+            expected = pycro_main.h5_spec_vals[1, 0:None:7]
+            actual = pycro_main.get_spec_values('Cycle')
+            self.assertTrue(np.allclose(expected, actual))
 
+    def test_get_spec_values_illegal(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(KeyError):
+                _ = pycro_main.get_spec_values('blah')
+            with self.assertRaises(TypeError):
+                _ = pycro_main.get_spec_values(np.array(5))
+
+    def test_slice_empty(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice()
+            expected = np.reshape(pycro_main[()], (3, 5, 2, 7))
+            expected = np.transpose(expected, (1, 0, 3, 2))
+            self.assertTrue(np.allclose(expected, actual))
+
+    def test_slice_non_existent_dim(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(KeyError):
+                _ = pycro_main.slice(slice_dict={'blah': 4, 'X': 3, 'Y': 1})
+
+    def test_slice_incorrect_type(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(TypeError):
+                _ = pycro_main.slice(slice_dict={'X': 'fdfd', 'Y': 1})
+
+    def test_slice_negative_index(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(ValueError):
+                _ = pycro_main.slice(slice_dict={'X': -4, 'Y': 1})
+
+    def test_slice_out_of_bounds(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            with self.assertRaises(ValueError):
+                _ = pycro_main.slice(slice_dict={'X': 15, 'Y': 1})
+
+    def test_slice_one_pos_dim_removed(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': 3})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[3, :, :, :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_one_pos_dim_sliced(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': slice(1, 5, 2)})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[slice(1, 5, 2), :, :, :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_two_pos_dim_sliced(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': slice(1, 5, 2), 'Y': 1})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[slice(1, 5, 2), 1, :, :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_two_pos_dim_sliced_list(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': [1, 2, 4], 'Y': 1})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[[1, 2, 4], 1, :, :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_both_pos_removed(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': 3, 'Y': 1})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[3, 1, :, :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_pos_and_spec_sliced_list(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': [1, 2, 4], 'Bias': slice(1, 7, 3)})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[[1, 2, 4], :, slice(1, 7, 3), :]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_slice_all_dims_sliced_list(self):
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            actual, success = pycro_main.slice(slice_dict={'X': [1, 2, 4], 'Y': 2, 'Bias': slice(1, 7, 3), 'Cycle': 1})
+            n_dim_form = np.transpose(np.reshape(pycro_main[()], (3, 5, 2, 7)), (1, 0, 3, 2))
+            expected = n_dim_form[[1, 2, 4], 2, slice(1, 7, 3), 1]
+            self.assertTrue(np.allclose(expected, actual))
+            self.assertTrue(success)
+
+    def test_toggle_sorting(self):
+        assert False
+
+    def test_get_current_sorting(self):
+        assert False
 
 
 if __name__ == '__main__':
