@@ -6,6 +6,7 @@ Created on Thu Sep  7 21:14:25 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import sys
 import h5py
 import six
 import numpy as np
@@ -13,6 +14,9 @@ from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatt
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
 from .dtype_utils import flatten_to_real, contains_integers
 from ..viz.jupyter_utils import simple_ndim_visualizer, VizDimension
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class PycroDataset(h5py.Dataset):
@@ -178,6 +182,8 @@ class PycroDataset(h5py.Dataset):
             Array containing the unit values of the dimension `dim_name`
 
         """
+        if not isinstance(dim_name, (str, unicode)):
+            raise TypeError('dim_name should be a string / unocode value')
         return get_unit_values(self.h5_pos_inds, self.h5_pos_vals)[dim_name]
 
     def get_spec_values(self, dim_name):
@@ -195,6 +201,8 @@ class PycroDataset(h5py.Dataset):
             Array containing the unit values of the dimension `dim_name`
 
         """
+        if not isinstance(dim_name, (str, unicode)):
+            raise TypeError('dim_name should be a string / unocode value')
         return get_unit_values(self.h5_spec_inds, self.h5_spec_vals)[dim_name]
 
     def get_current_sorting(self):
