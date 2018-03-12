@@ -15,7 +15,7 @@ before_deploy:
   - python setup.py bdist_wheel
 deploy:
   - edge:
-    branch: v1.8.47
+      branch: v1.8.47
 # Github pages deployment
     provider: pages
     skip_cleanup: true
