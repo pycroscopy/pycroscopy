@@ -35,13 +35,8 @@ v 1.0 goals
   * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
-14. More amenable Process classes:
-
- * allow user to try out parameters on a single instance of a dataset and use the same instance object to compute.
- * SVD, Cluster, Decomposition should only write results if the user is happy and not otherwise. This is one of the main reasons for wanting to delete sub-trees.
- 
-15. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
-16. Test all translators, Processes and Analyses to make sure they still work.
+14. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
+15. Test all translators, Processes and Analyses to make sure they still work.
 
 v 1.1 goals
 -----------

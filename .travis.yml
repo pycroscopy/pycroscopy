@@ -14,8 +14,10 @@ before_deploy:
   - python setup.py bdist
   - python setup.py bdist_wheel
 deploy:
+  - edge:
+      branch: v1.8.47
 # Github pages deployment
-  - provider: pages
+    provider: pages
     skip_cleanup: true
     github_token:
       secure: mjVrbUqrp3ODpQVoVVV6ZCA7M4VBlI3AWRRO1cZBoQQBrMMu0Dzwkqq+b3qSabHspAJsoHmzq337CgPL8sA32x0BESO0EOTHaxEvL8FvmLwQ9av51C2rbzoGdZAKmiRIvwNLUpPHRitGuE165cR+dm52kjwFLzA9khBjR3Mzr8E517QBsTpZms3O3//Ifc/0E/ksfcd+/MfGP8PIf8v8HyqCJsQYU6j8gGXSvBed72pZ/uT7byjqII7RHi0/e0xsfenswkEqNhMzgjt8WMC7iXpRqTKw2A7+HQNvGMtfSI28iiO5qWVTDncsYol2Er22LJg3CJmk367E9XT70eyriizgubYba/gM3f1/wNspvXqWh94R3S0+Af5afa5pfrRpOoNXqFO7zeTWlEyF5YUPUAY/tgxKYNO3wXxlaOjHBBz8Csu/e6v/Enq1evW1MyuU1ShUFj8q9oJiQMXtfLHnorX0plu69hSkeJwpQoY+2Z1xYtl3EkhpXJ0bYKoch5ijFTRJhQErtGQRBSuqkeSGpYQipnAfyVoe5zKdvFMruWP5SxmUK4HFWtonie6a9AADy6nHd6VKDL0LRzDfpkTu8XVArQSBBIQrEdNObMztJ2SWgnuu6m0hnED8y4VoLMVgRB4vSpv3UTdiiZcg4AMo7fbZ3CtczsE80p7INrxhAvw=

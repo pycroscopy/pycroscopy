@@ -32,9 +32,9 @@ follow suit.
 
 The core pycroscopy team consists of:
 
-* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath), 
-* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith), 
-* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), 
+* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
+* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
+* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
 * `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) 
 
 Substantial contributions from many developers including:
@@ -42,6 +42,7 @@ Substantial contributions from many developers including:
 * `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
+* `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * and many more
 
 Why?
@@ -104,12 +105,10 @@ The package structure is simple, with 4 main modules:
    
 Acknowledgements
 ----------------
-Besides the packages used in pycroscopy, we would like to thank the developers of the following software
-packages:
+* Special thanks to `Stefan Van Der Walt <https://bids.berkeley.edu/people/stéfan-van-der-walt>`_ (`@stefanv <https://github.com/stefanv>`_) and `Brett Naul <https://www.linkedin.com/in/brett-naul-46845b66>`_ (`@bnaul <https://github.com/bnaul>`_) for their guidance.
+* We thank `Sergei V. Kalinin <https://www.ornl.gov/staff-profile/sergei-v-kalinin>`_ from `IFIM <https://ifim.ornl.gov>`_ at ORNL for informing scientists at various universities and national labs across various scientific disciplines about pycroscopy.
+* Besides the packages used in pycroscopy, we would like to thank the developers of the following software packages:
 
-+ `Anaconda Python <https://www.continuum.io/anaconda-overview>`_
-+ `jupyter <http://jupyter.org/>`_
-+ `PyCharm <https://www.jetbrains.com/pycharm/>`_
-+ `GitKraken <https://www.gitkraken.com/>`_
-
-Special thanks to `Stefan Van Der Walt <https://bids.berkeley.edu/people/stéfan-van-der-walt>`_ (`@stefanv <https://github.com/stefanv>`_) and `Brett Naul <https://www.linkedin.com/in/brett-naul-46845b66>`_ (`@bnaul <https://github.com/bnaul>`_) for their guidance.
+	+ `Anaconda <https://www.continuum.io/anaconda-overview>`_
+	+ `PyCharm <https://www.jetbrains.com/pycharm/>`_
+	+ `GitKraken <https://www.gitkraken.com/>`_
