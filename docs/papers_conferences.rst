@@ -7,7 +7,7 @@ Journal Papers using pycroscopy
 * Electron Microscopy
 
  #. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Ptychography.html>`_
- #. Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging by S. Somnath et al.; under review at Advanced Structural and Chemical Imaging (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
+ #. `Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging <https://ascimaging.springeropen.com/articles/10.1186/s40679-018-0052-y>`_ by S. Somnath et al.; under review at Advanced Structural and Chemical Imaging (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
 
 * Scanning Probe Microscopy 
 
