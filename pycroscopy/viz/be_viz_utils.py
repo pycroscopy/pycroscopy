@@ -60,7 +60,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
-    plt_path = None
+        return fig
 
     print('Creating plots of SHO Results from {}.'.format(h5_main.name))
 
@@ -95,9 +95,6 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     try:
         h5_spec_vals = h5_file[get_attr(h5_main, 'Spectroscopic_Values')]
-    # except KeyError:
-    #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
-    #     raise
     except Exception:
         raise
 
@@ -108,6 +105,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     phase_mat = h5_main['Phase [rad]']
     rsqr_mat = h5_main['R2 Criterion']
 
+    fig_list = list()
     if isBEPS:
         meas_type = chan_grp.parent.attrs['VS_mode']
         # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
@@ -117,7 +115,6 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
             return
 
         # Plot amplitude and phase maps at one or more UDVS steps
-
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
             ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][:, 0:center])
@@ -126,8 +123,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
 
             for win_title, resp_mat in zip(['Forward', 'Reverse'], [forw_resp, rev_resp]):
-                __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude', save_plots,
-                                  folder_path, basename, num_rows, num_cols)
+                fig_list.append(__plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude',
+                                                  save_plots, folder_path, basename, num_rows, num_cols))
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
@@ -141,11 +138,13 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
                 out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
 
                 for win_title, resp_mat in zip(['In_Field', 'Out_of_Field'], [in_phase * in_amp, out_phase * out_amp]):
-                    __plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias', 'Piezoresponse (a.u.)',
-                                      save_plots, folder_path, basename, num_rows, num_cols)
+                    fig_list.append(__plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias',
+                                                      'Piezoresponse (a.u.)', save_plots, folder_path,
+                                                      basename, num_rows, num_cols))
             else:
-                __plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias', 'Piezoresponse (a.u.)',
-                                  save_plots, folder_path, basename, num_rows, num_cols)
+                fig_list.append(__plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias',
+                                                  'Piezoresponse (a.u.)', save_plots, folder_path, basename,
+                                                  num_rows, num_cols))
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
@@ -159,6 +158,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
                                        title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
                                               'R^2 Criterion'], cmap=cmap)
 
+        fig_list.append(fig_ms)
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
             fig_ms.savefig(plt_path, format='png', dpi=300)
@@ -166,7 +166,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     if show_plots:
         plt.show()
 
-    plt.close('all')
+    return fig_list
 
 
 def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
