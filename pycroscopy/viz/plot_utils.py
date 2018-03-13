@@ -1472,7 +1472,6 @@ def export_fig_data(fig, filename, include_images=False):
             for im in ims:
                 # Image data
                 im_lab = im.get_label()
-                im_dict[im_lab] = im.get_array().data
 
                 # X-Axis
                 x_ax = ax.get_xaxis()
@@ -1480,15 +1479,15 @@ def export_fig_data(fig, filename, include_images=False):
                 if x_lab == '':
                     x_lab = 'X'
 
-                im_dict[im_lab + x_lab] = x_ax.get_data_interval()
-
                 # Y-Axis
                 y_ax = ax.get_yaxis()
                 y_lab = y_ax.label.get_label()
                 if y_lab == '':
                     y_lab = 'Y'
 
-                im_dict[im_lab + y_lab] = y_ax.get_data_interval()
+                im_dict[im_lab] = {'data': im.get_array().data,
+                                   x_lab: x_ax.get_data_interval(),
+                                   y_lab: y_ax.get_data_interval()}
 
             ax_dict['Images'] = im_dict
 
@@ -1531,34 +1530,36 @@ def export_fig_data(fig, filename, include_images=False):
     for ax_lab, ax in axes_dict.items():
         data_file.write('Axis: {} \n'.format(ax_lab))
 
-        for im_lab, im in ax['Images'].items():
-            data_file.write('Image: {} \n'.format(im_lab))
-            data_file.write('\n')
-            im_data = im.pop('data')
-            for row in im_data:
-                row.tofile(data_file, sep='\t', format='%s')
+        if 'Images' in ax:
+            for im_lab, im in ax['Images'].items():
+                data_file.write('Image: {} \n'.format(im_lab))
                 data_file.write('\n')
-            data_file.write('\n')
-
-            for key, val in im.items():
-                data_file.write(key + '\n')
-
-                val.tofile(data_file, sep='\n', format='%s')
+                im_data = im.pop('data')
+                for row in im_data:
+                    row.tofile(data_file, sep='\t', format='%s')
+                    data_file.write('\n')
                 data_file.write('\n')
 
-            data_file.write(spacer)
+                for key, val in im.items():
+                    data_file.write(key + '\n')
 
-        for line_lab, line_dict in ax['Lines'].items():
-            data_file.write('Line: {} \n'.format(line_lab))
-            data_file.write('\n')
+                    val.tofile(data_file, sep='\n', format='%s')
+                    data_file.write('\n')
 
-            dim1, dim2 = line_dict.keys()
+                data_file.write(spacer)
 
-            data_file.write('{} \t {} \n'.format(dim1, dim2))
-            for val1, val2 in zip(line_dict[dim1], line_dict[dim2]):
-                data_file.write('{} \t {} \n'.format(str(val1), str(val2)))
+        if 'Lines' in ax:
+            for line_lab, line_dict in ax['Lines'].items():
+                data_file.write('Line: {} \n'.format(line_lab))
+                data_file.write('\n')
 
-            data_file.write(spacer)
+                dim1, dim2 = line_dict.keys()
+
+                data_file.write('{} \t {} \n'.format(dim1, dim2))
+                for val1, val2 in zip(line_dict[dim1], line_dict[dim2]):
+                    data_file.write('{} \t {} \n'.format(str(val1), str(val2)))
+
+                data_file.write(spacer)
 
         data_file.write(spacer)
 
