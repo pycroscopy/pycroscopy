@@ -85,14 +85,14 @@ Long-term
 
 GUI
 ~~~~~~~~~~~
-*	Switch to using plot.ly and dash for interactive elements
-*	Possibly use MayaVi for 3d plotting
+*	Convert all existing notebooks to interactive plotting
 
 Plot Utils
 ~~~~~~~~~
 * move plot_image_cleaning_results to a application specific module
 * move save_fig_filebox_button and export_fig_data to jupyter_utils
 * ensure most of these functions result in publication-ready plots (good proportions, font sizes, etc.)
+* allow setting of c-axis limits for all plot utils functions
 * plot_map 
 
   1. allow the tick labels to be specified instead of just the x_size and y_size. 
@@ -122,6 +122,8 @@ Plot Utils
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Incorporate sliding FFT into pycroscopy
+* Create an IR analysis notebook
 * Li Xin classification code 
 * Ondrej Dyck’s atom finding code – written well but needs to work on images with different kinds of atoms
 * Nina Wisinger’s processing code (Tselev) – in progress
