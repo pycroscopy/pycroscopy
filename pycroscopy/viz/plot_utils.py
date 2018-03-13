@@ -1520,7 +1520,7 @@ def export_fig_data(fig, filename, include_images=False):
     basename, ext = os.path.splitext(filename)
     folder, _ = os.path.split(basename)
 
-    spacer = r'**********************************************\n'
+    spacer = '**********************************************\n'
 
     data_file = open(filename, 'w')
 
