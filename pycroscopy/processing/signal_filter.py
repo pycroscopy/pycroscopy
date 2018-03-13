@@ -18,6 +18,7 @@ from ..core.io.write_utils import VALUES_DTYPE
 from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
+from .gmode_utils import test_filter
 # TODO: implement phase compensation
 # TODO: correct implementation of num_pix
 
@@ -117,6 +118,12 @@ class SignalFilter(Process):
         self.h5_filtered = None
         self.h5_condensed = None
         self.h5_noise_floors = None
+
+    def test_on_subset(self, pix_ind=None, excit_wfm=None):
+        if pix_ind is None:
+            pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
+        return test_filter(self.h5_main[pix_ind], frequency_filters=self.frequency_filters, excit_wfm=excit_wfm,
+                           noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True)
 
     def _create_results_datasets(self):
         """
