@@ -378,6 +378,9 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_sho_plots, sho_quantity=sho_quantity_picker, step_ind=bias_step_picker)
 
+    return fig
+
+
 def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     """
     Jupyer notebook ONLY function. Sets up a simple visualzier for visualizing raw BE data.
@@ -568,6 +571,9 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         widgets.interact(position_unpacker, **pos_dict)
         display(fig)
 
+    return fig
+
+
 def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit, step_chan='DC_Offset', cmap=None):
     """
     Interactive plotting of the BE Loops
@@ -746,6 +752,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), loop_ind=loop_slider)
 
+    return fig
+
 
 def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     """
@@ -807,6 +815,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     fig_filename, _ = os.path.splitext(h5_loop_parameters.file.filename)
     display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
+
+    return fig
 
 
 def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
@@ -1058,6 +1068,8 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
                      selected_loop_cycle=loop_cycle_widget,
                      x_pos=x_pos_widget, y_pos=y_pos_widget,
                      selected_step=spec_step_widget)
+
+    return fig
 
 
 def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
@@ -1425,6 +1437,8 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
     widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
     widgets.interact(_update_spec_step, selected_step=spec_step_widget)
+
+    return fig
 
 
 def _add_loop_parameters(axes, switching_coef_vec):
