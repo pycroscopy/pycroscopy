@@ -9,7 +9,7 @@ from IPython.display import display
 import ipywidgets as widgets
 import numpy as np
 
-from .plot_utils import plot_map
+from .plot_utils import plot_map, export_fig_data
 
 
 def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_names, spec_dim_units_old,
@@ -285,7 +285,8 @@ def simple_ndim_visualizer(data_mat, pos_dim_names, pos_dim_units_old, spec_dim_
 def save_fig_filebox_button(fig, filename):
     """
     Create ipython widgets to allow the user to save a figure to the
-    specified file.
+    specified file.  If a .txt file is specified, the data within the
+    figure will be exported instead.
 
     Parameters
     ----------
@@ -313,8 +314,13 @@ def save_fig_filebox_button(fig, filename):
     def _save_fig(junk):
         filename = name_box.value
         save_path = os.path.join(file_dir, filename)
-        fig.savefig(save_path, dpi='figure')
-        print('Figure saved to "{}".'.format(save_path))
+        _, ext = os.path.splitext(filename)
+        if ext == '.txt':
+            export_fig_data(fig, save_path, include_images=True)
+            print('Figure data exported to "{}".'.format(save_path))
+        else:
+            fig.savefig(save_path, dpi='figure')
+            print('Figure saved to "{}".'.format(save_path))
 
     widget_box = widgets.HBox([name_box, save_button])
 
