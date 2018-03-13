@@ -6,6 +6,7 @@ Created on Thu May 05 13:29:12 2016
 """
 
 from __future__ import division, print_function, absolute_import
+import sys
 from collections import Iterable
 from warnings import warn
 from numbers import Number
@@ -20,14 +21,16 @@ from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.viz.plot_utils import set_tick_font_size, plot_loops
 from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 
+if sys.version_info.major == 3:
+    unicode = str
 
 # TODO: Phase rotation not implemented correctly. Find and use excitation frequency
 
 
 ###############################################################################
 
-def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
-                excit_wfm=None, show_plots=True, verbose=False):
+def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None, excit_wfm=None, show_plots=True,
+                plot_title=None, verbose=False):
     """
     Filters the provided response with the provided filters.
 
@@ -47,6 +50,8 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         against excit_wfm will be returned for fig_loops
     show_plots : (Optional) Boolean
         Whether or not to plot FFTs before and after filtering
+    plot_title : str / unicode (Optional)
+        Title for the raw vs filtered plots if requested. For example - 'Row 15'
     verbose : (Optional) Boolean
         Prints extra debugging information if True.  Default False
 
@@ -69,6 +74,11 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
             show_loops = True
         else:
             raise ValueError('Length of resp_wfm should be divisibe by length of excit_wfm')
+    if show_loops:
+        if plot_title is None:
+            plot_title = 'FFT Filtering'
+        else:
+            assert isinstance(plot_title, (str, unicode))
 
     if frequency_filters is None and noise_threshold is None:
         raise ValueError('Need to specify at least some noise thresholding / frequency filter')
@@ -154,7 +164,7 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
             set_tick_font_size(axis, 14)
             axis.set_xlabel('Excitation', fontsize=16)
             axis.set_ylabel('Signal', fontsize=16)
-            axis.set_title('FFT Filtering', fontsize=16)
+            axis.set_title(plot_title, fontsize=16)
             fig_loops.tight_layout()
         else:
             # N loops:
@@ -165,7 +175,7 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
             fig_loops, axes_loops = plot_loops(excit_wfm, [raw_pixels, filt_pixels], line_colors=['r', 'k'],
                                                dataset_names=['Raw', 'Filtered'], x_label='Excitation',
                                                y_label='Signal', subtitle_prefix='Col ', plots_on_side=4,
-                                               title='FFT Filtering')
+                                               title=plot_title)
 
     return filt_data, fig_fft, fig_loops
 
