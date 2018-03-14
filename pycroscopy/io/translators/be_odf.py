@@ -859,7 +859,7 @@ class BEodfTranslator(Translator):
             # cut VS waveform
             vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction))]
             # repeat VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles)
+            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles))
             vs_amp_vec = vs_amp_vec + VS_offset
 
         elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
@@ -868,7 +868,7 @@ class BEodfTranslator(Translator):
             vs_amp_vec = np.roll(vs_amp_vec,
                                  int(np.floor(VS_steps / VS_fraction * VS_shift)))  # apply phase shift to VS wave
             vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction / 2))]  # cut VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles * 2)  # repeat VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles * 2))  # repeat VS waveform
 
         if FORC_cycles > 1:
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))
