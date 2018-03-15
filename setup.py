@@ -24,7 +24,7 @@ requirements = ['numpy_groupies>=0.9.6',
 
 setup(
     name='pycroscopy',
-    version='0.59.4',
+    version='0.59.5',
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
