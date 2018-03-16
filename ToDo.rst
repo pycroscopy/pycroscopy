@@ -155,32 +155,47 @@ Scaling to HPC
 -------------------
 We have two kinds of large computational jobs and one kind of large I/O job:
 
-* I/O - reading and writing large amounts of data
-   * Dask and MPI are compatible. Spark requires investigation
-* Computation
-   1. Machine learning and Statistics
+* I/O - reading and writing large amounts of data:
+
+  * MPI clearly works with very high performance parallel read and write
+  * Dask also works but performance is a question. Look at NERSC (Matthew Rocklin et al.)
+  * Spark / HDFS requires investigation
    
-      a. Use custom algorithms developed for BEAM - NO one is willing to salvage code
-         * Advantage - Optimized (and tested) for various HPC environments
-         * Disadvantages:
-            * Need to integarate non-python code
-            * We only have a handful of these. NOT future compatible            
-      b. OR continue using a single FAT node for these jobs
-         * Advantages:
-            * No optimization required
-            * Continue using the same scikit learn packages
-         * Disadvantage - Is not optimized for HPC
-       c. OR use pbdR / write pbdPy (wrappers around pbdR)
-         * Advantages:
-            * Already optimized / mature project
-            * In-house project (good support) 
-         * Disadvantages:
-            * Dependant on pbdR for implementing new algorithms
+* Computation:
+
+  1. Machine learning and Statistics
+   
+    * Use custom algorithms developed for BEAM - NO one is willing to salvage code
+   
+      * Advantage - Optimized (and tested) for various HPC environments
+      * Disadvantages:
+
+        * Need to integarate non-python code
+        * We only have a handful of these. NOT future compatible
             
-   2. Embarrasingly parallel analysis / processing. Can be scaled using:
+    * OR continue using a single FAT node for these jobs
+            
+      * Advantages:
+            
+        * No optimization required
+        * Continue using the same scikit learn packages
+      * Disadvantage - Is not optimized for HPC
+         
+    * OR use pbdR / write pbdPy (wrappers around pbdR)
+        
+      * Advantages:
+            
+        * Already optimized / mature project
+        * In-house project (good support) 
+      * Disadvantages:
+            
+        * Dependant on pbdR for implementing new algorithms
+            
+  2. Embarrasingly parallel analysis / processing. Can be scaled using:
    
-      * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
-         * simple dask netcdf example: http://matthewrocklin.com/blog/work/2016/02/26/dask-distributed-part-3
-      * MPI - Need alternatives to Optimize / Process classes - Best efficiency but a pain to implement
-      * Spark?
-      * ipyParallel?
+    * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
+            
+      * simple dask netcdf example: http://matthewrocklin.com/blog/work/2016/02/26/dask-distributed-part-3
+    * MPI - Need alternatives to Optimize / Process classes - Best efficiency but a pain to implement
+    * Spark?
+    * ipyParallel?
