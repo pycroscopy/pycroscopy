@@ -30,17 +30,18 @@ v 1.0 goals
  
   * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions. 
 11. Restructure Process such that:
-  * It allows the user to apply the process to a single unit of the data to tweak the parameters
-  * This requires a new function to update the parameters and does whatever init already does
+  * It allows the user to test / apply the process to a single unit of the data
   * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
 14. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
 15. Test all translators, Processes and Analyses to make sure they still work.
 
-v 1.1 goals
+v 2.0 goals
 -----------
-1. Deploy on cluster - consider MPI4py or ipyparallel....
+1. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
+2. Restructure Process to serve as a framework for facilitating scalable ensemble runs
+3. Deploy on CADES SHPC Condo, Eos, Rhea (CPU partition).
 
 Documentation
 -------------
