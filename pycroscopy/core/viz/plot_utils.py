@@ -47,7 +47,7 @@ def use_nice_plot_params():
     # mpl.rcParams['xtick.major.size'] = 6
 
 
-def get_plot_grid_size(num_plots):
+def get_plot_grid_size(num_plots, fewer_rows=True):
     """
     Returns the number of rows and columns ideal for visualizing multiple (identical) plots within a single figure
 
@@ -55,6 +55,8 @@ def get_plot_grid_size(num_plots):
     ----------
     num_plots : uint
         Number of identical subplots within a figure
+    fewer_rows : bool, optional. Default = True
+        Set to True if the grid should be short and wide or False for tall and narrow
 
     Returns
     -------
@@ -69,14 +71,11 @@ def get_plot_grid_size(num_plots):
     if num_plots < 1:
         raise ValueError('num_plots was less than 0')
 
-    if num_plots < 4:
-        nrows = 1
-        ncols = num_plots
-    elif num_plots in [4, 8]:
-        ncols = 4
-        nrows = num_plots // ncols
+    if fewer_rows:
+        nrows = int(np.floor(np.sqrt(num_plots)))
+        ncols = int(np.ceil(num_plots / nrows))
     else:
-        ncols = int(np.ceil(np.sqrt(num_plots)))
+        ncols = int(np.floor(np.sqrt(num_plots)))
         nrows = int(np.ceil(num_plots / ncols))
 
     return nrows, ncols
@@ -607,7 +606,7 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
             # add titles
             dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
         if len(line_colors) != len(datasets):
-            # TODO: Generate colors from a user-specified colormap
+            # TODO: Generate colors from a user-specified colormap or consider using line family
             color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
             if len(datasets) < len(color_list):
                 remaining_colors = [x for x in color_list if x not in line_colors]
@@ -627,14 +626,18 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
         _ = kwargs.pop('color', None)
 
     plots_on_side = min(abs(plots_on_side), 5)
-
-    sq_num_plots = min(plots_on_side, int(round(num_pos ** 0.5)))
-    if evenly_spaced:
-        chosen_pos = np.linspace(0, num_pos - 1, sq_num_plots ** 2, dtype=int)
+    if num_pos > plots_on_side ** 2:
+        nrows = plots_on_side
+        ncols = plots_on_side
     else:
-        chosen_pos = np.arange(sq_num_plots ** 2, dtype=int)
+        nrows, ncols = get_plot_grid_size(num_pos)
 
-    fig, axes = plt.subplots(nrows=sq_num_plots, ncols=sq_num_plots, sharex=True, figsize=(12, 12))
+    if evenly_spaced:
+        chosen_pos = np.linspace(0, num_pos - 1, nrows * ncols, dtype=int)
+    else:
+        chosen_pos = np.arange(nrows * ncols, dtype=int)
+
+    fig, axes = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, figsize=(12, 12))
     axes_lin = axes.flatten()
 
     for count, posn in enumerate(chosen_pos):
@@ -649,9 +652,9 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
         else:
             axes_lin[count].set_title(subtitle_prefix + ' ' + str(posn), fontsize=12)
 
-        if count % sq_num_plots == 0:
+        if count % ncols == 0:
             axes_lin[count].set_ylabel(y_label, fontsize=12)
-        if count >= (sq_num_plots - 1) * sq_num_plots:
+        if count >= (nrows - 1) * ncols:
             axes_lin[count].set_xlabel(x_label, fontsize=12)
         axes_lin[count].axis('tight')
         axes_lin[count].set_aspect('auto')
@@ -904,8 +907,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         title = [title + ' ' + str(x) for x in chosen_pos]
 
     fig_h, fig_w = fig_mult
-    p_rows = int(np.floor(np.sqrt(num_comps)))
-    p_cols = int(np.ceil(num_comps / p_rows))
+
+    p_rows, p_cols = get_plot_grid_size(num_comps)
+
     if p_rows * p_cols < num_comps:
         p_cols += 1
 
