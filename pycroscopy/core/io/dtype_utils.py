@@ -177,6 +177,8 @@ def check_dtype(ds_main):
         typesize of the data after func is run on it
     """
     # TODO: avoid assuming 2d shape
+    if not isinstance(ds_main, h5py.Dataset):
+        raise TypeError('ds_main should be a h5py.Dataset object')
     is_complex = False
     is_compound = False
     in_dtype = ds_main.dtype
