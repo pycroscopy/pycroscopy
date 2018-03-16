@@ -47,6 +47,41 @@ def use_nice_plot_params():
     # mpl.rcParams['xtick.major.size'] = 6
 
 
+def get_plot_grid_size(num_plots):
+    """
+    Returns the number of rows and columns ideal for visualizing multiple (identical) plots within a single figure
+
+    Parameters
+    ----------
+    num_plots : uint
+        Number of identical subplots within a figure
+
+    Returns
+    -------
+    nrows : uint
+        Number of rows
+    ncols : uint
+        Number of columns
+    """
+    assert isinstance(num_plots, Number)
+    # force integer:
+    num_plots = int(num_plots)
+    if num_plots < 1:
+        raise ValueError('num_plots was less than 0')
+
+    if num_plots < 4:
+        nrows = 1
+        ncols = num_plots
+    elif num_plots in [4, 8]:
+        ncols = 4
+        nrows = num_plots // ncols
+    else:
+        ncols = int(np.ceil(np.sqrt(num_plots)))
+        nrows = int(np.ceil(num_plots / ncols))
+
+    return nrows, ncols
+
+
 def set_tick_font_size(axes, font_size):
     """
     Sets the font size of the ticks in the provided axes
