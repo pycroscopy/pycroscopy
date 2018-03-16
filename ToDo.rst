@@ -151,34 +151,36 @@ Software Engineering
 * Add requirements.txt
 * Consider facilitating conda installation in addition to pypi
 
-Scaling to clusters
+Scaling to HPC
 -------------------
 We have two kinds of large computational jobs and one kind of large I/O job:
 
 * I/O - reading and writing large amounts of data
-   * Dask and MPI are compatible. Spark is probably not
+   * Dask and MPI are compatible. Spark requires investigation
 * Computation
    1. Machine learning and Statistics
    
-      1.1. Use custom algorithms developed for BEAM
+      a. Use custom algorithms developed for BEAM - NO one is willing to salvage code
          * Advantage - Optimized (and tested) for various HPC environments
          * Disadvantages:
             * Need to integarate non-python code
             * We only have a handful of these. NOT future compatible            
-      1.2. OR continue using a single FAT node for these jobs
+      b. OR continue using a single FAT node for these jobs
          * Advantages:
             * No optimization required
             * Continue using the same scikit learn packages
          * Disadvantage - Is not optimized for HPC
-       1.3. OR use pbdR / write pbdPy (wrappers around pbdR)
+       c. OR use pbdR / write pbdPy (wrappers around pbdR)
          * Advantages:
             * Already optimized / mature project
             * In-house project (good support) 
          * Disadvantages:
             * Dependant on pbdR for implementing new algorithms
             
-   2. Parallel parametric search - analyze subpackage and some user defined functions in processing. Can be extended using:
+   2. Embarrasingly parallel analysis / processing. Can be scaled using:
    
       * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
          * simple dask netcdf example: http://matthewrocklin.com/blog/work/2016/02/26/dask-distributed-part-3
-      * MPI - Need alternatives to Optimize / Process classes - Better efficiency but a pain to implement
+      * MPI - Need alternatives to Optimize / Process classes - Best efficiency but a pain to implement
+      * Spark?
+      * ipyParallel?
