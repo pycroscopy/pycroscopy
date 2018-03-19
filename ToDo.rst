@@ -76,6 +76,7 @@ Core development
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
 * Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
+* Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets. This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
 
 Long-term
 ^^^^^^^^^
