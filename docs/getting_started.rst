@@ -11,3 +11,10 @@ Getting Started
 * We can guide you to convert your file formats into pycroscopy compatible HDF5 files and help you get started with data analysis.
 * We are interested in collaborating with industry members to integrate pycroscopy into instrumentation or analysis software.
 * If you are interested in contributing and are looking for topics we are / will work on, please look at our `To Do <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst>`_ page
+
+Branches
+~~~~~~~~
+* ``master`` : Stable code based off which the pip installer works. Recommended for most people.
+* ``dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough testing. Note that certain features may be broken on this branch. Also note that we have currently frozen the addition of new features and are focusing on releasing a version 1.0 via the ``unity_dev`` branch. 
+* ``unity_dev`` : Substantially restructured version of ``master`` aimed towards `version 1.0 <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst#v-1-0-goals>`_ for pycroscopy. Besides pycroscopy.core.io, no guarantees are made for the rest of the package. This branch will eventually become ``master`` by around mid 2018. Developers encouraged to add features on this branch.  
+* Other branches belong to individual users / developers.
