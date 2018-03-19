@@ -6,13 +6,17 @@ Created on Thu Sep  7 21:14:25 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import sys
 import h5py
 import six
 import numpy as np
 from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
-from .dtype_utils import flatten_to_real
+from .dtype_utils import flatten_to_real, contains_integers
 from ..viz.jupyter_utils import simple_ndim_visualizer, VizDimension
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class PycroDataset(h5py.Dataset):
@@ -178,6 +182,8 @@ class PycroDataset(h5py.Dataset):
             Array containing the unit values of the dimension `dim_name`
 
         """
+        if not isinstance(dim_name, (str, unicode)):
+            raise TypeError('dim_name should be a string / unocode value')
         return get_unit_values(self.h5_pos_inds, self.h5_pos_vals)[dim_name]
 
     def get_spec_values(self, dim_name):
@@ -195,6 +201,8 @@ class PycroDataset(h5py.Dataset):
             Array containing the unit values of the dimension `dim_name`
 
         """
+        if not isinstance(dim_name, (str, unicode)):
+            raise TypeError('dim_name should be a string / unocode value')
         return get_unit_values(self.h5_spec_inds, self.h5_spec_vals)[dim_name]
 
     def get_current_sorting(self):
@@ -248,7 +256,7 @@ class PycroDataset(h5py.Dataset):
 
         return n_dim_data
 
-    def slice(self, as_scalar=False, slice_dict=None):
+    def slice(self, slice_dict=None, as_scalar=False, verbose=False):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -256,10 +264,12 @@ class PycroDataset(h5py.Dataset):
 
         Parameters
         ----------
-        as_scalar : bool
-            Should the data be returned as scalar values only.
-        slice_dict : dict
+        slice_dict : dict, optional
             Dictionary of array-likes.
+        as_scalar : bool, optional
+            Should the data be returned as scalar values only.
+        verbose : bool, optionbal
+            Whether or not to print debugging statements
 
         Returns
         -------
@@ -275,7 +285,12 @@ class PycroDataset(h5py.Dataset):
             slice_dict = dict()
 
         # Convert the slice dictionary into lists of indices for each dimension
-        pos_slice, spec_slice = self.get_pos_spec_slices(slice_dict)
+        pos_slice, spec_slice = self._get_pos_spec_slices(slice_dict)
+        if verbose:
+            print('Position slice:')
+            print(pos_slice)
+            print('Spectroscopic slice:')
+            print(spec_slice)
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
@@ -285,18 +300,54 @@ class PycroDataset(h5py.Dataset):
         else:
             data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
 
+        if verbose:
+            print('data_slice of shape: {} after slicing'.format(data_slice.shape))
+        data_slice = np.atleast_2d(np.squeeze(data_slice))
+        if verbose:
+            print('data_slice of shape: {} after squeezing'.format(data_slice.shape))
+
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
+        if verbose:
+            print('Sliced position indices:')
+            print(pos_inds)
+            print('Spectroscopic Indices (transposed)')
+            print(spec_inds.T)
+
+        # At this point, the empty dimensions MUST be removed in order to avoid problems with dimension sort etc.
+        def remove_singular_dims(anc_inds):
+            new_inds = []
+            for dim_values in anc_inds:
+                if len(np.unique(dim_values)) > 1:
+                    new_inds.append(dim_values)
+            # if all dimensions are removed?
+            if len(new_inds) == 0:
+                new_inds = np.arange(1)
+            else:
+                new_inds = np.array(new_inds)
+            return new_inds
+
+        pos_inds = remove_singular_dims(pos_inds.T).T
+        spec_inds = remove_singular_dims(spec_inds)
+
+        if verbose:
+            print('After removing any singular dimensions')
+            print('Sliced position indices:')
+            print(pos_inds)
+            print('Spectroscopic Indices (transposed)')
+            print(spec_inds.T)
+            print('data slice of shape: {}. Position indices of shape: {}, Spectroscopic indices of shape: {}'
+                  '.'.format(data_slice.shape, pos_inds.shape, spec_inds.shape))
 
         # TODO: if data is already loaded into memory, try to avoid I/O and slice in memory!!!!
-        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds)
+        data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds, verbose=verbose)
 
         if as_scalar:
             return flatten_to_real(data_slice), success
         else:
             return data_slice, success
 
-    def get_pos_spec_slices(self, slice_dict):
+    def _get_pos_spec_slices(self, slice_dict):
         """
         Convert the slice dictionary into two lists of indices, one each for the position and spectroscopic
         dimensions.
@@ -312,8 +363,22 @@ class PycroDataset(h5py.Dataset):
             Position indices included in the slice
         spec_slice : list of uints
             Spectroscopic indices included in the slice
-
         """
+        if not isinstance(slice_dict, dict):
+            raise TypeError('slice_dict should be a dictionary of slice objects')
+        if len(slice_dict) == 0:
+            pos_slice = np.expand_dims(np.arange(self.shape[0]), axis=1)
+            spec_slice = np.expand_dims(np.arange(self.shape[1]), axis=1)
+            return pos_slice, spec_slice
+
+        for key, val in slice_dict.items():
+            # Make sure the dimension is valid
+            if key not in self.__n_dim_labs:
+                raise KeyError('Cannot slice on dimension {}.  '
+                               'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
+            if not isinstance(val, (slice, list, np.ndarray, tuple, int)):
+                raise TypeError('The slices must be array-likes or slice objects.')
+
         # Create default slices that include the entire dimension
         n_dim_slices = dict()
         n_dim_slices_sizes = dict()
@@ -322,11 +387,6 @@ class PycroDataset(h5py.Dataset):
             n_dim_slices_sizes[dim_lab] = len(n_dim_slices[dim_lab])
         # Loop over all the keyword arguments and create slices for each.
         for key, val in slice_dict.items():
-            # Make sure the dimension is valid
-            if key not in self.__n_dim_labs:
-                raise KeyError('Cannot slice on dimension {}.  '
-                               'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
-
             # Check the value and convert to a slice object if possible.
             # Use a list if not.
             if isinstance(val, slice):
@@ -337,8 +397,19 @@ class PycroDataset(h5py.Dataset):
                 val = val.flatten().tolist()
             elif isinstance(val, tuple):
                 val = list(val)
+            elif isinstance(val, int):
+                val = [val]
             else:
                 raise TypeError('The slices must be array-likes or slice objects.')
+
+            if not contains_integers(val, min_val=0):
+                raise ValueError('Slicing indices should be >= 0')
+
+            # check to make sure that the values are not out of bounds:
+            dim_ind = np.squeeze(np.argwhere(self.__n_dim_labs == key))
+            cur_dim_size = self.__n_dim_sizes[dim_ind]
+            if np.max(val) >= cur_dim_size:
+                raise ValueError('slicing argument for dimension: {} was beyond {}'.format(key, cur_dim_size))
 
             n_dim_slices[key] = val
 
@@ -362,6 +433,7 @@ class PycroDataset(h5py.Dataset):
                 spec_slice = np.logical_and(spec_slice, n_dim_slices[spec_lab])
         spec_slice = np.argwhere(spec_slice)
 
+        # TODO: Shouldn't we simply squeeze before returning?
         return pos_slice, spec_slice
 
     def visualize(self, slice_dict=None, verbose=False, **kwargs):
@@ -393,7 +465,7 @@ class PycroDataset(h5py.Dataset):
                 raise TypeError('slice_dict should be a dictionary')
 
             # First work on slicing the ancillary matricies. Determine dimensionality before slicing n dims:
-            pos_slices, spec_slices = self.get_pos_spec_slices(slice_dict)
+            pos_slices, spec_slices = self._get_pos_spec_slices(slice_dict)
             # Things are too big to print here.
 
             pos_unit_values = get_unit_values(self.h5_pos_inds[np.squeeze(pos_slices), :],
