@@ -105,3 +105,5 @@ ENV/
 
 # Folder for testing scripts
 test_scripts/
+
+\.pytest_cache/
