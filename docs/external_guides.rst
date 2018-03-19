@@ -21,7 +21,8 @@ Code:
 * python - similar to what Continuum teaches
     * Python Tutorial - https://docs.python.org/3/tutorial/
     * Python 3 Programming Intro Tutorial - https://pythonprogramming.net/beginner-python-programming-tutorials/
-    * DataCamp Python Courses - https://www.datacamp.com/courses/tech:python?tap_a=5644-dce66f&tap_s=75426-9cf8ad
+    * Python for Data Science book w Notebooks - https://github.com/jakevdp/PythonDataScienceHandbook
+    DataCamp Python Courses - https://www.datacamp.com/courses/tech:python?tap_a=5644-dce66f&tap_s=75426-9cf8ad
 * Data analytics - Latter part of Python for Science course
 * HDF5 - What are datasets, groups, atttributes. How does one read and write these
     * Learning HDF5 (1st three tutorials) - https://portal.hdfgroup.org/display/HDF5/Learning+HDF5
