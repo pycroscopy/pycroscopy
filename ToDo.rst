@@ -75,7 +75,7 @@ Plot Utils
 
   1. allow the tick labels to be specified instead of just the x_size and y_size. 
 
-* plot_curves
+* plot_loops
  
   1. Legend at the bottom
   
