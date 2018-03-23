@@ -44,7 +44,7 @@ freqs = np.linspace(0.5, 5, 9)
 # Generating the signals at the different "positions"
 y_mat = np.array([np.sin(freq * x_vec) for freq in freqs])
 
-px.plot_utils.plot_loops(x_vec, y_mat)
+px.plot_utils.plot_curves(x_vec, y_mat)
 
 
 ################################################################################################
@@ -57,8 +57,8 @@ freqs = np.linspace(0.5, 5, 9)
 y_mat_1 = np.array([np.sin(freq * x_vec_1) for freq in freqs])
 y_mat_2 = np.array([np.cos(freq * x_vec_2) for freq in freqs])
 
-px.plot_utils.plot_loops([x_vec_1, x_vec_2], [y_mat_1, y_mat_2], 
-                         title='Sine and Cosine of different resolutions')
+px.plot_utils.plot_curves([x_vec_1, x_vec_2], [y_mat_1, y_mat_2],
+                          title='Sine and Cosine of different resolutions')
 
 ################################################################################################
 # plot_line_family
@@ -107,7 +107,7 @@ spectra = np.zeros((num_spectra, spectra_length), dtype=np.complex)
 for index, amp, freq, qfac, phase in zip(range(num_spectra), amps, freqs, q_facs, phis):
     spectra[index] = px.analysis.utils.be_sho.SHOfunc((amp, freq, qfac, phase), w_vec)
 
-fig, axis = px.plot_utils.plot_complex_loop_stack(spectra, w_vec, title='Oscillator responses')
+fig, axis = px.plot_utils.plot_complex_spectra(spectra, w_vec, title='Oscillator responses')
 
 ################################################################################################
 # rainbow_plot

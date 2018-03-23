@@ -22,12 +22,12 @@ pycroscopy\.viz\.plot\_utils
       plot_cluster_h5_group
       plot_cluster_results_separate
       plot_cluster_results_together
-      plot_complex_loop_stack
+      plot_complex_spectra
       plot_complex_map_stack
       plot_histgrams
       plot_image_cleaning_results
       plot_line_family
-      plot_loops
+      plot_curves
       plot_map
       plot_map_stack
       plot_scree
