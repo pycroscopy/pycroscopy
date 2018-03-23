@@ -174,8 +174,18 @@ class TestHDFUtils(unittest.TestCase):
             with self.assertRaises(AssertionError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], ['quantity', 'units'])
 
-    def test_get_region(self):
-        assert False
+    def test_get_region_illegal_01(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            with self.assertRaises(KeyError):
+                hdf_utils.get_region(h5_f['/Raw_Measurement/source_main'], 'non_existent')
+
+    def test_get_region_legal_01(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_source = h5_f['/Raw_Measurement/source_main']
+            returned = hdf_utils.get_region(h5_source, 'even_rows')
+            self.assertTrue(np.all(returned == h5_source[range(0, h5_source.shape[0], 2)]))
 
     def test_get_attr_illegal_04(self):
         self.__ensure_test_h5_file()
