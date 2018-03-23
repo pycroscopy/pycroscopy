@@ -10,12 +10,12 @@ Hackathon topics
   * write_utils - need a fresh file. Not much to it
   * PycroDataset - needs a fresh file
   * NumpyTranslator - just update the Translator tutorial
-  
+
 * advanced cookbooks - will be written by Suhas and Chris:
 
   * hdf_utils - check to make sure the examples (only on reading for now) we have still work / make them work. Add examples on modifying files
   * HdfWriter + VirtualData + write_utils - all need to be combined into 1
-  
+
 * Fix all translators, Fitters, Processes, notebooks to use the updated functions correctly - test them with real examples
 * Update all notebooks to say that one can run cells via shift + enter or point to a tutorial on jupyter notebooks (how to start them up and run through the cells) for those who don't know anything about the notebooks but come by them.
 * Thoroughly test and try to break plot_utils
@@ -25,7 +25,7 @@ Hackathon topics
 * Add papers (users + postdocs) that are not on the `list <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_.
 * Add more notebooks (Sabine's cKPFM for example) for papers that are not already on that list - may need to talk to all the postdocs and staff at IFIM.
 * Find more files from microscopes that require translation - this will guide the development of community standards
-  
+
   * Nanonis? - Chris Smith + Rama
   * Bruker - Nina / Stephen
   * NTMDT - Anton?
@@ -40,14 +40,14 @@ v 1.0 goals
   * How does one separate tested code from untested code? For example - SHO fitting is currently not tested but may become tested in the future.
   * hdf_utils is becoming very big and all the functions deal with h5 in some form whether it is for reading or writing. Perhaps it should be split into read_utils and write_utils? hdf is implied.
   * Make room (in terms of organization) for deep learning - implementation will NOT be part of 1.0:
-    
+
     * pycroscopy hdf5 to tfrecords / whatever other frameworks use
     * What science specific functions can be generalized and curated?
-  * Usage of package (only Clustering + SHO fitting for example) probably provides clues about how the package should / could be reorganized (by analysis / process). Typically, most analysis and Process classes have science-specific plotting. Why not insert Procoess / Analysis specific plotting / jupyter functions along with the Process / Fitter class? 
+  * Usage of package (only Clustering + SHO fitting for example) probably provides clues about how the package should / could be reorganized (by analysis / process). Typically, most analysis and Process classes have science-specific plotting. Why not insert Procoess / Analysis specific plotting / jupyter functions along with the Process / Fitter class?
   * Think about whether the rest of the code should be organized by instrument
-  
-    * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
-2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
+
+    * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz.
+2. mostly done - Make core as robust as possible with type / value checking, raising exceptions.
 3. mostly done - unit tests for .core io + basic data science (Cluster, SVD, Decomposition)
 4. mostly done - good utilities for interrogating data - pycro data, what about the rest of the file?
 5. partly done - good documentation for both users and developers
@@ -58,14 +58,14 @@ v 1.0 goals
   * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
   * Upload clean exports of paper notebooks
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
-  
+
 6. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
 7. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
-10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
- 
-  * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions. 
+10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.
+
+  * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions.
 11. DONE - Restructure Process to allow testing, checking for previous results, etc.
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
@@ -130,8 +130,32 @@ Long-term
 Plot Utils
 ~~~~~~~~~
 * ensure most of these functions result in publication-ready plots (good proportions, font sizes, etc.)
-* one round of testing
-* plot_histograms - not used frequently. Still needs to be fixed
+* plot_map 
+
+  1. allow the tick labels to be specified instead of just the x_size and y_size. 
+
+* plot_curves
+ 
+  1. Legend at the bottom
+  
+* plot_map_stack:
+
+  1. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
+  2. See all other changes that were made for the image cleaning paper
+
+* plot_cluster_results_together
+
+  1. Use plot_map and its cleaner color bar option
+  2. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
+  3. See G-mode IV paper to see other changes
+
+* plot_cluster_results_separate
+  
+  1. Use same guidelines as above
+
+* plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
+
+* plot_histograms - not used frequently. Can be ignored for this pass
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -171,41 +195,41 @@ We have two kinds of large computational jobs and one kind of large I/O job:
   * MPI clearly works with very high performance parallel read and write
   * Dask also works but performance is a question. Look at NERSC (Matthew Rocklin et al.)
   * Spark / HDFS requires investigation - Apparently does not work well with HDF5 files
-   
+
 * Computation:
 
   1. Machine learning and Statistics
    
     * Use custom algorithms developed for BEAM - NO one is willing to salvage code
-   
+
       * Advantage - Optimized (and tested) for various HPC environments
       * Disadvantages:
 
         * Need to integarate non-python code
         * We only have a handful of these. NOT future compatible
-            
+
     * OR continue using a single FAT node for these jobs
-            
+
       * Advantages:
-            
+
         * No optimization required
         * Continue using the same scikit learn packages
       * Disadvantage - Is not optimized for HPC
-         
+
     * OR use pbdR / write pbdPy (wrappers around pbdR)
-        
+
       * Advantages:
-            
+
         * Already optimized / mature project
-        * In-house project (good support) 
+        * In-house project (good support)
       * Disadvantages:
-            
+
         * Dependant on pbdR for implementing new algorithms
             
   2. Embarrasingly parallel analysis / processing. Can be scaled using:
    
     * Dask - An inplace replacement of multiprocessing will work on laptops and clusters. More elegant and easier to write and maintain compared to MPI at the cost of efficiency
-            
+
       * simple dask netcdf example: http://matthewrocklin.com/blog/work/2016/02/26/dask-distributed-part-3
     * MPI - Need alternatives to Optimize / Process classes - Best efficiency but a pain to implement
     * Spark?

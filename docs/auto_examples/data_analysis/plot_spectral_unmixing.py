@@ -158,10 +158,10 @@ px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with
 # Visualize the eigenvectors:
 first_evecs = h5_v[:9, :]
 
-px.plot_utils.plot_loops(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
-px.plot_utils.plot_loops(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
 
 # Visualize the abundance maps:
 px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps',

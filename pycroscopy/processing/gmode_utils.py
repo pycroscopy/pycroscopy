@@ -18,7 +18,7 @@ from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes, \
     check_if_main
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
-from ..core.viz.plot_utils import set_tick_font_size, plot_loops
+from ..core.viz.plot_utils import set_tick_font_size, plot_curves
 from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
 
 if sys.version_info.major == 3:
@@ -172,10 +172,10 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None, excit_wf
             filt_pixels = np.reshape(filt_data, (-1, len(excit_wfm)))
             print(raw_pixels.shape, filt_pixels.shape)
 
-            fig_loops, axes_loops = plot_loops(excit_wfm, [raw_pixels, filt_pixels], line_colors=['r', 'k'],
-                                               dataset_names=['Raw', 'Filtered'], x_label='Excitation',
-                                               y_label='Signal', subtitle_prefix='Col ', plots_on_side=4,
-                                               title=plot_title)
+            fig_loops, axes_loops = plot_curves(excit_wfm, [raw_pixels, filt_pixels], line_colors=['r', 'k'],
+                                                dataset_names=['Raw', 'Filtered'], x_label='Excitation',
+                                                y_label='Signal', subtitle_prefix='Col ', plots_on_side=4,
+                                                title=plot_title)
 
     return filt_data, fig_fft, fig_loops
 

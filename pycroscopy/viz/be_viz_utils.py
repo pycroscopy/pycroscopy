@@ -14,8 +14,8 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from ..core.viz.plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
-    plot_complex_loop_stack, plot_complex_map_stack, save_fig_filebox_button
+from ..core.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+    plot_complex_spectra, plot_complex_map_stack, save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
 from ..core.io.hdf_utils import reshape_to_n_dims, get_auxillary_datasets, get_sort_order, get_dimensionality, get_attr, \
@@ -48,8 +48,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
         plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5,
-                             x_label=spec_var_title, y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
+        fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5,
+                              x_label=spec_var_title, y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
@@ -1495,9 +1495,9 @@ def plot_1d_spectrum(data_vec, freq, title, **kwargs):
     freq *= 1E-3  # to kHz
 
     title = title + ': mean UDVS, mean spatial response'
-    fig, axes = plot_complex_loop_stack(np.expand_dims(data_vec, axis=0), freq, title=title,
-                                        subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
-                                        figsize=(5, 3), amp_units='V', **kwargs)
+    fig, axes = plot_complex_spectra(np.expand_dims(data_vec, axis=0), freq, title=title,
+                                     subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
+                                     figsize=(5, 3), amp_units='V', **kwargs)
     return fig, axes
 
 
