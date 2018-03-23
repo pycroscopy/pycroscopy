@@ -65,7 +65,7 @@ def get_plot_grid_size(num_plots, fewer_rows=True):
     ncols : uint
         Number of columns
     """
-    assert isinstance(num_plots, Number)
+    assert isinstance(num_plots, Number), 'num_plots must be a number'
     # force integer:
     num_plots = int(num_plots)
     if num_plots < 1:
@@ -92,6 +92,8 @@ def set_tick_font_size(axes, font_size):
     font_size : unigned int
         Font size
     """
+    assert isinstance(font_size, Number)
+    font_size = max(1, int(font_size))
 
     def __set_axis_tick(axis):
         """
@@ -99,7 +101,7 @@ def set_tick_font_size(axes, font_size):
 
         Parameters
         ----------
-        axis : matplotlib.pyplot.axis object
+        axis : matplotlib.axes.Axes object
             axis to set font sizes
         """
         for tick in axis.xaxis.get_major_ticks():
@@ -107,10 +109,14 @@ def set_tick_font_size(axes, font_size):
         for tick in axis.yaxis.get_major_ticks():
             tick.label.set_fontsize(font_size)
 
+    mesg = 'axes must either be a matplotlib.axes.Axes object or an iterable containing such objects'
+
     if hasattr(axes, '__iter__'):
         for axis in axes:
+            assert isinstance(axis, mpl.axes.Axes), mesg
             __set_axis_tick(axis)
     else:
+        assert isinstance(axes, mpl.axes.Axes), mesg
         __set_axis_tick(axes)
 
 
@@ -120,9 +126,9 @@ def make_scalar_mappable(vmin, vmax, cmap=None):
 
     Parameters
     ----------
-    vmin : float
+    vmin : Number
         Minimum value for colorbar
-    vmax : float
+    vmax : Number
         Maximum value for colorbar
     cmap : colormap object
         Colormap object to use
@@ -131,10 +137,17 @@ def make_scalar_mappable(vmin, vmax, cmap=None):
     -------
     sm : matplotlib.pyplot.cm.ScalarMappable object
         The object that can used to create a colorbar via plt.colorbar(sm)
+
+    Adapted from: https://stackoverflow.com/questions/8342549/matplotlib-add-colorbar-to-a-sequence-of-line-plots
     """
+    assert isinstance(vmin, Number), 'vmin should be a number'
+    assert isinstance(vmax, Number), 'vmax should be a number'
+    assert vmin < vmax, 'vmin must be less than vmax'
+
     if cmap is None:
         cmap = default_cmap
-
+    else:
+        assert isinstance(cmap, (mpl.colors.Colormap, str, unicode))
     sm = plt.cm.ScalarMappable(cmap=cmap,
                                norm=plt.Normalize(vmin=vmin, vmax=vmax))
     # fake up the array of the scalar mappable
@@ -148,13 +161,19 @@ def cbar_for_line_plot(axis, num_steps, discrete_ticks=True, **kwargs):
 
     Parameters
     ----------
-    axis : axis handle
+    axis : matplotlib.axes.Axes
         Axis with multiple line objects
     num_steps : uint
         Number of steps in the colorbar
     discrete_ticks : (optional) bool
         Whether or not to have the ticks match the number of number of steps. Default = True
     """
+    if not isinstance(axis, mpl.axes.Axes):
+        raise TypeError('axis must be a matplotlib.axes.Axes object')
+    if not isinstance(num_steps, int) and num_steps > 0:
+        raise TypeError('num_steps must be a whole number')
+    assert isinstance(discrete_ticks, bool)
+
     cmap = get_cmap_object(kwargs.pop('cmap', None))
     cmap = discrete_cmap(num_steps, cmap=cmap.name)
 
@@ -185,6 +204,8 @@ def get_cmap_object(cmap):
         return default_cmap
     elif type(cmap) in [str, unicode]:
         return plt.get_cmap(cmap)
+    elif not isinstance(cmap, mpl.colors.Colormap):
+        raise TypeError('cmap should either be a matplotlib.colors.Colormap object or a string')
     return cmap
 
 
@@ -218,6 +239,7 @@ def cmap_jet_white_center():
              }
     return LinearSegmentedColormap('white_jet', cdict)
 
+
 def cmap_from_rgba(name, interp_vals, normalization_val):
     """
     Generates a colormap given a matlab-style interpolation table
@@ -238,6 +260,12 @@ def cmap_from_rgba(name, interp_vals, normalization_val):
     new_cmap : matplotlib.colors.LinearSegmentedColormap object
         desired color map
     """
+    if not isinstance(name, (str, unicode)):
+        raise TypeError('name should be a string')
+    if not isinstance(interp_vals, (list, tuple, np.array)):
+        raise TypeError('interp_vals must be a list of tuples')
+    if not isinstance(normalization_val, Number):
+        raise TypeError('normalization_val must be a number')
 
     normalization_val = np.round(1.0 * normalization_val)
 
@@ -275,6 +303,23 @@ def make_linear_alpha_cmap(name, solid_color, normalization_val, min_alpha=0, ma
     new_cmap : matplotlib.colors.LinearSegmentedColormap object
         transparent to opaque color map based on the provided color
     """
+    if not isinstance(name, (str, unicode)):
+        raise TypeError('name should be a string')
+    if not isinstance(solid_color, (list, tuple, np.ndarray)):
+        raise TypeError('solid_color must be a list of numbers')
+    if not len(solid_color) == 3:
+        raise ValueError('solid-color should have three values')
+    if not np.all([isinstance(x, Number) for x in solid_color]):
+        raise TypeError('solid_color should have three numbers for red, green, blue')
+    if not isinstance(normalization_val, Number):
+        raise TypeError('normalization_val must be a number')
+    if not isinstance(min_alpha, Number):
+        raise TypeError('min_alpha should be a Number')
+    if not isinstance(max_alpha, Number):
+        raise TypeError('max_alpha should be a Number')
+    if min_alpha >= max_alpha:
+        raise ValueError('min_alpha must be less than max_alpha')
+
     solid_color = np.array(solid_color) / normalization_val * 1.0
     interp_table = [(1.0, (solid_color[0], solid_color[1], solid_color[2], max_alpha)),
                     (0, (solid_color[0], solid_color[1], solid_color[2], min_alpha))]
@@ -327,21 +372,21 @@ def discrete_cmap(num_bins, cmap=None):
     if cmap is None:
         cmap = default_cmap.name
 
-    elif type(cmap) not in [unicode, str]:
-        # could not figure out a better type check
+    elif isinstance(cmap, mpl.colors.Colormap):
         cmap = cmap.name
+    elif not isinstance(cmap, (str, unicode)):
+        raise TypeError('cmap should be a string or a matplotlib.colors.Colormap object')
 
     return plt.get_cmap(cmap, num_bins)
 
 
 def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     """
-    Plots the input against the output waveform (typically loops).
-    The color of the curve changes as a function of time
+    Plots the input against the output vector such that the color of the curve changes as a function of index
 
     Parameters
     ----------
-    axis : axis handle
+    axis : matplotlib.axes.Axes object
         Axis to plot the curve
     x_vec : 1D float numpy array
         vector that forms the X axis
@@ -350,6 +395,23 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
     num_steps : unsigned int (Optional)
         Number of discrete color steps
     """
+    if not isinstance(axis, mpl.axes.Axes):
+        raise TypeError('axis must be a matplotlib.axes.Axes object')
+    if not isinstance(x_vec, (list, tuple, np.ndarray)):
+        raise TypeError('x_vec must be array-like of numbers')
+    if not isinstance(x_vec, (list, tuple, np.ndarray)):
+        raise TypeError('x_vec must be array-like of numbers')
+    x_vec = np.array(x_vec)
+    y_vec = np.array(y_vec)
+    assert x_vec.ndim == 1 and y_vec.ndim == 1, 'x_vec and y_vec must be 1D arrays'
+    assert x_vec.shape == y_vec.shape, 'x_vec and y_vec must have the same shape'
+
+    if not isinstance(num_steps, int):
+        raise TypeError('num_steps must be an integer < size of x_vec')
+    num_steps = abs(num_steps)
+    assert num_steps < x_vec.size, 'num_steps must be an integer < size of x_vec'
+
+    assert isinstance(kwargs, dict)
     cmap = kwargs.pop('cmap', default_cmap)
     cmap = get_cmap_object(cmap)
 
@@ -375,7 +437,7 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
 
     Parameters
     ----------
-    axis : axis handle
+    axis : matplotlib.axes.Axes object
         Axis to plot the curve
     x_vec : array-like
         Values to plot against
@@ -392,20 +454,35 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
     show_cbar : (optional) bool
         Whether or not to show a colorbar (instead of a legend)
     """
+    if not isinstance(axis, mpl.axes.Axes):
+        raise TypeError('axis must be a matplotlib.axes.Axes object')
+    if not isinstance(x_vec, (list, tuple, np.ndarray)):
+        raise TypeError('x_vec must be array-like of numbers')
+    x_vec = np.array(x_vec)
+    assert x_vec.ndim == 1, 'x_vec must be a 1D array'
+    if not isinstance(line_family, np.ndarray):
+        raise TypeError('line_family must be a 2d array of numbers')
+    assert line_family.ndim == 2, 'line_family must be a 2D array'
+    assert x_vec.size == line_family.shape[1], 'The size of the 2nd dimension of line_family must match with of x_vec'
+    num_lines = line_family.shape[0]
+    for var, var_name in zip([label_suffix, label_prefix], ['label_suffix', 'label_prefix']):
+        if not isinstance(var, (str, unicode)):
+            raise TypeError(var_name + ' needs to be a string')
+    if not isinstance(y_offset, Number):
+        raise TypeError('y_offset should be a Number')
+    assert isinstance(show_cbar, bool)
+    if line_names is not None:
+        if not isinstance(line_names, (list, tuple)):
+            raise TypeError('line_names should be a list of strings')
+        if not np.all([isinstance(x, (str, unicode)) for x in line_names]):
+            raise TypeError('line_names should be a list of strings')
+        if len(line_names) != num_lines:
+            raise ValueError('length of line_names not matching with that of line_family')
+
     cmap = get_cmap_object(kwargs.pop('cmap', None))
-
-    num_lines = len(line_family)
-
-    default_names = False
 
     if line_names is None:
         label_prefix = 'Line '
-        default_names = True
-    elif len(line_names) != num_lines:
-        warn('Line names of different length compared to provided dataset')
-        default_names = True
-
-    if default_names:
         line_names = [str(line_ind) for line_ind in range(num_lines)]
 
     line_names = ['{} {} {}'.format(label_prefix, cur_name, label_suffix) for cur_name in line_names]
@@ -421,14 +498,14 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
         _ = cbar_for_line_plot(axis, num_lines, **kwargs)
 
 
-def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=None, x_size=None, y_size=None,
-             num_ticks=4, stdevs=None, cbar_label=None, tick_font_size=14, origin='lower', **kwargs):
+def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=None,
+             num_ticks=4, stdevs=None, cbar_label=None, tick_font_size=14, **kwargs):
     """
     Plots an image within the given axis with a color bar + label and appropriate X, Y tick labels.
     This is particularly useful to get readily interpretable plots for papers
     Parameters
     ----------
-    axis : matplotlib.axis object
+    axis : matplotlib.axes.Axes object
         Axis to plot this image onto
     img : 2D numpy array with real values
         Data for the image plot
@@ -440,10 +517,6 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         The references values that will be used for tick values on the X axis
     y_vec : array-like, 1D, optional
         The references values that will be used for tick values on the Y axis
-    x_size : float, optional, default = number of pixels in x direction
-        Extent of tick marks in the X axis. This could be something like 1.5 for 1.5 microns
-    y_size : float, optional, default = number of pixels in y direction
-        Extent of tick marks in y axis
     num_ticks : unsigned int, optional, default = 4
         Number of tick marks on the X and Y axes
     stdevs : unsigned int (Optional. Default = None)
@@ -452,26 +525,50 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         Labels for the colorbar. Use this for something like quantity (units)
     tick_font_size : unsigned int, optional, default = 14
         Font size to apply to x, y, colorbar ticks and colorbar label
-    origin : str
-        Where should the origin of the image data be located.  'lower' sets the origin to the
-        bottom left, 'upper' sets it to the upper left.
-        Default 'lower'
     kwargs : dictionary
         Anything else that will be passed on to imshow
+
     Returns
     -------
     im_handle : handle to image plot
         handle to image plot
     cbar : handle to color bar
         handle to color bar
+
+    Note
+    ----
+    The origin of the image will be set to the lower left corner. Use the kwarg 'origin' to change this
     """
+    if not isinstance(axis, mpl.axes.Axes):
+        raise TypeError('axis must be a matplotlib.axes.Axes object')
+    if not isinstance(img, np.ndarray):
+        raise TypeError('img should be a numpy array')
+    if not img.ndim == 2:
+        raise ValueError('img should be a 2D array')
+    if not isinstance(show_xy_ticks, bool):
+        raise TypeError('show_xy_ticks should be a boolean value')
+    if not isinstance(show_cbar, bool):
+        raise TypeError('show_cbar should be a boolean value')
+    # checks for x_vec and y_vec are done below
+    if num_ticks is not None:
+        if not isinstance(num_ticks, int):
+            raise TypeError('num_ticks should be a whole number')
+        if num_ticks < 2:
+            raise ValueError('num_ticks should be at least 2')
+    if tick_font_size is not None:
+        if not isinstance(tick_font_size, Number):
+            raise TypeError('tick_font_size must be a whole number')
+        if tick_font_size < 0:
+            raise ValueError('tick_font_size must be a whole number')
     if stdevs is not None:
+        if not isinstance(stdevs, Number):
+            raise TypeError('stdevs should be a Number')
         data_mean = np.mean(img)
         data_std = np.std(img)
         kwargs.update({'clim': [data_mean - stdevs * data_std,
                                 data_mean + stdevs * data_std]})
 
-    kwargs.update({'origin': origin})
+    kwargs.update({'origin': kwargs.pop('origin', 'lower')})
 
     im_handle = axis.imshow(img, **kwargs)
 
@@ -479,11 +576,9 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         if x_vec is not None:
-            if not isinstance(x_vec, (np.ndarray, list, tuple)) or len(x_vec) != img.shape[1]:
+            if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
                 raise ValueError('x_vec should be array-like with shape equal to the second axis of img')
             x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
-        elif isinstance(x_size, Number):
-            x_tick_labs = [str(np.round(ind * x_size / (img.shape[1] - 1), 2)) for ind in x_ticks]
         else:
             x_tick_labs = [str(ind) for ind in x_ticks]
 
@@ -492,11 +587,9 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         if y_vec is not None:
-            if not isinstance(y_vec, (np.ndarray, list, tuple)) or len(y_vec) != img.shape[0]:
+            if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
                 raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
             y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
-        elif isinstance(x_size, Number):
-            y_tick_labs = [str(np.round(ind * y_size / (img.shape[0] - 1), 2)) for ind in y_ticks]
         else:
             y_tick_labs = [str(ind) for ind in y_ticks]
 
@@ -515,16 +608,18 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         # cbar = axis.cbar_axes[count].colorbar(im_handle)
 
         if cbar_label is not None:
+            if not isinstance(cbar_label, (str, unicode)):
+                raise TypeError('cbar_label should be a string')
             cbar.set_label(cbar_label, fontsize=tick_font_size)
         cbar.ax.tick_params(labelsize=tick_font_size)
     return im_handle, cbar
 
 
-def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
-               plots_on_side=5, x_label='', y_label='', subtitle_prefix='Position', title='',
-               use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None, **kwargs):
+def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
+                plots_on_side=5, x_label='', y_label='', subtitle_prefix='Position', title='',
+                use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None, **kwargs):
     """
-    Plots loops from multiple datasets from up to 25 evenly spaced positions
+    Plots curves / spectras from multiple datasets from up to 25 evenly spaced positions
     Parameters
     -----------
     excit_wfms : 1D numpy float array or list of same
@@ -557,28 +652,56 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
     ---------
     fig, axes
     """
-    mode = 0
+    for var, var_name, dim_size in zip([datasets, excit_wfms], ['datasets', 'excit_wfms'], [2, 1]):
+        mesg = '{} should be {}D arrays or iterables (list or tuples) of {}D arrays' \
+               '.'.format(var_name, dim_size, dim_size)
+        if isinstance(datasets, [h5py.Dataset, np.ndarray]):
+            if not len(datasets.shape) == dim_size:
+                raise ValueError(mesg)
+        if isinstance(datasets, (list, tuple)):
+            if not np.all([isinstance(dset, (h5py.Dataset, np.ndarray)) for dset in datasets]):
+                raise TypeError(mesg)
+        else:
+            raise TypeError(mesg)
+
+    # modes:
     # 0 = one excitation waveform and one dataset
     # 1 = one excitation waveform but many datasets
     # 2 = one excitation waveform for each of many dataset
-    if type(datasets) in [h5py.Dataset, np.ndarray]:
+    if isinstance(datasets, [h5py.Dataset, np.ndarray]):
         # can be numpy array or h5py.dataset
         num_pos = datasets.shape[0]
         num_points = datasets.shape[1]
         datasets = [datasets]
-        excit_wfms = [excit_wfms]
+        if isinstance(excit_wfms, (np.ndarray, h5py.Dataset)):
+            excit_wfms = [excit_wfms]
+        elif isinstance(excit_wfms, list):
+            if len(excit_wfms) == num_points:
+                excit_wfms = [np.array(excit_wfms)]
+            elif len(excit_wfms) == 1 and len(excit_wfms[0]) == num_points:
+                excit_wfms = [np.array(excit_wfms[0])]
+            else:
+                raise ValueError('If only a single dataset is provided, excit_wfms should be a 1D array')
         line_colors = ['b']
         dataset_names = ['Default']
         mode = 0
     else:
+        # dataset is a list of datasets
         # First check if the datasets are correctly shaped:
         num_pos_es = list()
         num_points_es = list()
+
         for dataset in datasets:
+            if not isinstance(dataset, [h5py.Dataset, np.ndarray]):
+                raise TypeError('datasets can be a list of 2D h5py.Dataset or numpy array objects')
+            if len(dataset.shape) != 2:
+                raise ValueError('Each datset should be a 2D array')
             num_pos_es.append(dataset.shape[0])
             num_points_es.append(dataset.shape[1])
+
         num_pos_es = np.array(num_pos_es)
         num_points_es = np.array(num_points_es)
+
         if np.unique(num_pos_es).size > 1:  # or np.unique(num_points_es).size > 1:
             raise ValueError('The first dimension of the datasets are not matching: ' + str(num_pos_es))
         num_pos = np.unique(num_pos_es)[0]
@@ -670,23 +793,25 @@ def plot_loops(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_sp
 ###############################################################################
 
 
-def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='',
+def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='', evenly_spaced=True,
                            subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
     """
-    Plots the provided spectrograms from SVD V vector
+    Plots the amplitude and phase components of the provided stack of complex valued spectrograms (2D images)
 
     Parameters
     -------------
     map_stack : 3D numpy complex matrices
-        Eigenvectors rearranged as - [component, row, col]
+        stack of complex valued 2D images arranged as - [component, row, col]
     num_comps : int
-        Number of components to plot
+        Number of images to plot
     title : str, optional
         Title to plot above everything else
     x_label : str, optional
         Label for x axis
     y_label : str, optional
         Label for y axis
+    evenly_spaced : bool, optional. Default = True
+        If True, images will be sampled evenly over the given dataset. Else, the first num_comps images will be plotted
     subtitle_prefix : str, optional
         Prefix for the title over each image
     amp_units : str, optional
@@ -698,38 +823,60 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     ---------
     fig, axes
     """
+    if not isinstance(map_stack, np.ndarray) or not map_stack.ndim == 3:
+        raise TypeError('map_stack should be a 3 dimensional array arranged as [component, row, col]')
+    if num_comps is None:
+        num_comps = 4  # Default
+    else:
+        if not isinstance(num_comps, int) or not num_comps > 0:
+            raise TypeError('num_comps should be a positive integer')
+    for var, var_name in zip([title, x_label, y_label, subtitle_prefix, amp_units],
+                             ['title', 'x_label', 'y_label', 'subtitle_prefix', 'amp_units']):
+        if var is not None:
+            if not isinstance(var, (str, unicode)):
+                raise TypeError(var_name + ' should be a string')
     if amp_units is None:
         amp_units = 'a.u.'
+    if not isinstance(stdevs, Number) or stdevs <= 0:
+        raise TypeError('stdevs should be a positive number')
 
     figsize = kwargs.pop('figsize', (4, 4))
     figsize = (figsize[0] * num_comps, 8)
 
-    num_comps = min(num_comps, map_stack.shape[0])
+    num_comps = min(24, min(num_comps, map_stack.shape[0]))
 
-    fig, axes = plt.subplots(2, num_comps, figsize=figsize)
+    if evenly_spaced:
+        chosen_pos = np.linspace(0, map_stack.shape[0] - 1, num_comps, dtype=int)
+    else:
+        chosen_pos = np.arange(num_comps, dtype=int)
+
+    nrows, ncols = get_plot_grid_size(num_comps)
+
+    fig, axes = plt.subplots(nrows * 2, ncols, figsize=figsize)
     fig.subplots_adjust(hspace=0.1, wspace=0.4)
     if title is not None:
         fig.canvas.set_window_title(title)
         fig.suptitle(title, y=1.025)
 
     title_prefix = ''
-
-    for index in range(num_comps):
-        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
+    for comp_counter, comp_pos in enumerate(chosen_pos):
+        ax_ind = (comp_counter // ncols) * (2 * ncols) + comp_counter % ncols
+        cur_axes = [axes.flat[ax_ind], axes.flat[ax_ind + ncols]]
         funcs = [np.abs, np.angle]
         labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
         for func, comp_name, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
             kwargs['stdevs'] = std_val
-            _ = plot_map(axis, func(map_stack[index]), **kwargs)
+            _ = plot_map(axis, func(map_stack[comp_pos]), **kwargs)
 
             if num_comps > 1:
-                title_prefix = '%s %d - ' % (subtitle_prefix, index)
+                title_prefix = '%s %d - ' % (subtitle_prefix, comp_counter)
             axis.set_title('%s%s' % (title_prefix, comp_name))
 
             axis.set_aspect('auto')
-            if index == 0:
+            if ax_ind % ncols == 0:
                 axis.set_ylabel(y_label)
-        axis.set_xlabel(x_label)
+            if np.ceil((ax_ind + ncols)/ncols) == nrows:
+                axis.set_xlabel(x_label)
 
     fig.tight_layout()
 
@@ -738,15 +885,16 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
 
 ###############################################################################
 
-def plot_complex_loop_stack(loop_stack, x_vec, title=None, subtitle_prefix='Component', num_comps=4, x_label='',
-                            amp_units=None, **kwargs):
+def plot_complex_spectra(loop_stack, x_vec, title=None, subtitle_prefix='Component', num_comps=4, x_label='',
+                         amp_units=None, **kwargs):
+    # TODO: Combine with complex_map_stack
     """
-    Plots the provided spectrograms from SVD V vector
+    Plots the amplitude and phase components of the provided spectra (complex valued 1D arrays)
 
     Parameters
     -------------
-    loop_stack : 2D numpy complex matrix
-        Loops rearranged as - [component, points]
+    loop_stack : 2D numpy array of complex values
+        Spectra arranged as - [component, points in spectra]
     x_vec : 1D real numpy array
         The vector to plot against
     title : str
@@ -818,6 +966,14 @@ def plot_scree(scree, title='Scree', **kwargs):
     ---------
     fig, axes
     """
+    if isinstance(scree, (list, tuple)):
+        scree = np.array(scree)
+
+    if not isinstance(scree, np.ndarray):
+        raise TypeError('scree must be a 1D array')
+    if not isinstance(title, (str, unicode)):
+        raise TypeError('title must be a string')
+
     fig = plt.figure(figsize=kwargs.pop('figsize', (6.5, 6)))
     axis = fig.add_axes([0.1, 0.1, .8, .8])  # left, bottom, width, height (range 0 to 1)
     kwargs.update({'color': kwargs.pop('color', 'b')})
@@ -836,7 +992,7 @@ def plot_scree(scree, title='Scree', **kwargs):
 # ###############################################################################
 
 
-def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=True,
+def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=False,
                    title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
                    fig_title_yoffset=None, fig_title_size=None, **kwargs):
     """
@@ -854,8 +1010,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Options are None, single or each. Default None
     evenly_spaced : bool
         Default False
-    reverse_dims : Boolean (Optional)
-        Set this to False to accept data structured as [component, rows, cols]
+    reverse_dims : Boolean (Optional), default = False
+        Set this to True to accept data structured as [rows, cols, component]
     title : String or list of strings
         The titles for each of the plots.
         If a single string is provided, the plot titles become ['title 01', title 02', ...].
@@ -883,6 +1039,27 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     ---------
     fig, axes
     """
+    if not isinstance(map_stack, np.ndarray) or not map_stack.ndim == 3:
+        raise TypeError('map_stack should be a 3 dimensional array arranged as [component, row, col]')
+    if num_comps is None:
+        num_comps = 4  # Default
+    else:
+        if not isinstance(num_comps, int) or num_comps < 1:
+            raise TypeError('num_comps should be a positive integer')
+    for var, var_name in zip([title, heading, colorbar_label, color_bar_mode],
+                             ['title', 'heading', 'colorbar_label', 'color_bar_mode']):
+        if var is not None:
+            if not isinstance(var, (str, unicode)):
+                raise TypeError(var_name + ' should be a string')
+    if color_bar_mode not in [None, 'single', 'each']:
+        raise ValueError('color_bar_mode must be either None, "single", or "each"')
+
+    if amp_units is None:
+        amp_units = 'a.u.'
+    if not isinstance(stdevs, Number) or stdevs <= 0:
+        raise TypeError('stdevs should be a positive number')
+
+
     if reverse_dims:
         map_stack = np.transpose(map_stack, (2, 0, 1))
 
@@ -993,7 +1170,7 @@ def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
     -------
     fig : Figure
         Figure containing the plots
-    axes : 1D array_like of axes objects
+    axes : 1D array_like of matplotlib.axes.Axes objects
         Axes of the individual plots within `fig`
     """
 
@@ -1081,7 +1258,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     -------
     fig : Figure
         Figure containing the plots
-    axes : 1D array_like of axes objects
+    axes : 1D array_like of matplotlib.axes.Axes objects
         Axes of the individual plots within `fig`
     """
     cmap = get_cmap_object(cmap)
