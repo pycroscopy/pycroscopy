@@ -1512,11 +1512,10 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
                              + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
     freq *= 1E-3  # to kHz
 
-    fig, axes = plot_complex_map_stack(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
-                                       x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
-                                       extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
-                                       figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
-                                       **kwargs)
+    fig, axes = plot_complex_spectra(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
+                                     x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
+                                     extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
+                                     figsize=(5, 3), origin='lower', stdevs=None, amp_units='V', **kwargs)
     return fig, axes
 
 

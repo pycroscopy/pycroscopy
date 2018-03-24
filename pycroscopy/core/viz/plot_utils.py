@@ -616,7 +616,7 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
 
 def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_spaced=True,
-                plots_on_side=5, x_label='', y_label='', subtitle_prefix='Position', title='',
+                num_plots=25, x_label='', y_label='', subtitle_prefix='Position', title='',
                 use_rainbow_plots=False, fig_title_yoffset=1.05, h5_pos=None, **kwargs):
     """
     Plots curves / spectras from multiple datasets from up to 25 evenly spaced positions
@@ -632,8 +632,8 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
         Names of the different datasets to be compared
     evenly_spaced : boolean
         Evenly spaced positions or first N positions
-    plots_on_side : unsigned int
-        Number of plots on each side
+    num_plots : unsigned int
+        Number of plots
     x_label : (optional) String
         X Label for all plots
     y_label : (optional) String
@@ -652,6 +652,20 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
     ---------
     fig, axes
     """
+    for var, var_name in zip([use_rainbow_plots, evenly_spaced], ['use_rainbow_plots', 'evenly_spaced']):
+        if not isinstance(var, bool):
+            raise TypeError(var_name + ' should be of type: bool')
+    for var, var_name in zip([x_label, y_label, subtitle_prefix, title],
+                             ['x_label', 'y_label', 'subtitle_prefix', 'title']):
+        if not isinstance(var, (str, unicode)):
+            raise TypeError(var_name + ' should be of type: str')
+    if not isinstance(fig_title_yoffset, Number):
+        raise TypeError('fig_title_yoffset should be a Number')
+    if h5_pos is not None or not isinstance(h5_pos, h5py.Dataset):
+        raise TypeError('h5_pos should be a h5py.Dataset object')
+    if not isinstance(num_plots, int) or num_plots < 1:
+        raise TypeError('num_plots should be a number')
+
     for var, var_name, dim_size in zip([datasets, excit_wfms], ['datasets', 'excit_wfms'], [2, 1]):
         mesg = '{} should be {}D arrays or iterables (list or tuples) of {}D arrays' \
                '.'.format(var_name, dim_size, dim_size)
@@ -721,14 +735,17 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
             excit_wfms = [excit_wfms]
             mode = 1
 
+        for var, var_name in zip([dataset_names, line_colors], ['dataset_names', 'line_colors']):
+            if not isinstance(var, (list, tuple)) or not np.all([isinstance(x, (str, unicode)) for x in var]):
+                raise TypeError(var_name + ' should be a list of strings')
+            if len(var) > 0 and len(var) != len(datasets):
+                raise ValueError(var_name + ' is not of same length as datasets: ' + len(datasets))
+
         # Next the identification of datasets:
-        if len(dataset_names) > len(datasets):
-            # remove additional titles
-            dataset_names = dataset_names[:len(datasets)]
-        elif len(dataset_names) < len(datasets):
-            # add titles
-            dataset_names = dataset_names + ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
-        if len(line_colors) != len(datasets):
+        if len(dataset_names) == 0:
+            dataset_names = ['Dataset' + ' ' + str(x) for x in range(len(dataset_names), len(datasets))]
+
+        if len(line_colors) == 0:
             # TODO: Generate colors from a user-specified colormap or consider using line family
             color_list = ['b', 'g', 'r', 'c', 'm', 'y', 'k', 'pink', 'brown', 'orange']
             if len(datasets) < len(color_list):
@@ -748,12 +765,8 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
         # users are not allowed to specify colors
         _ = kwargs.pop('color', None)
 
-    plots_on_side = min(abs(plots_on_side), 5)
-    if num_pos > plots_on_side ** 2:
-        nrows = plots_on_side
-        ncols = plots_on_side
-    else:
-        nrows, ncols = get_plot_grid_size(num_pos)
+    num_plots = min(min(num_plots, 49), num_pos)
+    nrows, ncols = get_plot_grid_size(num_plots)
 
     if evenly_spaced:
         chosen_pos = np.linspace(0, num_pos - 1, nrows * ncols, dtype=int)
@@ -793,15 +806,18 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
 ###############################################################################
 
 
-def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_label='', evenly_spaced=True,
+def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label='', y_label='', evenly_spaced=True,
                            subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
     """
     Plots the amplitude and phase components of the provided stack of complex valued spectrograms (2D images)
 
     Parameters
     -------------
-    map_stack : 3D numpy complex matrices
-        stack of complex valued 2D images arranged as - [component, row, col]
+    map_stack : 2D or 3D numpy complex matrices
+        stack of complex valued 1D spectra arranged as [component, spectra] or
+        2D images arranged as - [component, row, col]
+    x_vec : 1D array-like, optional, default=None
+        If the data are spectra (1D) instead of spectrograms (2D), x_vec is the reference array against which
     num_comps : int
         Number of images to plot
     title : str, optional
@@ -819,12 +835,27 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     stdevs : int
         Number of standard deviations to consider for plotting
 
+    **kwargs will be passed on either to plot_map() or pyplot.plot()
+
     Returns
     ---------
     fig, axes
     """
-    if not isinstance(map_stack, np.ndarray) or not map_stack.ndim == 3:
-        raise TypeError('map_stack should be a 3 dimensional array arranged as [component, row, col]')
+    if not isinstance(map_stack, np.ndarray) or not map_stack.ndim in [2, 3]:
+        raise TypeError('map_stack should be a 2/3 dimensional array arranged as [component, row, col] or '
+                        '[component, spectra')
+    if x_vec is not None:
+        if not isinstance(x_vec, (list, tuple, np.ndarray)):
+            raise TypeError('x_vec should be a 1D array')
+        x_vec = np.array(x_vec)
+        if x_vec.ndim != 1:
+            raise ValueError('x_vec should be a 1D array')
+        if x_vec.size != map_stack.shape[1]:
+            raise ValueError('x_vec should be of the same size as the second dimension of map_stack')
+    else:
+        if map_stack.ndim == 2:
+            x_vec = np.arange(map_stack.shape[1])
+
     if num_comps is None:
         num_comps = 4  # Default
     else:
@@ -865,8 +896,11 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
         funcs = [np.abs, np.angle]
         labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
         for func, comp_name, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
-            kwargs['stdevs'] = std_val
-            _ = plot_map(axis, func(map_stack[comp_pos]), **kwargs)
+            if map_stack.ndims > 2:
+                kwargs['stdevs'] = std_val
+                _ = plot_map(axis, func(map_stack[comp_pos]), **kwargs)
+            else:
+                axis.plot(x_vec, map_stack[comp_pos], **kwargs)
 
             if num_comps > 1:
                 title_prefix = '%s %d - ' % (subtitle_prefix, comp_counter)
@@ -881,72 +915,6 @@ def plot_complex_map_stack(map_stack, num_comps=4, title=None, x_label='', y_lab
     fig.tight_layout()
 
     return fig, axes
-
-
-###############################################################################
-
-def plot_complex_spectra(loop_stack, x_vec, title=None, subtitle_prefix='Component', num_comps=4, x_label='',
-                         amp_units=None, **kwargs):
-    # TODO: Combine with complex_map_stack
-    """
-    Plots the amplitude and phase components of the provided spectra (complex valued 1D arrays)
-
-    Parameters
-    -------------
-    loop_stack : 2D numpy array of complex values
-        Spectra arranged as - [component, points in spectra]
-    x_vec : 1D real numpy array
-        The vector to plot against
-    title : str
-        Title to plot above everything else
-    subtitle_prefix : str
-        Subtile to of Figure
-    num_comps : int
-        Number of components to plot
-    x_label : str
-        Label for x axis
-    amp_units : str, optional
-        Units for amplitude
-
-    Returns
-    ---------
-    fig, axes
-    """
-    if amp_units is None:
-        amp_units = 'a.u.'
-
-    if min(num_comps, loop_stack.shape[0]) == 1:
-        subtitle_prefix = None
-
-    num_comps = min(num_comps, loop_stack.shape[0])
-
-    funcs = [np.abs, np.angle]
-    comp_labs = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
-
-    figsize = kwargs.pop('figsize', (4, 4))
-    figsize = (figsize[0] * num_comps, figsize[1] * len(funcs))
-
-    fig, axes = plt.subplots(len(funcs), num_comps, figsize=figsize)
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
-    if title is not None:
-        fig.canvas.set_window_title(title)
-        fig.suptitle(title, y=1.025)
-
-    for index in range(num_comps):
-        cur_loop = loop_stack[index, :]
-        cur_axes = [axes.flat[index], axes.flat[index + num_comps]]
-        for func, y_label, axis in zip(funcs, comp_labs, cur_axes):
-            axis.plot(x_vec, func(cur_loop), **kwargs)
-            if subtitle_prefix is not None:
-                axis.set_title('%s: %d' % (subtitle_prefix, index))
-            if index == 0:
-                axis.set_ylabel(y_label)
-        axis.set_xlabel(x_label)
-
-    fig.tight_layout()
-
-    return fig, axes
-
 
 ###############################################################################
 
@@ -1053,12 +1021,18 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                 raise TypeError(var_name + ' should be a string')
     if color_bar_mode not in [None, 'single', 'each']:
         raise ValueError('color_bar_mode must be either None, "single", or "each"')
-
-    if amp_units is None:
-        amp_units = 'a.u.'
-    if not isinstance(stdevs, Number) or stdevs <= 0:
-        raise TypeError('stdevs should be a positive number')
-
+    for var, var_name in zip([stdevs, fig_title_yoffset, fig_title_size],
+                             ['stdevs', 'fig_title_yoffset', 'fig_title_size']):
+        if not isinstance(var, Number) or var <= 0:
+            raise TypeError(var_name + ' should be a number > 0')
+    for var, var_name in zip([evenly_spaced, reverse_dims], ['evenly_spaced', 'reverse_dims']):
+        if not isinstance(var, bool):
+            raise TypeError(var_name + ' should be a bool')
+    for var, var_name in zip([fig_mult, pad_mult], ['fig_mult', 'pad_mult']):
+        if not isinstance(var, (list, tuple, np.ndarray)) or len(var) != 2:
+            raise TypeError(var_name + ' should be a tuple / list / numpy array of size 2')
+        if not np.all([x > 0 and isinstance(x, Number) for x in var]):
+            raise ValueError(var_name + ' should contain positive numbers')
 
     if reverse_dims:
         map_stack = np.transpose(map_stack, (2, 0, 1))
@@ -1173,6 +1147,12 @@ def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
     axes : 1D array_like of matplotlib.axes.Axes objects
         Axes of the individual plots within `fig`
     """
+    if not isinstance(h5_group, h5py.Group):
+        raise TypeError('h5_group should be a h5py.Group')
+    if not isinstance(centroids_together, bool):
+        raise TypeError('centroids_together should be a bool')
+    if not isinstance(cmap, (str, unicode, mpl.colors.Colormap)):
+        raise TypeError('cmap should either be a string or a matplotlib.colors.Colormap object')
 
     h5_labels = h5_group['Labels']
     try:
