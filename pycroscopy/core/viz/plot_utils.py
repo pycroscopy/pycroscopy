@@ -307,8 +307,8 @@ def make_linear_alpha_cmap(name, solid_color, normalization_val, min_alpha=0, ma
         raise TypeError('name should be a string')
     if not isinstance(solid_color, (list, tuple, np.ndarray)):
         raise TypeError('solid_color must be a list of numbers')
-    if not len(solid_color) == 3:
-        raise ValueError('solid-color should have three values')
+    if not len(solid_color) == 4:
+        raise ValueError('solid-color should have fourth values')
     if not np.all([isinstance(x, Number) for x in solid_color]):
         raise TypeError('solid_color should have three numbers for red, green, blue')
     if not isinstance(normalization_val, Number):
@@ -661,18 +661,19 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
             raise TypeError(var_name + ' should be of type: str')
     if not isinstance(fig_title_yoffset, Number):
         raise TypeError('fig_title_yoffset should be a Number')
-    if h5_pos is not None or not isinstance(h5_pos, h5py.Dataset):
-        raise TypeError('h5_pos should be a h5py.Dataset object')
+    if h5_pos is not None:
+        if not isinstance(h5_pos, h5py.Dataset):
+            raise TypeError('h5_pos should be a h5py.Dataset object')
     if not isinstance(num_plots, int) or num_plots < 1:
         raise TypeError('num_plots should be a number')
 
     for var, var_name, dim_size in zip([datasets, excit_wfms], ['datasets', 'excit_wfms'], [2, 1]):
         mesg = '{} should be {}D arrays or iterables (list or tuples) of {}D arrays' \
                '.'.format(var_name, dim_size, dim_size)
-        if isinstance(datasets, [h5py.Dataset, np.ndarray]):
-            if not len(datasets.shape) == dim_size:
+        if isinstance(var, (h5py.Dataset, np.ndarray)):
+            if not len(var.shape) == dim_size:
                 raise ValueError(mesg)
-        if isinstance(datasets, (list, tuple)):
+        elif isinstance(var, (list, tuple)):
             if not np.all([isinstance(dset, (h5py.Dataset, np.ndarray)) for dset in datasets]):
                 raise TypeError(mesg)
         else:
@@ -682,7 +683,7 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
     # 0 = one excitation waveform and one dataset
     # 1 = one excitation waveform but many datasets
     # 2 = one excitation waveform for each of many dataset
-    if isinstance(datasets, [h5py.Dataset, np.ndarray]):
+    if isinstance(datasets, (h5py.Dataset, np.ndarray)):
         # can be numpy array or h5py.dataset
         num_pos = datasets.shape[0]
         num_points = datasets.shape[1]
@@ -706,7 +707,7 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
         num_points_es = list()
 
         for dataset in datasets:
-            if not isinstance(dataset, [h5py.Dataset, np.ndarray]):
+            if not isinstance(dataset, (h5py.Dataset, np.ndarray)):
                 raise TypeError('datasets can be a list of 2D h5py.Dataset or numpy array objects')
             if len(dataset.shape) != 2:
                 raise ValueError('Each datset should be a 2D array')
@@ -896,11 +897,12 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         funcs = [np.abs, np.angle]
         labels = ['Amplitude (' + amp_units + ')', 'Phase (rad)']
         for func, comp_name, axis, std_val in zip(funcs, labels, cur_axes, [stdevs, None]):
-            if map_stack.ndims > 2:
+            y_vec = func(map_stack[comp_pos])
+            if map_stack.ndim > 2:
                 kwargs['stdevs'] = std_val
-                _ = plot_map(axis, func(map_stack[comp_pos]), **kwargs)
+                _ = plot_map(axis, y_vec, **kwargs)
             else:
-                axis.plot(x_vec, map_stack[comp_pos], **kwargs)
+                axis.plot(x_vec, y_vec, **kwargs)
 
             if num_comps > 1:
                 title_prefix = '%s %d - ' % (subtitle_prefix, comp_counter)
@@ -1023,8 +1025,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         raise ValueError('color_bar_mode must be either None, "single", or "each"')
     for var, var_name in zip([stdevs, fig_title_yoffset, fig_title_size],
                              ['stdevs', 'fig_title_yoffset', 'fig_title_size']):
-        if not isinstance(var, Number) or var <= 0:
-            raise TypeError(var_name + ' should be a number > 0')
+        if var is not None:
+            if not isinstance(var, Number) or var <= 0:
+                raise TypeError(var_name + ' of value: {} should be a number > 0'.format(var))
     for var, var_name in zip([evenly_spaced, reverse_dims], ['evenly_spaced', 'reverse_dims']):
         if not isinstance(var, bool):
             raise TypeError(var_name + ' should be a bool')
@@ -1214,7 +1217,7 @@ def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=
     label_mat : 2D ndarray or h5py.Dataset of ints
         Spatial map of cluster labels structured as [rows, cols]
     mean_response : 2D array or h5py.Dataset
-        Mean value of each cluster over all samples 
+        Mean value of each cluster over all samples
         arranged as [cluster number, features]
     spec_val :  1D array or h5py.Dataset of floats, optional
         X axis to plot the centroids against
@@ -1668,3 +1671,4 @@ def export_fig_data(fig, filename, include_images=False):
         data_file.write(spacer)
 
     data_file.close()
+
