@@ -408,7 +408,8 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
 
     if not isinstance(num_steps, int):
         raise TypeError('num_steps must be an integer < size of x_vec')
-    num_steps = abs(num_steps)
+    if num_steps < 2 or num_steps >= x_vec // 2:
+        raise ValueError('num_steps should be a positive number. 1/4 to 1/16th of x_vec')
     assert num_steps < x_vec.size, 'num_steps must be an integer < size of x_vec'
 
     assert isinstance(kwargs, dict)
@@ -460,6 +461,8 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
         raise TypeError('x_vec must be array-like of numbers')
     x_vec = np.array(x_vec)
     assert x_vec.ndim == 1, 'x_vec must be a 1D array'
+    if not isinstance(line_family, list):
+        line_family = np.array(line_family)
     if not isinstance(line_family, np.ndarray):
         raise TypeError('line_family must be a 2d array of numbers')
     assert line_family.ndim == 2, 'line_family must be a 2D array'
@@ -571,7 +574,7 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
     kwargs.update({'origin': kwargs.pop('origin', 'lower')})
 
     im_handle = axis.imshow(img, **kwargs)
-
+    assert isinstance(show_xy_ticks, bool)
     if show_xy_ticks is True:
 
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
@@ -602,6 +605,9 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         axis.set_yticks([])
 
     cbar = None
+    if not isinstance(show_cbar, bool):
+        show_cbar = False
+
     if show_cbar:
         cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
                             fraction=0.046, pad=0.04, use_gridspec=True)
