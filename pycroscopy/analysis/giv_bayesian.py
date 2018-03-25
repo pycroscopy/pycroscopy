@@ -12,15 +12,14 @@ import numpy as np
 from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.dtype_utils import stack_real_to_compound
-from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
+    build_ind_val_dsets
 from ..core.io.hdf_writer import HDFwriter
-from .utils.giv_utils import do_bayesian_inference
+from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})
 # TODO : Take lesser used bayesian inference params from kwargs if provided
-# TODO: Allow resuming of computation
 
 
 class GIVBayesian(Process):
@@ -77,6 +76,15 @@ class GIVBayesian(Process):
         self.reverse_results = None
         self.forward_results = None
         self._bayes_parms = None
+
+    def test_on_subset(self, pix_ind=None, show_plots=True, econ=False):
+        if pix_ind is None:
+            pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
+        other_params = self.parms_dict.copy()
+        _ = other_params.pop('freq')
+
+        return bayesian_inference_on_period(self.h5_main[pix_ind], self.single_ao, self.parms_dict['freq'],
+                                            show_plots=show_plots, econ=econ, **other_params)
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
