@@ -50,6 +50,8 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import NMF
 
 # finally import pycroscopy:
+import pycroscopy.core.viz.cluster_utils
+
 try:
     import pycroscopy as px
 except ImportError:
@@ -192,7 +194,7 @@ h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
+pycroscopy.core.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)

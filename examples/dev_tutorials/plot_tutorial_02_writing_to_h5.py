@@ -85,6 +85,8 @@ import os
 from warnings import warn
 
 # Package for downloading online files:
+import pycroscopy.core.viz.cluster_utils
+
 try:
     # This package is not part of anaconda and may need to be installed.
     import wget
@@ -422,7 +424,7 @@ px.hdf_utils.checkAndLinkAncillary(h5_centroids,
 # clustering results. The ancillary datasets linked to `labels` and `centroids` instructed the code about the
 # spatial and spectroscopic dimensionality and enabled it to automatically render the plots below
 
-px.plot_utils.plot_cluster_h5_group(h5_labels.parent, '');
+pycroscopy.core.viz.cluster_utils.plot_cluster_h5_group(h5_labels.parent, '');
 
 ###############################################################################
 # Cleanup
