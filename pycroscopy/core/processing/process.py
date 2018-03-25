@@ -63,13 +63,13 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
-        print('Consider calling test_on_subset() to check results before calling compute() which computes on the entire'
+        print('Consider calling test() to check results before calling compute() which computes on the entire'
               ' dataset and writes back to the HDF5 file')
 
         # DON'T check for duplicates since parms_dict has not yet been initialized.
         # Sub classes will check by themselves if they are interested.
 
-    def test_on_subset(self, **kwargs):
+    def test(self, **kwargs):
         """
         Tests the process on a subset (for example a pixel) of the whole data. The class can be reinstantiated with
         improved parameters and tested repeatedly until the user is content, at which point the user can call

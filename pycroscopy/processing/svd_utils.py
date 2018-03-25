@@ -49,7 +49,7 @@ class SVD(Process):
         self.__v = None
         self.__s = None
 
-    def test_on_subset(self):
+    def test(self):
         """
         Applies randomised VD to the dataset. This function does NOT write results to the hdf5 file. Call compute() to
         write to the file. Handles complex, compound datasets such that the V matrix is of the same data-type as the
@@ -86,7 +86,7 @@ class SVD(Process):
     def compute(self):
         """
         Computes SVD (by calling test_on_subset() if it has not already been called) and writes results to file.
-        Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
+        Consider calling test() to check results before writing to file. Results are deleted from memory
         upon writing to the HDF5 file
 
         Returns
@@ -95,7 +95,7 @@ class SVD(Process):
             Datagroup containing all the results
         """
         if self.__u is None and self.__v is None and self.__s is None:
-            self.test_on_subset()
+            self.test()
 
         self._write_results_chunk()
         del self.__u, self.__s, self.__v

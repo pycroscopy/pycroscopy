@@ -107,7 +107,7 @@ class Cluster(Process):
         self.__labels = None
         self.__mean_resp = None
 
-    def test_on_subset(self, rearrange_clusters=True):
+    def test(self, rearrange_clusters=True):
         """
         Clusters the hdf5 dataset and calculates mean response for each cluster. This function does NOT write results to
         the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
@@ -141,12 +141,11 @@ class Cluster(Process):
         if rearrange_clusters:
             self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp)
 
-
         return self.__labels, self.__mean_resp
 
     def compute(self, rearrange_clusters=True):
         """
-        Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test_on_subset() if it has
+        Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test() if it has
         not already been called), and writes the labels and mean response back to the h5 file.
 
         Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
@@ -163,7 +162,7 @@ class Cluster(Process):
             Reference to the group that contains the clustering results
         """
         if self.__labels is None and self.__mean_resp is None:
-            self.test_on_subset(rearrange_clusters=rearrange_clusters)
+            self.test(rearrange_clusters=rearrange_clusters)
 
         h5_group = self._write_results_chunk()
 

@@ -119,7 +119,7 @@ class SignalFilter(Process):
         self.h5_condensed = None
         self.h5_noise_floors = None
 
-    def test_on_subset(self, pix_ind=None, excit_wfm=None):
+    def test(self, pix_ind=None, excit_wfm=None):
         """
         Tests the signal filter on a single pixel (randomly chosen unless manually specified) worth of data.
 
