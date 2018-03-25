@@ -15,7 +15,8 @@ from IPython.display import display
 from matplotlib import pyplot as plt
 
 from ..core.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
-    plot_complex_spectra, plot_complex_map_stack, save_fig_filebox_button
+    plot_complex_spectra
+from ..core.viz.jupyter_utils import save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
 from ..core.io.hdf_utils import reshape_to_n_dims, get_auxillary_datasets, get_sort_order, get_dimensionality, get_attr, \

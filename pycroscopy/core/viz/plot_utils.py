@@ -13,7 +13,6 @@ import os
 import sys
 from numbers import Number
 import h5py
-import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -1134,46 +1133,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
 
 ###############################################################################
-
-
-def save_fig_filebox_button(fig, filename):
-    """
-    Create ipython widgets to allow the user to save a figure to the
-    specified file.
-
-    Parameters
-    ----------
-    fig : matplotlib.Figure
-        The figure to be saved.
-    filename : str
-        The filename the figure should be saved to
-
-    Returns
-    -------
-    widget_box : ipywidgets.HBox
-        Widget box holding the text entry and save button
-
-    """
-    filename = os.path.abspath(filename)
-    file_dir, filename = os.path.split(filename)
-
-    name_box = widgets.Text(value=filename,
-                            placeholder='Type something',
-                            description='Output Filename:',
-                            disabled=False,
-                            layout={'width': '50%'})
-    save_button = widgets.Button(description='Save figure')
-
-    def _save_fig():
-        save_path = os.path.join(file_dir, filename)
-        fig.save_fig(save_path, dpi='figure')
-        print('Figure saved to "{}".'.format(save_path))
-
-    widget_box = widgets.HBox([name_box, save_button])
-
-    save_button.on_click(_save_fig)
-
-    return widget_box
 
 
 def export_fig_data(fig, filename, include_images=False):
