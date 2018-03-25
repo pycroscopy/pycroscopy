@@ -98,12 +98,18 @@ class SVD(Process):
             self.test()
 
         self._write_results_chunk()
+        self.delete_results()
+
+        return self.h5_results_grp
+
+    def delete_results(self):
+        """
+        Deletes results from memory.
+        """
         del self.__u, self.__s, self.__v
         self.__u = None
         self.__v = None
         self.__s = None
-
-        return self.h5_results_grp
 
     def _write_results_chunk(self):
         """

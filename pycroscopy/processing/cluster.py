@@ -143,6 +143,14 @@ class Cluster(Process):
 
         return self.__labels, self.__mean_resp
 
+    def delete_results(self):
+        """
+        Deletes results from memory.
+        """
+        del self.__labels, self.__mean_resp
+        self.__labels = None
+        self.__mean_resp = None
+
     def compute(self, rearrange_clusters=True):
         """
         Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test() if it has
@@ -165,10 +173,7 @@ class Cluster(Process):
             self.test(rearrange_clusters=rearrange_clusters)
 
         h5_group = self._write_results_chunk()
-
-        del self.__labels, self.__mean_resp
-        self.__labels = None
-        self.__mean_resp = None
+        self.delete_results()
 
         return h5_group
 
