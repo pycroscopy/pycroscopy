@@ -23,7 +23,7 @@ v 1.0 goals
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
   
 6. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
-7. mostly done - good utils for generating publishable plots - make certain functions more generic / extendable - easy < 1 day
+7. mostly done, needs testing - good utils for generating publishable plots
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
 10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
@@ -34,8 +34,8 @@ v 1.0 goals
   * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
-14. Get pycroscopy on Anaconda / conda installation (to include other packages like opencv)
-15. Test all translators, Processes and Analyses to make sure they still work.
+14. Carlo Dri + Chris - Get pycroscopy on conda forge
+15. Test all translators, Processes, plotting, and Analyses to make sure they still work.
 
 v 2.0 goals
 -----------
@@ -85,42 +85,17 @@ Long-term
 * Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 
-GUI
-~~~~~~~~~~~
-*	Convert all existing notebooks to interactive plotting
-
 Plot Utils
 ~~~~~~~~~
-* move plot_image_cleaning_results to a application specific module
-* move save_fig_filebox_button and export_fig_data to jupyter_utils
 * ensure most of these functions result in publication-ready plots (good proportions, font sizes, etc.)
+* one round of testing
 * allow setting of c-axis limits for all plot utils functions
-* plot_map 
-
-  1. allow the tick labels to be specified instead of just the x_size and y_size. 
-
-* plot_loops
- 
-  1. Legend at the bottom
-  
 * plot_map_stack:
 
   1. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
   2. See all other changes that were made for the image cleaning paper
 
-* plot_cluster_results_together
-
-  1. Use plot_map and its cleaner color bar option
-  2. Option to use a color bar for the centroids instead of a legend - especially if number of clusters > 7
-  3. See G-mode IV paper to see other changes
-
-* plot_cluster_results_separate
-  
-  1. Use same guidelines as above
-
-* plot_cluster_dendrogram - this function has not worked recently to my knowledge. Fortunately, it is not one of the more popular functions so it gets low priority for now. Use inspiration from image cleaning paper
-
-* plot_histograms - not used frequently. Can be ignored for this pass
+* plot_histograms - not used frequently. Still needs to be fixed
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
