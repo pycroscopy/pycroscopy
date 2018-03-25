@@ -63,6 +63,9 @@ class Process(object):
         self._results = None
         self.h5_results_grp = None
 
+        print('Consider calling test_on_subset() to check results before calling compute() which computes on the entire'
+              ' dataset and writes back to the HDF5 file')
+
         # DON'T check for duplicates since parms_dict has not yet been initialized.
         # Sub classes will check by themselves if they are interested.
 
