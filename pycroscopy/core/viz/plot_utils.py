@@ -658,10 +658,18 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
             raise TypeError(var_name + ' should be of type: bool')
     for var, var_name in zip([x_label, y_label, subtitle_prefix, title],
                              ['x_label', 'y_label', 'subtitle_prefix', 'title']):
-        if not isinstance(var, (str, unicode)):
-            raise TypeError(var_name + ' should be of type: str')
-    if not isinstance(fig_title_yoffset, Number):
-        raise TypeError('fig_title_yoffset should be a Number')
+        if var is not None:
+            if not isinstance(var, (str, unicode)):
+                raise TypeError(var_name + ' should be of type: str')
+        else:
+            var = ''
+
+    if fig_title_yoffset is not None:
+        if not isinstance(fig_title_yoffset, Number):
+            raise TypeError('fig_title_yoffset should be a Number')
+    else:
+        fig_title_yoffset = 1.0
+
     if h5_pos is not None:
         if not isinstance(h5_pos, h5py.Dataset):
             raise TypeError('h5_pos should be a h5py.Dataset object')
@@ -966,7 +974,7 @@ def plot_scree(scree, title='Scree', **kwargs):
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=False,
                    title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
-                   fig_title_yoffset=None, fig_title_size=None, **kwargs):
+                   x_label=None, y_label=None, fig_title_yoffset=None, fig_title_size=None, **kwargs):
     """
     Plots the provided stack of maps
 
@@ -999,6 +1007,10 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Multipliers for the axis padding between plots in the stack.  Padding is calculated as
         (pad_mult[0]*fig_mult[1], pad_mult[1]*fig_mult[0]) for the width and height padding respectively.
         Default (0.1, 0.07)
+    x_label : (optional) String
+        X Label for all plots
+    y_label : (optional) String
+        Y label for all plots
     fig_title_yoffset : float
         Offset to move the figure title vertically in the figure
     fig_title_size : float
@@ -1018,11 +1030,15 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     else:
         if not isinstance(num_comps, int) or num_comps < 1:
             raise TypeError('num_comps should be a positive integer')
-    for var, var_name in zip([title, heading, colorbar_label, color_bar_mode],
-                             ['title', 'heading', 'colorbar_label', 'color_bar_mode']):
+
+    for var, var_name in zip([title, heading, colorbar_label, color_bar_mode, x_label, y_label],
+                             ['title', 'heading', 'colorbar_label', 'color_bar_mode', 'x_label', 'y_label']):
         if var is not None:
             if not isinstance(var, (str, unicode)):
                 raise TypeError(var_name + ' should be a string')
+        else:
+            var = ''
+
     if color_bar_mode not in [None, 'single', 'each']:
         raise ValueError('color_bar_mode must be either None, "single", or "each"')
     for var, var_name in zip([stdevs, fig_title_yoffset, fig_title_size],
@@ -1124,6 +1140,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if color_bar_mode is 'each':
             cb = axes202.cbar_axes[count].colorbar(im)
             cb.set_label_text(colorbar_label)
+
+        if count % p_cols == 0:
+            axes202[count].set_ylabel(y_label)
+        if count >= (p_rows - 1) * p_cols:
+            axes202[count].set_xlabel(x_label)
 
     if color_bar_mode is 'single':
         cb = axes202.cbar_axes[0].colorbar(im)
