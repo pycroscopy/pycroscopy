@@ -2,6 +2,7 @@
 Created on 11/11/16 10:08 AM
 @author: Suhas Somnath, Chris Smith
 """
+import os
 
 import matplotlib.pyplot as plt
 from IPython.display import display
@@ -362,3 +363,43 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
         display(fig)
 
     widgets.interact(update_plots, **slice_dict)
+
+
+def save_fig_filebox_button(fig, filename):
+    """
+    Create ipython widgets to allow the user to save a figure to the
+    specified file.
+
+    Parameters
+    ----------
+    fig : matplotlib.Figure
+        The figure to be saved.
+    filename : str
+        The filename the figure should be saved to
+
+    Returns
+    -------
+    widget_box : ipywidgets.HBox
+        Widget box holding the text entry and save button
+
+    """
+    filename = os.path.abspath(filename)
+    file_dir, filename = os.path.split(filename)
+
+    name_box = widgets.Text(value=filename,
+                            placeholder='Type something',
+                            description='Output Filename:',
+                            disabled=False,
+                            layout={'width': '50%'})
+    save_button = widgets.Button(description='Save figure')
+
+    def _save_fig():
+        save_path = os.path.join(file_dir, filename)
+        fig.save_fig(save_path, dpi='figure')
+        print('Figure saved to "{}".'.format(save_path))
+
+    widget_box = widgets.HBox([name_box, save_button])
+
+    save_button.on_click(_save_fig)
+
+    return widget_box
