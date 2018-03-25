@@ -77,7 +77,7 @@ class GIVBayesian(Process):
         self.forward_results = None
         self._bayes_parms = None
 
-    def test_on_subset(self, pix_ind=None, show_plots=True, econ=False):
+    def test(self, pix_ind=None, show_plots=True, econ=False):
         """
         Tests the inference on a single pixel (randomly chosen unless manually specified) worth of data.
 
@@ -317,6 +317,7 @@ class GIVBayesian(Process):
     def compute(self, override=False, *args, **kwargs):
         """
         Creates placeholders for the results, applies the inference to the data, and writes the output to the file.
+        Consider calling test() before this function to make sure that the parameters are appropriate.
 
         Parameters
         ----------

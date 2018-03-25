@@ -155,6 +155,7 @@ class SignalFilter(Process):
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
     def test_on_subset(self, pix_ind=None, excit_wfm=None):
+    def test(self, pix_ind=None, excit_wfm=None):
         """
         Tests the signal filter on a single pixel (randomly chosen unless manually specified) worth of data.
 
