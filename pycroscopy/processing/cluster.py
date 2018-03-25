@@ -6,6 +6,7 @@ Created on Tue Jan 05 07:55:56 2016
 
 """
 from __future__ import division, print_function, absolute_import
+import time
 import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
@@ -103,14 +104,57 @@ class Cluster(Process):
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
-    def compute(self, rearrange_clusters=True):
+        self.__labels = None
+        self.__mean_resp = None
+
+    def test_on_subset(self, rearrange_clusters=True):
         """
-        Clusters the hdf5 dataset, calculates mean response for each cluster, and writes the labels and mean response
-        back to the h5 file
+        Clusters the hdf5 dataset and calculates mean response for each cluster. This function does NOT write results to
+        the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
+        mean response vector for each cluster matrix is of the same data-type as the input matrix.
 
         Parameters
         ----------
-        rearrange_clusters : (Optional) Boolean. Default = True
+        rearrange_clusters : bool, optional. Default = True
+            Whether or not the clusters should be re-ordered by relative distances between the mean response
+
+        Returns
+        -------
+        labels : 1D unsigned int array
+            Array of cluster labels as obtained from the fit
+        mean_response : 2D numpy array
+            Array of the mean response for each cluster arranged as [cluster number, response]
+        """
+        t1 = time.time()
+
+        print('Performing clustering on {}.'.format(self.h5_main.name))
+        # perform fit on the real dataset
+        results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+
+        print('Took {} seconds to compute {}'.format(round(time.time() - t1, 2), self.method_name))
+
+        t1 = time.time()
+        self.__mean_resp = self._get_mean_response(results.labels_)
+        print('Took {} seconds to calculate mean response per cluster'.format(round(time.time() - t1, 2)))
+
+        self.__labels = results.labels_
+        if rearrange_clusters:
+            self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp)
+
+
+        return self.__labels, self.__mean_resp
+
+    def compute(self, rearrange_clusters=True):
+        """
+        Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test_on_subset() if it has
+        not already been called), and writes the labels and mean response back to the h5 file.
+
+        Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
+        upon writing to the HDF5 file
+
+        Parameters
+        ----------
+        rearrange_clusters : bool, optional. Default = True
             Whether or not the clusters should be re-ordered by relative distances between the mean response
 
         Returns
@@ -118,21 +162,16 @@ class Cluster(Process):
         h5_group : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
-        self._fit()
-        new_mean_response = self._get_mean_response(self.results.labels_)
-        new_labels = self.results.labels_
-        if rearrange_clusters:
-            new_labels, new_mean_response = reorder_clusters(self.results.labels_, new_mean_response,
-                                                             self.data_transform_func)
-        return self._write_results_chunk(new_labels, new_mean_response)
+        if self.__labels is None and self.__mean_resp is None:
+            self.test_on_subset(rearrange_clusters=rearrange_clusters)
 
-    def _fit(self):
-        """
-        Fits the provided dataset
-        """
-        print('Performing clustering on {}.'.format(self.h5_main.name))
-        # perform fit on the real dataset
-        self.results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+        h5_group = self._write_results_chunk()
+
+        del self.__labels, self.__mean_resp
+        self.__labels = None
+        self.__mean_resp = None
+
+        return h5_group
 
     def _get_mean_response(self, labels):
         """
@@ -151,6 +190,7 @@ class Cluster(Process):
         print('Calculated the Mean Response of each cluster.')
         num_clusts = len(np.unique(labels))
         mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
+        # TODO: Oppurtunity to do this in parallel
         for clust_ind in range(num_clusts):
             # get all pixels with this label
             targ_pos = np.argwhere(labels == clust_ind)
@@ -162,25 +202,18 @@ class Cluster(Process):
             mean_resp[clust_ind] = stack_real_to_target_dtype(avg_data, self.h5_main.dtype)
         return mean_resp
 
-    def _write_results_chunk(self, labels, mean_response):
+    def _write_results_chunk(self):
         """
         Writes the labels and mean response to the h5 file
 
-        Parameters
-        ------------
-        labels : 1D unsigned int array
-            Array of cluster labels as obtained from the fit
-        mean_response : 2D numpy array
-            Array of the mean response for each cluster arranged as [cluster number, response]
-
         Returns
         ---------
-        h5_labels : HDF5 Group reference
+        h5_group : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
         print('Writing clustering results to file.')
-        num_clusters = mean_response.shape[0]
-        ds_label_mat = VirtualDataset('Labels', np.uint32(labels.reshape([-1, 1])), dtype=np.uint32)
+        num_clusters = self.__mean_resp.shape[0]
+        ds_label_mat = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32)
         ds_label_mat.attrs['quantity'] = 'Cluster ID'
         ds_label_mat.attrs['units'] = 'a. u.'
 
@@ -188,7 +221,7 @@ class Cluster(Process):
 
         ds_cluster_inds = VirtualDataset('Cluster_Indices', INDICES_DTYPE(clust_ind_mat))
         ds_cluster_vals = VirtualDataset('Cluster_Values', VALUES_DTYPE(clust_ind_mat))
-        ds_cluster_centroids = VirtualDataset('Mean_Response', mean_response, dtype=mean_response.dtype)
+        ds_cluster_centroids = VirtualDataset('Mean_Response', self.__mean_resp, dtype=self.__mean_resp.dtype)
         # Main attributes will be copied from h5_main after writing
         ds_label_inds = VirtualDataset('Label_Spectroscopic_Indices', np.atleast_2d([0]), dtype=INDICES_DTYPE)
         ds_label_vals = VirtualDataset('Label_Spectroscopic_Values', np.atleast_2d([0]), dtype=VALUES_DTYPE)
