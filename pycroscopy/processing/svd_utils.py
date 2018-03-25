@@ -51,8 +51,9 @@ class SVD(Process):
 
     def test_on_subset(self):
         """
-        Applies randomised VD to the dataset. This does NOT write results to the hdf5 file. Call compute() to write to
-        the file. Handles complex, compound datasets such that the V matrix is of the same datatype as the input matrix.
+        Applies randomised VD to the dataset. This function does NOT write results to the hdf5 file. Call compute() to
+        write to the file. Handles complex, compound datasets such that the V matrix is of the same data-type as the
+        input matrix.
 
         Returns
         -------
@@ -79,7 +80,7 @@ class SVD(Process):
                                                       n_iter=3)
         self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
-        print('SVD took {} seconds.  Writing results to file.'.format(round(time.time() - t1, 2)))
+        print('Took {} seconds to compute randomized SVD'.format(round(time.time() - t1, 2)))
         return self.__u, self.__s, self.__v
 
     def compute(self):
