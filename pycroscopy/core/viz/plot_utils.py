@@ -973,8 +973,8 @@ def plot_scree(scree, title='Scree', **kwargs):
 
 
 def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly_spaced=False, reverse_dims=False,
-                   title='Component', heading='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
-                   x_label=None, y_label=None, fig_title_yoffset=None, fig_title_size=None, **kwargs):
+                   subtitle='Component', title='Map Stack', colorbar_label='', fig_mult=(5, 5), pad_mult=(0.1, 0.07),
+                   x_label=None, y_label=None, title_yoffset=None, title_size=None, **kwargs):
     """
     Plots the provided stack of maps
 
@@ -992,11 +992,11 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         Default False
     reverse_dims : Boolean (Optional), default = False
         Set this to True to accept data structured as [rows, cols, component]
-    title : String or list of strings
+    subtitle : String or list of strings
         The titles for each of the plots.
         If a single string is provided, the plot titles become ['title 01', title 02', ...].
         if a list of strings (equal to the number of components) are provided, these are used instead.
-    heading : String
+    title : String
         ###Insert description here### Default 'Map Stack'
     colorbar_label : String
         label for colorbar. Default is an empty string.
@@ -1011,9 +1011,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         X Label for all plots
     y_label : (optional) String
         Y label for all plots
-    fig_title_yoffset : float
+    title_yoffset : float
         Offset to move the figure title vertically in the figure
-    fig_title_size : float
+    title_size : float
         Size of figure title
     kwargs : dictionary
         Keyword arguments to be passed to either matplotlib.pyplot.figure, mpl_toolkits.axes_grid1.ImageGrid, or
@@ -1031,8 +1031,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if not isinstance(num_comps, int) or num_comps < 1:
             raise TypeError('num_comps should be a positive integer')
 
-    for var, var_name in zip([title, heading, colorbar_label, color_bar_mode, x_label, y_label],
-                             ['title', 'heading', 'colorbar_label', 'color_bar_mode', 'x_label', 'y_label']):
+    for var, var_name in zip([title, colorbar_label, color_bar_mode, x_label, y_label],
+                             ['title', 'colorbar_label', 'color_bar_mode', 'x_label', 'y_label']):
         if var is not None:
             if not isinstance(var, (str, unicode)):
                 raise TypeError(var_name + ' should be a string')
@@ -1041,8 +1041,8 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
 
     if color_bar_mode not in [None, 'single', 'each']:
         raise ValueError('color_bar_mode must be either None, "single", or "each"')
-    for var, var_name in zip([stdevs, fig_title_yoffset, fig_title_size],
-                             ['stdevs', 'fig_title_yoffset', 'fig_title_size']):
+    for var, var_name in zip([stdevs, title_yoffset, title_size],
+                             ['stdevs', 'title_yoffset', 'title_size']):
         if var is not None:
             if not isinstance(var, Number) or var <= 0:
                 raise TypeError(var_name + ' of value: {} should be a number > 0'.format(var))
@@ -1066,17 +1066,18 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     else:
         chosen_pos = np.arange(num_comps, dtype=int)
 
-    if isinstance(title, list):
-        if len(title) > num_comps:
-            # remove additional titles
-            title = title[:num_comps]
-        elif len(title) < num_comps:
-            # add titles
-            title += ['Component' + ' ' + str(x) for x in range(len(title), num_comps)]
+    if isinstance(subtitle, list):
+
+        if len(subtitle) > num_comps:
+            # remove additional subtitles
+            subtitle = subtitle[:num_comps]
+        elif len(subtitle) < num_comps:
+            # add subtitles
+            subtitle += ['Component' + ' ' + str(x) for x in range(len(subtitle), num_comps)]
     else:
-        if not isinstance(title, str):
-            title = 'Component'
-        title = [title + ' ' + str(x) for x in chosen_pos]
+        if not isinstance(subtitle, str):
+            subtitle = 'Component'
+        subtitle = [subtitle + ' ' + str(x) for x in chosen_pos]
 
     fig_h, fig_w = fig_mult
 
@@ -1123,19 +1124,19 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
 
-    fig202.canvas.set_window_title(heading)
+    fig202.canvas.set_window_title(title)
     # These parameters have not been easy to fix:
-    if fig_title_yoffset is None:
-        fig_title_yoffset = 0.9
-    if fig_title_size is None:
-        fig_title_size = 16 + (p_rows + p_cols)
-    fig202.suptitle(heading, fontsize=fig_title_size, y=fig_title_yoffset)
+    if title_yoffset is None:
+        title_yoffset = 0.9
+    if title_size is None:
+        title_size = 16 + (p_rows + p_cols)
+    fig202.suptitle(title, fontsize=title_size, y=title_yoffset)
 
-    for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
+    for count, index, curr_subtitle in zip(range(chosen_pos.size), chosen_pos, subtitle):
         im, im_cbar = plot_map(axes202[count],
                                map_stack[index],
                                stdevs=stdevs, show_cbar=False, **kwargs)
-        axes202[count].set_title(subtitle)
+        axes202[count].set_subtitle(curr_subtitle)
 
         if color_bar_mode is 'each':
             cb = axes202.cbar_axes[count].colorbar(im)
