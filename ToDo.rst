@@ -23,7 +23,7 @@ v 1.0 goals
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
   
 6. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
-7. mostly done, needs testing - good utils for generating publishable plots
+7. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
 10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
@@ -89,43 +89,38 @@ Plot Utils
 ~~~~~~~~~
 * ensure most of these functions result in publication-ready plots (good proportions, font sizes, etc.)
 * one round of testing
-* allow setting of c-axis limits for all plot utils functions
-* plot_map_stack:
-
-  1. Add ability to manually specify x and y tick labels - see plot_cluster_results_together for inspiration
-  2. See all other changes that were made for the image cleaning paper
-
 * plot_histograms - not used frequently. Still needs to be fixed
 
 External user contributions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Incorporate sliding FFT into pycroscopy
-* Create an IR analysis notebook
-* Li Xin classification code 
+* Sabine Neumeyer's cKPFM code
+* Incorporate sliding FFT into pycroscopy - Rama
+* Create an IR analysis notebook - Suhas should have something written in IF Drive
+* Li Xin classification code - Li Xin
 * Ondrej Dyck’s atom finding code – written well but needs to work on images with different kinds of atoms
 * Nina Wisinger’s processing code (Tselev) – in progress
-* Sabine Neumeyer's cKPFM code
-* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
 * Port everything from IFIM Matlab -> Python translation exercises
-* Other workflows/functions that already exist as scripts or notebooks
-
-Formatting changes
-------------------
-*	Fix remaining PEP8 problems
-*	Ensure code and documentation is standardized
-
-Testing
--------
-*	Write test code for scientific functions in addition to just core
-*	Longer tests using data (real or generated) for the workflow tests
+* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
 
 Software Engineering
 --------------------
+
+Other
+~~~~~
 * Consider releasing bug fixes (to onsite CNMS users) via git instead of rapid pypi releases 
    * example release steps (incl. git tagging): https://github.com/cesium-ml/cesium/blob/master/RELEASE.txt
-* Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
 * Add requirements.txt
-* Consider facilitating conda installation in addition to pypi
+
+Testing
+~~~~~~~
+* Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
+*	Write test code for scientific functions in addition to just core
+*	Longer tests using data (real or generated) for the workflow tests
+
+Formatting changes
+~~~~~~~~~~~~~~~~~~
+*	Fix remaining PEP8 problems
+*	Ensure code and documentation is standardized
 
 Scaling to HPC
 -------------------
