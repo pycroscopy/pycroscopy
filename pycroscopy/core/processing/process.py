@@ -66,6 +66,9 @@ class Process(object):
         # DON'T check for duplicates since parms_dict has not yet been initialized.
         # Sub classes will check by themselves if they are interested.
 
+    def test_on_subset(self, pix_ind=None):
+        raise NotImplementedError('test_on_subset has not yet been implemented')
+
     def _check_for_duplicates(self):
         """
         Checks for instances where the process was applied to the same dataset with the same parameters
