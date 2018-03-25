@@ -78,6 +78,22 @@ class GIVBayesian(Process):
         self._bayes_parms = None
 
     def test_on_subset(self, pix_ind=None, show_plots=True, econ=False):
+        """
+        Tests the inference on a single pixel (randomly chosen unless manually specified) worth of data.
+
+        Parameters
+        ----------
+        pix_ind : int, optional. default = random
+            Index of the pixel whose data will be used for inference
+        show_plots : bool, optional. default = True
+            Whether or not to show plots
+        econ : Boolean (Optional, Default = False)
+            Whether or not extra result datasets are returned. Turn this on when running on multiple datasets
+
+        Returns
+        -------
+        fig, axes
+        """
         if pix_ind is None:
             pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
         other_params = self.parms_dict.copy()

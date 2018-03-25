@@ -120,6 +120,23 @@ class SignalFilter(Process):
         self.h5_noise_floors = None
 
     def test_on_subset(self, pix_ind=None, excit_wfm=None):
+        """
+        Tests the signal filter on a single pixel (randomly chosen unless manually specified) worth of data.
+
+        Parameters
+        ----------
+        pix_ind : int, optional. default = random
+            Index of the pixel whose data will be used for inference
+        excit_wfm : array-like, optional. default = None
+            Waveform against which the raw and filtered signals will be plotted. This waveform can be a fraction of the
+            length of a single pixel's data. For example, in the case of G-mode, where a single scan line is yet to be
+            broken down into pixels, the excitation waveform for a single pixel can br provided to automatically
+            break the raw and filtered responses also into chunks of the same size.
+
+        Returns
+        -------
+        fig, axes
+        """
         if pix_ind is None:
             pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
         return test_filter(self.h5_main[pix_ind], frequency_filters=self.frequency_filters, excit_wfm=excit_wfm,

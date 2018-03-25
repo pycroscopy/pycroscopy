@@ -66,7 +66,20 @@ class Process(object):
         # DON'T check for duplicates since parms_dict has not yet been initialized.
         # Sub classes will check by themselves if they are interested.
 
-    def test_on_subset(self, pix_ind=None):
+    def test_on_subset(self, **kwargs):
+        """
+        Tests the process on a subset (for example a pixel) of the whole data. The class can be reinstantiated with
+        improved parameters and tested repeatedly until the user is content, at which point the user can call
+        compute() on the whole dataset.
+
+        Parameters
+        ----------
+        kwargs - dict, optional
+            keyword arguments to test the process
+
+        Returns
+        -------
+        """
         raise NotImplementedError('test_on_subset has not yet been implemented')
 
     def _check_for_duplicates(self):
