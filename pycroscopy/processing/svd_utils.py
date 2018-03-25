@@ -45,18 +45,24 @@ class SVD(Process):
         self.num_components = num_components
         self.parms_dict = {'num_components': num_components}
         self.duplicate_h5_groups = self._check_for_duplicates()
+        self.__u = None
+        self.__v = None
+        self.__s = None
 
-    def compute(self):
+    def test_on_subset(self):
         """
-        Computes SVD and writes results to file
+        Applies randomised VD to the dataset. This does NOT write results to the hdf5 file. Call compute() to write to
+        the file. Handles complex, compound datasets such that the V matrix is of the same datatype as the input matrix.
 
         Returns
         -------
-         h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
+        U : numpy.ndarray
+            Abundance matrix
+        S : numpy.ndarray
+            variance vector
+        V : numpy.ndarray
+            eigenvector matrix
         """
-
-
         '''
         Check if a number of compnents has been set and ensure that the number is less than
         the minimum axis length of the data.  If both conditions are met, use fsvd.  If not
@@ -69,45 +75,55 @@ class SVD(Process):
 
         t1 = time.time()
 
-        U, S, V = randomized_svd(self.data_transform_func(self.h5_main), self.num_components, n_iter=3)
+        self.__u, self.__s, self.__v = randomized_svd(self.data_transform_func(self.h5_main), self.num_components,
+                                                      n_iter=3)
+        self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
         print('SVD took {} seconds.  Writing results to file.'.format(round(time.time() - t1, 2)))
+        return self.__u, self.__s, self.__v
 
-        self._write_results_chunk(U, S, V)
-        del U, S, V
+    def compute(self):
+        """
+        Computes SVD (by calling test_on_subset() if it has not already been called) and writes results to file.
+        Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
+        upon writing to the HDF5 file
+
+        Returns
+        -------
+         h5_results_grp : h5py.Datagroup object
+            Datagroup containing all the results
+        """
+        if self.__u is None and self.__v is None and self.__s is None:
+            self.test_on_subset()
+
+        self._write_results_chunk()
+        del self.__u, self.__s, self.__v
+        self.__u = None
+        self.__v = None
+        self.__s = None
 
         return self.h5_results_grp
 
-    def _write_results_chunk(self, U, S, V):
+    def _write_results_chunk(self):
         """
         Writes the provided SVD results to file
 
         Parameters
         ----------
-        U : array-like
-            Abundance matrix
-        S : array-like
-            variance vector
-        V : array-like
-            eigenvector matrix
         """
 
-        ds_S = VirtualDataset('S', data=np.float32(S))
-        ds_S.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_S.attrs['units'] = ''
-        ds_inds = VirtualDataset('Component_Indices', data=INDICES_DTYPE(np.arange(len(S))))
+        ds_s = VirtualDataset('S', data=np.float32(self.__s))
+        ds_s.attrs['labels'] = {'Principal Component': [slice(0, None)]}
+        ds_s.attrs['units'] = ''
+        ds_inds = VirtualDataset('Component_Indices', data=INDICES_DTYPE(np.arange(len(self.__s))))
         ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_inds.attrs['units'] = ['']
-        del S
+        ds_inds.attrs['units'] = ''
 
-        u_chunks = calc_chunks(U.shape, np.float32(0).itemsize)
-        ds_U = VirtualDataset('U', data=np.float32(U), chunking=u_chunks)
-        del U
+        u_chunks = calc_chunks(self.__u.shape, np.float32(0).itemsize)
+        ds_u = VirtualDataset('U', data=np.float32(self.__u), chunking=u_chunks)
 
-        V = stack_real_to_target_dtype(V, self.h5_main.dtype)
-        v_chunks = calc_chunks(V.shape, self.h5_main.dtype.itemsize)
-        ds_V = VirtualDataset('V', data=V, chunking=v_chunks)
-        del V
+        v_chunks = calc_chunks(self.__v.shape, self.h5_main.dtype.itemsize)
+        ds_v = VirtualDataset('V', data=self.__v, chunking=v_chunks)
 
         '''
         Create the Group to hold the results and add the existing datasets as
@@ -115,7 +131,7 @@ class SVD(Process):
         '''
         grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
         svd_grp = VirtualGroup(grp_name, self.h5_main.parent.name[1:])
-        svd_grp.add_children([ds_V, ds_S, ds_U, ds_inds])
+        svd_grp.add_children([ds_v, ds_s, ds_u, ds_inds])
 
         '''
         Write the attributes to the group
@@ -139,7 +155,7 @@ class SVD(Process):
         copy_main_attributes(self.h5_main, h5_V)
         h5_V.attrs['units'] = np.array(['a. u.'], dtype='S')
 
-        del ds_S, ds_V, ds_U, svd_grp
+        del ds_s, ds_v, ds_u, svd_grp
 
         # Will attempt to see if there is anything linked to this dataset.
         # Since I was meticulous about the translators that I wrote, I know I will find something here
