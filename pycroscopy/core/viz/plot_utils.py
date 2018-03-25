@@ -12,17 +12,13 @@ import inspect
 import os
 import sys
 from numbers import Number
-from warnings import warn
 import h5py
 import ipywidgets as widgets
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy
 from matplotlib.colors import LinearSegmentedColormap
 from mpl_toolkits.axes_grid1 import ImageGrid
-
-from ..io.hdf_utils import reshape_to_n_dims, get_formatted_labels, get_data_descriptor
 
 if sys.version_info.major == 3:
     unicode = str
@@ -814,7 +810,7 @@ def plot_curves(excit_wfms, datasets, line_colors=[], dataset_names=[], evenly_s
 
 
 def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label='', y_label='', evenly_spaced=True,
-                           subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
+                         subtitle_prefix='Component', amp_units=None, stdevs=2, **kwargs):
     """
     Plots the amplitude and phase components of the provided stack of complex valued spectrograms (2D images)
 
@@ -917,12 +913,13 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
             axis.set_aspect('auto')
             if ax_ind % ncols == 0:
                 axis.set_ylabel(y_label)
-            if np.ceil((ax_ind + ncols)/ncols) == nrows:
+            if np.ceil((ax_ind + ncols) / ncols) == nrows:
                 axis.set_xlabel(x_label)
 
     fig.tight_layout()
 
     return fig, axes
+
 
 ###############################################################################
 
@@ -1116,7 +1113,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     if fig_title_yoffset is None:
         fig_title_yoffset = 0.9
     if fig_title_size is None:
-        fig_title_size = 16+(p_rows+ p_cols)
+        fig_title_size = 16 + (p_rows + p_cols)
     fig202.suptitle(heading, fontsize=fig_title_size, y=fig_title_yoffset)
 
     for count, index, subtitle in zip(range(chosen_pos.size), chosen_pos, title):
@@ -1136,384 +1133,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     return fig202, axes202
 
 
-def plot_cluster_h5_group(h5_group, centroids_together=True, cmap=default_cmap):
-    """
-    Plots the cluster labels and mean response for each cluster
-
-    Parameters
-    ----------
-    h5_group : h5py.Datagroup object
-        H5 group containing the labels and mean response
-    centroids_together : Boolean, optional - default = True
-        Whether or nor to plot all centroids together on the same plot
-    cmap : plt.cm object or str, optional
-        Colormap to use for the labels map and the centroid.
-
-    Returns
-    -------
-    fig : Figure
-        Figure containing the plots
-    axes : 1D array_like of matplotlib.axes.Axes objects
-        Axes of the individual plots within `fig`
-    """
-    if not isinstance(h5_group, h5py.Group):
-        raise TypeError('h5_group should be a h5py.Group')
-    if not isinstance(centroids_together, bool):
-        raise TypeError('centroids_together should be a bool')
-    if not isinstance(cmap, (str, unicode, mpl.colors.Colormap)):
-        raise TypeError('cmap should either be a string or a matplotlib.colors.Colormap object')
-
-    h5_labels = h5_group['Labels']
-    try:
-        h5_mean_resp = h5_group['Mean_Response']
-    except KeyError:
-        # old PySPM format:
-        h5_mean_resp = h5_group['Centroids']
-
-    # Reshape the mean response to N dimensions
-    mean_response, success = reshape_to_n_dims(h5_mean_resp)
-
-    # unfortunately, we cannot use the above function for the labels
-    # However, we will assume that the position values are linked to the labels:
-    h5_pos_vals = h5_labels.file[h5_labels.attrs['Position_Values']]
-    h5_pos_inds = h5_labels.file[h5_labels.attrs['Position_Indices']]
-
-    # Reshape the labels correctly:
-    pos_dims = []
-    for col in range(h5_pos_inds.shape[1]):
-        pos_dims.append(np.unique(h5_pos_inds[:, col]).size)
-
-    pos_ticks = [h5_pos_vals[:pos_dims[0], 0], h5_pos_vals[slice(0, None, pos_dims[0]), 1]]
-    # prepare the axes ticks for the map
-
-    pos_dims.reverse()  # go from slowest to fastest
-    pos_dims = tuple(pos_dims)
-    label_mat = np.reshape(h5_labels.value, pos_dims)
-
-    # Figure out the correct units and labels for mean response:
-    h5_spec_vals = h5_mean_resp.file[h5_mean_resp.attrs['Spectroscopic_Values']]
-    x_spec_label = get_formatted_labels(h5_spec_vals)[0]
-
-    # Figure out the correct axes labels for label map:
-    pos_labels = get_formatted_labels(h5_pos_vals)
-
-    y_spec_label = get_data_descriptor(h5_mean_resp)
-    # TODO: cleaner x and y axes labels instead of 0.0000125 etc.
-
-    if centroids_together:
-        return plot_cluster_results_together(label_mat, mean_response, spec_val=np.squeeze(h5_spec_vals[0]),
-                                             spec_label=x_spec_label, resp_label=y_spec_label,
-                                             pos_labels=pos_labels, pos_ticks=pos_ticks, cmap=cmap)
-    else:
-        return plot_cluster_results_separate(label_mat, mean_response, max_centroids=4, x_label=x_spec_label,
-                                             spec_val=np.squeeze(h5_spec_vals[0]), y_label=y_spec_label, cmap=cmap)
-
-
 ###############################################################################
-
-
-def plot_cluster_results_together(label_mat, mean_response, spec_val=None, cmap=default_cmap,
-                                  spec_label='Spectroscopic Value', resp_label='Response',
-                                  pos_labels=('X', 'Y'), pos_ticks=None):
-    """
-    Plot the cluster labels and mean response for each cluster in separate plots
-
-    Parameters
-    ----------
-    label_mat : 2D ndarray or h5py.Dataset of ints
-        Spatial map of cluster labels structured as [rows, cols]
-    mean_response : 2D array or h5py.Dataset
-        Mean value of each cluster over all samples
-        arranged as [cluster number, features]
-    spec_val :  1D array or h5py.Dataset of floats, optional
-        X axis to plot the centroids against
-        If no value is specified, the data is plotted against the index
-    cmap : plt.cm object or str, optional
-        Colormap to use for the labels map and the centroid.
-        Advised to pick a map where the centroid plots show clearly.
-        Default = matplotlib.pyplot.cm.jet
-    spec_label : str, optional
-        Label to use for X axis on cluster centroid plot
-        Default = 'Spectroscopic Value'
-    resp_label : str, optional
-        Label to use for Y axis on cluster centroid plot
-         Default = 'Response'
-    pos_labels : array_like of str, optional
-        Labels to use for the X and Y axes on the Label map
-        Default = ('X', 'Y')
-    pos_ticks : array_like of int
-
-    Returns
-    -------
-    fig : Figure
-        Figure containing the plots
-    axes : 1D array_like of matplotlib.axes.Axes objects
-        Axes of the individual plots within `fig`
-    """
-    cmap = get_cmap_object(cmap)
-
-    if isinstance(cmap, str):
-        cmap = plt.get_cmap(cmap)
-
-    def __plot_centroids(centroids, ax, spec_val, spec_label, y_label, cmap, title=None):
-        plot_line_family(ax, spec_val, centroids, label_prefix='Cluster', cmap=cmap)
-        ax.set_ylabel(y_label)
-        # ax.legend(loc='best')
-        if title:
-            ax.set_title(title)
-            ax.set_xlabel(spec_label)
-
-    if spec_val is None:
-        spec_val = np.arange(mean_response.shape[1])
-
-    if mean_response.dtype in [np.complex64, np.complex128, np.complex]:
-        fig = plt.figure(figsize=(12, 8))
-        ax_map = plt.subplot2grid((2, 12), (0, 0), colspan=6, rowspan=2)
-        ax_amp = plt.subplot2grid((2, 12), (0, 6), colspan=4)
-        ax_phase = plt.subplot2grid((2, 12), (1, 6), colspan=4)
-        axes = [ax_map, ax_amp, ax_phase]
-
-        __plot_centroids(np.abs(mean_response), ax_amp, spec_val, spec_label,
-                         resp_label + ' - Amplitude', cmap, 'Mean Response')
-        __plot_centroids(np.angle(mean_response), ax_phase, spec_val, spec_label,
-                         resp_label + ' - Phase', cmap)
-        plot_handles, plot_labels = ax_amp.get_legend_handles_labels()
-
-    else:
-        fig = plt.figure(figsize=(12, 8))
-        ax_map = plt.subplot2grid((1, 12), (0, 0), colspan=6)
-        ax_resp = plt.subplot2grid((1, 12), (0, 6), colspan=4)
-        axes = [ax_map, ax_resp]
-        __plot_centroids(mean_response, ax_resp, spec_val, spec_label,
-                         resp_label, cmap, 'Mean Response')
-        plot_handles, plot_labels = ax_resp.get_legend_handles_labels()
-
-    fleg = plt.figlegend(plot_handles, plot_labels, loc='center right',
-                         borderaxespad=0.0)
-    num_clusters = mean_response.shape[0]
-
-    if isinstance(label_mat, h5py.Dataset):
-        """
-        Reshape label_mat based on linked positions
-        """
-        pos = label_mat.file[label_mat.attrs['Position_Indices']]
-        nx = len(np.unique(pos[:, 0]))
-        ny = len(np.unique(pos[:, 1]))
-        label_mat = label_mat[()].reshape(nx, ny)
-
-    # im = ax_map.imshow(label_mat, interpolation='none')
-    ax_map.set_xlabel(pos_labels[0])
-    ax_map.set_ylabel(pos_labels[1])
-
-    if pos_ticks is not None:
-        x_ticks = np.linspace(0, label_mat.shape[1] - 1, 5, dtype=np.uint16)
-        y_ticks = np.linspace(0, label_mat.shape[0] - 1, 5, dtype=np.uint16)
-        ax_map.set_xticks(x_ticks)
-        ax_map.set_yticks(y_ticks)
-        ax_map.set_xticklabels(pos_ticks[0][x_ticks])
-        ax_map.set_yticklabels(pos_ticks[1][y_ticks])
-
-    """divider = make_axes_locatable(ax_map)
-    cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
-    fig.colorbar(im, cax=cax, ticks=np.arange(num_clusters),
-                 cmap=discrete_cmap(num_clusters, base_cmap=plt.cm.viridis))
-    ax_map.axis('tight')"""
-    pcol0 = ax_map.pcolor(label_mat, cmap=discrete_cmap(num_clusters, cmap=cmap))
-    fig.colorbar(pcol0, ax=ax_map, ticks=np.arange(num_clusters))
-    ax_map.axis('tight')
-    ax_map.set_aspect('auto')
-    ax_map.set_title('Cluster Label Map')
-
-    fig.tight_layout()
-    fig.canvas.set_window_title('Cluster results')
-
-    return fig, axes
-
-
-###############################################################################
-
-
-def plot_cluster_results_separate(label_mat, cluster_centroids, max_centroids=4, cmap=default_cmap,
-                                  spec_val=None, x_label='Excitation (a.u.)', y_label='Response (a.u.)'):
-    """
-    Plots the provided labels mat and centroids from clustering
-
-    Parameters
-    ----------
-    label_mat : 2D int numpy array
-                structured as [rows, cols]
-    cluster_centroids: 2D real numpy array
-                       structured as [cluster,features]
-    max_centroids : unsigned int
-                    Number of centroids to plot
-    cmap : plt.cm object or str, optional
-        Colormap to use for the labels map and the centroids
-    spec_val :  array-like
-        X axis to plot the centroids against
-        If no value is specified, the data is plotted against the index
-    x_label : String / unicode
-              X label for centroid plots
-    y_label : String / unicode
-              Y label for centroid plots
-
-    Returns
-    -------
-    fig
-    """
-
-    cmap = get_cmap_object(cmap)
-
-    if max_centroids < 5:
-
-        fig501 = plt.figure(figsize=(20, 10))
-        fax1 = plt.subplot2grid((2, 4), (0, 0), colspan=2, rowspan=2)
-        fax2 = plt.subplot2grid((2, 4), (0, 2))
-        fax3 = plt.subplot2grid((2, 4), (0, 3))
-        fax4 = plt.subplot2grid((2, 4), (1, 2))
-        fax5 = plt.subplot2grid((2, 4), (1, 3))
-        fig501.tight_layout()
-        axes_handles = [fax1, fax2, fax3, fax4, fax5]
-
-    else:
-        fig501 = plt.figure(figsize=(20, 10))
-        # make subplot for cluster map
-        fax1 = plt.subplot2grid((3, 6), (0, 0), colspan=3, rowspan=3)  # For cluster map
-        fax1.set_xmargin(0.50)
-        # make subplot for cluster centers
-        fax2 = plt.subplot2grid((3, 6), (0, 3))
-        fax3 = plt.subplot2grid((3, 6), (0, 4))
-        fax4 = plt.subplot2grid((3, 6), (0, 5))
-        fax5 = plt.subplot2grid((3, 6), (1, 3))
-        fax6 = plt.subplot2grid((3, 6), (1, 4))
-        fax7 = plt.subplot2grid((3, 6), (1, 5))
-        fax8 = plt.subplot2grid((3, 6), (2, 3))
-        fax9 = plt.subplot2grid((3, 6), (2, 4))
-        fax10 = plt.subplot2grid((3, 6), (2, 5))
-        fig501.tight_layout()
-        axes_handles = [fax1, fax2, fax3, fax4, fax5, fax6, fax7, fax8, fax9, fax10]
-
-    # First plot the labels map:
-    pcol0 = fax1.pcolor(label_mat, cmap=discrete_cmap(cluster_centroids.shape[0], cmap=cmap))
-    fig501.colorbar(pcol0, ax=fax1, ticks=np.arange(cluster_centroids.shape[0]))
-    fax1.axis('tight')
-    fax1.set_aspect('auto')
-    fax1.set_title('Cluster Label Map')
-    """im = fax1.imshow(label_mat, interpolation='none')
-    divider = make_axes_locatable(fax1)
-    cax = divider.append_axes("right", size="5%", pad=0.05)  # space for colorbar
-    plt.colorbar(im, cax=cax)"""
-
-    if spec_val is None and cluster_centroids.ndim == 2:
-        spec_val = np.arange(cluster_centroids.shape[1])
-
-    # Plot results
-    for ax, index in zip(axes_handles[1: max_centroids + 1], np.arange(max_centroids)):
-        if cluster_centroids.ndim == 2:
-            ax.plot(spec_val, cluster_centroids[index, :],
-                    color=cmap(int(255 * index / (cluster_centroids.shape[0] - 1))))
-            ax.set_xlabel(x_label)
-            ax.set_ylabel(y_label)
-        elif cluster_centroids.ndim == 3:
-            plot_map(ax, cluster_centroids[index])
-        ax.set_title('Centroid: %d' % index)
-
-    fig501.subplots_adjust(hspace=0.60, wspace=0.60)
-    fig501.tight_layout()
-
-    return fig501
-
-
-###############################################################################
-
-def plot_cluster_dendrogram(label_mat, e_vals, num_comp, num_cluster, mode='Full', last=None,
-                            sort_type='distance', sort_mode=True):
-    """
-    Creates and plots the dendrograms for the given label_mat and
-    eigenvalues
-
-    Parameters
-    -------------
-    label_mat : 2D real numpy array
-        structured as [rows, cols], from KMeans clustering
-    e_vals: 3D real numpy array of eigenvalues
-        structured as [component, rows, cols]
-    num_comp : int
-        Number of components used to make eigenvalues
-    num_cluster : int
-        Number of cluster used to make the label_mat
-    mode: str, optional
-        How should the dendrograms be created.
-        "Full" -- use all clusters when creating the dendrograms
-        "Truncated" -- stop showing clusters after 'last'
-    last: int, optional - should be provided when using "Truncated"
-        How many merged clusters should be shown when using
-        "Truncated" mode
-    sort_type: {'count', 'distance'}, optional
-        What type of sorting should be used when plotting the
-        dendrograms.  Options are:
-        count - Uses the count_sort from scipy.cluster.hierachy.dendrogram
-        distance - Uses the distance_sort from scipy.cluster.hierachy.dendrogram
-    sort_mode: {False, True, 'ascending', 'descending'}, optional
-        For the chosen sort_type, which mode should be used.
-        False - Does no sorting
-        'ascending' or True - The child with the minimum of the chosen sort
-        parameter is plotted first
-        'descending' - The child with the maximum of the chosen sort parameter is
-        plotted first
-
-    Returns
-    ---------
-    fig : matplotlib.pyplot Figure object
-        Figure containing the dendrogram
-    """
-    if mode == 'Truncated' and not last:
-        warn('Warning: Truncated dendrograms requested, but no last cluster given.  Reverting to full dendrograms.')
-        mode = 'Full'
-
-    if mode == 'Full':
-        print('Creating full dendrogram from clusters')
-        mode = None
-    elif mode == 'Truncated':
-        print('Creating truncated dendrogram from clusters.  Will stop at {}.'.format(last))
-        mode = 'lastp'
-    else:
-        raise ValueError('Error: Unknown mode requested for plotting dendrograms. mode={}'.format(mode))
-
-    c_sort = False
-    d_sort = False
-    if sort_type == 'count':
-        c_sort = sort_mode
-        if c_sort == 'descending':
-            c_sort = 'descendent'
-    elif sort_type == 'distance':
-        d_sort = sort_mode
-
-    centroid_mat = np.zeros([num_cluster, num_comp])
-    for k1 in range(num_cluster):
-        [i_x, i_y] = np.where(label_mat == k1)
-        u_stack = np.zeros([len(i_x), num_comp])
-        for k2 in range(len(i_x)):
-            u_stack[k2, :] = np.abs(e_vals[i_x[k2], i_y[k2], :num_comp])
-
-        centroid_mat[k1, :] = np.mean(u_stack, 0)
-
-    # Get the distrance between cluster means
-    distance_mat = scipy.spatial.distance.pdist(centroid_mat)
-
-    # get hierachical pairings of clusters
-    linkage_pairing = scipy.cluster.hierarchy.linkage(distance_mat, 'weighted')
-    linkage_pairing[:, 3] = linkage_pairing[:, 3] / max(linkage_pairing[:, 3])
-
-    fig = plt.figure()
-    scipy.cluster.hierarchy.dendrogram(linkage_pairing, p=last, truncate_mode=mode,
-                                       count_sort=c_sort, distance_sort=d_sort,
-                                       leaf_rotation=90)
-
-    fig.axes[0].set_title('Dendrogram')
-    fig.axes[0].set_xlabel('Index or (cluster size)')
-    fig.axes[0].set_ylabel('Distance')
-
-    return fig
 
 
 def save_fig_filebox_button(fig, filename):
@@ -1677,4 +1297,3 @@ def export_fig_data(fig, filename, include_images=False):
         data_file.write(spacer)
 
     data_file.close()
-
