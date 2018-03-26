@@ -68,20 +68,51 @@ class Decomposition(Process):
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
+        
+        self.__components = None
+        self.__projection = None
+        
+    def test(self):
+        """
+        Decomposes the hdf5 dataset to calculate the components and projection. This function does NOT write results to
+        the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
+        components are of the same data-type as the input matrix.
+
+        Returns
+        -------
+        components : numpy array
+            Components
+        projections : numpy array
+            Projections
+        """
+        self._fit()
+        self._transform()
+        self.__components = stack_real_to_target_dtype(self.estimator.components_, self.h5_main.dtype)
+        return self.__components, self.__projection
+
+    def delete_results(self):
+        """
+        Deletes results from memory.
+        """
+        del self.__components, self.__projection
+        self.__components = None
+        self.__projection = None
 
     def compute(self):
         """
-        Decomposes the hdf5 dataset, and writes the ? back to the hdf5 file
+        Decomposes the hdf5 dataset to calculate the components and projection (by calling test() if it hasn't already
+        been called), and writes the results back to the hdf5 file
         
         Returns
         -------
         h5_group : HDF5 Group reference
             Reference to the group that contains the decomposition results
         """
-        self._fit()
-        self._transform()
-        return self._write_results_chunk(stack_real_to_target_dtype(self.estimator.components_, self.h5_main.dtype),
-                                         self.projection)
+        if self.__components is None and self.__projection is None:
+            self.test()
+        h5_group = self._write_results_chunk(self.__components, self.__projection)
+        self.delete_results()
+        return h5_group
 
     def _fit(self):
         """
@@ -106,34 +137,27 @@ class Decomposition(Process):
         """
         if data is None:
             if self.method_name == 'NMF':
-                self.projection = self.estimator.transform(self.data_transform_func(np.abs(self.h5_main)))
+                self.__projection = self.estimator.transform(self.data_transform_func(np.abs(self.h5_main)))
             else:
-                self.projection = self.estimator.transform(self.data_transform_func(self.h5_main))
+                self.__projection = self.estimator.transform(self.data_transform_func(self.h5_main))
         else:
             if isinstance(data, h5py.Dataset):
                 if data.shape[0] == self.h5_main.shape[0]:
-                    self.projection = self.estimator.transform(data)
+                    self.__projection = self.estimator.transform(data)
 
-    def _write_results_chunk(self, components, projection):
+    def _write_results_chunk(self):
         """
         Writes the labels and mean response to the h5 file
-        
-        Parameters
-        ------------
-        labels : 1D unsigned int array
-            Array of cluster labels as obtained from the fit
-        mean_response : 2D numpy array
-            Array of the mean response for each cluster arranged as [cluster number, response]
-            
+
         Returns
         ---------
-        h5_labels : HDF5 Group reference
-            Reference to the group that contains the clustering results
+        h5_group : HDF5 Group reference
+            Reference to the group that contains the decomposition results
         """
-        ds_components = VirtualDataset('Components', components)  # equivalent to V
-        ds_projections = VirtualDataset('Projection', np.float32(projection))  # equivalent of U compound
+        ds_components = VirtualDataset('Components', self.__components)  # equivalent to V
+        ds_projections = VirtualDataset('Projection', np.float32(self.__projection))  # equivalent of U compound
 
-        decomp_ind_mat = np.transpose(np.atleast_2d(np.arange(components.shape[0])))
+        decomp_ind_mat = np.transpose(np.atleast_2d(np.arange(self.__components.shape[0])))
 
         ds_decomp_inds = VirtualDataset('Decomposition_Indices', INDICES_DTYPE(decomp_ind_mat))
         ds_decomp_vals = VirtualDataset('Decomposition_Values', VALUES_DTYPE(decomp_ind_mat))
@@ -149,7 +173,7 @@ class Decomposition(Process):
         decomp_grp.add_children([ds_components, ds_projections, ds_decomp_inds, ds_decomp_vals])
         
         decomp_grp.attrs.update(self.parms_dict)
-        decomp_grp.attrs.update({'n_components': components.shape[0],
+        decomp_grp.attrs.update({'n_components': self.__components.shape[0],
                                  'n_samples': self.h5_main.shape[0]})
         
         hdf = HDFwriter(self.h5_main.file)
