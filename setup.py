@@ -24,7 +24,7 @@ requirements = ['numpy_groupies>=0.9.6',
 
 setup(
     name='pycroscopy',
-    version='0.59.5b',
+    version='0.59.5c',
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
@@ -62,8 +62,8 @@ setup(
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='nose.collector',
-    dependency='',
-    dependency_links=[''],
+    # dependency='',
+    # dependency_links=[''],
     include_package_data=True,
 
     # If there are data files included in your packages that need to be
