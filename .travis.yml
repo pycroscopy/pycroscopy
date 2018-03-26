@@ -43,6 +43,9 @@ deploy:
     password:
       secure: Zukf9GSLm+SDganP1TZ7PLK0fjKmlmanZmRZqogvdStquiN5DsdWYmkN0oCIj3iLQHI9ICTAHMHVKExbBzjj3UGs14Ei1M7J+0OqZ19G5uoyqWbhfNasTCPc35oWMdBND53+rOGhRqRPTF2DKbpMoHV7fBLoHc4f745ZMN/SJNmoI4uD2ghIAu1W3UYYVsQ+5T9a0MphTkG0aTYpkRIea72C0RMhACKjs+2YAH7pH8q/A11zYJm9OFUZqnwiIhN1WC8Xwk2qbqUKUxOGPlVAfeBl7P4aBvymFfznAOtO0dhpDKcKGPdjlPQlb/HGpIEftGm0u37TC3yf7xMQiwDbMWwR0c4ploz0BZzR4qtFX3GJRtejS0GPCN76hJUJdmjyhnBs20j8dmeiyWBF2P9TLPKP9Tah3J4Ds+dQAJ+g6CdfFNf5vj6WR+72oJsYt9WmqL8C1ZqbrTPbd5bqGwi7Z/AcKgkpkj4ZbqC2o8pQRohpQRtUPc/MM9mW6zfR91cKbalVj0omIynhUgwsQ/QRuWSHPZZpT2RV6Bwmp1std14Slt7Z2tudRQ6Oq5jYTgdxKF5tFU5rTysCDeuTi4YgtAh4S6U6iijzmLdkfoRos2nzQlGtT3djicm+xFt0L5u6/yOUcsTflCtVSPT3+kNXfK+z5CNA+dhN7cEy+I7uZYA=
     distributions: "sdist bdist_wheel"
+    file:
+      - dist/*.whl
+      - dist/*.tar.gz
     on:
       tags: true
       branch: master
