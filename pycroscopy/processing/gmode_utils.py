@@ -16,7 +16,7 @@ from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_f
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes, \
-    check_if_main
+    check_if_main, get_attr
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.viz.plot_utils import set_tick_font_size, plot_curves
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
@@ -275,7 +275,8 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     h5_pos_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Position_Values'])[0]
     single_AO = h5_spec_vals[:, :pts_per_cycle]
 
-    spec_descriptor = AuxillaryDescriptor([single_AO.size], h5_spec_vals.attrs['labels'], h5_spec_vals.attrs['units'])
+    spec_descriptor = AuxillaryDescriptor([single_AO.size], get_attr(h5_spec_vals, 'labels'),
+                                          get_attr(h5_spec_vals, 'units'))
     ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_descriptor, is_spectral=True, verbose=False)
     ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
 
