@@ -49,7 +49,7 @@ class AuxillaryDescriptor(object):
             if elem_type == 2:
                 assert np.all([isinstance(_, (str, unicode)) for _ in val])
             elif elem_type == 0:
-                assert contains_integers(val, min_val=1)
+                assert contains_integers(val, min_val=1 + len(val) > 1)
             else:
                 assert np.all([isinstance(_, numbers.Number) for _ in val])
         num_elems = np.unique(lengths)
@@ -122,7 +122,8 @@ def make_indices_matrix(num_steps, is_position=True):
     indices_matrix : 2D unsigned int numpy array
         arranged as [steps, spatial dimension]
     """
-    assert contains_integers(num_steps, min_val=2)
+    assert isinstance(num_steps, (tuple, list))
+    assert contains_integers(num_steps, min_val=1 + len(num_steps) > 0)
 
     num_steps = np.array(num_steps)
     spat_dims = max(1, len(np.where(num_steps > 1)[0]))
