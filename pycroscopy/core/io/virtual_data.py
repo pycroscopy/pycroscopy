@@ -182,7 +182,8 @@ class VirtualDataset(VirtualData):
 
         super(VirtualDataset, self).__init__(name, parent, attrs=attrs)
 
-        assert isinstance(name, (str, unicode)), 'Name should be a string'
+        if not isinstance(name, (str, unicode)):
+            raise TypeError('Name should be a string')
 
         def _make_iterable(param):
             if param is not None:
@@ -207,8 +208,10 @@ class VirtualDataset(VirtualData):
         maxshape = _make_iterable(maxshape)
         chunking = _make_iterable(chunking)
 
-        assert _valid_shapes(maxshape, none_ok=True), "maxshape should only contain positive integers or None"
-        assert _valid_shapes(chunking, none_ok=False), "chunking should only contain positive integers"
+        if not _valid_shapes(maxshape, none_ok=True):
+            raise ValueError("maxshape should only contain positive integers or None")
+        if not _valid_shapes(chunking, none_ok=False):
+            raise ValueError("chunking should only contain positive integers")
 
         valid_compressions = [None, 'gzip', 'lzf']
         if compression not in valid_compressions:
@@ -303,7 +306,8 @@ class VirtualDataset(VirtualData):
             else:
                 return True
 
-        assert isinstance(other, VirtualDataset)
+        if not isinstance(other, VirtualDataset):
+            return False
         tests = []
         if self.data.shape != other.data.shape:
             return False
