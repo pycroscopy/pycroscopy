@@ -2,11 +2,13 @@ from codecs import open
 import os
 
 from setuptools import setup, find_packages
-from pycroscopy.__version__ import version as __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
+
+with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
+    __version__ = f.read().strip(sep="'")[1]
 
 requirements = ['numpy_groupies>=0.9.6',
                 'pyqtgraph>=0.10',
