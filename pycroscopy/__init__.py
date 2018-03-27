@@ -23,9 +23,9 @@ from . import viz
 from .viz import *
 
 from .__version__ import version as __version__
-from .__version__ import date as __date__
+from .__version__ import time as __time__
 
-__all__ = ['processing', 'analysis', 'io', 'viz', '__date__', '__version__']
+__all__ = ['processing', 'analysis', 'io', 'viz', '__time__', '__version__']
 __all__ += io.__all__
 __all__ += processing.__all__
 __all__ += analysis.__all__
