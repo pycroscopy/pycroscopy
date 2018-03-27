@@ -14,7 +14,7 @@ from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
 from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
-from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
+from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -141,6 +141,7 @@ class Cluster(Process):
         if rearrange_clusters:
             self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp)
 
+        # TODO: Return N dimensional form instead of 2D!
         return self.__labels, self.__mean_resp
 
     def delete_results(self):
@@ -217,28 +218,21 @@ class Cluster(Process):
         """
         print('Writing clustering results to file.')
         num_clusters = self.__mean_resp.shape[0]
-        ds_label_mat = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32)
-        ds_label_mat.attrs['quantity'] = 'Cluster ID'
-        ds_label_mat.attrs['units'] = 'a. u.'
+        ds_labels = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32)
+        ds_labels.attrs['quantity'] = 'Cluster ID'
+        ds_labels.attrs['units'] = 'a. u.'
 
-        clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
+        clust_desc = AuxillaryDescriptor([num_clusters], ['Cluster'], ['a. u.'])
+        ds_centroid_inds, ds_centroid_vals = build_ind_val_dsets(clust_desc, is_spectral=False, base_name='Cluster_')
 
-        ds_cluster_inds = VirtualDataset('Cluster_Indices', INDICES_DTYPE(clust_ind_mat))
-        ds_cluster_vals = VirtualDataset('Cluster_Values', VALUES_DTYPE(clust_ind_mat))
-        ds_cluster_centroids = VirtualDataset('Mean_Response', self.__mean_resp, dtype=self.__mean_resp.dtype)
+        ds_centroids = VirtualDataset('Mean_Response', self.__mean_resp, dtype=self.__mean_resp.dtype)
         # Main attributes will be copied from h5_main after writing
-        ds_label_inds = VirtualDataset('Label_Spectroscopic_Indices', np.atleast_2d([0]), dtype=INDICES_DTYPE)
-        ds_label_vals = VirtualDataset('Label_Spectroscopic_Values', np.atleast_2d([0]), dtype=VALUES_DTYPE)
+        lab_desc = AuxillaryDescriptor([1], ['Cluster'], ['ID'])
+        ds_label_inds, ds_label_vals = build_ind_val_dsets(lab_desc, is_spectral=True, base_name='Label_Spectroscopic_')
 
-        # write the labels and the mean response to h5
-        clust_slices = {'Cluster': (slice(None), slice(0, 1))}
-        ds_cluster_inds.attrs['labels'] = clust_slices
-        ds_cluster_inds.attrs['units'] = ['']
-        ds_cluster_vals.attrs['labels'] = clust_slices
-        ds_cluster_vals.attrs['units'] = ['']
-
-        cluster_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_', self.h5_main.parent.name[1:])
-        cluster_grp.add_children([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
+        cluster_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
+                                   self.h5_main.parent.name[1:])
+        cluster_grp.add_children([ds_labels, ds_centroids, ds_centroid_inds, ds_centroid_vals, ds_label_inds,
                                   ds_label_vals])
 
         # Write out all the parameters including those from the estimator
@@ -251,7 +245,9 @@ class Cluster(Process):
         Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
         '''
         if self.num_comps != self.h5_main.shape[1]:
-            ds_centroid_indices = VirtualDataset('Mean_Response_Indices', np.arange(self.num_comps, dtype=INDICES_DTYPE))
+            comp_desc = AuxillaryDescriptor([self.num_comps], ['Spectroscopic_Component'], ['a.u.'])
+            ds_centroid_indices, ds_centroid_values = build_ind_val_dsets(comp_desc, is_spectral=True,
+                                                                          base_name='Mean_Response_')
 
             if isinstance(self.data_slice[1], np.ndarray):
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
@@ -259,7 +255,7 @@ class Cluster(Process):
             else:
                 centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
 
-            ds_centroid_values = VirtualDataset('Mean_Response_Values', centroid_vals_mat)
+            ds_centroid_values.data[0, :] = centroid_vals_mat
 
             cluster_grp.add_children([ds_centroid_indices, ds_centroid_values])
 
