@@ -15,7 +15,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
@@ -61,18 +61,12 @@ class SporcTranslator(Translator):
         num_cols = parm_dict['grid_num_cols']
         num_pix = num_rows * num_cols
 
-        pos_mat = make_indices_matrix([num_cols, num_rows])
-        pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
-
         # new data format
         spec_ind_mat = np.transpose(VALUES_DTYPE(spec_ind_mat))
 
         # Now start creating datasets and populating:
-        ds_pos_ind = VirtualDataset('Position_Indices', INDICES_DTYPE(pos_mat))
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = VirtualDataset('Position_Values', VALUES_DTYPE(pos_mat))
-        ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = ['um', 'um']
+        pos_desc = AuxillaryDescriptor([num_cols, num_rows], ['X', 'Y'], ['um', 'um'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         spec_ind_labels = ['x index', 'y index', 'loop index', 'repetition index', 'slope index']
         spec_ind_dict = dict()

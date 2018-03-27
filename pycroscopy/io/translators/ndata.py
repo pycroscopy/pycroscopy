@@ -17,8 +17,7 @@ from skimage.util import crop
 
 from .df_utils.io_image import unnest_parm_dicts, read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -175,32 +174,18 @@ class NDataTranslator(Translator):
         meas_grp.attrs['translator'] = 'OneView'
         meas_grp.attrs['num_pixels'] = image.size
 
-        ds_rawimage = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
+        ds_raw_image = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
 
         '''
         Build Spectroscopic and Position datasets for the image
         '''
-        pos_mat = make_indices_matrix(image.shape)
-        spec_mat = np.array([[0]], dtype=INDICES_DTYPE)
+        spec_desc = AuxillaryDescriptor([1], ['Intensity'], ['a. u.'])
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
 
-        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', spec_mat)
-        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_mat, dtype=VALUES_DTYPE)
-        spec_lab = get_aux_dset_slicing(['Image'], is_spectroscopic=True)
-        ds_spec_inds.attrs['labels'] = spec_lab
-        ds_spec_inds.attrs['units'] = ''
-        ds_spec_vals.attrs['labels'] = spec_lab
-        ds_spec_vals.attrs['units'] = ''
+        pos_desc = AuxillaryDescriptor(image.shape, ['X', 'Y'], ['pixel', 'pixel'])
+        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_desc, is_spectral=False)
 
-        ds_pos_inds = VirtualDataset('Position_Indices', pos_mat)
-        ds_pos_vals = VirtualDataset('Position_Values', pos_mat, dtype=VALUES_DTYPE)
-
-        pos_lab = get_aux_dset_slicing(['X', 'Y'], is_spectroscopic=False)
-        ds_pos_inds.attrs['labels'] = pos_lab
-        ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
-        ds_pos_vals.attrs['labels'] = pos_lab
-        ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-
-        chan_grp.add_children([ds_rawimage, ds_spec_inds, ds_spec_vals,
+        chan_grp.add_children([ds_raw_image, ds_spec_inds, ds_spec_vals,
                                ds_pos_inds, ds_pos_vals])
 
         '''
@@ -280,10 +265,10 @@ class NDataTranslator(Translator):
             this_channel.parent.attrs.update(new_attrs)
 
             # Get the Position and Spectroscopic Datasets
-            ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
-                                                            labels=['U', 'V'], units=['pixel', 'pixel'])
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
-                                                         labels=['X', 'Y'], units=['pixel', 'pixel'])
+            spec_desc = AuxillaryDescriptor((usize, vsize), ['U', 'V'], ['pixel', 'pixel'])
+            ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
+            pos_desc = AuxillaryDescriptor([scan_size_x, scan_size_y], ['X', 'Y'], ['pixel', 'pixel'])
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
             ds_chunking = calc_chunks([num_images, num_pixels],
                                       np.float32(0).itemsize,

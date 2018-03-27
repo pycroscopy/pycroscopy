@@ -14,7 +14,7 @@ import h5py
 import numpy as np  # For array operations
 
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset  # building blocks for defining heirarchical storage in the H5 file
@@ -54,14 +54,14 @@ class GIVTranslator(Translator):
             remove(h5_path)
 
         # Now start creating datasets and populating:
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([excit_wfm.size], is_spectral=True,
-                                                         labels=['Bias'], units=['V'], verbose=False)
+        spec_desc = AuxillaryDescriptor([excit_wfm.size], ['Bias'], ['V'])
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=False)
         ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([parm_dict['grid_num_rows']], is_spectral=False,
-                                                     steps=[1.0 * parm_dict['grid_scan_height_[m]'] /
-                                                            parm_dict['grid_num_rows']],
-                                                     labels=['Y'], units=['m'])
+        pos_desc = AuxillaryDescriptor([parm_dict['grid_num_rows']], ['Y'], ['m'],
+                                       dim_step_sizes=[1.0 * parm_dict['grid_scan_height_[m]'] /
+                                                       parm_dict['grid_num_rows']])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
         
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.

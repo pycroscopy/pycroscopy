@@ -13,7 +13,7 @@ from skimage.measure import block_reduce
 
 from .df_utils.io_image import read_image
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main, find_dataset
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -151,13 +151,10 @@ class ImageTranslator(Translator):
         chan_grp = VirtualGroup('Channel_000')
         # Get the Position and Spectroscopic Datasets
         #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets([1],
-                                                        is_spectral=True,
-                                                        labels=['Image'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets((usize, vsize),
-                                                     is_spectral=False,
-                                                     labels=['X', 'Y'],
-                                                     units=['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(AuxillaryDescriptor([1], ['Intensity'], ['a.u.']),
+                                                        is_spectral=True)
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(AuxillaryDescriptor((usize, vsize), ['X', 'Y'], ['a.u.', 'a.u.']),
+                                                     is_spectral=False)
 
         ds_chunking = calc_chunks([num_pixels, 1],
                                   data_type(0).itemsize,

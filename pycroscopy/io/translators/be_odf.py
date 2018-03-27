@@ -17,7 +17,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
     createSpecVals, requires_conjugate, nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -161,8 +161,8 @@ class BEodfTranslator(Translator):
 
         self.FFT_BE_wave = bin_FFT
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
-                                                     labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
+        pos_desc = AuxillaryDescriptor([num_cols, num_rows], ['X', 'Y'], ['m', 'm'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=verbose)
 
         if isBEPS:
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)

@@ -13,7 +13,7 @@ import numpy as np  # For array operations
 from scipy.io import loadmat
 
 from ...core.io.translator import Translator
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
@@ -87,10 +87,10 @@ class ForcIVTranslator(Translator):
                                  chunking=(min(num_cols * num_rows, 100), num_iv_pts))
         ds_main.attrs = {'quantity': 'Current', 'units': '1E-9 A'}
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
-                                                     labels=['Y', 'X'], units=['m', 'm'], verbose=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([num_iv_pts], is_spectral=True,
-                                                         labels=['DC Bias'], units=['V'], verbose=False)
+        pos_desc = AuxillaryDescriptor([num_rows, num_cols], ['Y', 'X'], ['m', 'm'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
+        spec_desc = AuxillaryDescriptor([num_iv_pts], ['DC Bias'], ['V'])
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=False)
         ds_spec_vals.data = np.atleast_2d(excitation_vec)
 
         return super(ForcIVTranslator, self).simple_write(h5_path, 'FORC_IV', ds_main,

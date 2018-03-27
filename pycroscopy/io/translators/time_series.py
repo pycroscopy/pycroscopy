@@ -13,7 +13,7 @@ from skimage.measure import block_reduce
 
 from .df_utils.io_image import read_image, read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -346,16 +346,11 @@ class MovieTranslator(Translator):
         meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
         chan_grp = VirtualGroup('Channel_000')
-        # Get the Position and Spectroscopic Datasets
-        #     ds_spec_ind, ds_spec_vals = buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets([num_images],
-                                                        is_spectral=True,
-                                                        labels=['Time'],
-                                                        units=['s'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([usize, vsize],
-                                                     is_spectral=False,
-                                                     labels=['X', 'Y'],
-                                                     units=['pixel', 'pixel'])
+        # Build the Position and Spectroscopic Datasets
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(AuxillaryDescriptor([num_images], ['Time'], ['s']),
+                                                        is_spectral=True)
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(AuxillaryDescriptor([usize, vsize], ['X', 'Y'], ['a.u.', 'a.u.']),
+                                                     is_spectral=False)
 
         ds_chunking = calc_chunks([num_pixels, num_images],
                                   data_type(0).itemsize,
