@@ -39,19 +39,26 @@ class AuxillaryDescriptor(object):
 
         """
         lengths = []
-        for val, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes, dim_initial_vals],
-                                            [0, 2, 2, 1, 1],
-                                            [True, True, True, False, False]):
+        for val, var_name, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes,
+                                                       dim_initial_vals],
+                                                      ['dim_sizes', 'dim_names', 'dim_units', 'dim_step_sizes',
+                                                       'dim_initial_vals']
+                                                      [0, 2, 2, 1, 1],
+                                                      [True, True, True, False, False]):
             if not required and val is None:
                 continue
-            assert isinstance(val, (list, tuple, np.ndarray))
+            if not isinstance(val, (list, tuple, np.ndarray)):
+                raise TypeError(var_name + ' should be a list / tuple / numpy array')
             lengths.append(len(val))
             if elem_type == 2:
-                assert np.all([isinstance(_, (str, unicode)) for _ in val])
+                if not np.all([isinstance(_, (str, unicode)) for _ in val]):
+                    raise TypeError(var_name + ' should be a iterable containing strings')
             elif elem_type == 0:
-                assert contains_integers(val, min_val=1 + len(val) > 1)
+                if not contains_integers(val, min_val=1 + len(val) > 1):
+                    raise TypeError(var_name + ' should be a iterable containing integers > 1')
             else:
-                assert np.all([isinstance(_, numbers.Number) for _ in val])
+                if not np.all([isinstance(_, numbers.Number) for _ in val]):
+                    raise TypeError(var_name + ' should be a iterable containing Numbers')
         num_elems = np.unique(lengths)
         if len(num_elems) != 1:
             raise ValueError('All the arguments should have the same number of elements')
@@ -90,9 +97,12 @@ def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
         Dictionary of tuples containing slice objects corresponding to
         each position axis.
     """
-    assert isinstance(dim_names, Iterable)
-    assert len(dim_names) > 0
-    assert np.all([isinstance(x, (str, unicode)) for x in dim_names])
+    if not isinstance(dim_names, Iterable):
+        raise TypeError('dim_names should be Iterables')
+    if not len(dim_names) > 0:
+        raise ValueError('dim_names should not be empty')
+    if not np.all([isinstance(x, (str, unicode)) for x in dim_names]):
+        raise TypeError('dim_names should contain strings')
 
     slice_dict = dict()
     for spat_ind, curr_dim_name in enumerate(dim_names):
@@ -122,8 +132,10 @@ def make_indices_matrix(num_steps, is_position=True):
     indices_matrix : 2D unsigned int numpy array
         arranged as [steps, spatial dimension]
     """
-    assert isinstance(num_steps, (tuple, list))
-    assert contains_integers(num_steps, min_val=1 + len(num_steps) > 0)
+    if not isinstance(num_steps, (tuple, list, np.ndarray)):
+        raise TypeError('num_steps should be a list / tuple / numpy array')
+    if not contains_integers(num_steps, min_val=1 + len(num_steps) > 0):
+        raise ValueError('num_steps should contain integers greater than equal to 1 (empty dimension) or 2')
 
     num_steps = np.array(num_steps)
     spat_dims = max(1, len(np.where(num_steps > 1)[0]))
@@ -215,10 +227,12 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
 
     Dimensions should be in the order from fastest varying to slowest.
     """
-    assert isinstance(descriptor, AuxillaryDescriptor)
+    if not isinstance(descriptor, AuxillaryDescriptor):
+        raise TypeError('descriptor should be an AuxillaryDescriptor object')
 
     if base_name is not None:
-        assert isinstance(base_name, (str, unicode))
+        if not isinstance(base_name, (str, unicode)):
+            raise TypeError('base_name should be a string')
         if not base_name.endswith('_'):
             base_name += '_'
     else:
@@ -242,7 +256,8 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
 
     # Get the indices for all dimensions
     indices = make_indices_matrix(descriptor.sizes)
-    assert isinstance(indices, np.ndarray)
+    if not isinstance(indices, np.ndarray):
+        raise TypeError('indices should be a numpy array')
     if verbose:
         print('Indices')
         print(indices.shape)
