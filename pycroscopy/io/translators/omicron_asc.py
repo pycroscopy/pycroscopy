@@ -8,6 +8,7 @@ Created on Wed Sep 28 12:50:47 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np  # For array operations
 from os import path
+from ...core.io.write_utils import AuxillaryDescriptor
 from ...core.io.numpy_translator import NumpyTranslator
 
 
@@ -64,12 +65,13 @@ class AscTranslator(NumpyTranslator):
 
         # pass on the the necessary pieces of information onto the numpy translate that will handle the creation and
         # writing to the h5 file.
-        h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Current', 'nA',
-                                                       {'sizes': [num_cols, num_rows], 'units': ['nm', 'nm'],
-                                                        'names': ['X', 'Y']},
-                                                       {'sizes': [spectra_length], 'units': ['V'], 'names': ['Bias'],
-                                                        'initial_value': [-1], 'steps': [2 * max_v / spectra_length]},
-                                                       translator_name='ASC', parms_dict=parm_dict)
+
+        pos_dims = AuxillaryDescriptor([num_cols, num_rows], ['X', 'Y'], ['nm', 'nm'])
+        spec_dims = AuxillaryDescriptor([spectra_length], ['Bias'], ['V'], dim_initial_vals=[-1],
+                                        dim_step_sizes=[2 * max_v / spectra_length])
+
+        h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Current', 'nA', pos_dims,
+                                                       spec_dims, translator_name='ASC', parms_dict=parm_dict)
 
         return h5_path
 
