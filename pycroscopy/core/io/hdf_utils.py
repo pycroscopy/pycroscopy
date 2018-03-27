@@ -1181,21 +1181,21 @@ def copy_attributes(source, dest, skip_refs=True):
     assert isinstance(source, h5py.Dataset)
     assert isinstance(dest, h5py.Dataset)
 
-    for attr in source.attrs.keys():
-        atval = source.attrs[attr]
+    for att_name in source.attrs.keys():
+        att_val = get_attr(source, att_name)
         """
         Don't copy references unless asked
         """
-        if isinstance(atval, h5py.Reference):
-            if isinstance(atval, h5py.RegionReference) or skip_refs:
+        if isinstance(att_val, h5py.Reference):
+            if isinstance(att_val, h5py.RegionReference) or skip_refs:
                 continue
-            elif isinstance(atval, h5py.RegionReference):
+            elif isinstance(att_val, h5py.RegionReference):
                 """
                 Dereference old reference, get the appropriate data
                 slice and create new reference.
                 """
                 try:
-                    region = h5py.h5r.get_region(atval, source.id)
+                    region = h5py.h5r.get_region(att_val, source.id)
 
                     start, end = region.get_select_bounds()
                     ref_slice = []
@@ -1205,20 +1205,22 @@ def copy_attributes(source, dest, skip_refs=True):
                         else:
                             ref_slice.append(slice(start[i], end[i]))
                 except:
-                    warn('Could not create new region reference for {} in {}.'.format(attr, source.name))
+                    warn('Could not create new region reference for {} in {}.'.format(att_name, source.name))
                     continue
 
-                dest.attrs[attr] = dest.regionref[tuple(ref_slice)]
+                dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
                 continue
             else:
-                dest.attrs[attr] = atval
+                dest.attrs[att_name] = att_val
                 continue
-        dest.attrs[attr] = atval
+
+        # everything else
+        dest.attrs[att_name] = clean_string_att(att_val)
     if not skip_refs:
         try:
             copy_region_refs(source, dest)
         except:
-            print('Could not create new region reference for {} in {}.'.format(attr, source.name))
+            print('Could not create new region reference for {} in {}.'.format(att_name, source.name))
 
     return dest
 
@@ -1653,11 +1655,11 @@ def copy_main_attributes(h5_main, h5_new):
     for param in [h5_main, h5_new]:
         assert isinstance(param, h5py.Dataset)
 
-    for att_name, default_val in zip(['quantity', 'units'], ['Unknown', '']):
+    for att_name, default_val in zip(['quantity', 'units'], ['Unknown', 'a. u.']):
         val = default_val
         if att_name in h5_main.attrs:
             val = get_attr(h5_main, att_name)
-        h5_new.attrs[att_name] = val
+        h5_new.attrs[att_name] = clean_string_att(val)
 
 
 def check_for_old(h5_base, tool_name, new_parms=None, target_dset=None, verbose=False):
@@ -2378,7 +2380,10 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
             continue
         if verbose:
             print('Writing attribute: {} with value: {}'.format(key, val))
-        h5_obj.attrs[key] = clean_string_att(val)
+        clean_val = clean_string_att(val)
+        if verbose:
+            print('Attribute cleaned into: {}'.format(clean_val))
+        h5_obj.attrs[key] = clean_val
     if verbose:
         print('Wrote all (simple) attributes to {}: {}\n'.format(obj_type, h5_obj.name.split('/')[-1]))
 
