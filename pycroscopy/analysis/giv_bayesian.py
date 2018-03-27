@@ -77,7 +77,7 @@ class GIVBayesian(Process):
         self.forward_results = None
         self._bayes_parms = None
 
-    def test(self, pix_ind=None, show_plots=True, econ=False):
+    def test(self, pix_ind=None, show_plots=True, econ=True):
         """
         Tests the inference on a single pixel (randomly chosen unless manually specified) worth of data.
 
@@ -97,7 +97,9 @@ class GIVBayesian(Process):
         if pix_ind is None:
             pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
         other_params = self.parms_dict.copy()
+        # removing duplicates:
         _ = other_params.pop('freq')
+        _ = other_params.pop('econ')
 
         return bayesian_inference_on_period(self.h5_main[pix_ind], self.single_ao, self.parms_dict['freq'],
                                             show_plots=show_plots, econ=econ, **other_params)
@@ -139,7 +141,7 @@ class GIVBayesian(Process):
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=self.verbose)
 
         cap_shape = (num_pos, 1)
-        ds_cap = VirtualDataset('Capacitance', data=[], maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
+        ds_cap = VirtualDataset('Capacitance', data=None, maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
                                 compression='gzip')
         ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'pF'}
         cap_spec_desc = AuxillaryDescriptor([1], ['Direction'], [''])

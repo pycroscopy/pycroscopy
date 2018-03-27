@@ -283,7 +283,7 @@ class BEodfTranslator(Translator):
         BEPS_chunks = calc_chunks([num_pix, tot_bins],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, bins_per_step))
-        ds_main_data = VirtualDataset('Raw_Data', data=[],
+        ds_main_data = VirtualDataset('Raw_Data', data=None,
                                       maxshape=(num_pix, tot_bins),
                                       dtype=np.complex64,
                                       chunking=BEPS_chunks,

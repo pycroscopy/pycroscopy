@@ -66,7 +66,7 @@ class GIVTranslator(Translator):
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
         # For some reason, compression is effective only on time series data
-        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+        ds_raw_data = VirtualDataset('Raw_Data', data=None,
                                      maxshape=(parm_dict['grid_num_rows'], excit_wfm.size),
                                      dtype=np.float16, chunking=(1, excit_wfm.size), compression='gzip')
         ds_raw_data.attrs['quantity'] = ['Current']

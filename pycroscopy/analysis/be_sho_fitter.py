@@ -68,7 +68,7 @@ class BESHOfitter(Fitter):
         links the guess dataset to the spectroscopic datasets.
         """
         # Create all the ancilliary datasets, allocate space.....
-        ds_guess = VirtualDataset('Guess', data=[],
+        ds_guess = VirtualDataset('Guess', data=None,
                                   maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
                                   chunking=(1, self.num_udvs_steps), dtype=sho32)
         ds_guess.attrs = self._parms_dict

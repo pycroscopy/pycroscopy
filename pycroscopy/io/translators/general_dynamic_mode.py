@@ -106,7 +106,7 @@ class GDMTranslator(Translator):
         # Minimize file size to the extent possible.
         # DAQs are rated at 16 bit so float16 should be most appropriate.
         # For some reason, compression is more effective on time series data
-        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pix, len(freq_array) * num_bins),
+        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_pix, len(freq_array) * num_bins),
                                       dtype=np.float32, chunking=(1, num_bins), compression='gzip')
 
         chan_grp = VirtualGroup('Channel_000')

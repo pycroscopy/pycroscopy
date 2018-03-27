@@ -456,10 +456,10 @@ class BELoopFitter(Fitter):
         tot_cycles = cycle_start_inds.size
 
         # Prepare containers for the dataets
-        ds_projected_loops = VirtualDataset('Projected_Loops', data=[], dtype=np.float32,
+        ds_projected_loops = VirtualDataset('Projected_Loops', data=None, dtype=np.float32,
                                             maxshape=self.h5_main.shape, chunking=self.h5_main.chunks,
                                             compression='gzip')
-        ds_loop_metrics = VirtualDataset('Loop_Metrics', data=[], dtype=loop_metrics32,
+        ds_loop_metrics = VirtualDataset('Loop_Metrics', data=None, dtype=loop_metrics32,
                                          maxshape=(self.h5_main.shape[0], tot_cycles))
 
         ds_loop_met_spec_inds, ds_loop_met_spec_vals = build_reduced_spec_dsets(self._sho_spec_inds, self._sho_spec_vals,
