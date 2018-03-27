@@ -15,7 +15,7 @@ from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
 from ..core.io.write_utils import VALUES_DTYPE
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
@@ -160,8 +160,8 @@ class SignalFilter(Process):
         if self.noise_threshold is not None:
             ds_noise_floors = VirtualDataset('Noise_Floors',
                                              data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
-            ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets([1], is_spectral=True,
-                                                                         labels=['arb'], units=[''],
+            noise_spec_descriptor = AuxillaryDescriptor([1], ['arb'], [''])
+            ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets(noise_spec_descriptor, is_spectral=True,
                                                                          verbose=self.verbose)
             ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
             ds_noise_spec_vals.name = 'Noise_Spectral_Values'
@@ -180,8 +180,9 @@ class SignalFilter(Process):
         if self.write_condensed:
             self.hot_inds = np.where(self.composite_filter > 0)[0]
             self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([int(0.5 * len(self.hot_inds))], is_spectral=True,
-                                                             labels=['hot_frequencies'], units=[''],
+
+            condensed_spec_descriptor = AuxillaryDescriptor([int(0.5 * len(self.hot_inds))], ['hot_frequencies'], [''])
+            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(condensed_spec_descriptor, is_spectral=True,
                                                              verbose=self.verbose)
             ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(self.hot_inds))  # The data generated above varies linearly. Override.
             ds_cond_data = VirtualDataset('Condensed_Data', data=[],
@@ -191,12 +192,12 @@ class SignalFilter(Process):
             if self.num_effective_pix > 1:
                 # need to make new position datasets by taking every n'th index / value:
                 new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
-                ds_pos_inds, ds_pos_vals = build_ind_val_dsets([int(np.unique(h5_pos_inds[:, dim_ind]).size /
+                # TODO: The step in the Y direction should be changed.
+                pos_descriptor = AuxillaryDescriptor([int(np.unique(h5_pos_inds[:, dim_ind]).size /
                                                                     self.num_effective_pix)
                                                                 for dim_ind in range(h5_pos_inds.shape[1])],
-                                                               is_spectral=False,
-                                                               labels=h5_pos_inds.attrs['labels'],
-                                                               units=h5_pos_inds.attrs['units'], verbose=self.verbose)
+                                                     h5_pos_inds.attrs['labels'], h5_pos_inds.attrs['units'])
+                ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=self.verbose)
                 h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
                 grp_filt.add_children([ds_pos_inds, ds_pos_vals])
 
