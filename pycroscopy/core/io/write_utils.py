@@ -9,7 +9,7 @@ from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
-           'INDICES_DTYPE', 'VALUES_DTYPE', 'AuxillaryDescriptor']
+           'INDICES_DTYPE', 'VALUES_DTYPE', 'AuxillaryDescriptor', 'build_ind_val_dsets']
 
 if sys.version_info.major == 3:
     unicode = str

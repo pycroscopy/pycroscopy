@@ -21,7 +21,7 @@ from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.write_utils import INDICES_DTYPE
+from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 
 
 class SVD(Process):
@@ -81,6 +81,7 @@ class SVD(Process):
         self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
         print('Took {} seconds to compute randomized SVD'.format(round(time.time() - t1, 2)))
+        # TODO: Return N dimensional form instead of 2D!
         return self.__u, self.__s, self.__v
 
     def compute(self):
@@ -118,16 +119,16 @@ class SVD(Process):
         Parameters
         ----------
         """
+        aux_desc = AuxillaryDescriptor([len(self.__s)], ['Principal Component'], ['a. u.'])
+        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(aux_desc, is_spectral=False)
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(aux_desc, is_spectral=True)
 
+        # No point making this 1D dataset a main dataset
         ds_s = VirtualDataset('S', data=np.float32(self.__s))
-        ds_s.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_s.attrs['units'] = ''
-        ds_inds = VirtualDataset('Component_Indices', data=INDICES_DTYPE(np.arange(len(self.__s))))
-        ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_inds.attrs['units'] = ''
 
         u_chunks = calc_chunks(self.__u.shape, np.float32(0).itemsize)
-        ds_u = VirtualDataset('U', data=np.float32(self.__u), chunking=u_chunks)
+        ds_u = VirtualDataset('U', data=np.float32(self.__u), chunking=u_chunks,
+                              attrs={'quantity': 'Abundance', 'units': 'a.u.'})
 
         v_chunks = calc_chunks(self.__v.shape, self.h5_main.dtype.itemsize)
         ds_v = VirtualDataset('V', data=self.__v, chunking=v_chunks)
@@ -138,7 +139,7 @@ class SVD(Process):
         '''
         grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
         svd_grp = VirtualGroup(grp_name, self.h5_main.parent.name[1:])
-        svd_grp.add_children([ds_v, ds_s, ds_u, ds_inds])
+        svd_grp.add_children([ds_v, ds_s, ds_u, ds_pos_inds, ds_pos_vals, ds_spec_vals, ds_spec_inds])
 
         '''
         Write the attributes to the group
@@ -147,15 +148,18 @@ class SVD(Process):
         svd_grp.attrs.update({'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0] - 1})
 
         '''
-        Write the data and retrieve the HDF5 objects then delete the Microdatasets
+        Write the data and retrieve the HDF5 objects then delete the VirtualDataset objects
         '''
         hdf = HDFwriter(self.h5_main.file)
-        h5_svd_refs = hdf.write(svd_grp)
+        h5_svd_refs = hdf.write(svd_grp, print_log=False)
 
         h5_U = get_h5_obj_refs(['U'], h5_svd_refs)[0]
         h5_S = get_h5_obj_refs(['S'], h5_svd_refs)[0]
         h5_V = get_h5_obj_refs(['V'], h5_svd_refs)[0]
-        h5_svd_inds = get_h5_obj_refs(['Component_Indices'], h5_svd_refs)[0]
+        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_svd_refs)[0]
+        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_svd_refs)[0]
+        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_svd_refs)[0]
+        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_svd_refs)[0]
         self.h5_results_grp = h5_S.parent
 
         # copy attributes
@@ -172,11 +176,11 @@ class SVD(Process):
 
         check_and_link_ancillary(h5_V,
                                  ['Position_Indices', 'Position_Values'],
-                                 anc_refs=[h5_svd_inds, h5_S])
+                                 anc_refs=[h5_pos_inds, h5_pos_vals])
 
         check_and_link_ancillary(h5_U,
                                  ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                                 anc_refs=[h5_svd_inds, h5_S])
+                                 anc_refs=[h5_spec_inds, h5_spec_vals])
 
         check_and_link_ancillary(h5_V,
                                  ['Spectroscopic_Indices', 'Spectroscopic_Values'],
