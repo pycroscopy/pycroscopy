@@ -4,6 +4,8 @@ import numpy as np
 from collections import Iterable
 import numbers
 
+from .virtual_data import VirtualDataset
+
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
@@ -180,3 +182,87 @@ def clean_string_att(att_val):
         raise TypeError('Failed to clean: {}'.format(att_val))
 
 
+def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=None):
+    """
+    Creates VirtualDatasets for the position OR spectroscopic indices and values of the data.
+    Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
+    For example if one of the spectroscopic dimensions (e.g. - Bias) was sinusoidal and not linear, The specific
+    dimension in the Spectroscopic_Values dataset can be manually overwritten.
+
+    Parameters
+    ----------
+    descriptor : AuxillaryDescriptor
+        Object that provides all necessary instructions for constructing the indices and values datasets
+    is_spectral : bool, optional. default = True
+        Spectroscopic (True) or Position (False)
+    verbose : Boolean, optional
+        Whether or not to print statements for debugging purposes
+    base_name : str / unicode, optional
+        Prefix for the datasets. Default: 'Position_' when is_spectral is False, 'Spectroscopic_' otherwise
+
+    Returns
+    -------
+    ds_inds : VirtualDataset
+            Reduced Spectroscopic indices dataset
+    ds_vals : VirtualDataset
+            Reduces Spectroscopic values dataset
+
+    Notes
+    -----
+    `steps`, `initial_values`, `labels`, and 'units' must be the same length as
+    `dimensions` when they are specified.
+
+    Dimensions should be in the order from fastest varying to slowest.
+    """
+    assert isinstance(descriptor, AuxillaryDescriptor)
+
+    if base_name is not None:
+        assert isinstance(base_name, (str, unicode))
+        if not base_name.endswith('_'):
+            base_name += '_'
+    else:
+        base_name = 'Position_'
+        if is_spectral:
+            base_name = 'Spectroscopic_'
+
+    steps = np.atleast_2d(descriptor.steps)
+
+    if verbose:
+        print('Steps')
+        print(steps.shape)
+        print(steps)
+
+    initial_values = np.atleast_2d(descriptor.initial_vals)
+
+    if verbose:
+        print('Initial Values')
+        print(initial_values.shape)
+        print(initial_values)
+
+    # Get the indices for all dimensions
+    indices = make_indices_matrix(descriptor.sizes)
+    assert isinstance(indices, np.ndarray)
+    if verbose:
+        print('Indices')
+        print(indices.shape)
+        print(indices)
+
+    # Convert the indices to values
+    values = initial_values + VALUES_DTYPE(indices)*steps
+
+    if is_spectral:
+        indices = indices.transpose()
+        values = values.transpose()
+
+    # Create the slices that will define the labels
+    region_slices = get_aux_dset_slicing(descriptor.names, is_spectroscopic=is_spectral)
+
+    # Create the VirtualDataset for both Indices and Values
+    ds_indices = VirtualDataset(base_name + 'Indices', indices, dtype=INDICES_DTYPE)
+    ds_values = VirtualDataset(base_name + 'Values', VALUES_DTYPE(values), dtype=VALUES_DTYPE)
+
+    for dset in [ds_indices, ds_values]:
+        dset.attrs['labels'] = region_slices
+        dset.attrs['units'] = descriptor.units
+
+    return ds_indices, ds_values
