@@ -174,7 +174,7 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None, excit_wf
 
             fig_loops, axes_loops = plot_curves(excit_wfm, [raw_pixels, filt_pixels], line_colors=['r', 'k'],
                                                 dataset_names=['Raw', 'Filtered'], x_label='Excitation',
-                                                y_label='Signal', subtitle_prefix='Col ', plots_on_side=4,
+                                                y_label='Signal', subtitle_prefix='Col ', num_plots=16,
                                                 title=plot_title)
 
     return filt_data, fig_fft, fig_loops
