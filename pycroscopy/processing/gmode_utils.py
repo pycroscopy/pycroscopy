@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_a
     check_if_main
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.viz.plot_utils import set_tick_font_size, plot_curves
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 
 if sys.version_info.major == 3:
     unicode = str
@@ -275,14 +275,13 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     h5_pos_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Position_Values'])[0]
     single_AO = h5_spec_vals[:, :pts_per_cycle]
 
-    ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
-                                                     labels=h5_spec_vals.attrs['labels'],
-                                                     units=h5_spec_vals.attrs['units'], verbose=False)
+    spec_descriptor = AuxillaryDescriptor([single_AO.size], h5_spec_vals.attrs['labels'], h5_spec_vals.attrs['units'])
+    ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_descriptor, is_spectral=True, verbose=False)
     ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
 
-    ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_main.shape[0]], is_spectral=False,
-                                                   steps=[scan_step_x_m, h5_pos_vals[1, 0]],
-                                                   labels=['X', 'Y'], units=['m', 'm'], verbose=False)
+    pos_descriptor = AuxillaryDescriptor([num_cols, h5_main.shape[0]], ['X', 'Y'], ['m', 'm'],
+                                         dim_step_sizes=[scan_step_x_m, h5_pos_vals[1, 0]])
+    ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=False)
     # TODO: Create empty datasets and then write for very large datasets
     ds_reshaped_data = VirtualDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
                                       compression='gzip', chunking=(10, pts_per_cycle))
@@ -298,8 +297,8 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     h5_resh = get_h5_obj_refs(['Reshaped_Data'], h5_refs)[0]
     # Link everything:
     link_h5_objects_as_attrs(h5_resh,
-             get_h5_obj_refs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
-                           h5_refs))
+                             get_h5_obj_refs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices',
+                                              'Spectroscopic_Values'], h5_refs))
 
     # Copy the two attributes that are really important but ignored:
     copy_main_attributes(h5_main, h5_resh)
