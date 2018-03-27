@@ -49,7 +49,7 @@ class AuxillaryDescriptor(object):
             if elem_type == 2:
                 assert np.all([isinstance(_, (str, unicode)) for _ in val])
             elif elem_type == 0:
-                assert contains_integers(val, min_val=2)
+                assert contains_integers(val, min_val=1)
             else:
                 assert np.all([isinstance(_, numbers.Number) for _ in val])
         num_elems = np.unique(lengths)
