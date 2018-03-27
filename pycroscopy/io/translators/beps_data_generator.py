@@ -11,7 +11,8 @@ from ...core.io.hdf_writer import HDFwriter
 from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr
 from ...core.io.dtype_utils import stack_real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets, build_reduced_spec_dsets
+from ...core.io.hdf_utils import build_reduced_spec_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 from ...core.io.pycro_data import PycroDataset
 from ...analysis.utils.be_loop import loop_fit_function
@@ -371,20 +372,16 @@ class FakeBEPSGenerator(Translator):
         spec_start = [spec_start[idim] for idim in real_dims]
         spec_steps = [spec_steps[idim] for idim in real_dims]
 
-        spec_inds, spec_vals = build_ind_val_dsets(spec_dims,
-                                                   labels=spec_labs,
-                                                   units=spec_units,
-                                                   initial_values=spec_start,
-                                                   steps=spec_steps)
+        spec_desc = AuxillaryDescriptor(spec_dims, spec_labs, spec_units, dim_step_sizes=spec_steps,
+                                        dim_initial_vals=spec_start)
+        spec_inds, spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
 
         # Replace the dummy DC values with the correct ones
         spec_vals.data[spec_labs.index('DC_Offset'), :] = np.repeat(Vdc_vec, self.n_bins)
 
-        position_ind_mat, position_val_mat = build_ind_val_dsets([self.N_x, self.N_y], False,
-                                                                 steps=[10 / self.N_x, 10 / self.N_y],
-                                                                 initial_values=[-5, -5],
-                                                                 labels=['X', 'Y'],
-                                                                 units=['um', 'um'])
+        pos_desc = AuxillaryDescriptor([self.N_x, self.N_y], ['X', 'Y'], ['um', 'um'], dim_initial_vals=[-5, -5],
+                                       dim_step_sizes=[10 / self.N_x, 10 / self.N_y])
+        position_ind_mat, position_val_mat = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         return position_ind_mat, position_val_mat, spec_inds, spec_vals
 

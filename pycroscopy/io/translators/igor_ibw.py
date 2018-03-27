@@ -2,7 +2,7 @@
 """
 Created on Wed Dec 07 16:04:34 2016
 
-@author: Suhas Somnath
+@author: Suhas Somnath, Chris R. Smith, Raj Giri
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -14,7 +14,7 @@ from igor import binarywave as bw
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
 from ...core.io.write_utils import VALUES_DTYPE
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.virtual_data import VirtualGroup, \
@@ -73,13 +73,13 @@ class IgorIBWTranslator(Translator):
             images = images.transpose(2, 0, 1)  # now ordered as [chan, Y, X] image
             images = np.reshape(images, (images.shape[0], -1, 1))  # 3D [chan, Y*X points,1]
 
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
-                                                         steps=[1.0 * parm_dict['FastScanSize'] / num_cols,
-                                                                1.0 * parm_dict['SlowScanSize'] / num_rows],
-                                                         labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
+            pos_desc = AuxillaryDescriptor([num_cols, num_rows], ['X', 'Y'], ['m', 'm'],
+                                           dim_step_sizes=[1.0 * parm_dict['FastScanSize'] / num_cols,
+                                                           1.0 * parm_dict['SlowScanSize'] / num_rows])
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=verbose)
 
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([1], is_spectral=True, steps=[1],
-                                                             labels=['arb'], units=['a.u.'], verbose=verbose)
+            spec_desc = AuxillaryDescriptor([1], ['arb'], ['a.u.'])
+            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=verbose)
 
         else:  # single force curve
             if verbose:
@@ -89,11 +89,11 @@ class IgorIBWTranslator(Translator):
             images = np.atleast_3d(images)  # now [Z, chan, 1]
             images = images.transpose((1, 2, 0))  # [chan ,1, Z] force curve
 
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets([1], is_spectral=False, steps=[25E-9],
-                                                         labels=['X'], units=['m'], verbose=verbose)
+            pos_desc = AuxillaryDescriptor([1], ['X'], ['m'], dim_step_sizes=[25E-9])
+            ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=verbose)
 
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([images.shape[2]], is_spectral=True, labels=['Z'],
-                                                             units=['m'], verbose=verbose)
+            spec_desc = AuxillaryDescriptor([images.shape[2]], ['Z'], ['m'])
+            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=verbose)
             # The data generated above varies linearly. Override.
             # For now, we'll shove the Z sensor data into the spectroscopic values.
 

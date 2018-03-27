@@ -14,7 +14,7 @@ from skimage.measure import block_reduce
 
 from .df_utils.io_image import read_image, read_dm3, no_bin
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from pycroscopy.core.io.hdf_utils import build_ind_val_dsets
+from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -307,22 +307,19 @@ class PtychographyTranslator(Translator):
                       'translator': 'Ptychography',
                       'scan_size_x': scan_size_x,
                       'scan_size_y': scan_size_y}
-    # Create the hdf5 data Group
+
+        # Create the hdf5 data Group
         root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
         meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
         chan_grp = VirtualGroup('Channel_000')
-    # Get the Position and Spectroscopic Datasets
-    #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize),
-                                                        is_spectral=True,
-                                                        labels=['U', 'V'],
-                                                        units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y],
-                                                     is_spectral=False,
-                                                     labels=['X', 'Y'],
-                                                     units=['pixel', 'pixel'])
+
+        # Build the Position and Spectroscopic Datasets
+        spec_desc = AuxillaryDescriptor((usize, vsize), ['U', 'V'], ['pixel', 'pixel'])
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
+        pos_desc = AuxillaryDescriptor([scan_size_x, scan_size_y], ['X', 'Y'], ['pixel', 'pixel'])
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
