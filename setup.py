@@ -2,6 +2,7 @@ from codecs import open
 import os
 
 from setuptools import setup, find_packages
+from pycroscopy.__version__ import version as __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
@@ -24,7 +25,7 @@ requirements = ['numpy_groupies>=0.9.6',
 
 setup(
     name='pycroscopy',
-    version='0.59.dev6',
+    version=__version__,
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
