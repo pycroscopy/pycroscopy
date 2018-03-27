@@ -77,7 +77,7 @@ class GIVBayesian(Process):
         self.forward_results = None
         self._bayes_parms = None
 
-    def test(self, pix_ind=None, show_plots=True, econ=True):
+    def test(self, pix_ind=None, show_plots=True):
         """
         Tests the inference on a single pixel (randomly chosen unless manually specified) worth of data.
 
@@ -87,8 +87,6 @@ class GIVBayesian(Process):
             Index of the pixel whose data will be used for inference
         show_plots : bool, optional. default = True
             Whether or not to show plots
-        econ : Boolean (Optional, Default = False)
-            Whether or not extra result datasets are returned. Turn this on when running on multiple datasets
 
         Returns
         -------
@@ -99,10 +97,9 @@ class GIVBayesian(Process):
         other_params = self.parms_dict.copy()
         # removing duplicates:
         _ = other_params.pop('freq')
-        _ = other_params.pop('econ')
 
         return bayesian_inference_on_period(self.h5_main[pix_ind], self.single_ao, self.parms_dict['freq'],
-                                            show_plots=show_plots, econ=econ, **other_params)
+                                            show_plots=show_plots, **other_params)
 
     def _set_memory_and_cores(self, cores=1, mem=1024):
         """
@@ -150,13 +147,13 @@ class GIVBayesian(Process):
         ds_cap_spec_inds.name = 'Spectroscopic_Indices_Cap'
         ds_cap_spec_vals.name = 'Spectroscopic_Values_Cap'
 
-        ds_r_var = VirtualDataset('R_variance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
+        ds_r_var = VirtualDataset('R_variance', data=None, maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
                                   chunking=(1, self.num_x_steps), compression='gzip')
         ds_r_var.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_res = VirtualDataset('Resistance', data=[], maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
+        ds_res = VirtualDataset('Resistance', data=None, maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
                                 chunking=(1, self.num_x_steps), compression='gzip')
         ds_res.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_i_corr = VirtualDataset('Corrected_Current', data=[], maxshape=(num_pos, self.single_ao.size),
+        ds_i_corr = VirtualDataset('Corrected_Current', data=None, maxshape=(num_pos, self.single_ao.size),
                                    dtype=np.float32,
                                    chunking=(1, self.single_ao.size), compression='gzip')
         # don't bother adding any other attributes, all this will be taken from h5_main
