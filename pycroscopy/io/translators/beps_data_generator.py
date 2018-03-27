@@ -422,7 +422,7 @@ class FakeBEPSGenerator(Translator):
                                    np.complex64(0).itemsize,
                                    unit_chunks=[1, self.n_bins])
 
-        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+        ds_raw_data = VirtualDataset('Raw_Data', data=None,
                                      maxshape=[self.n_pixels, self.n_spec_bins],
                                      dtype=np.complex64,
                                      compression='gzip',
@@ -471,13 +471,13 @@ class FakeBEPSGenerator(Translator):
                                     self.n_sho_bins],
                                    sho32.itemsize,
                                    unit_chunks=[1, 1])
-        ds_sho_fit = VirtualDataset('Fit', data=[],
+        ds_sho_fit = VirtualDataset('Fit', data=None,
                                     maxshape=[self.n_pixels, self.n_sho_bins],
                                     dtype=sho32,
                                     compression='gzip',
                                     chunking=sho_chunking,
                                     parent=sho_grp)
-        ds_sho_guess = VirtualDataset('Guess', data=[],
+        ds_sho_guess = VirtualDataset('Guess', data=None,
                                       maxshape=[self.n_pixels, self.n_sho_bins],
                                       dtype=sho32,
                                       compression='gzip',
@@ -519,14 +519,14 @@ class FakeBEPSGenerator(Translator):
         loop_chunking = calc_chunks([self.n_pixels, self.n_loops],
                                     loop_fit32.itemsize,
                                     unit_chunks=[1, 1])
-        ds_loop_fit = VirtualDataset('Fit', data=[],
+        ds_loop_fit = VirtualDataset('Fit', data=None,
                                      maxshape=[self.n_pixels, self.n_loops],
                                      dtype=loop_fit32,
                                      compression='gzip',
                                      chunking=loop_chunking,
                                      parent=loop_grp)
 
-        ds_loop_guess = VirtualDataset('Guess', data=[],
+        ds_loop_guess = VirtualDataset('Guess', data=None,
                                        maxshape=[self.n_pixels, self.n_loops],
                                        dtype=loop_fit32,
                                        compression='gzip',

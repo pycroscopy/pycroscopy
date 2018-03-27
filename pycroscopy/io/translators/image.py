@@ -161,7 +161,7 @@ class ImageTranslator(Translator):
                                   unit_chunks=[1, 1])
 
         # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pixels, 1),
+        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_pixels, 1),
                                       chunking=ds_chunking, dtype=data_type, compression='gzip')
         # Add datasets as children of Measurement_000 data group
         chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,

@@ -465,7 +465,7 @@ class OneViewTranslator(Translator):
                                   unit_chunks=(1, num_pixels))
 
         # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
+        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_files, num_pixels),
                                       chunking=ds_chunking, dtype=data_type, compression='gzip')
         ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
                                             data=np.zeros(num_pixels, dtype=np.float32),

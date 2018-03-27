@@ -133,7 +133,7 @@ class GLineTranslator(Translator):
         This does NOT change with each file. The data written to it does.
         The auxiliary datasets will not change with each raw data file since
         only one excitation waveform is used"""
-        ds_main_data = VirtualDataset('Raw_Data', data=[],
+        ds_main_data = VirtualDataset('Raw_Data', data=None,
                                       maxshape=(self.num_rows, self.points_per_pixel * num_cols),
                                       chunking=(1, self.points_per_pixel), dtype=np.float16)
         ds_main_data.attrs['quantity'] = ['Deflection']

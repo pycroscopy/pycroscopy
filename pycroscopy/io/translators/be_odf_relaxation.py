@@ -228,7 +228,7 @@ class BEodfRelaxationTranslator(Translator):
         chunking = np.floor(np.sqrt(pixel_chunking))
         chunking = max(1, chunking)
         chunking = min(num_actual_udvs_steps, num_pix, chunking)
-        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_pix, tot_bins), dtype=np.complex64,
+        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_pix, tot_bins), dtype=np.complex64,
                                       chunking=(chunking, chunking * bins_per_step), compression='gzip')
 
         chan_grp = VirtualGroup('Channel_')
