@@ -30,6 +30,7 @@ When using Python 2.7, please install IPython 5.x LTS Long Term Support version.
 Beginning with IPython 6.0, Python 3.3 and above is required."""
 if sys.version_info.major == 2:
     requirements.append('ipython>=5,<6')
+    requirements.append('unittest2')
 elif sys.version_info.major == 3:
     requirements.append('ipython>=6')
     
