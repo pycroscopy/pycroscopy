@@ -192,7 +192,6 @@ class SignalFilter(Process):
             if self.num_effective_pix > 1:
                 # need to make new position datasets by taking every n'th index / value:
                 new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
-                # TODO: The step in the Y direction should be changed.
                 pos_descriptor = AuxillaryDescriptor([int(np.unique(h5_pos_inds[:, dim_ind]).size /
                                                                     self.num_effective_pix)
                                                                 for dim_ind in range(h5_pos_inds.shape[1])],
