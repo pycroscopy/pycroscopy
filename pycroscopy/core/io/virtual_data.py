@@ -223,14 +223,17 @@ class VirtualDataset(VirtualData):
         if maxshape is not None:
             if data is not None:
                 if len(data.shape) != len(maxshape):
-                    raise ValueError('Maxshape should have same number of dimensions as data')
+                    raise ValueError('Maxshape: {} should have same number of dimensions as data: {}'
+                                     '.'.format(maxshape, data.shape))
                 for d_size, m_size in zip(data.shape, maxshape):
                     if m_size is not None:
                         if m_size < d_size:
-                            raise ValueError('maxshape should not be smaller than the data shape')
+                            raise ValueError('maxshape: {} should not be smaller than the data shape: {}'
+                                             '.'.format(maxshape, data.shape))
             else:
                 if np.any([item is None for item in maxshape]):
-                    raise ValueError('maxshape should not have any None values when data is not provided')
+                    raise ValueError('maxshape: {} should not have any None values when data is not provided'
+                                     '.'.format(maxshape))
 
         if chunking is not None:
             for item in chunking:
