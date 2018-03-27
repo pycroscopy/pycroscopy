@@ -42,7 +42,7 @@ class AuxillaryDescriptor(object):
         for val, var_name, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes,
                                                        dim_initial_vals],
                                                       ['dim_sizes', 'dim_names', 'dim_units', 'dim_step_sizes',
-                                                       'dim_initial_vals']
+                                                       'dim_initial_vals'],
                                                       [0, 2, 2, 1, 1],
                                                       [True, True, True, False, False]):
             if not required and val is None:
