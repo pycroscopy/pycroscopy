@@ -29,9 +29,8 @@ v 1.0 goals
 10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
  
   * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions. 
-11. DONE - Restructure Process such that:
-  * It allows the user to test / apply the process to a single unit of the data
-  * The compute should be detached from writing in Cluster, Decomposition etc. If the results are not satisfactory, discard them, change parameters and try again until one is happy with the results at which point the write results can be manually called.
+11. mostly done - Restructure Process such that:
+  * test() for Cluster, Decomposition, SVD should return N dimensional datasets instead of flattened 2D
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
 14. Carlo Dri + Chris - Get pycroscopy on conda forge
