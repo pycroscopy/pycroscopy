@@ -29,7 +29,7 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
            'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy',
            'is_editable_h5', 'write_ind_val_dsets', 'build_reduced_spec_dsets', 'write_reduced_spec_dsets',
            'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
-           'assign_group_index', 'clean_reg_ref', 'build_ind_val_dsets'
+           'assign_group_index', 'clean_reg_ref'
            ]
 
 if sys.version_info.major == 3:
@@ -2141,103 +2141,6 @@ def write_ind_val_dsets(h5_parent_group, descriptor, is_spectral=True, verbose=F
         write_simple_attrs(h5_dset, {'units': descriptor.units, 'labels': descriptor.names})
 
     return h5_indices, h5_values
-
-
-def build_ind_val_dsets(h5_parent_group, descriptor, is_spectral=True, verbose=False, base_name=None):
-    """
-    Creates h5py.Datasets for the position OR spectroscopic indices and values of the data.
-    Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
-    For example if one of the spectroscopic dimensions (e.g. - Bias) was sinusoidal and not linear, The specific
-    dimension in the Spectroscopic_Values dataset can be manually overwritten.
-
-    Parameters
-    ----------
-    h5_parent_group : h5py.Group or h5py.File
-        Group under which the indices and values datasets will be created
-    descriptor : AuxillaryDescriptor
-        Object that provides all necessary instructions for constructing the indices and values datasets
-    is_spectral : bool, optional. default = True
-        Spectroscopic (True) or Position (False)
-    verbose : Boolean, optional
-        Whether or not to print statements for debugging purposes
-    base_name : str / unicode, optional
-        Prefix for the datasets. Default: 'Position_' when is_spectral is False, 'Spectroscopic_' otherwise
-
-    Returns
-    -------
-    ds_inds : VirtualDataset
-            Reduced Spectroscopic indices dataset
-    ds_vals : VirtualDataset
-            Reduces Spectroscopic values dataset
-
-    Notes
-    -----
-    `steps`, `initial_values`, `labels`, and 'units' must be the same length as
-    `dimensions` when they are specified.
-
-    Dimensions should be in the order from fastest varying to slowest.
-    """
-    assert isinstance(descriptor, AuxillaryDescriptor)
-    assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
-    if not is_editable_h5(h5_parent_group):
-        raise ValueError('The provided h5 object is not valid / open')
-
-    if base_name is not None:
-        assert isinstance(base_name, (str, unicode))
-        if not base_name.endswith('_'):
-            base_name += '_'
-    else:
-        base_name = 'Position_'
-        if is_spectral:
-            base_name = 'Spectroscopic_'
-
-    # check if the datasets already exist. If they do, there's no point in going any further
-    for sub_name in ['Indices', 'Values']:
-        if base_name + sub_name in h5_parent_group.keys():
-            raise KeyError('Dataset: {} already exists in provided group: {}'.format(base_name + sub_name,
-                                                                                       h5_parent_group.name))
-
-    steps = np.atleast_2d(descriptor.steps)
-
-    if verbose:
-        print('Steps')
-        print(steps.shape)
-        print(steps)
-
-    initial_values = np.atleast_2d(descriptor.initial_vals)
-
-    if verbose:
-        print('Initial Values')
-        print(initial_values.shape)
-        print(initial_values)
-
-    # Get the indices for all dimensions
-    indices = make_indices_matrix(descriptor.sizes)
-    assert isinstance(indices, np.ndarray)
-    if verbose:
-        print('Indices')
-        print(indices.shape)
-        print(indices)
-
-    # Convert the indices to values
-    values = initial_values + VALUES_DTYPE(indices)*steps
-
-    # Create the slices that will define the labels
-    if is_spectral:
-        indices = indices.transpose()
-        values = values.transpose()
-
-    region_slices = get_aux_dset_slicing(descriptor.names, is_spectroscopic=is_spectral)
-
-    # Create the VirtualDataset for both Indices and Values
-    ds_indices = VirtualDataset(base_name + 'Indices', indices, dtype=INDICES_DTYPE)
-    ds_values = VirtualDataset(base_name + 'Values', VALUES_DTYPE(values), dtype=VALUES_DTYPE)
-
-    for dset in [ds_indices, ds_values]:
-        dset.attrs['labels'] = region_slices
-        dset.attrs['units'] = descriptor.units
-
-    return ds_indices, ds_values
 
 
 def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_dim, step_starts,
