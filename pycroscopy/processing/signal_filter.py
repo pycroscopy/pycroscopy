@@ -154,8 +154,7 @@ class SignalFilter(Process):
             print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
             print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
 
-    def test_on_subset(self, pix_ind=None, excit_wfm=None):
-    def test(self, pix_ind=None, excit_wfm=None):
+    def test(self, pix_ind=None, excit_wfm=None, **kwargs):
         """
         Tests the signal filter on a single pixel (randomly chosen unless manually specified) worth of data.
 
@@ -176,7 +175,8 @@ class SignalFilter(Process):
         if pix_ind is None:
             pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
         return test_filter(self.h5_main[pix_ind], frequency_filters=self.frequency_filters, excit_wfm=excit_wfm,
-                           noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True)
+                           noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True,
+                           **kwargs)
 
     def _create_results_datasets(self):
         """
@@ -204,7 +204,7 @@ class SignalFilter(Process):
             grp_filt.add_children([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
 
         if self.write_filtered:
-            ds_filt_data = VirtualDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
+            ds_filt_data = VirtualDataset('Filtered_Data', data=None, maxshape=self.h5_main.maxshape,
                                           dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
             grp_filt.add_children([ds_filt_data])
 
@@ -220,8 +220,9 @@ class SignalFilter(Process):
             condensed_spec_descriptor = AuxillaryDescriptor([int(0.5 * len(self.hot_inds))], ['hot_frequencies'], [''])
             ds_spec_inds, ds_spec_vals = build_ind_val_dsets(condensed_spec_descriptor, is_spectral=True,
                                                              verbose=self.verbose)
-            ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(self.hot_inds))  # The data generated above varies linearly. Override.
-            ds_cond_data = VirtualDataset('Condensed_Data', data=[],
+            # The data generated above varies linearly. Override.
+            ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(self.hot_inds))
+            ds_cond_data = VirtualDataset('Condensed_Data', data=None,
                                           maxshape=(self.num_effective_pix, len(self.hot_inds)),
                                           dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
             grp_filt.add_children([ds_spec_inds, ds_spec_vals, ds_cond_data])
