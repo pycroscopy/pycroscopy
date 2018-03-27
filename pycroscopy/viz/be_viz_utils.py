@@ -49,8 +49,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
         plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5,
-                              x_label=spec_var_title, y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
+        fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, num_plots=25, x_label=spec_var_title,
+                              y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
