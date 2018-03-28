@@ -109,6 +109,8 @@ Package
 * Consider releasing bug fixes (to onsite CNMS users) via git instead of rapid pypi releases 
    * example release steps (incl. git tagging): https://github.com/cesium-ml/cesium/blob/master/RELEASE.txt
 * Add requirements.txt
+* Circle CI integration
+* AppVeyor integration
 
 Testing
 ~~~~~~~
