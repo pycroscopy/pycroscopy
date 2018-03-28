@@ -28,6 +28,7 @@ Documentation Index
     contact
     install
     faq
+    credits
     api
 
 Indices and tables
