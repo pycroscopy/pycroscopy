@@ -20,31 +20,12 @@ Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 Who?
 -----------
-This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional
-**I**\maging of **M**\materials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library
-that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes
-generate (thanks to the large IFIM users community!). It is now being developed by the **A**\dvanced **D**\ata &
-**W**\orkflows **G**\roup (ADWG) at the **O**\ak Ridge National Laboratory **L**\eadership **C**\omputing **F**\acility (`OLCF <https://www.olcf.ornl.gov>`_)
-
-By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
+* This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional **I**\maging of **M**\aterials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes generate (thanks to the large IFIM users community!). 
+* It is now being developed and maintained by `Suhas Somnath <https://github.com/ssomnath>`_ of the **A**\dvanced **D**\ata & **W**\orkflows **G**\roup (ADWG) at the **O**\ak Ridge National Laboratory **L**\eadership **C**\omputing **F**\acility (`OLCF <https://www.olcf.ornl.gov>`_) and `Chris R. Smith <https://github.com/CompPhysChris>`_ of IFIM. 
+* By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
 community of materials science/physics. We also hope, quite ardently, that other materials scientists would
 follow suit.
-
-The core pycroscopy team consists of:
-
-* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
-* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
-
-Substantial contributions from many developers including:
-
-* `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
-* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
-* `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
-* `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
-* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
-* `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
-* `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
-* and many more
+* Please visit our `credits and acknowledegements <https://pycroscopy.github.io/pycroscopy/credits.html>`_ page for more information.
 
 Why?
 ---------------
@@ -110,13 +91,3 @@ Branches
 * ``dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough testing. Note that certain features may be broken on this branch. Also note that we have currently frozen the addition of new features and are focusing on releasing a version 1.0 via the ``unity_dev`` branch. 
 * ``unity_dev`` : Substantially restructured version of ``master`` aimed towards `version 1.0 <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst#v-1-0-goals>`_ for pycroscopy. Besides pycroscopy.core.io, no guarantees are made for the rest of the package. This branch will eventually become ``master`` by around mid 2018. Developers encouraged to add features on this branch.  
 * Other branches belong to individual users / developers.
-   
-Acknowledgements
-----------------
-* Special thanks to `Stefan Van Der Walt <https://bids.berkeley.edu/people/stéfan-van-der-walt>`_ (`@stefanv <https://github.com/stefanv>`_) and `Brett Naul <https://www.linkedin.com/in/brett-naul-46845b66>`_ (`@bnaul <https://github.com/bnaul>`_) for their guidance.
-* We thank `Sergei V. Kalinin <https://www.ornl.gov/staff-profile/sergei-v-kalinin>`_ from `IFIM <https://ifim.ornl.gov>`_ at ORNL for informing scientists at various universities and national labs across various scientific disciplines about pycroscopy.
-* Besides the packages used in pycroscopy, we would like to thank the developers of the following software packages:
-
-	+ `Anaconda <https://www.continuum.io/anaconda-overview>`_
-	+ `PyCharm <https://www.jetbrains.com/pycharm/>`_
-	+ `GitKraken <https://www.gitkraken.com/>`_
