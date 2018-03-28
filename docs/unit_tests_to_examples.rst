@@ -1,6 +1,9 @@
 =============================================
 Converting Unit Tests to Examples
 =============================================
+**Suhas Somnath**
+
+.. contents::
 
 Introduction
 ------------
@@ -18,9 +21,17 @@ Introduction
   * We do not need to translate every single unit test to an example, just the ones that best illustrate a function.
 * This guide will show you how to convert existing unit tests to examples for cookbooks 
 
+Notes
+-----
+* The unit tests may not have comments for every set of lines as presented here however it is a good idea to add a few helpful comments wherever possible.
+* If the purpose of the function is not immediately clear, please consider reading the ``doctoring`` of the function in the source code.
+  
+  * We have tried to be as meticulous as possible to explain the purpose of each function and each of the parameters in the docstring
+  * If you are using Jupyter to test and write examples, you can press the ``Tab`` key four times to get a separate window explaining the function and its inputs
+  * If the docstring and the unit tests are still confusing contact Suhas / Chris.
 
-Case 1
-------
+Case 1 - Simple unit test
+-------------------------
 
 As a simple example, we will consider tests for ``recommend_cpu_cores()`` present in ``pycroscopy.core.io.io_utils.py``. As the name suggests, the function recommends the number of CPU cores to use for a specific parallel computation (for example fitting N spectra to a function). 
 
@@ -80,3 +91,264 @@ Recall that the translation of a unit test to an example only requires that the 
   recommeded_cores = px.io_utils.recommend_cpu_cores(num_jobs, requested_cores=requested_cores, lengthy_computation=False)
   print('Recommended number of CPU cores for {} independent, FAST, and parallel '
         'computations using the requested {} CPU cores is {}\n'.format(num_jobs, requested_cores, recommeded_cores))
+
+Case 2 - Failure test
+---------------------
+A major portion of writing unit tests involves writing tests to assert how the function should handle invalid inputs such as providing a string where an integer was expected, etc. It is not necessary to translate such unit tests into examples but it is important to identify and differentiate "success" unit tests (that are worth translating to examples), like the one above, from "failure" test cases, like the one below. In the example below, we intend to test the function: ``px.hdf_utils.get_unit_values()``. 
+
+.. code-block:: python
+
+    def test_get_unit_values_illegal_key(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
+            h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
+            with self.assertRaises(KeyError):
+                _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Does not exist'])
+
+Knowing the inner workings of the specific function are not relevant for this discussion. In the above example, ``'Does not exist'`` is clearly meant to signify an invalid input. The ``self.assertRaises(KeyError):`` only states that we assert that passing such invalid inputs causes the function to throw a ``KeyError``. Should you encounter such a "failure" test case, you may want to ignore it.
+
+Case 3 - Realistic example
+--------------------------
+Most unit tests will not look as simple as that in Case 1. However, the unit test is likely to have the same components - 
+
+* some set up code to call the function (case 1 did not have much of this) 
+* calling the function
+* asserting different things about the returned values / created file / plot etc.
+
+The following unit test tests the `pycroscopy.core.io.hdf_utils.link_as_main()` function which aims to link a dataset with four ancillary datasets to make it a `Main` dataset. You will see that the example is actually fairly similar to the unit test despite its complexity.
+
+.. code-block:: python
+
+    def test_link_as_main(self):
+        file_path = 'link_as_main.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            num_rows = 3
+            num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+
+            source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                         np.repeat(np.arange(num_rows), num_cols))).T
+            pos_attrs = {'units': ['nm', 'um'],
+                         'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
+            dset_source_pos_inds = VirtualDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            dset_source_pos_vals = VirtualDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+
+            source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+            dset_source_main = VirtualDataset('source_main', source_main_data,
+                                              attrs={'units': 'A', 'quantity': 'Current',
+                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                              'odd_rows': (slice(1, None, 2), slice(None))}
+                                                   })
+            # make spectroscopic axis interesting as well
+            source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
+            source_spec_attrs = {'units': ['V', ''],
+                                 'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
+            dset_source_spec_inds = VirtualDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                                   attrs=source_spec_attrs)
+            dset_source_spec_vals = VirtualDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                                   attrs=source_spec_attrs)
+
+            writer = HDFwriter(h5_f)
+            h5_main = writer._create_dataset(h5_f, dset_source_main)
+            h5_pos_inds = writer._create_dataset(h5_f, dset_source_pos_inds)
+            h5_pos_vals = writer._create_dataset(h5_f, dset_source_pos_vals)
+            h5_spec_inds = writer._create_dataset(h5_f, dset_source_spec_inds)
+            h5_spec_vals = writer._create_dataset(h5_f, dset_source_spec_vals)
+
+            self.assertFalse(hdf_utils.check_if_main(h5_main))
+
+            # Now need to link as main!
+            hdf_utils.link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
+
+            # Finally:
+            self.assertTrue(hdf_utils.check_if_main(h5_main))
+
+        os.remove(file_path)
+
+Though it is not absolutely necessary to understand the intricacies of the entire unit test in order to translate this to an example, here is a breakdown of what is happening in the function:
+
+This unit test requires the creation of a HDF5 file. So, the first thing we do is delete the file if it already exists to avoid conflicts. 
+
+.. code-block:: python
+
+  file_path = 'link_as_main.h5'
+  self.__delete_existing_file(file_path)
+
+Next, we create the file and open it:
+
+.. code-block:: python
+
+  with h5py.File(file_path) as h5_f:
+
+In this case, the main dataset is a 4D dataset (`X`, `Y` dimensions in positions and `Bias`, `Cycle` spectroscopic dimensions). 
+
+.. code-block:: python
+
+  num_rows = 3
+  num_cols = 5
+  num_cycles = 2
+  num_cycle_pts = 7
+
+First we create the `Position` `Indices` and `Values` datasets
+
+.. code-block:: python
+
+  source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                               np.repeat(np.arange(num_rows), num_cols))).T
+  pos_attrs = {'units': ['nm', 'um'],
+               'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
+  dset_source_pos_inds = VirtualDataset('PosIndices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+  dset_source_pos_vals = VirtualDataset('PosValues', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+
+Next, we prepare the (random) data that will be contained in the Main dataset. To ensure that advanced features such as `region references` are retained, we add two simple region references: `even_rows` and `odd_rows` that separate data by even and odd positions (no physical relevance)
+
+.. code-block:: python
+
+  source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+  dset_source_main = VirtualDataset('source_main', source_main_data,
+                                    attrs={'units': 'A', 'quantity': 'Current',
+                                           'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                      'odd_rows': (slice(1, None, 2), slice(None))}
+                                           })
+
+We follow the same procedure that was followed for the `Position` datasets to create the equivalent `Spectroscopic` `Indices` and `Values` datasets:
+
+.. code-block:: python
+
+  source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
+  source_spec_attrs = {'units': ['V', ''],
+                       'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
+  dset_source_spec_inds = VirtualDataset('SpecIndices', source_spec_data, dtype=np.uint16,
+                                         attrs=source_spec_attrs)
+  dset_source_spec_vals = VirtualDataset('SpecValues', source_spec_data, dtype=np.float16,
+                                         attrs=source_spec_attrs)
+
+With the (Virtual) datasets prepared, we can write these to a real HDF5 file using the `HDFWriter`
+
+.. code-block:: python
+
+  writer = HDFwriter(h5_f)
+  h5_main = writer._create_dataset(h5_f, dset_source_main)
+  h5_pos_inds = writer._create_dataset(h5_f, dset_source_pos_inds)
+  h5_pos_vals = writer._create_dataset(h5_f, dset_source_pos_vals)
+  h5_spec_inds = writer._create_dataset(h5_f, dset_source_spec_inds)
+  h5_spec_vals = writer._create_dataset(h5_f, dset_source_spec_vals)
+
+Finally, we arrive at the assertion portion of the unit test and this is the only section that will need to be changed. The following line proves that the dataset `h5_main` cannot pass the test of being a pycroscopy `Main` dataset since it has not yet been linked to the ancillary datasets
+
+.. code-block:: python
+
+  self.assertFalse(hdf_utils.check_if_main(h5_main))
+
+For the example, this line could be turned into a simple print statement as:
+
+.. code-block:: python
+
+  print('Before linking to ancillary datasets, h5_main is a main dataset? : {}'.format(hdf_utils.check_if_main(h5_main))
+
+This is the call to the function that we want to test:
+
+.. code-block:: python
+
+  # Now need to link as main!
+  hdf_utils.link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
+
+When we check to see if the dataset is now `Main`, we expect it to be true.
+
+.. code-block:: python
+
+  # Finally:
+  self.assertTrue(hdf_utils.check_if_main(h5_main))
+
+Again, this assertion statement can easily be turned into a print statement:
+
+.. code-block:: python
+
+  print('After linking to ancillary datasets, h5_main is a main dataset? : {}'.format(hdf_utils.check_if_main(h5_main))
+
+In addition, one could also show that if a dataset is a ``Main`` dataset, we can use it as a ``Pycrodataset``. The below print statement should print the complete details regarding h5_main:
+
+.. code-block:: python
+
+  print(px.Pycrodataset(h5_main))
+
+Formatting the example
+----------------------
+The current tool (Sphynx) requires that all examples be written in a python file formatted in a specific manner in order for the result to look like a beautiful Jupyter notebook-like documents. The code aspect of such example files is straightforward enough but here are some guidelines for formatting the text in such python scripts:
+
+Creating Text Cells
+~~~~~~~~~~~~~~~~~~~~~~
+There are two ways to create Jupyter text ``cells`` :
+
+* Python block comments
+* A set of unbroken python comment lines
+
+Here's how you would do it with a block comment:
+
+.. code-block:: python
+
+  """
+  Some text here
+  Next line here.
+  Blah blah
+  """
+
+and here's how you would do it using conventional '#' symbols:
+
+.. code-block:: python
+
+  ####################################################################################
+  # Some text here
+  # Next line here.
+  #
+  # Empty line above signifying the end of a paragraph. Note that the previous line still
+  # needs to have a '#' otherwise, the cell will be broken into two parts
+
+Headings
+~~~~~~~~~
+
+.. code-block:: python
+
+  """
+  ======================================================================================
+  H1 - Heading of the highest level
+  ======================================================================================
+  **some text in bold**
+
+  H2 - Heading one level below
+  ============================
+
+  Note that the lines containing the '=' or '~' or '-' characters need to be at least as long as the text above the line
+
+  """
+
+  ####################################################################################
+  # H2 Heading for new cell
+  # ===========================
+  # Conventional text below a heading - 
+  #
+  # You can have empty lines to signify a new paragraph
+  # All this text is going to be part of a single text cell
+
+  print('Hello World!')
+
+  ####################################################################################
+  # Text cell without any heading
+  # done with text cell
+
+  # a regular python comment
+  print('Next line of code!')
+
+Bullets
+~~~~~~~
+
+.. code-block:: python
+
+  ####################################################################################
+  # * bullet point 1
+  # * bullet point 2
