@@ -283,22 +283,7 @@ The current tool (Sphynx) requires that all examples be written in a python file
 
 Creating Text Cells
 ~~~~~~~~~~~~~~~~~~~~~~
-There are two ways to create Jupyter text ``cells`` :
-
-* Python block comments
-* A set of unbroken python comment lines
-
-Here's how you would do it with a block comment:
-
-.. code-block:: python
-
-  """
-  Some text here
-  Next line here.
-  Blah blah
-  """
-
-and here's how you would do it using conventional '#' symbols:
+Text cells (like in Jupyter) must start with a giant line of #####
 
 .. code-block:: python
 
@@ -314,18 +299,12 @@ Headings
 
 .. code-block:: python
 
-  """
-  ======================================================================================
-  H1 - Heading of the highest level
-  ======================================================================================
-  **some text in bold**
-
-  H2 - Heading one level below
-  ============================
-
-  Note that the lines containing the '=' or '~' or '-' characters need to be at least as long as the text above the line
-
-  """
+  ####################################################################################
+  # ======================================================================================
+  # H1 - Heading of the highest level
+  # ======================================================================================
+  # Note that the lines containing the '=' or '~' or '-' characters need to be at least as long as the text above the line
+  #
 
   ####################################################################################
   # H2 Heading for new cell
@@ -352,3 +331,10 @@ Bullets
   ####################################################################################
   # * bullet point 1
   # * bullet point 2
+  
+Emphasis
+~~~~~~~~
+
+.. code-block:: python
+
+  # **some text in bold**
