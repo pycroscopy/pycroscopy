@@ -40,7 +40,7 @@ Substantial contributions from many developers including:
 * `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
 * `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
 * `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
-* `@carlodri <https://github.com/carlodri>`_(Carlo Dri)
+* `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
