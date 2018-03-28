@@ -35,7 +35,6 @@ deploy:
       branch: master
 # PyPi deployment
   - provider: pypi
-    python: 3.6
     skip_cleanup: true
     user:
       secure: WqjAoxPDvxFVE39Em9R8meOYTaCcnBKLezIsn4dInShCwSz3dPK/J/iV0q3zNJnzpSB7DoUZtpmq38sivldye+Z1lSCFl6AKXD3EcenbyFE30sE7F667cOC+7eeuXH+QRvY/MHfPQ2lnG8/ytWdDgzJbnl4NGC00nu+8k6406z2B0eKU+7ANODSQ4wXTIhyPyG4vSIr9wqaIziZtVOnpO+yg1ryiZh6sUyBxCyDH6GjqL4FECEjiDgN/FGw6fKYmSM5J3SX//RZ0X/cMZuD7Po2x1ryZBj39b9P5ZFMfwxi8JE1DE0qyVkEqBWqlZdL4SihOtxJ5bMqUGgROMOuySa9I3NoLQZQgS/0KSnXJ+bLshy37GYeJD823brPBcaWyps0C5JUJhQF2OXs1gk72z4wTyjmEq2Co8ly03nLjCAqMWPngomOYdu/cSARCJm5kzrLCOFoO6y5cCyvJaYzyU2pl10FRggOW4UDc0KF72+l5KrU8bYIc4pvGmheEVsWrgTjHPmnFX8l7oHYept0Q36jRL3Rca4Yk0wl+RwozXZptioARl+sKrLH3O9N6wXwdJSqmcZmolaEIgR4Y3ZQsgVgMj9QlNmELIy7dfYMboSdCkzBLki+957ncuB4pIv4l5kxO2+SiGBF2P18/WDpL1jGU+tzkeWK6jzYr1KGkx9g=
@@ -49,3 +48,4 @@ deploy:
     on:
       tags: true
       branch: master
+      python: 3.6
