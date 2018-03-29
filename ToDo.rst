@@ -1,5 +1,30 @@
 .. contents::
 
+
+Hackathon topics
+----------------
+* Write cookbooks - these will be requried for most of the topics below where writing any code is involved:
+
+  * io_utils - mostly done but needs updating
+  * numpy_utils - started but needs more work
+  * write_utils - need a fresh file. Not much to it
+  * PycroDataset - needs a fresh file
+  * NumpyTranslator - just update the Translator tutorial
+  
+* advanced cookbooks - will be written by Suhas and Chris:
+
+  * hdf_utils - check to make sure the examples (only on reading for now) we have still work / make them work. Add examples on modifying files
+  * HdfWriter + VirtualData + write_utils - all need to be combined into 1
+  
+* Fix all translators, Fitters, Processes, notebooks to use the updated functions correctly - test them with real examples
+* Update all notebooks to say that one can run cells via shift + enter or point to a tutorial on jupyter notebooks (how to start them up and run through the cells) for those who don't know anything about the notebooks but come by them.
+* Thoroughly test and try to break plot_utils
+* start a twitter account
+* Add to the scientific examples - how to swap out the data for user provided data - Eg FFT filtering
+* Upload clean exports of notebooks that were part of past journal papers
+* Add more notebooks (Sabine's cKPFM for example) for papers that are not already on that list - may need to talk to all the postdocs and staff at IFIM.
+* Update the external tutorials page with more information, etc.
+
 v 1.0 goals
 -----------
 1. mostly done - reogranize to have a .core submodule with the core functionality, .contrib to have non-verified code
