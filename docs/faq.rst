@@ -5,9 +5,9 @@ Frequently asked questions
 
 Pycroscopy philosophy
 ---------------------
+
 What is pycroscopy and how is it different from python?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 `Python <https://www.python.org>`_ is an (interpreted) programming langauge similar to R, Java, C, C++, Fortran etc. `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html#what>`_ is an addon module to python that provides it the ability to analyze scientific imaging / microscopy data. As an (oversimplified) analogy, think of python as Windows or Mac OS and pycroscopy as Firefox or Chrome or Safari. 
 
 Is pycroscopy only for the scientific imaging / microscopy communities? 
@@ -20,12 +20,15 @@ Who uses pycroscopy?
 
 How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 `ImageJ <https://imagej.nih.gov/ij/>`_, `FIJI <https://fiji.sc>`_, `ImageSXM <https://www.liverpool.ac.uk/~sdb/ImageSXM/>`_, `WSxM <http://www.wsxm.es/download.html>`_, `SpectraFox <https://spectrafox.com>`_, and `OpenFovea <http://www.freesbi.ch/en/openfovea>`_ are all excellent software packages for dealing with conventional and popular microscopy data such as 2D images or a handful of (simple) spectra. We think that pycroscopy is complementary to these  other softwares and packages. Pycroscopy was built for a completely different purpose and with a unique philosophy. Pycroscopy solves some truly challenging problems that none of the other packages do - It can handle arbitrarily large datasets (Gigabytes / Terabytes / or even larger) with arbitrary dimensionality (any combination of dimensionality in position and spectral space. We have had absolutely no problem dealing with datasets with more than 9 unique dimensions - see `Band Excitation Polarization Switching + First Order Reversal Curve probing <https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_03_multidimensional_data.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-03-multidimensional-data-py>`_). In addition, Pycroscopy takes a data centric approach aimed towards open science wherein all the data starting from the raw measurement from the instrument, all the way to the final data that is plotted in the resulting scientific publication, are contained in the same file. The processing steps applied to the data are completely transparent and traceable. Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. `GXSM <http://gxsm.sourceforge.net>`_ is another software package that focuses more on the data acquistion than advanced data analysis
 
 Why is pycroscopy written in python and not C / Fortran / Julia?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 One of the main objectives of pycroscopy is to lower the barrier to advanced data analytics for domain scientists such as material scientists. A C / Fortran version of pycroscopy would certainly have been more efficient than the current python code-base. However, the learning curve for writing efficient C code is far steeper compared to python / Julia / Matlab for the average domain scientist. Focusing on science is a big enough job for domain scientists and we want to make it as easy as possible to adopt pycroscopy even for those who are novices at programming. Furthermore, our code makes heavy use of highly efficient numerical and scientific libraries such as Numpy and Scipy that are comparable in speed to C so we do not expect our code to be substantially slower than C / Fortran. Julia is a (relatively) new language similar to python that promises to be as fast as C and as easy as python and purpose-built for efficient computing. However, as of this writing, Julia unfortunately still does not have open-source package ecosystem that is as large or diverse (think of the many packages necessary to read obscure proprietary microscopy file formats as an example) as python. Furthermore, python's unchallenged leadership in the data analytics / deep learning field have only validated it as the language of choice. These are among the main reasons pycroscopy is written in python. 
+
+Pycroscopy is written in python, so it is going to be slow since it cannot use all the cores on my CPU, right?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Actually, all data processing / analysis algorithms we have written in pycroscopy can use every single core on your CPU. Given N CPU cores, you should notice a nearly N-fold speed up in your computation. By default, we set aside 2 cores for the operating system and other user applications such as an internet browser, Microsoft Word, etc. 
 
 Using pycroscopy
 ----------------
@@ -45,12 +48,20 @@ Traditional graphical interfaces are rather time consuming to develop. Instead, 
 * `Image cleaning and atom finding notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_
 
 I am not able to find an example on topic X / I find tutorial Y confusing / I need help!
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We appreciate your feedback regarding the documentation. Please send us an email at pycroscopy@gmail.com or send us a message on our `slack group <https://pycroscopy.slack.com/>`_ and we will work with you to add / improve our documentation. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+We appreciate your feedback regarding the documentation. Please send us an email at pycroscopy@gmail.com or send us a message on our `slack group <https://pycroscopy.slack.com/>`_ and we will work with you to add / improve our documentation.
 
-Pycroscopy is written in python, so it is going to be slow since it cannot use all the cores on my CPU, right?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Actually, all data processing / analysis algorithms we have written in pycroscopy can use every single core on your CPU. Given N CPU cores, you should notice a nearly N-fold speed up in your computation. By default, we set aside 2 cores for the operating system and other user applications such as an internet browser, Microsoft Word, etc. 
+What do I do when something is broken?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Often, others may have encountered the same problem and may have brought up a similar issue. Try searching on google and trying out some suggested solutions. If this does not work, raise an ``issue`` `here <https://github.com/pycroscopy/pycroscopy/issues>`_ and one of us will work with you to resolve the problem.
+
+Do I still need to use standard softwares for plotting figures for papers?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Not at all. Python has an excellent set of libraries for generating even complicated figures for journal papers. Pycroscopy has `several functions <https://pycroscopy.github.io/pycroscopy/auto_examples/user_tutorials/plot_utils.html#sphx-glr-auto-examples-user-tutorials-plot-utils-py>`_ that make it easier to quickly generate publication-ready figures. There are `several publications <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_ that have only used pycroscopy and matplotlib to generate figures for papers. If you are still not convinced, you can always export your data to text / csv files and use conventional softwares like `Origin Pro <https://www.originlab.com>`_.
+
+How can I cite pycroscopy?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.59.7. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
 
 Data
 ----
@@ -67,13 +78,13 @@ Can Pycroscopy read data files from instrument X?
 Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some popular file formats and store the information in HDF5 files. You can find a list of available `translators here <https://github.com/pycroscopy/pycroscopy/tree/master/pycroscopy/io/translators>`_.
 
 I could not find a data translator for my data format. What do I do now?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Chances are that there is a (or multiple) python package out there already that reads the data from your file into python. All you will need to do is to write the data and metadata to HDF5 files by writing your own Translator. We have `examples available here <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html#developer-tutorials>`_.
 
 Becoming a part of the effort
 -----------------------------
 I don't know python / I don't think I write great python code. Does this preclude me from contributing to pycroscopy?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Not really. Python is far easier to learn than many languages. If you know Matlab, Julia, C++, Fortran or any other programming language. You should not have a hard time reading our code or contributing to the codebase. 
 
 You can still contribute your code. 
@@ -101,8 +112,8 @@ Can you add my code to pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 We would like to thank you and several others who have offered their code. We are more than happy to add your code to this project. Just as we strive to ensure that you get the best possible software from us, we ask that you do the same for others. We do NOT ask that your code be as efficient as possible. Instead, we have some simpler and easier requests:
 
-* Encapsulate indpendent sections of your code into functions that can be used individually if required.
-* Ensure that your code (functions) is well documented (numpy format) - expected inputs and outputs, purpose of functions
+* Encapsulate independent sections of your code into functions that can be used individually if required.
+* Ensure that your code (functions) is well documented (`numpy format <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_) - expected inputs and outputs, purpose of functions
 * Ensure that your code works in python 2.7 and python 3.5 (ideally using packages that are easy to install on Windows, Mac, and Linux)
 * Provide a few examples on how one might use your code
 
