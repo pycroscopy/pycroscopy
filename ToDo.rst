@@ -60,6 +60,7 @@ v 1.0 goals
 13. file dialog for Jupyter not working on Mac OS
 14. Carlo Dri + Chris - Get pycroscopy on conda forge
 15. Test all translators, Processes, plotting, and Analyses to make sure they still work.
+16. Add ability to export data as txt probably via numpy.savetext
 
 v 2.0 goals
 -----------
