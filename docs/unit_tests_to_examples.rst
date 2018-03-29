@@ -338,3 +338,16 @@ Emphasis
 .. code-block:: python
 
   # **some text in bold**
+
+Getting started
+-----------------
+* Read the instructions on `Pycharm + git <https://github.com/pycroscopy/pycroscopy/blob/unity_dev/docs/Using%20PyCharm%20to%20manage%20repository.pdf>`_ to get your hands on the code
+* Pick the ``module`` in ``pycroscopy/core/io/`` (for example - ``io_utils.py`` or ``dtype_utils.py``) you want to work on.
+  
+  * Please let others know which module you are working on in order to avoid duplication of efforts
+* You are recommended to keep three files open when writing examples:
+
+  1. The ``source code`` for the function located in ``pycroscopy/core/io/`` - the basic documentation for the function will give you an idea about the function, inputs, outputs, etc. Select the module you intend to work on in `this directory <https://github.com/pycroscopy/pycroscopy/tree/unity_dev/pycroscopy/core/io>`_
+  2. The ``unit tests`` that will be translated to examples located in ``test/core/io``. You should find a test module corresponding to each module in the source code `here <https://github.com/pycroscopy/pycroscopy/tree/unity_dev/tests/core/io>`_. All the files will have a "test_" prefix
+  3. The ``examples script`` where you will be writing the new examples located in ``examples/user_tutorial``. You will find a few existing examples already in `this directory <https://github.com/pycroscopy/pycroscopy/tree/unity_dev/examples/user_tutorials>`_. Most of them are incomplete. You can make a new file if one does not exist. Note that the names of all example scripts must start with "plot_".  
+* Contact Chris / Suhas if you have any questions.
