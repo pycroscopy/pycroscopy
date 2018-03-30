@@ -7,6 +7,10 @@ pycroscopy
     
 .. image:: https://img.shields.io/pypi/v/pycroscopy.svg
     :target: https://pypi.org/project/pyCroscopy/
+    
+.. image:: https://img.shields.io/conda/vn/conda-forge/pycroscopy.svg
+    :target: https://github.com/conda-forge/pycroscopy-feedstock
+    :alt: Conda (channel only)
 
 .. image:: https://img.shields.io/pypi/l/pycroscopy.svg
     :target: https://pypi.org/project/pyCroscopy/
