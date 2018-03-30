@@ -12,7 +12,7 @@ import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
-from ..core.processing.process import Process
+from ..core.processing.process import Process, parallel_compute
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ..core.io.hdf_writer import HDFwriter
@@ -107,7 +107,7 @@ class Cluster(Process):
         self.__labels = None
         self.__mean_resp = None
 
-    def test(self, rearrange_clusters=True):
+    def test(self, rearrange_clusters=True, override=False):
         """
         Clusters the hdf5 dataset and calculates mean response for each cluster. This function does NOT write results to
         the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
@@ -117,6 +117,8 @@ class Cluster(Process):
         ----------
         rearrange_clusters : bool, optional. Default = True
             Whether or not the clusters should be re-ordered by relative distances between the mean response
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         -------
@@ -125,6 +127,13 @@ class Cluster(Process):
         mean_response : 2D numpy array
             Array of the mean response for each cluster arranged as [cluster number, response]
         """
+        if not override:
+            if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
+                self.h5_results_grp = self.duplicate_h5_groups[-1]
+                print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
+                print('set the "override" flag to True to recompute results')
+                return self.h5_results_grp['Labels'][()], self.h5_results_grp['Mean_Response'][()]
+
         t1 = time.time()
 
         print('Performing clustering on {}.'.format(self.h5_main.name))
@@ -152,7 +161,7 @@ class Cluster(Process):
         self.__labels = None
         self.__mean_resp = None
 
-    def compute(self, rearrange_clusters=True):
+    def compute(self, rearrange_clusters=True, override=False):
         """
         Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test() if it has
         not already been called), and writes the labels and mean response back to the h5 file.
@@ -164,6 +173,8 @@ class Cluster(Process):
         ----------
         rearrange_clusters : bool, optional. Default = True
             Whether or not the clusters should be re-ordered by relative distances between the mean response
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         --------
@@ -171,10 +182,13 @@ class Cluster(Process):
             Reference to the group that contains the clustering results
         """
         if self.__labels is None and self.__mean_resp is None:
-            self.test(rearrange_clusters=rearrange_clusters)
+            self.test(rearrange_clusters=rearrange_clusters, override=override)
 
-        h5_group = self._write_results_chunk()
-        self.delete_results()
+        if self.h5_results_grp is None:
+            h5_group = self._write_results_chunk()
+            self.delete_results()
+        else:
+            h5_group = self.h5_results_grp
 
         return h5_group
 
@@ -194,17 +208,22 @@ class Cluster(Process):
         """
         print('Calculated the Mean Response of each cluster.')
         num_clusts = len(np.unique(labels))
-        mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
-        # TODO: Oppurtunity to do this in parallel
-        for clust_ind in range(num_clusts):
+
+        def __mean_resp_for_cluster(clust_ind, h5_raw, labels_vec, data_slice, xform_func):
             # get all pixels with this label
-            targ_pos = np.argwhere(labels == clust_ind)
+            targ_pos = np.argwhere(labels_vec == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
             data_chunk = np.atleast_2d(self.h5_main[targ_pos, self.data_slice[1]])
             # transform to real from whatever type it was
-            avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
+            avg_data = np.mean(xform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
-            mean_resp[clust_ind] = stack_real_to_target_dtype(avg_data, self.h5_main.dtype)
+            return np.squeeze(stack_real_to_target_dtype(avg_data, h5_raw.dtype))
+
+        # TODO: Force usage of multiple threads. This should not take 3 cores
+        mean_resp = np.array(parallel_compute(np.arange(num_clusts), __mean_resp_for_cluster,
+                                              func_args=[self.h5_main, labels, self.data_slice,
+                                                         self.data_transform_func], lengthy_computation=True))
+
         return mean_resp
 
     def _write_results_chunk(self):
@@ -237,6 +256,7 @@ class Cluster(Process):
 
         # Write out all the parameters including those from the estimator
         cluster_grp.attrs.update(self.parms_dict)
+        cluster_grp.attrs['last_pixel'] = self.h5_main.shape[0]
 
         h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
         h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
