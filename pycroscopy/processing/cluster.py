@@ -98,7 +98,8 @@ class Cluster(Process):
 
         # check for existing datagroups with same results
         self.process_name = 'Cluster'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        # Partial groups don't make any sense for statistical learning algorithms....
+        self.duplicate_h5_groups, self.h5_partial_groups = self._check_for_duplicates()
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
@@ -133,6 +134,8 @@ class Cluster(Process):
                 print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
                 print('set the "override" flag to True to recompute results')
                 return self.h5_results_grp['Labels'][()], self.h5_results_grp['Mean_Response'][()]
+
+        self.h5_results_grp = None
 
         t1 = time.time()
 
