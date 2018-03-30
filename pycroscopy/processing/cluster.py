@@ -13,7 +13,8 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes
+from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes, reshape_to_n_dims
+from ..core.io.pycro_data import PycroDataset
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
@@ -105,6 +106,9 @@ class Cluster(Process):
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
 
+        # supercharge h5_main!
+        self.h5_main = PycroDataset(self.h5_main)
+
         self.__labels = None
         self.__mean_resp = None
 
@@ -133,7 +137,8 @@ class Cluster(Process):
                 self.h5_results_grp = self.duplicate_h5_groups[-1]
                 print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
                 print('set the "override" flag to True to recompute results')
-                return self.h5_results_grp['Labels'][()], self.h5_results_grp['Mean_Response'][()]
+                return np.squeeze(reshape_to_n_dims(self.h5_results_grp['Labels'])[0]), \
+                       reshape_to_n_dims(self.h5_results_grp['Mean_Response'])[0]
 
         self.h5_results_grp = None
 
@@ -153,8 +158,19 @@ class Cluster(Process):
         if rearrange_clusters:
             self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp)
 
-        # TODO: Return N dimensional form instead of 2D!
-        return self.__labels, self.__mean_resp
+        # TODO: What if test() is called repeatedly?
+        labels_mat, success = reshape_to_n_dims(np.expand_dims(np.squeeze(self.__labels), axis=1),
+                                                h5_pos=self.h5_main.h5_pos_inds, h5_spec=np.expand_dims([0], axis=0))
+        if success == False:
+            raise ValueError('Could not reshape labels to 2D dataset! Error:' + success)
+
+        centroid_mat, success = reshape_to_n_dims(self.__mean_resp, h5_spec=self.h5_main.h5_spec_inds,
+                                                  h5_pos=np.expand_dims(np.arange(self.__mean_resp.shape[0]), axis=1))
+
+        if success == False:
+            raise ValueError('Could not reshape mean response to 2D dataset! Error:' + success)
+
+        return np.squeeze(labels_mat), centroid_mat
 
     def delete_results(self):
         """
@@ -163,6 +179,7 @@ class Cluster(Process):
         del self.__labels, self.__mean_resp
         self.__labels = None
         self.__mean_resp = None
+        self.h5_results_grp = None
 
     def compute(self, rearrange_clusters=True, override=False):
         """
@@ -185,7 +202,7 @@ class Cluster(Process):
             Reference to the group that contains the clustering results
         """
         if self.__labels is None and self.__mean_resp is None:
-            self.test(rearrange_clusters=rearrange_clusters, override=override)
+            _ = self.test(rearrange_clusters=rearrange_clusters, override=override)
 
         if self.h5_results_grp is None:
             h5_group = self._write_results_chunk()
@@ -240,9 +257,8 @@ class Cluster(Process):
         """
         print('Writing clustering results to file.')
         num_clusters = self.__mean_resp.shape[0]
-        ds_labels = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32)
-        ds_labels.attrs['quantity'] = 'Cluster ID'
-        ds_labels.attrs['units'] = 'a. u.'
+        ds_labels = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32,
+                                   attrs={'quantity': 'Cluster ID', 'units': 'a. u.'})
 
         clust_desc = AuxillaryDescriptor([num_clusters], ['Cluster'], ['a. u.'])
         ds_centroid_inds, ds_centroid_vals = build_ind_val_dsets(clust_desc, is_spectral=False, base_name='Cluster_')
