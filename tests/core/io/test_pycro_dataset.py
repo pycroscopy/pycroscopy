@@ -217,7 +217,7 @@ class TestPycroDataset(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             expected = np.reshape(h5_main, (3, 5, 2, 7))
-            # expected = np.transpose(expected, (1, 0, 3, 2))
+            expected = np.transpose(expected, (1, 0, 3, 2))
             pycro_dset = PycroDataset(h5_main)
             pycro_dset.toggle_sorting()
             self.assertTrue(np.allclose(expected, pycro_dset.get_n_dim_form()))
