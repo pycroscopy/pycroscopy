@@ -103,7 +103,7 @@ class PycroDataset(h5py.Dataset):
         # internal book-keeping / we don't want users to mess with these?
         self.__n_dim_sizes = np.append(self.__pos_dim_sizes, self.__spec_dim_sizes)
         self.__n_dim_labs = np.append(self.__pos_dim_labels, self.__spec_dim_labels)
-        self.__n_dim_sort_order = np.append(self.__pos_sort_order, self.__spec_sort_order)
+        self.__n_dim_sort_order = np.append(self.__pos_sort_order, self.__spec_sort_order+len(self.__pos_sort_order))
         self.__n_dim_data = None
 
         # Should the dimensions be sorted from fastest to slowest
