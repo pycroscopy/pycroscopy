@@ -67,7 +67,7 @@ setup(
     tests_require=['pytest', 'Nose'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
-    test_suite='nose.collector',
+    test_suite='pytest',
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,
