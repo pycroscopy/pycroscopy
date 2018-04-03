@@ -120,7 +120,8 @@ class Cluster(Process):
         new_mean_response = self._get_mean_response(self.results.labels_)
         new_labels = self.results.labels_
         if rearrange_clusters:
-            new_labels, new_mean_response = reorder_clusters(self.results.labels_, new_mean_response)
+            new_labels, new_mean_response = reorder_clusters(self.results.labels_, new_mean_response,
+                                                             self.data_transform_func)
         return self._write_results_chunk(new_labels, new_mean_response)
 
     def _fit(self):
@@ -152,7 +153,7 @@ class Cluster(Process):
             # get all pixels with this label
             targ_pos = np.argwhere(labels == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[:, self.data_slice[1]][targ_pos, :])
+            data_chunk = np.atleast_2d(self.h5_main[targ_pos, self.data_slice[1]])
             # transform to real from whatever type it was
             avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
@@ -327,7 +328,7 @@ class Cluster(Process):
         return h5_labels.parent
 
 
-def reorder_clusters(labels, mean_response):
+def reorder_clusters(labels, mean_response, transform_function=None):
     """
     Reorders clusters by the distances between the clusters
 
@@ -337,6 +338,8 @@ def reorder_clusters(labels, mean_response):
         Labels for the clusters
     mean_response : 2D numpy array
         Mean response of each cluster arranged as [cluster , features]
+    transform_function : callable, optional
+        Function that will convert the mean_response into real values
 
     Returns
     -------
@@ -347,8 +350,13 @@ def reorder_clusters(labels, mean_response):
     """
 
     num_clusters = mean_response.shape[0]
+
     # Get the distance between cluster means
-    distance_mat = pdist(mean_response)
+    if transform_function is not None:
+        distance_mat = pdist(transform_function(mean_response))
+    else:
+        distance_mat = pdist(mean_response)
+
     # get hierarchical pairings of clusters
     linkage_pairing = linkage(distance_mat, 'weighted')
 
