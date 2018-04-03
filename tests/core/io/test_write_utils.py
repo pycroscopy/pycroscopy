@@ -26,15 +26,15 @@ class TestWriteUtils(unittest.TestCase):
             _ = write_utils.make_indices_matrix([1, 2, 3])
 
     def test_make_indices_non_int_dim_sizes(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = write_utils.make_indices_matrix([1.233, 2.4, 3])
 
     def test_make_indices_not_list(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = write_utils.make_indices_matrix(1)
 
     def test_make_indices_weird_inputs(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = write_utils.make_indices_matrix([2, 'hello', 3])
 
     def test_make_indices_matrix_1_dims(self):
@@ -80,9 +80,9 @@ class TestWriteUtils(unittest.TestCase):
         self.assertEqual(ret_val, expected)
 
     def test_get_aux_dset_slicing_odd_input(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = write_utils.get_aux_dset_slicing([1, 'Y'], is_spectroscopic=True)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = write_utils.get_aux_dset_slicing([], is_spectroscopic=True)
             
     def test_clean_string_att_float(self):
@@ -165,12 +165,12 @@ class TestWriteUtils(unittest.TestCase):
             _ = write_utils.AuxillaryDescriptor(sizes, [dim_names[0]], [dim_units[1]],
                                                 dim_step_sizes=steps, dim_initial_vals=inits)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             # Swapped names (strs) with sizes (uints)
             _ = write_utils.AuxillaryDescriptor(dim_names, sizes, dim_units,
                                                 dim_step_sizes=steps, dim_initial_vals=inits)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             # Swapped names (strs) with sizes (uints)
             _ = write_utils.AuxillaryDescriptor(dim_names, sizes, steps,
                                                 dim_step_sizes=dim_units, dim_initial_vals=dim_names)
