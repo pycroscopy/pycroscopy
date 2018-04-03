@@ -23,7 +23,7 @@ if sys.version_info.major == 3:
 
 
 class HDFwriter(object):
-    def __init__(self, file_handle):
+    def __init__(self, file_handle, force_new=False):
         """
         Main class that simplifies writing to pycroscopy hdf5 files.
 
@@ -32,8 +32,14 @@ class HDFwriter(object):
         file_handle : h5py.File object or str or unicode
             h5py.File - handle to an open file in 'w' or 'r+' mode
             str or unicode - Absolute path to an unopened the hdf5 file
+        force_new : bool, optional
+            If true, check if the file already exists and delete it if
+            it does.  Ignored if the file_handle is a h5py.File object
         """
         if type(file_handle) in [str, unicode]:
+            if force_new and os.path.exists(file_handle):
+                os.remove(file_handle)
+
             try:
                 self.file = h5py.File(file_handle, 'r+')
             except IOError:
