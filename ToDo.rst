@@ -3,7 +3,7 @@
 
 Hackathon topics
 ----------------
-* Write cookbooks - these will be requried for most of the topics below where writing any code is involved:
+* Write cookbooks (instructions + tutorial `here  <https://github.com/pycroscopy/pycroscopy/blob/unity_dev/docs/unit_tests_to_examples.rst>`_) - these will be requried for most of the topics below where writing any code is involved:
 
   * io_utils - mostly done but needs updating
   * numpy_utils - started but needs more work
@@ -23,20 +23,31 @@ Hackathon topics
 * Add to the scientific examples - how to swap out the data for user provided data - Eg FFT filtering
 * Upload clean exports of notebooks that were part of past journal papers
 * Add more notebooks (Sabine's cKPFM for example) for papers that are not already on that list - may need to talk to all the postdocs and staff at IFIM.
+* Find more files from microscopes that require translation - this will guide the development of community standards
+  
+  * Nanonis? - Chris Smith + Rama
+  * Bruker - Nina / Stephen
+  * NTMDT - Anton?
+  * Anasys - Alex / Olga co.
 * Update the external tutorials page with more information, etc.
 
 v 1.0 goals
 -----------
-1. mostly done - reogranize to have a .core submodule with the core functionality, .contrib to have non-verified code
+1. partly done - reogranize code - This is perhaps the last oppurtunity for major restructuring and renaming
 
-  * This is perhaps the last oppurtunity for major restructuring and renaming
+  * have a .core submodule with the core functionality, .contrib to have non-verified code
+  * How does one separate tested code from untested code? For example - SHO fitting is currently not tested but may become tested in the future.
   * hdf_utils is becoming very big and all the functions deal with h5 in some form whether it is for reading or writing. Perhaps it should be split into read_utils and write_utils? hdf is implied.
+  * Make room (in terms of organization) for deep learning - implementation will NOT be part of 1.0:
+    
+    * pycroscopy hdf5 to tfrecords / whatever other frameworks use
+    * What science specific functions can be generalized and curated?
+  * Usage of package (only Clustering + SHO fitting for example) probably provides clues about how the package should / could be reorganized (by analysis / process). Typically, most analysis and Process classes have science-specific plotting. Why not insert Procoess / Analysis specific plotting / jupyter functions along with the Process / Fitter class? 
   * Think about whether the rest of the code should be organized by instrument
+  
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
 2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
-3. mostly done - unit tests for .core io
-
- * measure coverage using codecov.io and codecov package
+3. mostly done - unit tests for .core io + basic data science (Cluster, SVD, Decomposition)
 4. mostly done - good utilities for interrogating data - pycro data, what about the rest of the file?
 5. partly done - good documentation for both users and developers
 
@@ -58,11 +69,12 @@ v 1.0 goals
   * test() for Cluster, Decomposition, SVD should return N dimensional datasets instead of flattened 2D
 12. Lower the communication barrier by starting a twitter account - Rama?
 13. file dialog for Jupyter not working on Mac OS
-14. Carlo Dri + Chris - Get pycroscopy on conda forge
+14. DONE - Carlo Dri - Get pycroscopy on conda forge
 15. Test all translators, Processes, plotting, and Analyses to make sure they still work.
 16. Add ability to export data as txt probably via numpy.savetext
+17. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
 
-v 2.0 goals
+v 1.1 goals
 -----------
 1. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
 2. Restructure Process to serve as a framework for facilitating scalable ensemble runs
@@ -99,7 +111,6 @@ Core development
 * function for saving sub-tree to new h5 file
 * Windows compatible function for deleting sub-tree
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
-* Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself)
 * Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure! 
 * Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets. This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
 
@@ -132,11 +143,7 @@ Software Engineering
 
 Package
 ~~~~~~~
-* Consider releasing bug fixes (to onsite CNMS users) via git instead of rapid pypi releases 
-   * example release steps (incl. git tagging): https://github.com/cesium-ml/cesium/blob/master/RELEASE.txt
 * Add requirements.txt
-* Circle CI integration
-* AppVeyor integration
 
 Testing
 ~~~~~~~
@@ -157,7 +164,7 @@ We have two kinds of large computational jobs and one kind of large I/O job:
 
   * MPI clearly works with very high performance parallel read and write
   * Dask also works but performance is a question. Look at NERSC (Matthew Rocklin et al.)
-  * Spark / HDFS requires investigation
+  * Spark / HDFS requires investigation - Apparently does not work well with HDF5 files
    
 * Computation:
 
