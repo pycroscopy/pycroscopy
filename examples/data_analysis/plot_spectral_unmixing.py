@@ -82,7 +82,7 @@ except ImportError:
 data_file_path = 'temp_um.h5'
 # download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
-_ = wget.download(url, data_file_path, bar=None)
+data_file_path = wget.download(url, data_file_path, bar=None)
 
 hdf = px.HDFwriter(data_file_path)
 h5_file = hdf.file
@@ -95,14 +95,14 @@ print('----------------------')
 h5_meas_grp = h5_file['Measurement_000']
 
 # Extracting some basic parameters:
-num_rows = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_rows')
-num_cols = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_cols')
+num_rows = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
+num_cols = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
 
 # Getting a reference to the main dataset:
 h5_main = h5_meas_grp['Channel_000/Raw_Data']
 
 # Extracting the X axis - vector of frequencies
-h5_spec_vals = px.hdf_utils.getAuxData(h5_main,'Spectroscopic_Values')[-1]
+h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
 freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 print('Data currently of shape:', h5_main.shape)
@@ -158,7 +158,7 @@ h5_v = h5_svd_group['V']
 h5_s = h5_svd_group['S']
 
 # Since the two spatial dimensions (x, y) have been collapsed to one, we need to reshape the abundance maps:
-abun_maps = np.reshape(h5_u[:,:25], (num_rows, num_cols, -1))
+abun_maps = np.reshape(h5_u[:, :25], (num_rows, num_cols, -1))
 
 # Visualize the variance / statistical importance of each component:
 px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with number of components')
@@ -166,13 +166,13 @@ px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with
 # Visualize the eigenvectors:
 first_evecs = h5_v[:9, :]
 
-px.plot_utils.plot_curves(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
+px.plot_utils.plot_curves(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label,
                           subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
-px.plot_utils.plot_curves(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
+px.plot_utils.plot_curves(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)',
                           subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
 
 # Visualize the abundance maps:
-px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps',
+px.plot_utils.plot_map_stack(abun_maps, num_comps=9, title='SVD Abundance Maps',
                              color_bar_mode='single', cmap='inferno')
 
 #####################################################################################
@@ -189,12 +189,12 @@ px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps
 
 num_clusters = 4
 
-estimators = px.Cluster(h5_main, KMeans(n_clusters=num_clusters))
+estimators = px.processing.Cluster(h5_main, KMeans(n_clusters=num_clusters))
 h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-pycroscopy.core.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
+px.core.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)
