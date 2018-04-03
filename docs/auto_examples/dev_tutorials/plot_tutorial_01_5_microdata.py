@@ -74,7 +74,7 @@ ds_main = px.VirtualDataset('Main_Data', data=data1, parent='/')
 ##############################################################################
 # We can also create an empty dataset and write the values in later
 # With this method, it is neccessary to specify the dtype and maxshape kwarg parameters.
-ds_empty = px.VirtualDataset('Empty_Data', data=[], dtype=np.float32, maxshape=[7, 5, 3])
+ds_empty = px.VirtualDataset('Empty_Data', data=None, dtype=np.float32, maxshape=[7, 5, 3])
 
 ##############################################################################
 # We can also create groups and add other MicroData objects as children.
@@ -99,7 +99,7 @@ root_group.show_tree()
 h5_path = 'microdata_test.h5'
 
 # Then we use the ioHDF5 class to build the file from our objects.
-hdf = px.HDFwriter(h5_path)
+hdf = px.HDFwriter(h5_path, force_new=True)
 
 ##############################################################################
 # The writeData method builds the hdf5 file using the structure defined by the
@@ -108,8 +108,8 @@ hdf = px.HDFwriter(h5_path)
 h5_refs = hdf.write(root_group, print_log=True)
 
 # We can use these references to get the h5py dataset and group objects
-h5_main = px.io.hdf_utils.getH5DsetRefs(['Main_Data'], h5_refs)[0]
-h5_empty = px.io.hdf_utils.getH5DsetRefs(['Empty_Data'], h5_refs)[0]
+h5_main = px.core.io.hdf_utils.get_h5_obj_refs(['Main_Data'], h5_refs)[0]
+h5_empty = px.core.io.hdf_utils.get_h5_obj_refs(['Empty_Data'], h5_refs)[0]
 
 ##############################################################################
 # Compare the data in our dataset to the original

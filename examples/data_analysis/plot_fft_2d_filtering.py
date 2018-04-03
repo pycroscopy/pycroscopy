@@ -101,7 +101,7 @@ u_mat, v_mat = np.meshgrid(u_axis_vec, v_axis_vec)  # matrices of u-positions an
 # A plot of the data is shown below (STEM image of STO).
 fig, axis = plt.subplots(figsize=(5, 5))
 _ = px.plot_utils.plot_map(axis, image_raw, cmap=plt.cm.inferno, clim=[0, 6],
-                           x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                           x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
 axis.set_title('original image of STO captured via STEM')
 
 ####################################################################################
@@ -177,7 +177,7 @@ image_filtered = np.real(image_filtered)
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, img, title in zip(axes, [image_raw, image_filtered], ['original', 'filtered']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
 
@@ -190,7 +190,7 @@ image_w_background = image_raw + background_distortion
 fig, axes = plt.subplots(figsize=(10, 5), ncols=2)
 for axis, img, title in zip(axes, [background_distortion, image_w_background], ['background', 'image with background']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
 
@@ -228,6 +228,6 @@ for axis, img, title in zip(axes, [image_corrected, filtered_background],
                             ['image with background subtracted', 
                              'background component that was removed']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
