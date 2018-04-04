@@ -949,8 +949,8 @@ def plot_scree(scree, title='Scree', **kwargs):
     if isinstance(scree, (list, tuple)):
         scree = np.array(scree)
 
-    if not isinstance(scree, np.ndarray):
-        raise TypeError('scree must be a 1D array')
+    if not (isinstance(scree, np.ndarray) or isinstance(scree, h5py.Dataset)):
+        raise TypeError('scree must be a 1D array or Dataset')
     if not isinstance(title, (str, unicode)):
         raise TypeError('title must be a string')
 
@@ -1136,7 +1136,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         im, im_cbar = plot_map(axes202[count],
                                map_stack[index],
                                stdevs=stdevs, show_cbar=False, **kwargs)
-        axes202[count].set_subtitle(curr_subtitle)
+        axes202[count].set_title(curr_subtitle)
 
         if color_bar_mode is 'each':
             cb = axes202.cbar_axes[count].colorbar(im)

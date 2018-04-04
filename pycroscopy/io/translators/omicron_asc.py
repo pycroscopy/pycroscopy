@@ -71,7 +71,7 @@ class AscTranslator(NumpyTranslator):
                                         dim_step_sizes=[2 * max_v / spectra_length])
 
         h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Current', 'nA', pos_dims,
-                                                       spec_dims, translator_name='ASC', parms_dict=parm_dict)
+                                                       spec_dims, translator_name='ASC', parm_dict=parm_dict)
 
         return h5_path
 

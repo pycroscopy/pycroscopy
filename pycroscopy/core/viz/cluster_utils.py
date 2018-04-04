@@ -207,7 +207,8 @@ def plot_cluster_centroids(centroids, x_vec, legend_mode=1, x_label=None, y_labe
     if not isinstance(overlayed, bool):
         raise TypeError('overlayed should be a boolean value')
     if amp_units is not None:
-        if not isinstance(amp_units, (str, unicode)):
+        if not (isinstance(amp_units, (str, unicode)) or
+                (isinstance(amp_units, np.ndarray) and amp_units.dtype.type == np.str_)):
             raise TypeError('amp_units should be a str')
     else:
         amp_units = 'a.u.'
@@ -262,9 +263,9 @@ def plot_cluster_centroids(centroids, x_vec, legend_mode=1, x_label=None, y_labe
                         raise TypeError(var_name + ' should be a string')
                     func(var)
 
-            if fig is not None:
-                fig.tight_layout()
-            return fig, axis
+        if fig is not None:
+            fig.tight_layout()
+        return fig, axis
 
     else:
         if centroids.dtype in [np.complex64, np.complex128, np.complex]:
