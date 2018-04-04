@@ -950,8 +950,8 @@ def plot_scree(scree, title='Scree', **kwargs):
     if isinstance(scree, (list, tuple)):
         scree = np.array(scree)
 
-    if not isinstance(scree, np.ndarray):
-        raise TypeError('scree must be a 1D array')
+    if not (isinstance(scree, np.ndarray) or isinstance(scree, h5py.Dataset)):
+        raise TypeError('scree must be a 1D array or Dataset')
     if not isinstance(title, (str, unicode)):
         raise TypeError('title must be a string')
 
