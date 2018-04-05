@@ -107,7 +107,7 @@ num_rows = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
 num_cols = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
 
 # Extracting the X axis - vector of frequencies
-h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[-1]
+h5_spec_vals = px.core.io.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
 freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 #########################################################################
