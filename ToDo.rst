@@ -73,6 +73,7 @@ v 1.0 goals
 15. Test all translators, Processes, plotting, and Analyses to make sure they still work.
 16. Add ability to export data as txt probably via numpy.savetext
 17. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
+18. Address pending TODOs
 
 v 1.1 goals
 -----------
