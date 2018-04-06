@@ -410,8 +410,17 @@ class HDFwriter(object):
         if max_shape is None:
             max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
+        if microdset.data is not None:
+            shape = microdset.data.shape
+        elif microdset.chunking is not None:
+            warn('No data was given.  The base shape of of the dataset will be set to the chunk size.')
+            shape = microdset.chunking
+        else:
+            raise ValueError("You must provide an initial data array or a chunk size to create a resizeable dataset.")
+
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
+                                          shape=shape,
                                           compression=microdset.compression,
                                           dtype=microdset.dtype,
                                           chunks=microdset.chunking,
