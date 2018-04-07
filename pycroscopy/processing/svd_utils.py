@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_
     get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes, \
     reshape_to_n_dims
 from pycroscopy.core.io.hdf_writer import HDFwriter
-from ..core.io.io_utils import get_available_memory
+from ..core.io.io_utils import get_available_memory, format_time
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
@@ -100,7 +100,7 @@ class SVD(Process):
                                                       n_iter=3)
         self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
-        print('Took {} seconds to compute randomized SVD'.format(round(time.time() - t1, 2)))
+        print('Took {} to compute randomized SVD'.format(format_time(time.time() - t1)))
 
         u_mat, success = reshape_to_n_dims(self.__u, h5_pos=self.h5_main.h5_pos_inds,
                                            h5_spec=np.expand_dims(np.arange(self.__u.shape[1]), axis=0))

@@ -15,6 +15,7 @@ from .proc_utils import get_component_slice
 from ..core.processing.process import Process, parallel_compute
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes, reshape_to_n_dims
 from ..core.io.pycro_data import PycroDataset
+from ..core.io.io_utils import format_time
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
@@ -148,11 +149,11 @@ class Cluster(Process):
         # perform fit on the real dataset
         results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
 
-        print('Took {} seconds to compute {}'.format(round(time.time() - t1, 2), self.method_name))
+        print('Took {} to compute {}'.format(format_time(time.time() - t1), self.method_name))
 
         t1 = time.time()
         self.__mean_resp = self._get_mean_response(results.labels_)
-        print('Took {} seconds to calculate mean response per cluster'.format(round(time.time() - t1, 2)))
+        print('Took {} to calculate mean response per cluster'.format(format_time(time.time() - t1)))
 
         self.__labels = results.labels_
         if rearrange_clusters:
