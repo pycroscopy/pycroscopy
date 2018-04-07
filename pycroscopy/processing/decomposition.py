@@ -17,6 +17,7 @@ from ..core.io.hdf_writer import HDFwriter
 from ..core.io.write_utils import AuxillaryDescriptor, build_ind_val_dsets, clean_string_att
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..core.io.io_utils import format_time
 from ..core.io.pycro_data import PycroDataset
 
 
@@ -111,10 +112,9 @@ class Decomposition(Process):
         t0 = time.time()
         self._fit()
         self._transform()
-        print('Took {} seconds to compute {}'.format(round(time.time() - t0, 2), self.method_name))
+        print('Took {} to compute {}'.format(format_time(time.time() - t0), self.method_name))
 
         self.__components = stack_real_to_target_dtype(self.estimator.components_, self.h5_main.dtype)
-        # TODO: Return N dimensional form instead of 2D!
         projection_mat, success = reshape_to_n_dims(self.__projection, h5_pos=self.h5_main.h5_pos_inds,
                                                     h5_spec=np.expand_dims(np.arange(self.__projection.shape[1]),
                                                                            axis=0))
@@ -122,7 +122,8 @@ class Decomposition(Process):
             raise ValueError('Could not reshape projections to N-Dimensional dataset! Error:' + success)
 
         components_mat, success = reshape_to_n_dims(self.__components, h5_spec=self.h5_main.h5_spec_inds,
-                                                  h5_pos=np.expand_dims(np.arange(self.__components.shape[0]), axis=1))
+                                                    h5_pos=np.expand_dims(np.arange(self.__components.shape[0]),
+                                                                          axis=1))
 
         if success == False:
             raise ValueError('Could not reshape components to N-Dimensional dataset! Error:' + success)
