@@ -1569,7 +1569,7 @@ def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=102
     Save the original size of unit_chunks to use for incrementing the chunk size during
      loop
     '''
-    base_chunks = unit_chunks
+    base_chunks = unit_chunks.copy()
 
     '''
     Loop until chunk_size is greater than the maximum chunk_mem or the chunk_size is equal to

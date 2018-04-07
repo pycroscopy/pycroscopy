@@ -60,9 +60,9 @@ class TestHDFUtils(unittest.TestCase):
             source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
             dset_source_main = VirtualDataset(source_dset_name, source_main_data,
                                               attrs={'units': 'A', 'quantity': 'Current',
-                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
-                                                              'odd_rows': (slice(1, None, 2), slice(None))}
-                                                   })
+                                                     'labels': {'even_rows': (slice(0, None, 2), slice(None)),
+                                                                'odd_rows': (slice(1, None, 2), slice(None))}
+                                                     })
             # make spectroscopic axis interesting as well
             source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
@@ -1639,8 +1639,6 @@ class TestHDFUtils(unittest.TestCase):
 
         os.remove(file_path)
 
-    """  
-     
     def test_write_reduced_spec_dsets_2d_to_1d(self):
         self.__ensure_test_h5_file()
         duplicate_path = 'copy_test_hdf_utils.h5'
@@ -1654,15 +1652,15 @@ class TestHDFUtils(unittest.TestCase):
             h5_spec_inds_new, h5_spec_vals_new = hdf_utils.write_reduced_spec_dsets(h5_spec_inds_orig.parent,
                                                                                     h5_spec_inds_orig,
                                                                                     h5_spec_vals_orig,
-                                                                                    [False, True], cycle_starts,
+                                                                                    np.array([False, True]),
+                                                                                    cycle_starts,
                                                                                     basename=new_base_name)
-            print(h5_spec_inds_new[()])
 
             dim_names = ['Cycle']
             dim_units = ['']
             ref_data = np.expand_dims(np.arange(2), axis=0)
             for h5_dset, exp_dtype, exp_name in zip([h5_spec_inds_new, h5_spec_vals_new],
-                                                    [write_utils.INDICES_DTYPE, write_utils.VALUES_DTYPE],
+                                                    [h5_spec_inds_orig.dtype, h5_spec_vals_orig.dtype],
                                                     [new_base_name + '_Indices', new_base_name + '_Values']):
                 self.assertIsInstance(h5_dset, h5py.Dataset)
                 self.assertEqual(h5_dset.parent, h5_spec_inds_orig.parent)
@@ -1676,35 +1674,75 @@ class TestHDFUtils(unittest.TestCase):
                 for dim_ind, curr_name in enumerate(dim_names):
                     self.assertTrue(np.allclose(np.squeeze(ref_data[dim_ind]),
                                                 np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
+
         os.remove(duplicate_path)
-        
-    def test_calc_chunks(self):
+
+    def test_calc_chunks_no_unit_chunk(self):
         dimensions = (16384, 16384 * 4)
         dtype_bytesize = 4
         unit_chunks = None
         ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
-        print(ret_val)
-        assert False  
-               
-    def test_get_indices_for_region_ref(self):
+        self.assertTrue(np.allclose(ret_val, (26, 100)))
+
+    def test_calc_chunks_unit_chunk(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (3, 7)
+        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+        self.assertTrue(np.allclose(ret_val, (27, 98)))
+
+    def test_calc_chunks_no_unit_chunk_max_mem(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = None
+        max_mem = 50000
+        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
+        self.assertTrue(np.allclose(ret_val, (56, 224)))
+
+    def test_calc_chunks_unit_chunk_max_mem(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (3, 7)
+        max_mem = 50000
+        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
+        self.assertTrue(np.allclose(ret_val, (57, 224)))
+
+    def test_calc_chunks_unit_not_iterable(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = 4
+
+        with self.assertRaises(AssertionError):
+            _ = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+
+    def test_calc_chunks_shape_mismatch(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (1, 5, 9)
+
+        with self.assertRaises(ValueError):
+            _ = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+
+    def test_get_indices_for_region_ref_corners(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             reg_ref = hdf_utils.get_attr(h5_main, 'even_rows')
-            ret_val = hdf_utils.get_indices_for_region_ref(h5_main, reg_ref)
-            expected_data = h5_main[0:None:2]
-            data_slices = []
-            for item in ret_val:
-                print(h5_main[item[0], item[1]].shape)
-                data_slices.append(h5_main[item[0], item[1]])
-            data_slices = np.vstack(data_slices)
-            print(data_slices.shape, expected_data.shape)
-            self.assertTrue(np.allclose(data_slices, expected_data))
-            
-    
+            ret_val = hdf_utils.get_indices_for_region_ref(h5_main, reg_ref, 'corners')
+            expected_pos = np.repeat(np.arange(h5_main.shape[0])[::2], 2)
+            expected_spec = np.tile(np.array([0,h5_main.shape[1]-1]), expected_pos.size // 2)
+            expected_corners = np.vstack((expected_pos, expected_spec)).T
+            self.assertTrue(np.allclose(ret_val, expected_corners))
 
-    
-    """
+    def test_get_indices_for_region_ref_slices(self):
+        self.__ensure_test_h5_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            h5_main = h5_f['/Raw_Measurement/source_main']
+            reg_ref = hdf_utils.get_attr(h5_main, 'even_rows')
+            ret_val = hdf_utils.get_indices_for_region_ref(h5_main, reg_ref, 'slices')
+            spec_slice = slice(0, h5_main.shape[1] - 1, None)
+            expected_slices = np.array([[slice(x, x, None), spec_slice] for x in np.arange(h5_main.shape[0])[::2]])
+            self.assertTrue(np.all(ret_val==expected_slices))
 
 
 if __name__ == '__main__':

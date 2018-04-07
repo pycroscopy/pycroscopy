@@ -56,14 +56,14 @@ class TestVirtualDataSet(unittest.TestCase):
         name = 'test'
         chunking = (-1, 128)
         data = np.random.rand(2, 128)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_invalid_chunking_argument_02(self):
         name = 'test'
         chunking = ('a', range(5))
         data = np.random.rand(2, 128)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_incompatible_chunking_data(self):
@@ -105,7 +105,7 @@ class TestVirtualDataSet(unittest.TestCase):
         name = 'test'
         chunking = (None, 128)
         data = np.random.rand(2, 128)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = VirtualDataset(name, data, chunking=chunking)
 
     def test_incompatible_maxshape_data_shapes(self):

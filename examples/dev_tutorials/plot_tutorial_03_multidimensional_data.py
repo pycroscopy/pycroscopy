@@ -102,10 +102,10 @@ print(h5_main)
 # slice the data. For that we need the ancillary datasets that support this main dataset
 
 # pycroscopy has a convenient function to access datasets linked to a given dataset:
-h5_spec_ind = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Indices')[0]
-h5_spec_val = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[0]
-h5_pos_ind = px.hdf_utils.getAuxData(h5_main, 'Position_Indices')[0]
-h5_pos_val = px.hdf_utils.getAuxData(h5_main, 'Position_Values')[0]
+h5_spec_ind = px.core.io.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Indices')[0]
+h5_spec_val = px.core.io.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[0]
+h5_pos_ind = px.core.io.hdf_utils.get_auxillary_datasets(h5_main, 'Position_Indices')[0]
+h5_pos_val = px.core.io.hdf_utils.get_auxillary_datasets(h5_main, 'Position_Values')[0]
 
 #########################################################################
 # Understanding the ancillary datasets:
@@ -299,7 +299,7 @@ axis.set_title('Spectrogram Amplitude')
 # line. Note that while this approach appears simple on the surface, there are a fair number of lines of code that
 # make up this function.
 
-ds_nd, success, labels = px.hdf_utils.reshape_to_Ndims(h5_main, get_labels=True)
+ds_nd, success, labels = px.hdf_utils.reshape_to_n_dims(h5_main, get_labels=True)
 print('Shape of the N-dimensional dataset:', ds_nd.shape)
 print(labels)
 

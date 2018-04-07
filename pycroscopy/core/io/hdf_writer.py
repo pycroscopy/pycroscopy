@@ -23,7 +23,7 @@ if sys.version_info.major == 3:
 
 
 class HDFwriter(object):
-    def __init__(self, file_handle):
+    def __init__(self, file_handle, force_new=False):
         """
         Main class that simplifies writing to pycroscopy hdf5 files.
 
@@ -32,8 +32,14 @@ class HDFwriter(object):
         file_handle : h5py.File object or str or unicode
             h5py.File - handle to an open file in 'w' or 'r+' mode
             str or unicode - Absolute path to an unopened the hdf5 file
+        force_new : bool, optional
+            If true, check if the file already exists and delete it if
+            it does.  Ignored if the file_handle is a h5py.File object
         """
         if type(file_handle) in [str, unicode]:
+            if force_new and os.path.exists(file_handle):
+                os.remove(file_handle)
+
             try:
                 self.file = h5py.File(file_handle, 'r+')
             except IOError:
@@ -404,8 +410,17 @@ class HDFwriter(object):
         if max_shape is None:
             max_shape = tuple([None for _ in range(len(microdset.data.shape))])
 
+        if microdset.data is not None:
+            shape = microdset.data.shape
+        elif microdset.chunking is not None:
+            warn('No data was given.  The base shape of of the dataset will be set to the chunk size.')
+            shape = microdset.chunking
+        else:
+            raise ValueError("You must provide an initial data array or a chunk size to create a resizeable dataset.")
+
         h5_dset = h5_group.create_dataset(microdset.name,
                                           data=microdset.data,
+                                          shape=shape,
                                           compression=microdset.compression,
                                           dtype=microdset.dtype,
                                           chunks=microdset.chunking,

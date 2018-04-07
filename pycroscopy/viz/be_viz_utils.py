@@ -421,8 +421,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
-        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
-                                                         y_size=spatial_map.shape[1], cmap=cmap)
+        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
         axes[0].set_ylabel('Y')
