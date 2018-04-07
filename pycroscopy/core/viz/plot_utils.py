@@ -878,8 +878,9 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
                 raise TypeError(var_name + ' should be a string')
     if amp_units is None:
         amp_units = 'a.u.'
-    if not isinstance(stdevs, Number) or stdevs <= 0:
-        raise TypeError('stdevs should be a positive number')
+    if stdevs is not None:
+        if not isinstance(stdevs, Number) or stdevs <= 0:
+            raise TypeError('stdevs should be a positive number')
 
     figsize = kwargs.pop('figsize', (4, 4))
     figsize = (figsize[0] * num_comps, 8)
