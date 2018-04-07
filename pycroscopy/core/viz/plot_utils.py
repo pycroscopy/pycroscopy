@@ -1103,7 +1103,7 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if key in kwargs:
             figkwargs.update({key: kwargs.pop(key)})
 
-    fig202 = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h), **figkwargs)
+    fig = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h), **figkwargs)
 
     '''
     Set defaults for kwargs to the ImageGrid and extract any non-default values from current kwargs
@@ -1120,39 +1120,39 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if key in kwargs:
             igkwargs.update({key: kwargs.pop(key)})
 
-    axes202 = ImageGrid(fig202, 111, nrows_ncols=(p_rows, p_cols),
+    axes = ImageGrid(fig, 111, nrows_ncols=(p_rows, p_cols),
                         cbar_mode=color_bar_mode,
                         axes_pad=(pad_w * fig_w, pad_h * fig_h),
                         **igkwargs)
 
-    fig202.canvas.set_window_title(title)
+    fig.canvas.set_window_title(title)
     # These parameters have not been easy to fix:
     if title_yoffset is None:
         title_yoffset = 0.9
     if title_size is None:
         title_size = 16 + (p_rows + p_cols)
-    fig202.suptitle(title, fontsize=title_size, y=title_yoffset)
+    fig.suptitle(title, fontsize=title_size, y=title_yoffset)
 
     for count, index, curr_subtitle in zip(range(chosen_pos.size), chosen_pos, subtitle):
-        im, im_cbar = plot_map(axes202[count],
+        im, im_cbar = plot_map(axes[count],
                                map_stack[index],
                                stdevs=stdevs, show_cbar=False, **kwargs)
-        axes202[count].set_subtitle(curr_subtitle)
+        axes[count].set_title(curr_subtitle)
 
         if color_bar_mode is 'each':
-            cb = axes202.cbar_axes[count].colorbar(im)
+            cb = axes.cbar_axes[count].colorbar(im)
             cb.set_label_text(colorbar_label)
 
         if count % p_cols == 0:
-            axes202[count].set_ylabel(y_label)
+            axes[count].set_ylabel(y_label)
         if count >= (p_rows - 1) * p_cols:
-            axes202[count].set_xlabel(x_label)
+            axes[count].set_xlabel(x_label)
 
     if color_bar_mode is 'single':
-        cb = axes202.cbar_axes[0].colorbar(im)
+        cb = axes.cbar_axes[0].colorbar(im)
         cb.set_label_text(colorbar_label)
 
-    return fig202, axes202
+    return fig, axes
 
 
 ###############################################################################
