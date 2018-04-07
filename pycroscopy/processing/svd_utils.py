@@ -16,12 +16,14 @@ from sklearn.utils.extmath import randomized_svd
 from ..core.processing.process import Process
 from .proc_utils import get_component_slice
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_results_groups, \
-    get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes
+    get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes, \
+    reshape_to_n_dims
 from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.pycro_data import PycroDataset
 
 
 class SVD(Process):
@@ -44,16 +46,25 @@ class SVD(Process):
             num_components = min(n_samples, n_features, num_components)
         self.num_components = num_components
         self.parms_dict = {'num_components': num_components}
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
+
+        # supercharge h5_main!
+        self.h5_main = PycroDataset(self.h5_main)
+
         self.__u = None
         self.__v = None
         self.__s = None
 
-    def test(self):
+    def test(self, override=False):
         """
         Applies randomised VD to the dataset. This function does NOT write results to the hdf5 file. Call compute() to
         write to the file. Handles complex, compound datasets such that the V matrix is of the same data-type as the
         input matrix.
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         -------
@@ -72,6 +83,15 @@ class SVD(Process):
         C.Smith -- We might need to put a lower limit on num_comps in the future.  I don't
                    know enough about svd to be sure.
         '''
+        if not override:
+            if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
+                self.h5_results_grp = self.duplicate_h5_groups[-1]
+                print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
+                print('set the "override" flag to True to recompute results')
+                return reshape_to_n_dims(self.h5_results_grp['U'])[0], self.h5_results_grp['S'][()], \
+                       reshape_to_n_dims(self.h5_results_grp['V'])[0]
+
+        self.h5_results_grp = None
         print('Performing SVD')
 
         t1 = time.time()
@@ -81,14 +101,29 @@ class SVD(Process):
         self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
         print('Took {} seconds to compute randomized SVD'.format(round(time.time() - t1, 2)))
-        # TODO: Return N dimensional form instead of 2D!
-        return self.__u, self.__s, self.__v
 
-    def compute(self):
+        u_mat, success = reshape_to_n_dims(self.__u, h5_pos=self.h5_main.h5_pos_inds,
+                                           h5_spec=np.expand_dims(np.arange(self.__u.shape[1]), axis=0))
+        if success == False:
+            raise ValueError('Could not reshape U to N-Dimensional dataset! Error:' + success)
+
+        v_mat, success = reshape_to_n_dims(self.__v, h5_pos=np.expand_dims(np.arange(self.__u.shape[1]), axis=1),
+                                           h5_spec=self.h5_main.h5_spec_inds)
+        if success == False:
+            raise ValueError('Could not reshape V to N-Dimensional dataset! Error:' + success)
+
+        return u_mat, self.__s, v_mat
+
+    def compute(self, override=False):
         """
         Computes SVD (by calling test_on_subset() if it has not already been called) and writes results to file.
         Consider calling test() to check results before writing to file. Results are deleted from memory
         upon writing to the HDF5 file
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         -------
@@ -96,12 +131,15 @@ class SVD(Process):
             Datagroup containing all the results
         """
         if self.__u is None and self.__v is None and self.__s is None:
-            self.test()
+            self.test(override=override)
 
-        self._write_results_chunk()
-        self.delete_results()
+        if self.h5_results_grp is None:
+            self._write_results_chunk()
+            self.delete_results()
 
-        return self.h5_results_grp
+        h5_group = self.h5_results_grp
+
+        return h5_group
 
     def delete_results(self):
         """
