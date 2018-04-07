@@ -251,11 +251,12 @@ class VirtualDataset(VirtualData):
                 raise ValueError('chunking should have the same number of dimensions as either maxshape or data')
             # Now, they have the same number of dimensions:
             # make sure that all its values are less than equal to the size of the data
-            for ch, mx in zip(chunking, data_shape):
-                if mx is not None:
-                    if ch > mx:
-                        raise ValueError('chunking shape ({}) must be less than or equal to the data shape ({}) in all '
-                                         'dimensions'.format(chunking, data_shape))
+            if not resizable:
+                for ch, mx in zip(chunking, data_shape):
+                    if mx is not None:
+                        if ch > mx:
+                            raise ValueError('chunking shape ({}) must be less than or equal to the data shape ({}) in '
+                                             'all dimensions'.format(chunking, data_shape))
 
         if isinstance(dtype, (str, unicode)):
             dtype = np.dtype(dtype)
