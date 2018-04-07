@@ -100,7 +100,7 @@ class Cluster(Process):
         # check for existing datagroups with same results
         self.process_name = 'Cluster'
         # Partial groups don't make any sense for statistical learning algorithms....
-        self.duplicate_h5_groups, self.h5_partial_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
@@ -162,13 +162,13 @@ class Cluster(Process):
         labels_mat, success = reshape_to_n_dims(np.expand_dims(np.squeeze(self.__labels), axis=1),
                                                 h5_pos=self.h5_main.h5_pos_inds, h5_spec=np.expand_dims([0], axis=0))
         if success == False:
-            raise ValueError('Could not reshape labels to 2D dataset! Error:' + success)
+            raise ValueError('Could not reshape labels to N-Dimensional dataset! Error:' + success)
 
         centroid_mat, success = reshape_to_n_dims(self.__mean_resp, h5_spec=self.h5_main.h5_spec_inds,
                                                   h5_pos=np.expand_dims(np.arange(self.__mean_resp.shape[0]), axis=1))
 
         if success == False:
-            raise ValueError('Could not reshape mean response to 2D dataset! Error:' + success)
+            raise ValueError('Could not reshape mean response to N-Dimensional dataset! Error:' + success)
 
         return np.squeeze(labels_mat), centroid_mat
 
