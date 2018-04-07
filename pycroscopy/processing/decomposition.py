@@ -7,15 +7,17 @@ Created on Tue Jan 05 07:55:56 2016
 
 from __future__ import division, print_function, absolute_import
 import h5py
+import time
 import numpy as np
 import sklearn.decomposition as dec
 
 from ..core.processing.process import Process
-from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary
+from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, get_attr, reshape_to_n_dims
 from ..core.io.hdf_writer import HDFwriter
-from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE
+from ..core.io.write_utils import AuxillaryDescriptor, build_ind_val_dsets, clean_string_att
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..core.io.pycro_data import PycroDataset
 
 
 class Decomposition(Process):
@@ -63,20 +65,29 @@ class Decomposition(Process):
         
         # check for existing datagroups with same results 
         self.process_name = 'Decomposition'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        # Partial groups don't make any sense for statistical learning algorithms....
+        self.duplicate_h5_groups, self.h5_partial_groups = self._check_for_duplicates()
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
          self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
+
+        # supercharge h5_main!
+        self.h5_main = PycroDataset(self.h5_main)
         
         self.__components = None
         self.__projection = None
         
-    def test(self):
+    def test(self, override=False):
         """
         Decomposes the hdf5 dataset to calculate the components and projection. This function does NOT write results to
         the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
         components are of the same data-type as the input matrix.
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         -------
@@ -85,10 +96,38 @@ class Decomposition(Process):
         projections : numpy array
             Projections
         """
+        if not override:
+            if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
+                self.h5_results_grp = self.duplicate_h5_groups[-1]
+                print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
+                print('set the "override" flag to True to recompute results')
+                return PycroDataset(self.h5_results_grp['Components']).get_n_dim_form(), \
+                       PycroDataset(self.h5_results_grp['Projection']).get_n_dim_form()
+
+        self.h5_results_grp = None
+
+        print('Performing Decomposition on {}.'.format(self.h5_main.name))
+
+        t0 = time.time()
         self._fit()
         self._transform()
+        print('Took {} seconds to compute {}'.format(round(time.time() - t0, 2), self.method_name))
+
         self.__components = stack_real_to_target_dtype(self.estimator.components_, self.h5_main.dtype)
-        return self.__components, self.__projection
+        # TODO: Return N dimensional form instead of 2D!
+        projection_mat, success = reshape_to_n_dims(self.__projection, h5_pos=self.h5_main.h5_pos_inds,
+                                                    h5_spec=np.expand_dims(np.arange(self.__projection.shape[1]),
+                                                                           axis=0))
+        if success == False:
+            raise ValueError('Could not reshape projections to N-Dimensional dataset! Error:' + success)
+
+        components_mat, success = reshape_to_n_dims(self.__components, h5_spec=self.h5_main.h5_spec_inds,
+                                                  h5_pos=np.expand_dims(np.arange(self.__components.shape[0]), axis=1))
+
+        if success == False:
+            raise ValueError('Could not reshape components to N-Dimensional dataset! Error:' + success)
+
+        return components_mat, projection_mat
 
     def delete_results(self):
         """
@@ -97,21 +136,32 @@ class Decomposition(Process):
         del self.__components, self.__projection
         self.__components = None
         self.__projection = None
+        self.h5_results_grp = None
 
-    def compute(self):
+    def compute(self, override=False):
         """
         Decomposes the hdf5 dataset to calculate the components and projection (by calling test() if it hasn't already
         been called), and writes the results back to the hdf5 file
-        
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
+
         Returns
         -------
         h5_group : HDF5 Group reference
             Reference to the group that contains the decomposition results
         """
         if self.__components is None and self.__projection is None:
-            self.test()
-        h5_group = self._write_results_chunk(self.__components, self.__projection)
-        self.delete_results()
+            self.test(override=override)
+
+        if self.h5_results_grp is None:
+            h5_group = self._write_results_chunk()
+            self.delete_results()
+        else:
+            h5_group = self.h5_results_grp
+
         return h5_group
 
     def _fit(self):
@@ -154,35 +204,33 @@ class Decomposition(Process):
         h5_group : HDF5 Group reference
             Reference to the group that contains the decomposition results
         """
-        ds_components = VirtualDataset('Components', self.__components)  # equivalent to V
-        ds_projections = VirtualDataset('Projection', np.float32(self.__projection))  # equivalent of U compound
+        ds_components = VirtualDataset('Components', self.__components, # equivalent to V - compound / complex
+                                       attrs={'units': 'a. u.',
+                                              'quantity': clean_string_att(get_attr(self.h5_main, 'quantity'))})
+        ds_projections = VirtualDataset('Projection', np.float32(self.__projection),
+                                        attrs={'quantity': 'abundance', 'units': 'a.u.'})  # equivalent of U - real
 
-        decomp_ind_mat = np.transpose(np.atleast_2d(np.arange(self.__components.shape[0])))
-
-        ds_decomp_inds = VirtualDataset('Decomposition_Indices', INDICES_DTYPE(decomp_ind_mat))
-        ds_decomp_vals = VirtualDataset('Decomposition_Values', VALUES_DTYPE(decomp_ind_mat))
-
-        # write the labels and the mean response to h5
-        decomp_slices = {'Decomp': (slice(None), slice(0, 1))}
-        ds_decomp_inds.attrs['labels'] = decomp_slices
-        ds_decomp_inds.attrs['units'] = ['']
-        ds_decomp_vals.attrs['labels'] = decomp_slices
-        ds_decomp_vals.attrs['units'] = ['']
+        decomp_desc = AuxillaryDescriptor([self.__components.shape[0]], ['Endmember'], ['a. u.'])
+        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(decomp_desc, is_spectral=False)
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(decomp_desc, is_spectral=True)
 
         decomp_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-Decomposition_', self.h5_main.parent.name[1:])
-        decomp_grp.add_children([ds_components, ds_projections, ds_decomp_inds, ds_decomp_vals])
+        decomp_grp.add_children([ds_components, ds_projections, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
         
         decomp_grp.attrs.update(self.parms_dict)
         decomp_grp.attrs.update({'n_components': self.__components.shape[0],
-                                 'n_samples': self.h5_main.shape[0]})
+                                 'n_samples': self.h5_main.shape[0],
+                                 'last_pixel': self.h5_main.shape[0]})
         
         hdf = HDFwriter(self.h5_main.file)
         h5_decomp_refs = hdf.write(decomp_grp)
 
         h5_components = get_h5_obj_refs(['Components'], h5_decomp_refs)[0]
         h5_projections = get_h5_obj_refs(['Projection'], h5_decomp_refs)[0]
-        h5_decomp_inds = get_h5_obj_refs(['Decomposition_Indices'], h5_decomp_refs)[0]
-        h5_decomp_vals = get_h5_obj_refs(['Decomposition_Values'], h5_decomp_refs)[0]
+        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_decomp_refs)[0]
+        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_decomp_refs)[0]
+        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_decomp_refs)[0]
+        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_decomp_refs)[0]
 
         check_and_link_ancillary(h5_projections,
                               ['Position_Indices', 'Position_Values'],
@@ -190,7 +238,7 @@ class Decomposition(Process):
 
         check_and_link_ancillary(h5_projections,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_decomp_inds, h5_decomp_vals])
+                              anc_refs=[h5_spec_inds, h5_spec_vals])
 
         check_and_link_ancillary(h5_components,
                               ['Spectroscopic_Indices', 'Spectroscopic_Values'],
@@ -198,7 +246,8 @@ class Decomposition(Process):
 
         check_and_link_ancillary(h5_components,
                               ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_decomp_inds, h5_decomp_vals])
+                              anc_refs=[h5_pos_inds, h5_pos_vals])
 
         # return the h5 group object
-        return h5_components.parent
+        self.h5_results_grp = h5_components.parent
+        return self.h5_results_grp
