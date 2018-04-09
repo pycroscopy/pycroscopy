@@ -21,7 +21,8 @@ Hackathon topics
 * Thoroughly test and try to break plot_utils
 * start a twitter account
 * Add to the scientific examples - how to swap out the data for user provided data - Eg FFT filtering
-* Upload clean exports of notebooks that were part of past journal papers
+* Upload clean exports of notebooks that were part of past journal papers `here <https://github.com/pycroscopy/papers>`_ (Eg - Liam's Gmode papers)
+* Add papers (users + postdocs) that are not on the `list <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_.
 * Add more notebooks (Sabine's cKPFM for example) for papers that are not already on that list - may need to talk to all the postdocs and staff at IFIM.
 * Find more files from microscopes that require translation - this will guide the development of community standards
   
