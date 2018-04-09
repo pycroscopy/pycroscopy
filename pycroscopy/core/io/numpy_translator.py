@@ -12,7 +12,7 @@ import sys
 import h5py
 import numpy as np  # For array operations
 
-from .write_utils import AuxillaryDescriptor
+from .write_utils import Dimension
 from .translator import Translator, generate_dummy_main_parms
 from .hdf_utils import write_main_dataset, write_simple_attrs
 
@@ -42,9 +42,13 @@ class NumpyTranslator(Translator):
             Name of the physical quantity stored in the dataset. Example - 'Current'
         units : String / Unicode
             Name of units for the quantity stored in the dataset. Example - 'A' for amperes
-        pos_dims : AuxillaryDescriptor
+        pos_dims : Dimension or array-like of Dimension objects
+            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
+            datasets
             Object specifying the instructions necessary for building the Position indices and values datasets
-        spec_dims : AuxillaryDescriptor
+        spec_dims : Dimension or array-like of Dimension objects
+            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
+            datasets
             Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
         translator_name : String / unicode, Optional
             Name of the translator. Example - 'HitachiSEMTranslator'
@@ -63,11 +67,16 @@ class NumpyTranslator(Translator):
         assert isinstance(raw_data, np.ndarray)
         assert raw_data.ndim == 2
 
-        for ind, anc_dic in enumerate([pos_dims, spec_dims]):
-            assert isinstance(anc_dic, AuxillaryDescriptor)
+        for ind, dimensions in enumerate([pos_dims, spec_dims]):
+            if isinstance(dimensions, Dimension):
+                dimensions = [dimensions]
+            if not isinstance(dimensions, (list, np.ndarray, tuple)):
+                raise TypeError('dimensions should be array-like ')
+            if not np.all([isinstance(x, Dimension) for x in dimensions]):
+                raise TypeError('dimensions should be a sequence of Dimension objects')
             # Check to make sure that the product of the position and spectroscopic dimension sizes match with
             # that of raw_data
-            assert raw_data.shape[ind] == np.product(anc_dic.sizes)
+            assert raw_data.shape[ind] == np.product([len(x.values) for x in dimensions])
 
         if path.exists(h5_path):
             remove(h5_path)

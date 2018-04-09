@@ -15,7 +15,7 @@ from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
                                 link_h5_objects_as_attrs
 from ..core.io.write_utils import VALUES_DTYPE
-from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.write_utils import build_ind_val_dsets, Dimension
 from ..core.io.hdf_writer import HDFwriter
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
@@ -161,7 +161,7 @@ class SignalFilter(Process):
         if self.noise_threshold is not None:
             ds_noise_floors = VirtualDataset('Noise_Floors',
                                              data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
-            noise_spec_descriptor = AuxillaryDescriptor([1], ['arb'], [''])
+            noise_spec_descriptor = Dimension('arb', '', [1])
             ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets(noise_spec_descriptor, is_spectral=True,
                                                                          verbose=self.verbose)
             ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
@@ -182,7 +182,7 @@ class SignalFilter(Process):
             self.hot_inds = np.where(self.composite_filter > 0)[0]
             self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
 
-            condensed_spec_descriptor = AuxillaryDescriptor([int(0.5 * len(self.hot_inds))], ['hot_frequencies'], [''])
+            condensed_spec_descriptor = Dimension('hot_frequencies', '', np.arange(int(0.5 * len(self.hot_inds))))
             ds_spec_inds, ds_spec_vals = build_ind_val_dsets(condensed_spec_descriptor, is_spectral=True,
                                                              verbose=self.verbose)
             # The data generated above varies linearly. Override.
@@ -194,10 +194,11 @@ class SignalFilter(Process):
             if self.num_effective_pix > 1:
                 # need to make new position datasets by taking every n'th index / value:
                 new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
-                pos_descriptor = AuxillaryDescriptor([int(np.unique(h5_pos_inds[:, dim_ind]).size /
-                                                                    self.num_effective_pix)
-                                                                for dim_ind in range(h5_pos_inds.shape[1])],
-                                                     h5_pos_inds.attrs['labels'], h5_pos_inds.attrs['units'])
+                pos_descriptor = []
+                for name, units, leng in zip(h5_pos_inds.attrs['labels'], h5_pos_inds.attrs['units'],
+                                             [int(np.unique(h5_pos_inds[:, dim_ind]).size / self.num_effective_pix)
+                                              for dim_ind in range(h5_pos_inds.shape[1])]):
+                    pos_descriptor.append(Dimension(name, units, np.arange(leng)))
                 ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=self.verbose)
                 h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
                 grp_filt.add_children([ds_pos_inds, ds_pos_vals])

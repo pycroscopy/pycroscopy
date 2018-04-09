@@ -12,7 +12,7 @@ from os import path, remove, listdir  # File Path formatting
 import numpy as np  # For array operations
 from scipy.io import loadmat
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ...core.io.write_utils import build_ind_val_dsets, Dimension
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -113,13 +113,15 @@ class TRKPFMTranslator(Translator):
             print("Data size does not match number of pixels expected. Cannot continue")
 
         # Now start creating datasets and populating:
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(AuxillaryDescriptor([excit_wfm.size], ['Bias'], ['V']),
-                                                         is_spectral=True, verbose=False)
+
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Bias', 'V', excit_wfm), is_spectral=True,
+                                                         verbose=False)
 
         ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
 
-        pos_desc = AuxillaryDescriptor([parm_dict['grid_num_rows'], parm_dict['grid_num_cols']], ['X', 'Y'],
-                                       ['a.u.', 'a.u.'])
+        pos_desc = [Dimension('X', 'a.u.', np.arange(parm_dict['grid_num_cols'])),
+                    Dimension('Y', 'a.u.', np.arange(parm_dict['grid_num_rows']))]
+
         ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
 
         ds_raw_data = VirtualDataset('Raw_Data', data=[],

@@ -11,37 +11,10 @@ import numpy as np
 import sys
 
 from .plot_utils import plot_map, set_tick_font_size
+from ..io.write_utils import Dimension
 
 if sys.version_info.major == 3:
     unicode = str
-
-
-class VizDimension(object):
-    def __init__(self, name, units, values=None):
-        """
-        Simple object that describes a dimension in a dataset by its name, units, and values
-        Parameters
-        ----------
-        name : str / unicode
-            Name of the dimension. For example 'Bias'
-        units : str / unicode
-            Units for this dimension. For example: 'V'
-        values : array-like, optional
-            Values over which this dimension was varied. A linearly increasing set of values will be assumed as default.
-        """
-        if not isinstance(name, (str, unicode)):
-            raise TypeError('name should be a string')
-        if not isinstance(units, (str, unicode)):
-            raise TypeError('units should be a string')
-        if values is not None:
-            if not isinstance(values, (np.ndarray, list, tuple)):
-                raise TypeError('values should be array like')
-        self.name = name
-        self.units = units
-        self.values = values
-
-    def __repr__(self):
-        return '{} ({}) : {}'.format(self.name, self.units, self.values)
 
 
 def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xdim=None, verbose=False):
@@ -57,9 +30,9 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
     data_mat : numpy.array object
         Data to be visualized
     pos_dims : list / tuple
-        List of VizDimension objects specifying all position dimensions in the same order as in data_mat
+        List of Dimension objects specifying all position dimensions in the same order as in data_mat
     spec_dims : list / tuple
-        List of VizDimension objects specifying all position dimensions in the same order as in data_mat
+        List of Dimension objects specifying all position dimensions in the same order as in data_mat
     spec_xdim : str, optional
         Name of dimension with respect to which the spectral data will be plotted for 1D plots
     pos_xdim : str, optional
@@ -86,7 +59,7 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
     def get_slice_string(slice_dict, dim_list):
         slice_str = ''
         for dimension in dim_list:
-            assert isinstance(dimension, VizDimension)
+            assert isinstance(dimension, Dimension)
             if dimension.name in slice_dict.keys():
                 slice_str += '{} = {} {}\n'.format(dimension.name,
                                                    dimension.values[slice_dict[dimension.name]],
@@ -164,8 +137,8 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
         if not isinstance(parm, (list, tuple)):
             raise TypeError('Expected {} to be of type: Iterable - example list or tuple'.format(parm_name))
         for item in parm:
-            if not isinstance(item, VizDimension):
-                raise TypeError('Expected items in {} to be of type: VizDimension'.format(parm_name))
+            if not isinstance(item, Dimension):
+                raise TypeError('Expected items in {} to be of type: Dimension'.format(parm_name))
         if len(parm) > 2:
             raise NotImplementedError('Currently not able to handle more than 2 position or spectroscopic dimensions.'
                                       ' {} contains {} dimensions'.format(parm_name, len(parm)))

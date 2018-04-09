@@ -13,7 +13,7 @@ from ..core.processing.process import Process, parallel_compute
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.dtype_utils import stack_real_to_compound
 from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
-from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.write_utils import build_ind_val_dsets, Dimension
 from ..core.io.hdf_writer import HDFwriter
 from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
 
@@ -134,14 +134,14 @@ class GIVBayesian(Process):
 
         if self.verbose:
             print('Now creating the datasets')
-        spec_desc = AuxillaryDescriptor([self.num_x_steps], ['Bias'], ['V'])
+        spec_desc = Dimension('Bias', 'V', np.arange(self.num_x_steps))
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=self.verbose)
 
         cap_shape = (num_pos, 1)
         ds_cap = VirtualDataset('Capacitance', data=None, maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
                                 compression='gzip')
         ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'pF'}
-        cap_spec_desc = AuxillaryDescriptor([1], ['Direction'], [''])
+        cap_spec_desc = Dimension('Direction', '', [1])
         ds_cap_spec_inds, ds_cap_spec_vals = build_ind_val_dsets(cap_spec_desc, is_spectral=True, verbose=self.verbose)
         # the names of these datasets will clash with the ones created above. Change names manually:
         ds_cap_spec_inds.name = 'Spectroscopic_Indices_Cap'

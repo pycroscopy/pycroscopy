@@ -14,7 +14,7 @@ import sklearn.decomposition as dec
 from ..core.processing.process import Process
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, get_attr, reshape_to_n_dims
 from ..core.io.hdf_writer import HDFwriter
-from ..core.io.write_utils import AuxillaryDescriptor, build_ind_val_dsets, clean_string_att
+from ..core.io.write_utils import Dimension, build_ind_val_dsets, clean_string_att
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.io.io_utils import format_time
@@ -211,7 +211,7 @@ class Decomposition(Process):
         ds_projections = VirtualDataset('Projection', np.float32(self.__projection),
                                         attrs={'quantity': 'abundance', 'units': 'a.u.'})  # equivalent of U - real
 
-        decomp_desc = AuxillaryDescriptor([self.__components.shape[0]], ['Endmember'], ['a. u.'])
+        decomp_desc = Dimension('Endmember', 'a. u.', np.arange(self.__components.shape[0]))
         ds_pos_inds, ds_pos_vals = build_ind_val_dsets(decomp_desc, is_spectral=False)
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets(decomp_desc, is_spectral=True)
 

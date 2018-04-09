@@ -22,7 +22,7 @@ from pycroscopy.core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory, format_time
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.write_utils import build_ind_val_dsets, Dimension
 from ..core.io.pycro_data import PycroDataset
 
 
@@ -157,7 +157,7 @@ class SVD(Process):
         Parameters
         ----------
         """
-        aux_desc = AuxillaryDescriptor([len(self.__s)], ['Principal Component'], ['a. u.'])
+        aux_desc = Dimension('Principal Component', 'a. u.', np.arange(len(self.__s)))
         ds_pos_inds, ds_pos_vals = build_ind_val_dsets(aux_desc, is_spectral=False)
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets(aux_desc, is_spectral=True)
 

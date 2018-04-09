@@ -17,7 +17,7 @@ from skimage.util import crop
 
 from .df_utils.io_image import unnest_parm_dicts, read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ...core.io.write_utils import build_ind_val_dsets, Dimension
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, calc_chunks, link_as_main
 from ...core.io.hdf_writer import HDFwriter
 from ...core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -179,11 +179,12 @@ class NDataTranslator(Translator):
         '''
         Build Spectroscopic and Position datasets for the image
         '''
-        spec_desc = AuxillaryDescriptor([1], ['Intensity'], ['a. u.'])
+        spec_desc = Dimension('Intensity', 'a.u.', [1])
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
 
-        pos_desc = AuxillaryDescriptor(image.shape, ['X', 'Y'], ['pixel', 'pixel'])
-        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_desc, is_spectral=False)
+        pos_dims = [Dimension('X', 'a.u.', np.arange(image.shape[0])),
+                    Dimension('Y', 'a.u.', np.arange(image.shape[1]))]
+        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_dims, is_spectral=False)
 
         chan_grp.add_children([ds_raw_image, ds_spec_inds, ds_spec_vals,
                                ds_pos_inds, ds_pos_vals])
@@ -265,9 +266,10 @@ class NDataTranslator(Translator):
             this_channel.parent.attrs.update(new_attrs)
 
             # Get the Position and Spectroscopic Datasets
-            spec_desc = AuxillaryDescriptor((usize, vsize), ['U', 'V'], ['pixel', 'pixel'])
+            spec_desc = [Dimension('U', 'pixel', np.arange(usize)), Dimension('V', 'pixel', np.arange(vsize))]
             ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
-            pos_desc = AuxillaryDescriptor([scan_size_x, scan_size_y], ['X', 'Y'], ['pixel', 'pixel'])
+            pos_desc = [Dimension('X', 'pixel', np.arange(scan_size_x)),
+                        Dimension('Y', 'pixel', np.arange(scan_size_y))]
             ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
             ds_chunking = calc_chunks([num_images, num_pixels],

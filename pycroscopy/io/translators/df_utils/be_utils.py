@@ -16,7 +16,8 @@ import numpy as np
 import xlrd as xlreader
 
 from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
-    get_attr, create_spec_inds_from_vals
+    get_attr
+from pycroscopy.core.io.write_utils import create_spec_inds_from_vals
 from ....core.io.hdf_writer import HDFwriter
 from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....core.io.virtual_data import VirtualDataset, VirtualGroup

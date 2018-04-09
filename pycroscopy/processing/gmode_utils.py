@@ -19,7 +19,7 @@ from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_a
     check_if_main, get_attr
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.viz.plot_utils import set_tick_font_size, plot_curves
-from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.write_utils import build_ind_val_dsets, Dimension
 
 if sys.version_info.major == 3:
     unicode = str
@@ -273,15 +273,15 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
 
     h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
     h5_pos_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Position_Values'])[0]
-    single_AO = h5_spec_vals[:, :pts_per_cycle]
+    single_ao = h5_spec_vals[:, :pts_per_cycle]
 
-    spec_descriptor = AuxillaryDescriptor([single_AO.size], get_attr(h5_spec_vals, 'labels'),
-                                          get_attr(h5_spec_vals, 'units'))
+    spec_descriptor = Dimension(get_attr(h5_spec_vals, 'labels')[0], get_attr(h5_spec_vals, 'units')[0], single_ao)
     ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_descriptor, is_spectral=True, verbose=False)
-    ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
+    ds_spec_vals.data = np.atleast_2d(single_ao)  # The data generated above varies linearly. Override.
 
-    pos_descriptor = AuxillaryDescriptor([num_cols, h5_main.shape[0]], ['X', 'Y'], ['m', 'm'],
-                                         dim_step_sizes=[scan_step_x_m, h5_pos_vals[1, 0]])
+    pos_descriptor = [Dimension('X', 'm', np.linspace(0, scan_step_x_m, num_cols)),
+                      Dimension('Y', 'm', np.linspace(0, h5_pos_vals[1, 0], h5_main.shape[0]))]
+
     ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=False)
     # TODO: Create empty datasets and then write for very large datasets
     ds_reshaped_data = VirtualDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),

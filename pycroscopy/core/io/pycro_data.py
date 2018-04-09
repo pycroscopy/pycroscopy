@@ -13,7 +13,8 @@ import numpy as np
 from .hdf_utils import check_if_main, get_attr, get_data_descriptor, get_formatted_labels, \
     get_dimensionality, get_sort_order, get_unit_values, reshape_to_n_dims
 from .dtype_utils import flatten_to_real, contains_integers
-from ..viz.jupyter_utils import simple_ndim_visualizer, VizDimension
+from .write_utils import Dimension
+from ..viz.jupyter_utils import simple_ndim_visualizer
 
 if sys.version_info.major == 3:
     unicode = str
@@ -518,10 +519,10 @@ class PycroDataset(h5py.Dataset):
 
         pos_dims = []
         for name, units in zip(pos_labels, pos_units):
-            pos_dims.append(VizDimension(name, units, values=pos_unit_values[name]))
+            pos_dims.append(Dimension(name, units, pos_unit_values[name]))
         spec_dims = []
         for name, units in zip(spec_labels, spec_units):
-            spec_dims.append(VizDimension(name, units, values=spec_unit_values[name]))
+            spec_dims.append(Dimension(name, units, spec_unit_values[name]))
 
         if verbose:
             print('Position VizDimensions:')

@@ -16,7 +16,7 @@ from ..core.processing.process import Process, parallel_compute
 from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes, reshape_to_n_dims
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.io_utils import format_time
-from ..core.io.write_utils import build_ind_val_dsets, AuxillaryDescriptor
+from ..core.io.write_utils import build_ind_val_dsets, Dimension
 from ..core.io.hdf_writer import HDFwriter
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualGroup, VirtualDataset
@@ -261,12 +261,12 @@ class Cluster(Process):
         ds_labels = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32,
                                    attrs={'quantity': 'Cluster ID', 'units': 'a. u.'})
 
-        clust_desc = AuxillaryDescriptor([num_clusters], ['Cluster'], ['a. u.'])
+        clust_desc = Dimension('Cluster', 'a. u.', np.arange(num_clusters))
         ds_centroid_inds, ds_centroid_vals = build_ind_val_dsets(clust_desc, is_spectral=False, base_name='Cluster_')
 
         ds_centroids = VirtualDataset('Mean_Response', self.__mean_resp, dtype=self.__mean_resp.dtype)
         # Main attributes will be copied from h5_main after writing
-        lab_desc = AuxillaryDescriptor([1], ['Cluster'], ['ID'])
+        lab_desc = Dimension('Cluster', 'ID', [1])
         ds_label_inds, ds_label_vals = build_ind_val_dsets(lab_desc, is_spectral=True, base_name='Label_Spectroscopic_')
 
         cluster_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
@@ -285,7 +285,7 @@ class Cluster(Process):
         Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
         '''
         if self.num_comps != self.h5_main.shape[1]:
-            comp_desc = AuxillaryDescriptor([self.num_comps], ['Spectroscopic_Component'], ['a.u.'])
+            comp_desc = Dimension('Spectroscopic_Component', 'a.u.', np.arange(self.num_comps))
             ds_centroid_indices, ds_centroid_values = build_ind_val_dsets(comp_desc, is_spectral=True,
                                                                           base_name='Mean_Response_')
 

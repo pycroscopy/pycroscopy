@@ -9,13 +9,32 @@ from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
-           'INDICES_DTYPE', 'VALUES_DTYPE', 'AuxillaryDescriptor', 'build_ind_val_dsets']
+           'INDICES_DTYPE', 'VALUES_DTYPE', 'Dimension', 'build_ind_val_dsets']
 
 if sys.version_info.major == 3:
     unicode = str
 
 INDICES_DTYPE = np.uint32
 VALUES_DTYPE = np.float32
+
+
+class Dimension(object):
+    def __init__(self, name, units, values):
+        if not isinstance(name, (str, unicode)):
+            raise TypeError('name should be a string')
+        name = name.strip()
+        if len(name) < 1:
+            raise ValueError('name should not be an empty string')
+        if not isinstance(units, (str, unicode)):
+            raise TypeError('units should be a string')
+        if not isinstance(values, (np.ndarray, list, tuple)):
+            raise TypeError('values should be array-like')
+        self.name = name
+        self.units = units
+        self.values = values
+
+    def __repr__(self):
+        return '{} ({}) : {}'.format(self.name, self.units, self.values)
 
 
 class AuxillaryDescriptor(object):
@@ -195,7 +214,43 @@ def clean_string_att(att_val):
         raise TypeError('Failed to clean: {}'.format(att_val))
 
 
-def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=None):
+def build_ind_val_matricies(unit_values, is_spectral=True):
+    """
+    Builds indices and values matrices using given unit values for each dimension.
+
+    Parameters
+    ----------
+    unit_values : list / tuple
+        Sequence of values vectors for each dimension
+    is_spectral : bool (optional), default = True
+        If true, returns matrices for spectroscopic datasets, else returns matrices for Position datasets
+
+    Returns
+    -------
+    ind_mat : 2D numpy array
+        Indices matrix
+    val_mat : 2D numpy array
+        Values matrix
+    """
+    if not isinstance(unit_values, (list, tuple)):
+        raise TypeError('unit_values should be a list or tuple')
+    if not np.all([np.array(x).ndim == 1 for x in unit_values]):
+        raise ValueError('unit_values should only contain 1D array')
+    lengths = [len(x) for x in unit_values]
+    tile_size = [np.prod(lengths[x:]) for x in range(1, len(lengths))] + [1]
+    rep_size = [1] + [np.prod(lengths[:x]) for x in range(1, len(lengths))]
+    val_mat = np.zeros(shape=(len(lengths), np.prod(lengths)))
+    ind_mat = np.zeros(shape=val_mat.shape, dtype=np.uint32)
+    for ind, ts, rs, vec in zip(range(len(lengths)), tile_size, rep_size, unit_values):
+        val_mat[ind] = np.tile(np.repeat(vec, rs), ts)
+        ind_mat[ind] = np.tile(np.repeat(np.arange(len(vec)), rs), ts)
+    if not is_spectral:
+        val_mat = val_mat.T
+        ind_mat = ind_mat.T
+    return INDICES_DTYPE(ind_mat), VALUES_DTYPE(val_mat)
+
+
+def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=None):
     """
     Creates VirtualDatasets for the position OR spectroscopic indices and values of the data.
     Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
@@ -204,8 +259,9 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
 
     Parameters
     ----------
-    descriptor : AuxillaryDescriptor
-        Object that provides all necessary instructions for constructing the indices and values datasets
+    dimensions : Dimension or array-like of Dimension objects
+        Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
+        datasets
     is_spectral : bool, optional. default = True
         Spectroscopic (True) or Position (False)
     verbose : Boolean, optional
@@ -227,8 +283,12 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
 
     Dimensions should be in the order from fastest varying to slowest.
     """
-    if not isinstance(descriptor, AuxillaryDescriptor):
-        raise TypeError('descriptor should be an AuxillaryDescriptor object')
+    if isinstance(dimensions, Dimension):
+        dimensions = [dimensions]
+    if not isinstance(dimensions, (list, np.ndarray, tuple)):
+        raise TypeError('dimensions should be array-like ')
+    if not np.all([isinstance(x, Dimension) for x in dimensions]):
+        raise TypeError('dimensions should be a sequence of Dimension objects')
 
     if base_name is not None:
         if not isinstance(base_name, (str, unicode)):
@@ -240,38 +300,22 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
         if is_spectral:
             base_name = 'Spectroscopic_'
 
-    steps = np.atleast_2d(descriptor.steps)
+    unit_values = [x.values for x in dimensions]
 
-    if verbose:
-        print('Steps')
-        print(steps.shape)
-        print(steps)
+    indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
 
-    initial_values = np.atleast_2d(descriptor.initial_vals)
-
-    if verbose:
-        print('Initial Values')
-        print(initial_values.shape)
-        print(initial_values)
-
-    # Get the indices for all dimensions
-    indices = make_indices_matrix(descriptor.sizes)
-    if not isinstance(indices, np.ndarray):
-        raise TypeError('indices should be a numpy array')
-    if verbose:
-        print('Indices')
-        print(indices.shape)
-        print(indices)
-
-    # Convert the indices to values
-    values = initial_values + VALUES_DTYPE(indices)*steps
-
-    if is_spectral:
+    if not is_spectral:
         indices = indices.transpose()
         values = values.transpose()
 
+    if verbose:
+        print('Indices:')
+        print(indices)
+        print('Values:')
+        print(values)
+
     # Create the slices that will define the labels
-    region_slices = get_aux_dset_slicing(descriptor.names, is_spectroscopic=is_spectral)
+    region_slices = get_aux_dset_slicing([x.name for x in dimensions], is_spectroscopic=is_spectral)
 
     # Create the VirtualDataset for both Indices and Values
     ds_indices = VirtualDataset(base_name + 'Indices', indices, dtype=INDICES_DTYPE)
@@ -279,6 +323,67 @@ def build_ind_val_dsets(descriptor, is_spectral=True, verbose=False, base_name=N
 
     for dset in [ds_indices, ds_values]:
         dset.attrs['labels'] = region_slices
-        dset.attrs['units'] = descriptor.units
+        dset.attrs['units'] = [x.units for x in dimensions]
 
     return ds_indices, ds_values
+
+
+def create_spec_inds_from_vals(ds_spec_val_mat):
+    """
+    Create new Spectroscopic Indices table from the changes in the
+    Spectroscopic Values
+
+    Parameters
+    ----------
+    ds_spec_val_mat : array-like,
+        Holds the spectroscopic values to be indexed
+
+    Returns
+    -------
+    ds_spec_inds_mat : numpy array of uints the same shape as ds_spec_val_mat
+        Indices corresponding to the values in ds_spec_val_mat
+
+    """
+    ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype=np.int32)
+
+    """
+    Find how quickly the spectroscopic values are changing in each row 
+    and the order of row from fastest changing to slowest.
+    """
+    change_count = [len(np.where([row[i] != row[i - 1] for i in range(len(row))])[0]) for row in ds_spec_val_mat]
+    change_sort = np.argsort(change_count)[::-1]
+
+    """
+    Determine everywhere the spectroscopic values change and build 
+    index table based on those changed
+    """
+    indices = np.zeros(ds_spec_val_mat.shape[0])
+    for jcol in range(1, ds_spec_val_mat.shape[1]):
+        this_col = ds_spec_val_mat[change_sort, jcol]
+        last_col = ds_spec_val_mat[change_sort, jcol - 1]
+
+        """
+        Check if current column values are different than those 
+        in last column.
+        """
+        changed = np.where(this_col != last_col)[0]
+
+        """
+        If only one row changed, increment the index for that 
+        column
+        If more than one row has changed, increment the index for 
+        the last row that changed and set all others to zero
+        """
+        if len(changed) == 1:
+            indices[changed] += 1
+        elif len(changed > 1):
+            for change in changed[:-1]:
+                indices[change] = 0
+            indices[changed[-1]] += 1
+
+        """
+        Store the indices for the current column in the dataset
+        """
+        ds_spec_inds_mat[change_sort, jcol] = indices
+
+    return ds_spec_inds_mat
