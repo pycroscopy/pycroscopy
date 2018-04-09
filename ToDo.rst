@@ -73,6 +73,11 @@ v 1.0 goals
 16. Add ability to export data as txt probably via numpy.savetext
 17. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
 18. Address pending TODOs
+19. Address edge cases:
+
+  * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
+  * Process on multiple datasets - G-mode KPFM
+  * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
 
 v 1.1 goals
 -----------
