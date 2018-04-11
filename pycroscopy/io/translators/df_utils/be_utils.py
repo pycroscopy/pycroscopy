@@ -18,7 +18,7 @@ import xlrd as xlreader
 from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
 from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
 from ...io_hdf5 import ioHDF5
-from ...io_utils import getAvailableMem, recommendCores
+from ...io_utils import getAvailableMem, recommendCores, in_ipynb
 from ...microdata import MicroDataset, MicroDataGroup
 from ....analysis.optimize import Optimize
 from ....processing.proc_utils import buildHistogram
@@ -486,23 +486,24 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
 
         if save_plots or show_plots:
             fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
-            path_1d = None
-            path_2d = None
-            path_hist = None
+            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
+            fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
+
             if save_plots:
                 path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
                 path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
-            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
-            fig_1d.savefig(path_1d, format='png', dpi=300)
-            fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
-            fig_2d.savefig(path_2d, format='png', dpi=300)
+                fig_1d.savefig(path_1d, format='png', dpi=300)
+                fig_2d.savefig(path_2d, format='png', dpi=300)
+
             if do_histogram:
                 plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 
             if show_plots:
                 plt.show()
-            plt.close('all')
+            else:
+                plt.close('all')
+                
             # print('Generated spatially average data for group: %s' %(col_name))
     print('Completed generating spatially averaged plot groups')
 
