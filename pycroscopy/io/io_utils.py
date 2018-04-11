@@ -6,6 +6,7 @@ Created on Tue Nov  3 21:14:25 2015
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import sys
 import os
 from multiprocessing import cpu_count
 from time import strftime
@@ -19,6 +20,12 @@ __all__ = ['getAvailableMem', 'getTimeStamp', 'transformToTargetType', 'transfor
            'complex_to_float', 'compound_to_scalar', 'realToComplex', 'realToCompound', 'check_dtype',
            'recommendCores', 'uiGetFile']
 
+
+def in_ipynb():
+    if 'ipykernel' in sys.modules or 'IPython' in sys.modules:
+        return True
+    else:
+        return False
 
 def check_ssh():
     return 'SSH_CLIENT' in os.environ or 'SSH_TTY' in os.environ
