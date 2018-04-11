@@ -1163,10 +1163,13 @@ class TestHDFUtils(unittest.TestCase):
     def test_write_ind_val_dsets_legal_bare_minimum_pos(self):
         num_cols = 3
         num_rows = 2
+        sizes = [num_cols, num_rows]
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+        descriptor = []
+        for length, name, units in zip(sizes, dim_names, dim_units):
+            descriptor.append(write_utils.Dimension(name, units, np.arange(length)))
 
         pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols))).T
@@ -1183,10 +1186,13 @@ class TestHDFUtils(unittest.TestCase):
     def test_write_ind_val_dsets_legal_bare_minimum_spec(self):
         num_cols = 3
         num_rows = 2
+        sizes = [num_cols, num_rows]
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+        descriptor = []
+        for length, name, units in zip(sizes, dim_names, dim_units):
+            descriptor.append(write_utils.Dimension(name, units, np.arange(length)))
 
         spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols)))
@@ -1210,9 +1216,10 @@ class TestHDFUtils(unittest.TestCase):
         col_initial = 1
         row_initial = 0.2
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units,
-                                                     dim_step_sizes=[col_step, row_step],
-                                                     dim_initial_vals=[col_initial, row_initial])
+        descriptor = []
+        for length, name, units, step, initial in zip([num_cols, num_rows], dim_names, dim_units,
+                                                      [col_step, row_step], [col_initial, row_initial]):
+            descriptor.append(write_utils.Dimension(name, units, initial + step * np.arange(length)))
 
         new_base_name = 'Overriden'
         spec_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),
@@ -1231,12 +1238,13 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_write_ind_val_dsets_illegal(self):
-        num_cols = 3
-        num_rows = 2
+        sizes = [3, 2]
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+        descriptor = []
+        for length, name, units in zip(sizes, dim_names, dim_units):
+            descriptor.append(write_utils.Dimension(name, units, np.arange(length)))
 
         file_path = 'test_write_ind_val_dsets.h5'
         self.__delete_existing_file(file_path)
@@ -1355,14 +1363,19 @@ class TestHDFUtils(unittest.TestCase):
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
         pos_units = ['nm', 'um']
-        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+
+        pos_dims = []
+        for length, name, units in zip(pos_sizes, pos_names, pos_units):
+            pos_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         pos_data = np.vstack((np.tile(np.arange(5), 3),
                               np.repeat(np.arange(3), 5))).T
 
         spec_sizes = [7, 2]
         spec_names = ['Bias', 'Cycle']
         spec_units = ['V', '']
-        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_dims = []
+        for length, name, units in zip(spec_sizes, spec_names, spec_units):
+            spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         spec_data = np.vstack((np.tile(np.arange(7), 2),
                               np.repeat(np.arange(2), 7)))
 
@@ -1392,14 +1405,18 @@ class TestHDFUtils(unittest.TestCase):
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
         pos_units = ['nm', 'um']
-        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+        pos_dims = []
+        for length, name, units in zip(pos_sizes, pos_names, pos_units):
+            pos_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         pos_data = np.vstack((np.tile(np.arange(5), 3),
                               np.repeat(np.arange(3), 5))).T
 
         spec_sizes = [7, 2]
         spec_names = ['Bias', 'Cycle']
         spec_units = ['V', '']
-        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_dims = []
+        for length, name, units in zip(spec_sizes, spec_names, spec_units):
+            spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         spec_data = np.vstack((np.tile(np.arange(7), 2),
                                np.repeat(np.arange(2), 7)))
 
@@ -1428,14 +1445,18 @@ class TestHDFUtils(unittest.TestCase):
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
         pos_units = ['nm', 'um']
-        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+        pos_dims = []
+        for length, name, units in zip(pos_sizes, pos_names, pos_units):
+            pos_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         pos_data = np.vstack((np.tile(np.arange(5), 3),
                               np.repeat(np.arange(3), 5))).T
 
         spec_sizes = [7, 2]
         spec_names = ['Bias', 'Cycle']
         spec_units = ['V', '']
-        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_dims = []
+        for length, name, units in zip(spec_sizes, spec_names, spec_units):
+            spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
         spec_data = np.vstack((np.tile(np.arange(7), 2),
                                np.repeat(np.arange(2), 7)))
 
@@ -1466,12 +1487,16 @@ class TestHDFUtils(unittest.TestCase):
         pos_sizes = [5, 15]  # too many steps in the Y direction
         pos_names = ['X', 'Y']
         pos_units = ['nm', 'um']
-        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+        pos_dims = []
+        for length, name, units in zip(pos_sizes, pos_names, pos_units):
+            pos_dims.append(write_utils.Dimension(name, units, np.arange(length)))
 
         spec_sizes = [7, 2]
         spec_names = ['Bias', 'Cycle']
         spec_units = ['V', '']
-        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_dims = []
+        for length, name, units in zip(spec_sizes, spec_names, spec_units):
+            spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
 
         with h5py.File(file_path) as h5_f:
             with self.assertRaises(AssertionError):

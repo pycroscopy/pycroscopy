@@ -111,69 +111,39 @@ class TestWriteUtils(unittest.TestCase):
         for exp, act in zip(expected, returned):
             self.assertEqual(exp, act)
 
-    def test_aux_dset_descriptor_minimum(self):
-        sizes = [3, 2]
-        dim_names = ['X', 'Y']
-        dim_units = ['nm', 'um']
-        steps = [1, 1]
-        inits = [0, 0]
+    def test_dimension_array(self):
+        name = 'Bias'
+        units = 'V'
+        values = np.random.rand(5)
 
-        descriptor = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units)
-        for expected, actual in zip([sizes, dim_names, dim_units, steps, inits],
-                                    [descriptor.sizes, descriptor.names, descriptor.units,
-                                     descriptor.steps, descriptor.initial_vals]):
+        descriptor = write_utils.Dimension(name, units, values)
+        for expected, actual in zip([name, units, values],
+                                    [descriptor.name, descriptor.units, descriptor.values]):
             self.assertTrue(np.all([x == y for x, y in zip(expected, actual)]))
 
-    def test_aux_dset_descriptor_full_legal(self):
-        sizes = [3, 2]
-        dim_names = ['X', 'Y']
-        dim_units = ['nm', 'um']
-        steps = [0.25, -0.1]
-        inits = [1500, 1E-6]
+    def test_dimension_length(self):
+        name = 'Bias'
+        units = 'V'
+        values = np.random.rand(5)
 
-        descriptor = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units, dim_step_sizes=steps,
-                                                     dim_initial_vals=inits)
-        for expected, actual in zip([sizes, dim_names, dim_units, steps, inits],
-                                    [descriptor.sizes, descriptor.names, descriptor.units,
-                                     descriptor.steps, descriptor.initial_vals]):
+        descriptor = write_utils.Dimension(name, units, len(values))
+        for expected, actual in zip([name, units, values],
+                                    [descriptor.name, descriptor.units, descriptor.values]):
             self.assertTrue(np.all([x == y for x, y in zip(expected, actual)]))
 
     def test_aux_dset_descriptor_illegal(self):
-        sizes = [3, 2]
-        dim_names = ['X', 'Y']
-        dim_units = ['nm', 'um']
-        steps = [0.25, -0.1]
-        inits = [1500, 1E-6]
-        
-        with self.assertRaises(ValueError):
-            # too few steps
-            _ = write_utils.AuxillaryDescriptor(sizes, dim_names, dim_units, dim_step_sizes=[5], 
-                                                dim_initial_vals=inits)
-
-        with self.assertRaises(ValueError):
-            # too few dimension sizes
-            _ = write_utils.AuxillaryDescriptor([5], dim_names, dim_units,
-                                                dim_step_sizes=steps, dim_initial_vals=inits)
-
-        with self.assertRaises(ValueError):
-            # too few names
-            _ = write_utils.AuxillaryDescriptor(sizes, [dim_names[0]], dim_units,
-                                                dim_step_sizes=steps, dim_initial_vals=inits)
-
-        with self.assertRaises(ValueError):
-            # too few names and units
-            _ = write_utils.AuxillaryDescriptor(sizes, [dim_names[0]], [dim_units[1]],
-                                                dim_step_sizes=steps, dim_initial_vals=inits)
 
         with self.assertRaises(TypeError):
-            # Swapped names (strs) with sizes (uints)
-            _ = write_utils.AuxillaryDescriptor(dim_names, sizes, dim_units,
-                                                dim_step_sizes=steps, dim_initial_vals=inits)
+            _ = write_utils.Dimension('Name', 14, np.arange(4))
 
         with self.assertRaises(TypeError):
-            # Swapped names (strs) with sizes (uints)
-            _ = write_utils.AuxillaryDescriptor(dim_names, sizes, steps,
-                                                dim_step_sizes=dim_units, dim_initial_vals=dim_names)
+            _ = write_utils.Dimension(14, 'nm', np.arange(4))
+
+        with self.assertRaises(TypeError):
+            _ = write_utils.Dimension('Name', 'unit', 0)
+
+        with self.assertRaises(TypeError):
+            _ = write_utils.Dimension('Name', 'unit', 'invalid')
 
     def __validate_aux_virtual_dset_pair(self, ds_inds, ds_vals, dim_names, dim_units, inds_matrix,
                                          vals_matrix=None, base_name=None, is_spectral=True):
@@ -212,10 +182,13 @@ class TestWriteUtils(unittest.TestCase):
     def test_build_ind_val_dsets_legal_bare_minimum_pos(self):
         num_cols = 3
         num_rows = 2
+        sizes = [num_cols, num_rows]
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+        descriptor = []
+        for length, name, units in zip(sizes, dim_names, dim_units):
+            descriptor.append(write_utils.Dimension(name, units, np.arange(length)))
 
         pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                               np.repeat(np.arange(num_rows), num_cols))).T
@@ -227,10 +200,13 @@ class TestWriteUtils(unittest.TestCase):
     def test_build_ind_val_dsets_legal_bare_minimum_spec(self):
         num_cols = 3
         num_rows = 2
+        sizes = [num_cols, num_rows]
         dim_names = ['X', 'Y']
         dim_units = ['nm', 'um']
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units)
+        descriptor = []
+        for length, name, units in zip(sizes, dim_names, dim_units):
+            descriptor.append(write_utils.Dimension(name, units, np.arange(length)))
 
         spec_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                                np.repeat(np.arange(num_rows), num_cols)))
@@ -249,9 +225,10 @@ class TestWriteUtils(unittest.TestCase):
         col_initial = 1
         row_initial = 0.2
 
-        descriptor = write_utils.AuxillaryDescriptor([num_cols, num_rows], dim_names, dim_units,
-                                                     dim_step_sizes=[col_step, row_step],
-                                                     dim_initial_vals=[col_initial, row_initial])
+        descriptor = []
+        for length, name, units, step, initial in zip([num_cols, num_rows], dim_names, dim_units,
+                                                      [col_step, row_step], [col_initial, row_initial]):
+            descriptor.append(write_utils.Dimension(name, units, initial + step * np.arange(length)))
 
         new_base_name = 'Overriden'
         spec_inds = np.vstack((np.tile(np.arange(num_cols), num_rows),

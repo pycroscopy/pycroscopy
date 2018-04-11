@@ -75,14 +75,19 @@ class TestNumpyTranslator(unittest.TestCase):
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
         pos_units = ['nm', 'um']
-        pos_dims = write_utils.AuxillaryDescriptor(pos_sizes, pos_names, pos_units)
+        pos_dims = []
+        for name, unit, length in zip(pos_names, pos_units, pos_sizes):
+            pos_dims.append(write_utils.Dimension(name, unit, np.arange(length)))
         pos_data = np.vstack((np.tile(np.arange(5), 3),
                               np.repeat(np.arange(3), 5))).T
 
         spec_sizes = [7, 2]
         spec_names = ['Bias', 'Cycle']
         spec_units = ['V', '']
-        spec_dims = write_utils.AuxillaryDescriptor(spec_sizes, spec_names, spec_units)
+        spec_dims = []
+        for name, unit, length in zip(spec_names, spec_units, spec_sizes):
+            spec_dims.append(write_utils.Dimension(name, unit, np.arange(length)))
+
         spec_data = np.vstack((np.tile(np.arange(7), 2),
                                np.repeat(np.arange(2), 7)))
 
