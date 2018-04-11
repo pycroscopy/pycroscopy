@@ -3,12 +3,12 @@
 
 import os
 import numpy as np
-from ..io_hdf5 import ioHDF5
-from ..hdf_utils import getH5DsetRefs, link_as_main
-from ..microdata import MicroDataset, MicroDataGroup
-from .translator import Translator
+from ...core.io.hdf_writer import HDFwriter
+from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
+from ...core.io.virtual_data import VirtualDataset, VirtualGroup
+from ...core.io.translator import Translator
+from ...core.io.write_utils import build_ind_val_dsets, get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
-from .utils import get_position_slicing, build_ind_val_dsets
 
 
 class NanonisTranslator(Translator):
@@ -90,43 +90,43 @@ class NanonisTranslator(Translator):
         ds_spec_inds, ds_spec_vals = build_ind_val_dsets([dc_offset.size], labels=[spec_label], units=[spec_units])
         ds_spec_vals.data[:] = dc_offset
 
-        ds_pos_inds = MicroDataset('Position_Indices', self.data_dict['Position Indices'])
-        ds_pos_vals = MicroDataset('Position_Values', self.data_dict['Position Values'])
+        ds_pos_inds = VirtualDataset('Position_Indices', self.data_dict['Position Indices'])
+        ds_pos_vals = VirtualDataset('Position_Values', self.data_dict['Position Values'])
 
         ds_pos_inds.attrs['labels'] = self.data_dict['Position labels']
         ds_pos_inds.attrs['units'] = self.data_dict['Position units']
         ds_pos_vals.attrs['labels'] = self.data_dict['Position labels']
         ds_pos_vals.attrs['units'] = self.data_dict['Position units']
 
-        ds_meas_grp = MicroDataGroup('Measurement_')
+        ds_meas_grp = VirtualGroup('Measurement_')
         ds_meas_grp.addChildren([ds_spec_vals, ds_spec_inds, ds_pos_inds, ds_pos_vals])
 
         if os.path.exists(self.h5_path):
             os.remove(self.h5_path)
-        hdf = ioHDF5(self.h5_path)
+        hdf = HDFwriter(self.h5_path)
         h5_refs = hdf.writeData(ds_meas_grp, print_log=True)
 
         aux_ds_names = ['Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
 
-        h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals = getH5DsetRefs(aux_ds_names, h5_refs)
+        h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals = get_h5_obj_refs(aux_ds_names, h5_refs)
 
         for data_channel in data_channels:
             raw_data = self.data_dict[data_channel].reshape([num_points, -1]) * 1E9  # Convert to nA
 
-            ds_raw = MicroDataset('Raw_Data', raw_data)
+            ds_raw = VirtualDataset('Raw_Data', raw_data)
             data_label, data_unit = data_channel.rsplit(maxsplit=1)
             data_unit = data_unit.strip('()')
             ds_raw.attrs['units'] = data_unit
             ds_raw.attrs['quantity'] = data_label
 
-            ds_chan_grp = MicroDataGroup('Channel_', parent=ds_meas_grp.name)
+            ds_chan_grp = VirtualGroup('Channel_', parent=ds_meas_grp.name)
 
             ds_chan_grp.addChildren([ds_raw])
             ds_meas_grp.addChildren([ds_chan_grp])
 
             h5_refs = hdf.writeData(ds_chan_grp, print_log=verbose)
-            h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
             link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
 
             hdf.file.flush()
@@ -173,7 +173,7 @@ class NanonisTranslator(Translator):
         pos_dims = np.hstack([pos_dims, z_data])
         pos_dims *= 1E9
         pos_inds = np.hstack([pos_inds, np.arange(z_data.size).reshape(z_data.shape)])
-        pos_labs = get_position_slicing(['X', 'Y', 'Z'])
+        pos_labs = get_aux_dset_slicing(['X', 'Y', 'Z'], is_spectroscopic=False)
         pos_units = ['nm', 'nm', 'nm']
 
         self.parm_dict = parm_dict
