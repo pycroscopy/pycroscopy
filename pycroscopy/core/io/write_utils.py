@@ -20,6 +20,18 @@ VALUES_DTYPE = np.float32
 
 class Dimension(object):
     def __init__(self, name, units, values):
+        """
+        Simple object that describes a dimension in a dataset by its name, units, and values
+        Parameters
+        ----------
+        name : str / unicode
+            Name of the dimension. For example 'Bias'
+        units : str / unicode
+            Units for this dimension. For example: 'V'
+        values : array-like, or int
+            Values over which this dimension was varied. A linearly increasing set of values will be generated if an
+            integer is provided instead of an array.
+        """
         if not isinstance(name, (str, unicode)):
             raise TypeError('name should be a string')
         name = name.strip()
@@ -27,6 +39,10 @@ class Dimension(object):
             raise ValueError('name should not be an empty string')
         if not isinstance(units, (str, unicode)):
             raise TypeError('units should be a string')
+        if isinstance(values, int):
+            if values < 1:
+                raise ValueError('values should at least be specified as a positive integer')
+            values = np.arange(values)
         if not isinstance(values, (np.ndarray, list, tuple)):
             raise TypeError('values should be array-like')
         self.name = name
@@ -35,64 +51,6 @@ class Dimension(object):
 
     def __repr__(self):
         return '{} ({}) : {}'.format(self.name, self.units, self.values)
-
-
-class AuxillaryDescriptor(object):
-    def __init__(self, dim_sizes, dim_names, dim_units, dim_step_sizes=None, dim_initial_vals=None):
-        """
-        Object that provides the instructions necessary for building ancillary datasets
-
-        Parameters
-        ----------
-        dim_sizes : list / tuple of of unsigned ints.
-            Sizes of all dimensions arranged from fastest to slowest.
-            For example - [5, 3], if the data had 5 units along X (changing faster) and 3 along Y (changing slower)
-        dim_names : list / tuple of str / unicode
-            Names corresponding to each dimension in 'sizes'. For example - ['X', 'Y']
-        dim_units : list / tuple of str / unicode
-            Units corresponding to each dimension in 'sizes'. For example - ['nm', 'um']
-        dim_step_sizes : list / tuple of numbers, optional
-            step-size in each dimension.  One if not specified.
-        dim_initial_vals : list / tuple of numbers, optional
-            Floating point for the zeroth value in each dimension.  Zero if not specified.
-
-        """
-        lengths = []
-        for val, var_name, elem_type, required in zip([dim_sizes, dim_names, dim_units, dim_step_sizes,
-                                                       dim_initial_vals],
-                                                      ['dim_sizes', 'dim_names', 'dim_units', 'dim_step_sizes',
-                                                       'dim_initial_vals'],
-                                                      [0, 2, 2, 1, 1],
-                                                      [True, True, True, False, False]):
-            if not required and val is None:
-                continue
-            if not isinstance(val, (list, tuple, np.ndarray)):
-                raise TypeError(var_name + ' should be a list / tuple / numpy array')
-            lengths.append(len(val))
-            if elem_type == 2:
-                if not np.all([isinstance(_, (str, unicode)) for _ in val]):
-                    raise TypeError(var_name + ' should be a iterable containing strings')
-            elif elem_type == 0:
-                if not contains_integers(val, min_val=1 + len(val) > 1):
-                    raise TypeError(var_name + ' should be a iterable containing integers > 1')
-            else:
-                if not np.all([isinstance(_, numbers.Number) for _ in val]):
-                    raise TypeError(var_name + ' should be a iterable containing Numbers')
-        num_elems = np.unique(lengths)
-        if len(num_elems) != 1:
-            raise ValueError('All the arguments should have the same number of elements')
-        if num_elems[0] == 0:
-            raise ValueError('Argument should not be empty')
-
-        self.sizes = dim_sizes
-        self.names = dim_names
-        self.units = dim_units
-        if dim_step_sizes is None:
-            dim_step_sizes = np.ones_like(dim_sizes)
-        self.steps = dim_step_sizes
-        if dim_initial_vals is None:
-            dim_initial_vals = np.zeros_like(dim_sizes)
-        self.initial_vals = dim_initial_vals
 
 
 def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
@@ -117,7 +75,7 @@ def get_aux_dset_slicing(dim_names, last_ind=None, is_spectroscopic=False):
         each position axis.
     """
     if not isinstance(dim_names, Iterable):
-        raise TypeError('dim_names should be Iterables')
+        raise TypeError('dim_names should be and Iterable')
     if not len(dim_names) > 0:
         raise ValueError('dim_names should not be empty')
     if not np.all([isinstance(x, (str, unicode)) for x in dim_names]):
