@@ -1358,7 +1358,7 @@ class TestHDFUtils(unittest.TestCase):
         main_data = np.random.rand(15, 14)
         main_data_name = 'Test_Main'
         quantity = 'Current'
-        units = 'nA'
+        dset_units = 'nA'
 
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
@@ -1380,8 +1380,8 @@ class TestHDFUtils(unittest.TestCase):
                               np.repeat(np.arange(2), 7)))
 
         with h5py.File(file_path) as h5_f:
-            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
-                                                      main_dset_attrs=None)
+            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, pos_dims,
+                                                      spec_dims, main_dset_attrs=None)
             self.assertIsInstance(pycro_main, PycroDataset)
             self.assertEqual(pycro_main.name.split('/')[-1], main_data_name)
             self.assertEqual(pycro_main.parent, h5_f)
@@ -1400,7 +1400,7 @@ class TestHDFUtils(unittest.TestCase):
         main_data = np.random.rand(15, 14)
         main_data_name = 'Test_Main'
         quantity = 'Current'
-        units = 'nA'
+        dset_units = 'nA'
 
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
@@ -1425,7 +1425,7 @@ class TestHDFUtils(unittest.TestCase):
             self.__validate_aux_dset_pair(h5_f, h5_spec_inds, h5_spec_vals, spec_names, spec_units, spec_data,
                                           is_spectral=True)
 
-            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, pos_dims,
+            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, pos_dims,
                                                       None, h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
                                                       main_dset_attrs=None)
 
@@ -1440,7 +1440,7 @@ class TestHDFUtils(unittest.TestCase):
         main_data = np.random.rand(15, 14)
         main_data_name = 'Test_Main'
         quantity = 'Current'
-        units = 'nA'
+        dset_units = 'nA'
 
         pos_sizes = [5, 3]
         pos_names = ['X', 'Y']
@@ -1464,7 +1464,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_spec_inds, h5_spec_vals = hdf_utils.write_ind_val_dsets(h5_f, spec_dims, is_spectral=True)
             h5_pos_inds, h5_pos_vals = hdf_utils.write_ind_val_dsets(h5_f, pos_dims, is_spectral=False)
 
-            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, None,
+            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, None,
                                                       None, h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
                                                       h5_pos_vals=h5_pos_vals, h5_pos_inds=h5_pos_inds,
                                                       main_dset_attrs=None)
@@ -1482,7 +1482,7 @@ class TestHDFUtils(unittest.TestCase):
         main_data = np.random.rand(15, 14)
         main_data_name = 'Test_Main'
         quantity = 'Current'
-        units = 'nA'
+        dset_units = 'nA'
 
         pos_sizes = [5, 15]  # too many steps in the Y direction
         pos_names = ['X', 'Y']
@@ -1499,8 +1499,9 @@ class TestHDFUtils(unittest.TestCase):
             spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
 
         with h5py.File(file_path) as h5_f:
-            with self.assertRaises(AssertionError):
-                _ = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, units, pos_dims, spec_dims)
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, pos_dims,
+                                                 spec_dims)
         os.remove(file_path)
 
     def test_clean_reg_refs_1d(self):
