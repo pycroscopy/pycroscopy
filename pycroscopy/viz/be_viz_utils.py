@@ -61,7 +61,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
-    plt_path = None
+        return fig
 
     print('Creating plots of SHO Results from {}.'.format(h5_main.name))
 
@@ -96,9 +96,6 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     try:
         h5_spec_vals = h5_file[get_attr(h5_main, 'Spectroscopic_Values')]
-    # except KeyError:
-    #     warn('No Spectrosocpic Datasets found as attribute of {}'.format(h5_main.name))
-    #     raise
     except Exception:
         raise
 
@@ -109,6 +106,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     phase_mat = h5_main['Phase [rad]']
     rsqr_mat = h5_main['R2 Criterion']
 
+    fig_list = list()
     if isBEPS:
         meas_type = chan_grp.parent.attrs['VS_mode']
         # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
@@ -118,7 +116,6 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
             return
 
         # Plot amplitude and phase maps at one or more UDVS steps
-
         if meas_type == 'AC modulation mode with time reversal':
             center = int(h5_spec_vals.shape[1] * 0.5)
             ac_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['AC_Amplitude']][:, 0:center])
@@ -127,8 +124,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
             rev_resp = np.squeeze(amp_mat[:, slice(center, None)])
 
             for win_title, resp_mat in zip(['Forward', 'Reverse'], [forw_resp, rev_resp]):
-                __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude', save_plots,
-                                  folder_path, basename, num_rows, num_cols)
+                fig_list.append(__plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, 'AC Amplitude', 'Amplitude',
+                                                  save_plots, folder_path, basename, num_rows, num_cols))
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
@@ -142,11 +139,13 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
                 out_amp = np.squeeze(amp_mat[:, slice(1, None, 2)])
 
                 for win_title, resp_mat in zip(['In_Field', 'Out_of_Field'], [in_phase * in_amp, out_phase * out_amp]):
-                    __plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias', 'Piezoresponse (a.u.)',
-                                      save_plots, folder_path, basename, num_rows, num_cols)
+                    fig_list.append(__plot_loops_maps(dc_vec, resp_mat, grp_name, win_title, 'DC Bias',
+                                                      'Piezoresponse (a.u.)', save_plots, folder_path,
+                                                      basename, num_rows, num_cols))
             else:
-                __plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias', 'Piezoresponse (a.u.)',
-                                  save_plots, folder_path, basename, num_rows, num_cols)
+                fig_list.append(__plot_loops_maps(dc_vec, phase_mat * amp_mat, grp_name, '', 'DC Bias',
+                                                  'Piezoresponse (a.u.)', save_plots, folder_path, basename,
+                                                  num_rows, num_cols))
 
     else:  # BE-Line can only visualize the amplitude and phase maps:
         amp_mat = amp_mat.reshape(num_rows, num_cols)
@@ -160,6 +159,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
                                        title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
                                               'R^2 Criterion'], cmap=cmap)
 
+        fig_list.append(fig_ms)
         if save_plots:
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
             fig_ms.savefig(plt_path, format='png', dpi=300)
@@ -167,7 +167,7 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     if show_plots:
         plt.show()
 
-    plt.close('all')
+    return fig_list
 
 
 def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
@@ -375,8 +375,12 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     cid = img_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
-    display(save_fig_filebox_button(fig, h5_sho_dset.file.filename))
+    fig_filename, _ = os.path.splitext(h5_sho_dset.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_sho_plots, sho_quantity=sho_quantity_picker, step_ind=bias_step_picker)
+
+    return fig
+
 
 def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     """
@@ -468,7 +472,8 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         fig.tight_layout()
 
         plt.show()
-        display(save_fig_filebox_button(fig, h5_main.file.filename))
+        fig_filename, _ = os.path.splitext(h5_main.file.filename)
+        display(save_fig_filebox_button(fig, fig_filename+'.png'))
 
         def index_unpacker(step):
             spatial_map = np.abs(np.reshape(h5_main[:, step], pos_dims[::-1]))
@@ -565,6 +570,9 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
         widgets.interact(position_unpacker, **pos_dict)
         display(fig)
+
+    return fig
+
 
 def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit, step_chan='DC_Offset', cmap=None):
     """
@@ -679,8 +687,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     fig.tight_layout()
 
     plt.show()
-
-    display(save_fig_filebox_button(fig, h5_projected_loops.file.filename))
+    fig_filename, _ = os.path.splitext(h5_projected_loops.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
 
     loop_slider = widgets.IntSlider(min=0, max=bias_vec.shape[1]-1, description='Loop Number')
 
@@ -744,6 +752,8 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     widgets.interact(update_loop_plots, loop_field=list(fit_nd.dtype.names), loop_ind=loop_slider)
 
+    return fig
+
 
 def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     """
@@ -802,9 +812,11 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
         fig.canvas.draw()
 
     plt.show()
-
-    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_parameters.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(update_loop_maps, parameter_name=list(parameter_names))
+
+    return fig
 
 
 def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
@@ -1037,8 +1049,8 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
         plt_sho_fit_amp.set_ydata(np.amp(current_sho_fit))
         plt_sho_fit_phase.set_ydata(np.angle(current_sho_fit))
 
-
-    display(save_fig_filebox_button(fig, h5_loop_parameters.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_parameters.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     display(fig)
     x_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[0]), step=pos_dims[0]/100, value=selected_loop_pos[0])
     y_pos_widget = widgets.FloatSlider(min=0.0, max=float(pos_dims[1]), step=pos_dims[1] / 100, value=selected_loop_pos[1])
@@ -1056,6 +1068,8 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
                      selected_loop_cycle=loop_cycle_widget,
                      x_pos=x_pos_widget, y_pos=y_pos_widget,
                      selected_step=spec_step_widget)
+
+    return fig
 
 
 def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
@@ -1418,10 +1432,13 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
     cid = loop_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
 
-    display(save_fig_filebox_button(fig, h5_loop_projections.file.filename))
+    fig_filename, _ = os.path.splitext(h5_loop_projections.file.filename)
+    display(save_fig_filebox_button(fig, fig_filename + '.png'))
     widgets.interact(_update_loop_parm, selected_loop_parm=loop_parm_widget)
     widgets.interact(_update_loop_cycle, selected_loop_cycle=loop_cycle_widget)
     widgets.interact(_update_spec_step, selected_step=spec_step_widget)
+
+    return fig
 
 
 def _add_loop_parameters(axes, switching_coef_vec):

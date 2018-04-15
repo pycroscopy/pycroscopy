@@ -53,7 +53,7 @@ class NDataTranslator(Translator):
         h5_path : str
             Absolute path to where the HDF5 file should be located
         image_path : str
-            Absolute path to folder holding the image files
+            Absolute path to folder holding the image files or the path to a specific file
         bin_factor : array_like of uint, optional
             Downsampling factor for each dimension.  Default is None.
         bin_func : callable, optional
@@ -104,11 +104,6 @@ class NDataTranslator(Translator):
         '''
         file_list = self._parse_file_path(image_path)
 
-        '''
-        Get zipfile handles for all the ndata1 files that were found in the image_path
-        '''
-        ziplist = [zipfile.ZipFile(zip_path, 'r') for zip_path in file_list]
-
         image_parm_list = self._getimageparms(file_list)
 
         '''
@@ -129,7 +124,7 @@ class NDataTranslator(Translator):
 
         h5_channels = self._setupH5(image_parm_list)
 
-        self._read_data(ziplist, h5_channels)
+        self._read_data(file_list, h5_channels)
 
         self.hdf.close()
 
@@ -204,7 +199,7 @@ class NDataTranslator(Translator):
 
         self.root_image_list.append(h5_image)
 
-    def _read_data(self, zip_list, h5_channels):
+    def _read_data(self, file_list, h5_channels):
         """
         Iterates over the images in `file_list`, reading each image and downsampling if
         reqeusted, and writes the flattened image to file.  Also builds the Mean_Ronchigram
@@ -212,7 +207,7 @@ class NDataTranslator(Translator):
 
         Parameters
         ----------
-        zip_list : list of str
+        file_list : list of str
             List of all files in `image_path` that will be read
         h5_main : h5py.Dataset
             Dataset which will hold the Ronchigrams
@@ -232,13 +227,24 @@ class NDataTranslator(Translator):
         For each file, we must read the data then create the neccessary datasets, add them to the channel, and
         write it all to file
         '''
-        for ifile, (this_file, this_channel) in enumerate(zip(zip_list, h5_channels)):
-            '''
-            Extract the data file from the zip archive and read it into an array
-            '''
-            tmp_path = this_file.extract('data.npy')
-            this_data = np.load(tmp_path)
-            os.remove(tmp_path)
+
+        '''
+        Get zipfile handles for all the ndata1 files that were found in the image_path
+        '''
+
+        for ifile, (this_file, this_channel) in enumerate(zip(file_list, h5_channels)):
+            _, ext = os.path.splitext(this_file)
+            if ext == '.ndata1':
+                '''
+                Extract the data file from the zip archive and read it into an array
+                '''
+                this_zip = zipfile.ZipFile(this_file, 'r')
+                tmp_path = this_zip.extract('data.npy')
+                this_data = np.load(tmp_path)
+                os.remove(tmp_path)
+            elif ext == '.npy':
+                # Read data directly from npy file
+                this_data = np.load(this_file)
 
             '''
             Find the shape of the data, then calculate the final dimensions based on the crop and
@@ -391,7 +397,7 @@ class NDataTranslator(Translator):
         return ronc_mat3_mean.reshape(-1)
 
     @staticmethod
-    def _parse_file_path(image_folder):
+    def _parse_file_path(image_path):
         """
         Returns a list of all files in the directory given by path
 
@@ -405,15 +411,23 @@ class NDataTranslator(Translator):
         file_list : list of strings
             names of all files in directory located at path
         """
-        file_list = list()
-        allowed_image_types = ['.ndata1']
-        for root, dirs, files in os.walk(image_folder):
-            for thisfile in files:
-                _, ext = os.path.splitext(thisfile)
-                if ext not in allowed_image_types:
-                    continue
-                else:
-                    file_list.append(os.path.join(root, thisfile))
+        allowed_image_types = ['.ndata1', '.npy']
+        if os.path.isdir(image_path):
+            # Image path is to a directory
+            file_list = list()
+            for root, dirs, files in os.walk(image_path):
+                for thisfile in files:
+                    _, ext = os.path.splitext(thisfile)
+                    if ext not in allowed_image_types:
+                        continue
+                    else:
+                        file_list.append(os.path.join(root, thisfile))
+        else:
+            # Image path is a file
+            _, ext = os.path.splitext(image_path)
+            if ext in allowed_image_types:
+                file_list = [image_path]
+
         return file_list
 
     @staticmethod
@@ -433,15 +447,26 @@ class NDataTranslator(Translator):
         """
         parm_list = list()
 
-        for zpath in file_list:
-            zfile = zipfile.ZipFile(zpath, 'r')
-            tmp_path = zfile.extract('metadata.json')
+        for fpath in file_list:
+            base, ext = os.path.splitext(fpath)
+            if ext == '.ndata1':
+                zfile = zipfile.ZipFile(fpath, 'r')
+                tmp_path = zfile.extract('metadata.json')
+            elif ext == '.npy':
+                folder, basename = os.path.split(base)
+                same_name_path = base+'.json'
+                metapath = os.path.join(folder, 'metadata.json')
+                if os.path.exists(same_name_path):
+                    tmp_path = same_name_path
+                elif os.path.exists(metapath):
+                    tmp_path = metapath
             metafile = open(tmp_path, 'r')
             metastring = metafile.read()
             parm_list.append(unnest_parm_dicts(json.loads(metastring)))
             metafile.close()
 
-            os.remove(tmp_path)
+            if ext == '.ndata1':
+                os.remove(tmp_path)
 
         return parm_list
 

@@ -27,6 +27,8 @@ Documentation Index
     auto_examples/index
     contact
     install
+    faq
+    credits
     api
 
 Indices and tables

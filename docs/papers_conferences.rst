@@ -7,7 +7,7 @@ Journal Papers using pycroscopy
 * Electron Microscopy
 
  #. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by S. Jesse et al., Scientific Reports (2015); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Ptychography.html>`_
- #. Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging by S. Somnath et al.; under review at Advanced Structural and Chemical Imaging (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
+ #. `Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging <https://ascimaging.springeropen.com/articles/10.1186/s40679-018-0052-y>`_ by S. Somnath et al.; under review at Advanced Structural and Chemical Imaging (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
 
 * Scanning Probe Microscopy 
 
@@ -15,13 +15,14 @@ Journal Papers using pycroscopy
  #. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by L. Li et al., Scientific Reports (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/STS_LDOS.ipynb>`_.
  #. `Direct Imaging of the Relaxation of Individual Ferroelectric Interfaces in a Tensile-Strained Film <http://onlinelibrary.wiley.com/doi/10.1002/aelm.201600508/full>`_ by L. Li et al.; Advanced Electronic Materials (2017);  `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/BE_Processing.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/SPM/AFM/BE_Processing.html>`_.
  #. `Decoding apparent ferroelectricity in perovskite nanofibers <http://pubs.acs.org/doi/pdf/10.1021/acsami.7b14257>`_ by R. Ganeshkumar et al., ACS Applied Materials & Interfaces (2017).
- #. Ultrafast Current Imaging via Bayesian Inference by S. Somnath et al., accepted at Nature Communications (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/gIV_sIV_Nat_Comm_2017.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/SPM/AFM/gIV_sIV_Nat_Comm_2017.html>`_.
+ #. `Ultrafast Current Imaging via Bayesian Inference <https://www.nature.com/articles/s41467-017-02455-7>`_ by S. Somnath et al., Nature Communications (2018); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/gIV_sIV_Nat_Comm_2017.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/SPM/AFM/gIV_sIV_Nat_Comm_2017.html>`_.
 
 * Many more coming soon....
 
 pycroscopy at International conferences
 ---------------------------------------
 * Aug 5th 2018 - `Tutorial <https://www.microscopy.org/MandM/2018/program/short_courses.cfm>`_ at Microscopy and Microanalysis Conference 2018.
+* Feb 28 2018 - Webinar on `Jupyter for Supporting a Materials Imaging User Facility (and beyond) <https://www.exascaleproject.org/event/jupyter/>`_. see this `Youtube video <https://www.youtube.com/watch?v=aKah_O5OZdE&t=31m53s>`_
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Nov 27 2017 - `Tutorial on Machine Learning for Image and Hyperspectral Data <https://mrsfall.zerista.com/event/member/434841>`_
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; `poster 1641 <http://www2.avs.org/symposium2017/Papers/Paper_SP-TuP1.html>`_

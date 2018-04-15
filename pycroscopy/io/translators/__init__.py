@@ -15,6 +15,7 @@ from . import sporc
 from . import time_series
 from . import df_utils
 from . import beps_data_generator
+from . import nanonis
 
 from .be_odf import BEodfTranslator
 from .be_odf_relaxation import BEodfRelaxationTranslator
@@ -34,6 +35,7 @@ from .time_series import MovieTranslator
 
 from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
+from .nanonis import NanonisTranslator
 
 __all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',

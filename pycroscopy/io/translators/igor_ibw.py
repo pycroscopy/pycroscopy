@@ -58,6 +58,10 @@ class IgorIBWTranslator(Translator):
 
         # Get the data to figure out if this is an image or a force curve
         images = ibw_wave.get('wData')
+
+        if images.shape[2] != len(chan_labels):
+            chan_labels = chan_labels[1:] # for layer 0 null set errors in older AR software
+
         if images.ndim == 3:  # Image stack
             if verbose:
                 print('Found image stack of size {}'.format(images.shape))
@@ -180,7 +184,10 @@ class IgorIBWTranslator(Translator):
         """
         parm_string = ibw_wave.get('note')
         if type(parm_string) == bytes:
-            parm_string = parm_string.decode(codec)
+            try:
+                parm_string = parm_string.decode(codec)
+            except:
+                parm_string = parm_string.decode('ISO-8859-1') # for older AR software
         parm_string = parm_string.rstrip('\r')
         parm_list = parm_string.split('\r')
         parm_dict = dict()

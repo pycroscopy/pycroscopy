@@ -20,28 +20,10 @@ Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 Who?
 -----------
-This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase
-**M**\aterials **S**\ciences (`CNMS <https://www.ornl.gov/facility/cnms>`_) to implement a python library
-that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes
-generate (thanks to the large CNMS users community!).
-
-By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
-community of materials science/physics. We also hope, quite ardently, that other materials scientists would
-follow suit.
-
-The core pycroscopy team consists of:
-
-* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath), 
-* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith), 
-* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), 
-* `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) 
-
-Substantial contributions from many developers including:
-
-* `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
-* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
-* `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
-* and many more
+* This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional **I**\maging of **M**\aterials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes generate (thanks to the large IFIM users community!). 
+* It is now being developed and maintained by `Suhas Somnath <https://github.com/ssomnath>`_ of the **A**\dvanced **D**\ata & **W**\orkflows **G**\roup (ADWG) at the **O**\ak Ridge National Laboratory **L**\eadership **C**\omputing **F**\acility (`OLCF <https://www.olcf.ornl.gov>`_) and `Chris R. Smith <https://github.com/CompPhysChris>`_ of IFIM. 
+* By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider community of materials science/physics. We also hope, quite ardently, that other materials scientists would follow suit.
+* Please visit our `credits and acknowledegements <https://pycroscopy.github.io/pycroscopy/credits.html>`_ page for more information.
 
 Why?
 ---------------
@@ -64,7 +46,7 @@ As we see it, there are a few  opportunities in microscopy / imaging and materia
 
 **4. Disjoint communities**
   * Similar analysis routines written by each community (SPM, STEM, TOF SIMs, XRD...) *independently*!
-  * *Need: Centralized repository, instrument agonistic analysis routines that bring communities together*
+  * *Need: Centralized repository, instrument agnoistic analysis routines that bring communities together*
 
 **5. Expensive analysis software**
   * Software supplied with instruments often insufficient / incapable of custom analysis routines
@@ -101,13 +83,9 @@ The package structure is simple, with 4 main modules:
    3. **analysis**: model-dependent analysis of information.
    4. **viz**: Plotting functions and interactive jupyter widgets to visualize multidimenional data
    
-Acknowledgements
-----------------
-Besides the packages used in pycroscopy, we would like to thank the developers of the following software
-packages:
-
-+ `Python <https://www.python.org>`_
-+ `Anaconda Python <https://www.continuum.io/anaconda-overview>`_
-+ `jupyter <http://jupyter.org/>`_
-+ `PyCharm <https://www.jetbrains.com/pycharm/>`_
-+ `GitKraken <https://www.gitkraken.com/>`_
+Branches
+~~~~~~~~
+* ``master`` : Stable code based off which the pip installer works. Recommended for most people.
+* ``dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough testing. Note that certain features may be broken on this branch. Also note that we have currently frozen the addition of new features and are focusing on releasing a version 1.0 via the ``unity_dev`` branch. 
+* ``unity_dev`` : Substantially restructured version of ``master`` aimed towards `version 1.0 <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst#v-1-0-goals>`_ for pycroscopy. Besides pycroscopy.core.io, no guarantees are made for the rest of the package. This branch will eventually become ``master`` by around mid 2018. Developers encouraged to add features on this branch.  
+* Other branches belong to individual users / developers.

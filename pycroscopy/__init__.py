@@ -19,7 +19,7 @@ from . import analysis
 from . import processing
 
 from .__version__ import version as __version__
-from .__version__ import date as __date__
+from .__version__ import time as __time__
 
 __all__ = core.__all__
 warn('You are using the unity_dev branch, which is aimed at a 1.0 release for pycroscopy. '

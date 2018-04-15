@@ -95,11 +95,11 @@ class PycroDataset(h5py.Dataset):
 
         # The size of each dimension
         self.__pos_dim_sizes = np.array(get_dimensionality(np.transpose(self.h5_pos_inds)))
-        self.__spec_dim_sizes = np.array(get_dimensionality(self.h5_spec_inds))
+        self.__spec_dim_sizes = np.array(get_dimensionality(np.atleast_2d(self.h5_spec_inds)))
 
         # Sorted dimension order
         self.__pos_sort_order = get_sort_order(np.transpose(self.h5_pos_inds))
-        self.__spec_sort_order = get_sort_order(self.h5_spec_inds)
+        self.__spec_sort_order = get_sort_order(np.atleast_2d(self.h5_spec_inds))
 
         # internal book-keeping / we don't want users to mess with these?
         self.__n_dim_sizes = np.append(self.__pos_dim_sizes, self.__spec_dim_sizes)
