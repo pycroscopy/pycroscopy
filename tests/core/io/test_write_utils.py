@@ -22,7 +22,7 @@ if sys.version_info.major == 3:
 class TestWriteUtils(unittest.TestCase):
 
     def test_make_indices_dim_w_val_1(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = write_utils.make_indices_matrix([1, 2, 3])
 
     def test_make_indices_non_int_dim_sizes(self):
@@ -124,12 +124,13 @@ class TestWriteUtils(unittest.TestCase):
     def test_dimension_length(self):
         name = 'Bias'
         units = 'V'
-        values = np.random.rand(5)
+        values = np.arange(5)
 
         descriptor = write_utils.Dimension(name, units, len(values))
-        for expected, actual in zip([name, units, values],
-                                    [descriptor.name, descriptor.units, descriptor.values]):
+        for expected, actual in zip([name, units],
+                                    [descriptor.name, descriptor.units]):
             self.assertTrue(np.all([x == y for x, y in zip(expected, actual)]))
+        self.assertTrue(np.allclose(values, descriptor.values))
 
     def test_aux_dset_descriptor_illegal(self):
 
@@ -139,7 +140,7 @@ class TestWriteUtils(unittest.TestCase):
         with self.assertRaises(TypeError):
             _ = write_utils.Dimension(14, 'nm', np.arange(4))
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(ValueError):
             _ = write_utils.Dimension('Name', 'unit', 0)
 
         with self.assertRaises(TypeError):
