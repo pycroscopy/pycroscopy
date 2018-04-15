@@ -111,7 +111,7 @@ def make_indices_matrix(num_steps, is_position=True):
     """
     if not isinstance(num_steps, (tuple, list, np.ndarray)):
         raise TypeError('num_steps should be a list / tuple / numpy array')
-    if not contains_integers(num_steps, min_val=1 + len(num_steps) > 0):
+    if not contains_integers(num_steps, min_val=1 + int(len(num_steps) > 0)):
         raise ValueError('num_steps should contain integers greater than equal to 1 (empty dimension) or 2')
 
     num_steps = np.array(num_steps)
