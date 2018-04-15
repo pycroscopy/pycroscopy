@@ -84,7 +84,8 @@ def get_all_main(parent, verbose=False):
         The datasets found in the file that meet the 'Main Data' criteria.
 
     """
-    assert isinstance(parent, (h5py.Group, h5py.File))
+    if not isinstance(parent, (h5py.Group, h5py.File)):
+        raise TypeError('parent should be a h5py.File or h5py.Group object')
 
     from .pycro_data import PycroDataset
 
@@ -357,8 +358,10 @@ def find_dataset(h5_group, dset_name):
     """
     from .pycro_data import PycroDataset
 
-    assert isinstance(h5_group, (h5py.File, h5py.Group))
-    assert isinstance(dset_name, (str, unicode))
+    if not isinstance(h5_group, (h5py.File, h5py.Group)):
+        raise TypeError('h5_group should be a h5py.File or h5py.Group object')
+    if not isinstance(dset_name, (str, unicode)):
+        raise TypeError('dset_name should be a string')
 
     # print 'Finding all instances of', ds_name
     datasets = []
@@ -392,8 +395,10 @@ def find_results_groups(h5_main, tool_name):
     groups : list of references to h5 group objects
         groups whose name contains the tool name and the dataset name
     """
-    assert isinstance(h5_main, h5py.Dataset)
-    assert isinstance(tool_name, (str, unicode))
+    if not isinstance(h5_main, h5py.Dataset):
+        raise TypeError('h5_main should be a h5py.Dataset object')
+    if not isinstance(tool_name, (str, unicode)):
+        raise TypeError('tool_name should be a string')
 
     dset_name = h5_main.name.split('/')[-1]
     h5_parent_group = h5_main.parent
@@ -430,10 +435,13 @@ def get_indices_for_region_ref(h5_main, ref, return_method='slices'):
         array of indices in the source dataset that ref accesses
 
     """
-    assert isinstance(h5_main, h5py.Dataset)
-    assert isinstance(ref, h5py.RegionReference)
+    if not isinstance(h5_main, h5py.Dataset):
+        raise TypeError('h5_main should be a h5py.Dataset object')
+    if not isinstance(ref, h5py.RegionReference):
+        raise TypeError('ref should be a h5py.RegionReference object')
     if return_method is not None:
-        assert isinstance(return_method, (str, unicode))
+        if not isinstance(return_method, (str, unicode)):
+            raise TypeError('return_method should be a string')
 
     if return_method == 'points':
         def __corners_to_point_array(start, stop):
@@ -533,9 +541,6 @@ def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     attempt to get the attribute with the same name from the h5_main
     dataset
 
-    @author: Suhas Somnath
-    edited - Chris Smith
-
     Parameters
     ----------
     h5_dset : HDF5 Dataset
@@ -556,12 +561,16 @@ def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
     Either `h5_main` or `anc_refs` MUST be provided and `anc_refs` has the
     higher priority if both are present.
     """
-    assert isinstance(h5_dset, h5py.Dataset)
-    assert isinstance(anc_names, (list, tuple))
+    if not isinstance(h5_dset, h5py.Dataset):
+        raise TypeError('h5_dset should be a h5py.Dataset object')
+    if not isinstance(anc_names, (list, tuple)):
+        raise TypeError('anc_names should be a list / tuple')
     if h5_main is not None:
-        assert isinstance(h5_main, h5py.Dataset)
+        if not isinstance(h5_main, h5py.Dataset):
+            raise TypeError('h5_main should be a h5py.Dataset object')
     if anc_refs is not None:
-        assert isinstance(anc_refs, (list, tuple))
+        if not isinstance(anc_refs, (list, tuple)):
+            raise TypeError('anc_refs should be a list / tuple')
 
     def __check_and_link_single(h5_obj_ref, target_ref_name):
         if isinstance(h5_obj_ref, h5py.Reference):
@@ -620,8 +629,10 @@ def create_region_reference(h5_main, ref_inds):
     new_ref : HDF5 Region reference
         reference in `h5_main` for the blocks of points defined by `ref_inds`
     """
-    assert isinstance(h5_main, h5py.Dataset)
-    assert isinstance(ref_inds, Iterable)
+    if not isinstance(h5_main, h5py.Dataset):
+        raise TypeError('h5_main should be a h5py.Dataset object')
+    if not isinstance(ref_inds, (list, tuple)):
+        raise TypeError('ref_inds should be a list or tuple')
 
     h5_space = h5_main.id.get_space()
     h5_space.select_none()
@@ -652,7 +663,8 @@ def get_data_descriptor(h5_dset):
     descriptor : String
         string of the form 'quantity (unit)'
     """
-    assert isinstance(h5_dset, h5py.Dataset)
+    if not isinstance(h5_dset, h5py.Dataset):
+        raise TypeError('h5_dset should be a h5py.Dataset object')
 
     try:
         quant = get_attr(h5_dset, 'quantity')
@@ -680,7 +692,8 @@ def get_formatted_labels(h5_dset):
     labels : list
         list of strings formatted as 'label k (unit k)'
     """
-    assert isinstance(h5_dset, h5py.Dataset)
+    if not isinstance(h5_dset, h5py.Dataset):
+        raise TypeError('h5_dset should be a h5py.Dataset object')
 
     try:
         labs = get_attr(h5_dset, 'labels')
@@ -749,17 +762,25 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     # TODO: sort_dims does not appear to do much. Functions as though it was always True
 
     if h5_pos is None and h5_spec is None:
-        assert check_if_main(h5_main)
+        if not check_if_main(h5_main):
+            raise ValueError('if h5_main is a h5py.Dataset it should be a Main dataset')
     else:
-        assert isinstance(h5_main, (h5py.Dataset, np.ndarray))
+        if not isinstance(h5_main, (h5py.Dataset, np.ndarray)):
+            raise TypeError('h5_main should either be a h5py.Dataset or numpy array')
 
     if h5_pos is not None:
-        assert isinstance(h5_pos, (h5py.Dataset, np.ndarray))
-        assert h5_pos.shape[0] == h5_main.shape[0]
+        if not isinstance(h5_pos, (h5py.Dataset, np.ndarray)):
+            raise TypeError('h5_pos should either be a h5py.Dataset or numpy array')
+        if h5_pos.shape[0] != h5_main.shape[0]:
+            raise ValueError('The size of h5_pos: {} does not match with h5_main: {}'.format(h5_pos.shape,
+                                                                                             h5_main.shape))
 
     if h5_spec is not None:
-        assert isinstance(h5_spec, (h5py.Dataset, np.ndarray))
-        assert h5_spec.shape[1] == h5_main.shape[1]
+        if not isinstance(h5_spec, (h5py.Dataset, np.ndarray)):
+            raise TypeError('h5_spec should either be a h5py.Dataset or numpy array')
+        if h5_spec.shape[1] != h5_main.shape[1]:
+            raise ValueError('The size of h5_spec: {} does not match with h5_main: {}'.format(h5_spec.shape,
+                                                                                              h5_main.shape))
 
     pos_labs = np.array(['Positions'])
     spec_labs = np.array(['Spectral_Step'])
@@ -974,7 +995,8 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     in order from fastest to slowest.
 
     """
-    assert isinstance(data_n_dim, np.ndarray)
+    if not isinstance(data_n_dim, np.ndarray):
+        raise TypeError('data_n_dim is not a numpy array')
 
     if h5_spec is None and h5_pos is None:
         raise ValueError('at least one of h5_pos or h5_spec must be specified for an attempt to reshape to 2D')
@@ -1015,7 +1037,9 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
             print('Spectral indices not provided but position indices provided.\n'
                   'Building spectral indices assuming that dimensions are arranged as slow -> fast')
         pos_dims = get_dimensionality(ds_pos, index_sort=get_sort_order(ds_pos))
-        assert np.all([x in data_n_dim.shape for x in pos_dims])
+        if not np.all([x in data_n_dim.shape for x in pos_dims]):
+            raise ValueError('Dimension sizes in pos_dims: {} do not exist in data_n_dim shape: '
+                             '{}'.format(pos_dims, data_n_dim.shape))
         spec_dims = [col for col in list(data_n_dim.shape) if col not in pos_dims]
         if verbose:
             print('data has dimensions: {}. Provided position indices had dimensions of size: {}. Spectral dimensions '
@@ -1027,7 +1051,9 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
             print('Position indices not provided but spectral indices provided.\n'
                   'Building position indices assuming that dimensions are arranged as slow -> fast')
         spec_dims = get_dimensionality(ds_spec, index_sort=get_sort_order(ds_spec))
-        assert np.all([x in data_n_dim.shape for x in spec_dims])
+        if not np.all([x in data_n_dim.shape for x in spec_dims]):
+            raise ValueError('Dimension sizes in spec_dims: {} do not exist in data_n_dim shape: '
+                             '{}'.format(spec_dims, data_n_dim.shape))
         pos_dims = [col for col in list(data_n_dim.shape) if col not in spec_dims]
         if verbose:
             print('data has dimensions: {}. Spectroscopic position indices had dimensions of size: {}. Position '
@@ -1090,7 +1116,8 @@ def get_dimensionality(ds_index, index_sort=None):
     sorted_dims : list of unsigned integers
         Dimensionality of each row in ds_index.  If index_sort is supplied, it will be in the sorted order
     """
-    assert isinstance(ds_index, (np.ndarray, h5py.Dataset))
+    if not isinstance(ds_index, (np.ndarray, h5py.Dataset)):
+        raise TypeError('ds_index should either be a numpy array or h5py.Dataset')
 
     if ds_index.shape[0] > ds_index.shape[1]:
         # must be spectroscopic like in shape (few rows, more cols)
@@ -1099,8 +1126,10 @@ def get_dimensionality(ds_index, index_sort=None):
     if index_sort is None:
         index_sort = np.arange(ds_index.shape[0])
     else:
-        assert contains_integers(index_sort, min_val=0)
-        assert np.array(index_sort).ndim == 1
+        if not contains_integers(index_sort, min_val=0):
+            raise ValueError('index_sort should contain integers > 0')
+        if np.array(index_sort).ndim != 1:
+            raise ValueError('index_sort should be a 1D array')
         assert len(np.unique(index_sort)) == ds_index.shape[0]
 
     sorted_dims = [len(np.unique(row)) for row in np.array(ds_index, ndmin=2)[index_sort]]
@@ -1122,7 +1151,8 @@ def get_sort_order(ds_spec):
     change_sort : List of unsigned integers
         Order of rows sorted from fastest changing to slowest
     """
-    assert isinstance(ds_spec, (np.ndarray, h5py.Dataset))
+    if not isinstance(ds_spec, (np.ndarray, h5py.Dataset)):
+        raise TypeError('ds_spec should either be a numpy array or h5py.Dataset')
 
     if ds_spec.shape[0] > ds_spec.shape[1]:
         # must be spectroscopic like in shape (few rows, more cols)
@@ -1157,10 +1187,13 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=None, skip_ref
     h5_new_dset : h5py.Dataset object
         Newly created dataset
     """
-    assert isinstance(source_dset, h5py.Dataset)
-    assert isinstance(dtype, (h5py.Datatype, np.dtype))
+    if not isinstance(source_dset, h5py.Dataset):
+        raise TypeError('source_deset should be a h5py.Dataset object')
+    if not isinstance(dtype, (h5py.Datatype, np.dtype)):
+        raise TypeError('dtype should either be a numpy or h5py dtype')
     if new_attrs is not None:
-        assert isinstance(new_attrs, dict)
+        if not isinstance(new_attrs, dict):
+            raise TypeError('new_attrs should be a dictionary')
     else:
         new_attrs = dict()
 
@@ -1200,8 +1233,10 @@ def copy_attributes(source, dest, skip_refs=True):
     skip_refs : bool, optional. default = True
         Whether or not the references (dataset and region) should be skipped
     """
-    assert isinstance(source, h5py.Dataset)
-    assert isinstance(dest, h5py.Dataset)
+    if not isinstance(source, h5py.Dataset):
+        raise TypeError('source should be a h5py.Dataset object')
+    if not isinstance(dest, h5py.Dataset):
+        raise TypeError('dest should be a h5py.Dataset object')
 
     for att_name in source.attrs.keys():
         att_val = get_attr(source, att_name)
@@ -1352,12 +1387,14 @@ def link_h5_objects_as_attrs(src, h5_objects):
     --------
     None
     """
-    assert isinstance(src, (h5py.Dataset, h5py.File, h5py.Group))
+    if not isinstance(src, (h5py.Dataset, h5py.File, h5py.Group)):
+        raise TypeError('src should either be a h5py Dataset, File, or Group')
     if isinstance(h5_objects, (h5py.Dataset, h5py.Group)):
         h5_objects = [h5_objects]
 
     for itm in h5_objects:
-        assert isinstance(itm, (h5py.Dataset, h5py.Group))
+        if not isinstance(itm, (h5py.Dataset, h5py.Group)):
+            raise TypeError('h5_objects should only contain h5py. Dataset and Group objects')
         src.attrs[itm.name.split('/')[-1]] = itm.ref
 
 
@@ -1376,9 +1413,13 @@ def link_h5_obj_as_alias(h5_main, h5_ancillary, alias_name):
     alias_name : String
         Alias / alternate name for trg
     """
-    assert isinstance(h5_main, (h5py.Dataset, h5py.File, h5py.Group))
-    assert isinstance(h5_ancillary, (h5py.Dataset, h5py.Group))
-    assert isinstance(alias_name, (str, unicode))
+    if not isinstance(h5_main, (h5py.Dataset, h5py.File, h5py.Group)):
+        raise TypeError('h5_main should either be a h5py Dataset, File, or Group')
+    if not isinstance(h5_ancillary, (h5py.Dataset, h5py.Group)):
+        raise TypeError('h5_ancillary should be a h5py. Dataset or Group object')
+    if not isinstance(alias_name, (str, unicode)):
+        raise TypeError('alias_name should be a string')
+    alias_name = alias_name.strip()
     h5_main.attrs[alias_name] = h5_ancillary.ref
 
 
@@ -1461,9 +1502,13 @@ def copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_target_ind
             reference
 
     """
-    for param in [h5_source, h5_target, h5_source_inds, h5_target_inds]:
-        assert isinstance(param, h5py.Dataset)
-    assert isinstance(key, (str, unicode))
+    for param, param_name in zip([h5_source, h5_target, h5_source_inds, h5_target_inds],
+                                 ['h5_source', 'h5_target', 'h5_source_inds', 'h5_target_inds']):
+        if not isinstance(param, h5py.Dataset):
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
+    if not isinstance(key, (str, unicode)):
+        raise TypeError('key should be a string')
+    key = key.strip()
 
     '''
     Determine which dimension is missing from the target
@@ -1529,9 +1574,11 @@ def simple_region_ref_copy(h5_source, h5_target, key):
             reference
 
     """
-    for param in [h5_source, h5_target]:
-        assert isinstance(param, h5py.Dataset)
-    assert isinstance(key, (str, unicode))
+    for param, param_name in zip([h5_source, h5_target], ['h5_source', 'h5_target']):
+        if not isinstance(param, h5py.Dataset):
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
+    if not isinstance(key, (str, unicode)):
+        raise TypeError('key should be a string')
 
     ref = h5_source.attrs[key]
     ref_inds = get_indices_for_region_ref(h5_source, ref, return_method='corners')
@@ -1567,10 +1614,13 @@ def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=102
         requested `max_chunk_mem` as posible while having steps based on the input
         `unit_chunks`.
     """
-    assert isinstance(dimensions, Iterable)
-    assert isinstance(dtype_byte_size, int)
+    if not isinstance(dimensions, (list, tuple)):
+        raise TypeError('dimensions should either be a tuple or list')
+    if not isinstance(dtype_byte_size, int):
+        raise TypeError('dtype_byte_size should be an integer')
     if unit_chunks is not None:
-        assert isinstance(unit_chunks, Iterable)
+        if not isinstance(unit_chunks, (tuple, list)):
+            raise TypeError('unit_chunks should either be a tuple or list')
 
     '''
     Ensure that dimensions is an array
@@ -1643,11 +1693,17 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
         Datasets that will be linked with their own names
     """
     # TODO: Make sure that the dimensions of spec and pos match with the data!
-    for param in [h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals]:
-        assert isinstance(param, h5py.Dataset)
+    for param, param_name in zip([h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals],
+                                 ['h5_main', 'h5_pos_inds', 'h5_pos_vals', 'h5_spec_inds', 'h5_spec_vals']):
+        if not isinstance(param, h5py.Dataset):
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
 
-    assert h5_pos_vals.shape == h5_pos_inds.shape
-    assert h5_spec_vals.shape == h5_spec_inds.shape
+    if h5_pos_vals.shape != h5_pos_inds.shape:
+        raise ValueError('h5_pos_vals: {} and h5_pos_inds: {} do not have the same shape'
+                         '.'.format(h5_pos_vals.shape, h5_pos_inds))
+    if h5_spec_vals.shape != h5_spec_inds.shape:
+        raise ValueError('h5_spec_vals: {} and h5_spec_inds: {} do not have the same shape'
+                         '.'.format(h5_spec_vals.shape, h5_spec_inds))
 
     link_h5_obj_as_alias(h5_main, h5_pos_inds, 'Position_Indices')
     link_h5_obj_as_alias(h5_main, h5_pos_vals, 'Position_Values')
@@ -1655,7 +1711,8 @@ def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, 
     link_h5_obj_as_alias(h5_main, h5_spec_vals, 'Spectroscopic_Values')
 
     if anc_dsets is not None:
-        assert isinstance(anc_dsets, Iterable)
+        if not isinstance(anc_dsets, (list, tuple)):
+            raise TypeError('anc_dsets should be a list or tuple')
         anc_dsets = list(anc_dsets)
         np.all([isinstance(item, h5py.Dataset) for item in anc_dsets])
 
@@ -1674,8 +1731,9 @@ def copy_main_attributes(h5_main, h5_new):
     h5_new : h5py.Dataset
         Dataset to which the target attributes are to be copied
     """
-    for param in [h5_main, h5_new]:
-        assert isinstance(param, h5py.Dataset)
+    for param, param_name in zip([h5_main, h5_new], ['h5_main', 'h5_new']):
+        if not isinstance(param, h5py.Dataset):
+            print(param_name + ' should be a h5py.Dataset object')
 
     for att_name, default_val in zip(['quantity', 'units'], ['Unknown', 'a. u.']):
         val = default_val
@@ -1708,14 +1766,18 @@ def check_for_old(h5_base, tool_name, new_parms=None, target_dset=None, verbose=
     group : list
            List of all groups with parameters matching those in `new_parms`
     """
-    assert isinstance(h5_base, h5py.Dataset)
-    assert isinstance(tool_name, (str, unicode))
+    if not isinstance(h5_base, h5py.Dataset):
+        raise TypeError('h5_base should be a h5py.Dataset object')
+    if not isinstance(tool_name, (str, unicode)):
+        raise TypeError('tool_name should be a string')
     if new_parms is None:
         new_parms = dict()
     else:
-        assert isinstance(new_parms, dict)
+        if not isinstance(new_parms, dict):
+            raise TypeError('new_parms should be a dict')
     if target_dset is not None:
-        assert isinstance(target_dset, (str, unicode))
+        if not isinstance(target_dset, (str, unicode)):
+            raise TypeError('target_dset should be a string')
 
     matching_groups = []
     groups = find_results_groups(h5_base, tool_name)
@@ -1760,11 +1822,13 @@ def check_for_matching_attrs(h5_obj, new_parms=None, verbose=False):
     tests: bool
         Whether or not all paramters in new_parms matched with those in h5_obj's attributes
     """
-    assert isinstance(h5_obj, (h5py.Dataset, h5py.Group, h5py.File))
+    if not isinstance(h5_obj, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('h5_obj should be a h5py.Dataset, h5py.Group, or h5py.File object')
     if new_parms is None:
         new_parms = dict()
     else:
-        assert isinstance(new_parms, dict)
+        if not isinstance(new_parms, dict):
+            raise TypeError('new_parms should be a dictionary')
 
     tests = []
     for key in new_parms.keys():
@@ -1860,11 +1924,13 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbos
         all_dim_names = np.array(all_dim_names)
         allowed_types = (h5py.Dataset, np.ndarray)
 
-    for dset in [h5_inds, h5_vals]:
-        assert isinstance(dset, allowed_types)
+    for dset, dset_name in zip([h5_inds, h5_vals], ['h5_inds', 'h5_vals']):
+        if not isinstance(dset, allowed_types):
+            raise TypeError(dset_name + ' should be of type: {}'.format(allowed_types))
 
     # Do we need to check that the provided inds and vals correspond to the same main dataset?
-    assert h5_inds.shape == h5_vals.shape
+    if h5_inds.shape != h5_vals.shape:
+        raise ValueError('h5_inds: {} and h5_vals: {} should have the same shapes'.format(h5_inds.shape, h5_vals.shape))
 
     if all_dim_names is None:
         all_dim_names = get_attr(h5_inds, 'labels')
@@ -1908,7 +1974,8 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbos
     else:
         if isinstance(dim_names, (str, unicode)):
             dim_names = [dim_names]
-        assert isinstance(dim_names, (list, tuple))
+        if not isinstance(dim_names, (list, tuple)):
+            raise TypeError('dim_names should be a list or tuple')
 
         if verbose:
             print('Checking to make sure that the target dimension names: {} exist in the datasets attributes: {}'
@@ -1916,7 +1983,8 @@ def get_unit_values(h5_inds, h5_vals, dim_names=None, all_dim_names=None, verbos
 
         # check to make sure that the dimension names exist in the datasets:
         for dim_name in dim_names:
-            assert isinstance(dim_name, (str, unicode))
+            if not isinstance(dim_name, (str, unicode)):
+                raise TypeError('dim_name should be a string')
             if dim_name not in all_dim_names:
                 raise KeyError('Dimension {} does not exist in the provided ancillary datasets'.format(dim_name))
 
@@ -1958,7 +2026,8 @@ def get_source_dataset(h5_group):
     h5_source : Pycrodataset object
         Main dataset from which this group was generated
     """
-    assert isinstance(h5_group, h5py.Group)
+    if not isinstance(h5_group, h5py.Group):
+        raise TypeError('h5_group should be a h5py.Group object')
 
     from .pycro_data import PycroDataset
 
@@ -2057,7 +2126,8 @@ def write_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, verbose=F
         raise ValueError('The provided h5 object is not valid / open')
 
     if base_name is not None:
-        assert isinstance(base_name, (str, unicode))
+        if not isinstance(base_name, (str, unicode)):
+            raise TypeError('base_name should be a string')
         if not base_name.endswith('_'):
             base_name += '_'
     else:
@@ -2124,19 +2194,24 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
     h5_vals : h5py.Dataset
             Reduces Spectroscopic values dataset
     """
-    assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
+    if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
+        raise TypeError('h5_parent_group should either be a h5py. Group or File object')
     if basename is not None:
-        assert isinstance(basename, (str, unicode))
+        if not isinstance(basename, (str, unicode)):
+            raise TypeError('basename should be a string')
 
     for sub_name in ['_Indices', '_Values']:
         if basename + sub_name in h5_parent_group.keys():
             raise KeyError('Dataset: {} already exists in provided group: {}'.format(basename + sub_name,
                                                                                      h5_parent_group.name))
 
-    for param in [h5_spec_inds, h5_spec_vals]:
-        assert isinstance(param, h5py.Dataset)
-    assert isinstance(keep_dim, (bool, np.ndarray, list, tuple))
-    assert isinstance(step_starts, (list, np.ndarray, list, tuple))
+    for param, param_name in zip([h5_spec_inds, h5_spec_vals], ['h5_spec_inds', 'h5_spec_vals']):
+        if not isinstance(param, h5py.Dataset):
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
+    if not isinstance(keep_dim, (bool, np.ndarray, list, tuple)):
+        raise TypeError('keep_dim should be a bool, np.ndarray, list, or tuple')
+    if not isinstance(step_starts, (list, np.ndarray, list, tuple)):
+        raise TypeError('step_starts should be a list, np.ndarray, list, or tuple')
 
     if h5_spec_inds.shape[0] > 1:
         '''
@@ -2207,19 +2282,24 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
     ds_vals : VirtualDataset
             Reduces Spectroscopic values dataset
     """
-    assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
+    if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
+        raise TypeError('h5_parent_group should be a h5py.File or h5py.Group object')
     if basename is not None:
-        assert isinstance(basename, (str, unicode))
+        if not isinstance(basename, (str, unicode)):
+            raise TypeError('basename should be a string')
 
     for sub_name in ['_Indices', '_Values']:
         if basename + sub_name in h5_parent_group.keys():
             raise KeyError('Dataset: {} already exists in provided group: {}'.format(basename + sub_name,
                                                                                      h5_parent_group.name))
 
-    for param in [h5_spec_inds, h5_spec_vals]:
-        assert isinstance(param, h5py.Dataset)
-    assert isinstance(keep_dim, (bool, np.ndarray, list, tuple))
-    assert isinstance(step_starts, (list, np.ndarray, list, tuple))
+    for param, param_name in zip([h5_spec_inds, h5_spec_vals], ['h5_spec_inds', 'h5_spec_vals']):
+        if not isinstance(param, h5py.Dataset):
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
+    if not isinstance(keep_dim, (bool, np.ndarray, list, tuple)):
+        raise TypeError('keep_dim should be a bool, np.ndarray, list, or tuple')
+    if not isinstance(step_starts, (list, np.ndarray, list, tuple)):
+        raise TypeError('step_starts should be a list, np.ndarray, list, or tuple')
 
     if h5_spec_inds.shape[0] > 1:
         '''
@@ -2276,8 +2356,10 @@ def assign_group_index(h5_parent_group, base_name, verbose=False):
     base_name : str / unicode
         Base name of the new group with the next available index as a suffix
     """
-    assert isinstance(h5_parent_group, h5py.Group)
-    assert isinstance(base_name, (str, unicode))
+    if not isinstance(h5_parent_group, h5py.Group):
+        raise TypeError('h5_parent_group should be a h5py.Group object')
+    if not isinstance(base_name, (str, unicode)):
+        raise TypeError('base_name should be a string')
 
     if len(base_name) == 0:
         raise ValueError('base_name should not be an empty string')

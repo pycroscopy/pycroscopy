@@ -500,7 +500,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Ancillary']
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
 
     def test_get_unit_values_source_spec_single(self):
@@ -768,7 +768,7 @@ class TestHDFUtils(unittest.TestCase):
             self.assertFalse(hdf_utils.check_if_main(h5_main))
 
             # Now need to link as main!
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 hdf_utils.link_as_main(h5_main, h5_spec_inds, h5_pos_vals, h5_pos_inds, h5_spec_vals)
 
         os.remove(file_path)
@@ -802,11 +802,11 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(h5_f[h5_f.attrs['France']], h5_group)
 
             # Non h5 object
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 hdf_utils.link_h5_obj_as_alias(h5_group, np.arange(5), 'Center')
 
             # H5 reference but not the object
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 hdf_utils.link_h5_obj_as_alias(h5_group, h5_f.attrs['Paris'], 'Center')
 
         os.remove(file_path)
@@ -834,7 +834,7 @@ class TestHDFUtils(unittest.TestCase):
             for exp, name in zip([h5_main, h5_anc], ['main', 'Ancillary']):
                 self.assertEqual(exp, h5_group[h5_group.attrs[name]])
 
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 hdf_utils.link_h5_objects_as_attrs(h5_main, np.arange(4))
 
         os.remove(file_path)
@@ -868,16 +868,16 @@ class TestHDFUtils(unittest.TestCase):
             h5_spec = h5_f['/Raw_Measurement/Spectroscopic_Indices']
 
             # Not main
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 _ = hdf_utils.reshape_to_n_dims(h5_main)
 
             # Not main and not helping that we are supplign incompatible ancillary datasets
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 _ = hdf_utils.reshape_to_n_dims(h5_main, h5_pos=h5_pos, h5_spec=h5_spec)
 
             # main but we are supplign incompatible ancillary datasets
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000/results_main']
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 _ = hdf_utils.reshape_to_n_dims(h5_main, h5_pos=h5_pos, h5_spec=h5_spec)
 
     def test_reshape_to_n_dim_numpy(self):
@@ -1738,7 +1738,7 @@ class TestHDFUtils(unittest.TestCase):
         dtype_bytesize = 4
         unit_chunks = 4
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
 
     def test_calc_chunks_shape_mismatch(self):
