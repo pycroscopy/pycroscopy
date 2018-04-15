@@ -262,10 +262,6 @@ def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=N
 
     indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
 
-    if not is_spectral:
-        indices = indices.transpose()
-        values = values.transpose()
-
     if verbose:
         print('Indices:')
         print(indices)
