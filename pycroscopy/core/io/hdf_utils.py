@@ -2113,10 +2113,6 @@ def write_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, verbose=F
 
     indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
 
-    if is_spectral:
-        indices = indices.transpose()
-        values = values.transpose()
-
     if verbose:
         print('Indices:')
         print(indices)
@@ -2427,39 +2423,54 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     """
 
     def __validate_anc_h5_dsets(inds, vals, is_spectroscopic=True):
-        assert isinstance(inds, h5py.Dataset)
-        assert isinstance(vals, h5py.Dataset)
-        assert inds.shape == vals.shape
-        assert inds.shape[is_spectroscopic] == main_data.shape[is_spectroscopic]
+        if not isinstance(inds, h5py.Dataset):
+            raise TypeError('inds must be a h5py.Dataset object')
+        if not isinstance(vals, h5py.Dataset):
+            raise TypeError('vals must be a h5py.Dataset object')
+        if inds.shape != vals.shape:
+            raise ValueError('inds: {} and vals: {} should be of the same shape'.format(inds.shape, vals.shape))
+        if inds.shape[is_spectroscopic] != main_data.shape[is_spectroscopic]:
+            raise ValueError('index {} in shape of inds: {} and main_data: {} should be equal'
+                             '.'.format(int(is_spectroscopic), inds.shape, main_data.shape))
 
     def __validate_dimensions(dimensions):
-        if isinstance(dimensions, Dimension):
-            dimensions = [dimensions]
         if not isinstance(dimensions, (list, np.ndarray, tuple)):
             raise TypeError('dimensions should be array-like ')
         if not np.all([isinstance(x, Dimension) for x in dimensions]):
             raise TypeError('dimensions should be a sequence of Dimension objects')
         return dimensions
 
-    assert isinstance(h5_parent_group, (h5py.Group, h5py.File))
-    assert is_editable_h5(h5_parent_group)
+    if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
+        raise TypeError('h5_parent_group should be a h5py.File or h5py.Group object')
+    if not is_editable_h5(h5_parent_group):
+        raise ValueError('The provided file is not editable')
 
-    for arg in [quantity, units, main_data_name]:
-        assert isinstance(arg, (str, unicode))
-        assert len(arg) > 0
+    for arg, arg_name in zip([quantity, units, main_data_name],
+                             ['quantity', 'units', 'main_data_name']):
+        if not isinstance(arg, (str, unicode)):
+            raise TypeError(arg_name + ' should be a string')
+        if len(arg.strip()) <= 0:
+            raise ValueError(arg_name + ' should not be an empty string')
 
-    assert isinstance(main_data, np.ndarray)
-    assert main_data.ndim == 2
+    if not isinstance(main_data, np.ndarray):
+        raise TypeError('main_data should be a numpy array')
+    if main_data.ndim != 2:
+        raise ValueError('main_data shoul be a 2D array')
 
     if h5_pos_inds is not None and h5_pos_vals is not None:
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, is_spectroscopic=False)
     else:
         for dset_name in ['Position_Indices', 'Position_Values']:
-            assert dset_name not in h5_parent_group.keys()
+            if dset_name in h5_parent_group.keys():
+                raise KeyError('Dataset named: ' + dset_name + ' already exists in group: '
+                                                               '{}'.format(h5_parent_group.name))
+        if isinstance(pos_dims, Dimension):
+            pos_dims = [pos_dims]
         pos_dims = __validate_dimensions(pos_dims)
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
-        assert main_data.shape[0] == np.product([len(x.values) for x in pos_dims])
+        if main_data.shape[0] != np.product([len(x.values) for x in pos_dims]):
+            raise ValueError('Position dimensions in main data do not match with product of values in pos_dims')
         h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False)
 
     if h5_spec_inds is not None and h5_spec_vals is not None:
@@ -2467,10 +2478,16 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         __validate_anc_h5_dsets(h5_spec_inds, h5_spec_vals, is_spectroscopic=True)
     else:
         for dset_name in ['Spectroscopic_Indices', 'Spectroscopic_Values']:
-            assert dset_name not in h5_parent_group.keys()
+            if dset_name in h5_parent_group.keys():
+                raise KeyError('Dataset named: ' + dset_name + ' already exists in group: '
+                                                               '{}'.format(h5_parent_group.name))
+
+        if isinstance(spec_dims, Dimension):
+            spec_dims = [spec_dims]
         spec_dims = __validate_dimensions(spec_dims)
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
-        assert main_data.shape[1] == np.product([len(x.values) for x in spec_dims])
+        if main_data.shape[1] != np.product([len(x.values) for x in spec_dims]):
+            raise ValueError('Spectroscopic dimensions in main data do not match with product of values in spec_dims')
         h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False)
 
     # Raw data - assuming simple small dataset
