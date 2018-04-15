@@ -125,14 +125,19 @@ def get_auxillary_datasets(h5_object, aux_dset_name=None):
     -------
     list of h5py.Reference of auxiliary dataset objects.
     """
-    assert isinstance(h5_object, (h5py.Dataset, h5py.Group, h5py.File))
-    if aux_dset_name is not None:
-        assert isinstance(aux_dset_name, (list, tuple, str, unicode))
+    if not isinstance(h5_object, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('h5_object should be a h5py.Dataset, h5py.Group or h5py.File object')
 
     if aux_dset_name is None:
         aux_dset_name = h5_object.attrs.keys()
-    elif type(aux_dset_name) not in [list, tuple, set]:
-        aux_dset_name = [aux_dset_name]  # typically a single string
+    else:
+        if isinstance(aux_dset_name, (str, unicode)):
+            aux_dset_name = [aux_dset_name]
+        if not isinstance(aux_dset_name, (list, tuple)):
+            raise TypeError('aux_dset_name should be a string or list / tuple of strings')
+        if not np.all([isinstance(x, (str, unicode)) for x in aux_dset_name]):
+            raise TypeError('aux_dset_name should be a string or list / tuple of strings')
+
     data_list = list()
     curr_name = None
     try:
@@ -164,8 +169,11 @@ def get_attr(h5_object, attr_name):
     att_val : object
         value of attribute, in certain cases (byte strings or list of byte strings) reformatted to readily usable forms
     """
-    assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
-    assert isinstance(attr_name, (str, unicode))
+    if not isinstance(h5_object, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('h5_object should be a h5py.Dataset, h5py.Group or h5py.File object')
+
+    if not isinstance(attr_name, (str, unicode)):
+        raise TypeError('attr_name should be a string')
 
     if attr_name not in h5_object.attrs.keys():
         raise KeyError("'{}' is not an attribute in '{}'".format(attr_name, h5_object.name))
@@ -198,15 +206,18 @@ def get_attributes(h5_object, attr_names=None):
     Dictionary containing (name,value) pairs of attributes
     """
 
-    assert isinstance(h5_object, (h5py.File, h5py.Group, h5py.Dataset))
-    if attr_names is not None:
-        assert isinstance(attr_names, (str, unicode, list, tuple))
+    if not isinstance(h5_object, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('h5_object should be a h5py.Dataset, h5py.Group or h5py.File object')
 
     if attr_names is None:
         attr_names = h5_object.attrs.keys()
-
-    if isinstance(attr_names, (str, unicode)):
-        attr_names = [attr_names]
+    else:
+        if isinstance(attr_names, (str, unicode)):
+            attr_names = [attr_names]
+        if not isinstance(attr_names, (list, tuple)):
+            raise TypeError('attr_names should be a string or list / tuple of strings')
+        if not np.all([isinstance(x, (str, unicode)) for x in attr_names]):
+            raise TypeError('attr_names should be a string or list / tuple of strings')
 
     att_dict = {}
 
@@ -251,9 +262,9 @@ def get_h5_obj_refs(obj_names, h5_refs):
 
     Parameters
     ----------
-    obj_names : List of strings
+    obj_names : string or List of strings
         names of target h5py objects
-    h5_refs : List of H5 object references
+    h5_refs : H5 object reference or List of H5 object references
         list containing the target reference
 
     Returns
@@ -263,8 +274,17 @@ def get_h5_obj_refs(obj_names, h5_refs):
     """
     from .pycro_data import PycroDataset
 
-    assert isinstance(obj_names, (list, tuple))
-    assert isinstance(h5_refs, (list, tuple))
+    if isinstance(obj_names, (str, unicode)):
+        obj_names = [obj_names]
+    if not isinstance(obj_names, (list, tuple)):
+        raise TypeError('obj_names should be a string or list of strings')
+    if not np.all([isinstance(x, (str, unicode)) for x in obj_names]):
+        raise TypeError('obj_names should be a string or list / tuple of strings')
+
+    if isinstance(h5_refs, (h5py.File, h5py.Group, h5py.Dataset)):
+        h5_refs = [h5_refs]
+    if not isinstance(h5_refs, (list, tuple)):
+        raise TypeError('h5_refs should be a / list of h5py.Dataset, h5py.Group or h5py.File object(s)')
 
     found_objects = []
     for target_name in obj_names:
@@ -303,12 +323,15 @@ def get_group_refs(group_name, h5_refs):
         A list of h5py.Group objects whose name matched with the provided group_name
     """
 
-    assert isinstance(group_name, (str, unicode))
-    assert isinstance(h5_refs, (list, tuple))
+    if not isinstance(group_name, (str, unicode)):
+        raise TypeError('group_name must be a string')
+    if not isinstance(h5_refs, (list, tuple)):
+        raise TypeError('h5_refs should be a list or tuple')
 
     group_list = list()
     for h5_object in h5_refs:
         if not isinstance(h5_object, h5py.Group):
+            warn('Ignoring object of type: {}. Expected h5py.Group object'.format(type(h5_object)))
             continue
         if h5_object.name.split('/')[-1].startswith(group_name):
             group_list.append(h5_object)

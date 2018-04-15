@@ -494,9 +494,11 @@ class TestPycroDataset(unittest.TestCase):
             self.assertTrue(success)
 
     def test_toggle_sorting(self):
+        # To be added by Chris
         assert False
 
     def test_get_current_sorting(self):
+        # To be added by Chris
         assert False
 
 

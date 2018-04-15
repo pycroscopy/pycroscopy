@@ -87,7 +87,6 @@ class TestHDFUtils(unittest.TestCase):
 
             writer = HDFwriter(h5_f)
             h5_refs_list = writer.write(group_source, print_log=False)
-
             [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
             h5_source_group = h5_source_main.parent
             [h5_pos_inds] = hdf_utils.get_h5_obj_refs([dset_source_pos_inds.name], h5_refs_list)
@@ -159,19 +158,19 @@ class TestHDFUtils(unittest.TestCase):
     # start off with the most popular functions:
     def test_get_attr_illegal_01(self):
         self.__ensure_test_h5_file()
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             hdf_utils.get_attr(np.arange(3), 'units')
 
     def test_get_attr_illegal_02(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], 14)
 
     def test_get_attr_illegal_03(self):
         self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(TypeError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], ['quantity', 'units'])
 
     def test_get_region_illegal_01(self):
@@ -1123,6 +1122,7 @@ class TestHDFUtils(unittest.TestCase):
                               h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
                               h5_f['/Raw_Measurement/source_main-Fitter_001/results_main']]
             main_dsets = hdf_utils.get_all_main(h5_f, verbose=False)
+            # self.assertEqual(set(main_dsets), set(expected_dsets))
             self.assertEqual(len(main_dsets), len(expected_dsets))
             self.assertTrue(np.all([x.name == y.name for x, y in zip(main_dsets, expected_dsets)]))
     
