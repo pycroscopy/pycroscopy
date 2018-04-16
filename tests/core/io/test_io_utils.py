@@ -45,17 +45,17 @@ class TestIOUtils(unittest.TestCase):
         self.assertEqual(io_utils.formatted_str_to_number("4.32 MHz", ["MHz", "kHz"], [1E+6, 1E+3]), 4.32E+6)
 
     def test_formatted_str_to_number_invalid(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("4.32 MHz", ["MHz"], [1E+6, 1E+3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("4.32 MHz", ["MHz", "kHz"], [1E+3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("4.32-MHz", ["MHz", "kHz"], [1E+6, 1E+3])
         with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("haha MHz", ["MHz", "kHz"], [1E+6, 1E+3])
         with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("1.2.3.4 MHz", ["MHz", "kHz"], [1E+6, 1E+3])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.formatted_str_to_number("MHz", ["MHz", "kHz"], [1E+6, 1E+3])
 
     def test_format_quantity(self):
@@ -67,11 +67,11 @@ class TestIOUtils(unittest.TestCase):
         self.assertEqual(ret_val, '1.75 hours')
 
     def test_format_quantity_illegal(self):
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.format_quantity(315, ['sec', 'mins', 'hours'], [1, 60, 3600, 3600*24])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = io_utils.format_quantity(315, ['sec', 'mins', 'hours'], [1, 60])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = io_utils.format_quantity(315, ['sec', 14, 'hours'], [1, 60, 3600*24])
         with self.assertRaises(TypeError):
             _ = io_utils.format_quantity('hello', ['sec', 'mins', 'hours'], [1, 60, 3600])

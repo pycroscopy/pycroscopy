@@ -31,12 +31,14 @@ def contains_integers(iter_int, min_val=None):
     bool
         Whether or not the provided object is an iterable of integers
     """
-    assert isinstance(iter_int, Iterable)
+    if not isinstance(iter_int, Iterable):
+        raise TypeError('iter_int should be an Iterable')
     if len(iter_int) == 0:
         return False
     try:
         if min_val is not None:
-            assert min_val % 1 == 0
+            if min_val % 1 != 0:
+                raise ValueError('min_val should be an integer')
             return np.all([x % 1 == 0 and x >= min_val for x in iter_int])
         else:
             return np.all([x % 1 == 0 for x in iter_int])
@@ -58,7 +60,8 @@ def flatten_complex_to_real(ds_main):
     -------
     retval : ND real numpy array
     """
-    assert isinstance(ds_main, (h5py.Dataset, np.ndarray))
+    if not isinstance(ds_main, (h5py.Dataset, np.ndarray)):
+        raise TypeError('ds_main should either be a h5py.Dataset or numpy array')
     if ds_main.dtype not in [np.complex, np.complex64, np.complex128, np.complex256]:
         raise TypeError("Expected a complex valued matrix")
 
@@ -238,7 +241,8 @@ def stack_real_to_complex(ds_real):
     if ds_real.dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
         raise TypeError("Array cannot have complex dtype")
 
-    assert ds_real.shape[-1] / 2 == ds_real.shape[-1] // 2, "Last dimension must be even sized"
+    if ds_real.shape[-1] / 2 != ds_real.shape[-1] // 2:
+        raise ValueError("Last dimension must be even sized")
     half_point = ds_real.shape[-1] // 2
     return ds_real[..., :half_point] + 1j * ds_real[..., half_point:]
 

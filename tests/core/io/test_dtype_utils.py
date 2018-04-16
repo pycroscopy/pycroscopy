@@ -65,9 +65,9 @@ class TestDtypeUtils(unittest.TestCase):
         self.assertFalse(dtype_utils.contains_integers(['dsss', 34, 1.23, None]))
         self.assertFalse(dtype_utils.contains_integers([]))
         
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = dtype_utils.contains_integers(None)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(TypeError):
             _ = dtype_utils.contains_integers(14)
 
     def test_stack_real_to_complex_single(self):
@@ -139,7 +139,7 @@ class TestDtypeUtils(unittest.TestCase):
             with self.assertRaises(TypeError):
                 _ = dtype_utils.stack_real_to_complex(h5_f['complex'])
 
-            with self.assertRaises(AssertionError):
+            with self.assertRaises(ValueError):
                 _ = dtype_utils.stack_real_to_complex(h5_f['compound'])
 
     def test_complex_to_real_compound_illegal(self):
@@ -154,7 +154,7 @@ class TestDtypeUtils(unittest.TestCase):
     def test_stack_real_to_complex_illegal_odd_last_dim(self):
         expected = 5 * np.random.rand(2, 3, 5, 7) + 7j * np.random.rand(2, 3, 5, 7)
         real_val = np.concatenate([np.real(expected), np.imag(expected)[..., :-1]], axis=3)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             _ = dtype_utils.stack_real_to_complex(real_val)
 
     def test_get_compund_sub_dtypes_legal(self):

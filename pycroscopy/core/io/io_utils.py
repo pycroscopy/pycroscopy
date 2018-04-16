@@ -53,7 +53,8 @@ def file_dialog(file_filter='H5 file (*.h5)', caption='Select File'):
     """
     for param in [file_filter, caption]:
         if param is not None:
-            assert isinstance(param, (str, unicode))
+            if not isinstance(param, (str, unicode)):
+                raise TypeError('param must be a string')
 
     # Only try to use the GUI options if not over an SSH connection.
     if not check_ssh():
@@ -126,10 +127,14 @@ def format_quantity(value, unit_names, factors, decimals=2):
         String with value formatted correctly
     """
     # assert isinstance(value, (int, float))
-    assert isinstance(unit_names, Iterable)
-    assert isinstance(factors, Iterable)
-    assert len(unit_names) == len(factors)
-    assert np.all([isinstance(_, (str, unicode)) for _ in unit_names])
+    if not isinstance(unit_names, Iterable):
+        raise TypeError('unit_names must an Iterable')
+    if not isinstance(factors, Iterable):
+        raise TypeError('factors must be an Iterable')
+    if len(unit_names) != len(factors):
+        raise ValueError('unit_names and factors must be of the same length')
+    if not np.all([isinstance(_, (str, unicode)) for _ in unit_names]):
+        raise TypeError('unit_names must be strings')
     index = None
 
     for index, val in enumerate(factors):
@@ -272,15 +277,22 @@ def formatted_str_to_number(str_val, magnitude_names, magnitude_values, separato
     number
         Numeric value of the string
     """
-    assert isinstance(str_val, (str, unicode))
-    assert isinstance(separator, (str, unicode))
-    assert isinstance(magnitude_names, Iterable)
-    assert isinstance(magnitude_values, Iterable)
-    assert np.all([isinstance(_, (str, unicode)) for _ in magnitude_names])
-    assert len(magnitude_names) == len(magnitude_values)
+    if not isinstance(str_val, (str, unicode)):
+        raise TypeError('str_val must be a string')
+    if not isinstance(separator, (str, unicode)):
+        raise TypeError('separator must be a string')
+    if not isinstance(magnitude_names, Iterable):
+        raise TypeError('magnitude_names must be an Iterable')
+    if not isinstance(magnitude_values, Iterable):
+        raise TypeError('magnitude_values must be an Iterable')
+    if not np.all([isinstance(_, (str, unicode)) for _ in magnitude_names]):
+        raise TypeError('magnitude_names should contain strings')
+    if len(magnitude_names) != len(magnitude_values):
+        raise ValueError('magnitude_names and magnitude_values should be of the same length')
 
     components = str_val.split(separator)
-    assert len(components) == 2
+    if len(components) != 2:
+        raise ValueError('String value should be of format "123.45<separator>Unit')
 
     for unit_name, scaling in zip(magnitude_names, magnitude_values):
         if unit_name == components[1]:
