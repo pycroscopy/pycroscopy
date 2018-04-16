@@ -1,11 +1,15 @@
-import sys
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Sep  7 21:14:25 2017
 
+@author: Suhas Somnath, Chris Smith
+"""
+
+import sys
 import numpy as np
 from collections import Iterable
-import numbers
 
 from .virtual_data import VirtualDataset
-
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
@@ -298,6 +302,11 @@ def create_spec_inds_from_vals(ds_spec_val_mat):
         Indices corresponding to the values in ds_spec_val_mat
 
     """
+    if not isinstance(ds_spec_val_mat, np.ndarray):
+        raise TypeError('ds_spec_val_mat must be a numpy array')
+    if ds_spec_val_mat.ndim != 2:
+        raise ValueError('ds_spec_val_mat must be a 2D array arranged as [dimension, values]')
+
     ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype=np.int32)
 
     """
