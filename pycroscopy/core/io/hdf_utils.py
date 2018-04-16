@@ -2421,7 +2421,8 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
 
 
 def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
-                       main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None, h5_spec_vals=None):
+                       main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None, h5_spec_vals=None,
+                       **kwargs):
     """
     Writes the provided data as a 'Main' dataset with all appropriate linking.
     By default, the instructions for generating the ancillary datasets should be specified using the pos_dims and
@@ -2429,12 +2430,15 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     available for either/or the positions / spectroscopic, they can be specified using the keyword arguments. In this
     case, fresh datasets will not be generated.
 
+    kwargs will be passed onto the creation of the dataset. Please pass chunking, compression, dtype, and other
+    arguments this way
+
     Parameters
     ----------
     h5_parent_group : h5py.Group
         Parent group under which the datasets will be created
-    main_data : np.ndarray
-        2D matrix formatted as [position, spectral]
+    main_data : np.ndarray or list / tuple
+        2D matrix formatted as [position, spectral] or a list / tuple with the shape for an empty dataset
     main_data_name : String / Unicode
         Name to give to the main dataset
     quantity : String / Unicode
@@ -2466,16 +2470,16 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Reference to the main dataset
     """
 
-    def __validate_anc_h5_dsets(inds, vals, is_spectroscopic=True):
+    def __validate_anc_h5_dsets(inds, vals, main_shape, is_spectroscopic=True):
         if not isinstance(inds, h5py.Dataset):
             raise TypeError('inds must be a h5py.Dataset object')
         if not isinstance(vals, h5py.Dataset):
             raise TypeError('vals must be a h5py.Dataset object')
         if inds.shape != vals.shape:
             raise ValueError('inds: {} and vals: {} should be of the same shape'.format(inds.shape, vals.shape))
-        if inds.shape[is_spectroscopic] != main_data.shape[is_spectroscopic]:
+        if inds.shape[is_spectroscopic] != main_shape[is_spectroscopic]:
             raise ValueError('index {} in shape of inds: {} and main_data: {} should be equal'
-                             '.'.format(int(is_spectroscopic), inds.shape, main_data.shape))
+                             '.'.format(int(is_spectroscopic), inds.shape, main_shape))
 
     def __validate_dimensions(dimensions):
         if not isinstance(dimensions, (list, np.ndarray, tuple)):
@@ -2496,14 +2500,22 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         if len(arg.strip()) <= 0:
             raise ValueError(arg_name + ' should not be an empty string')
 
-    if not isinstance(main_data, np.ndarray):
-        raise TypeError('main_data should be a numpy array')
-    if main_data.ndim != 2:
-        raise ValueError('main_data shoul be a 2D array')
+    if isinstance(main_data, (list, tuple)):
+        if not contains_integers(main_data, min_val=1):
+            raise ValueError('main_data if specified as a shape should be a list / tuple of integers >= 1')
+        if len(main_data) != 2:
+            raise ValueError('main_data if specified as a shape should contain 2 numbers')
+        main_shape = main_data
+    elif isinstance(main_data, np.ndarray):
+        if main_data.ndim != 2:
+            raise ValueError('main_data should be a 2D array')
+        main_shape = main_data.shape
+    else:
+        raise TypeError('main_data should either be a numpy array or a tuple / list with the shape of the data')
 
     if h5_pos_inds is not None and h5_pos_vals is not None:
         # The provided datasets override fresh building instructions.
-        __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, is_spectroscopic=False)
+        __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, main_shape, is_spectroscopic=False)
     else:
         for dset_name in ['Position_Indices', 'Position_Values']:
             if dset_name in h5_parent_group.keys():
@@ -2513,13 +2525,13 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             pos_dims = [pos_dims]
         pos_dims = __validate_dimensions(pos_dims)
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
-        if main_data.shape[0] != np.product([len(x.values) for x in pos_dims]):
+        if main_shape[0] != np.product([len(x.values) for x in pos_dims]):
             raise ValueError('Position dimensions in main data do not match with product of values in pos_dims')
         h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False)
 
     if h5_spec_inds is not None and h5_spec_vals is not None:
         # The provided datasets override fresh building instructions.
-        __validate_anc_h5_dsets(h5_spec_inds, h5_spec_vals, is_spectroscopic=True)
+        __validate_anc_h5_dsets(h5_spec_inds, h5_spec_vals, main_shape, is_spectroscopic=True)
     else:
         for dset_name in ['Spectroscopic_Indices', 'Spectroscopic_Values']:
             if dset_name in h5_parent_group.keys():
@@ -2530,13 +2542,16 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             spec_dims = [spec_dims]
         spec_dims = __validate_dimensions(spec_dims)
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
-        if main_data.shape[1] != np.product([len(x.values) for x in spec_dims]):
+        if main_shape[1] != np.product([len(x.values) for x in spec_dims]):
             raise ValueError('Spectroscopic dimensions in main data do not match with product of values in spec_dims')
         h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False)
 
-    # Raw data - assuming simple small dataset
-    # TODO: allow for large empty dataset
-    h5_main = h5_parent_group.create_dataset(main_data_name, data=main_data)
+    if isinstance(main_data, np.ndarray):
+        # Case 1 - simple small dataset
+        h5_main = h5_parent_group.create_dataset(main_data_name, data=main_data, **kwargs)
+    else:
+        # Case 2 - large empty dataset
+        h5_main = h5_parent_group.create_dataset(main_data_name, main_data, **kwargs)
     h5_main.attrs.update({'quantity': quantity, 'units': units})
     if isinstance(main_dset_attrs, dict):
         h5_main.attrs.update(main_dset_attrs)

@@ -1352,7 +1352,7 @@ class TestHDFUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = hdf_utils.is_editable_h5(h5_group)
 
-    def test_write_main_dset(self):
+    def test_write_main_dset_small(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
         main_data = np.random.rand(15, 14)
@@ -1386,6 +1386,48 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(pycro_main.name.split('/')[-1], main_data_name)
             self.assertEqual(pycro_main.parent, h5_f)
             self.assertTrue(np.allclose(main_data, pycro_main[()]))
+
+            self.__validate_aux_dset_pair(h5_f, pycro_main.h5_pos_inds, pycro_main.h5_pos_vals, pos_names, pos_units,
+                                          pos_data, h5_main=pycro_main, is_spectral=False)
+
+            self.__validate_aux_dset_pair(h5_f, pycro_main.h5_spec_inds, pycro_main.h5_spec_vals, spec_names, spec_units,
+                                          spec_data, h5_main=pycro_main, is_spectral=True)
+        os.remove(file_path)
+
+    def test_write_main_dset_empty(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        main_data = (15, 14)
+        main_data_name = 'Test_Main'
+        quantity = 'Current'
+        dset_units = 'nA'
+
+        pos_sizes = [5, 3]
+        pos_names = ['X', 'Y']
+        pos_units = ['nm', 'um']
+
+        pos_dims = []
+        for length, name, units in zip(pos_sizes, pos_names, pos_units):
+            pos_dims.append(write_utils.Dimension(name, units, np.arange(length)))
+        pos_data = np.vstack((np.tile(np.arange(5), 3),
+                              np.repeat(np.arange(3), 5))).T
+
+        spec_sizes = [7, 2]
+        spec_names = ['Bias', 'Cycle']
+        spec_units = ['V', '']
+        spec_dims = []
+        for length, name, units in zip(spec_sizes, spec_names, spec_units):
+            spec_dims.append(write_utils.Dimension(name, units, np.arange(length)))
+        spec_data = np.vstack((np.tile(np.arange(7), 2),
+                              np.repeat(np.arange(2), 7)))
+
+        with h5py.File(file_path) as h5_f:
+            pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, pos_dims,
+                                                      spec_dims, main_dset_attrs=None)
+            self.assertIsInstance(pycro_main, PycroDataset)
+            self.assertEqual(pycro_main.name.split('/')[-1], main_data_name)
+            self.assertEqual(pycro_main.parent, h5_f)
+            self.assertEqual(main_data, pycro_main.shape)
 
             self.__validate_aux_dset_pair(h5_f, pycro_main.h5_pos_inds, pycro_main.h5_pos_vals, pos_names, pos_units,
                                           pos_data, h5_main=pycro_main, is_spectral=False)
