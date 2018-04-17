@@ -13,6 +13,7 @@ import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
+from functools import partial
 
 from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, plot_complex_loop_stack, plot_complex_map_stack
 from pycroscopy.viz.jupyter_utils import save_fig_filebox_button
@@ -214,14 +215,14 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     return fig, axes
 
 
-def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None):
+def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None):
     """
     Jupyer notebook ONLY function. Sets up an interactive visualizer for viewing SHO fitted BEPS data.
     Currently, this is limited to DC and AC spectroscopy datasets.
 
     Parameters
     ----------
-    h5_sho_dset : h5py.Dataset
+    pc_sho_dset : PycroDataset
         dataset to be plotted
     step_chan : string / unicode
         Name of the channel that forms the primary spectroscopic axis (eg - DC offset)
@@ -235,30 +236,29 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     """
     cmap = get_cmap_object(cmap)
 
-    guess_3d_data, success = reshape_to_Ndims(h5_sho_dset)
-
-    h5_sho_spec_inds = getAuxData(h5_sho_dset, 'Spectroscopic_Indices')[0]
-    h5_sho_spec_vals = getAuxData(h5_sho_dset, 'Spectroscopic_Values')[0]
+    h5_sho_spec_inds = pc_sho_dset.h5_spec_inds
+    h5_sho_spec_vals = pc_sho_dset.h5_spec_vals
     spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
-    sho_spec_dims = np.array(spec_nd.shape[1:])
-    sho_spec_labels = get_attr(h5_sho_spec_inds, 'labels')
+    sho_spec_dims = pc_sho_dset.spec_dim_sizes
+    sho_spec_labels = pc_sho_dset.spec_dim_labels
 
-    h5_pos_inds = getAuxData(h5_sho_dset, auxDataName='Position_Indices')[-1]
+    h5_pos_inds = pc_sho_dset.h5_pos_inds
     pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
-    pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
-    pos_labels = get_attr(h5_pos_inds, 'labels')
+    pos_dims = pc_sho_dset.pos_dim_sizes
+    pos_labels = pc_sho_dset.pos_dim_labels
 
     # reshape to X, Y, step, all others
-    spec_step_dim_ind = np.where(sho_spec_labels == step_chan)[0][0]
+    spec_step_dim_ind = sho_spec_labels.index(step_chan)
     step_dim_ind = len(pos_dims) + spec_step_dim_ind
 
     # move the step dimension to be the first after all position dimensions
-    rest_sho_dim_order = list(range(len(pos_dims), len(guess_3d_data.shape)))
+    rest_sho_dim_order = list(range(len(pos_dims), len(pc_sho_dset.n_dim_sizes)))
     rest_sho_dim_order.remove(step_dim_ind)
     new_order = list(range(len(pos_dims))) + [step_dim_ind] + rest_sho_dim_order
 
     # Transpose the 3D dataset to this shape:
-    sho_guess_Nd_1 = np.transpose(guess_3d_data, new_order)
+    guess_nd_data = pc_sho_dset.get_n_dim_form()
+    guess_nd_data = np.transpose(guess_nd_data, new_order)
 
     # Now move the step dimension to the front for the spec labels as well
     new_spec_order = list(range(len(sho_spec_labels)))
@@ -270,12 +270,14 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     # Now collapse all additional dimensions
     final_guess_shape = pos_dims + [new_spec_dims[0]] + [-1]
-    sho_dset_collapsed = np.reshape(sho_guess_Nd_1, final_guess_shape)
+    sho_dset_collapsed = np.reshape(guess_nd_data, final_guess_shape).squeeze()
 
     # Get the bias matrix:
     bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
     bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
                             new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
+    if bias_mat.ndim == 1:
+        bias_mat = np.atleast_2d(bias_mat).T
 
     # This is just the visualizer:
     sho_quantity = 'Amplitude [V]'
@@ -297,9 +299,19 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
             resp_func = ac_spectroscopy_func
             resp_label = 'Amplitude (a. u.)'
 
-    spatial_map = sho_dset_collapsed[:, :, step_ind, 0][sho_quantity]
-    resp_vec = sho_dset_collapsed[row_ind, col_ind, :, :]
-    resp_vec = resp_func(resp_vec)
+    not_step_chan = sho_spec_labels.copy().remove(step_chan)
+    spatial_dict = {step_chan: [step_ind]}
+    resp_dict = {pos_labels[-1]: [row_ind],
+                 pos_labels[-2]: [col_ind]}
+    for key in pos_labels[:-2]:
+        spatial_dict[key] = [0]
+        resp_dict[key] = [0]
+    if not_step_chan is not None:
+        for key in not_step_chan:
+            spatial_dict[key] = [0]
+
+    spatial_map = pc_sho_dset.slice(False, spatial_dict)[0][sho_quantity].squeeze()
+    resp_vec = resp_func(pc_sho_dset.slice(False, resp_dict)[0].squeeze())
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
@@ -314,8 +326,8 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=None)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
-    ax_map.set_xlabel('X')
-    ax_map.set_ylabel('Y')
+    ax_map.set_xlabel(pos_labels[-1])
+    ax_map.set_ylabel(pos_labels[-2])
     ax_map.set_title(map_title)
     crosshair = ax_map.plot(row_ind, col_ind, 'k+')[0]
 
@@ -328,9 +340,17 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
 
     plt.show()
 
+    # Build sliders for any extra Position Dimensions
+    pos_sliders = dict()
+    for ikey, key in enumerate(pos_labels[:-2]):
+        pos_sliders[key] = widgets.IntSlider(value=0, min=0, max=pos_dims[ikey] - 1,
+                                             step=1, description='{} Step:'.format(key),
+                                             continuous_update=False)
+
     def update_sho_plots(sho_quantity, step_ind):
         bias_slider.set_xdata((step_ind, step_ind))
-        spatial_map = sho_dset_collapsed[:, :, step_ind, 0][sho_quantity]
+        spatial_dict[step_chan] = [step_ind]
+        spatial_map = pc_sho_dset.slice(False, spatial_dict)[0][sho_quantity].squeeze()
         map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
         ax_map.set_title(map_title)
         img_map.set_data(spatial_map.T)
@@ -338,29 +358,40 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
         spat_std = np.std(spatial_map)
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
+    def update_resp_plot(resp_dict):
+        resp_vec = resp_func(np.atleast_2d(pc_sho_dset.slice(False, resp_dict)[0].squeeze()))
+        for line_handle, data in zip(line_handles, resp_vec):
+            line_handle.set_ydata(data)
+
+        ax_loop.relim()
+        ax_loop.autoscale_view()
+
     def pos_picker(event):
         if not img_map.axes.in_axes(event):
             return
 
         xdata = int(round(event.xdata))
         ydata = int(round(event.ydata))
-        current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
 
-        pos_dim_vals = list(range(len(pos_labels)))
-
-        for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
-            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
+        resp_dict[pos_labels[-1]] = [xdata]
+        resp_dict[pos_labels[-2]] = [ydata]
 
         crosshair.set_xdata(xdata)
         crosshair.set_ydata(ydata)
 
-        resp_vec = sho_dset_collapsed[xdata, ydata, :, :]
-        resp_vec = resp_func(resp_vec)
-        for line_handle, data in zip(line_handles, np.transpose(resp_vec)):
-            line_handle.set_ydata(data)
+        update_resp_plot(resp_dict)
 
-        ax_loop.relim()
-        ax_loop.autoscale_view()
+        fig.canvas.draw()
+
+    def pos_slider_update(slider):
+        for key in pos_labels[:-2]:
+            spatial_dict[key] = [pos_sliders[key].value]
+            resp_dict[key] = [pos_sliders[key].value]
+        step = bias_step_picker.value
+        sho_quantity = sho_quantity_picker.value
+
+        update_resp_plot(resp_dict)
+        update_sho_plots(sho_quantity, step)
 
         fig.canvas.draw()
 
@@ -372,16 +403,19 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     bias_step_picker = widgets.IntSlider(min=0, max=bias_mat.shape[0]-1, step=1,
                                          description='Bias Step')
 
-    cid = img_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
-
-    fig_filename, _ = os.path.splitext(h5_sho_dset.file.filename)
+    fig_filename, _ = os.path.splitext(pc_sho_dset.file.filename)
     display(save_fig_filebox_button(fig, fig_filename + '.png'))
+
+    for key, slider in pos_sliders.items():
+        widgets.interact(pos_slider_update, slider=slider)
+
+    cid = img_map.figure.canvas.mpl_connect('button_press_event', pos_picker)
     widgets.interact(update_sho_plots, sho_quantity=sho_quantity_picker, step_ind=bias_step_picker)
 
     return fig
 
 
-def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
+def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
     """
     Jupyer notebook ONLY function. Sets up a simple visualzier for visualizing raw BE data.
     Sliders for position indices can be used to visualize BE spectrograms (frequency, UDVS step).
@@ -389,61 +423,69 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
     Parameters
     ----------
-    h5_main : h5py.Dataset
+    pc_main : PycroDataset
         Raw Band Excitation dataset
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
     """
     cmap = get_cmap_object(cmap)
 
-    h5_pos_inds = getAuxData(h5_main, auxDataName='Position_Indices')[-1]
-    pos_sort = get_sort_order(np.transpose(h5_pos_inds))
-    pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_sort)
-    pos_labels = np.array(get_attr(h5_pos_inds, 'labels'))[pos_sort]
+    h5_pos_inds = pc_main.h5_pos_inds
+    pos_dims = pc_main.pos_dim_sizes
+    pos_labels = pc_main.pos_dim_labels
 
-    h5_spec_vals = getAuxData(h5_main, auxDataName='Spectroscopic_Values')[-1]
-    h5_spec_inds = getAuxData(h5_main, auxDataName='Spectroscopic_Indices')[-1]
-    spec_sort = get_sort_order(h5_spec_inds)
-    spec_dims = get_dimensionality(h5_spec_inds, spec_sort)
-    spec_labels = np.array(get_attr(h5_spec_inds, 'labels'))[spec_sort]
+    h5_spec_vals = pc_main.h5_spec_vals
+    h5_spec_inds = pc_main.h5_spec_inds
+    spec_dims = pc_main.spec_dim_sizes
+    spec_labels = pc_main.spec_dim_labels
 
-    ifreq = int(np.argwhere(spec_labels == 'Frequency'))
+    ifreq = spec_labels.index('Frequency')
     freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
 
-    num_udvs_steps = h5_main.parent.parent.attrs.get('num_udvs_steps', None)
+    num_udvs_steps = np.prod(spec_dims[not ifreq])
 
-    # New version of aquisition software renamed num_udvs_steps to num_UDVS_steps
-    if num_udvs_steps is None:
-        num_udvs_steps = h5_main.parent.parent.attrs.get('num_UDVS_steps', None)
+    if len(pos_dims) >= 2:
+        # Build initial slice dictionaries
+        spatial_slice_dict = {'X': slice(None), 'Y': slice(None)}
+        for key in pos_labels:
+            if key in spatial_slice_dict.keys():
+                continue
+            else:
+                spatial_slice_dict[key] = [0]
 
-    if num_udvs_steps is None:
-        warn('Number of UDVS steps could not be determined.  Will assume single step.')
+        spectrogram_slice_dict = {key: [0] for key in pos_labels}
 
-    if len(pos_dims) == 2:
-        spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
-        spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
+        spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+
+        x_size = pos_dims[-1]
+        y_size = pos_dims[-2]
+
+        spatial_map = np.abs(np.reshape(pc_main[spatial_slice, 0], (y_size, x_size)))
+        spectrogram = np.reshape(pc_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
-        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=spatial_map.shape[0],
-                                                         y_size=spatial_map.shape[1], cmap=cmap)
+        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=x_size,
+                                                         y_size=y_size, cmap=cmap)
         axes[0].set_aspect('equal')
-        axes[0].set_xlabel('X')
-        axes[0].set_ylabel('Y')
+        axes[0].set_xlabel(pos_labels[-1])
+        axes[0].set_ylabel(pos_labels[-2])
 
-        crosshair = axes[0].plot(int(0.5 * spatial_map.shape[0]), int(0.5 * spatial_map.shape[1]), 'k+')[0]
+        xdata = int(0.5 * x_size)
+        ydata = int(0.5 * y_size)
+        crosshair = axes[0].plot(xdata, ydata, 'k+')[0]
 
         if len(spec_dims) > 1:
             amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
+                                         extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, num_udvs_steps])
 
             phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
-                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
+                                             extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, num_udvs_steps])
 
             for axis in axes[1:3]:
                 axis.set_ylabel('BE step')
                 axis.axis('tight')
                 x0, x1 = (freqs_2d[0, 0], freqs_2d[-1, 0])
-                y0, y1 = (0, spectrogram.shape[0])
+                y0, y1 = (0, num_udvs_steps)
                 axis.set_aspect(np.abs(x1-x0)/np.abs(y1-y0))
 
         else:
@@ -453,7 +495,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             spectrogram = np.squeeze(spectrogram)
             amp_img = axes[1].plot(np.abs(spectrogram))[0]
             phase_img = axes[2].plot(np.angle(spectrogram))[0]
-            amp_full = np.abs(h5_main[()])
+            amp_full = np.abs(pc_main[()])
             amp_mean = np.mean(amp_full)
             amp_std = np.std(amp_full)
             st_devs = 4
@@ -461,22 +503,49 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             axes[1].set_ylim([0, amp_mean + st_devs * amp_std])
             axes[2].set_ylim([-np.pi, np.pi])
 
-        axes[1].set_title('Amplitude - Position ({},{})'.format(int(0.5 * spatial_map.shape[0]),
-                                                                int(0.5 * spatial_map.shape[0])))
+        pos_heading = pos_labels[-1] + ': ' + str(xdata) + ', ' + \
+                      pos_labels[-2] + ': ' + str(ydata) + ', '
+        for dim_name in pos_labels[-3::-1]:
+            pos_heading += dim_name + ': ' + str(spatial_slice_dict[dim_name]) + ', '
+
+        axes[1].set_title('Amplitude \n' + pos_heading)
         axes[1].set_xlabel('Frequency (kHz)')
 
-        axes[2].set_title('Phase - Position ({},{})'.format(int(0.5 * spatial_map.shape[0]),
-                                                                int(0.5 * spatial_map.shape[0])))
+        axes[2].set_title('Phase \n' + pos_heading)
         axes[2].set_xlabel('Frequency (kHz)')
 
         fig.tight_layout()
 
-        plt.show()
-        fig_filename, _ = os.path.splitext(h5_main.file.filename)
+        fig_filename, _ = os.path.splitext(pc_main.file.filename)
         display(save_fig_filebox_button(fig, fig_filename+'.png'))
 
-        def index_unpacker(step):
-            spatial_map = np.abs(np.reshape(h5_main[:, step], pos_dims[::-1]))
+        # Build sliders for any extra Position Dimensions
+        pos_sliders = dict()
+        for ikey, key in enumerate(pos_labels[:-2]):
+            pos_sliders[key] = widgets.IntSlider(value=0, min=0, max=pos_dims[ikey]-1,
+                                                 step=1, description='{} Step:'.format(key),
+                                                 continuous_update=False)
+
+        def get_spatial_slice():
+            xdata, ydata = crosshair.get_xydata().squeeze()
+            spatial_slice_dict[pos_labels[-1]] = [int(xdata)]
+            spatial_slice_dict[pos_labels[-2]] = [int(ydata)]
+            for key in pos_labels[:-2]:
+                spatial_slice_dict[key] = [pos_sliders[key].value]
+
+            spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+
+            return spatial_slice
+
+        def spec_index_unpacker(step):
+            spatial_slice_dict[pos_labels[-1]] = slice(None)
+            spatial_slice_dict[pos_labels[-2]] = slice(None)
+            for key in pos_labels[:-2]:
+                spatial_slice_dict[key] = [pos_sliders[key].value]
+
+            spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+
+            spatial_map = np.abs(np.reshape(pc_main[spatial_slice, step], (x_size, y_size)))
             spatial_img.set_data(spatial_map)
             spat_mean = np.mean(spatial_map)
             spat_std = np.std(spatial_map)
@@ -494,23 +563,20 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
             xdata = int(round(event.xdata))
             ydata = int(round(event.ydata))
-            current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
-
-            pos_dim_vals = list(range(len(pos_labels)))
-
-            for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
-                pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
 
             crosshair.set_xdata(xdata)
             crosshair.set_ydata(ydata)
 
-            axes[1].set_title('Amplitude - Position ({},{})'.format(xdata,ydata))
-            axes[2].set_title('Phase - Position ({},{})'.format(xdata, ydata))
+            spatial_slice = get_spatial_slice()
 
-            pix_ind = pos_dim_vals[0]
-            for pos_dim_ind in range(1, len(pos_labels)):
-                pix_ind += pos_dim_vals[pos_dim_ind] * pos_dims[pos_dim_ind - 1]
-            spectrogram = np.reshape(h5_main[pix_ind], (num_udvs_steps, -1))
+            pos_heading = pos_labels[-1] + ': ' + str(xdata) + ', ' + \
+                          pos_labels[-2] + ': ' + str(ydata) + ', '
+            for dim_name in pos_labels[-3::-1]:
+                pos_heading += dim_name + ': ' + str(spatial_slice_dict[dim_name]) + ', '
+            axes[1].set_title('Amplitude \n' + pos_heading)
+            axes[2].set_title('Phase \n' + pos_heading)
+
+            spectrogram = np.reshape(pc_main[spatial_slice, :], (num_udvs_steps, -1))
 
             if len(spec_dims) > 1:
                 amp_img.set_data(np.abs(spectrogram))
@@ -523,9 +589,40 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
 
             fig.canvas.draw()
 
+        def pos_slider_update(slider):
+            spatial_slice = get_spatial_slice()
+            step = spec_index_slider.value
+
+            spec_index_unpacker(step)
+
+            pos_heading = pos_labels[-1] + ': ' + str(xdata) + ', ' + \
+                          pos_labels[-2] + ': ' + str(ydata) + ', '
+            for dim_name in pos_labels[-3::-1]:
+                pos_heading += dim_name + ': ' + str(spatial_slice_dict[dim_name]) + ', '
+            axes[1].set_title('Amplitude \n' + pos_heading)
+            axes[2].set_title('Phase \n' + pos_heading)
+
+            spectrogram = np.reshape(pc_main[spatial_slice, :], (num_udvs_steps, -1))
+
+            if len(spec_dims) > 1:
+                amp_img.set_data(np.abs(spectrogram))
+                phase_img.set_data(np.angle(spectrogram))
+            else:
+                amp_img.set_ydata(np.abs(spectrogram))
+                phase_img.set_ydata(np.angle(spectrogram))
+            amp_cbar.changed()
+            phase_cbar.changed()
+
+            fig.canvas.draw()
+
+
+        spec_index_slider = widgets.IntSlider(value=0, min=0, max=pc_main.shape[1], step=1,
+                                              description='Step')
         cid = spatial_img.figure.canvas.mpl_connect('button_press_event', pos_picker)
-        widgets.interact(index_unpacker, step=(0, h5_main.shape[1] - 1, 1))
-        plt.show()
+        widgets.interact(spec_index_unpacker, step=spec_index_slider)
+        for key, slider in pos_sliders.items():
+            widgets.interact(pos_slider_update, slider=slider)
+        # plt.show()
 
     else:
         def plot_spectrogram(data, freq_vals):
@@ -550,7 +647,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             fig.tight_layout()
             return fig, axes, im_handles
 
-        fig, axes, im_handles = plot_spectrogram(np.reshape(h5_main[0], (num_udvs_steps, -1)), freqs_2d)
+        fig, axes, im_handles = plot_spectrogram(np.reshape(pc_main[0], (num_udvs_steps, -1)), freqs_2d)
 
         def position_unpacker(**kwargs):
             pos_dim_vals = range(len(pos_labels))
@@ -559,7 +656,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
             pix_ind = pos_dim_vals[0]
             for pos_dim_ind in range(1, len(pos_labels)):
                 pix_ind += pos_dim_vals[pos_dim_ind] * pos_dims[pos_dim_ind - 1]
-            spectrogram = np.reshape(h5_main[pix_ind], (num_udvs_steps, -1))
+            spectrogram = np.reshape(pc_main[pix_ind], (num_udvs_steps, -1))
             im_handles[0].set_data(np.abs(spectrogram))
             im_handles[1].set_data(np.angle(spectrogram))
             display(fig)
