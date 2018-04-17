@@ -12,11 +12,10 @@ import numpy as np
 import sklearn.decomposition as dec
 
 from ..core.processing.process import Process
-from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, get_attr, reshape_to_n_dims
-from ..core.io.hdf_writer import HDFwriter
-from ..core.io.write_utils import Dimension, build_ind_val_dsets, clean_string_att
+from ..core.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
+    write_simple_attrs
+from ..core.io.write_utils import Dimension
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
-from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 from ..core.io.io_utils import format_time
 from ..core.io.pycro_data import PycroDataset
 
@@ -205,50 +204,26 @@ class Decomposition(Process):
         h5_group : HDF5 Group reference
             Reference to the group that contains the decomposition results
         """
-        ds_components = VirtualDataset('Components', self.__components, # equivalent to V - compound / complex
-                                       attrs={'units': 'a. u.',
-                                              'quantity': clean_string_att(get_attr(self.h5_main, 'quantity'))})
-        ds_projections = VirtualDataset('Projection', np.float32(self.__projection),
-                                        attrs={'quantity': 'abundance', 'units': 'a.u.'})  # equivalent of U - real
 
-        decomp_desc = Dimension('Endmember', 'a. u.', np.arange(self.__components.shape[0]))
-        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(decomp_desc, is_spectral=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(decomp_desc, is_spectral=True)
+        h5_decomp_group = create_results_group(self.h5_main, self.process_name)
+        write_simple_attrs(h5_decomp_group, self.parms_dict)
+        write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
+                                             'n_samples': self.h5_main.shape[0], 'last_pixel': self.h5_main.shape[0]})
 
-        decomp_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-Decomposition_', self.h5_main.parent.name[1:])
-        decomp_grp.add_children([ds_components, ds_projections, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
-        
-        decomp_grp.attrs.update(self.parms_dict)
-        decomp_grp.attrs.update({'n_components': self.__components.shape[0],
-                                 'n_samples': self.h5_main.shape[0],
-                                 'last_pixel': self.h5_main.shape[0]})
-        
-        hdf = HDFwriter(self.h5_main.file)
-        h5_decomp_refs = hdf.write(decomp_grp)
+        decomp_desc = Dimension('Endmember', 'a. u.', self.__components.shape[0])
 
-        h5_components = get_h5_obj_refs(['Components'], h5_decomp_refs)[0]
-        h5_projections = get_h5_obj_refs(['Projection'], h5_decomp_refs)[0]
-        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_decomp_refs)[0]
-        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_decomp_refs)[0]
-        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_decomp_refs)[0]
-        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_decomp_refs)[0]
+        # equivalent to V - compound / complex
+        h5_components = write_main_dataset(h5_decomp_group, self.__components, 'Components',
+                                           get_attr(self.h5_main, 'quantity')[0], 'a.u.', decomp_desc,
+                                           None,
+                                           h5_spec_inds=self.h5_main.h5_spec_inds,
+                                           h5_spec_vals=self.h5_main.h5_spec_vals)
 
-        check_and_link_ancillary(h5_projections,
-                              ['Position_Indices', 'Position_Values'],
-                              h5_main=self.h5_main)
-
-        check_and_link_ancillary(h5_projections,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_spec_inds, h5_spec_vals])
-
-        check_and_link_ancillary(h5_components,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              h5_main=self.h5_main)
-
-        check_and_link_ancillary(h5_components,
-                              ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_pos_inds, h5_pos_vals])
+        # equivalent of U - real
+        h5_projections = write_main_dataset(h5_decomp_group, np.float32(self.__projection), 'Projection', 'abundance',
+                                            'a.u.', None, decomp_desc, dtype=np.float32,
+                                            h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals)
 
         # return the h5 group object
-        self.h5_results_grp = h5_components.parent
+        self.h5_results_grp = h5_decomp_group
         return self.h5_results_grp

@@ -7,7 +7,6 @@ Created on Mon Mar 28 09:45:08 2016
 
 from __future__ import division, print_function, absolute_import
 import time
-from warnings import warn
 from multiprocessing import cpu_count
 import numpy as np
 from sklearn.utils import gen_batches
@@ -15,14 +14,14 @@ from sklearn.utils.extmath import randomized_svd
 
 from ..core.processing.process import Process
 from .proc_utils import get_component_slice
-from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, find_results_groups, \
-    get_indices_for_region_ref, create_region_reference, calc_chunks, copy_main_attributes, copy_attributes, \
-    reshape_to_n_dims
-from pycroscopy.core.io.hdf_writer import HDFwriter
+from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups,  get_indices_for_region_ref, \
+    create_region_reference, calc_chunks, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
+    create_results_group, write_simple_attrs
+from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory, format_time
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..core.io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.write_utils import build_ind_val_dsets, Dimension
+from ..core.io.write_utils import Dimension
 from ..core.io.pycro_data import PycroDataset
 
 
@@ -92,7 +91,6 @@ class SVD(Process):
                        reshape_to_n_dims(self.h5_results_grp['V'])[0]
 
         self.h5_results_grp = None
-        print('Performing SVD')
 
         t1 = time.time()
 
@@ -157,72 +155,25 @@ class SVD(Process):
         Parameters
         ----------
         """
-        aux_desc = Dimension('Principal Component', 'a. u.', np.arange(len(self.__s)))
-        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(aux_desc, is_spectral=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(aux_desc, is_spectral=True)
+        comp_dim = Dimension('Principal Component', 'a. u.', len(self.__s))
+
+        h5_svd_group = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = h5_svd_group
+
+        write_simple_attrs(h5_svd_group, self.parms_dict)
+        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0] - 1})
+
+        h5_u = write_main_dataset(h5_svd_group, np.float32(self.__u), 'U', 'Abundance', 'a.u.', None, comp_dim,
+                                  h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
+                                  dtype=np.float32, chunks=calc_chunks(self.__u.shape, np.float32(0).itemsize))
+        print(get_attr(self.h5_main, 'quantity')[0])
+        h5_v = write_main_dataset(h5_svd_group, self.__v, 'V', get_attr(self.h5_main, 'quantity')[0],
+                                  'a.u.', comp_dim, None, h5_spec_inds=self.h5_main.h5_spec_inds,
+                                  h5_spec_vals=self.h5_main.h5_spec_vals,
+                                  chunks=calc_chunks(self.__v.shape, self.h5_main.dtype.itemsize))
 
         # No point making this 1D dataset a main dataset
-        ds_s = VirtualDataset('S', data=np.float32(self.__s))
-
-        u_chunks = calc_chunks(self.__u.shape, np.float32(0).itemsize)
-        ds_u = VirtualDataset('U', data=np.float32(self.__u), chunking=u_chunks,
-                              attrs={'quantity': 'Abundance', 'units': 'a.u.'})
-
-        v_chunks = calc_chunks(self.__v.shape, self.h5_main.dtype.itemsize)
-        ds_v = VirtualDataset('V', data=self.__v, chunking=v_chunks)
-
-        '''
-        Create the Group to hold the results and add the existing datasets as
-        children
-        '''
-        grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        svd_grp = VirtualGroup(grp_name, self.h5_main.parent.name[1:])
-        svd_grp.add_children([ds_v, ds_s, ds_u, ds_pos_inds, ds_pos_vals, ds_spec_vals, ds_spec_inds])
-
-        '''
-        Write the attributes to the group
-        '''
-        svd_grp.attrs = self.parms_dict
-        svd_grp.attrs.update({'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0] - 1})
-
-        '''
-        Write the data and retrieve the HDF5 objects then delete the VirtualDataset objects
-        '''
-        hdf = HDFwriter(self.h5_main.file)
-        h5_svd_refs = hdf.write(svd_grp, print_log=False)
-
-        h5_U = get_h5_obj_refs(['U'], h5_svd_refs)[0]
-        h5_S = get_h5_obj_refs(['S'], h5_svd_refs)[0]
-        h5_V = get_h5_obj_refs(['V'], h5_svd_refs)[0]
-        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_svd_refs)[0]
-        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_svd_refs)[0]
-        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_svd_refs)[0]
-        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_svd_refs)[0]
-        self.h5_results_grp = h5_S.parent
-
-        # copy attributes
-        copy_main_attributes(self.h5_main, h5_V)
-        h5_V.attrs['units'] = np.array(['a. u.'], dtype='S')
-
-        del ds_s, ds_v, ds_u, svd_grp
-
-        # Will attempt to see if there is anything linked to this dataset.
-        # Since I was meticulous about the translators that I wrote, I know I will find something here
-        check_and_link_ancillary(h5_U,
-                                 ['Position_Indices', 'Position_Values'],
-                                 h5_main=self.h5_main)
-
-        check_and_link_ancillary(h5_V,
-                                 ['Position_Indices', 'Position_Values'],
-                                 anc_refs=[h5_pos_inds, h5_pos_vals])
-
-        check_and_link_ancillary(h5_U,
-                                 ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                                 anc_refs=[h5_spec_inds, h5_spec_vals])
-
-        check_and_link_ancillary(h5_V,
-                                 ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                                 h5_main=self.h5_main)
+        h5_s = h5_svd_group.create_dataset('S', data=np.float32(self.__s))
 
         '''
         Check h5_main for plot group references.
@@ -234,11 +185,11 @@ class SVD(Process):
 
             ref_inds = get_indices_for_region_ref(self.h5_main, self.h5_main.attrs[key], return_method='corners')
             ref_inds = ref_inds.reshape([-1, 2, 2])
-            ref_inds[:, 1, 0] = h5_V.shape[0] - 1
+            ref_inds[:, 1, 0] = h5_v.shape[0] - 1
 
-            svd_ref = create_region_reference(h5_V, ref_inds)
+            svd_ref = create_region_reference(h5_v, ref_inds)
 
-            h5_V.attrs[key] = svd_ref
+            h5_v.attrs[key] = svd_ref
 
 ###############################################################################
 
@@ -306,8 +257,6 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
         the rebuilt dataset
 
     """
-
-    hdf = HDFwriter(h5_main.file)
     comp_slice, num_comps = get_component_slice(components, total_components=h5_main.shape[1])
     dset_name = h5_main.name.split('/')[-1]
 
@@ -327,16 +276,14 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     Get the handles for the SVD results
     '''
     try:
-        h5_svd = find_results_groups(h5_main, 'SVD')[-1]
+        h5_svd_group = find_results_groups(h5_main, 'SVD')[-1]
 
-        h5_S = h5_svd['S']
-        h5_U = h5_svd['U']
-        h5_V = h5_svd['V']
+        h5_S = h5_svd_group['S']
+        h5_U = h5_svd_group['U']
+        h5_V = h5_svd_group['V']
 
     except KeyError:
-        warnstring = 'SVD Results for {dset} were not found.'.format(dset=dset_name)
-        warn(warnstring)
-        return
+        raise KeyError('SVD Results for {dset} were not found.'.format(dset=dset_name))
     except:
         raise
 
@@ -374,7 +321,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     '''
     Create the Group and dataset to hold the rebuild data
     '''
-    rebuilt_grp = VirtualGroup('Rebuilt_Data_', h5_svd.name[1:])
+    rebuilt_grp = VirtualGroup('Rebuilt_Data_', h5_svd_group.name[1:])
 
     ds_rebuilt = VirtualDataset('Rebuilt_Data', rebuild,
                                 chunking=h5_main.chunks,
@@ -386,6 +333,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         rebuilt_grp.attrs['components_used'] = components
 
+    hdf = HDFwriter(h5_main.file)
     h5_refs = hdf.write(rebuilt_grp)
 
     h5_rebuilt = get_h5_obj_refs(['Rebuilt_Data'], h5_refs)[0]

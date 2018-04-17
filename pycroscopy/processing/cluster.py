@@ -13,13 +13,12 @@ from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.hdf_utils import get_h5_obj_refs, check_and_link_ancillary, copy_main_attributes, reshape_to_n_dims
+from ..core.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
+    write_simple_attrs, link_h5_obj_as_alias, write_ind_val_dsets
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.io_utils import format_time
-from ..core.io.write_utils import build_ind_val_dsets, Dimension
-from ..core.io.hdf_writer import HDFwriter
+from ..core.io.write_utils import Dimension
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
-from ..core.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class Cluster(Process):
@@ -258,83 +257,50 @@ class Cluster(Process):
         """
         print('Writing clustering results to file.')
         num_clusters = self.__mean_resp.shape[0]
-        ds_labels = VirtualDataset('Labels', np.uint32(self.__labels.reshape([-1, 1])), dtype=np.uint32,
-                                   attrs={'quantity': 'Cluster ID', 'units': 'a. u.'})
 
-        clust_desc = Dimension('Cluster', 'a. u.', np.arange(num_clusters))
-        ds_centroid_inds, ds_centroid_vals = build_ind_val_dsets(clust_desc, is_spectral=False, base_name='Cluster_')
+        h5_cluster_group = create_results_group(self.h5_main, self.process_name)
 
-        ds_centroids = VirtualDataset('Mean_Response', self.__mean_resp, dtype=self.__mean_resp.dtype)
-        # Main attributes will be copied from h5_main after writing
-        lab_desc = Dimension('Cluster', 'ID', [1])
-        ds_label_inds, ds_label_vals = build_ind_val_dsets(lab_desc, is_spectral=True, base_name='Label_Spectroscopic_')
+        write_simple_attrs(h5_cluster_group, self.parms_dict)
+        h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
-        cluster_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
-                                   self.h5_main.parent.name[1:])
-        cluster_grp.add_children([ds_labels, ds_centroids, ds_centroid_inds, ds_centroid_vals, ds_label_inds,
-                                  ds_label_vals])
+        h5_labels = write_main_dataset(h5_cluster_group, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
+                                       'Cluster ID', 'a. u.', None, [Dimension('Cluster', 'ID', [1])],
+                                       h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
+                                       aux_spec_prefix='Cluster_', dtype=np.uint32)
 
-        # Write out all the parameters including those from the estimator
-        cluster_grp.attrs.update(self.parms_dict)
-        cluster_grp.attrs['last_pixel'] = self.h5_main.shape[0]
+        # For now, link centroids with default spectroscopic indices and values.
+        h5_centroids = write_main_dataset(h5_cluster_group, self.__mean_resp, 'Mean_Response',
+                                          get_attr(self.h5_main, 'quantity')[0], get_attr(self.h5_main, 'units')[0],
+                                          Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
+                                          h5_spec_inds=self.h5_main.h5_spec_inds, aux_pos_prefix='Mean_Resp_Pos_',
+                                          h5_spec_vals=self.h5_main.h5_spec_vals)
 
-        h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
-        h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
-
-        '''
-        Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
-        '''
         if self.num_comps != self.h5_main.shape[1]:
-            comp_desc = Dimension('Spectroscopic_Component', 'a.u.', np.arange(self.num_comps))
-            ds_centroid_indices, ds_centroid_values = build_ind_val_dsets(comp_desc, is_spectral=True,
-                                                                          base_name='Mean_Response_')
-
+            '''
+            Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
+            Note that a sliced spectroscopic matrix may not be contiguous. Let's just lose the spectroscopic data
+            for now until a better method is figured out
+            '''
+            """
             if isinstance(self.data_slice[1], np.ndarray):
-                centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
+                centroid_vals_mat = h5_centroids.h5_spec_vals[self.data_slice[1].tolist()]
 
             else:
-                centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
-
+                centroid_vals_mat = h5_centroids.h5_spec_vals[self.data_slice[1]]
+    
             ds_centroid_values.data[0, :] = centroid_vals_mat
+            """
+            if isinstance(self.data_slice[1], np.ndarray):
+                vals = self.data_slice[1].tolist()
+            else:
+                vals = self.data_slice[1]
+            new_spec = Dimension('Original_Spectral_Index', 'a.u.', vals)
+            h5_inds, h5_vals = write_ind_val_dsets(h5_cluster_group, new_spec, is_spectral=True)
+            # Now we need to link these two new datasets to h5_centroids
+            link_h5_obj_as_alias(h5_centroids, h5_inds, 'Spectroscopic_Indices')
+            link_h5_obj_as_alias(h5_centroids, h5_vals, 'Spectroscopic_Values')
 
-            cluster_grp.add_children([ds_centroid_indices, ds_centroid_values])
-
-        hdf = HDFwriter(self.h5_main.file)
-        h5_clust_refs = hdf.write(cluster_grp)
-
-        h5_labels = get_h5_obj_refs(['Labels'], h5_clust_refs)[0]
-        h5_centroids = get_h5_obj_refs(['Mean_Response'], h5_clust_refs)[0]
-        h5_clust_inds = get_h5_obj_refs(['Cluster_Indices'], h5_clust_refs)[0]
-        h5_clust_vals = get_h5_obj_refs(['Cluster_Values'], h5_clust_refs)[0]
-        h5_label_inds = get_h5_obj_refs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
-        h5_label_vals = get_h5_obj_refs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
-
-        copy_main_attributes(self.h5_main, h5_centroids)
-
-        if isinstance(self.data_slice[1], np.ndarray):
-            h5_mean_resp_inds = get_h5_obj_refs(['Mean_Response_Indices'], h5_clust_refs)[0]
-            h5_mean_resp_vals = get_h5_obj_refs(['Mean_Response_Values'], h5_clust_refs)[0]
-        else:
-            h5_mean_resp_inds = h5_spec_inds
-            h5_mean_resp_vals = h5_spec_vals
-
-        check_and_link_ancillary(h5_labels,
-                              ['Position_Indices', 'Position_Values'],
-                              h5_main=self.h5_main)
-        check_and_link_ancillary(h5_labels,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_label_inds, h5_label_vals])
-
-        check_and_link_ancillary(h5_centroids,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_mean_resp_inds, h5_mean_resp_vals])
-
-        check_and_link_ancillary(h5_centroids,
-                              ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_clust_inds, h5_clust_vals])
-
-        # return the h5 group object
-        return h5_labels.parent
+        return h5_cluster_group
 
 
 def reorder_clusters(labels, mean_response):
