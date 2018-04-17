@@ -2594,8 +2594,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise ValueError('main_data if specified as a shape should be a list / tuple of integers >= 1')
         if len(main_data) != 2:
             raise ValueError('main_data if specified as a shape should contain 2 numbers')
+        """
         if 'dtype' not in kwargs:
             raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
+        """
         main_shape = main_data
         if verbose:
             print('Selected empty dataset creation. OK so far')
