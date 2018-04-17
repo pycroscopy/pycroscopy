@@ -10,11 +10,11 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 import numpy as np
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.virtual_data import VirtualDataset, VirtualGroup
 from ..core.io.dtype_utils import stack_real_to_compound
-from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main
-from ..core.io.write_utils import build_ind_val_dsets, Dimension
-from ..core.io.hdf_writer import HDFwriter
+from ..core.io.hdf_utils import write_main_dataset, create_results_group, create_empty_dataset, write_simple_attrs, \
+    print_tree, get_attributes
+from ..core.io.write_utils import Dimension
+from ..core.io.pycro_data import PycroDataset
 from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
@@ -53,6 +53,8 @@ class GIVBayesian(Process):
         if self.verbose:
             print('ensuring that half steps should be odd, num_x_steps is now', self.num_x_steps)
 
+        self.h5_main = PycroDataset(self.h5_main)
+
         # take these from kwargs
         bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
 
@@ -62,7 +64,8 @@ class GIVBayesian(Process):
         self.process_name = 'Bayesian_Inference'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
-        h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
+        # Should not be extracting excitation this way!
+        h5_spec_vals = self.h5_main.h5_spec_vals[0]
         self.single_ao = np.squeeze(h5_spec_vals[()])
 
         roll_cyc_fract = -0.25
@@ -121,7 +124,7 @@ class GIVBayesian(Process):
         # raw, compensated current, resistance, variance
         self._max_pos_per_read = self._max_pos_per_read // 4  # Integer division
         # Since these computations take far longer than functional fitting, do in smaller batches:
-        self._max_pos_per_read = min(500, self._max_pos_per_read)
+        self._max_pos_per_read = min(100, self._max_pos_per_read)
         if self.verbose:
             print('Max positions per read set to {}'.format(self._max_pos_per_read))
 
@@ -134,72 +137,53 @@ class GIVBayesian(Process):
 
         if self.verbose:
             print('Now creating the datasets')
-        spec_desc = Dimension('Bias', 'V', np.arange(self.num_x_steps))
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=self.verbose)
 
-        cap_shape = (num_pos, 1)
-        ds_cap = VirtualDataset('Capacitance', data=None, maxshape=cap_shape, dtype=cap_dtype, chunking=cap_shape,
-                                compression='gzip')
-        ds_cap.attrs = {'quantity': 'Capacitance', 'units': 'pF'}
-        cap_spec_desc = Dimension('Direction', '', [1])
-        ds_cap_spec_inds, ds_cap_spec_vals = build_ind_val_dsets(cap_spec_desc, is_spectral=True, verbose=self.verbose)
-        # the names of these datasets will clash with the ones created above. Change names manually:
-        ds_cap_spec_inds.name = 'Spectroscopic_Indices_Cap'
-        ds_cap_spec_vals.name = 'Spectroscopic_Values_Cap'
-
-        ds_r_var = VirtualDataset('R_variance', data=None, maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
-                                  chunking=(1, self.num_x_steps), compression='gzip')
-        ds_r_var.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_res = VirtualDataset('Resistance', data=None, maxshape=(num_pos, self.num_x_steps), dtype=np.float32,
-                                chunking=(1, self.num_x_steps), compression='gzip')
-        ds_res.attrs = {'quantity': 'Resistance', 'units': 'GOhms'}
-        ds_i_corr = VirtualDataset('Corrected_Current', data=None, maxshape=(num_pos, self.single_ao.size),
-                                   dtype=np.float32,
-                                   chunking=(1, self.single_ao.size), compression='gzip')
-        # don't bother adding any other attributes, all this will be taken from h5_main
-
-        bayes_grp = VirtualGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_',
-                                 parent=self.h5_main.parent.name)
-        bayes_grp.add_children([ds_spec_inds, ds_spec_vals, ds_cap, ds_r_var, ds_res, ds_i_corr,
-                                ds_cap_spec_inds, ds_cap_spec_vals])
-        bayes_grp.attrs = {'algorithm_author': 'Kody J. Law', 'last_pixel': 0}
-        bayes_grp.attrs.update(self.parms_dict)
+        h5_group = create_results_group(self.h5_main, self.process_name)
+        write_simple_attrs(h5_group, {'algorithm_author': 'Kody J. Law', 'last_pixel': 0})
+        write_simple_attrs(h5_group, self.parms_dict)
 
         if self.verbose:
-            bayes_grp.show_tree()
+            print('created group: {}'.format(h5_group.name))
+            print(get_attributes(h5_group))
 
-        self.hdf = HDFwriter(self.h5_main.file)
-        h5_refs = self.hdf.write(bayes_grp, print_log=self.verbose)
-
-        self.h5_new_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
-        h5_new_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]
-        h5_cap_spec_vals = get_h5_obj_refs(['Spectroscopic_Values_Cap'], h5_refs)[0]
-        h5_cap_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices_Cap'], h5_refs)[0]
-        self.h5_cap = get_h5_obj_refs(['Capacitance'], h5_refs)[0]
-        self.h5_variance = get_h5_obj_refs(['R_variance'], h5_refs)[0]
-        self.h5_resistance = get_h5_obj_refs(['Resistance'], h5_refs)[0]
-        self.h5_i_corrected = get_h5_obj_refs(['Corrected_Current'], h5_refs)[0]
-        self.h5_results_grp = self.h5_cap.parent
+        # One of those rare instances when the result is exactly the same as the source
+        self.h5_i_corrected = create_empty_dataset(self.h5_main, np.float32, 'Corrected_Current', h5_group=h5_group)
 
         if self.verbose:
-            print('Finished making room for the datasets. Now linking them')
+            print('Created I Corrected')
+            print_tree(h5_group)
 
-        # Now link the datasets appropriately so that they become hubs:
-        h5_pos_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Values'])[0]
-        h5_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
-
-        # Capacitance main dataset:
-        link_as_main(self.h5_cap, h5_pos_inds, h5_pos_vals, h5_cap_spec_inds, h5_cap_spec_vals)
-
-        # the corrected current dataset is the same as the main dataset in every way
-        copy_attributes(self.h5_main, self.h5_i_corrected, skip_refs=False)
-
-        # The resistance datasets get new spec datasets but reuse the old pos datasets:
-        for new_dset in [self.h5_resistance, self.h5_variance]:
-            link_as_main(new_dset, h5_pos_inds, h5_pos_vals, h5_new_spec_inds, self.h5_new_spec_vals)
+        # The resistance dataset requires the creation of a new spectroscopic dimension
+        self.h5_resistance = write_main_dataset(h5_group, (num_pos, self.num_x_steps), 'Resistance', 'Resistance',
+                                                'GOhms', None, Dimension('Bias', 'V', self.num_x_steps),
+                                                dtype=np.float32, chunks=(1, self.num_x_steps), compression='gzip',
+                                                h5_pos_inds=self.h5_main.h5_pos_inds,
+                                                h5_pos_vals=self.h5_main.h5_pos_vals)
 
         if self.verbose:
-            print('Finished linking all datasets!')
+            print('Created Resistance')
+            print_tree(h5_group)
+
+        assert isinstance(self.h5_resistance, PycroDataset)  # only here for PyCharm
+        self.h5_new_spec_vals = self.h5_resistance.h5_spec_vals
+
+        # The variance is identical to the resistance dataset
+        self.h5_variance = create_empty_dataset(self.h5_resistance, np.float32, 'R_variance')
+
+        if self.verbose:
+            print('Created Variance')
+            print_tree(h5_group)
+
+        # The capacitance dataset requires new spectroscopic dimensions as well
+        self.h5_cap = write_main_dataset(h5_group, (num_pos, 1), 'Capacitance', 'Capacitance', 'pF', None,
+                                         Dimension('Direction', '', [1]),  h5_pos_inds=self.h5_main.h5_pos_inds,
+                                         h5_pos_vals=self.h5_main.h5_pos_vals, dtype=cap_dtype, compression='gzip',
+                                         aux_spec_prefix='Cap_Spec_')
+
+        if self.verbose:
+            print('Created Capacitance')
+            print_tree(h5_group)
+            print('Done!')
 
         self.hdf.flush()
 
