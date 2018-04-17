@@ -37,96 +37,120 @@ class TestHDFUtils(unittest.TestCase):
 
     @staticmethod
     def __create_test_h5_file():
+
+        def __write_safe_attrs(h5_object, attrs):
+            for key, val in attrs.items():
+                h5_object.attrs[key] = val
+
+        def __write_string_list_as_attr(h5_object, attrs):
+            for key, val in attrs.items():
+                h5_object.attrs[key] = np.array(val, dtype='S')
+
+        def __write_aux_reg_ref(h5_dset, labels, is_spec=True):
+            for index, reg_ref_name in enumerate(labels):
+                if is_spec:
+                    reg_ref_tuple = (slice(index, index + 1), slice(None))
+                else:
+                    reg_ref_tuple = (slice(None), slice(index, index + 1))
+                h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
+
+        def __write_main_reg_refs(h5_dset, attrs):
+            for reg_ref_name, reg_ref_tuple in attrs.items():
+                h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
+            __write_string_list_as_attr(h5_dset, {'labels': list(attrs.keys())})
+
         if os.path.exists(test_h5_file_path):
             os.remove(test_h5_file_path)
         with h5py.File(test_h5_file_path) as h5_f:
+
+            h5_raw_grp = h5_f.create_group('Raw_Measurement')
+            __write_safe_attrs(h5_raw_grp, {'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4]})
+            __write_string_list_as_attr(h5_raw_grp, {'att_4': ['str_1', 'str_2', 'str_3']})
+
+            _ = h5_raw_grp.create_group('Misc')
+
             num_rows = 3
             num_cols = 5
+            num_cycles = 2
+            num_cycle_pts = 7
+
             source_dset_name = 'source_main'
             tool_name = 'Fitter'
 
             source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
                                          np.repeat(np.arange(num_rows), num_cols))).T
-            pos_attrs = {'units': ['nm', 'um'],
-                         'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = VirtualDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
+            pos_attrs = {'units': ['nm', 'um'], 'labels': ['X', 'Y']}
+
+            h5_pos_inds = h5_raw_grp.create_dataset('Position_Indices', data=source_pos_data, dtype=np.uint16)
+            __write_aux_reg_ref(h5_pos_inds, pos_attrs['labels'], is_spec=False)
+            __write_string_list_as_attr(h5_pos_inds, pos_attrs)
+
             # make the values more interesting:
             source_pos_data = np.vstack((source_pos_data[:, 0] * 50, source_pos_data[:, 1] * 1.25)).T
-            dset_source_pos_vals = VirtualDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
 
-            num_cycles = 2
-            num_cycle_pts = 7
+            h5_pos_vals = h5_raw_grp.create_dataset('Position_Values', data=source_pos_data, dtype=np.float32)
+            __write_aux_reg_ref(h5_pos_vals, pos_attrs['labels'], is_spec=False)
+            __write_string_list_as_attr(h5_pos_vals, pos_attrs)
 
-            source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = VirtualDataset(source_dset_name, source_main_data,
-                                              attrs={'units': 'A', 'quantity': 'Current',
-                                                     'labels': {'even_rows': (slice(0, None, 2), slice(None)),
-                                                                'odd_rows': (slice(1, None, 2), slice(None))}
-                                                     })
-            # make spectroscopic axis interesting as well
             source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
                                           np.repeat(np.arange(num_cycles), num_cycle_pts)))
-            source_spec_attrs = {'units': ['V', ''],
-                                 'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = VirtualDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
-                                                   attrs=source_spec_attrs)
-            source_spec_data = np.vstack((np.tile(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)),
-                                                  num_cycles),
-                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
-            dset_source_spec_vals = VirtualDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
-                                                   attrs=source_spec_attrs)
+            source_spec_attrs = {'units': ['V', ''], 'labels': ['Bias', 'Cycle']}
 
-            dset_ancillary = VirtualDataset('Ancillary', np.arange(5))
+            h5_source_spec_inds = h5_raw_grp.create_dataset('Spectroscopic_Indices', data=source_spec_data,
+                                                            dtype=np.uint16)
+            __write_aux_reg_ref(h5_source_spec_inds, source_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_source_spec_inds, source_spec_attrs)
 
-            group_source = VirtualGroup('Raw_Measurement',
-                                        children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
-                                                  dset_source_pos_vals, dset_source_pos_inds, dset_ancillary,
-                                                  VirtualGroup('Misc')],
-                                        attrs={'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4],
-                                                 'att_4': ['str_1', 'str_2', 'str_3']})
+            # make spectroscopic axis interesting as well
+            source_spec_data = np.vstack(
+                (np.tile(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)),
+                         num_cycles),
+                 np.repeat(np.arange(num_cycles), num_cycle_pts)))
 
-            writer = HDFwriter(h5_f)
-            h5_refs_list = writer.write(group_source, print_log=False)
-            [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
-            h5_source_group = h5_source_main.parent
-            [h5_pos_inds] = hdf_utils.get_h5_obj_refs([dset_source_pos_inds.name], h5_refs_list)
-            [h5_pos_vals] = hdf_utils.get_h5_obj_refs([dset_source_pos_vals.name], h5_refs_list)
-            [h5_source_spec_inds] = hdf_utils.get_h5_obj_refs([dset_source_spec_inds.name], h5_refs_list)
-            [h5_source_spec_vals] = hdf_utils.get_h5_obj_refs([dset_source_spec_vals.name], h5_refs_list)
+            h5_source_spec_vals = h5_raw_grp.create_dataset('Spectroscopic_Values', data=source_spec_data,
+                                                            dtype=np.float32)
+            __write_aux_reg_ref(h5_source_spec_vals, source_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_source_spec_vals, source_spec_attrs)
+
+            source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
+            h5_source_main = h5_raw_grp.create_dataset(source_dset_name, data=source_main_data)
+            __write_safe_attrs(h5_source_main, {'units': 'A', 'quantity': 'Current'})
+            __write_main_reg_refs(h5_source_main, {'even_rows': (slice(0, None, 2), slice(None)),
+                                                   'odd_rows': (slice(1, None, 2), slice(None))})
 
             # Now need to link as main!
             for dset in [h5_pos_inds, h5_pos_vals, h5_source_spec_inds, h5_source_spec_vals]:
                 h5_source_main.attrs[dset.name.split('/')[-1]] = dset.ref
 
+            _ = h5_raw_grp.create_dataset('Ancillary', data=np.arange(5))
+
             # Now add a few results:
+
+            h5_results_grp_1 = h5_raw_grp.create_group(source_dset_name + '-' + tool_name + '_000')
+            __write_safe_attrs(h5_results_grp_1, {'att_1': 'string_val', 'att_2': 1.2345, 'att_3': [1, 2, 3, 4]})
+            __write_string_list_as_attr(h5_results_grp_1, {'att_4': ['str_1', 'str_2', 'str_3']})
 
             num_cycles = 1
             num_cycle_pts = 7
 
             results_spec_inds = np.expand_dims(np.arange(num_cycle_pts), 0)
-            results_spec_attrs = {'units': ['V'], 'labels': {'Bias': (slice(0, 1), slice(None))}}
-            dset_results_spec_inds = VirtualDataset('Spectroscopic_Indices', results_spec_inds, dtype=np.uint16,
-                                                    attrs=results_spec_attrs)
+            results_spec_attrs = {'units': ['V'], 'labels': ['Bias']}
+
+            h5_results_1_spec_inds = h5_results_grp_1.create_dataset('Spectroscopic_Indices',
+                                                                     data=results_spec_inds, dtype=np.uint16)
+            __write_aux_reg_ref(h5_results_1_spec_inds, results_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_results_1_spec_inds, results_spec_attrs)
+
             results_spec_vals = np.expand_dims(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)), 0)
-            dset_results_spec_vals = VirtualDataset('Spectroscopic_Values', results_spec_vals, dtype=np.float16,
-                                                    attrs=results_spec_attrs)
+
+            h5_results_1_spec_vals = h5_results_grp_1.create_dataset('Spectroscopic_Values', data=results_spec_vals,
+                                                                     dtype=np.float32)
+            __write_aux_reg_ref(h5_results_1_spec_vals, results_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_results_1_spec_vals, results_spec_attrs)
 
             results_1_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_results_1_main = VirtualDataset('results_main', results_1_main_data,
-                                                 attrs={'units': 'pF', 'quantity': 'Capacitance'})
-
-            group_results_1 = VirtualGroup(source_dset_name + '-' + tool_name + '_',
-                                           parent=h5_source_group.name,
-                                           children=[dset_results_1_main, dset_results_spec_inds,
-                                                       dset_results_spec_vals],
-                                           attrs={'att_1': 'string_val', 'att_2': 1.2345,
-                                                    'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']})
-
-            h5_refs_list = writer.write(group_results_1, print_log=False)
-
-            [h5_results_1_main] = hdf_utils.get_h5_obj_refs([dset_results_1_main.name], h5_refs_list)
-            [h5_results_1_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
-            [h5_results_1_spec_vals] = hdf_utils.get_h5_obj_refs([dset_results_spec_vals.name], h5_refs_list)
+            h5_results_1_main = h5_results_grp_1.create_dataset('results_main', data=results_1_main_data)
+            __write_safe_attrs(h5_results_1_main, {'units': 'pF', 'quantity': 'Capacitance'})
 
             # Now need to link as main!
             for dset in [h5_pos_inds, h5_pos_vals, h5_results_1_spec_inds, h5_results_1_spec_vals]:
@@ -134,22 +158,23 @@ class TestHDFUtils(unittest.TestCase):
 
             # add another result with different parameters
 
+            h5_results_grp_2 = h5_raw_grp.create_group(source_dset_name + '-' + tool_name + '_001')
+            __write_safe_attrs(h5_results_grp_2, {'att_1': 'other_string_val', 'att_2': 5.4321, 'att_3': [4, 1, 3]})
+            __write_string_list_as_attr(h5_results_grp_2, {'att_4': ['s', 'str_2', 'str_3']})
+
             results_2_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_results_2_main = VirtualDataset('results_main', results_2_main_data,
-                                                 attrs={'units': 'pF', 'quantity': 'Capacitance'})
+            h5_results_2_main = h5_results_grp_2.create_dataset('results_main', data=results_2_main_data)
+            __write_safe_attrs(h5_results_2_main, {'units': 'pF', 'quantity': 'Capacitance'})
 
-            group_results_2 = VirtualGroup(source_dset_name + '-' + tool_name + '_',
-                                           parent=h5_source_group.name,
-                                           children=[dset_results_2_main, dset_results_spec_inds,
-                                                       dset_results_spec_vals],
-                                           attrs={'att_1': 'other_string_val', 'att_2': 5.4321,
-                                                    'att_3': [4, 1, 3], 'att_4': ['s', 'str_2', 'str_3']})
+            h5_results_2_spec_inds = h5_results_grp_2.create_dataset('Spectroscopic_Indices',
+                                                                     data=results_spec_inds, dtype=np.uint16)
+            __write_aux_reg_ref(h5_results_2_spec_inds, results_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_results_2_spec_inds, results_spec_attrs)
 
-            h5_refs_list = writer.write(group_results_2, print_log=False)
-
-            [h5_results_2_main] = hdf_utils.get_h5_obj_refs([dset_results_2_main.name], h5_refs_list)
-            [h5_results_2_spec_inds] = hdf_utils.get_h5_obj_refs([dset_results_spec_inds.name], h5_refs_list)
-            [h5_results_2_spec_vals] = hdf_utils.get_h5_obj_refs([dset_results_spec_vals.name], h5_refs_list)
+            h5_results_2_spec_vals = h5_results_grp_2.create_dataset('Spectroscopic_Values', data=results_spec_vals,
+                                                                     dtype=np.float32)
+            __write_aux_reg_ref(h5_results_2_spec_vals, results_spec_attrs['labels'], is_spec=True)
+            __write_string_list_as_attr(h5_results_2_spec_vals, results_spec_attrs)
 
             # Now need to link as main!
             for dset in [h5_pos_inds, h5_pos_vals, h5_results_2_spec_inds, h5_results_2_spec_vals]:
@@ -467,7 +492,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             num_cycle_pts = 7
-            expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
+            expected = {'Bias': np.float32(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
             ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
@@ -480,7 +505,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             num_cycle_pts = 7
-            expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
+            expected = {'Bias': np.float32(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False))),
                         'Cycle': [0., 1.]}
             ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
             self.assertEqual(len(expected), len(ret_val))
@@ -509,7 +534,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
             num_cycle_pts = 7
-            expected = {'Bias': np.float16(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)))}
+            expected = {'Bias': np.float32(2.5 * np.sin(np.linspace(0, np.pi, num_cycle_pts, endpoint=False)))}
             ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names='Bias')
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
@@ -522,8 +547,8 @@ class TestHDFUtils(unittest.TestCase):
             h5_vals = h5_f['/Raw_Measurement/Position_Values']
             num_rows = 3
             num_cols = 5
-            expected = {'X': np.float16(np.arange(num_cols) * 50),
-                        'Y': np.float16(np.arange(num_rows) * 1.25)}
+            expected = {'X': np.float32(np.arange(num_cols) * 50),
+                        'Y': np.float32(np.arange(num_rows) * 1.25)}
             ret_val = hdf_utils.get_unit_values(h5_inds, h5_vals)
             self.assertEqual(len(expected), len(ret_val))
             for key, exp in expected.items():
