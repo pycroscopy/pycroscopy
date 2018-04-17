@@ -289,7 +289,7 @@ class PycroDataset(h5py.Dataset):
             # Fewer final positions that spectra (Most common case)
             data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
         else:
-            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
+            data_slice = np.atleast_2d(self[:, spec_slice].T).T[pos_slice.squeeze(), :]
 
         pos_inds = self.h5_pos_inds[pos_slice, :]
         spec_inds = self.h5_spec_inds[:, spec_slice].reshape([self.h5_spec_inds.shape[0], -1])
