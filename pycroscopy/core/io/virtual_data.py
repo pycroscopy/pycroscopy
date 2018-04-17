@@ -47,6 +47,10 @@ class VirtualData(object):
         self.parent = parent
         self.indexed = False
 
+        warn('VirtualData classes are available only for legacy purposes and will be REMOVED in a future release.\n'
+             'Please consider using a combination of functions in hdf_utils such as write_main_dataset() instead',
+             DeprecationWarning)
+
 
 class VirtualGroup(VirtualData):
     """
@@ -328,7 +332,7 @@ class VirtualDataset(VirtualData):
 
 class EmptyVirtualDataset(VirtualDataset):
 
-    def __init__(self, name, maxshape, dtype=None, compression=None, chunking=None, parent=None, attrs=None):
+    def __init__(self, name, maxshape, dtype, compression=None, chunking=None, parent=None, attrs=None):
         """
         Parameters
         ----------
@@ -336,8 +340,8 @@ class EmptyVirtualDataset(VirtualDataset):
             Name of the dataset
         maxshape : tuple of ints
             Maximum size in each axis this dataset is expected to be
-        dtype : datatype, (optional)
-            typically a datatype of a numpy array =None
+        dtype : datatype
+            typically a datatype of a numpy array
         compression : (Optional) String
             See h5py compression. Leave as 'gzip' as a default mode of compression
         chunking : (Optional) tuple of ints
@@ -354,7 +358,7 @@ class EmptyVirtualDataset(VirtualDataset):
         Ensure that the name, maxshape are specified and that maxshape does not have any elements that are None.
             All other arguments are optional.
 
-        >>> ds_raw_data = EmptyVirtualDataset('Raw_Data', (1024,16384), dtype=np.float16, chunking=(1,16384),
+        >>> ds_raw_data = EmptyVirtualDataset('Raw_Data', (1024,16384), np.float16, chunking=(1,16384),
         >>>                                   compression='gzip')
 
         """

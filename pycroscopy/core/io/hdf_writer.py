@@ -13,7 +13,6 @@ from time import time, sleep
 from warnings import warn
 import h5py
 
-from .write_utils import clean_string_att
 from .hdf_utils import assign_group_index, write_simple_attrs, attempt_reg_ref_build, write_region_references
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
@@ -59,6 +58,10 @@ class HDFwriter(object):
             self.path = file_handle.filename
         else:
             raise TypeError('Please provide a file path as a string or a valid h5py.File object')
+
+        warn('HDFWriter is available only for legacy purposes and will be REMOVED in a future release.\n'
+             'Please consider using a combination of functions in hdf_utils such as write_main_dataset() instead',
+             DeprecationWarning)
 
     def clear(self):
         """
