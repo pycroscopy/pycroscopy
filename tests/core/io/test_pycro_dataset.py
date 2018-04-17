@@ -11,7 +11,7 @@ import sys
 import h5py
 import numpy as np
 sys.path.append("../../../pycroscopy/")
-from pycroscopy.core.io import PycroDataset, VirtualDataset, VirtualGroup, hdf_utils, HDFwriter
+from pycroscopy.core.io import PycroDataset, hdf_utils
 
 if sys.version_info.major == 3:
     unicode = str

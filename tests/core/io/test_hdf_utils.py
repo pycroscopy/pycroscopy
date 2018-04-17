@@ -12,8 +12,6 @@ import h5py
 import numpy as np
 import shutil
 sys.path.append("../../../pycroscopy/")
-from pycroscopy import VirtualGroup, VirtualDataset
-from pycroscopy import HDFwriter
 from pycroscopy.core.io import hdf_utils, write_utils
 from pycroscopy.core.io.pycro_data import PycroDataset
 
@@ -945,18 +943,27 @@ class TestHDFUtils(unittest.TestCase):
         file_path = 'reshape_to_n_dim_sort_required.h5'
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
+            h5_raw_grp = h5_f.create_group('Raw_Measurement')
+
             num_rows = 3
             num_cols = 5
             num_cycles = 2
             num_cycle_pts = 7
 
+            source_dset_name = 'source_main'
+
             # arrange as slow, fast instead of fast, slow
             source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
                                          np.tile(np.arange(num_cols), num_rows))).T
-            pos_attrs = {'units': ['nm', 'um'],
-                         'labels': {'X': (slice(None), slice(0, 1)), 'Y': (slice(None), slice(1, 2))}}
-            dset_source_pos_inds = VirtualDataset('Position_Indices', source_pos_data, dtype=np.uint16, attrs=pos_attrs)
-            dset_source_pos_vals = VirtualDataset('Position_Values', source_pos_data, dtype=np.float16, attrs=pos_attrs)
+            pos_attrs = {'units': ['nm', 'um'], 'labels': ['X', 'Y']}
+
+            h5_pos_inds = h5_raw_grp.create_dataset('Position_Indices', data=source_pos_data, dtype=np.uint16)
+            TestHDFUtils.__write_aux_reg_ref(h5_pos_inds, pos_attrs['labels'], is_spec=False)
+            TestHDFUtils.__write_string_list_as_attr(h5_pos_inds, pos_attrs)
+
+            h5_pos_vals = h5_raw_grp.create_dataset('Position_Values', data=source_pos_data, dtype=np.float32)
+            TestHDFUtils.__write_aux_reg_ref(h5_pos_vals, pos_attrs['labels'], is_spec=False)
+            TestHDFUtils.__write_string_list_as_attr(h5_pos_vals, pos_attrs)
 
             source_main_data = np.zeros(shape=(num_rows * num_cols, num_cycle_pts * num_cycles), dtype=np.float16)
             for row_ind in range(num_rows):
@@ -967,31 +974,23 @@ class TestHDFUtils(unittest.TestCase):
                             source_main_data[row_ind*num_cols + col_ind, cycle_ind*num_cycle_pts + bias_ind] = val
 
             # source_main_data = np.random.rand(num_rows * num_cols, num_cycle_pts * num_cycles)
-            dset_source_main = VirtualDataset('source_main', source_main_data,
-                                              attrs={'units': 'A', 'quantity': 'Current',
-                                                   'labels': {'even_rows': (slice(0, None, 2), slice(None)),
-                                                              'odd_rows': (slice(1, None, 2), slice(None))}})
+            h5_source_main = h5_raw_grp.create_dataset(source_dset_name, data=source_main_data)
+            TestHDFUtils.__write_safe_attrs(h5_source_main, {'units': 'A', 'quantity': 'Current'})
+
             # make spectroscopic slow, fast instead of fast, slow
             source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
                                           np.tile(np.arange(num_cycle_pts), num_cycles)))
-            source_spec_attrs = {'units': ['V', ''],
-                                 'labels': {'Bias': (slice(0, 1), slice(None)), 'Cycle': (slice(1, 2), slice(None))}}
-            dset_source_spec_inds = VirtualDataset('Spectroscopic_Indices', source_spec_data, dtype=np.uint16,
-                                                   attrs=source_spec_attrs)
-            dset_source_spec_vals = VirtualDataset('Spectroscopic_Values', source_spec_data, dtype=np.float16,
-                                                   attrs=source_spec_attrs)
-            group_source = VirtualGroup('Raw_Measurement',
-                                        children=[dset_source_main, dset_source_spec_inds, dset_source_spec_vals,
-                                                    dset_source_pos_vals, dset_source_pos_inds])
+            source_spec_attrs = {'units': ['V', ''], 'labels': ['Bias', 'Cycle']}
 
-            writer = HDFwriter(h5_f)
-            h5_refs_list = writer.write(group_source)
+            h5_source_spec_inds = h5_raw_grp.create_dataset('Spectroscopic_Indices', data=source_spec_data,
+                                                            dtype=np.uint16)
+            TestHDFUtils.__write_aux_reg_ref(h5_source_spec_inds, source_spec_attrs['labels'], is_spec=True)
+            TestHDFUtils.__write_string_list_as_attr(h5_source_spec_inds, source_spec_attrs)
 
-            [h5_source_main] = hdf_utils.get_h5_obj_refs([dset_source_main.name], h5_refs_list)
-            [h5_pos_inds] = hdf_utils.get_h5_obj_refs([dset_source_pos_inds.name], h5_refs_list)
-            [h5_pos_vals] = hdf_utils.get_h5_obj_refs([dset_source_pos_vals.name], h5_refs_list)
-            [h5_source_spec_inds] = hdf_utils.get_h5_obj_refs([dset_source_spec_inds.name], h5_refs_list)
-            [h5_source_spec_vals] = hdf_utils.get_h5_obj_refs([dset_source_spec_vals.name], h5_refs_list)
+            h5_source_spec_vals = h5_raw_grp.create_dataset('Spectroscopic_Values', data=source_spec_data,
+                                                            dtype=np.float32)
+            TestHDFUtils.__write_aux_reg_ref(h5_source_spec_vals, source_spec_attrs['labels'], is_spec=True)
+            TestHDFUtils.__write_string_list_as_attr(h5_source_spec_vals, source_spec_attrs)
 
             # Now need to link as main!
             for dset in [h5_pos_inds, h5_pos_vals, h5_source_spec_inds, h5_source_spec_vals]:
