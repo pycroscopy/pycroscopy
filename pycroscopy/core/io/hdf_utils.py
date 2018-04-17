@@ -12,11 +12,14 @@ import collections
 from warnings import warn
 from collections import Iterable
 import numpy as np
+import socket
 
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
     Dimension, build_ind_val_matricies
+from .io_utils import get_time_stamp
 from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
+from ...__version__ import version as pycroscopy_version
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -2385,6 +2388,58 @@ def assign_group_index(h5_parent_group, base_name, verbose=False):
     return base_name + '{:03d}'.format(index)
 
 
+def write_basic_attrs_to_group(h5_group):
+    """
+    Writes basic book-keeping and posterity related attributes to groups created in pycroscopy such as machine id,
+    pycroscopy version, timestamp.
+
+    Parameters
+    ----------
+    h5_group
+
+    Returns
+    -------
+
+    """
+    if not isinstance(h5_group, h5py.Group):
+        raise TypeError('h5_group should be a h5py.Group object')
+    write_simple_attrs(h5_group, {'machine_id': socket.getfqdn(),
+                                  'timestamp': get_time_stamp(),
+                                  'pycroscopy_version': pycroscopy_version},
+                       obj_type='Group', verbose=False)
+
+
+def create_results_group(h5_main, tool_name):
+    """
+    Creates a h5py.Group object autoindexed and named as 'DatasetName-ToolName_00x'
+
+    Parameters
+    ----------
+    h5_main : h5py.Dataset object
+        Reference to the dataset based on which the process / analysis is being performed
+    tool_name : string / unicode
+        Name of the Process / Analysis applied to h5_main
+
+    Returns
+    -------
+    h5_group : h5py.Group object
+        Results group which can now house the results datasets
+    """
+    if not isinstance(h5_main, h5py.Dataset):
+        raise TypeError('h5_main should be a h5py.Dataset or Pycrodataset object')
+    if not isinstance(tool_name, (str, unicode)):
+        raise TypeError('tool_name should be a string')
+
+    group_name = h5_main.name.split('/')[-1] + '-' + tool_name + '_'
+    group_name = assign_group_index(h5_main.parent, group_name)
+
+    h5_group = h5_main.parent.create_group(group_name)
+
+    write_basic_attrs_to_group(h5_group)
+
+    return h5_group
+
+
 def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
     """
     Writes attributes to a h5py object
@@ -2422,7 +2477,7 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
 
 def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
                        main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None, h5_spec_vals=None,
-                       **kwargs):
+                       aux_spec_prefix='Spectroscopic_', aux_pos_prefix='Position_', **kwargs):
     """
     Writes the provided data as a 'Main' dataset with all appropriate linking.
     By default, the instructions for generating the ancillary datasets should be specified using the pos_dims and
@@ -2463,6 +2518,10 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Dataset that will be linked with the name 'Spectroscopic_Indices'
     h5_spec_vals : h5py.Dataset, Optional
         Dataset that will be linked with the name 'Spectroscopic_Values'
+    aux_spec_prefix : str / unicode, Optional
+        Default prefix for Spectroscopic datasets. Default = 'Spectroscopic_'
+    aux_pos_prefix : str / unicode, Optional
+        Default prefix for Position datasets. Default = 'Position_'
 
     Returns
     -------
@@ -2527,7 +2586,12 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         # Check to make sure that the product of the position dimension sizes match with that of raw_data
         if main_shape[0] != np.product([len(x.values) for x in pos_dims]):
             raise ValueError('Position dimensions in main data do not match with product of values in pos_dims')
-        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False)
+        if not isinstance(aux_pos_prefix, (str, unicode)):
+            raise TypeError('aux_pos_prefix should be a string')
+        if not aux_pos_prefix.endswith('_'):
+            aux_pos_prefix += '_'
+        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False,
+                                                       base_name=aux_pos_prefix)
 
     if h5_spec_inds is not None and h5_spec_vals is not None:
         # The provided datasets override fresh building instructions.
@@ -2544,7 +2608,12 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         # Check to make sure that the product of the spectroscopic dimension sizes match with that of raw_data
         if main_shape[1] != np.product([len(x.values) for x in spec_dims]):
             raise ValueError('Spectroscopic dimensions in main data do not match with product of values in spec_dims')
-        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False)
+        if not isinstance(aux_spec_prefix, (str, unicode)):
+            raise TypeError('aux_spec_prefix should be a string')
+        if not aux_spec_prefix.endswith('_'):
+            aux_spec_prefix += '_'
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False,
+                                                         base_name=aux_spec_prefix)
 
     if isinstance(main_data, np.ndarray):
         # Case 1 - simple small dataset
@@ -2552,7 +2621,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     else:
         # Case 2 - large empty dataset
         h5_main = h5_parent_group.create_dataset(main_data_name, main_data, **kwargs)
-    h5_main.attrs.update({'quantity': quantity, 'units': units})
+    write_simple_attrs(h5_main, {'quantity': quantity, 'units': units})
     if isinstance(main_dset_attrs, dict):
         h5_main.attrs.update(main_dset_attrs)
 
