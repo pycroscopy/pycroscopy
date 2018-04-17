@@ -9,8 +9,11 @@ import sys
 import numpy as np
 from collections import Iterable
 
-from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
+
+from warnings import warn
+from .virtual_data import VirtualDataset
+
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
            'INDICES_DTYPE', 'VALUES_DTYPE', 'Dimension', 'build_ind_val_dsets']
@@ -245,6 +248,10 @@ def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=N
 
     Dimensions should be in the order from fastest varying to slowest.
     """
+
+    warn('build_ind_val_dsets is available only for legacy purposes and will be REMOVED in a future release.\n'
+         'Please consider using write_ind_val_dsets in hdf_utils instead', DeprecationWarning)
+
     if isinstance(dimensions, Dimension):
         dimensions = [dimensions]
     if not isinstance(dimensions, (list, np.ndarray, tuple)):

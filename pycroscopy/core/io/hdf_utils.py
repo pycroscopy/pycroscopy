@@ -17,9 +17,10 @@ import socket
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
     Dimension, build_ind_val_matricies
 from .io_utils import get_time_stamp
-from .virtual_data import VirtualDataset
 from .dtype_utils import contains_integers
 from ...__version__ import version as pycroscopy_version
+
+from .virtual_data import VirtualDataset
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
@@ -2296,6 +2297,9 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
     ds_vals : VirtualDataset
             Reduces Spectroscopic values dataset
     """
+    warn('build_reduced_spec_dsets is available only for legacy purposes and will be REMOVED in a future release.\n'
+         'Please consider using write_reduced_spec_dsets instead', DeprecationWarning)
+
     if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
         raise TypeError('h5_parent_group should be a h5py.File or h5py.Group object')
     if basename is not None:
