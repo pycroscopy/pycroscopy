@@ -443,7 +443,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
     freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
 
-    num_udvs_steps = np.prod(spec_dims[not ifreq])
+    num_udvs_steps = np.prod([spec_dims[idim] for idim in range(len(spec_dims)) if idim != ifreq])
 
     if len(pos_dims) >= 2:
         # Build initial slice dictionaries
