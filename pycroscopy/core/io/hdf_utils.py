@@ -1167,9 +1167,9 @@ def get_sort_order(ds_spec):
     return change_sort
 
 
-def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=None, skip_refs=False):
+def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs=None, skip_refs=False):
     """
-    Creates an empty dataset in the h5 file based in the same group as the provided dataset
+    Creates an empty dataset in the h5 file based on the provided dataset in the same or specified group
 
     Parameters
     ----------
@@ -1179,6 +1179,8 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=None, skip_ref
         Data type of the fit / guess datasets
     dset_name : String / Unicode
         Name of the dataset
+    h5_group : h5py.Group object, optional. Default = None
+        Group within which this dataset will be created
     new_attrs : dictionary (Optional)
         Any new attributes that need to be written to the dataset
     skip_refs : boolean, optional
@@ -1200,7 +1202,11 @@ def create_empty_dataset(source_dset, dtype, dset_name, new_attrs=None, skip_ref
     else:
         new_attrs = dict()
 
-    h5_group = source_dset.parent
+    if h5_group is None:
+        h5_group = source_dset.parent
+    else:
+        if not isinstance(h5_group, (h5py.Group, h5py.File)):
+            raise TypeError('h5_group should be a h5py.Group or h5py.File object')
     try:
         # Check if the dataset already exists
         h5_new_dset = h5_group[dset_name]
@@ -2564,6 +2570,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise ValueError('main_data if specified as a shape should be a list / tuple of integers >= 1')
         if len(main_data) != 2:
             raise ValueError('main_data if specified as a shape should contain 2 numbers')
+        if 'dtype' not in kwargs:
+            raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
         main_shape = main_data
     elif isinstance(main_data, np.ndarray):
         if main_data.ndim != 2:
