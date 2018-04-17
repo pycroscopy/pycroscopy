@@ -1194,7 +1194,12 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
     """
     if not isinstance(source_dset, h5py.Dataset):
         raise TypeError('source_deset should be a h5py.Dataset object')
-    if not isinstance(dtype, (h5py.Datatype, np.dtype)):
+    if isinstance(dtype, (h5py.Datatype, np.dtype)):
+        pass
+    elif isinstance(np.dtype(dtype), np.dtype):
+        # This should catch all those instances when dtype is something familiar like - np.float32
+        pass
+    else:
         raise TypeError('dtype should either be a numpy or h5py dtype')
     if new_attrs is not None:
         if not isinstance(new_attrs, dict):
@@ -2483,7 +2488,7 @@ def write_simple_attrs(h5_obj, attrs, obj_type='', verbose=False):
 
 def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, units, pos_dims, spec_dims,
                        main_dset_attrs=None, h5_pos_inds=None, h5_pos_vals=None, h5_spec_inds=None, h5_spec_vals=None,
-                       aux_spec_prefix='Spectroscopic_', aux_pos_prefix='Position_', **kwargs):
+                       aux_spec_prefix='Spectroscopic_', aux_pos_prefix='Position_', verbose=False, **kwargs):
     """
     Writes the provided data as a 'Main' dataset with all appropriate linking.
     By default, the instructions for generating the ancillary datasets should be specified using the pos_dims and
@@ -2528,6 +2533,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Default prefix for Spectroscopic datasets. Default = 'Spectroscopic_'
     aux_pos_prefix : str / unicode, Optional
         Default prefix for Position datasets. Default = 'Position_'
+    verbose : bool, Optional, default=False
+        If set to true - prints debugging logs
 
     Returns
     -------
@@ -2557,6 +2564,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         raise TypeError('h5_parent_group should be a h5py.File or h5py.Group object')
     if not is_editable_h5(h5_parent_group):
         raise ValueError('The provided file is not editable')
+    if verbose:
+        print('h5 group and file OK')
 
     for arg, arg_name in zip([quantity, units, main_data_name],
                              ['quantity', 'units', 'main_data_name']):
@@ -2564,6 +2573,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise TypeError(arg_name + ' should be a string')
         if len(arg.strip()) <= 0:
             raise ValueError(arg_name + ' should not be an empty string')
+    if verbose:
+        print('quantity, units, main_data_name all OK')
 
     if isinstance(main_data, (list, tuple)):
         if not contains_integers(main_data, min_val=1):
@@ -2573,16 +2584,22 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         if 'dtype' not in kwargs:
             raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
         main_shape = main_data
+        if verbose:
+            print('Selected empty dataset creation. OK so far')
     elif isinstance(main_data, np.ndarray):
         if main_data.ndim != 2:
             raise ValueError('main_data should be a 2D array')
         main_shape = main_data.shape
+        if verbose:
+            print('Provided numpy array for main_data OK so far')
     else:
         raise TypeError('main_data should either be a numpy array or a tuple / list with the shape of the data')
 
     if h5_pos_inds is not None and h5_pos_vals is not None:
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_pos_inds, h5_pos_vals, main_shape, is_spectroscopic=False)
+        if verbose:
+            print('Provided h5 position indices and values OK')
     else:
         for dset_name in ['Position_Indices', 'Position_Values']:
             if dset_name in h5_parent_group.keys():
@@ -2598,12 +2615,18 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise TypeError('aux_pos_prefix should be a string')
         if not aux_pos_prefix.endswith('_'):
             aux_pos_prefix += '_'
-        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=False,
+        if verbose:
+            print('Passed all pre-tests for creating position datasets')
+        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_parent_group, pos_dims, is_spectral=False, verbose=verbose,
                                                        base_name=aux_pos_prefix)
+        if verbose:
+            print('Created position datasets!')
 
     if h5_spec_inds is not None and h5_spec_vals is not None:
         # The provided datasets override fresh building instructions.
         __validate_anc_h5_dsets(h5_spec_inds, h5_spec_vals, main_shape, is_spectroscopic=True)
+        if verbose:
+            print('Provided h5 spectroscopic datasets were OK')
     else:
         for dset_name in ['Spectroscopic_Indices', 'Spectroscopic_Values']:
             if dset_name in h5_parent_group.keys():
@@ -2620,21 +2643,37 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise TypeError('aux_spec_prefix should be a string')
         if not aux_spec_prefix.endswith('_'):
             aux_spec_prefix += '_'
-        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=False,
+        if verbose:
+            print('Passed all pre-tests for creating spectroscopic datasets')
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_parent_group, spec_dims, is_spectral=True, verbose=verbose,
                                                          base_name=aux_spec_prefix)
+        if verbose:
+            print('Created Spectroscopic datasets')
 
     if isinstance(main_data, np.ndarray):
         # Case 1 - simple small dataset
         h5_main = h5_parent_group.create_dataset(main_data_name, data=main_data, **kwargs)
+        if verbose:
+            print('Created main dataset with provided data')
     else:
         # Case 2 - large empty dataset
         h5_main = h5_parent_group.create_dataset(main_data_name, main_data, **kwargs)
+        if verbose:
+            print('Created empty dataset for Main')
+
     write_simple_attrs(h5_main, {'quantity': quantity, 'units': units})
+    if verbose:
+        print('Wrote quantity and units attributes to main dataset')
+
     if isinstance(main_dset_attrs, dict):
         h5_main.attrs.update(main_dset_attrs)
+        if verbose:
+            print('Wrote provided attributes to main dataset')
 
     # make it main
     link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
+    if verbose:
+        print('Successfully linked datasets - dataset should be main now')
 
     from .pycro_data import PycroDataset
     return PycroDataset(h5_main)
