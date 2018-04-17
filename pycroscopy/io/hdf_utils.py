@@ -804,7 +804,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
     so that they are in the same order as in the index array
     """
     if not sort_dims:
-        swap_axes = np.append(pos_sort.size - 1 - pos_sort,
+        swap_axes = np.append([pos_sort[::-1].tolist().index(x) for x in range(pos_sort.size)],
                               spec_sort.size - spec_sort - 1 + len(pos_dims))
     else:
         swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_dims))
@@ -824,18 +824,7 @@ def reshape_to_Ndims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verbo
         '''
         Get the labels in the proper order
         '''
-        if isinstance(h5_pos, h5py.Dataset):
-            pos_labs = get_attr(h5_pos, 'labels')
-        else:
-            pos_labs = np.array(['' for _ in pos_dims])
-        if isinstance(h5_spec, h5py.Dataset):
-            spec_labs = get_attr(h5_spec, 'labels')
-        else:
-            spec_labs = np.array(['' for _ in spec_dims])
-
-        ds_labels = np.hstack([pos_labs[pos_sort[::-1]], spec_labs[spec_sort[::-1]]])
-
-        results.append(ds_labels[swap_axes])
+        results.append(all_labels[swap_axes])
 
     return results
 
