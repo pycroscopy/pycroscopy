@@ -99,7 +99,7 @@ h5_file = h5py.File(h5_path, mode='r')
 h5_meas_grp = h5_file['Measurement_000']
 
 # Getting a reference to the main dataset:
-h5_main = h5_meas_grp['Channel_000/Raw_Data']
+h5_main = px.PycroDataset(h5_meas_grp['Channel_000/Raw_Data'])
 print('\nThe main dataset:\n------------------------------------')
 print(h5_main)
 
