@@ -7,16 +7,13 @@ Created on Tue Nov 07 11:48:53 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-
+import h5py
 import numpy as np
 from collections import Iterable
 from ..core.processing.process import Process, parallel_compute
-from ..core.io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_attributes, link_as_main, \
-                                link_h5_objects_as_attrs
-from ..core.io.write_utils import VALUES_DTYPE
-from ..core.io.write_utils import build_ind_val_dsets, Dimension
-from ..core.io.hdf_writer import HDFwriter
+from ..core.io.hdf_utils import create_results_group, write_main_dataset, write_simple_attrs, create_empty_dataset, \
+    write_ind_val_dsets
+from ..core.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
 # TODO: implement phase compensation
@@ -148,51 +145,22 @@ class SignalFilter(Process):
         Creates all the datasets necessary for holding all parameters + data.
         """
 
-        grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        grp_filt = VirtualGroup(grp_name, self.h5_main.parent.name)
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name)
 
         self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
-        grp_filt.attrs = self.parms_dict
+        write_simple_attrs(self.h5_results_grp, self.parms_dict)
+
+        assert isinstance(self.h5_results_grp, h5py.Group)
 
         if isinstance(self.composite_filter, np.ndarray):
-            ds_comp_filt = VirtualDataset('Composite_Filter', np.float32(self.composite_filter))
-            grp_filt.add_children([ds_comp_filt])
+            h5_comp_filt = self.h5_results_grp.create_dataset('Composite_Filter',
+                                                              data=np.float32(self.composite_filter))
 
-        if self.noise_threshold is not None:
-            ds_noise_floors = VirtualDataset('Noise_Floors',
-                                             data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
-            noise_spec_descriptor = Dimension('arb', '', [1])
-            ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets(noise_spec_descriptor, is_spectral=True,
-                                                                         verbose=self.verbose)
-            ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
-            ds_noise_spec_vals.name = 'Noise_Spectral_Values'
-            grp_filt.add_children([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
-
-        if self.write_filtered:
-            ds_filt_data = VirtualDataset('Filtered_Data', data=None, maxshape=self.h5_main.maxshape,
-                                          dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
-            grp_filt.add_children([ds_filt_data])
-
-        self.hot_inds = None
-
-        h5_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
-        h5_pos_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Values'])[0]
-
-        if self.write_condensed:
-            self.hot_inds = np.where(self.composite_filter > 0)[0]
-            self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
-
-            condensed_spec_descriptor = Dimension('hot_frequencies', '', np.arange(int(0.5 * len(self.hot_inds))))
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(condensed_spec_descriptor, is_spectral=True,
-                                                             verbose=self.verbose)
-            # The data generated above varies linearly. Override.
-            ds_spec_vals.data = VALUES_DTYPE(np.atleast_2d(self.hot_inds))
-            ds_cond_data = VirtualDataset('Condensed_Data', data=None,
-                                          maxshape=(self.num_effective_pix, len(self.hot_inds)),
-                                          dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
-            grp_filt.add_children([ds_spec_inds, ds_spec_vals, ds_cond_data])
-            if self.num_effective_pix > 1:
-                # need to make new position datasets by taking every n'th index / value:
+        # First create the position datsets if the new indices are smaller...
+        if self.num_effective_pix != self.h5_main.shape[0]:
+            # TODO: Do this part correctly. See past solution:
+            """
+            # need to make new position datasets by taking every n'th index / value:
                 new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
                 pos_descriptor = []
                 for name, units, leng in zip(h5_pos_inds.attrs['labels'], h5_pos_inds.attrs['units'],
@@ -201,50 +169,37 @@ class SignalFilter(Process):
                     pos_descriptor.append(Dimension(name, units, np.arange(leng)))
                 ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=self.verbose)
                 h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
-                grp_filt.add_children([ds_pos_inds, ds_pos_vals])
-
-        if self.verbose:
-            grp_filt.show_tree()
-        hdf = HDFwriter(self.h5_main.file)
-        h5_filt_refs = hdf.write(grp_filt, print_log=self.verbose)
-
-        if isinstance(self.composite_filter, np.ndarray):
-            h5_comp_filt = get_h5_obj_refs(['Composite_Filter'], h5_filt_refs)[0]
+                
+            """
+            h5_pos_inds_new, h5_pos_vals_new = write_ind_val_dsets(self.h5_results_grp,
+                                                                   Dimension('pixel', 'a.u.', self.num_effective_pix),
+                                                                   is_spectral=False, verbose=self.verbose)
+        else:
+            h5_pos_inds_new = self.h5_main.h5_pos_inds
+            h5_pos_vals_new = self.h5_main.h5_pos_vals
 
         if self.noise_threshold is not None:
-            self.h5_noise_floors = get_h5_obj_refs(['Noise_Floors'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_noise_floors.parent
-            link_as_main(self.h5_noise_floors, h5_pos_inds, h5_pos_vals,
-                         get_h5_obj_refs(['Noise_Spectral_Indices'], h5_filt_refs)[0],
-                         get_h5_obj_refs(['Noise_Spectral_Values'], h5_filt_refs)[0])
+            self.h5_noise_floors = write_main_dataset(self.h5_results_grp, (self.num_effective_pix, 1), 'Noise_Floors',
+                                                      'Noise', 'a.u.', None, Dimension('arb', '', [1]),
+                                                      dtype=np.float32, aux_spec_prefix='Noise_Spec_',
+                                                      h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
+                                                      verbose=self.verbose)
 
-        # Now need to link appropriately:
         if self.write_filtered:
-            self.h5_filtered = get_h5_obj_refs(['Filtered_Data'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_filtered.parent
-            copy_attributes(self.h5_main, self.h5_filtered, skip_refs=False)
-            if isinstance(self.composite_filter, np.ndarray):
-                link_h5_objects_as_attrs(self.h5_filtered, [h5_comp_filt])
+            # Filtered data is identical to Main_Data in every way - just a duplicate
+            self.h5_filtered = create_empty_dataset(self.h5_main, self.h5_main.dtype, 'Filtered_Data',
+                                                    h5_group=self.h5_results_grp)
 
-            """link_as_main(self.h5_filtered, h5_pos_inds, h5_pos_vals,
-                         get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
-                         get_auxillary_datasets(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
+        self.hot_inds = None
 
         if self.write_condensed:
-            self.h5_condensed = get_h5_obj_refs(['Condensed_Data'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_condensed.parent
-            if isinstance(self.composite_filter, np.ndarray):
-                link_h5_objects_as_attrs(self.h5_condensed, [h5_comp_filt])
-            if self.noise_threshold is not None:
-                link_h5_objects_as_attrs(self.h5_condensed, [self.h5_noise_floors])
-
-            if self.num_effective_pix > 1:
-                h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_filt_refs)[0]
-                h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_filt_refs)[0]
-
-            link_as_main(self.h5_condensed, h5_pos_inds, h5_pos_vals,
-                         get_h5_obj_refs(['Spectroscopic_Indices'], h5_filt_refs)[0],
-                         get_h5_obj_refs(['Spectroscopic_Values'], h5_filt_refs)[0])
+            self.hot_inds = np.where(self.composite_filter > 0)[0]
+            self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
+            condensed_spec = Dimension('hot_frequencies', '', int(0.5 * len(self.hot_inds)))
+            self.h5_condensed = write_main_dataset(self.h5_results_grp, (self.num_effective_pix, len(self.hot_inds)),
+                                                   'Condensed_Data', 'Complex', 'a. u.', None, condensed_spec,
+                                                   h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
+                                                   dtype=np.complex, verbose=self.verbose)
 
     def _get_existing_datasets(self):
         """

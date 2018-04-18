@@ -22,10 +22,9 @@ from .be_sho_fitter import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
 from ..core.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
-from ..core.io.hdf_utils import get_h5_obj_refs, get_auxillary_datasets, copy_region_refs, link_h5_objects_as_attrs, \
-    get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, link_h5_obj_as_alias, create_empty_dataset
-from pycroscopy.core.io.hdf_utils import build_reduced_spec_dsets
-from ..core.io.virtual_data import VirtualDataset, VirtualGroup
+from ..core.io.hdf_utils import get_auxillary_datasets, copy_region_refs, \
+    get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, \
+    create_empty_dataset, create_results_group, write_reduced_spec_dsets, write_simple_attrs, write_main_dataset
 
 '''
 Custom dtypes for the datasets created during fitting.
@@ -261,7 +260,7 @@ class BELoopFitter(Fitter):
             self.h5_loop_metrics[self._start_pos:self._end_pos, self._current_met_spec_slice] = metrics_2d
             self.h5_guess[self._start_pos:self._end_pos, self._current_met_spec_slice] = guessed_loops_2
 
-            self.hdf.flush()
+            self.h5_main.file.flush()
 
             '''
             Change the starting position and get the next chunk of data
@@ -455,49 +454,31 @@ class BELoopFitter(Fitter):
         cycle_start_inds = np.argwhere(self._sho_spec_inds[fit_dim_ind, :] == 0).flatten()
         tot_cycles = cycle_start_inds.size
 
-        # Prepare containers for the dataets
-        ds_projected_loops = VirtualDataset('Projected_Loops', data=None, dtype=np.float32,
-                                            maxshape=self.h5_main.shape, chunking=self.h5_main.chunks,
-                                            compression='gzip')
-        ds_loop_metrics = VirtualDataset('Loop_Metrics', data=None, dtype=loop_metrics32,
-                                         maxshape=(self.h5_main.shape[0], tot_cycles))
+        # Make the results group
+        self._h5_group = create_results_group(self.h5_main, 'Loop_Fit')
+        write_simple_attrs(self._h5_group, {'projection_method': 'pycroscopy BE loop model'})
 
-        ds_loop_met_spec_inds, ds_loop_met_spec_vals = build_reduced_spec_dsets(self._sho_spec_inds, self._sho_spec_vals,
-                                                                        not_fit_dim, cycle_start_inds,
-                                                                        basename='Loop_Metrics')
+        # Write datasets
+        self.h5_projected_loops = create_empty_dataset(self.h5_main, np.float32, 'Projected_Loops',
+                                                       h5_group=self._h5_group)
 
-        # name of the dataset being projected.
-        dset_name = self.h5_main.name.split('/')[-1]
+        h5_loop_met_spec_inds, h5_loop_met_spec_vals = write_reduced_spec_dsets(self._h5_group, self._sho_spec_inds,
+                                                                                self._sho_spec_vals, not_fit_dim,
+                                                                                cycle_start_inds,
+                                                                                basename='Loop_Metrics')
 
-        proj_grp = VirtualGroup('-'.join([dset_name, 'Loop_Fit_']),
-                                  self.h5_main.parent.name[1:])
-        proj_grp.attrs['projection_method'] = 'pycroscopy BE loop model'
-        proj_grp.add_children([ds_projected_loops, ds_loop_metrics,
-                               ds_loop_met_spec_inds, ds_loop_met_spec_vals])
+        self.h5_loop_metrics = write_main_dataset(self._h5_group, (self.h5_main.shape[0], tot_cycles), 'Loop_Metrics',
+                                                  'Metrics', 'compound', None, None, dtype=loop_metrics32,
+                                                  h5_pos_inds=self.h5_main.h5_pos_inds,
+                                                  h5_pos_vals=self.h5_main.h5_pos_vals,
+                                                  h5_spec_inds=h5_loop_met_spec_inds,
+                                                  h5_spec_vals=h5_loop_met_spec_vals)
 
-        h5_proj_grp_refs = self.hdf.write(proj_grp)
-        self.h5_projected_loops = get_h5_obj_refs(['Projected_Loops'], h5_proj_grp_refs)[0]
-        self.h5_loop_metrics = get_h5_obj_refs(['Loop_Metrics'], h5_proj_grp_refs)[0]
-        self._met_spec_inds = get_h5_obj_refs(['Loop_Metrics_Indices'], h5_proj_grp_refs)[0]
-        h5_loop_met_spec_vals = get_h5_obj_refs(['Loop_Metrics_Values'], h5_proj_grp_refs)[0]
-        self._h5_group = h5_loop_met_spec_vals.parent
-
-        h5_pos_dsets = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices',
-                                                             'Position_Values'])
-        # do linking here
-        # first the positions
-        link_h5_objects_as_attrs(self.h5_projected_loops, h5_pos_dsets)
-        link_h5_objects_as_attrs(self.h5_projected_loops, [self.h5_loop_metrics])
-        link_h5_objects_as_attrs(self.h5_loop_metrics, h5_pos_dsets)
-        # then the spectroscopic
-        link_h5_objects_as_attrs(self.h5_projected_loops, [self._sho_spec_inds, self._sho_spec_vals])
-        link_h5_obj_as_alias(self.h5_loop_metrics, self._met_spec_inds, 'Spectroscopic_Indices')
-        link_h5_obj_as_alias(self.h5_loop_metrics, h5_loop_met_spec_vals, 'Spectroscopic_Values')
-
+        # Copy region reference:
         copy_region_refs(self.h5_main, self.h5_projected_loops)
         copy_region_refs(self.h5_main, self.h5_loop_metrics)
 
-        self.hdf.flush()
+        self.h5_main.file.flush()
 
         return
 
@@ -975,7 +956,7 @@ class BELoopFitter(Fitter):
         self.h5_guess = create_empty_dataset(self.h5_loop_metrics, loop_fit32, 'Guess')
         self._h5_group.attrs['guess method'] = 'pycroscopy statistical'
 
-        self.hdf.flush()
+        self.h5_main.flush()
 
     @staticmethod
     def _guess_loops(vdc_vec, projected_loops_2d):

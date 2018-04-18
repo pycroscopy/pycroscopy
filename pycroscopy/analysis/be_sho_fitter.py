@@ -1,6 +1,6 @@
 """
 Created on 7/17/16 10:08 AM
-@author: Suhas Somnath, Numan Laanait, Chris R. Smith
+@author: Suhas Somnath, Chris R. Smith, Numan Laanait
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -9,17 +9,12 @@ import numpy as np
 
 from .fitter import Fitter
 from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import copy_region_refs, link_h5_objects_as_attrs, get_h5_obj_refs, \
-                                create_empty_dataset, get_auxillary_datasets
-from pycroscopy.core.io.hdf_utils import build_reduced_spec_dsets
-from ..core.io.virtual_data import VirtualDataset, VirtualGroup
+from ..core.io.hdf_utils import copy_region_refs, write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
+                                create_empty_dataset, get_auxillary_datasets, write_main_dataset
 
 '''
 Custom dtype for the datasets created during fitting.
 '''
-# sho32 = np.dtype([('Amplitude [V]', np.float32), ('Frequency [Hz]', np.float32),
-#                   ('Quality Factor', np.float32), ('Phase [rad]', np.float32),
-#                   ('R2 Criterion', np.float32)])
 field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor', 'Phase [rad]', 'R2 Criterion']
 sho32 = np.dtype({'names': field_names,
                   'formats': [np.float32 for name in field_names]})
@@ -68,43 +63,21 @@ class BESHOfitter(Fitter):
         links the guess dataset to the spectroscopic datasets.
         """
         # Create all the ancilliary datasets, allocate space.....
-        ds_guess = VirtualDataset('Guess', data=None,
-                                  maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
-                                  chunking=(1, self.num_udvs_steps), dtype=sho32)
-        ds_guess.attrs = self._parms_dict
+
+        h5_group = create_results_group(self.h5_main, 'SHO_Fit')
+        write_simple_attrs(h5_group, {'SHO_guess_method': "pycroscopy BESHO", 'last_pixel': 0})
 
         not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
+        h5_sho_inds, h5_sho_vals = write_reduced_spec_dsets(h5_group, self.h5_main.h5_spec_inds,
+                                                    self.h5_main.h5_spec_vals, not_freq, self.step_start_inds)
 
-        ds_sho_inds, ds_sho_vals = build_reduced_spec_dsets(self.h5_main.h5_spec_inds,
-                                                    self.h5_main.h5_spec_vals,
-                                                    not_freq, self.step_start_inds)
-
-        dset_name = self.h5_main.name.split('/')[-1]
-        sho_grp = VirtualGroup('-'.join([dset_name,
-                                           'SHO_Fit_']),
-                                 self.h5_main.parent.name[1:])
-        sho_grp.add_children([ds_guess,
-                              ds_sho_inds,
-                              ds_sho_vals])
-        sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
-
-        h5_sho_grp_refs = self.hdf.write(sho_grp, print_log=self._verbose)
-
-        self.h5_guess = get_h5_obj_refs(['Guess'], h5_sho_grp_refs)[0]
-        h5_sho_inds = get_h5_obj_refs(['Spectroscopic_Indices'],
-                                    h5_sho_grp_refs)[0]
-        h5_sho_vals = get_h5_obj_refs(['Spectroscopic_Values'],
-                                    h5_sho_grp_refs)[0]
-
-        # Reference linking before actual fitting
-        link_h5_objects_as_attrs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
-        # Linking ancillary position datasets:
-        aux_dsets = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices', 'Position_Values'])
-        link_h5_objects_as_attrs(self.h5_guess, aux_dsets)
+        self.h5_guess = write_main_dataset(h5_group, (self.h5_main.shape[0], self.num_udvs_steps), 'Guess', 'SHO',
+                                           'compound', None, None, h5_pos_inds=self.h5_main.h5_pos_inds,
+                                           h5_pos_vals=self.h5_main.h5_pos_vals, h5_spec_inds=h5_sho_inds,
+                                           h5_spec_vals=h5_sho_vals, chunks=(1, self.num_udvs_steps), dtype=sho32,
+                                           main_dset_attrs=self._parms_dict, verbose=self._verbose)
 
         copy_region_refs(self.h5_main, self.h5_guess)
-
-        self.h5_guess = PycroDataset(self.h5_guess)
 
     def _create_fit_datasets(self):
         """

@@ -13,7 +13,6 @@ import time as tm
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
 from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs
 from .optimize import Optimize
@@ -49,7 +48,6 @@ class Fitter(object):
         # Checking if dataset has the proper dimensions for the model to run.
         if self._is_legal(h5_main, variables):
             self.h5_main = h5_main
-            self.hdf = HDFwriter(self.h5_main.file)
 
         else:
             raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
@@ -193,7 +191,7 @@ class Fitter(object):
         self._start_pos = self._end_pos
 
         # flush the file
-        self.hdf.flush()
+        self.h5_main.file.flush()
         if self._verbose:
             print('Finished writing ' + statement + ' results (chunk) to file!')
 

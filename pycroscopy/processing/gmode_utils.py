@@ -13,13 +13,10 @@ from numbers import Number
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-from ..core.io.hdf_writer import HDFwriter
 from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, get_auxillary_datasets, copy_main_attributes, \
-    check_if_main, get_attr
-from ..core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..core.io.hdf_utils import check_if_main, get_attr, write_main_dataset, create_results_group
 from ..core.viz.plot_utils import set_tick_font_size, plot_curves
-from ..core.io.write_utils import build_ind_val_dsets, Dimension
+from ..core.io.write_utils import Dimension
 
 if sys.version_info.major == 3:
     unicode = str
@@ -257,6 +254,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     """
     if not check_if_main(h5_main):
         raise TypeError('h5_main is not a Main dataset')
+    h5_main = PycroDataset(h5_main)
     if pts_per_cycle % 1 != 0 or pts_per_cycle < 1:
         raise TypeError('pts_per_cycle should be a positive integer')
     if scan_step_x_m is not None:
@@ -271,38 +269,25 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
 
     num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
-    h5_spec_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
-    h5_pos_vals = get_auxillary_datasets(h5_main, aux_dset_name=['Position_Values'])[0]
-    single_ao = h5_spec_vals[:, :pts_per_cycle]
+    # TODO: DO NOT assume simple 1 spectral dimension!
+    single_ao = np.squeeze(h5_main.h5_spec_vals[:, :pts_per_cycle])
 
-    spec_descriptor = Dimension(get_attr(h5_spec_vals, 'labels')[0], get_attr(h5_spec_vals, 'units')[0], single_ao)
-    ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_descriptor, is_spectral=True, verbose=False)
-    ds_spec_vals.data = np.atleast_2d(single_ao)  # The data generated above varies linearly. Override.
+    spec_dims = Dimension(get_attr(h5_main.h5_spec_vals, 'labels')[0],
+                          get_attr(h5_main.h5_spec_vals, 'units')[0], single_ao)
 
-    pos_descriptor = [Dimension('X', 'm', np.linspace(0, scan_step_x_m, num_cols)),
-                      Dimension('Y', 'm', np.linspace(0, h5_pos_vals[1, 0], h5_main.shape[0]))]
+    # TODO: DO NOT assume simple 1D in positions!
+    pos_dims = [Dimension('X', 'm', np.linspace(0, scan_step_x_m, num_cols)),
+                Dimension('Y', 'm', np.linspace(0, h5_main.h5_pos_vals[1, 0], h5_main.shape[0]))]
 
-    ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=False)
+    h5_group = create_results_group(h5_main, 'Reshape')
     # TODO: Create empty datasets and then write for very large datasets
-    ds_reshaped_data = VirtualDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
-                                      compression='gzip', chunking=(10, pts_per_cycle))
+    h5_resh = write_main_dataset(h5_group, (num_cols * h5_main.shape[0], pts_per_cycle), 'Reshaped_Data',
+                                 get_attr(h5_main, 'quantity')[0], get_attr(h5_main, 'units')[0], pos_dims, spec_dims,
+                                 chunks=(10, pts_per_cycle), dtype=h5_main.dtype, compression=h5_main.compression)
 
-    # write this to H5 as some form of filtered data.
-    resh_grp = VirtualGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
-    resh_grp.add_children([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
-
-    hdf = HDFwriter(h5_main.file)
+    # TODO: DON'T write in one shot assuming small datasets fit in memory!
     print('Starting to reshape G-mode line data. Please be patient')
-    h5_refs = hdf.write(resh_grp)
-
-    h5_resh = get_h5_obj_refs(['Reshaped_Data'], h5_refs)[0]
-    # Link everything:
-    link_h5_objects_as_attrs(h5_resh,
-                             get_h5_obj_refs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices',
-                                              'Spectroscopic_Values'], h5_refs))
-
-    # Copy the two attributes that are really important but ignored:
-    copy_main_attributes(h5_main, h5_resh)
+    h5_resh[()] = np.reshape(h5_main[()], (-1, pts_per_cycle))
 
     print('Finished reshaping G-mode line data to rows and columns')
 
