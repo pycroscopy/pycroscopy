@@ -16,7 +16,7 @@ from ..core.io.hdf_utils import create_results_group, write_main_dataset, write_
 from ..core.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
-# TODO: implement phase compensation
+
 # TODO: correct implementation of num_pix
 
 
@@ -229,7 +229,7 @@ class SignalFilter(Process):
         # Leaving in this provision that will allow restarting of processes
         self.h5_results_grp.attrs['last_pixel'] = self._end_pos
 
-        self.hdf.flush()
+        self.h5_main.file.flush()
 
         print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
@@ -270,6 +270,7 @@ class SignalFilter(Process):
             # take inverse FFT
             self.filtered_data = np.real(np.fft.ifft(np.fft.ifftshift(self.data, axes=1), axis=1))
             if self.phase_rad > 0:
+                # TODO: implement phase compensation
                 # do np.roll on data
                 # self.data = np.roll(self.data, 0, axis=1)
                 pass
