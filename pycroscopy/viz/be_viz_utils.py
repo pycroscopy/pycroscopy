@@ -443,7 +443,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
     freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
 
-    num_udvs_steps = np.prod([spec_dims[idim] for idim in range(len(spec_dims)) if idim != ifreq])
+    num_udvs_steps = int(np.prod([spec_dims[idim] for idim in range(len(spec_dims)) if idim != ifreq]))
 
     if len(pos_dims) >= 2:
         # Build initial slice dictionaries
@@ -463,7 +463,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
 
         spatial_map = np.abs(np.reshape(pc_main[spatial_slice, 0], (y_size, x_size)))
         spectrogram = np.reshape(pc_main[0], (num_udvs_steps, -1))
-        fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
+        fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box'})
         spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=x_size,
                                                          y_size=y_size, cmap=cmap)
         axes[0].set_aspect('equal')
