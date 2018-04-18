@@ -16,8 +16,8 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import write_ind_val_dsets, calc_chunks, write_main_dataset, write_region_references, \
+from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
+from ...core.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
     create_indexed_group, write_simple_attrs, write_basic_attrs_to_group
 
 

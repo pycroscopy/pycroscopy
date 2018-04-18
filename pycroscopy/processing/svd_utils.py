@@ -15,13 +15,13 @@ from sklearn.utils.extmath import randomized_svd
 from ..core.processing.process import Process
 from .proc_utils import get_component_slice
 from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups,  get_indices_for_region_ref, \
-    create_region_reference, calc_chunks, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
+    create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs
 from ..io.hdf_writer import HDFwriter
 from ..core.io.io_utils import get_available_memory, format_time
 from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from ..io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.write_utils import Dimension
+from ..core.io.write_utils import Dimension, calc_chunks
 from ..core.io.pycro_data import PycroDataset
 
 

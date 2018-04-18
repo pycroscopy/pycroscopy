@@ -192,6 +192,52 @@ class TestWriteUtils(unittest.TestCase):
         inds = write_utils.create_spec_inds_from_vals(exp_vals)
         self.assertTrue(np.allclose(inds, exp_inds))
 
+    def test_calc_chunks_no_unit_chunk(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = None
+        ret_val = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+        self.assertTrue(np.allclose(ret_val, (26, 100)))
+
+    def test_calc_chunks_unit_chunk(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (3, 7)
+        ret_val = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+        self.assertTrue(np.allclose(ret_val, (27, 98)))
+
+    def test_calc_chunks_no_unit_chunk_max_mem(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = None
+        max_mem = 50000
+        ret_val = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
+        self.assertTrue(np.allclose(ret_val, (56, 224)))
+
+    def test_calc_chunks_unit_chunk_max_mem(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (3, 7)
+        max_mem = 50000
+        ret_val = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
+        self.assertTrue(np.allclose(ret_val, (57, 224)))
+
+    def test_calc_chunks_unit_not_iterable(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = 4
+
+        with self.assertRaises(TypeError):
+            _ = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+
+    def test_calc_chunks_shape_mismatch(self):
+        dimensions = (16384, 16384 * 4)
+        dtype_bytesize = 4
+        unit_chunks = (1, 5, 9)
+
+        with self.assertRaises(ValueError):
+            _ = write_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -26,7 +26,7 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
            'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
            'link_h5_obj_as_alias',
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
-           'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'check_for_old', 'get_source_dataset',
+           'copy_main_attributes', 'create_empty_dataset', 'check_for_old', 'get_source_dataset',
            'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy', 'write_basic_attrs_to_group',
            'is_editable_h5', 'write_ind_val_dsets', 'write_reduced_spec_dsets',
            'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
@@ -1600,89 +1600,6 @@ def simple_region_ref_copy(h5_source, h5_target, key):
     target_ref = create_region_reference(h5_target, ref_inds)
     h5_target.attrs[key] = target_ref
     return ref_inds
-
-
-def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=10240):
-    """
-    Calculate the chunk size for the HDF5 dataset based on the dimensions and the
-    maximum chunk size in memory
-
-    Parameters
-    ----------
-    dimensions : array_like of int
-        Shape of the data to be chunked
-    dtype_byte_size : unsigned int
-        Size of an entry in the data in bytes
-    unit_chunks : array_like of int, optional
-        Unit size of the chunking in each dimension.  Must be the same size as
-        the shape of `ds_main`.  Default None, `unit_chunks` is set to 1 in all
-        dimensions
-    max_chunk_mem : int, optional
-        Maximum size of the chunk in memory in bytes.  Default 10240b or 10kb per h5py recommendations
-
-    Returns
-    -------
-    chunking : tuple of int
-        Calculated maximum size of a chunk in each dimension that is as close to the
-        requested `max_chunk_mem` as posible while having steps based on the input
-        `unit_chunks`.
-    """
-    if not isinstance(dimensions, (list, tuple)):
-        raise TypeError('dimensions should either be a tuple or list')
-    if not isinstance(dtype_byte_size, int):
-        raise TypeError('dtype_byte_size should be an integer')
-    if unit_chunks is not None:
-        if not isinstance(unit_chunks, (tuple, list)):
-            raise TypeError('unit_chunks should either be a tuple or list')
-
-    '''
-    Ensure that dimensions is an array
-    '''
-    dimensions = np.asarray(dimensions, dtype=np.uint)
-    '''
-    Set the unit_chunks to all ones if not given.  Ensure it is an array if it is.
-    '''
-    if unit_chunks is None:
-        unit_chunks = np.ones_like(dimensions)
-    else:
-        unit_chunks = np.asarray(unit_chunks, dtype=np.uint)
-
-    if unit_chunks.shape != dimensions.shape:
-        raise ValueError('Unit chunk size must have the same shape as the input dataset.')
-
-    '''
-    Save the original size of unit_chunks to use for incrementing the chunk size during
-     loop
-    '''
-    base_chunks = unit_chunks.copy()
-
-    '''
-    Loop until chunk_size is greater than the maximum chunk_mem or the chunk_size is equal to
-    that of dimensions
-    '''
-    while np.prod(unit_chunks) * dtype_byte_size <= max_chunk_mem:
-        '''
-        Check if all chunk dimensions are greater or equal to the
-        actual dimensions.  Exit the loop if true.
-        '''
-        if np.all(unit_chunks >= dimensions):
-            break
-
-        '''
-        Find the index of the next chunk to be increased and increment it by the base_chunk
-        size
-        '''
-        ichunk = np.argmax(dimensions / unit_chunks)
-        unit_chunks[ichunk] += base_chunks[ichunk]
-
-    '''
-    Ensure that the size of the chunks is between one and the dimension size.
-    '''
-    unit_chunks = np.clip(unit_chunks, np.ones_like(unit_chunks), dimensions)
-
-    chunking = tuple(unit_chunks)
-
-    return chunking
 
 
 def link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals, anc_dsets=None):

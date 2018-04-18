@@ -11,6 +11,9 @@ import sys
 import h5py
 import numpy as np
 import shutil
+
+import pycroscopy.core.io.write_utils
+
 sys.path.append("../../../pycroscopy/")
 from pycroscopy.core.io import hdf_utils, write_utils
 from pycroscopy.core.io.pycro_data import PycroDataset
@@ -1778,52 +1781,6 @@ class TestHDFUtils(unittest.TestCase):
                                                 np.squeeze(h5_dset[h5_dset.attrs[curr_name]])))
 
         os.remove(duplicate_path)
-
-    def test_calc_chunks_no_unit_chunk(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = None
-        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
-        self.assertTrue(np.allclose(ret_val, (26, 100)))
-
-    def test_calc_chunks_unit_chunk(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = (3, 7)
-        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
-        self.assertTrue(np.allclose(ret_val, (27, 98)))
-
-    def test_calc_chunks_no_unit_chunk_max_mem(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = None
-        max_mem = 50000
-        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
-        self.assertTrue(np.allclose(ret_val, (56, 224)))
-
-    def test_calc_chunks_unit_chunk_max_mem(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = (3, 7)
-        max_mem = 50000
-        ret_val = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks, max_chunk_mem=max_mem)
-        self.assertTrue(np.allclose(ret_val, (57, 224)))
-
-    def test_calc_chunks_unit_not_iterable(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = 4
-
-        with self.assertRaises(TypeError):
-            _ = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
-
-    def test_calc_chunks_shape_mismatch(self):
-        dimensions = (16384, 16384 * 4)
-        dtype_bytesize = 4
-        unit_chunks = (1, 5, 9)
-
-        with self.assertRaises(ValueError):
-            _ = hdf_utils.calc_chunks(dimensions, dtype_bytesize, unit_chunks=unit_chunks)
 
     def test_get_indices_for_region_ref_corners(self):
         self.__ensure_test_h5_file()
