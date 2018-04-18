@@ -76,6 +76,7 @@ class BEPSndfTranslator(Translator):
             Absolute path of the generated .h5 file
 
         """
+        data_filepath = path.abspath(data_filepath)
         # Read the parameter files
         self.debug = debug
         if debug:
@@ -330,7 +331,7 @@ class BEPSndfTranslator(Translator):
         link_h5_objects_as_attrs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
-        generatePlotGroups(self.ds_main, self.hdf, self.mean_resp,
+        generatePlotGroups(self.ds_main, self.mean_resp,
                            self.folder_path, self.basename,
                            self.max_resp, self.min_resp,
                            max_mem_mb=self.max_ram,

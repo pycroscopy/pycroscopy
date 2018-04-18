@@ -50,6 +50,7 @@ class BEodfRelaxationTranslator(Translator):
         Outputs:
             Nothing
         """
+        file_path = path.abspath(file_path)
         (folder_path, basename) = path.split(file_path)
         (basename, path_dict) = self._parse_file_path(file_path)
 
@@ -282,7 +283,7 @@ class BEodfRelaxationTranslator(Translator):
         self._read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict)
         self.hdf.flush()
 
-        generatePlotGroups(self.ds_main, self.hdf, self.mean_resp, folder_path, basename, self.max_resp,
+        generatePlotGroups(self.ds_main, self.mean_resp, folder_path, basename, self.max_resp,
                            self.min_resp, max_mem_mb=self.max_ram, spec_label=spec_label, show_plots=show_plots,
                            save_plots=save_plots, do_histogram=do_histogram,
                            ignore_plot_groups=ignored_plt_grps)  # We ignored in-field plot group.
