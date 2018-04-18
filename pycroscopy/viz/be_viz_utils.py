@@ -1527,12 +1527,19 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
         else:
             raise ValueError('plot_2d_spectrogram: Incompatible data sizes!!!! spectrogram: '
                              + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
-    freq *= 1E-3  # to kHz
 
     fig, axes = plot_complex_spectra(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
                                      x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
-                                     extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
                                      figsize=(5, 3), origin='lower', stdevs=None, amp_units='V', **kwargs)
+
+    # Changing the X axis labels
+    x_ticks = np.linspace(0, mean_spectrogram.shape[1] - 1, 5, dtype=int)
+    x_tick_labs = [str(np.round(freq[ind], 2)) for ind in x_ticks]
+
+    for axis in axes:
+        axis.set_xticks(x_ticks)
+        axis.set_xticklabels(x_tick_labs)
+
     return fig, axes
 
 
