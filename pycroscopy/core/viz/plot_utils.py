@@ -861,7 +861,8 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         if x_vec.ndim != 1:
             raise ValueError('x_vec should be a 1D array')
         if x_vec.size != map_stack.shape[1]:
-            raise ValueError('x_vec should be of the same size as the second dimension of map_stack')
+            raise ValueError('x_vec: {} should be of the same size as the second dimension of map_stack: '
+                             '{}'.format(x_vec.shape, map_stack.shape))
     else:
         if map_stack.ndim == 2:
             x_vec = np.arange(map_stack.shape[1])

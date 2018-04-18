@@ -24,15 +24,15 @@ from .virtual_data import VirtualDataset
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
-           'copy_region_refs', 'get_all_main',
+           'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor',
            'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
            'link_h5_obj_as_alias',
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
-           'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'check_for_old', 'get_source_dataset', 'get_unit_values', 'get_data_descriptor',
-           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy',
+           'copy_main_attributes', 'create_empty_dataset', 'calc_chunks', 'check_for_old', 'get_source_dataset',
+           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy', 'write_basic_attrs_to_group',
            'is_editable_h5', 'write_ind_val_dsets', 'build_reduced_spec_dsets', 'write_reduced_spec_dsets',
            'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
-           'assign_group_index', 'clean_reg_ref', 'create_results_group'
+           'assign_group_index', 'clean_reg_ref', 'create_results_group', 'create_indexed_group'
            ]
 
 if sys.version_info.major == 3:
@@ -2403,6 +2403,35 @@ def assign_group_index(h5_parent_group, base_name, verbose=False):
     return base_name + '{:03d}'.format(index)
 
 
+def create_indexed_group(h5_parent_group, base_name):
+    """
+    Creates a group with an indexed name (eg - 'Measurement_012') under h5_parent_group using the provided base_name
+    as a prefix for the group's name
+
+    Parameters
+    ----------
+    h5_parent_group : h5py.Group or h5py.File object
+        File or group within which the new group will be created
+    base_name : str / unicode
+        Prefix for the group name. This need not end with a '_'. It will be added automatically
+
+    Returns
+    -------
+
+    """
+    if not isinstance(h5_parent_group, (h5py.Group, h5py.File)):
+        raise TypeError('h5_parent_group should be a h5py.File or Group object')
+    if not isinstance(base_name, (str, unicode)):
+        raise TypeError('base_name should be a string')
+    base_name = base_name.strip()
+    if len(base_name) == 0:
+        raise ValueError('base_name should not be an empty string')
+    group_name = assign_group_index(h5_parent_group, base_name)
+    h5_new_group = h5_parent_group.create_group(group_name)
+    write_basic_attrs_to_group(h5_new_group)
+    return h5_new_group
+
+
 def write_basic_attrs_to_group(h5_group):
     """
     Writes basic book-keeping and posterity related attributes to groups created in pycroscopy such as machine id,
@@ -2524,7 +2553,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         datasets
         Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
     main_dset_attrs : dictionary, Optional
-        Dictionary of parameters that will be written to the main dataset
+        Dictionary of parameters that will be written to the main dataset. Do NOT include region references here.
     h5_pos_inds : h5py.Dataset, Optional
         Dataset that will be linked with the name 'Position_Indices'
     h5_pos_vals : h5py.Dataset, Optional
@@ -2666,7 +2695,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         print('Wrote quantity and units attributes to main dataset')
 
     if isinstance(main_dset_attrs, dict):
-        h5_main.attrs.update(main_dset_attrs)
+        write_simple_attrs(h5_main, main_dset_attrs)
         if verbose:
             print('Wrote provided attributes to main dataset')
 
