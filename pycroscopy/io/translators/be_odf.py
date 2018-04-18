@@ -58,6 +58,7 @@ class BEodfTranslator(Translator):
         h5_path : String / Unicode
             Absolute path of the resultant .h5 file
         """
+        file_path = path.abspath(file_path)
         (folder_path, basename) = path.split(file_path)
         (basename, path_dict) = self._parse_file_path(file_path)
 
@@ -228,6 +229,10 @@ class BEodfTranslator(Translator):
                                                                                                      parm_dict,
                                                                                                      UDVS_labs,
                                                                                                      UDVS_units)
+        # Not sure what is happening here but this should work.
+        spec_dim_dict = dict()
+        for entry in spec_vals_labs_names:
+            spec_dim_dict[entry[0] + '_parameters'] = entry[1]
 
         spec_vals_slices = dict()
         #         if len(spec_vals_labs) == 1:
@@ -299,13 +304,7 @@ class BEodfTranslator(Translator):
         for dset in [h5_spec_inds, h5_spec_vals]:
             write_region_references(dset, spec_vals_slices, add_labels_attr=True, verbose=verbose)
             write_simple_attrs(dset, {'units': spec_vals_units}, verbose=verbose)
-
-        # Not sure what is happening here but this should work.
-        for entry in spec_vals_labs_names:
-            label = entry[0] + '_parameters'
-            names = entry[1]
-            h5_spec_inds.attrs[label] = names
-            h5_spec_vals.attrs[label] = names
+            write_simple_attrs(dset, spec_dim_dict)
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
         h5_noise_floor = h5_chan_grp.create_dataset('Noise_Floor', (num_pix, num_actual_udvs_steps), dtype=nf32,
