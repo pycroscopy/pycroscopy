@@ -9,7 +9,7 @@ import unittest
 import sys
 sys.path.append("../../../pycroscopy/")
 import numpy as np
-from pycroscopy import VirtualGroup, VirtualDataset
+from pycroscopy.io.virtual_data import VirtualGroup, VirtualDataset
 
 
 class MyOutput(object):
