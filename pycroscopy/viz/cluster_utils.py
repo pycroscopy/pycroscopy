@@ -6,9 +6,9 @@ import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 
-from ..io.pycro_data import PycroDataset
-from ..io.hdf_utils import get_attr
-from ..viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, unicode, plot_map, \
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.hdf_utils import get_attr
+from ..core.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, unicode, plot_map, \
     discrete_cmap, plot_line_family, make_scalar_mappable, plot_curves
 
 

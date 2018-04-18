@@ -35,11 +35,9 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 
 # The package used for creating and manipulating HDF5 files:
-import h5py
 
 # Plotting and visualization:
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # for downloading files:
 import wget
@@ -51,7 +49,7 @@ from sklearn.decomposition import NMF
 
 # finally import pycroscopy:
 import pycroscopy as px
-import pycroscopy.core.viz.cluster_utils
+import pycroscopy.viz.cluster_utils
 
 """
   
@@ -187,7 +185,7 @@ h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-pycroscopy.core.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
+pycroscopy.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)

@@ -85,10 +85,7 @@ import os
 from warnings import warn
 
 # Package for downloading online files:
-import pycroscopy.core.io.hdf_utils
-import pycroscopy.core.io.translator
-import pycroscopy.core.io.write_utils
-import pycroscopy.core.viz.cluster_utils
+import pycroscopy.viz.cluster_utils
 
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -103,7 +100,6 @@ except ImportError:
 import numpy as np
 
 # The package used for creating and manipulating HDF5 files:
-import h5py
 
 # Packages for plotting:
 import matplotlib.pyplot as plt
@@ -426,7 +422,7 @@ px.hdf_utils.checkAndLinkAncillary(h5_centroids,
 # clustering results. The ancillary datasets linked to `labels` and `centroids` instructed the code about the
 # spatial and spectroscopic dimensionality and enabled it to automatically render the plots below
 
-pycroscopy.core.viz.cluster_utils.plot_cluster_h5_group(h5_labels.parent, '');
+pycroscopy.viz.cluster_utils.plot_cluster_h5_group(h5_labels.parent, '');
 
 ###############################################################################
 # Cleanup
