@@ -2,7 +2,7 @@
 """
 Created on Tue Nov  3 21:14:25 2015
 
-@author: Suhas Somnath, Chris Smith, Numan Laanait
+@author: Suhas Somnath, Chris Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -32,7 +32,7 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
            'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy',
            'is_editable_h5', 'write_ind_val_dsets', 'build_reduced_spec_dsets', 'write_reduced_spec_dsets',
            'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
-           'assign_group_index', 'clean_reg_ref'
+           'assign_group_index', 'clean_reg_ref', 'create_results_group'
            ]
 
 if sys.version_info.major == 3:

@@ -47,10 +47,6 @@ class VirtualData(object):
         self.parent = parent
         self.indexed = False
 
-        warn('VirtualData classes are available only for legacy purposes and will be REMOVED in a future release.\n'
-             'Please consider using a combination of functions in hdf_utils such as write_main_dataset() instead',
-             DeprecationWarning)
-
 
 class VirtualGroup(VirtualData):
     """
@@ -74,6 +70,11 @@ class VirtualGroup(VirtualData):
          children : MicroData or list of MicroData objects. (Optional)
             Children can be a mixture of groups and datasets
         """
+
+        warn('VirtualGroup is available only for legacy purposes and will be REMOVED in a future release.\n'
+             'Please consider using a combination of functions in hdf_utils such as create_results_group() instead',
+             DeprecationWarning)
+
         super(VirtualGroup, self).__init__(name, parent, attrs=attrs)
         self.children = list()
         self.attrs['machine_id'] = socket.getfqdn()
@@ -181,6 +182,11 @@ class VirtualDataset(VirtualData):
         >>> ds_spec_inds = VirtualDataset('Spectroscopic_Indices', np.random.random(1, 10))
             ds_spec_inds.attrs['labels'] = {'Time Index':(slice(0,1), slice(None))}
         """
+
+        warn('VirtualDataset is available only for legacy purposes and will be REMOVED in a future release.\n'
+             'Please consider using a combination of functions in hdf_utils such as write_main_dataset() instead',
+             DeprecationWarning)
+
         if parent is None:
             parent = '/'  # by default assume it is under root
 
