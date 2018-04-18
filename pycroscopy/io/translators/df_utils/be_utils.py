@@ -305,7 +305,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     return spectrogram_mat
 
 
-def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
+def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
                        max_mem_mb=1024, spec_label='None', ignore_plot_groups=[],
                        show_plots=True, save_plots=True, do_histogram=False,
                        debug=False):
@@ -317,8 +317,6 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     ----------
     h5_main : H5 reference
         to the main dataset
-    hdf : active ioHDF instance 
-        for writing to same H5 file
     mean_resp : 1D numpy array
         spatially averaged amplitude
     folder_path : String
@@ -346,6 +344,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         If True, then extra debug statements are printed.
         Default False
     """
+    # Too
+    assert isinstance(h5_main, h5py.Dataset)
+    hdf = HDFwriter(h5_main.file)
 
     grp = h5_main.parent
     h5_freq = grp['Bin_Frequencies']
@@ -495,8 +496,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
             fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
             fig_1d.savefig(path_1d, format='png', dpi=300)
-            fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
-            fig_2d.savefig(path_2d, format='png', dpi=300)
+            if mean_spec.shape[0] > 1:
+                fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
+                fig_2d.savefig(path_2d, format='png', dpi=300)
             if do_histogram:
                 plot_histograms(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 
