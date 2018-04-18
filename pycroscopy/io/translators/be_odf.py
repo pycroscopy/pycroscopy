@@ -332,7 +332,7 @@ class BEodfTranslator(Translator):
                            spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram, debug=verbose)
 
-        self.h5_raw.file.close()
+        h5_f.close()
 
         return h5_path
 
