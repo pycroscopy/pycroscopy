@@ -12,8 +12,8 @@ import time as tm
 import matplotlib.pyplot as plt
 
 from ...core.io.io_utils import recommend_cpu_cores
-from ...core.io.virtual_data import VirtualDataset, VirtualGroup
-from ...core.io.hdf_writer import HDFwriter
+from ...io.virtual_data import VirtualDataset, VirtualGroup
+from ...io.hdf_writer import HDFwriter
 from ...core.viz.plot_utils import cmap_jet_white_center
 
 

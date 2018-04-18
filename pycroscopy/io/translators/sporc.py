@@ -15,11 +15,12 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import build_ind_val_dsets, Dimension, INDICES_DTYPE, VALUES_DTYPE
+from ...core.io.write_utils import Dimension, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
+from ..write_utils import build_ind_val_dsets
+from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class SporcTranslator(Translator):

@@ -1,14 +1,13 @@
-
-
-
 import os
 import numpy as np
-from ...core.io.hdf_writer import HDFwriter
+
 from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
-from ...core.io.virtual_data import VirtualDataset, VirtualGroup
 from ...core.io.translator import Translator
-from ...core.io.write_utils import build_ind_val_dsets, get_aux_dset_slicing
+from ...core.io.write_utils import get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
+from ..virtual_data import VirtualDataset, VirtualGroup
+from ..hdf_writer import HDFwriter
+from ..write_utils import build_ind_val_dsets
 
 
 class NanonisTranslator(Translator):

@@ -7,20 +7,21 @@ import numpy as np
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from ...core.io.hdf_writer import HDFwriter
 from ...core.io.hdf_utils import calc_chunks, get_h5_obj_refs, link_as_main, get_attr
 from ...core.io.dtype_utils import stack_real_to_compound
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.hdf_utils import build_reduced_spec_dsets
-from ...core.io.write_utils import build_ind_val_dsets, Dimension
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
 from ...core.io.pycro_data import PycroDataset
+from ...core.io.write_utils import Dimension
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_fitter import sho32
 from ...analysis.be_loop_fitter import loop_fit32
 from .df_utils.beps_gen_utils import get_noise_vec, beps_image_folder
 from .df_utils.io_image import read_image, no_bin
+# Deprecated imports:
+from ..hdf_writer import HDFwriter
+from ..write_utils import build_reduced_spec_dsets, build_ind_val_dsets
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class FakeBEPSGenerator(Translator):

@@ -19,7 +19,7 @@ class Translator(object):
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, max_mem_mb=1024):
+    def __init__(self, max_mem_mb=1024, *args, **kwargs):
         """
         Parameters
         -----------
@@ -33,12 +33,12 @@ class Translator(object):
         self.max_ram = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
 
     @abc.abstractmethod
-    def translate(self, filepath):
+    def translate(self, filepath, *args, **kwargs):
         """
         Abstract method.
         To be implemented by extensions of this class. God I miss Java!
         """
-        raise NotImplementedError('Ths translate method needs to be implemented by the child class')
+        raise NotImplementedError('The translate method needs to be implemented by the child class')
 
 
 def generate_dummy_main_parms():

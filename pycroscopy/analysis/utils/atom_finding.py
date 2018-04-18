@@ -19,8 +19,8 @@ import matplotlib.patches as patches
 
 from ...core.io.io_utils import recommend_cpu_cores
 from ...core.io.dtype_utils import stack_real_to_compound
-from ...core.io.virtual_data import VirtualDataset, VirtualGroup
-from ...core.io.hdf_writer import HDFwriter
+from ...io.virtual_data import VirtualDataset, VirtualGroup
+from ...io.hdf_writer import HDFwriter
 
 # atom_dtype = np.dtype([('x', np.float32),
 #                        ('y', np.float32),

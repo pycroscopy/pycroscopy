@@ -11,12 +11,8 @@ from collections import Iterable
 
 from .dtype_utils import contains_integers
 
-from warnings import warn
-from .virtual_data import VirtualDataset
-
-
-__all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix',
-           'INDICES_DTYPE', 'VALUES_DTYPE', 'Dimension', 'build_ind_val_dsets']
+__all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
+           'Dimension']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -213,84 +209,6 @@ def build_ind_val_matricies(unit_values, is_spectral=True):
         val_mat = val_mat.T
         ind_mat = ind_mat.T
     return INDICES_DTYPE(ind_mat), VALUES_DTYPE(val_mat)
-
-
-def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=None):
-    """
-    Creates VirtualDatasets for the position OR spectroscopic indices and values of the data.
-    Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
-    For example if one of the spectroscopic dimensions (e.g. - Bias) was sinusoidal and not linear, The specific
-    dimension in the Spectroscopic_Values dataset can be manually overwritten.
-
-    Parameters
-    ----------
-    dimensions : Dimension or array-like of Dimension objects
-        Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
-        datasets
-    is_spectral : bool, optional. default = True
-        Spectroscopic (True) or Position (False)
-    verbose : Boolean, optional
-        Whether or not to print statements for debugging purposes
-    base_name : str / unicode, optional
-        Prefix for the datasets. Default: 'Position_' when is_spectral is False, 'Spectroscopic_' otherwise
-
-    Returns
-    -------
-    ds_inds : VirtualDataset
-            Reduced Spectroscopic indices dataset
-    ds_vals : VirtualDataset
-            Reduces Spectroscopic values dataset
-
-    Notes
-    -----
-    `steps`, `initial_values`, `labels`, and 'units' must be the same length as
-    `dimensions` when they are specified.
-
-    Dimensions should be in the order from fastest varying to slowest.
-    """
-
-    warn('build_ind_val_dsets is available only for legacy purposes and will be REMOVED in a future release.\n'
-         'Please consider using write_ind_val_dsets in hdf_utils instead', DeprecationWarning)
-
-    if isinstance(dimensions, Dimension):
-        dimensions = [dimensions]
-    if not isinstance(dimensions, (list, np.ndarray, tuple)):
-        raise TypeError('dimensions should be array-like ')
-    if not np.all([isinstance(x, Dimension) for x in dimensions]):
-        raise TypeError('dimensions should be a sequence of Dimension objects')
-
-    if base_name is not None:
-        if not isinstance(base_name, (str, unicode)):
-            raise TypeError('base_name should be a string')
-        if not base_name.endswith('_'):
-            base_name += '_'
-    else:
-        base_name = 'Position_'
-        if is_spectral:
-            base_name = 'Spectroscopic_'
-
-    unit_values = [x.values for x in dimensions]
-
-    indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
-
-    if verbose:
-        print('Indices:')
-        print(indices)
-        print('Values:')
-        print(values)
-
-    # Create the slices that will define the labels
-    region_slices = get_aux_dset_slicing([x.name for x in dimensions], is_spectroscopic=is_spectral)
-
-    # Create the VirtualDataset for both Indices and Values
-    ds_indices = VirtualDataset(base_name + 'Indices', indices, dtype=INDICES_DTYPE)
-    ds_values = VirtualDataset(base_name + 'Values', VALUES_DTYPE(values), dtype=VALUES_DTYPE)
-
-    for dset in [ds_indices, ds_values]:
-        dset.attrs['labels'] = region_slices
-        dset.attrs['units'] = [x.units for x in dimensions]
-
-    return ds_indices, ds_values
 
 
 def create_spec_inds_from_vals(ds_spec_val_mat):

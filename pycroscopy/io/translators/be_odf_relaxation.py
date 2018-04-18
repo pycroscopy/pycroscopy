@@ -18,8 +18,8 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlot
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs
-from ...core.io.hdf_writer import HDFwriter
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class BEodfRelaxationTranslator(Translator):

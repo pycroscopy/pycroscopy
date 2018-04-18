@@ -14,10 +14,11 @@ from skimage.measure import block_reduce
 
 from .df_utils.io_image import read_image, read_dm3, no_bin
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import build_ind_val_dsets, Dimension
+from ...core.io.write_utils import Dimension
 from ...core.io.hdf_utils import get_h5_obj_refs, calc_chunks, link_as_main
-from ...core.io.hdf_writer import HDFwriter
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..write_utils import build_ind_val_dsets
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class PtychographyTranslator(Translator):

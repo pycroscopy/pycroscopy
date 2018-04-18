@@ -4,7 +4,7 @@ Created on Wed Dec 16 10:42:03 2015
 
 @author: Suhas Somnath, Numan Laanait
 
-The MicroData classes
+The VirtualData classes
 
 """
 
@@ -14,7 +14,7 @@ from warnings import warn
 import numpy as np
 import sys
 
-from .io_utils import get_time_stamp
+from ..core.io.io_utils import get_time_stamp
 
 if sys.version_info.major == 3:
     unicode = str

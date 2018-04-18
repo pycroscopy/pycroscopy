@@ -20,8 +20,8 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, calc_chunks
-from ...core.io.hdf_writer import HDFwriter
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class BEPSndfTranslator(Translator):

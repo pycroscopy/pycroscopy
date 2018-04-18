@@ -10,7 +10,7 @@ import h5py
 
 sys.path.append('../')
 from scipy.io import loadmat
-from ...core.io.hdf_writer import HDFwriter
+from ...io.hdf_writer import HDFwriter
 
 
 def loadDataFunc(filePath, **kwargs):

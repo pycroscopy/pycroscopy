@@ -18,10 +18,11 @@ from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
 from ...core.io.translator import generate_dummy_main_parms
 from ...core.io.write_utils import VALUES_DTYPE
-from ...core.io.write_utils import build_ind_val_dsets, Dimension
+from ...core.io.write_utils import Dimension
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.hdf_writer import HDFwriter
-from ...core.io.virtual_data import VirtualGroup, VirtualDataset
+from ..write_utils import build_ind_val_dsets
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class GTuneTranslator(GLineTranslator):

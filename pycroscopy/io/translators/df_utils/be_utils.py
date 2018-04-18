@@ -17,13 +17,13 @@ import xlrd as xlreader
 
 from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
     get_attr
-from pycroscopy.core.io.write_utils import create_spec_inds_from_vals
-from ....core.io.hdf_writer import HDFwriter
+from ....core.io.write_utils import create_spec_inds_from_vals
 from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
-from ....core.io.virtual_data import VirtualDataset, VirtualGroup
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
+from ...hdf_writer import HDFwriter
+from ...virtual_data import VirtualDataset, VirtualGroup
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
