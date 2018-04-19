@@ -18,7 +18,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from ...core.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
-    create_indexed_group, write_simple_attrs, write_basic_attrs_to_group
+    create_indexed_group, write_simple_attrs, write_book_keeping_attrs
 
 
 class BEodfTranslator(Translator):
@@ -263,7 +263,7 @@ class BEodfTranslator(Translator):
         global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'ODF'
         write_simple_attrs(h5_f, global_parms)
-        write_basic_attrs_to_group(h5_f)
+        write_book_keeping_attrs(h5_f)
 
         # Then create the measurement group
         h5_meas_group = create_indexed_group(h5_f, 'Measurement')

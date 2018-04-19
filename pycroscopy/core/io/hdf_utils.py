@@ -27,7 +27,7 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
            'link_h5_obj_as_alias',
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
            'copy_main_attributes', 'create_empty_dataset', 'check_for_old', 'get_source_dataset',
-           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy', 'write_basic_attrs_to_group',
+           'link_as_main', 'copy_reg_ref_reduced_dim', 'simple_region_ref_copy', 'write_book_keeping_attrs',
            'is_editable_h5', 'write_ind_val_dsets', 'write_reduced_spec_dsets',
            'write_simple_attrs', 'write_main_dataset', 'attempt_reg_ref_build', 'write_region_references',
            'assign_group_index', 'clean_reg_ref', 'create_results_group', 'create_indexed_group'
@@ -2255,29 +2255,26 @@ def create_indexed_group(h5_parent_group, base_name):
         raise ValueError('base_name should not be an empty string')
     group_name = assign_group_index(h5_parent_group, base_name)
     h5_new_group = h5_parent_group.create_group(group_name)
-    write_basic_attrs_to_group(h5_new_group)
+    write_book_keeping_attrs(h5_new_group)
     return h5_new_group
 
 
-def write_basic_attrs_to_group(h5_group):
+def write_book_keeping_attrs(h5_obj):
     """
     Writes basic book-keeping and posterity related attributes to groups created in pycroscopy such as machine id,
     pycroscopy version, timestamp.
 
     Parameters
     ----------
-    h5_group
-
-    Returns
-    -------
-
+    h5_obj : h5py.Object
+        Object to which basic book-keeping attributes need to be written
     """
-    if not isinstance(h5_group, h5py.Group):
-        raise TypeError('h5_group should be a h5py.Group object')
-    write_simple_attrs(h5_group, {'machine_id': socket.getfqdn(),
-                                  'timestamp': get_time_stamp(),
-                                  'pycroscopy_version': pycroscopy_version},
-                       obj_type='Group', verbose=False)
+    if not isinstance(h5_obj, (h5py.Group, h5py.File, h5py.Dataset)):
+        raise TypeError('h5_obj should be a h5py.Group, h5py.File, or h5py.Dataset object')
+    write_simple_attrs(h5_obj, {'machine_id': socket.getfqdn(),
+                                'timestamp': get_time_stamp(),
+                                'pycroscopy_version': pycroscopy_version},
+                       verbose=False)
 
 
 def create_results_group(h5_main, tool_name):
@@ -2306,7 +2303,7 @@ def create_results_group(h5_main, tool_name):
 
     h5_group = h5_main.parent.create_group(group_name)
 
-    write_basic_attrs_to_group(h5_group)
+    write_book_keeping_attrs(h5_group)
 
     return h5_group
 
