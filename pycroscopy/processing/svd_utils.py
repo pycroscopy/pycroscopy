@@ -166,7 +166,7 @@ class SVD(Process):
         h5_u = write_main_dataset(h5_svd_group, np.float32(self.__u), 'U', 'Abundance', 'a.u.', None, comp_dim,
                                   h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
                                   dtype=np.float32, chunks=calc_chunks(self.__u.shape, np.float32(0).itemsize))
-        print(get_attr(self.h5_main, 'quantity')[0])
+        # print(get_attr(self.h5_main, 'quantity')[0])
         h5_v = write_main_dataset(h5_svd_group, self.__v, 'V', get_attr(self.h5_main, 'quantity')[0],
                                   'a.u.', comp_dim, None, h5_spec_inds=self.h5_main.h5_spec_inds,
                                   h5_spec_vals=self.h5_main.h5_spec_vals,

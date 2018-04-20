@@ -264,7 +264,7 @@ class Cluster(Process):
         h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
         h5_labels = write_main_dataset(h5_cluster_group, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
-                                       'Cluster ID', 'a. u.', None, [Dimension('Cluster', 'ID', [1])],
+                                       'Cluster ID', 'a. u.', None, Dimension('Cluster', 'ID', 1),
                                        h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
                                        aux_spec_prefix='Cluster_', dtype=np.uint32)
 

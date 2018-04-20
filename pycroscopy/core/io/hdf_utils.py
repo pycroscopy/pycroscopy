@@ -2171,8 +2171,7 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
         # Adding the labels and units to the new spectroscopic data sets
         for dset in [h5_inds, h5_vals]:
             write_region_references(dset, reg_ref_slices, verbose=False)
-            dset.attrs['labels'] = labels
-            dset.attrs['units'] = h5_spec_inds.attrs['units'][keep_dim]
+            write_simple_attrs(dset, {'labels': labels, 'units': h5_spec_inds.attrs['units'][keep_dim]})
 
     else:  # Single spectroscopic dimension:
         h5_inds = h5_parent_group.create_dataset(basename + '_Indices', data=np.array([[0]]), dtype=INDICES_DTYPE)
@@ -2182,8 +2181,7 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
 
         for dset in [h5_inds, h5_vals]:
             write_region_references(dset, reg_ref_slices, verbose=False)
-            dset.attrs['labels'] = 'Single_Step'
-            dset.attrs['units'] = ['']
+            write_simple_attrs(dset, {'labels': 'Single_Step', 'units': ''})
 
     return h5_inds, h5_vals
 
