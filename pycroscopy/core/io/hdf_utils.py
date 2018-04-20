@@ -633,7 +633,7 @@ def create_region_reference(h5_main, ref_inds):
     """
     if not isinstance(h5_main, h5py.Dataset):
         raise TypeError('h5_main should be a h5py.Dataset object')
-    if not isinstance(ref_inds, (list, tuple)):
+    if not isinstance(ref_inds, (Iterable)):
         raise TypeError('ref_inds should be a list or tuple')
 
     h5_space = h5_main.id.get_space()
@@ -2400,7 +2400,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
 
     Returns
     -------
-    h5_main : h5py.Dataset
+    h5_main : PycroDataset
         Reference to the main dataset
     """
 

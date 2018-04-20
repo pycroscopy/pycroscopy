@@ -1119,7 +1119,7 @@ class TestHDFUtils(unittest.TestCase):
             attrs = {'labels': {'even_rows': (slice(0, None, 2), slice(None)),
                                 'odd_rows': (slice(1, None, 2), slice(None))}}
 
-            TestHDFUtils.__write_main_reg_refs(h5_orig_dset, attrs)
+            TestHDFUtils.__write_main_reg_refs(h5_orig_dset, attrs['labels'])
             h5_f.flush()
 
             # two atts point to region references. one for labels
