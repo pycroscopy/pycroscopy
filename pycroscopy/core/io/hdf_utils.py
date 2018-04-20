@@ -2523,6 +2523,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         if verbose:
             print('Wrote provided attributes to main dataset')
 
+    write_book_keeping_attrs(h5_main)
+
     # make it main
     link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
     if verbose:
