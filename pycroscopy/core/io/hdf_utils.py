@@ -1224,11 +1224,16 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
         h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                               compression=source_dset.compression, chunks=source_dset.chunks)
 
-    except:
-        raise
     # This should link the ancillary datasets correctly
     h5_new_dset = copy_attributes(source_dset, h5_new_dset, skip_refs=skip_refs)
     h5_new_dset.attrs.update(new_attrs)
+
+    if check_if_main(h5_new_dset):
+        from .pycro_data import PycroDataset
+
+        h5_new_dset = PycroDataset(h5_new_dset)
+        # update book keeping attributes
+        write_book_keeping_attrs(h5_new_dset)
 
     return h5_new_dset
 
