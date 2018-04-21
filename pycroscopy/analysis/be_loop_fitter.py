@@ -85,7 +85,7 @@ class BELoopFitter(Fitter):
         self._met_all_but_forc_inds = None
         self._current_forc = 0
         self._maxDataChunk = 1
-        self._fit_dim = variables[0]
+        self._fit_dim_name = variables[0]
 
     def _is_legal(self, h5_main, variables=['DC_Offset']):
         """
@@ -159,7 +159,7 @@ class BELoopFitter(Fitter):
         '''
         Find the Spectroscopic index for the DC_Offset
         '''
-        fit_ind = np.argwhere(get_attr(self._sho_spec_vals, 'labels') == self._fit_dim).squeeze()
+        fit_ind = np.argwhere(get_attr(self._sho_spec_vals, 'labels') == self._fit_dim_name).squeeze()
         self._fit_spec_index = fit_ind
         self._fit_offset_index = 1 + fit_ind
 
@@ -444,8 +444,7 @@ class BELoopFitter(Fitter):
         self._sho_spec_vals = self.h5_main.h5_spec_vals
         self._sho_pos_inds = self.h5_main.h5_pos_inds
 
-        fit_dim_ind = self.h5_main.spec_dim_labels.index(self._fit_dim)
-        not_fit_dim = np.arange(len(self.h5_main.spec_dim_labels)) != fit_dim_ind
+        fit_dim_ind = self.h5_main.spec_dim_labels.index(self._fit_dim_name)
 
         self._fit_spec_index = fit_dim_ind
         self._fit_offset_index = 1 + fit_dim_ind
@@ -463,8 +462,7 @@ class BELoopFitter(Fitter):
                                                        h5_group=self._h5_group)
 
         h5_loop_met_spec_inds, h5_loop_met_spec_vals = write_reduced_spec_dsets(self._h5_group, self._sho_spec_inds,
-                                                                                self._sho_spec_vals, not_fit_dim,
-                                                                                cycle_start_inds,
+                                                                                self._sho_spec_vals, self._fit_dim_name,
                                                                                 basename='Loop_Metrics')
 
         self.h5_loop_metrics = write_main_dataset(self._h5_group, (self.h5_main.shape[0], tot_cycles), 'Loop_Metrics',
@@ -749,7 +747,7 @@ class BELoopFitter(Fitter):
             print('Spectroscopic dimensions sorted by rate of change:')
             print(spec_labels_sorted)
         # slice the N dimensional dataset such that we only get the DC offset for default values of other dims
-        fit_dim_pos = np.argwhere(spec_labels_sorted == self._fit_dim)[0][0]
+        fit_dim_pos = np.argwhere(spec_labels_sorted == self._fit_dim_name)[0][0]
         # fit_dim_slice = list()
         # for dim_ind in range(spec_labels_sorted.size):
         #     if dim_ind == fit_dim_pos:
@@ -759,7 +757,7 @@ class BELoopFitter(Fitter):
 
         fit_dim_slice = [fit_dim_pos]
         for idim, dim in enumerate(spec_labels_sorted[1:]):
-            if dim == self._fit_dim:
+            if dim == self._fit_dim_name:
                 fit_dim_slice.append(slice(None))
                 fit_dim_slice[0] = idim
             elif dim in ['FORC', 'FORC_repeat']:

@@ -43,9 +43,11 @@ class BESHOfitter(Fitter):
         # self._max_pos_per_read = 1
         self._fitter_name = "SHO_Fit"
         self._parms_dict = None
+        self._fit_dim_name = variables[0]
 
         # Extract some basic parameters that are necessary for either the guess or fit
-        self.step_start_inds = np.where(self.h5_main.h5_spec_inds[0] == 0)[0]
+        freq_dim_ind = self.h5_main.spec_dim_labels.index(variables[0])
+        self.step_start_inds = np.where(self.h5_main.h5_spec_inds[freq_dim_ind] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
 
         # find the frequency vector and hold in memory
@@ -69,7 +71,7 @@ class BESHOfitter(Fitter):
 
         not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
         h5_sho_inds, h5_sho_vals = write_reduced_spec_dsets(h5_group, self.h5_main.h5_spec_inds,
-                                                    self.h5_main.h5_spec_vals, not_freq, self.step_start_inds)
+                                                            self.h5_main.h5_spec_vals, self._fit_dim_name)
 
         self.h5_guess = write_main_dataset(h5_group, (self.h5_main.shape[0], self.num_udvs_steps), 'Guess', 'SHO',
                                            'compound', None, None, h5_pos_inds=self.h5_main.h5_pos_inds,
