@@ -18,7 +18,7 @@ from platform import platform
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
     Dimension, build_ind_val_matricies
 from .io_utils import get_time_stamp
-from .dtype_utils import contains_integers
+from .dtype_utils import contains_integers, validate_dtype
 from ...__version__ import version as pycroscopy_version
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
@@ -1194,13 +1194,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
     """
     if not isinstance(source_dset, h5py.Dataset):
         raise TypeError('source_deset should be a h5py.Dataset object')
-    if isinstance(dtype, (h5py.Datatype, np.dtype)):
-        pass
-    elif isinstance(np.dtype(dtype), np.dtype):
-        # This should catch all those instances when dtype is something familiar like - np.float32
-        pass
-    else:
-        raise TypeError('dtype should either be a numpy or h5py dtype')
+    validate_dtype(dtype)
     if new_attrs is not None:
         if not isinstance(new_attrs, dict):
             raise TypeError('new_attrs should be a dictionary')
@@ -2369,7 +2363,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     h5_parent_group : h5py.Group
         Parent group under which the datasets will be created
     main_data : np.ndarray or list / tuple
-        2D matrix formatted as [position, spectral] or a list / tuple with the shape for an empty dataset
+        2D matrix formatted as [position, spectral] or a list / tuple with the shape for an empty dataset.
+        If creating an empty dataset - the dtype must be specified via a kwarg.
     main_data_name : String / Unicode
         Name to give to the main dataset
     quantity : String / Unicode
@@ -2459,10 +2454,9 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise ValueError('main_data if specified as a shape should be a list / tuple of integers >= 1')
         if len(main_data) != 2:
             raise ValueError('main_data if specified as a shape should contain 2 numbers')
-        """
         if 'dtype' not in kwargs:
             raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
-        """
+        validate_dtype(kwargs.get('dtype'))
         main_shape = main_data
         if verbose:
             print('Selected empty dataset creation. OK so far')
