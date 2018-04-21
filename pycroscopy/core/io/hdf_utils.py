@@ -1239,17 +1239,17 @@ def copy_attributes(source, dest, skip_refs=True):
 
     Parameters
     ----------
-    source : h5py.dataset object
-        Dataset containing the desired attributes
-    dest : h5py.dataset object
-        Dataset to which the attributes need to be copied to
+    source : h5py.Dataset, h5py.Group, or h5py.File object
+        Object containing the desired attributes
+    dest : h5py.Dataset, h5py.Group, or h5py.File object
+        Object to which the attributes need to be copied to
     skip_refs : bool, optional. default = True
         Whether or not the references (dataset and region) should be skipped
     """
-    if not isinstance(source, h5py.Dataset):
-        raise TypeError('source should be a h5py.Dataset object')
-    if not isinstance(dest, h5py.Dataset):
-        raise TypeError('dest should be a h5py.Dataset object')
+    if not isinstance(source, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('source should be a h5py.Dataset, h5py.Group,or h5py.File object')
+    if not isinstance(dest, (h5py.Dataset, h5py.Group, h5py.File)):
+        raise TypeError('dest should be a h5py.Dataset, h5py.Group, or h5py.File object')
 
     for att_name in source.attrs.keys():
         att_val = get_attr(source, att_name)
@@ -1257,7 +1257,7 @@ def copy_attributes(source, dest, skip_refs=True):
         Don't copy references unless asked
         """
         if isinstance(att_val, h5py.Reference):
-            if isinstance(att_val, h5py.RegionReference) or skip_refs:
+            if isinstance(att_val, h5py.RegionReference) or skip_refs or not isinstance(dest, h5py.Dataset):
                 continue
             elif isinstance(att_val, h5py.RegionReference):
                 """
