@@ -2100,8 +2100,7 @@ def write_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, verbose=F
     return h5_indices, h5_values
 
 
-def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_dim, step_starts,
-                             basename='Spectroscopic'):
+def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, dim_name, basename='Spectroscopic'):
     """
     Creates new Spectroscopic Indices and Values datasets from the input datasets
     and keeps the dimensions specified in keep_dim
@@ -2114,11 +2113,9 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
             Spectroscopic indices dataset
     h5_spec_vals : HDF5 Dataset
             Spectroscopic values dataset
-    keep_dim : Numpy Array, Boolean
-            Array designating which rows of the input spectroscopic datasets to keep
-    step_starts : Numpy Array, Unsigned Integers
-            Array specifying the start of each step in the reduced datasets
-    basename : str / unicode
+    dim_name : str / unicode
+            Name of the dimension to remove
+    basename : str / unicode, Optional
             String to which '_Indices' and '_Values' will be appended to get the names
             of the new datasets
 
@@ -2143,10 +2140,16 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
     for param, param_name in zip([h5_spec_inds, h5_spec_vals], ['h5_spec_inds', 'h5_spec_vals']):
         if not isinstance(param, h5py.Dataset):
             raise TypeError(param_name + ' should be a h5py.Dataset object')
-    if not isinstance(keep_dim, (bool, np.ndarray, list, tuple)):
-        raise TypeError('keep_dim should be a bool, np.ndarray, list, or tuple')
-    if not isinstance(step_starts, (list, np.ndarray, list, tuple)):
-        raise TypeError('step_starts should be a list, np.ndarray, list, or tuple')
+    if dim_name is not None:
+        if not isinstance(dim_name, (str, unicode)):
+            raise TypeError('dim_name should be a string')
+
+    all_dim_names = list(get_attr(h5_spec_inds, 'labels'))
+    if dim_name not in all_dim_names:
+        raise KeyError('Requested dimension: {} not in the list of labels: {}'.format(dim_name, all_dim_names))
+    dim_ind = all_dim_names.index(dim_name)
+    step_starts = np.where(h5_spec_inds[dim_ind] == 0)[0]
+    keep_dim = np.array(all_dim_names) != dim_name
 
     if h5_spec_inds.shape[0] > 1:
         '''
