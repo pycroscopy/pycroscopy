@@ -10,7 +10,7 @@ import numpy as np
 from collections import Iterable
 
 __all__ = ['flatten_complex_to_real', 'get_compound_sub_dtypes', 'flatten_compound_to_real', 'check_dtype',
-           'stack_real_to_complex',
+           'stack_real_to_complex', 'validate_dtype',
            'stack_real_to_compound', 'stack_real_to_target_dtype', 'flatten_to_real', 'contains_integers']
 
 
@@ -312,3 +312,22 @@ def stack_real_to_target_dtype(ds_real, new_dtype):
         return stack_real_to_compound(ds_real, new_dtype)
     else:
         return new_dtype.type(ds_real)
+
+
+def validate_dtype(dtype):
+    """
+    Checks the provided object to ensure that it is a valid dtype that can be written to an HDF5 file.
+    Raises a type error if invalid. does not return anything
+
+    Parameters
+    ----------
+    dtype : object
+        Object that is hopefully a h5py.Datatype, np.dtype object.
+    """
+    if isinstance(dtype, (h5py.Datatype, np.dtype)):
+        pass
+    elif isinstance(np.dtype(dtype), np.dtype):
+        # This should catch all those instances when dtype is something familiar like - np.float32
+        pass
+    else:
+        raise TypeError('dtype should either be a numpy or h5py dtype')
