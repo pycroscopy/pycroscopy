@@ -13,6 +13,7 @@ from warnings import warn
 from collections import Iterable
 import numpy as np
 import socket
+from platform import platform
 
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
     Dimension, build_ind_val_matricies
@@ -2279,7 +2280,8 @@ def write_book_keeping_attrs(h5_obj):
         raise TypeError('h5_obj should be a h5py.Group, h5py.File, or h5py.Dataset object')
     write_simple_attrs(h5_obj, {'machine_id': socket.getfqdn(),
                                 'timestamp': get_time_stamp(),
-                                'pycroscopy_version': pycroscopy_version},
+                                'pycroscopy_version': pycroscopy_version,
+                                'platform': platform()},
                        verbose=False)
 
 
