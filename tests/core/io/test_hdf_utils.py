@@ -1460,7 +1460,7 @@ class TestHDFUtils(unittest.TestCase):
 
         with h5py.File(file_path) as h5_f:
             pycro_main = hdf_utils.write_main_dataset(h5_f, main_data, main_data_name, quantity, dset_units, pos_dims,
-                                                      spec_dims, main_dset_attrs=None)
+                                                      spec_dims, dtype=np.float16, main_dset_attrs=None)
             self.assertIsInstance(pycro_main, PycroDataset)
             self.assertEqual(pycro_main.name.split('/')[-1], main_data_name)
             self.assertEqual(pycro_main.parent, h5_f)
@@ -1753,12 +1753,11 @@ class TestHDFUtils(unittest.TestCase):
             h5_spec_inds_orig = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_spec_vals_orig = h5_f['/Raw_Measurement/Spectroscopic_Values']
             new_base_name = 'Blah'
-            cycle_starts = np.where(h5_spec_inds_orig[0] == 0)[0]
+            # cycle_starts = np.where(h5_spec_inds_orig[0] == 0)[0]
             h5_spec_inds_new, h5_spec_vals_new = hdf_utils.write_reduced_spec_dsets(h5_spec_inds_orig.parent,
                                                                                     h5_spec_inds_orig,
                                                                                     h5_spec_vals_orig,
-                                                                                    np.array([False, True]),
-                                                                                    cycle_starts,
+                                                                                    'Bias',
                                                                                     basename=new_base_name)
 
             dim_names = ['Cycle']
