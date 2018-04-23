@@ -37,6 +37,8 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
 if sys.version_info.major == 3:
     unicode = str
 
+# TODO: Next version should account for two objects being in different files!
+
 
 def print_tree(parent, rel_paths=False, main_dsets_only=False):
     """
@@ -1677,10 +1679,10 @@ def copy_main_attributes(h5_main, h5_new):
         if not isinstance(param, h5py.Dataset):
             print(param_name + ' should be a h5py.Dataset object')
 
-    for att_name, default_val in zip(['quantity', 'units'], ['Unknown', 'a. u.']):
-        val = default_val
-        if att_name in h5_main.attrs:
-            val = get_attr(h5_main, att_name)
+    for att_name in ['quantity', 'units']:
+        if att_name not in h5_main.attrs:
+            raise KeyError('Attribute: {} does not exist in {}'.format(att_name, h5_main))
+        val = get_attr(h5_main, att_name)
         h5_new.attrs[att_name] = clean_string_att(val)
 
 
@@ -2311,6 +2313,9 @@ def create_results_group(h5_main, tool_name):
         raise TypeError('h5_main should be a h5py.Dataset or Pycrodataset object')
     if not isinstance(tool_name, (str, unicode)):
         raise TypeError('tool_name should be a string')
+    tool_name = tool_name.strip()
+    if len(tool_name) < 1:
+        raise ValueError('tool_name should not be an empty string')
 
     group_name = h5_main.name.split('/')[-1] + '-' + tool_name + '_'
     group_name = assign_group_index(h5_main.parent, group_name)
