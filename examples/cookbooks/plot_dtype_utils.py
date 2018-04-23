@@ -36,7 +36,6 @@ except ImportError:
 # Hpwever, while the eigenvectors can have complex values, the resultant complex-valued abundance maps are meaningless.
 # To avoid these problems, we need functions that transform the data tp the necessary type (integer, real-value etc.)
 #
-################################################################################################
 # The dtype_utils module in .io facilitates two main kinds of data transformations:
 #
 # 1. Transforming from complex or compound (also known as structured arrays in numpy) valued datasets to real-valued
