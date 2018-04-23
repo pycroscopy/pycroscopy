@@ -1,7 +1,7 @@
 .. contents::
 
 
-Hackathon topics
+Help topics
 ----------------
 * Write cookbooks (instructions + tutorial `here  <https://github.com/pycroscopy/pycroscopy/blob/unity_dev/docs/unit_tests_to_examples.rst>`_) - these will be requried for most of the topics below where writing any code is involved:
 
@@ -10,12 +10,6 @@ Hackathon topics
   * write_utils - need a fresh file. Not much to it
   * PycroDataset - needs a fresh file
   * NumpyTranslator - just update the Translator tutorial
-  
-* advanced cookbooks - will be written by Suhas and Chris:
-
-  * hdf_utils - check to make sure the examples (only on reading for now) we have still work / make them work. Add examples on modifying files
-  * HdfWriter + VirtualData + write_utils - all need to be combined into 1
-  
 * Fix all translators, Fitters, Processes, notebooks to use the updated functions correctly - test them with real examples
 * Update all notebooks to say that one can run cells via shift + enter or point to a tutorial on jupyter notebooks (how to start them up and run through the cells) for those who don't know anything about the notebooks but come by them.
 * Thoroughly test and try to break plot_utils
@@ -34,7 +28,7 @@ Hackathon topics
 
 v 1.0 goals
 -----------
-1. partly done - reogranize code - This is perhaps the last oppurtunity for major restructuring and renaming
+1.  mostly done - reogranize code - This is perhaps the last oppurtunity for major restructuring and renaming. 
 
   * have a .core submodule with the core functionality, .contrib to have non-verified code
   * How does one separate tested code from untested code? For example - SHO fitting is currently not tested but may become tested in the future.
@@ -48,18 +42,18 @@ v 1.0 goals
   
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
 2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
-3. mostly done - unit tests for .core io + basic data science (Cluster, SVD, Decomposition)
-4. mostly done - good utilities for interrogating data - pycro data, what about the rest of the file?
+3. mostly done - add tests for new functions - unit tests for .core io + basic data science (Cluster, SVD, Decomposition)
+4. mostly done - good utilities for interrogating data - pycro data. Do slicing on ND dataset if available
 5. partly done - good documentation for both users and developers
 
-  * Need one per module in .core + finish plot_utils tour
+  * Need one for dtype, io, write utils.
   * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
   * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
   * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
   * Upload clean exports of paper notebooks
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
   
-6. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
+6. needs to be fixed - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
 7. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
 8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 9. Examples within docs for popular functions <-- just use the examples from the tests!
@@ -74,7 +68,8 @@ v 1.0 goals
 16. Add ability to export data as txt probably via numpy.savetext
 17. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
 18. Address pending TODOs
-19. Address edge cases:
+19. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
+20. Address edge cases:
 
   * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
   * Process on multiple datasets - G-mode KPFM
@@ -82,9 +77,14 @@ v 1.0 goals
 
 v 1.1 goals
 -----------
-1. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
-2. Restructure Process to serve as a framework for facilitating scalable ensemble runs
-3. Deploy on CADES SHPC Condo, Eos, Rhea (CPU partition).
+1. Move core into new package. set up CI, website etc.
+
+v 1.2 goals
+------------
+1. Profile code to see where things are slow
+2. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
+3. New package for facilitating scalable ensemble runs
+4. Deploy on CADES SHPC Condo, Eos, Rhea (CPU partition).
 
 Documentation
 -------------
