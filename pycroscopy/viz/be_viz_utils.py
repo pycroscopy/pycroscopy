@@ -312,7 +312,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
             spatial_dict[key] = [0]
 
     spatial_map = pc_sho_dset.slice(False, spatial_dict)[0][sho_quantity].squeeze()
-    resp_vec = resp_func(pc_sho_dset.slice(False, resp_dict)[0].squeeze())
+    resp_vec = resp_func(pc_sho_dset.slice(False, resp_dict)[0].reshape(bias_mat.shape))
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
