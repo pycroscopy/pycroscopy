@@ -1206,7 +1206,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
     """
     if not isinstance(source_dset, h5py.Dataset):
         raise TypeError('source_deset should be a h5py.Dataset object')
-    validate_dtype(dtype)
+    _ = validate_dtype(dtype)
     if new_attrs is not None:
         if not isinstance(new_attrs, dict):
             raise TypeError('new_attrs should be a dictionary')
@@ -2468,7 +2468,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise ValueError('main_data if specified as a shape should contain 2 numbers')
         if 'dtype' not in kwargs:
             raise ValueError('dtype must be included as a kwarg when creating an empty dataset')
-        validate_dtype(kwargs.get('dtype'))
+        _ = validate_dtype(kwargs.get('dtype'))
         main_shape = main_data
         if verbose:
             print('Selected empty dataset creation. OK so far')

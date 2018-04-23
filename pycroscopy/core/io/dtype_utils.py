@@ -317,12 +317,17 @@ def stack_real_to_target_dtype(ds_real, new_dtype):
 def validate_dtype(dtype):
     """
     Checks the provided object to ensure that it is a valid dtype that can be written to an HDF5 file.
-    Raises a type error if invalid. does not return anything
+    Raises a type error if invalid. Returns True if the object passed the tests
 
     Parameters
     ----------
     dtype : object
         Object that is hopefully a h5py.Datatype, np.dtype object.
+
+    Returns
+    -------
+    status : bool
+        True if the object was a valid dtype
     """
     if isinstance(dtype, (h5py.Datatype, np.dtype)):
         pass
@@ -331,3 +336,4 @@ def validate_dtype(dtype):
         pass
     else:
         raise TypeError('dtype should either be a numpy or h5py dtype')
+    return True
