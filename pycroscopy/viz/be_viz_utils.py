@@ -299,7 +299,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
             resp_func = ac_spectroscopy_func
             resp_label = 'Amplitude (a. u.)'
 
-    not_step_chan = sho_spec_labels.copy().remove(step_chan)
+    not_step_chan = sho_spec_labels.copy()
+    not_step_chan.remove(step_chan)
     spatial_dict = {step_chan: [step_ind]}
     resp_dict = {pos_labels[-1]: [row_ind],
                  pos_labels[-2]: [col_ind]}
@@ -682,7 +683,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     h5_loop_guess : h5py.Dataset
         Dataset holding the loop guesses
     h5_loop_fit : h5py.Dataset
-        Dataset holding the loop gits
+        Dataset holding the loop fits
     step_chan : str, optional
         The name of the Spectroscopic dimension to plot versus.  Needs testing.
         Default 'DC_Offset'
@@ -820,12 +821,6 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
         xdata = int(round(event.xdata))
         ydata = int(round(event.ydata))
-        current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
-
-        pos_dim_vals = list(range(len(pos_labels)))
-
-        for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
-            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
 
         crosshair.set_xdata(xdata)
         crosshair.set_ydata(ydata)
