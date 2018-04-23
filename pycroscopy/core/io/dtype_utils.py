@@ -62,7 +62,7 @@ def flatten_complex_to_real(ds_main):
     """
     if not isinstance(ds_main, (h5py.Dataset, np.ndarray)):
         raise TypeError('ds_main should either be a h5py.Dataset or numpy array')
-    if ds_main.dtype not in [np.complex, np.complex64, np.complex128, np.complex256]:
+    if not is_complex_dtype(ds_main.dtype):
         raise TypeError("Expected a complex valued matrix")
 
     axis = np.array(ds_main).ndim - 1
@@ -123,7 +123,7 @@ def flatten_to_real(ds_main):
     """
     if not isinstance(ds_main, (h5py.Dataset, np.ndarray)):
         ds_main = np.array(ds_main)
-    if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
+    if is_complex_dtype(ds_main.dtype):
         return flatten_complex_to_real(ds_main)
     elif len(ds_main.dtype) > 0:
         return flatten_compound_to_real(ds_main)
@@ -153,14 +153,14 @@ def get_compound_sub_dtypes(struct_dtype):
     return dtypes
 
 
-def check_dtype(ds_main):
+def check_dtype(h5_dset):
     """
-    Checks the datatype of the input dataset and provides the appropriate
+    Checks the datatype of the input HDF5 dataset and provides the appropriate
     function calls to convert it to a float
 
     Parameters
     ----------
-    ds_main : HDF5 Dataset
+    h5_dset : HDF5 Dataset
         Dataset of interest
 
     Returns
@@ -180,19 +180,19 @@ def check_dtype(ds_main):
         typesize of the data after func is run on it
     """
     # TODO: avoid assuming 2d shape
-    if not isinstance(ds_main, h5py.Dataset):
-        raise TypeError('ds_main should be a h5py.Dataset object')
+    if not isinstance(h5_dset, h5py.Dataset):
+        raise TypeError('h5_dset should be a h5py.Dataset object')
     is_complex = False
     is_compound = False
-    in_dtype = ds_main.dtype
-    n_samples, n_features = ds_main.shape
-    if ds_main.dtype in [np.complex64, np.complex128, np.complex]:
+    in_dtype = h5_dset.dtype
+    n_samples, n_features = h5_dset.shape
+    if is_complex_dtype(h5_dset.dtype):
         is_complex = True
-        new_dtype = np.real(ds_main[0, 0]).dtype
+        new_dtype = np.real(h5_dset[0, 0]).dtype
         type_mult = new_dtype.itemsize * 2
         func = flatten_complex_to_real
         n_features *= 2
-    elif len(ds_main.dtype) > 0:
+    elif len(h5_dset.dtype) > 0:
         """
         Some form of structured numpy is in use
         We only support real scalars for the component types at the current time
@@ -204,10 +204,10 @@ def check_dtype(ds_main):
         func = flatten_compound_to_real
         n_features *= len(in_dtype)
     else:
-        if ds_main.dtype not in [np.float32, np.float64]:
+        if h5_dset.dtype not in [np.float32, np.float64]:
             new_dtype = np.float32
         else:
-            new_dtype = ds_main.dtype.type
+            new_dtype = h5_dset.dtype.type
 
         type_mult = new_dtype(0).itemsize
 
@@ -238,7 +238,7 @@ def stack_real_to_complex(ds_real):
         ds_real = np.array(ds_real)
     if isinstance(ds_real.dtype, np.void):
         raise TypeError("Array cannot have a compound dtype")
-    if ds_real.dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+    if is_complex_dtype(ds_real.dtype):
         raise TypeError("Array cannot have complex dtype")
 
     if ds_real.shape[-1] / 2 != ds_real.shape[-1] // 2:
@@ -269,7 +269,7 @@ def stack_real_to_compound(ds_real, compound_type):
         ds_real = np.array(ds_real)
     if len(ds_real.dtype) > 0:
         raise TypeError("Array cannot have a compound dtype")
-    elif ds_real.dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+    elif is_complex_dtype(ds_real.dtype):
         raise TypeError("Array cannot have complex dtype")
     if not isinstance(compound_type, np.dtype):
         raise TypeError('Provided object must be a structured array dtype')
@@ -306,7 +306,7 @@ def stack_real_to_target_dtype(ds_real, new_dtype):
     ret_val : nD numpy array
         Data of the target data type
     """
-    if new_dtype in [np.complex64, np.complex128, np.complex]:
+    if is_complex_dtype(new_dtype):
         return stack_real_to_complex(ds_real)
     elif len(new_dtype) > 0:
         return stack_real_to_compound(ds_real, new_dtype)
@@ -337,3 +337,23 @@ def validate_dtype(dtype):
     else:
         raise TypeError('dtype should either be a numpy or h5py dtype')
     return True
+
+
+def is_complex_dtype(dtype):
+    """
+    Checks if the provided dtype is a complex dtype
+
+    Parameters
+    ----------
+    dtype : object
+        Object that is a h5py.Datatype, np.dtype object.
+
+    Returns
+    -------
+    is_complex : bool
+        True if the dtype was a complex dtype. Else returns False
+    """
+    validate_dtype(dtype)
+    if dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+        return True
+    return False

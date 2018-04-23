@@ -410,6 +410,15 @@ class TestDtypeUtils(unittest.TestCase):
             with self.assertRaises(TypeError):
                 dtype_utils.validate_dtype(dtype)
 
+    def test_is_complex_dtype_valid(self):
+        struct_dtype = np.dtype({'names': ['r', 'g', 'b'],
+                                 'formats': [np.float32, np.uint16, np.float64]})
+        for dtype in [np.float32, np.float16, np.uint8, np.int16, struct_dtype, bool]:
+            self.assertFalse(dtype_utils.is_complex_dtype(dtype))
+
+        for dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+            self.assertTrue(dtype_utils.is_complex_dtype(dtype))
+
 
 if __name__ == '__main__':
     unittest.main()
