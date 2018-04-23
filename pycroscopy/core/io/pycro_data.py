@@ -288,22 +288,26 @@ class PycroDataset(h5py.Dataset):
         # Convert the slice dictionary into lists of indices for each dimension
         pos_slice, spec_slice = self._get_pos_spec_slices(slice_dict)
         if verbose:
-            print('Position slice:')
+            print('Position slice: shape - {}'.format(pos_slice.shape))
             print(pos_slice)
-            print('Spectroscopic slice:')
+            print('Spectroscopic slice: shape - {}'.format(spec_slice.shape))
             print(spec_slice)
 
         # Now that the slices are built, we just need to apply them to the data
         # This method is slow and memory intensive but shouldn't fail if multiple lists are given.
         if len(pos_slice) <= len(spec_slice):
-            # Fewer final positions that spectra (Most common case)
-            data_slice = np.atleast_2d(self[pos_slice, :])[:, spec_slice]
+            # Fewer final positions than spectra
+            data_slice = np.atleast_2d(self[pos_slice[:, 0], :])[:, spec_slice[:, 0]]
         else:
-            data_slice = np.atleast_2d(self[:, spec_slice])[pos_slice, :]
+            # Fewer final spectral points compared to positions
+            data_slice = np.atleast_2d(self[:, spec_slice[:, 0]])[pos_slice[:, 0], :]
 
         if verbose:
             print('data_slice of shape: {} after slicing'.format(data_slice.shape))
+        orig_shape = data_slice.shape
         data_slice = np.atleast_2d(np.squeeze(data_slice))
+        if data_slice.shape[0] == orig_shape[1] and data_slice.shape[1] == orig_shape[0]:
+            data_slice = data_slice.T
         if verbose:
             print('data_slice of shape: {} after squeezing'.format(data_slice.shape))
 
@@ -328,8 +332,8 @@ class PycroDataset(h5py.Dataset):
                 new_inds = np.array(new_inds)
             return new_inds
 
-        pos_inds = remove_singular_dims(pos_inds.T).T
-        spec_inds = remove_singular_dims(spec_inds)
+        pos_inds = np.atleast_2d(remove_singular_dims(pos_inds.T).T)
+        spec_inds = np.atleast_2d(remove_singular_dims(spec_inds))
 
         if verbose:
             print('After removing any singular dimensions')
@@ -342,6 +346,7 @@ class PycroDataset(h5py.Dataset):
 
         # TODO: if data is already loaded into memory, try to avoid I/O and slice in memory!!!!
         data_slice, success = reshape_to_n_dims(data_slice, h5_pos=pos_inds, h5_spec=spec_inds, verbose=verbose)
+        data_slice = np.squeeze(data_slice)
 
         if as_scalar:
             return flatten_to_real(data_slice), success
