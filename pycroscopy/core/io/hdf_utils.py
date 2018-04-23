@@ -16,7 +16,7 @@ import socket
 from platform import platform
 
 from .write_utils import INDICES_DTYPE, VALUES_DTYPE, get_aux_dset_slicing, clean_string_att, make_indices_matrix, \
-    Dimension, build_ind_val_matricies
+    Dimension, build_ind_val_matrices
 from .io_utils import get_time_stamp
 from .dtype_utils import contains_integers, validate_dtype
 from ...__version__ import version as pycroscopy_version
@@ -2085,7 +2085,7 @@ def write_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, verbose=F
 
     unit_values = [x.values for x in dimensions]
 
-    indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
+    indices, values = build_ind_val_matrices(unit_values, is_spectral=is_spectral)
 
     if verbose:
         print('Indices:')

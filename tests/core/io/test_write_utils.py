@@ -143,26 +143,24 @@ class TestWriteUtils(unittest.TestCase):
         with self.assertRaises(TypeError):
             _ = write_utils.Dimension('Name', 'unit', 'invalid')
 
-
-
-    def test_build_ind_val_matricies_empty(self):
-        inds, vals = write_utils.build_ind_val_matricies([[0]], is_spectral=True)
+    def test_build_ind_val_matrices_empty(self):
+        inds, vals = write_utils.build_ind_val_matrices([[0]], is_spectral=True)
         self.assertTrue(np.allclose(inds, write_utils.INDICES_DTYPE(np.expand_dims(np.arange(1), 0))))
         self.assertTrue(np.allclose(vals, write_utils.VALUES_DTYPE(np.expand_dims(np.arange(1), 0))))
 
-    def test_build_ind_val_matricies_1D(self):
+    def test_build_ind_val_matrices_1D(self):
         sine_val = np.sin(np.linspace(0, 2*np.pi, 128))
-        inds, vals = write_utils.build_ind_val_matricies([sine_val], is_spectral=True)
+        inds, vals = write_utils.build_ind_val_matrices([sine_val], is_spectral=True)
         self.assertTrue(np.allclose(inds, write_utils.INDICES_DTYPE(np.expand_dims(np.arange(len(sine_val)), axis=0))))
         self.assertTrue(np.allclose(vals, write_utils.VALUES_DTYPE(np.expand_dims(sine_val, axis=0))))
 
-    def test_build_ind_val_matricies_1D_pos(self):
+    def test_build_ind_val_matrices_1D_pos(self):
         sine_val = np.sin(np.linspace(0, 2 * np.pi, 128))
-        inds, vals = write_utils.build_ind_val_matricies([sine_val], is_spectral=False)
+        inds, vals = write_utils.build_ind_val_matrices([sine_val], is_spectral=False)
         self.assertTrue(np.allclose(inds, write_utils.INDICES_DTYPE(np.expand_dims(np.arange(len(sine_val)), axis=1))))
         self.assertTrue(np.allclose(vals, write_utils.VALUES_DTYPE(np.expand_dims(sine_val, axis=1))))
 
-    def test_build_ind_val_matricies_3D(self):
+    def test_build_ind_val_matrices_3D(self):
         max_v = 4
         half_pts = 8
         bi_triang = np.roll(np.hstack((np.linspace(-max_v, max_v, half_pts, endpoint=False),
@@ -173,7 +171,7 @@ class TestWriteUtils(unittest.TestCase):
                               np.repeat(cycles, 2 * 2 * half_pts)))
         exp_inds = np.vstack((np.tile(np.arange(2 * half_pts), 6), np.tile(np.repeat(fields, 2 * half_pts), 3),
                               np.repeat(cycles, 2 * 2 * half_pts)))
-        inds, vals = write_utils.build_ind_val_matricies([bi_triang, fields, cycles])
+        inds, vals = write_utils.build_ind_val_matrices([bi_triang, fields, cycles])
         self.assertTrue(np.allclose(exp_inds, inds))
         self.assertTrue(np.allclose(exp_vals, vals))
 

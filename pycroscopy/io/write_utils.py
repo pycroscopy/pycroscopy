@@ -11,7 +11,7 @@ import h5py
 import numpy as np
 
 from .virtual_data import VirtualDataset
-from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, build_ind_val_matricies, get_aux_dset_slicing
+from ..core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, build_ind_val_matrices, get_aux_dset_slicing
 
 if sys.version_info.major == 3:
     unicode = str
@@ -161,7 +161,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=N
 
     unit_values = [x.values for x in dimensions]
 
-    indices, values = build_ind_val_matricies(unit_values, is_spectral=is_spectral)
+    indices, values = build_ind_val_matrices(unit_values, is_spectral=is_spectral)
 
     if verbose:
         print('Indices:')

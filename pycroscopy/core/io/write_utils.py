@@ -12,7 +12,7 @@ from collections import Iterable
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
-           'Dimension']
+           'Dimension', 'build_ind_val_matrices']
 
 if sys.version_info.major == 3:
     unicode = str
@@ -175,7 +175,7 @@ def clean_string_att(att_val):
         raise TypeError('Failed to clean: {}'.format(att_val))
 
 
-def build_ind_val_matricies(unit_values, is_spectral=True):
+def build_ind_val_matrices(unit_values, is_spectral=True):
     """
     Builds indices and values matrices using given unit values for each dimension.
 
