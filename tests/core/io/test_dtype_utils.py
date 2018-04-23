@@ -385,6 +385,31 @@ class TestDtypeUtils(unittest.TestCase):
             self.assertEqual(n_samples, h5_f['compound'].shape[0])
             self.assertEqual(type_mult, 3 * np.float32(0).itemsize)
 
+    def test_get_compound_sub_dtypes_valid(self):
+        input_dict = {'names': ['r', 'g', 'b'], 'formats': [np.float32, np.uint16, np.float64]}
+        expected = dict()
+        for name, dtype in zip(input_dict['names'], input_dict['formats']):
+            expected[name] = dtype
+        struct_dtype = np.dtype(input_dict)
+        actual = dtype_utils.get_compound_sub_dtypes(struct_dtype)
+        self.assertEqual(expected, actual)
+
+    def test_get_compound_sub_dtypes_invalid(self):
+        for item in [np.float16, np.complex, 4, 2.343, True, 'ssdsds', np.arange(5)]:
+            with self.assertRaises(TypeError):
+                _ = dtype_utils.get_compound_sub_dtypes(item)
+
+    def test_validate_dtype_valid(self):
+        struct_dtype = np.dtype({'names': ['r', 'g', 'b'],
+                                'formats': [np.float32, np.uint16, np.float64]})
+        for dtype in [np.float32, np.float16, np.complex, np.complex64, np.uint8, np.int16, struct_dtype]:
+            self.assertTrue(dtype_utils.validate_dtype(dtype))
+
+    def test_validate_dtype_invalid(self):
+        for dtype in [6, 'dssds', np.arange(5), True]:
+            with self.assertRaises(TypeError):
+                dtype_utils.validate_dtype(dtype)
+
 
 if __name__ == '__main__':
     unittest.main()

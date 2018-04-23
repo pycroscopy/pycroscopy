@@ -23,5 +23,5 @@ from .__version__ import time as __time__
 
 __all__ = core.__all__
 warn('You are using the unity_dev branch, which is aimed at a 1.0 release for pycroscopy. '
-     'Be advised - this branch changes very significantly and frequently. It is therefore not meant for usage. '
+     'Be advised - this branch changes very significantly and frequently. '
      'Use the master or dev branches for regular purposes.')
