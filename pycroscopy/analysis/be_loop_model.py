@@ -26,6 +26,7 @@ from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyRegionRefs, linkRefs, 
     get_sort_order, get_dimensionality, reshape_to_Ndims, reshape_from_Ndims, create_empty_dataset, buildReducedSpec, \
     get_attr
 from ..io.microdata import MicroDataset, MicroDataGroup
+from ..io.pycro_data import PycroDataset
 
 '''
 Custom dtypes for the datasets created during fitting.
@@ -277,7 +278,7 @@ class BELoopModel(Model):
         if get_loop_parameters:
             self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
 
-        return self.h5_guess
+        return PycroDataset(self.h5_guess)
 
     def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
                obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
@@ -408,7 +409,7 @@ class BELoopModel(Model):
         if get_loop_parameters:
             self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
 
-        return self.h5_fit
+        return PycroDataset(self.h5_fit)
 
     @staticmethod
     def extract_loop_parameters(h5_loop_fit, nuc_threshold=0.03):
