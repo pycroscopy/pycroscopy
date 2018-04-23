@@ -1802,6 +1802,78 @@ class TestHDFUtils(unittest.TestCase):
             expected_slices = np.array([[slice(x, x, None), spec_slice] for x in np.arange(h5_main.shape[0])[::2]])
             self.assertTrue(np.all(ret_val==expected_slices))
 
+    def test_write_book_keeping_attrs_file(self):
+        assert False
+
+    def test_write_book_keeping_attrs_group(self):
+        assert False
+
+    def test_write_book_keeping_attrs_dset(self):
+        assert False
+
+    def test_write_book_keeping_attrs_invalid(self):
+        assert False
+
+    def test_copy_attributes_file_dset(self):
+        assert False
+
+    def test_copy_attributes_group_dset(self):
+        assert False
+
+    def test_copy_attributes_dset_w_reg_ref_group(self):
+        assert False
+
+    def test_copy_attributes_illegal_to_from_reg_ref(self):
+        assert False
+
+    def test_copy_main_attributes_valid(self):
+        assert False
+
+    def test_copy_main_attributes_invalid(self):
+        assert False
+
+    def test_create_empty_dataset_same_group_new_attrs(self):
+        assert False
+
+    def test_create_empty_dataset_diff_groups(self):
+        assert False
+
+    def test_create_empty_dataset_w_region_refs(self):
+        assert False
+
+    def test_create_empty_dataset_existing_dset_name(self):
+        assert False
+
+    def test_create_index_group_first_group(self):
+        assert False
+
+    def test_create_index_group_second(self):
+        assert False
+
+    def test_create_index_group_w_suffix_(self):
+        assert False
+
+    def test_create_index_group_empty_base_name(self):
+        assert False
+
+    def test_create_results_group_first(self):
+        assert False
+
+    def test_create_results_group_second(self):
+        assert False
+
+    def test_create_results_group_empty_tool_name(self):
+        assert False
+
+    def test_create_region_ref(self):
+        assert False
+
+    def test_copy_region_refs(self):
+        assert False
+
+    def test_copy_reg_ref_reduced_dim(self):
+        assert False
+
 
 if __name__ == '__main__':
     unittest.main()
