@@ -1677,7 +1677,7 @@ def copy_main_attributes(h5_main, h5_new):
     """
     for param, param_name in zip([h5_main, h5_new], ['h5_main', 'h5_new']):
         if not isinstance(param, h5py.Dataset):
-            print(param_name + ' should be a h5py.Dataset object')
+            raise TypeError(param_name + ' should be a h5py.Dataset object')
 
     for att_name in ['quantity', 'units']:
         if att_name not in h5_main.attrs:
