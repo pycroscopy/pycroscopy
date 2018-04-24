@@ -56,8 +56,8 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
         plt_title = grp_name + '_' + win_title + '_Snaps'
         fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
-                                   color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
-                                   heading=plt_title, cmap=cmap)
+                                   color_bar_mode="each", evenly_spaced=True, subtitle='UDVS Step #',
+                                   title=plt_title, cmap=cmap)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
@@ -312,7 +312,7 @@ def jupyter_visualize_beps_sho(h5_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=None)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel('X')
@@ -424,7 +424,7 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
     if len(pos_dims) == 2:
         spatial_map = np.abs(np.reshape(h5_main[:, 0], pos_dims[::-1]))
         spectrogram = np.reshape(h5_main[0], (num_udvs_steps, -1))
-        fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box-forced'})
+        fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box'})
         spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel('X')
@@ -433,10 +433,10 @@ def jupyter_visualize_be_spectrograms(h5_main, cmap=None):
         crosshair = axes[0].plot(int(0.5 * spatial_map.shape[0]), int(0.5 * spatial_map.shape[1]), 'k+')[0]
 
         if len(spec_dims) > 1:
-            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
+            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=True, cmap=cmap,
                                          extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
-            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
+            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=True, cmap=cmap,
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, spectrogram.shape[0]])
 
             for axis in axes[1:3]:
@@ -665,9 +665,7 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map, im_cbar = plot_map(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
-                                           y_size=spatial_map.shape[1], cmap=cmap)
-
+    im_map, im_cbar = plot_map(ax_map, spatial_map.T, cmap=cmap)
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
     ax_map.set_title('{} - Loop {}'.format(loop_field, loop_ind))
@@ -795,7 +793,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
         map_titles.append(' - '.join(title_list))
 
     fig, axes = plot_map_stack(parameter_map_stack, num_comps=num_cycles, color_bar_mode='each',
-                               title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]),
+                               subtitle=map_titles, title='Maps of Loop Parameter {}'.format(parameter_names[0]),
                                **kwargs)
 
     def update_loop_maps(parameter_name):
@@ -1204,11 +1202,11 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         for spec_dim, dim_ind in zip(loop_spec_labs, selected_loop_ndims):
             slice_dict[spec_dim] = [dim_ind]
 
-        loop_proj_vec, _ = h5_loop_projections.slice(False, slice_dict)
+        loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, False)
         loop_proj_vec2 = np.roll(loop_proj_vec.squeeze(), shift_ind)
 
-        loop_guess_slice, _ = h5_loop_guess.slice(True, slice_dict)
-        loop_fit_slice, _ = h5_loop_fit.slice(True, slice_dict)
+        loop_guess_slice, _ = h5_loop_guess.slice(slice_dict, True)
+        loop_fit_slice, _ = h5_loop_fit.slice(slice_dict, True)
 
         # loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
         # loop_proj_vec2 = np.rollaxis(loop_proj_vec,
