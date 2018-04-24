@@ -1271,7 +1271,10 @@ def copy_attributes(source, dest, skip_refs=True):
         Don't copy references unless asked
         """
         if isinstance(att_val, h5py.Reference):
-            if isinstance(att_val, h5py.RegionReference) or skip_refs or not isinstance(dest, h5py.Dataset):
+            if not skip_refs and not isinstance(dest, h5py.Dataset):
+                warn('Skipping region reference named: {}'.format(att_name))
+                continue
+            elif isinstance(att_val, h5py.RegionReference) or skip_refs:
                 continue
             elif isinstance(att_val, h5py.RegionReference):
                 """
@@ -1289,7 +1292,7 @@ def copy_attributes(source, dest, skip_refs=True):
                         else:
                             ref_slice.append(slice(start[i], end[i]))
                 except:
-                    warn('Could not create new region reference for {} in {}.'.format(att_name, source.name))
+                    warn('Could not copy region reference:{} to {}'.format(att_name, dest.name))
                     continue
 
                 dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
@@ -1304,7 +1307,7 @@ def copy_attributes(source, dest, skip_refs=True):
         try:
             copy_region_refs(source, dest)
         except:
-            print('Could not create new region reference for {} in {}.'.format(att_name, source.name))
+            print('Could not copy region reference:{} to {}.'.format(att_name, dest.name))
 
     return dest
 
