@@ -147,7 +147,7 @@ class BEPSndfTranslator(Translator):
         s_pixels = np.array(parsers[0].get_spatial_pixels())
         self.pos_labels = ['Laser Spot', 'Z', 'Y', 'X']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
-        self.pos_mat = make_indices_matrix(s_pixels)
+        self.pos_mat = make_indices_matrix(s_pixels[np.argwhere(s_pixels > 1)].squeeze())
         self.pos_units = ['um' for _ in range(len(self.pos_labels))]
         #         self.pos_mat = np.int32(self.pos_mat)
 
@@ -486,7 +486,9 @@ class BEPSndfTranslator(Translator):
                                       np.zeros(shape=(1, tot_pts), dtype=np.complex64),
                                       chunking=beps_chunks,
                                       resizable=True,
-                                      compression='gzip')
+                                      compression='gzip',
+                                      attrs={'quantity': 'Piezoresponse',
+                                             'units': 'V'})
 
         ds_noise = VirtualDataset('Noise_Floor', np.zeros(shape=(1, actual_udvs_steps), dtype=nf32),
                                   chunking=(1, actual_udvs_steps), resizable=True, compression='gzip')
