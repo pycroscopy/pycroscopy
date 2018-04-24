@@ -15,8 +15,11 @@ import shutil
 import pycroscopy.core.io.write_utils
 
 sys.path.append("../../../pycroscopy/")
-from pycroscopy.core.io import hdf_utils, write_utils
+from pycroscopy.core.io import hdf_utils, write_utils, io_utils
 from pycroscopy.core.io.pycro_data import PycroDataset
+from pycroscopy import __version__
+from platform import platform
+import socket
 
 test_h5_file_path = 'test_hdf_utils.h5'
 
@@ -1800,70 +1803,367 @@ class TestHDFUtils(unittest.TestCase):
             ret_val = hdf_utils.get_indices_for_region_ref(h5_main, reg_ref, 'slices')
             spec_slice = slice(0, h5_main.shape[1] - 1, None)
             expected_slices = np.array([[slice(x, x, None), spec_slice] for x in np.arange(h5_main.shape[0])[::2]])
-            self.assertTrue(np.all(ret_val==expected_slices))
+            self.assertTrue(np.all(ret_val == expected_slices))
+
+    def __verify_book_keeping_attrs(self, h5_obj):
+        time_stamp = io_utils.get_time_stamp()
+        in_file = h5_obj.attrs['timestamp']
+        self.assertEqual(time_stamp[:time_stamp.rindex('_')], in_file[:in_file.rindex('_')])
+        self.assertEqual(__version__, h5_obj.attrs['pycroscopy_version'])
+        self.assertEqual(socket.getfqdn(), h5_obj.attrs['machine_id'])
+        self.assertEqual(platform(), h5_obj.attrs['platform'])
 
     def test_write_book_keeping_attrs_file(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            hdf_utils.write_book_keeping_attrs(h5_f)
+            self.__verify_book_keeping_attrs(h5_f)
+        os.remove(file_path)
 
     def test_write_book_keeping_attrs_group(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_g = h5_f.create_group('group')
+            hdf_utils.write_book_keeping_attrs(h5_g)
+            self.__verify_book_keeping_attrs(h5_g)
+        os.remove(file_path)
 
     def test_write_book_keeping_attrs_dset(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('dset', data=[1, 2, 3])
+            hdf_utils.write_book_keeping_attrs(h5_dset)
+            self.__verify_book_keeping_attrs(h5_dset)
+        os.remove(file_path)
 
     def test_write_book_keeping_attrs_invalid(self):
-        assert False
+        with self.assertRaises(TypeError):
+            hdf_utils.write_book_keeping_attrs(np.arange(4))
 
     def test_copy_attributes_file_dset(self):
-        assert False
+        file_path = 'test.h5'
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        also_easy_attr = {'N_numbers': [1, -53.6, 0.000463]}
+        hard_attrs = {'N_strings': np.array(['a', 'bc', 'def'], dtype='S')}
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_f.attrs.update(easy_attrs)
+            h5_f.attrs.update(also_easy_attr)
+            h5_f.attrs.update(hard_attrs)
+            h5_dset = h5_f.create_dataset('Main_01', data=[1, 2, 3])
+            hdf_utils.copy_attributes(h5_f, h5_dset)
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_dset.attrs[key])
+            for key, val in also_easy_attr.items():
+                self.assertTrue(np.all([x == y for x, y in zip(val, h5_dset.attrs[key])]))
+            for key, val in hard_attrs.items():
+                self.assertTrue(np.all([x == y for x, y in zip(val, h5_dset.attrs[key])]))
+        os.remove(file_path)
 
     def test_copy_attributes_group_dset(self):
-        assert False
+        file_path = 'test.h5'
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        also_easy_attr = {'N_numbers': [1, -53.6, 0.000463]}
+        hard_attrs = {'N_strings': np.array(['a', 'bc', 'def'], dtype='S')}
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_group = h5_f.create_group('Group')
+            h5_group.attrs.update(easy_attrs)
+            h5_group.attrs.update(also_easy_attr)
+            h5_group.attrs.update(hard_attrs)
+            h5_dset = h5_f.create_dataset('Main_01', data=[1, 2, 3])
+            hdf_utils.copy_attributes(h5_group, h5_dset)
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_dset.attrs[key])
+            for key, val in also_easy_attr.items():
+                self.assertTrue(np.all([x == y for x, y in zip(val, h5_dset.attrs[key])]))
+            for key, val in hard_attrs.items():
+                self.assertTrue(np.all([x == y for x, y in zip(val, h5_dset.attrs[key])]))
+        os.remove(file_path)
+
+    def test_copy_attributes_dset_w_reg_ref_group_but_skipped(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_source.attrs.update(easy_attrs)
+            h5_dset_sink = h5_f.create_dataset('Sink', data=data)
+            reg_refs = {'even_rows': (slice(None), slice(0, None, 2)),
+                        'odd_rows': (slice(None), slice(1, None, 2))}
+            for reg_ref_name, reg_ref_tuple in reg_refs.items():
+                h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
+
+            hdf_utils.copy_attributes(h5_dset_source, h5_dset_sink, skip_refs=True)
+
+            self.assertEqual(len(h5_dset_sink.attrs), len(easy_attrs))
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_dset_sink.attrs[key])
+
+        os.remove(file_path)
+
+    def test_copy_attributes_dset_w_reg_ref_group_to_file(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_source.attrs.update(easy_attrs)
+            reg_refs = {'even_rows': (slice(None), slice(0, None, 2)),
+                        'odd_rows': (slice(None), slice(1, None, 2))}
+            for reg_ref_name, reg_ref_tuple in reg_refs.items():
+                h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
+
+            with self.assertWarns(UserWarning):
+                hdf_utils.copy_attributes(h5_dset_source, h5_f, skip_refs=False)
+
+            self.assertEqual(len(h5_f.attrs), len(easy_attrs))
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_f.attrs[key])
+
+        os.remove(file_path)
 
     def test_copy_attributes_dset_w_reg_ref_group(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_source.attrs.update(easy_attrs)
+            h5_dset_sink = h5_f.create_dataset('Sink', data=data)
+            reg_refs = {'even_rows': (slice(None), slice(0, None, 2)),
+                        'odd_rows': (slice(None), slice(1, None, 2))}
+            for reg_ref_name, reg_ref_tuple in reg_refs.items():
+                h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
+
+            hdf_utils.copy_attributes(h5_dset_source, h5_dset_sink, skip_refs=False)
+
+            for key, val in h5_dset_sink.attrs.items():
+                print(key, val)
+
+            self.assertEqual(len(h5_dset_sink.attrs), len(reg_refs) + len(easy_attrs))
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_dset_sink.attrs[key])
+
+            self.assertTrue('labels' not in h5_dset_sink.attrs.keys())
+
+            expected_data = [data[:, 0:None:2], data[:, 1:None:2]]
+            written_data = [h5_dset_sink[h5_dset_sink.attrs['even_rows']],
+                            h5_dset_sink[h5_dset_sink.attrs['odd_rows']]]
+
+            for exp, act in zip(expected_data, written_data):
+                self.assertTrue(np.allclose(exp, act))
+
+        os.remove(file_path)
 
     def test_copy_attributes_illegal_to_from_reg_ref(self):
         assert False
 
     def test_copy_main_attributes_valid(self):
-        assert False
+        file_path = 'test.h5'
+        main_attrs = {'quantity': 'Current', 'units': 'nA'}
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Main_01', data=[1, 23])
+            h5_dset_source.attrs.update(main_attrs)
+            h5_group = h5_f.create_group('Group')
+            h5_dset_sink = h5_group.create_dataset('Main_02', data=[4, 5])
+            hdf_utils.copy_main_attributes(h5_dset_source, h5_dset_sink)
+            for key, val in main_attrs.items():
+                self.assertEqual(val, h5_dset_sink.attrs[key])
+        os.remove(file_path)
 
-    def test_copy_main_attributes_invalid(self):
-        assert False
+    def test_copy_main_attributes_no_main_attrs(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Main_01', data=[1, 23])
+            h5_group = h5_f.create_group('Group')
+            h5_dset_sink = h5_group.create_dataset('Main_02', data=[4, 5])
+            with self.assertRaises(KeyError):
+                hdf_utils.copy_main_attributes(h5_dset_source, h5_dset_sink)
+        os.remove(file_path)
+
+    def test_copy_main_attributes_wrong_objects(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Main_01', data=[1, 23])
+            h5_group = h5_f.create_group('Group')
+            with self.assertRaises(TypeError):
+                hdf_utils.copy_main_attributes(h5_dset_source, h5_group)
+            with self.assertRaises(TypeError):
+                hdf_utils.copy_main_attributes(h5_group, h5_dset_source)
+        os.remove(file_path)
 
     def test_create_empty_dataset_same_group_new_attrs(self):
-        assert False
+        file_path = 'test.h5'
+        existing_attrs = {'a': 1, 'b': 'Hello'}
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=[1, 2, 3])
+            h5_dset_source.attrs.update(existing_attrs)
+            h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Duplicate', new_attrs=easy_attrs)
+            self.assertIsInstance(h5_duplicate, h5py.Dataset)
+            self.assertTrue(h5_duplicate.parent, h5_dset_source.parent)
+            self.assertTrue(h5_duplicate.name, '/Group/Duplicate')
+            self.assertTrue(h5_duplicate.dtype, np.float16)
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_duplicate.attrs[key])
+            for key, val in existing_attrs.items():
+                self.assertEqual(val, h5_duplicate.attrs[key])
+
+        os.remove(file_path)
 
     def test_create_empty_dataset_diff_groups(self):
-        assert False
+        file_path = 'test.h5'
+        existing_attrs = {'a': 1, 'b': 'Hello'}
+        easy_attrs = {'1_string': 'Current', '1_number': 35.23}
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=[1, 2, 3])
+            h5_dset_source.attrs.update(existing_attrs)
+            h5_group = h5_f.create_group('Group')
+            h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Duplicate',
+                                                          h5_group=h5_group, new_attrs=easy_attrs)
+            self.assertIsInstance(h5_duplicate, h5py.Dataset)
+            self.assertTrue(h5_duplicate.parent, h5_group)
+            self.assertTrue(h5_duplicate.name, '/Group/Duplicate')
+            self.assertTrue(h5_duplicate.dtype, np.float16)
+            for key, val in easy_attrs.items():
+                self.assertEqual(val, h5_duplicate.attrs[key])
+            for key, val in existing_attrs.items():
+                self.assertEqual(val, h5_duplicate.attrs[key])
+
+        os.remove(file_path)
 
     def test_create_empty_dataset_w_region_refs(self):
         assert False
 
     def test_create_empty_dataset_existing_dset_name(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=[1, 2, 3])
+            _ = h5_f.create_dataset('Existing', data=[4,5,6])
+            with self.assertRaises(KeyError):
+                _ = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
+        os.remove(file_path)
 
     def test_create_index_group_first_group(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_group = hdf_utils.create_indexed_group(h5_f, 'Hello')
+            self.assertIsInstance(h5_group, h5py.Group)
+            self.assertEqual(h5_group.name, '/Hello_000')
+            self.assertEqual(h5_group.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group)
+
+            h5_sub_group = hdf_utils.create_indexed_group(h5_group, 'Test')
+            self.assertIsInstance(h5_sub_group, h5py.Group)
+            self.assertEqual(h5_sub_group.name, '/Hello_000/Test_000')
+            self.assertEqual(h5_sub_group.parent, h5_group)
+            self.__verify_book_keeping_attrs(h5_sub_group)
+        os.remove(file_path)
 
     def test_create_index_group_second(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_group_1 = hdf_utils.create_indexed_group(h5_f, 'Hello')
+            self.assertIsInstance(h5_group_1, h5py.Group)
+            self.assertEqual(h5_group_1.name, '/Hello_000')
+            self.assertEqual(h5_group_1.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group_1)
+
+            h5_group_2 = hdf_utils.create_indexed_group(h5_f, 'Hello')
+            self.assertIsInstance(h5_group_2, h5py.Group)
+            self.assertEqual(h5_group_2.name, '/Hello_001')
+            self.assertEqual(h5_group_2.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group_2)
+        os.remove(file_path)
 
     def test_create_index_group_w_suffix_(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_group = hdf_utils.create_indexed_group(h5_f, 'Hello_')
+            self.assertIsInstance(h5_group, h5py.Group)
+            self.assertEqual(h5_group.name, '/Hello_000')
+            self.assertEqual(h5_group.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group)
+        os.remove(file_path)
 
     def test_create_index_group_empty_base_name(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.create_indexed_group(h5_f, '    ')
+
+        os.remove(file_path)
 
     def test_create_results_group_first(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Main', data=[1,2,3])
+            h5_group = hdf_utils.create_results_group(h5_dset, 'Tool')
+            self.assertIsInstance(h5_group, h5py.Group)
+            self.assertEqual(h5_group.name, '/Main-Tool_000')
+            self.assertEqual(h5_group.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group)
+
+            h5_dset = h5_group.create_dataset('Main_Dataset', data=[1, 2, 3])
+            h5_sub_group = hdf_utils.create_results_group(h5_dset, 'SHO_Fit')
+            self.assertIsInstance(h5_sub_group, h5py.Group)
+            self.assertEqual(h5_sub_group.name, '/Main-Tool_000/Main_Dataset-SHO_Fit_000')
+            self.assertEqual(h5_sub_group.parent, h5_group)
+            self.__verify_book_keeping_attrs(h5_sub_group)
+        os.remove(file_path)
 
     def test_create_results_group_second(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Main', data=[1, 2, 3])
+            h5_group = hdf_utils.create_results_group(h5_dset, 'Tool')
+            self.assertIsInstance(h5_group, h5py.Group)
+            self.assertEqual(h5_group.name, '/Main-Tool_000')
+            self.assertEqual(h5_group.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_group)
+
+            h5_sub_group = hdf_utils.create_results_group(h5_dset, 'Tool')
+            self.assertIsInstance(h5_sub_group, h5py.Group)
+            self.assertEqual(h5_sub_group.name, '/Main-Tool_001')
+            self.assertEqual(h5_sub_group.parent, h5_f)
+            self.__verify_book_keeping_attrs(h5_sub_group)
+        os.remove(file_path)
 
     def test_create_results_group_empty_tool_name(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Main', data=[1, 2, 3])
+            with self.assertRaises(ValueError):
+                _ = hdf_utils.create_results_group(h5_dset, '   ')
+        os.remove(file_path)
+
+    def test_create_results_group_not_dataset(self):
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        with h5py.File(file_path) as h5_f:
+            with self.assertRaises(TypeError):
+                _ = hdf_utils.create_results_group(h5_f, 'Tool')
+        os.remove(file_path)
 
     def test_create_region_ref(self):
         assert False
