@@ -5,7 +5,6 @@ from . import general_dynamic_mode
 from . import gmode_iv
 from . import gmode_line
 from . import gmode_tune
-from . import image
 from . import ndata
 from . import tr_kpfm
 from . import igor_ibw
@@ -25,7 +24,7 @@ from .gmode_iv import GIVTranslator
 from .gmode_line import GLineTranslator
 from .gmode_tune import GTuneTranslator
 from .igor_ibw import IgorIBWTranslator
-from .image import ImageTranslator
+from pycroscopy.core.io.image import ImageTranslator
 from .ndata import NDataTranslator
 from .tr_kpfm import TRKPFMTranslator
 from .oneview import OneViewTranslator
