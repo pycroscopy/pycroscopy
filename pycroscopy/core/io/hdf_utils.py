@@ -1147,7 +1147,7 @@ def get_dimensionality(ds_index, index_sort=None):
             raise ValueError('index_sort should contain integers > 0')
         if np.array(index_sort).ndim != 1:
             raise ValueError('index_sort should be a 1D array')
-        assert len(np.unique(index_sort)) == ds_index.shape[0]
+        assert len(np.unique(index_sort)) <= ds_index.shape[0]
 
     sorted_dims = [len(np.unique(row)) for row in np.array(ds_index, ndmin=2)[index_sort]]
     return sorted_dims

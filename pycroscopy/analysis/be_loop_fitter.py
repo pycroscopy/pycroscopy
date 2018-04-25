@@ -204,7 +204,7 @@ class BELoopFitter(Fitter):
             max_mem = min(max_mem, self._maxMemoryMB)
             self._maxDataChunk = int(max_mem / self._maxCpus)
 
-        self._get_sho_chunk_sizes(max_mem,)
+        self._get_sho_chunk_sizes(max_mem)
         self._create_guess_datasets()
 
         '''
@@ -477,6 +477,7 @@ class BELoopFitter(Fitter):
         copy_region_refs(self.h5_main, self.h5_loop_metrics)
 
         self.h5_main.file.flush()
+        self._met_spec_inds = self.h5_loop_metrics.h5_spec_inds
 
         return
 
@@ -954,7 +955,7 @@ class BELoopFitter(Fitter):
         self.h5_guess = create_empty_dataset(self.h5_loop_metrics, loop_fit32, 'Guess')
         self._h5_group.attrs['guess method'] = 'pycroscopy statistical'
 
-        self.h5_main.flush()
+        self.h5_main.file.flush()
 
     @staticmethod
     def _guess_loops(vdc_vec, projected_loops_2d):

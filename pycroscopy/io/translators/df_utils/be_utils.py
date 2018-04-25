@@ -490,15 +490,19 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
             path_1d = None
             path_2d = None
             path_hist = None
+
+            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
             if save_plots:
                 path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
                 path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
-            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
-            fig_1d.savefig(path_1d, format='png', dpi=300)
+
+                fig_1d.savefig(path_1d, format='png', dpi=300)
             if mean_spec.shape[0] > 1:
                 fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
-                fig_2d.savefig(path_2d, format='png', dpi=300)
+                if save_plots:
+                    fig_2d.savefig(path_2d, format='png', dpi=300)
+
             if do_histogram:
                 plot_histograms(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 

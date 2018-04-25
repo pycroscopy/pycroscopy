@@ -304,7 +304,8 @@ class Fitter(object):
             # First try to simply return any completed computation
             if len(completed_dsets) > 0:
                 print('Returned previously computed results at ' + completed_dsets[-1].name)
-                return completed_dsets[-1]
+                self.h5_guess = PycroDataset(completed_dsets[-1])
+                return
 
             # Next attempt to resume automatically if nothing is provided
             if len(partial_dsets) > 0:
@@ -526,7 +527,8 @@ class Fitter(object):
             # First try to simply return completed results
             if len(completed_fits) > 0:
                 print('Returned previously computed results at ' + completed_fits[-1].name)
-                return completed_fits[-1]
+                self.h5_fit = PycroDataset(completed_fits[-1])
+                return
 
             # Next, attempt to resume automatically:
             elif len(partial_fit_groups) > 0:
