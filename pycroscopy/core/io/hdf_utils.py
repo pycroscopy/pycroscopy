@@ -1285,35 +1285,34 @@ def copy_attributes(source, dest, skip_refs=True):
             if not skip_refs and not isinstance(dest, h5py.Dataset):
                 warn('Skipping region reference named: {}'.format(att_name))
                 continue
-            elif isinstance(att_val, h5py.RegionReference) or skip_refs:
-                continue
-            elif isinstance(att_val, h5py.RegionReference):
-                """
-                Dereference old reference, get the appropriate data
-                slice and create new reference.
-                """
-                try:
-                    region = h5py.h5r.get_region(att_val, source.id)
-
-                    start, end = region.get_select_bounds()
-                    ref_slice = []
-                    for i in range(len(start)):
-                        if start[i] == end[i]:
-                            ref_slice.append(start[i])
-                        else:
-                            ref_slice.append(slice(start[i], end[i]))
-                except:
-                    warn('Could not copy region reference:{} to {}'.format(att_name, dest.name))
-                    continue
-
-                dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
-                continue
+            # elif isinstance(att_val, h5py.RegionReference):
+            #     """
+            #     Dereference old reference, get the appropriate data
+            #     slice and create new reference.
+            #     """
+            #     try:
+            #         region = h5py.h5r.get_region(att_val, source.id)
+            #
+            #         start, end = region.get_select_bounds()
+            #         ref_slice = []
+            #         for i in range(len(start)):
+            #             if start[i] == end[i]:
+            #                 ref_slice.append(start[i])
+            #             else:
+            #                 ref_slice.append(slice(start[i], end[i]))
+            #     except:
+            #         warn('Could not copy region reference:{} to {}'.format(att_name, dest.name))
+            #         continue
+            #
+            #     dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
+            #     continue
             else:
                 dest.attrs[att_name] = att_val
                 continue
 
         # everything else
         dest.attrs[att_name] = clean_string_att(att_val)
+
     if not skip_refs:
         try:
             copy_region_refs(source, dest)
