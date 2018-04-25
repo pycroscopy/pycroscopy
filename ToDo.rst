@@ -37,6 +37,7 @@ Urgent
   * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
   * Process on multiple datasets - G-mode KPFM
   * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
+6. Handle complex and compound data in the machine learning classes.
 
 Important
 ~~~~~~~~~
