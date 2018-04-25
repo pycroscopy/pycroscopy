@@ -50,7 +50,7 @@ except ImportError:
 
 ########################################################################################################################
 # Building Ancillary datasets
-# ===============
+# ============================
 # 
 # Pycroscopy uses pairs of ancillary matrics to support the instrument-independent and compact representation of
 # multidimensional datasets. While the creation of ancillary datasets is straightforward when the number of position and
@@ -188,6 +188,36 @@ for key, val in ret_val.items():
     print('{} : {}'.format(key, val))
 
 ########################################################################################################################
+# Dimension
+# ----------
+# In pycroscopy, position and spectrosocpic dimensions are defined using some basic information that will be
+# incorporated in **Dimension** objects that contain three vial pieces of information:
+# * Name of the dimension
+# * units for the dimension
+# * values:
+#     * These can be the actual values over which the dimension was varied
+#     * or number of steps in case of linearly varying dimensions such as 'Cycle' below
+#
+# These objects will be heavily used for creating Main or ancillary datasets in pycroscopy.hdf_utils and even to
+# set up interactive jupyter Visualizers in pycroscopy.PycroDataset.
+#
+# Note that the Dimension objects in the lists for Positions and Spectroscopic must be arranged from fastest varying to
+# slowest varying to mimic how the data is actually arranged. For example, in this example, there are multiple
+# bias points per field and multiple fields per cycle. Thus, the bias changes faster than the field and the field
+# changes faster than the cycle. Therefore, the Bias must precede Field which will precede Cycle. Let's assume that
+# we were describing the spectroscopic dimensions for this example dataset to some other pycroscopy function, we would
+# describe the spectroscopic dimensions as:
+
+spec_dims = [px.write_utils.Dimension('Bias', 'V', bi_triang),
+             px.write_utils.Dimension('Fields', '', fields),
+             # for the sake of example, since we know that cycles is linearly increasing from 0 with a step size of 1,
+             # we can specify such a simply dimension via just the length of that dimension:
+             px.write_utils.Dimension('Cycle', '', len(cycles))]
+
+########################################################################################################################
+# The application of the Dimension objects will be a lot more apparent in the document about the writing functions in
+# pycroscopy.hdf_utils. Please refer to that document.
+#
 # Misc writing utilities
 # ========================
 # 
