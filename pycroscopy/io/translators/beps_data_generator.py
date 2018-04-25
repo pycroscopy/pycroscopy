@@ -17,7 +17,7 @@ from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_fitter import sho32
 from ...analysis.be_loop_fitter import loop_fit32
 from .df_utils.beps_gen_utils import get_noise_vec, beps_image_folder
-from .df_utils.io_image import read_image, no_bin
+from pycroscopy.core.io.io_image import read_image, no_bin
 # Deprecated imports:
 from ..hdf_writer import HDFwriter
 from ..write_utils import build_reduced_spec_dsets, build_ind_val_dsets
