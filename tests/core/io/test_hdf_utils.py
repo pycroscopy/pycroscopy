@@ -2042,7 +2042,26 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_create_empty_dataset_w_region_refs(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        main_attrs = {'quantity': 'Current', 'units': 'nA'}
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_source.attrs.update(main_attrs)
+            reg_refs = {'even_rows': (slice(0, None, 2), slice(None)),
+                        'odd_rows': (slice(1, None, 2), slice(None))}
+
+            for reg_ref_name, reg_ref_tuple in reg_refs.items():
+                h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
+
+            h5_copy = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
+
+            for reg_ref_name in reg_refs.keys():
+                self.assertTrue(isinstance(h5_copy.attrs[reg_ref_name], h5py.RegionReference))
+                self.assertTrue(h5_dset_source[h5_dset_source.attrs[reg_ref_name]].shape == h5_copy[h5_copy.attrs[reg_ref_name]].shape)
+
+        os.remove(file_path)
 
     def test_create_empty_dataset_existing_dset_name(self):
         file_path = 'test.h5'
