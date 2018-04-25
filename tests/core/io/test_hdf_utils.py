@@ -1944,9 +1944,6 @@ class TestHDFUtils(unittest.TestCase):
 
             hdf_utils.copy_attributes(h5_dset_source, h5_dset_sink, skip_refs=False)
 
-            for key, val in h5_dset_sink.attrs.items():
-                print(key, val)
-
             self.assertEqual(len(h5_dset_sink.attrs), len(reg_refs) + len(easy_attrs))
             for key, val in easy_attrs.items():
                 self.assertEqual(val, h5_dset_sink.attrs[key])
@@ -2052,9 +2049,13 @@ class TestHDFUtils(unittest.TestCase):
         self.__delete_existing_file(file_path)
         with h5py.File(file_path) as h5_f:
             h5_dset_source = h5_f.create_dataset('Source', data=[1, 2, 3])
-            _ = h5_f.create_dataset('Existing', data=[4,5,6])
-            with self.assertRaises(KeyError):
-                _ = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
+            _ = h5_f.create_dataset('Existing', data=[4, 5, 6])
+            with self.assertWarns(UserWarning):
+                h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
+            self.assertIsInstance(h5_duplicate, h5py.Dataset)
+            self.assertEqual(h5_duplicate.name, '/Existing')
+            self.assertTrue(np.allclose(h5_duplicate[()], np.zeros(3)))
+            self.assertEqual(h5_duplicate.dtype, np.float16)
         os.remove(file_path)
 
     def test_create_index_group_first_group(self):
