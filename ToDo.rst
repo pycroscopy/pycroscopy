@@ -31,13 +31,12 @@ Urgent
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
 
 2. file dialog for Jupyter not working on Mac OS
-3. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
-4. Address edge cases:
+3. Address edge cases:
 
   * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
   * Process on multiple datasets - G-mode KPFM
   * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
-5. Handle complex and compound data in the machine learning classes.
+4. Handle complex and compound data in the machine learning classes.
 
 Important
 ~~~~~~~~~
@@ -63,6 +62,7 @@ Done
 6. DONE - Carlo Dri - Get pycroscopy on conda forge
 7. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 8. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
+9. DONE - Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
 
 v 0.6.1 goals
 -----------
