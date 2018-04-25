@@ -29,15 +29,15 @@ Urgent
   * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
   * Upload clean exports of paper notebooks
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
-2. needs to be fixed - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
-3. file dialog for Jupyter not working on Mac OS
-4. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
-5. Address edge cases:
+
+2. file dialog for Jupyter not working on Mac OS
+3. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
+4. Address edge cases:
 
   * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
   * Process on multiple datasets - G-mode KPFM
   * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
-6. Handle complex and compound data in the machine learning classes.
+5. Handle complex and compound data in the machine learning classes.
 
 Important
 ~~~~~~~~~
@@ -62,7 +62,7 @@ Done
 5. DONE - Restructure Process to allow testing, checking for previous results, etc.
 6. DONE - Carlo Dri - Get pycroscopy on conda forge
 7. DONE - Fitter must absorb new features in Process if it is not possible to extend it
-
+8. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
 
 v 0.6.1 goals
 -----------
