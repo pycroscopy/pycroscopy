@@ -15,7 +15,8 @@ import numpy as np
 from skimage.measure import block_reduce
 from skimage.util import crop
 
-from .df_utils.io_image import unnest_parm_dicts, read_dm3
+from pycroscopy.core.io.io_image import unnest_parm_dicts
+from pycroscopy.io.translators.df_utils.dm_utils import read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import Dimension, calc_chunks
 from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, link_as_main

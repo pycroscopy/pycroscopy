@@ -7,17 +7,14 @@ Created on Feb 9, 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import os
-
+import h5py
 import numpy as np
 from skimage.measure import block_reduce
 
-from .df_utils.io_image import read_image
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main, find_dataset
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from .io_image import read_image
+from .translator import Translator, generate_dummy_main_parms
+from .write_utils import Dimension, calc_chunks
+from .hdf_utils import write_main_dataset, write_simple_attrs
 
 
 class ImageTranslator(Translator):
@@ -144,79 +141,27 @@ class ImageTranslator(Translator):
                       'num_pixels': num_pixels,
                       'translator': 'Image'}
 
-        # Create the hdf5 data Group
-        root_grp = VirtualGroup('/')
-        root_grp.attrs = root_parms
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = main_parms
-        chan_grp = VirtualGroup('Channel_000')
-        # Get the Position and Spectroscopic Datasets
-        #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
+        self.h5_file = h5py.File(self.h5_path)
 
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(Dimension('Intensity', 'a.u.', [1]), is_spectral=True)
+        # Root attributes first:
+        write_simple_attrs(self.h5_file, root_parms)
+
+        # Create the hdf5 data Group
+        meas_grp = self.h5_file.create_group('Measurement_000')
+        write_simple_attrs(meas_grp, main_parms)
+        chan_grp = meas_grp.create_group('Channel_000')
+        # Get the Position and Spectroscopic Datasets
 
         pos_dims = [Dimension('X', 'a.u.', np.arange(usize)), Dimension('Y', 'a.u.', np.arange(vsize))]
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_dims, is_spectral=False)
 
-        ds_chunking = calc_chunks([num_pixels, 1],
+        chunking = calc_chunks([num_pixels, 1],
                                   data_type(0).itemsize,
                                   unit_chunks=[1, 1])
 
-        # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_pixels, 1),
-                                      chunking=ds_chunking, dtype=data_type, compression='gzip')
-        # Add datasets as children of Measurement_000 data group
-        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                               ds_pos_val])
-        meas_grp.add_children([chan_grp])
+        h5_main = write_main_dataset(chan_grp, (usize*vsize, 1), 'Raw_Data', 'Intensity', 'a.u.',
+                                     pos_dims, Dimension('None', 'a.u.', [1]), dtype=data_type, chunks=chunking)
 
-        root_grp.add_children([meas_grp])
-        # print('Writing following tree to this file:')
-        # root_grp.showTree()
-
-        # Open the hdf5 file and delete any contents
-        try:
-            hdf = HDFwriter(self.h5_path)
-
-            '''
-            See if existing Raw_Data exists
-            '''
-            raw_list = find_dataset(hdf.file, 'Raw_Data')
-
-            '''
-            Check in the list to see if any match the chosen parameters.
-            Return the first that matches.  Clear file if none foound.
-            '''
-            for h5_raw in raw_list:
-                h5_meas = h5_raw.parent.parent
-                old_parms = h5_meas.attrs
-                old_parms.pop('machine_id', None)
-                old_parms.pop('timestame', None)
-                test = [meas_grp.attrs[key] == old_parms[key] for key in old_parms.keys()]
-                if all(test):
-                    return h5_raw
-            # the clear (actually the repack) does not work on the ubuntu VM / Windows.
-            # hdf.clear()
-            # Just close, remove, and start new
-            hdf.close()
-            os.remove(self.h5_path)
-            hdf = HDFwriter(self.h5_path)
-
-        except:
-            raise
-
-        self.hdf = hdf
-
-        h5_refs = self.hdf.write(root_grp)
-        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-        aux_ds_names = ['Position_Indices',
-                        'Position_Values',
-                        'Spectroscopic_Indices',
-                        'Spectroscopic_Values']
-
-        link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
-
-        self.hdf.flush()
+        self.h5_file.flush()
 
         return h5_main
 

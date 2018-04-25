@@ -161,13 +161,13 @@ class Cluster(Process):
         # TODO: What if test() is called repeatedly?
         labels_mat, success = reshape_to_n_dims(np.expand_dims(np.squeeze(self.__labels), axis=1),
                                                 h5_pos=self.h5_main.h5_pos_inds, h5_spec=np.expand_dims([0], axis=0))
-        if success == False:
+        if not success:
             raise ValueError('Could not reshape labels to N-Dimensional dataset! Error:' + success)
 
         centroid_mat, success = reshape_to_n_dims(self.__mean_resp, h5_spec=self.h5_main.h5_spec_inds,
                                                   h5_pos=np.expand_dims(np.arange(self.__mean_resp.shape[0]), axis=1))
 
-        if success == False:
+        if not success:
             raise ValueError('Could not reshape mean response to N-Dimensional dataset! Error:' + success)
 
         return np.squeeze(labels_mat), centroid_mat

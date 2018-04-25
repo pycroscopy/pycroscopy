@@ -333,10 +333,10 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
             axes[0].set_title('Spatial Map for\n' + global_vars['component_title'] + '\n' + spec_titles, fontsize=18)
 
         slice_dict.update(kwargs)
-        display(fig)
 
     widgets.interact(update_plots, **slice_dict)
 
+    return fig
 
 def save_fig_filebox_button(fig, filename):
     """
