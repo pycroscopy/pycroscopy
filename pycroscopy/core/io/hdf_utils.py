@@ -1220,16 +1220,25 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
     else:
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object')
-    try:
-        # Check if the dataset already exists
-        h5_new_dset = h5_group[dset_name]
-        # Make sure it has the correct shape and dtype
-        if any((source_dset.shape != h5_new_dset.shape, source_dset.dtype != h5_new_dset.dtype)):
-            del h5_new_dset, h5_group[dset_name]
-            h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
-                                                  compression=source_dset.compression, chunks=source_dset.chunks)
 
-    except KeyError:
+    if dset_name in h5_group.keys():
+        if isinstance(h5_group[dset_name], h5py.Dataset):
+            warn('A dataset named: {} already exists in group: {}'.format(dset_name, h5_group.name))
+            h5_new_dset = h5_group[dset_name]
+            # Make sure it has the correct shape and dtype
+            if any((source_dset.shape != h5_new_dset.shape, dtype != h5_new_dset.dtype)):
+                warn('Either the shape (existing: {} desired: {}) or dtype (existing: {} desired: {}) of the dataset '
+                     'did not match with expectations. Deleting and creating a new one.'.format(h5_new_dset.shape,
+                                                                                                source_dset.shape,
+                                                                                                h5_new_dset.dtype,
+                                                                                                dtype))
+                del h5_new_dset, h5_group[dset_name]
+                h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
+                                                      compression=source_dset.compression, chunks=source_dset.chunks)
+        else:
+            raise KeyError('{} is already a {} in group: {}'.format(dset_name, type(h5_group[dset_name]), h5_group.name))
+
+    else:
         h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                               compression=source_dset.compression, chunks=source_dset.chunks)
 
@@ -1248,6 +1257,7 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
 
 
 def copy_attributes(source, dest, skip_refs=True):
+    # TODO: VERY confusing - why call copy_region_refs() AND copy region refs here???
     """
     Copy attributes from one h5object to another
 
@@ -1271,6 +1281,7 @@ def copy_attributes(source, dest, skip_refs=True):
         Don't copy references unless asked
         """
         if isinstance(att_val, h5py.Reference):
+
             if not skip_refs and not isinstance(dest, h5py.Dataset):
                 warn('Skipping region reference named: {}'.format(att_name))
                 continue
@@ -1306,8 +1317,8 @@ def copy_attributes(source, dest, skip_refs=True):
     if not skip_refs:
         try:
             copy_region_refs(source, dest)
-        except:
-            print('Could not copy region reference:{} to {}.'.format(att_name, dest.name))
+        except TypeError:
+            print('Could not copy region references to {}.'.format(dest.name))
 
     return dest
 
@@ -1477,6 +1488,7 @@ def copy_region_refs(h5_source, h5_target):
     h5_spec_vals = h5_target.file[h5_target.attrs['Spectroscopic_Values']]
 
     for key in h5_source.attrs.keys():
+        # TODO: If this is BE specific, it does NOT belong here
         if '_Plot_Group' not in key:
             continue
 
@@ -1489,8 +1501,8 @@ def copy_region_refs(h5_source, h5_target):
 
         else:
             '''
-        Spectroscopic dimensions are different.
-        Do the dimenion reducing copy.
+            Spectroscopic dimensions are different.
+            Do the dimension reducing copy.
             '''
             ref_inds = copy_reg_ref_reduced_dim(h5_source, h5_target, h5_source_inds, h5_spec_inds, key)
         '''
