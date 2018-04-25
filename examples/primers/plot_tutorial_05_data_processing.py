@@ -1,14 +1,12 @@
 """
 =======================================
-Tutorial 5: Formalizing Data Processing
+Formalizing Data Processing in Parallel
 =======================================
 
 **Suhas Somnath**
 
 9/8/2017
 
-
-This set of tutorials will serve as examples for developing end-to-end workflows for and using pycroscopy.
 
 **In this example, we will learn how to write a simple yet formal pycroscopy class for processing data.**
 
@@ -98,6 +96,7 @@ sho32 = np.dtype({'names': field_names,
 #   described earlier, the goal of the Process class is to modularize and compartmentalize the main sections of the code
 #   in order to facilitate faster and more robust implementation of data processing algorithms.
 #
+
 
 class ShoGuess(px.Process):
 
