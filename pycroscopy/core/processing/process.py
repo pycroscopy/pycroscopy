@@ -255,7 +255,7 @@ class Process(object):
                                          lengthy_computation=False,
                                          func_args=args, func_kwargs=kwargs)
 
-    def compute(self, override=False, *args, **kwargs):
+    def compute(self, *args, override=False, **kwargs):
         """
         Creates placeholders for the results, applies the unit computation to chunks of the dataset
 
@@ -306,7 +306,7 @@ class Process(object):
 
             t_start = tm.time()
 
-            self._unit_computation()
+            self._unit_computation(*args, **kwargs)
 
             tot_time = np.round(tm.time() - t_start, decimals=2)
             if self.verbose:
@@ -362,6 +362,8 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=N
     if func_args is None:
         func_args = list()
     else:
+        if isinstance(func_args, tuple):
+            func_args = list(func_args)
         if not isinstance(func_args, list):
             raise TypeError('Arguments to the mapped function should be specified as a list')
     if func_kwargs is None:
