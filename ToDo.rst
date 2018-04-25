@@ -3,17 +3,9 @@
 
 Help topics
 ----------------
-* Write cookbooks (instructions + tutorial `here  <https://github.com/pycroscopy/pycroscopy/blob/unity_dev/docs/unit_tests_to_examples.rst>`_) - these will be requried for most of the topics below where writing any code is involved:
-
-  * io_utils - mostly done but needs updating
-  * numpy_utils - started but needs more work
-  * write_utils - need a fresh file. Not much to it
-  * PycroDataset - needs a fresh file
-  * NumpyTranslator - just update the Translator tutorial
 * Fix all translators, Fitters, Processes, notebooks to use the updated functions correctly - test them with real examples
 * Update all notebooks to say that one can run cells via shift + enter or point to a tutorial on jupyter notebooks (how to start them up and run through the cells) for those who don't know anything about the notebooks but come by them.
-* Thoroughly test and try to break plot_utils
-* start a twitter account
+* Thoroughly test, beautify, and try to break plot_utils
 * Add to the scientific examples - how to swap out the data for user provided data - Eg FFT filtering
 * Upload clean exports of notebooks that were part of past journal papers `here <https://github.com/pycroscopy/papers>`_ (Eg - Liam's Gmode papers)
 * Add papers (users + postdocs) that are not on the `list <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_.
@@ -26,9 +18,54 @@ Help topics
   * Anasys - Alex / Olga co.
 * Update the external tutorials page with more information, etc.
 
-v 1.0 goals
+v 0.6 goals
 -----------
-1.  mostly done - reogranize code - This is perhaps the last oppurtunity for major restructuring and renaming. 
+Urgent
+~~~~~~
+1. partly done - good documentation for both users and developers
+
+  * Need explaination of what is where and why
+  * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
+  * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
+  * Upload clean exports of paper notebooks
+  * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
+2. needs to be fixed - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
+3. file dialog for Jupyter not working on Mac OS
+4. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
+5. Address edge cases:
+
+  * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
+  * Process on multiple datasets - G-mode KPFM
+  * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
+
+Important
+~~~~~~~~~
+1. mostly done - good utilities for interrogating data - pycro data. Do slicing on ND dataset if available
+2. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
+3. unit tests for basic data science (Cluster, SVD, Decomposition)
+4. Test all translators, image cleaning and to make sure they still work.
+5. Address pending TODOs
+
+Low priority
+~~~~~~~~~~~~
+1. Add ability to export data as txt probably via numpy.savetext
+2. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
+3. Examples within docs for popular functions
+
+Done
+~~~~
+1. DONE - move core (non-scientific) modules into .core. This will be moved into a new package
+2. DONE - Make core as robust as possible with type / value checking, raising exceptions. 
+3. DONE - unit tests for .core io
+4. DONE - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
+5. DONE - Restructure Process to allow testing, checking for previous results, etc.
+6. DONE - Carlo Dri - Get pycroscopy on conda forge
+7. DONE - Fitter must absorb new features in Process if it is not possible to extend it
+
+
+v 0.6.1 goals
+-----------
+1.  Reogranize code - This is perhaps the last oppurtunity for major restructuring and renaming. 
 
   * have a .core submodule with the core functionality, .contrib to have non-verified code
   * How does one separate tested code from untested code? For example - SHO fitting is currently not tested but may become tested in the future.
@@ -41,45 +78,11 @@ v 1.0 goals
   * Think about whether the rest of the code should be organized by instrument
   
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz. 
-2. mostly done - Make core as robust as possible with type / value checking, raising exceptions. 
-3. mostly done - add tests for new functions - unit tests for .core io + basic data science (Cluster, SVD, Decomposition)
-4. mostly done - good utilities for interrogating data - pycro data. Do slicing on ND dataset if available
-5. partly done - good documentation for both users and developers
+2. set up CI
+3. website 
+4. Twitter? etc.
 
-  * Need one for dtype, io, write utils.
-  * (for developers) explaining what is where and why + io utils + hdf utils tour etc.
-  * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
-  * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
-  * Upload clean exports of paper notebooks
-  * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
-  
-6. needs to be fixed - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
-7. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
-8. DONE - Fitter must absorb new features in Process if it is not possible to extend it
-9. Examples within docs for popular functions <-- just use the examples from the tests!
-10. almost done - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.  
- 
-  * Allow the user to specify an empty dataset - this will become very handy for all Processes and Analysis classes. This will mean that we cannot check to see if the sizes of the said dimensions in the descriptors / h5 ancilllary datasets match with the data dimensions. 
-11. DONE - Restructure Process to allow testing, checking for previous results, etc.
-12. Lower the communication barrier by starting a twitter account - Rama?
-13. file dialog for Jupyter not working on Mac OS
-14. DONE - Carlo Dri - Get pycroscopy on conda forge
-15. Test all translators, Processes, plotting, and Analyses to make sure they still work.
-16. Add ability to export data as txt probably via numpy.savetext
-17. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
-18. Address pending TODOs
-19. Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
-20. Address edge cases:
-
-  * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
-  * Process on multiple datasets - G-mode KPFM
-  * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
-
-v 1.1 goals
------------
-1. Move core into new package. set up CI, website etc.
-
-v 1.2 goals
+v 0.7 goals
 ------------
 1. Profile code to see where things are slow
 2. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
