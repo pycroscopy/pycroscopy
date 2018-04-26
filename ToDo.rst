@@ -36,15 +36,16 @@ Urgent
   * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
   * Process on multiple datasets - G-mode KPFM
   * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
-4. Handle complex and compound data in the machine learning classes.
+4. Address the remaining 7 unit tests
 
 Important
 ~~~~~~~~~
 1. mostly done - good utilities for interrogating data - pycro data. Do slicing on ND dataset if available
-2. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
-3. unit tests for basic data science (Cluster, SVD, Decomposition)
-4. Test all translators, image cleaning and to make sure they still work.
-5. Address pending TODOs
+2. Handle complex and compound data in the machine learning classes.
+3. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
+4. unit tests for basic data science (Cluster, SVD, Decomposition)
+5. Test all translators, image cleaning and to make sure they still work.
+6. Address pending TODOs
 
 Low priority
 ~~~~~~~~~~~~
@@ -63,6 +64,7 @@ Done
 7. DONE - Fitter must absorb new features in Process if it is not possible to extend it
 8. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
 9. DONE - Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
+10. DONE - Cookbooks for every module in core
 
 v 0.6.1 goals
 -----------
