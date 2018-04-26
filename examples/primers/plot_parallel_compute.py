@@ -15,6 +15,9 @@
 # these cores is represented via two logical cores, thereby summing to a total of at least four cores. Thus, it is
 # prudent to make use of these unused cores whenever possible. Fortunately, there are a few python packages that
 # facilitate the efficient use of all CPU cores with minimal modifications to the existing code.
+#
+# **pycroscopy.parallel_compute()** is a very handy function that simplifies parallel computation significantly to a
+# **single function call** and will be discussed in this document.
 # 
 # Example scientific problem
 # ---------------------------
@@ -249,7 +252,7 @@ print('Parallel computation took', np.round(time.time()-t_0, 2), ' seconds')
 # Let's compare the results from both the serial and parallel methods to ensure they give the same results:
 
 print('Result from serial computation: {}'.format(serial_results[pixel_ind]))
-print('Result from parallel computation: {}'.format(serial_results[pixel_ind]))
+print('Result from parallel computation: {}'.format(parallel_results[pixel_ind]))
 
 ########################################################################################################################
 # Simplifying the function
@@ -281,8 +284,18 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 # and these input/output operations are by far the slowest components of the computation. Instead, it makes sense to
 # read large amounts of data from the necessary files once, perform the computation, and then write to the files once
 # after all the computation is complete. In fact, this is what we automatically do in the **Fitter** and
-# **Process** classes in **pycroscopy**
-# 
+# **Process** classes in pycroscopy
+#
+# pycroscopy.parallel_compute()
+# -----------------------------
+# This is a handy function that simplifies the parallel computation even further to a **single** function call!
+# It is a lot **more straightforward** to provide the arguments and keyword arguments of the function that needs to be
+# applied to the entire dataset. Furthermore, this function intelligently assigns the number of CPU cores for the
+# parallel computation based on the size of the dataset and the computational complexity of the unit computation.
+# For instance, it scales down the number of cores for small datasets if each computation is short. It also ensures that
+# 1-2 cores fewer than all available cores are used by default so that the user can continue using their computer for
+# other purposes while the computation runs. We will see an example of how to use this function in the next section.
+#
 # Scalability
 # -------------
 # Lets see how the computation time decreases as the number of CPU cores is increased. This time lets use the find_peaks
@@ -290,15 +303,16 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 # computation - we would not need to specify the keyword arguments (kwargs) at all! Note that this is a very simple
 # function and the benefits of partial will be greater for more complex problems:
 
+
 def my_parallel_compute(data, func, cpu_cores):
     t_0 = time.time() 
-    
-    values = [joblib.delayed(func)(x) for x in data]
+
     # Execute the parallel computation
-    parallel_results = joblib.Parallel(n_jobs=cpu_cores)(values)
+    _ = px.parallel_compute(data, func, cores=cpu_cores)
+
     # Return only the time difference
-    
     return time.time()-t_0
+
 
 print('Now we will test the speed up for different numbers of CPU cores.\nThis will take some time:')
 core_vec = np.arange(1, max(4, cpu_count())+1)
