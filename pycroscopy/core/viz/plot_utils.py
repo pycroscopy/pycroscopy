@@ -2,7 +2,7 @@
 """
 Created on Thu May 05 13:29:12 2016
 
-@author: Suhas Somnath
+@author: Suhas Somnath, Chris R. Smith
 """
 # TODO: All general plotting functions should support data with 1, 2, or 3 spatial dimensions.
 
@@ -44,7 +44,7 @@ def use_nice_plot_params():
     publications
     """
     # mpl.rcParams.keys()  # gets all allowable keys
-    mpl.rc('figure', figsize=(5.5, 5))
+    # mpl.rc('figure', figsize=(5.5, 5))
     mpl.rc('lines', linewidth=2)
     mpl.rc('axes', labelsize=16, titlesize=16)
     mpl.rc('figure', titlesize=20)
