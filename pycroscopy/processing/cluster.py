@@ -156,7 +156,8 @@ class Cluster(Process):
 
         self.__labels = results.labels_
         if rearrange_clusters:
-            self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp)
+            self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp,
+                                                               self.data_transform_func)
 
         # TODO: What if test() is called repeatedly?
         labels_mat, success = reshape_to_n_dims(np.expand_dims(np.squeeze(self.__labels), axis=1),
@@ -303,7 +304,7 @@ class Cluster(Process):
         return h5_cluster_group
 
 
-def reorder_clusters(labels, mean_response):
+def reorder_clusters(labels, mean_response, transform_function=None):
     """
     Reorders clusters by the distances between the clusters
 
@@ -313,6 +314,8 @@ def reorder_clusters(labels, mean_response):
         Labels for the clusters
     mean_response : 2D numpy array
         Mean response of each cluster arranged as [cluster , features]
+    transform_function : callable, optional
+        Function that will convert the mean_response into real values
 
     Returns
     -------
@@ -324,7 +327,11 @@ def reorder_clusters(labels, mean_response):
 
     num_clusters = mean_response.shape[0]
     # Get the distance between cluster means
-    distance_mat = pdist(mean_response)
+    if transform_function is not None:
+        distance_mat = pdist(transform_function(mean_response))
+    else:
+        distance_mat = pdist(mean_response)
+
     # get hierarchical pairings of clusters
     linkage_pairing = linkage(distance_mat, 'weighted')
 
