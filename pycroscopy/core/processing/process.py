@@ -297,7 +297,8 @@ class Process(object):
         num_pos = self.h5_main.shape[0] - self._start_pos
         orig_start_pos = self._start_pos
 
-        print('You can abort this computation at any time and resume at a later time!\n'
+        # TODO: Need to find a nice way of figuring out if a process has implemented the partial feature.
+        print('You maybe able to abort this computation at any time and resume at a later time!\n'
               '\tIf you are operating in a python console, press Ctrl+C or Cmd+C to abort\n'
               '\tIf you are in a Jupyter notebook, click on "Kernel">>"Interrupt"')
 
