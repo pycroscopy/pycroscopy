@@ -323,8 +323,95 @@ for axis, title in zip(axes, ['Default', 'Custom']):
 px.plot_utils.set_tick_font_size(axes[1], 24)
 fig.tight_layout()
 
-# export_fig_data()
+################################################################################################
+# get_plot_grid_size()
+# ---------------------
+# This handy function figures out the layout for a 2D grid of sub-plots given a desired number of plots
+print('Subfigures\tFewer Rows\tFewer Columns')
+for num_plots in range(1, 17):
+    print('{}\t\t{}\t\t{}'.format(num_plots,
+                              px.plot_utils.get_plot_grid_size(num_plots, fewer_rows=True),
+                              px.plot_utils.get_plot_grid_size(num_plots, fewer_rows=False)))
+
+################################################################################################
+# make_scalar_mappable()
+# ----------------------
+# This is a low-level function that is used by cbar_for_line_plot() to generate the color bar manually.
+# Here we revisit the example for plot_line_family() but we generate the colorbar by hand using
+# make_scalar_mappable(). In this case, we make the colorbar horizontal just as an example.
+
+x_vec = np.linspace(0, 2*np.pi, 256)
+freqs = range(1, 5)
+y_mat = np.array([np.sin(freq * x_vec) for freq in freqs])
+
+fig, axis = plt.subplots(figsize=(4, 4.75))
+px.plot_utils.plot_line_family(axis, x_vec, y_mat)
+
+num_steps = len(freqs)
+
+sm = px.plot_utils.make_scalar_mappable(1, num_steps+1)
+
+cbar = plt.colorbar(sm, ax=axis, orientation='horizontal',
+                    pad=0.04, use_gridspec=True)
+
+################################################################################################
 # cmap_from_rgba()
-# get_plot_grid_size
-# make_scalar_mappable
-# use_nice_plot_params
+# ----------------
+# This function is handy for converting a Matlab-style colormap instructions (lists of [reg, green, blue, alpha]) to
+# matplotlib's style:
+
+hot_desaturated = [(255.0, (255, 76, 76, 255)),
+                   (218.5, (107, 0, 0, 255)),
+                   (182.1, (255, 96, 0, 255)),
+                   (145.6, (255, 255, 0, 255)),
+                   (109.4, (0, 127, 0, 255)),
+                   (72.675, (0, 255, 255, 255)),
+                   (36.5, (0, 0, 91, 255)),
+                   (0, (71, 71, 219, 255))]
+
+new_cmap = px.plot_utils.cmap_from_rgba('hot_desaturated', hot_desaturated, 255)
+
+x_vec = np.linspace(0, 2*np.pi, 256)
+y_vec = np.sin(x_vec)
+
+test = y_vec * np.atleast_2d(y_vec).T
+
+fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
+for axis, title, cmap in zip(axes.flat,
+                             ['Jet', 'Jet desaturated'],
+                             [plt.cm.jet, new_cmap]):
+    im_handle = axis.imshow(test, cmap=cmap)
+    cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
+                            fraction=0.046, pad=0.04, use_gridspec=True)
+    axis.set_title(title)
+fig.tight_layout()
+
+################################################################################################
+# use_nice_plot_params()
+# ----------------------
+# This function changes the default plotting parameters so that the figures look nicer and are closer to publication-
+# ready figures. Note that all subsequent plots will be generated using the new defaults
+#
+# reset_plot_params()
+# -------------------
+# This function resets the plot parameters to matplotlib defaults.
+# The following sequence of default >> nice >> default parameters will illustrate this.
+
+x_vec = np.linspace(0, 2*np.pi, 256)
+freqs = range(1, 5)
+y_mat = np.array([np.sin(freq * x_vec) for freq in freqs])
+
+
+for nice in [False, True, False]:
+    if nice:
+        px.plot_utils.use_nice_plot_params()
+    else:
+        px.plot_utils.reset_plot_params()
+    fig, axis = plt.subplots(figsize=(4, 4))
+    px.plot_utils.plot_line_family(axis, x_vec, y_mat)
+    axis.set_xlabel('Time (sec)')
+    axis.set_ylabel('Amplitude (a. u.)')
+    if nice:
+        axis.set_title('Nice')
+    else:
+        axis.set_title('Default')
