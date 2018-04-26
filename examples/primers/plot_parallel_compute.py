@@ -301,7 +301,8 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 # Lets see how the computation time decreases as the number of CPU cores is increased. This time lets use the find_peaks
 # function instead of wavelet_peaks. The benefit of **partial** will be clearly evident in the set up of the parallel
 # computation - we would not need to specify the keyword arguments (kwargs) at all! Note that this is a very simple
-# function and the benefits of partial will be greater for more complex problems:
+# function and the benefits of **partial()** will be greater for more complex problems. Also note that we are using
+# pycroscopy.parallel_compute() instead of **joblib** as an illustration of its simplicity.
 
 
 def my_parallel_compute(data, func, cpu_cores):
