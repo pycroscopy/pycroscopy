@@ -25,6 +25,19 @@ if sys.version_info.major == 3:
 default_cmap = plt.cm.viridis
 
 
+def reset_plot_params():
+    """
+    Resets the plot parameters to matplotlib default values
+    Adapted from:
+    https://stackoverflow.com/questions/26413185/how-to-recover-matplotlib-defaults-after-setting-stylesheet
+    """
+
+    mpl.rcParams.update(mpl.rcParamsDefault)
+    # Also resetting ipython inline parameters
+    inline_rc = dict(mpl.rcParams)
+    mpl.rcParams.update(inline_rc)
+
+
 def use_nice_plot_params():
     """
     Resets default plot parameters such as figure size, font sizes etc. to values better suited for scientific
