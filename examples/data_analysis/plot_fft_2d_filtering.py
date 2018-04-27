@@ -5,6 +5,11 @@ FFT & Filtering of Atomically Resolved Images
 
 **Stephen Jesse and Suhas Somnath**
 
+* Institute for Functional Imaging of Materials
+* Center for Nanophase Materials Sciences
+
+Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
+
 9/28/2015
 
 Fourier transforms offer a very fast and convenient means to analyze and filter 
@@ -18,7 +23,9 @@ multiplying/dividing by iω in the Fourier domain (where ω is the transformed v
 We will take advantage of these properties and demonstrate simple image filtering and 
 convolution with example.   
 
-A few properties/uses of FFT’s are worth reviewing:
+A few properties/uses of FFT’s are worth reviewing.
+
+In this example we will load an image, Fourier transform it, apply a smoothing filter, and transform it back.
 """
 
 from __future__ import division, unicode_literals, print_function
@@ -44,18 +51,20 @@ except ImportError:
     import pycroscopy as px
 
 ####################################################################################
-# In this example we will load an image, Fourier transform it, apply a smoothing filter, 
-# and transform it back. The images is stored as a tab delimited text file. One can load 
-# it using the following command: 
+# We will be using an image available on our GitHub project page by default. You are encouraged
+# to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own image instead.
+# When using your own image, you can skip this cell and provide the path to your data using the variable -
+# data_file_path
+#
+# Coming back to our example, lets start by downloading the file from GitHub:
 data_file_path = 'temp_STEM_STO.txt'
 # download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STEM_STO_2_20.txt'
 _ = wget.download(url, data_file_path, bar=None)
 
 ####################################################################################
-# In this example we will load an image, Fourier transform it, apply a smoothing filter, 
-# and transform it back. The images is stored as a tab delimited text file. One can load 
-# it using the following command: 
+# The image is stored as a tab delimited text file. One can load its contents to memory by using the following command:
+
 image_raw = np.loadtxt(data_file_path, dtype='str', delimiter='\t')
 
 # delete the temporarily downloaded file:

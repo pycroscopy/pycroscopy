@@ -5,6 +5,11 @@ Image alignment and registration
 
 **Stephen Jesse, Alex Belianinov, Suhas Somnath**
 
+* Institute for Functional Imaging of Materials
+* Center for Nanophase Materials Sciences
+
+Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
+
 7/29/2015
 
 Often scientists find themselves wanting to compare data of various origins on the same sample that has a location of
@@ -98,6 +103,10 @@ def normalize_image(image):
 ##############################################################################
 # Load the data from the hdf5 file
 # --------------------------------
+# We will be using an data file available on our GitHub project page by default. You are encouraged
+# to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own data instead.
+# When using your own data, you can skip this cell and provide the path to your data using the variable - h5_path
+#
 # We begin by loading the high resolution STM image, the Z component image of the spectroscopic data set, and the
 # spectroscopic data set itself
 
