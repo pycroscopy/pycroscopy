@@ -2351,12 +2351,24 @@ def create_results_group(h5_main, tool_name):
     if len(tool_name) < 1:
         raise ValueError('tool_name should not be an empty string')
 
+    if '-' in tool_name:
+        warn('tool_name should not contain the "-" character. Reformatted name from:{} to '
+             '{}'.format(tool_name, tool_name.replace('-', '_')))
+    tool_name = tool_name.replace('-', '_')
+
     group_name = h5_main.name.split('/')[-1] + '-' + tool_name + '_'
     group_name = assign_group_index(h5_main.parent, group_name)
 
     h5_group = h5_main.parent.create_group(group_name)
 
     write_book_keeping_attrs(h5_group)
+
+    # Also add some basic attributes like source and tool name. This will allow relaxation of nomenclature restrictions:
+    # this are NOT being used right now but will be in the subsequent versions of pycroscopy
+    write_simple_attrs(h5_group, {'tool': tool_name, 'num_source_dsets': 1})
+    # in this case, there is only one source
+    for dset_ind, dset in enumerate([h5_main]):
+        h5_group.attrs['source_' + '{:03d}'.format(dset_ind)] = dset.ref
 
     return h5_group
 
