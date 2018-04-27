@@ -3,11 +3,10 @@
 Spectral Unmixing
 =================================================================
 
-S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3`\
+Suhas Somnath, Rama K. Vasudevan, Stephen Jesse
 
-* :sup:`1` Institute for Functional Imaging of Materials
-* :sup:`2` Advanced Data and Workflows Group
-* :sup:`3` Center for Nanophase Materials Sciences
+* Institute for Functional Imaging of Materials
+* Center for Nanophase Materials Sciences
 
 Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
 
@@ -26,7 +25,7 @@ Software Prerequisites:
 
 """
 
-#Import packages
+# Import packages
 
 # Ensure that this code works on both python 2 and python 3
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -58,9 +57,6 @@ except ImportError:
     pip.main(['install', 'pycroscopy'])
     import pycroscopy as px
 
-"""
-  
-"""
 
 #####################################################################################
 # The Data
@@ -74,8 +70,9 @@ except ImportError:
 # Fortunately, all statistical analysis, machine learning, spectral unmixing algorithms, etc. only accept data that is
 # formatted in the same manner of [position x spectra] in a two dimensional matrix.
 #
-# We will begin by downloading the BE-PFM dataset from Github
-#
+# We will be using an data file available on our GitHub project page by default. You are encouraged
+# to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own data instead.
+# When using your own data, you can skip this cell and provide the path to your data using the variable - data_file_path
 
 data_file_path = 'temp_um.h5'
 # download the data file from Github:

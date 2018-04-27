@@ -1221,6 +1221,16 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object')
 
+    if not isinstance(dset_name, (str, unicode)):
+        raise TypeError('dset_name should be a string')
+    dset_name = dset_name.strip()
+    if len(dset_name) == 0:
+        raise ValueError('dset_name cannot be empty!')
+    if '-' in dset_name:
+        warn('dset_name should not contain the "-" character. Reformatted name from:{} to '
+             '{}'.format(dset_name, dset_name.replace('-', '_')))
+    dset_name = dset_name.replace('-', '_')
+
     if dset_name in h5_group.keys():
         if isinstance(h5_group[dset_name], h5py.Dataset):
             warn('A dataset named: {} already exists in group: {}'.format(dset_name, h5_group.name))
@@ -2341,12 +2351,24 @@ def create_results_group(h5_main, tool_name):
     if len(tool_name) < 1:
         raise ValueError('tool_name should not be an empty string')
 
+    if '-' in tool_name:
+        warn('tool_name should not contain the "-" character. Reformatted name from:{} to '
+             '{}'.format(tool_name, tool_name.replace('-', '_')))
+    tool_name = tool_name.replace('-', '_')
+
     group_name = h5_main.name.split('/')[-1] + '-' + tool_name + '_'
     group_name = assign_group_index(h5_main.parent, group_name)
 
     h5_group = h5_main.parent.create_group(group_name)
 
     write_book_keeping_attrs(h5_group)
+
+    # Also add some basic attributes like source and tool name. This will allow relaxation of nomenclature restrictions:
+    # this are NOT being used right now but will be in the subsequent versions of pycroscopy
+    write_simple_attrs(h5_group, {'tool': tool_name, 'num_source_dsets': 1})
+    # in this case, there is only one source
+    for dset_ind, dset in enumerate([h5_main]):
+        h5_group.attrs['source_' + '{:03d}'.format(dset_ind)] = dset.ref
 
     return h5_group
 
@@ -2407,7 +2429,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         2D matrix formatted as [position, spectral] or a list / tuple with the shape for an empty dataset.
         If creating an empty dataset - the dtype must be specified via a kwarg.
     main_data_name : String / Unicode
-        Name to give to the main dataset
+        Name to give to the main dataset. This cannot contain the '-' character.
     quantity : String / Unicode
         Name of the physical quantity stored in the dataset. Example - 'Current'
     units : String / Unicode
@@ -2466,8 +2488,13 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     def __check_anc_before_creation(aux_prefix, dim_type='pos'):
         if not isinstance(aux_prefix, (str, unicode)):
             raise TypeError('aux_' + dim_type + '_prefix should be a string')
+        aux_prefix = aux_prefix.strip()
         if not aux_prefix.endswith('_'):
             aux_prefix += '_'
+        if '-' in aux_prefix:
+            warn('aux_' + dim_type + ' should not contain the "-" character. Reformatted name from:{} to '
+                 '{}'.format(aux_prefix, aux_prefix.replace('-', '_')))
+        aux_prefix = aux_prefix.replace('-', '_')
         for dset_name in [aux_prefix + 'Indices', aux_prefix + 'Values']:
             if dset_name in h5_parent_group.keys():
                 raise KeyError('Dataset named: ' + dset_name + ' already exists in group: '
@@ -2489,6 +2516,14 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             raise ValueError(arg_name + ' should not be an empty string')
     if verbose:
         print('quantity, units, main_data_name all OK')
+
+    quantity = quantity.strip()
+    units = units.strip()
+    main_data_name = main_data_name.strip()
+    if '-' in main_data_name:
+        warn('main_data_name should not contain the "-" character. Reformatted name from:{} to '
+             '{}'.format(main_data_name, main_data_name.replace('-', '_')))
+    main_data_name = main_data_name.replace('-', '_')
 
     if isinstance(main_data, (list, tuple)):
         if not contains_integers(main_data, min_val=1):
