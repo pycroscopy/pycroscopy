@@ -1221,6 +1221,16 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
         if not isinstance(h5_group, (h5py.Group, h5py.File)):
             raise TypeError('h5_group should be a h5py.Group or h5py.File object')
 
+    if not isinstance(dset_name, (str, unicode)):
+        raise TypeError('dset_name should be a string')
+    dset_name = dset_name.strip()
+    if len(dset_name) == 0:
+        raise ValueError('dset_name cannot be empty!')
+    if '-' in dset_name:
+        warn('dset_name should not contain the "-" character. Reformatted name from:{} to '
+             '{}'.format(dset_name, dset_name.replace('-', '_')))
+    dset_name = dset_name.replace('-', '_')
+
     if dset_name in h5_group.keys():
         if isinstance(h5_group[dset_name], h5py.Dataset):
             warn('A dataset named: {} already exists in group: {}'.format(dset_name, h5_group.name))
