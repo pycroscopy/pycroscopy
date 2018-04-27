@@ -1960,7 +1960,19 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_copy_attributes_illegal_to_from_reg_ref(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_dest = h5_f.create_dataset('Sink', data=data[:-1, :-1])
+            reg_refs = {'even_rows': (slice(0, None, 2), slice(None)),
+                        'odd_rows': (slice(1, None, 2), slice(None))}
+            for reg_ref_name, reg_ref_tuple in reg_refs.items():
+                h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
+
+            with self.assertWarns(UserWarning):
+                hdf_utils.copy_attributes(h5_dset_source, h5_dset_dest, skip_refs=False)
 
     def test_copy_main_attributes_valid(self):
         file_path = 'test.h5'
