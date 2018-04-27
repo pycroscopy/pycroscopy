@@ -254,35 +254,8 @@ def read_image(image_path, *args, **kwargs):
     """
     ext = os.path.splitext(image_path)[1]
     if ext == '.txt':
-        return read_txt(image_path, *args, **kwargs), dict()
+        return np.loadtxt(image_path, *args, **kwargs), dict()
     else:
         # Set the as_grey argument to True is not already provided.
         kwargs['as_grey'] = (kwargs.pop('as_grey', True))
         return imread(image_path, *args, **kwargs), dict()
-
-
-def read_txt(image_path, header_lines=0, delimiter=None, *args, **kwargs):
-    """
-
-    Parameters
-    ----------
-    image_path : str
-        Path to the image file
-    header_lines : int
-        Number of lines to skip as the header
-    delimiter : str
-        Separator between the columns of data
-    args
-    kwargs
-
-    Returns
-    -------
-    image : numpy.ndarray
-        Image array read from the plaintext file
-
-    """
-    image = np.loadtxt(image_path, *args,
-                       skiprows=header_lines,
-                       delimiter=delimiter, **kwargs)
-
-    return image
