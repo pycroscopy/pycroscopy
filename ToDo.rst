@@ -25,18 +25,11 @@ Urgent
 1. partly done - good documentation for both users and developers
 
   * Need explaination of what is where and why
-  * Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
-  * Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
   * Upload clean exports of paper notebooks
   * comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
 
 2. file dialog for Jupyter not working on Mac OS
-3. Address edge cases:
-
-  * Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
-  * Process on multiple datasets - G-mode KPFM
-  * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
-4. Address the remaining 7 unit tests
+3. Chris - Address the remaining unit tests
 
 Important
 ~~~~~~~~~
@@ -65,6 +58,16 @@ Done
 8. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
 9. DONE - Move Image Translator to core. Perhaps make a new subfolder in core.io -> translators
 10. DONE - Cookbooks for every module in core
+11. Address edge cases:
+
+  * DONE - Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
+  * DONE - Process on multiple datasets - G-mode KPFM
+  * Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
+
+12. DONE - documentation:
+
+  * DONE - Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
+  * DONE - Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
 
 v 0.6.1 goals
 -----------
