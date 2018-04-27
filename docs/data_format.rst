@@ -51,13 +51,13 @@ Data in pycroscopy files are stored in three main kinds of datasets:
    the instrument as well as results from processing or analysis routines
    applied to the data
 #. Mandatory ``Ancillary`` datasets that are necessary to explain the
-   ``main`` data. Note - these datasets may sometimes be referred to ``Auxillary`` datasets in different parts of the package.
+   ``main`` data
 #. ``Extra`` datasets store any other data that may be of value
 
 ``Main`` Datasets
 ~~~~~~~~~~~~~~~~~
 
-Regardless of origin, modality, dimensionality or complexity, imaging data have one
+Regardless of origin, modality or complexity, imaging data have one
 thing in common:
 
 **The same measurement is performed at multiple spatial locations**
@@ -110,7 +110,7 @@ this paradigm:
    function of a single (spectroscopic) variable such as wavelength.
    Thus this data is represented as a 1 x P matrix, where P is the
    number of points in the spectra
--  **Scanning Tunneling Spectroscopy or IV spectroscopy**: The current
+-  **Scanning Tunelling Spectroscopy or IV spectroscopy**: The current
    (A 1D array of size P) is recorded as a function of voltage at each
    position in a two dimensional grid of points (two spatial
    dimensions). Thus the data would be represented as a N x P matrix,
@@ -191,9 +191,9 @@ and utility of compound datasets are best described with examples:
   fit should actually be a N x 1 dataset where each element is a compound
   value made up of the S coefficients. Note that while some form of sequence
   can be forced onto the coefficients if the spectra were fit to polynomial
-  equations, the drawbacks outweigh the benefits:
+  equations, the drawbacks outweight the benefits:
 
-  * Storing data in compound datasets circumvents (slicing) problems associated
+  * Storing data in compund datasets circumvents (slicing) problems associated
     with getting a specific / the kth coeffient if the data were stored in a
     real-valued matrix instead.
   * Visualization also becomes a lot simpler since compound datasets cannot
@@ -340,7 +340,7 @@ to be recorded as separate datasets in the same file. For example, one
 channel could be a spectra (1D array) collected at each location on a 2D
 grid while another could be the temperature (single value) recorded by
 another sensor at the same spatial positions. In this case, the two
-datasets could indeed share the same ancillary position datasets but
+datasets could indeed share the same ancilalry position datasets but
 different spectroscopic datasets. Alternativeley, there could be other
 cases where the average measurement over multiple spatial points is
 recorded separately (possibly by another detector). In this case, the
@@ -360,7 +360,7 @@ advantageous features.
 
 Information can be stored in HDF5 files in several ways:
 
-* ``Datasets`` allow the storage of data matricies and these are the vessels used for storing the ``main``,
+* ``Datasets`` allow the storageo of data matricies and these are the vessels used for storing the ``main``,
   ``ancillary``, and any extra data matricies
 * ``Datagroups`` are similar to folders in conventional file systems and can be used to store any number of datasets or
   datagroups themselves
@@ -391,7 +391,7 @@ pycroscopy format in HDF5 files.
 ``Main`` data:
 ~~~~~~~~~~~~~~
 
-**Dataset** structured as (positions x spectroscopic values)
+**Dataset** structured as (positions x time or spectroscopic values)
 
 * ``dtype`` : uint8, float32, complex64, compound if necessary, etc.
 * *Required* attributes:
@@ -408,14 +408,10 @@ pycroscopy format in HDF5 files.
   * ``Spectroscopic_Values`` - Reference to the spectroscopic values
     dataset
 
-* `chunking <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__  : 
-
-   * You may think of chunking as the division of a large matrix in to several small chunks wherein the data within the chunk is contiguous in order to improve data reading and writing speeds among other things. This is an optional argument that can be specified when creating a dataset if the typical pattern for reading the data is known a-priori. 
-   * For example, if it is known that data will ONLY be read position-by-position and not spectral index-by-spectral index (e.g. - specific frequency in a spectra) it makes sense to chunk a few consecutive positions (rows) together. That way, loading a single position's (row) value will cause h5py to load the entire data chunk that this position is present in into memory. While it may seem wasteful at first, it pays dividends in the cases when one is attempting to process data position-by-position. So, when we ask h5py to load the next position (row), if this row was already loaded as part of the chunk (already in memory), the desired data will be retrieved from memory (the chunk that also contains data for this row) instead of reading the HDF5 file, which is far slower a process compared to retrieving from memory. The drawback of chunking by rows only is that if data must be read by column (spectroscopic index), the entire dataset has to be loaded into memory since the column is actually distributed over ALL chunks. One solution to avoid such problems is to set the chunks to a handful of positions and spectral indices (like a square instead of very wide rectangles). This way, reading a single row would mean loading 4-5 chunks instead of one. However, at the same time, reading a single column might mean reading 10 chunks instead of ALL chunks.
-   * HDF group recommends that chunks be between 100 kB to 1 MB. This size needs to be translated to n positions x s spectroscopic indices depending on:
-   
-      * the size of each data element (unsigned integer / float / double, complex value etc.)
-      * how the data is likely to be read (position-by-position) or (spectroscopic index-by-spectroscopic index) or both
+* `chunking <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__
+  : HDF group recommends that chunks be between 100 kB to 1 MB. We
+  recommend chunking by whole number of positions since data is more
+  likely to be read by position rather than by specific spectral indices.
 
 Note that we are only storing references to the ancillary datasets. This
 allows multiple ``main`` datasets to share the same ancillary datasets
@@ -538,29 +534,27 @@ Measurement data
 
    -  ``Channel_000`` (datagroup)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
    -  ``Channel_001`` (datagroup)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
-   -  Datasets common to Channel\_000 and Channel\_001 (e.g. - ``Channel_000`` and ``Channel_001`` could store ancillary datasets or some other datasets here to avoid duplication if they are both going to be the same. Note that the location of these ancillary datasets is not important so long as they are correctly linked to the Main dataset)
+   -  Datasets common to Channel\_000 and Channel\_001
 
 -  ``Measurement_001`` (datagroup)
 
    -  ``Channel_000`` (datagroup)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
    -  ``Channel_001`` (datagroup)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
    -  Datasets common to Channel\_000 and Channel\_001
 
 -  ...
-
-Note that this heirarchical arrangement of datagroups and datasets is only a recommendation and not a requirement for either pycroscopy or HDF5. 
 
 Tool (analysis / processing)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -587,7 +581,7 @@ Tool (analysis / processing)
    -  Since there is a possibility that the same tool could be applied
       to the very same dataset multiple times, we store the results of
       each run of the tool in a separate datagroup. These datagroups are
-      differentiated by the index that is appended to the base-name of
+      differentiated by the index that is appened to the base-name of
       the datagroup.
    -  Note that a ``-`` separates the dataset name from the tool name
       and anything after the last ``_`` will be assumed to be the index
