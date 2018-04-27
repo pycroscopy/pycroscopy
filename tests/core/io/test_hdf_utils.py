@@ -2183,6 +2183,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             with self.assertRaises(TypeError):
                 _ = hdf_utils.create_results_group(h5_f, 'Tool')
+                
         os.remove(file_path)
 
     def test_create_region_ref(self):
@@ -2205,6 +2206,8 @@ class TestHDFUtils(unittest.TestCase):
 
             self.assertTrue(np.allclose(h5_reg, h5_slice))
 
+        os.remove(file_path)
+
     def test_copy_region_refs(self):
         file_path = 'test.h5'
         self.__delete_existing_file(file_path)
@@ -2219,6 +2222,8 @@ class TestHDFUtils(unittest.TestCase):
 
             self.assertTrue(np.allclose(h5_dset_source[h5_dset_source.attrs['regref']],
                                         h5_dset_dest[h5_dset_dest.attrs['regref']]))
+
+        os.remove(file_path)
 
 
     def test_copy_reg_ref_reduced_dim(self):
