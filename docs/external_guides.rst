@@ -1,5 +1,5 @@
-Links to handy tutorials
-========================
+Handy Tutorials on the Basics
+=============================
 Here are a list of excellent tutorials from other websites and sources that describe some of the many important topics
 on reading, using / running and writing code:
 

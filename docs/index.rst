@@ -25,6 +25,7 @@ Documentation Index
     data_format
     papers_conferences
     auto_examples/index
+    external_guides
     contact
     install
     faq
