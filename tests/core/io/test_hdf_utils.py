@@ -1893,8 +1893,8 @@ class TestHDFUtils(unittest.TestCase):
             h5_dset_source = h5_f.create_dataset('Source', data=data)
             h5_dset_source.attrs.update(easy_attrs)
             h5_dset_sink = h5_f.create_dataset('Sink', data=data)
-            reg_refs = {'even_rows': (slice(None), slice(0, None, 2)),
-                        'odd_rows': (slice(None), slice(1, None, 2))}
+            reg_refs = {'even_rows': (slice(0, None, 2), slice(None)),
+                        'odd_rows': (slice(1, None, 2), slice(None))}
             for reg_ref_name, reg_ref_tuple in reg_refs.items():
                 h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
 
@@ -2186,10 +2186,40 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_create_region_ref(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(5, 7)
+        with h5py.File(file_path) as h5_f:
+            h5_dset = h5_f.create_dataset('Source', data=data)
+            pos_inds = np.arange(0, h5_dset.shape[0], 2)
+            ref_inds = [((pos_start, 0), (pos_start, h5_dset.shape[1]-1)) for pos_start in pos_inds]
+            ref_inds = np.array(ref_inds)
+            reg_ref = hdf_utils.create_region_reference(h5_dset, ref_inds)
+            ref_slices = list()
+            for start, stop in ref_inds:
+                ref_slices.append([slice(start[0], stop[0]+1), slice(start[1], None)])
+
+            h5_reg = h5_dset[reg_ref]
+
+            h5_slice = np.vstack([h5_dset[pos_slice, spec_slice] for (pos_slice, spec_slice) in ref_slices])
+
+            self.assertTrue(np.allclose(h5_reg, h5_slice))
 
     def test_copy_region_refs(self):
-        assert False
+        file_path = 'test.h5'
+        self.__delete_existing_file(file_path)
+        data = np.random.rand(11, 7)
+        with h5py.File(file_path) as h5_f:
+            h5_dset_source = h5_f.create_dataset('Source', data=data)
+            h5_dset_dest = h5_f.create_dataset('Target', data=data)
+            source_ref = h5_dset_source.regionref[0:-1:2]
+            h5_dset_source.attrs['regref'] = source_ref
+
+            hdf_utils.copy_region_refs(h5_dset_source, h5_dset_dest)
+
+            self.assertTrue(np.allclose(h5_dset_source[h5_dset_source.attrs['regref']],
+                                        h5_dset_dest[h5_dset_dest.attrs['regref']]))
+
 
     def test_copy_reg_ref_reduced_dim(self):
         assert False
