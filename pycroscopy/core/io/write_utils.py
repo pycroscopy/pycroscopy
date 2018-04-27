@@ -12,7 +12,7 @@ from collections import Iterable
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
-           'Dimension', 'build_ind_val_matrices']
+           'Dimension', 'build_ind_val_matrices', 'calc_chunks']
 
 if sys.version_info.major == 3:
     unicode = str
