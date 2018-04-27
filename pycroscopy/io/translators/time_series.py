@@ -11,8 +11,8 @@ import os
 import numpy as np
 from skimage.measure import block_reduce
 
-from pycroscopy.core.io.io_image import read_image
-from pycroscopy.io.translators.df_utils.dm_utils import read_dm3
+from .df_utils.dm_utils import read_dm3
+from ...core.io.image import read_image
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import Dimension, calc_chunks
 from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main

@@ -7,37 +7,6 @@ Created on Nov 8, 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import array
-import os
-
-import numpy as np
-from skimage.io import imread
-
-
-def read_image(image_path, *args, **kwargs):
-    """
-    Read the image file at `image_path` into a numpy array
-
-    Parameters
-    ----------
-    image_path : str
-        Path to the image file
-
-    Returns
-    -------
-    image : numpy.ndarray
-        Array containing the image from the file `image_path`
-    image_parms : dict
-        Dictionary containing image parameters.  If image type does not have
-        parameters then an empty dictionary is returned.
-
-    """
-    ext = os.path.splitext(image_path)[1]
-    if ext == '.txt':
-        return read_txt(image_path, *args, **kwargs), dict()
-    else:
-        # Set the as_grey argument to True is not already provided.
-        kwargs['as_grey'] = (kwargs.pop('as_grey', True))
-        return imread(image_path, *args, **kwargs), dict()
 
 
 def unnest_parm_dicts(image_parms, prefix=''):
@@ -100,33 +69,6 @@ def try_tag_to_string(tag_data):
             raise
 
     return tag_data
-
-
-def read_txt(image_path, header_lines=0, delimiter=None, *args, **kwargs):
-    """
-
-    Parameters
-    ----------
-    image_path : str
-        Path to the image file
-    header_lines : int
-        Number of lines to skip as the header
-    delimiter : str
-        Separator between the columns of data
-    args
-    kwargs
-
-    Returns
-    -------
-    image : numpy.ndarray
-        Image array read from the plaintext file
-
-    """
-    image = np.loadtxt(image_path, *args,
-                       skiprows=header_lines,
-                       delimiter=delimiter, **kwargs)
-
-    return image
 
 
 def no_bin(image, *args, **kwargs):

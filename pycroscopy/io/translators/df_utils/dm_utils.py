@@ -1,9 +1,9 @@
 import numpy as np
 
-from pycroscopy.io.translators.df_utils import dm4reader
-from pycroscopy.io.translators.df_utils.dm3_image_utils import imagedatadict_to_ndarray
-from pycroscopy.core.io.io_image import try_tag_to_string, unnest_parm_dicts
-from pycroscopy.io.translators.df_utils.parse_dm3 import parse_dm_header
+from . import dm4reader
+from .dm3_image_utils import imagedatadict_to_ndarray
+from .image_utils import try_tag_to_string, unnest_parm_dicts
+from .parse_dm3 import parse_dm_header
 
 
 def parse_dm4_parms(dm4_file, tag_dir, base_name=''):
