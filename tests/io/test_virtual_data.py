@@ -32,17 +32,17 @@ class TestVirtualDataSet(unittest.TestCase):
         with self.assertRaises(ValueError):
             _ = VirtualDataset(name, data=None)
 
-    def test_children_for_microgroup_legal(self):
+    def test_children_for_virtualgroup_legal(self):
         child = VirtualGroup('blah')
         mg = VirtualGroup('test_group', children=child)
         self.assertEqual(len(mg.children), 1)
         self.assertEqual(child, mg.children[0])
 
-    def test_children_for_microgroup_illegal(self):
+    def test_children_for_virtualgroup_illegal(self):
         mg = VirtualGroup('test_group', children=np.arange(4))
         self.assertEqual(len(mg.children), 0)
 
-    def test_attrs_for_microgroup_legal(self):
+    def test_attrs_for_virtualgroup_legal(self):
         attrs = {'att_1': 'string_val',
                      'att_2': 1.2345,
                      'att_3': [1, 2, 3, 4],
@@ -238,7 +238,7 @@ class TestVirtualGroup(unittest.TestCase):
     def test_add_single_child_illegal_01(self):
         group_name = 'indexed_group_'
         group = VirtualGroup(group_name)
-        # with self.assertWarns('Children must be of type MicroData. child ignored'):
+        # with self.assertWarns('Children must be of type VirtualData. child ignored'):
         group.add_children(np.arange(4))
         self.assertEqual(len(group.children), 0)
 
