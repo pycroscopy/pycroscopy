@@ -1,10 +1,13 @@
+"""
+================================================================================
+The PycroDataset
+================================================================================
+
+**Suhas Somnath**
+
+11/11/2017
+"""
 ########################################################################################################################
-# The PycroDataset
-# =================
-# Suhas Somnath
-# 
-# 11/11/2017
-# 
 # Main Datasets in Pycroscopy
 # ----------------------------
 # In pycroscopy, all spatial dimensions are collapsed to a single dimension and, similarly, all spectroscopic dimensions
@@ -14,16 +17,16 @@
 # This general and intuitive format allows imaging data from any instrument, measurement scheme, size, or dimensionality
 # to be represented in the same way. Such an instrument independent data format enables a single set of analysis and
 # processing functions to be reused for multiple image formats or modalities.
-# 
+#
 # Main datasets are greater than the sum of their parts. They are more capable and information-packed than conventional
 # datasets since they have (or are linked to) all the necessary information to describe a measured dataset. The
 # additional information contained / linked by Main datasets includes:
-# 
+#
 # * the recorded physical quantity
 # * units of the data
 # * names of the position and spectroscopic dimensions
 # * dimensionality of the data in its original N dimensional form etc.
-# 
+#
 # PycroDatasets = Main Datasets
 # ------------------------------
 # Regardless, Main datasets are just concepts or blueprints and not concrete digital objects in a programming language
@@ -34,15 +37,15 @@
 # * allow quick interactive visualization in Jupyter notebooks
 # * allow intuitive slicing of the N dimensional dataset
 # * and much much more.
-# 
+#
 # While it is most certainly possible to access this information and enable these functionalities via the native h5py
 # functionality, it can become tedious very quickly.  In fact, a lot of the functionality of PycroDataset comes from
 # orchestration of multiple functions in hdf_utils. The PycroDataset class makes such necessary information and any
 # necessary functionality easily accessible.
-# 
+#
 # Since Main datasets are the hubs of information in a Pycroscopy formatted HDF5 file, we expect that the majority of
 # the data interrogation will happen via PycroDatasets
-# 
+#
 # Recommended pre-requisite reading
 # ---------------------------------
 # * pycroscopy data format - https://pycroscopy.github.io/pycroscopy/data_format.html.
@@ -51,7 +54,7 @@
 #
 # Example scientific dataset
 # ---------------------------
-# 
+#
 # Before, we dive into the functionalities of PycroDatasets we need to understand the dataset that will be used in this
 # example. For this example, we will be working with a Band Excitation Polarization Switching (BEPS) dataset acquired
 # from advanced atomic force microscopes. In the much simpler Band Excitation (BE) imaging datasets, a single spectra
@@ -60,10 +63,10 @@
 # BEPS dataset used in this example has a spectra for each combination of three other parameters (DC offset, Field, and
 # Cycle). Thus, this dataset has three new spectral dimensions in addition to the spectra itself. Hence, this dataset
 # becomes a 2+4 = 6 dimensional dataset
-# 
+#
 # Load all necessary packages
 # ---------------------------
-# 
+#
 # First, we need to load the necessary packages. Here are a list of packages besides pycroscopy that will be used in
 # this example:
 # * h5py - to open and close the file
@@ -138,7 +141,7 @@ print('h5_raw is a main dataset? {}'.format(px.hdf_utils.check_if_main(h5_raw)))
 ########################################################################################################################
 # It turns out that this is indeed a Main dataset. Therefore, we can turn this in to a Pycrodataset without any
 # problems.
-# 
+#
 # Creating a PycroDataset
 # -----------------------
 # All one needs for creating a PycroDataset object is a Main dataset. Here is how we can supercharge h5_raw:
@@ -149,7 +152,7 @@ print(pd_raw)
 ########################################################################################################################
 # Notice how easy it was to create a PycroDataset object. Also, note how the PycroDataset is much more informative in
 # comparison with the conventional h5py.Dataset object.
-# 
+#
 # PycroDataset = Supercharged h5py.Dataset
 # ========================================
 # Remember that PycroDataset is just an extension of the h5py.Dataset object class. Therefore, both the h5_raw and
@@ -165,7 +168,7 @@ print(pd_raw == h5_raw)
 # Since the PycroDataset is aware and has handles to the supporting ancillary datasets, they can be accessed as
 # properties of the object unlike HDF5 datasets. Note that these ancillary datasets can be accessed using functionality
 # in pycroscopy.hdf_utils as well. However, the PycroDataset option is far easier.
-# 
+#
 # Let us compare accessing the Spectroscopic Indices via the PycroDataset and hdf_utils functionality:
 
 h5_spec_inds_1 = pd_raw.h5_spec_inds
@@ -197,7 +200,7 @@ print(pd_raw.spec_dim_descriptors)
 # PycroDataset object makes it very easy to access the values over which a dimension was varied using the
 # get_pos_values() and get_spec_values() functions. This functionality is enabled by the get_unit_values() function in
 # pycroscopy.hdf_utils.
-# 
+#
 # For example, let us say we wanted to see how the 'DC_Offset' dimension was varied, we could:
 
 dim_name = 'DC_Offset'
@@ -211,7 +214,7 @@ fig.tight_layout()
 ########################################################################################################################
 # Reshaping to N dimensions
 # -------------------------
-# 
+#
 # Pycroscopy stores N dimensional datasets in a flattened 2D form of position x spectral values. It can become
 # challenging to retrieve the data in its original N-dimensional form, especially for multidimensional datasets
 # such as the one we are working on. Fortunately, all the information regarding the dimensionality of the dataset
@@ -233,7 +236,7 @@ print(pd_raw.n_dim_labels)
 # this problem, PycroDataset has a slice() function that efficiently loads the only the sliced data into memory and
 # reshapes the data to an N dimensional form if possible. Moreover, the slicing arguments can be provided in the actual
 # N dimensional form!
-# 
+#
 # For example, imagine that we cannot load the entire example dataset in its N dimensional form and then slice it. Lets
 # try to get the spatial map for the following conditions without loading the entire dataset in its N dimensional form
 # and then slicing it :
@@ -241,7 +244,7 @@ print(pd_raw.n_dim_labels)
 # * 1st index of cycle
 # * 0th index of Field (remember Python is 0 based)
 # * 43rd index of Frequency
-# 
+#
 # To get this, we would slice as:
 
 spat_map_1, success = pd_raw.slice(slice_dict={'Frequency': 43, 'DC_Offset': 14, 'Field': 0, 'Cycle': 1})

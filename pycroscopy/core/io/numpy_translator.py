@@ -35,7 +35,7 @@ class NumpyTranslator(Translator):
         h5_path : String / Unicode
             Absolute path of the h5 file to be written
         data_name : String / Unicode
-            Name of the data type. Example - 'SEM'
+            Name of the scientific data type. Example - 'SEM'
         raw_data : np.ndarray
             2D matrix formatted as [position, spectral]
         quantity : String / Unicode

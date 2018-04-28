@@ -1,12 +1,14 @@
+"""
+================================================================================
+Utilities for handling data types and transformations
+================================================================================
 
+**Suhas Somnath**
+
+4/18/2018
+"""
 # coding: utf-8
 ################################################################################
-# Utilities for handling data types and transformations
-# =======================================================
-# Suhas Somnath
-#
-# 4/18/2018
-#
 # Introduction
 # -------------
 # The general nature of pycroscopy facilitates the representation of any kind of measurement data.

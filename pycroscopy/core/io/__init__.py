@@ -11,6 +11,7 @@ from .pycro_data import PycroDataset
 from .translator import Translator, generate_dummy_main_parms
 from .numpy_translator import NumpyTranslator
 from .image import ImageTranslator
+from .write_utils import Dimension
 
 __all__ = ['PycroDataset', 'hdf_utils', 'io_utils', 'dtype_utils', 'NumpyTranslator', 'write_utils',
-           'ImageTranslator']
+           'ImageTranslator', 'Dimension']
