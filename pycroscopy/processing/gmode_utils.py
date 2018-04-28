@@ -6,26 +6,28 @@ Created on Thu May 05 13:29:12 2016
 """
 
 from __future__ import division, print_function, absolute_import
+import sys
 from collections import Iterable
 from warnings import warn
+from numbers import Number
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-from ..io.io_hdf5 import ioHDF5
-from ..io.pycro_data import PycroDataset
-from ..io.hdf_utils import getH5DsetRefs, linkRefs, getAuxData, copy_main_attributes
-from ..io.microdata import MicroDataGroup, MicroDataset
-from ..viz.plot_utils import rainbow_plot, set_tick_font_size
-from ..io.translators.utils import build_ind_val_dsets
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.hdf_utils import check_if_main, get_attr, write_main_dataset, create_results_group
+from ..core.viz.plot_utils import set_tick_font_size, plot_curves
+from ..core.io.write_utils import Dimension
+
+if sys.version_info.major == 3:
+    unicode = str
 
 # TODO: Phase rotation not implemented correctly. Find and use excitation frequency
 
 
 ###############################################################################
 
-def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
-                excit_wfm=None, central_resp_size=None, show_plots=True, use_rainbow_plots=True,
-                verbose=False):
+def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None, excit_wfm=None, show_plots=True,
+                plot_title=None, verbose=False):
     """
     Filters the provided response with the provided filters.
 
@@ -38,13 +40,15 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
     noise_threshold : (Optional) float
         Noise threshold to apply to signal
     excit_wfm : (Optional) 1D array-like
-        Excitation waveform in the time domain. This waveform is necessary for plotting loops.
-    central_resp_size : (Optional) unsigned int
-        Number of response sample points from the center of the waveform to show in plots. Useful for SPORC
+        Excitation waveform in the time domain. This waveform is necessary for plotting loops. If the length of
+        resp_wfm matches excit_wfm, a single plot will be returned with the raw and filtered signals plotted against the
+        excit_wfm. Else, resp_wfm and the filtered (filt_data) signal will be broken into chunks matching the length of
+        excit_wfm and a figure with multiple plots (one for each chunk) with the raw and filtered signal chunks plotted
+        against excit_wfm will be returned for fig_loops
     show_plots : (Optional) Boolean
         Whether or not to plot FFTs before and after filtering
-    use_rainbow_plots : (Optional) Boolean
-        Whether or not to plot loops whose color varied as a function of time
+    plot_title : str / unicode (Optional)
+        Title for the raw vs filtered plots if requested. For example - 'Row 15'
     verbose : (Optional) Boolean
         Prints extra debugging information if True.  Default False
 
@@ -52,13 +56,26 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
     -------
     filt_data : 1D numpy float array
         Filtered signal in the time domain
-    fig : matplotlib.pyplot.figure object
+    fig_fft : matplotlib.pyplot.figure object
         handle to the plotted figure if requested, else None
-    axes : 1D list of matplotlib.pyplot axis objects
-        handles to the axes in the plotted figure if requested, else None
+    fig_loops : matplotlib.pyplot.figure object
+        handle to figure with the filtered signal and raw signal plotted against the excitation waveform
     """
+    if not isinstance(resp_wfm, (np.ndarray, list)):
+        raise TypeError('resp_wfm should be array-like')
+    resp_wfm = np.array(resp_wfm)
 
-    show_loops = excit_wfm is not None and show_plots
+    show_loops = False
+    if excit_wfm is not None and show_plots:
+        if len(resp_wfm) % len(excit_wfm) == 0:
+            show_loops = True
+        else:
+            raise ValueError('Length of resp_wfm should be divisibe by length of excit_wfm')
+    if show_loops:
+        if plot_title is None:
+            plot_title = 'FFT Filtering'
+        else:
+            assert isinstance(plot_title, (str, unicode))
 
     if frequency_filters is None and noise_threshold is None:
         raise ValueError('Need to specify at least some noise thresholding / frequency filter')
@@ -87,51 +104,28 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         if verbose:
             print('The noise_floor is', noise_floor)
 
-
+    fig_fft = None
     if show_plots:
-        l_ind = int(0.5 * num_pts)
+        w_vec = np.linspace(-0.5 * samp_rate, 0.5 * samp_rate, num_pts) * 1E-3
+
+        fig_fft, [ax_raw, ax_filt] = plt.subplots(figsize=(12, 8), nrows=2)
+        axes_fft = [ax_raw, ax_filt]
+        set_tick_font_size(axes_fft, 14)
+
+        r_ind = num_pts
         if isinstance(composite_filter, np.ndarray):
             r_ind = np.max(np.where(composite_filter > 0)[0])
-        else:
-            r_ind = num_pts
-        if verbose:
-            print('The left index is {} and the right index is {}.'.format(l_ind, r_ind))
 
-        w_vec = np.linspace(-0.5 * samp_rate, 0.5 * samp_rate, num_pts) * 1E-3
-        if central_resp_size:
-            sz = int(0.5 * central_resp_size)
-            l_resp_ind = -sz + l_ind
-            r_resp_ind = l_ind + sz
-        else:
-            l_resp_ind = l_ind
-            r_resp_ind = num_pts
-        if verbose:
-            print('The left response index is {} and the right response index is {}.'.format(l_resp_ind, r_resp_ind))
-
-        fig = plt.figure(figsize=(12, 8))
-        lhs_colspan = 2
-        if show_loops is False:
-            lhs_colspan = 4
-        else:
-            ax_loops = plt.subplot2grid((2, 4), (0, 2), colspan=2, rowspan=2)
-        ax_raw = plt.subplot2grid((2, 4), (0, 0), colspan=lhs_colspan)
-        ax_filt = plt.subplot2grid((2, 4), (1, 0), colspan=lhs_colspan)
-        axes = [ax_raw, ax_filt]
-        set_tick_font_size(axes, 14)
-    else:
-        fig = None
-        axes = None
-
-    if show_plots:
+        x_lims = slice(len(w_vec) // 2, r_ind)
         amp = np.abs(fft_pix_data)
-        ax_raw.semilogy(w_vec[l_ind:r_ind], amp[l_ind:r_ind], label='Raw')
+        ax_raw.semilogy(w_vec[x_lims], amp[x_lims], label='Raw')
         if frequency_filters is not None:
-            ax_raw.semilogy(w_vec[l_ind:r_ind],
-                            (composite_filter[l_ind:r_ind] + np.min(amp)) * (np.max(amp) - np.min(amp)),
+            ax_raw.semilogy(w_vec[x_lims], (composite_filter[x_lims] + np.min(amp)) * (np.max(amp) - np.min(amp)),
                             linewidth=3, color='orange', label='Composite Filter')
         if noise_threshold is not None:
-            ax_raw.semilogy(w_vec[l_ind:r_ind], np.ones(r_ind - l_ind) * noise_floor,
-                            linewidth=2, color='r', label='Noise Threshold')
+            ax_raw.axhline(noise_floor,
+                           # ax_raw.semilogy(w_vec, np.ones(r_ind - l_ind) * noise_floor,
+                           linewidth=2, color='r', label='Noise Threshold')
         ax_raw.legend(loc='best', fontsize=14)
         ax_raw.set_title('Raw Signal', fontsize=16)
         ax_raw.set_ylabel('Magnitude (a. u.)', fontsize=14)
@@ -142,12 +136,13 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         fft_pix_data[np.abs(fft_pix_data) < noise_floor] = 1E-16  # DON'T use 0 here. ipython kernel dies
 
     if show_plots:
-        ax_filt.semilogy(w_vec[l_ind:r_ind], np.abs(fft_pix_data[l_ind:r_ind]))
+        ax_filt.semilogy(w_vec[x_lims], np.abs(fft_pix_data)[x_lims])
         ax_filt.set_title('Filtered Signal', fontsize=16)
         ax_filt.set_xlabel('Frequency(kHz)', fontsize=14)
         ax_filt.set_ylabel('Magnitude (a. u.)', fontsize=14)
         if noise_threshold is not None:
             ax_filt.set_ylim(bottom=noise_floor)  # prevents the noise threshold from messing up plots
+        fig_fft.tight_layout()
 
     filt_data = np.real(np.fft.ifft(np.fft.ifftshift(fft_pix_data)))
 
@@ -155,18 +150,31 @@ def test_filter(resp_wfm, frequency_filters=None, noise_threshold=None,
         print('The shape of the filtered data is {}'.format(filt_data.shape))
         print('The shape of the excitation waveform is {}'.format(excit_wfm.shape))
 
+    fig_loops = None
     if show_loops:
-        if use_rainbow_plots:
-            rainbow_plot(ax_loops, excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
+        if len(resp_wfm) == len(excit_wfm):
+            # single plot:
+            fig_loops, axis = plt.subplots(figsize=(5.5, 5))
+            axis.plot(excit_wfm, resp_wfm, 'r', label='Raw')
+            axis.plot(excit_wfm, filt_data, 'k', label='Filtered')
+            axis.legend(fontsize=14)
+            set_tick_font_size(axis, 14)
+            axis.set_xlabel('Excitation', fontsize=16)
+            axis.set_ylabel('Signal', fontsize=16)
+            axis.set_title(plot_title, fontsize=16)
+            fig_loops.tight_layout()
         else:
-            ax_loops.plot(excit_wfm[l_resp_ind:r_resp_ind], filt_data[l_resp_ind:r_resp_ind] * 1E+3)
-        ax_loops.set_title('AI vs AO', fontsize=16)
-        ax_loops.set_xlabel('Input Bias (V)', fontsize=14)
-        ax_loops.set_ylabel('Deflection (mV)', fontsize=14)
-        set_tick_font_size(ax_loops, 14)
-        axes.append(ax_loops)
-        fig.tight_layout()
-    return filt_data, fig, axes
+            # N loops:
+            raw_pixels = np.reshape(resp_wfm, (-1, len(excit_wfm)))
+            filt_pixels = np.reshape(filt_data, (-1, len(excit_wfm)))
+            print(raw_pixels.shape, filt_pixels.shape)
+
+            fig_loops, axes_loops = plot_curves(excit_wfm, [raw_pixels, filt_pixels], line_colors=['r', 'k'],
+                                                dataset_names=['Raw', 'Filtered'], x_label='Excitation',
+                                                y_label='Signal', subtitle_prefix='Col ', num_plots=16,
+                                                title=plot_title)
+
+    return filt_data, fig_fft, fig_loops
 
 
 ###############################################################################
@@ -200,6 +208,19 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
     instead of doing the inverse FFT on the complete data.
 
     """
+    if num_pts % 1 != 0:
+        raise ValueError('num_pts should be an integer')
+    if not isinstance(f_condensed_mat, (np.ndarray, list)):
+        raise TypeError('f_condensed_mat should be array-like')
+    if f_condensed_mat.dtype not in [np.complex, np.complex64, np.complex128]:
+        raise TypeError('f_condensed_mat should be a complex array')
+    if not isinstance(hot_inds, (np.ndarray, list)):
+        raise TypeError('hot_inds should be array-like')
+    hot_inds = np.array(hot_inds)
+    if hot_inds.ndim > 1:
+        raise ValueError('hot_inds should be a 1D array')
+
+    f_condensed_mat = np.array(f_condensed_mat)
     f_condensed_mat = np.atleast_2d(f_condensed_mat)
     hot_inds_mirror = np.flipud(num_pts - hot_inds)
     time_resp = np.zeros(shape=(f_condensed_mat.shape[0], num_pts), dtype=np.float32)
@@ -213,7 +234,7 @@ def decompress_response(f_condensed_mat, num_pts, hot_inds):
     return np.squeeze(time_resp)
 
 
-def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
+def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     """
     Breaks up the provided raw G-mode dataset into lines and pixels (from just lines)
 
@@ -231,44 +252,42 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=1):
     h5_resh : h5py.Dataset object
         Reference to the main dataset that contains the reshaped data
     """
+    if not check_if_main(h5_main):
+        raise TypeError('h5_main is not a Main dataset')
+    h5_main = PycroDataset(h5_main)
+    if pts_per_cycle % 1 != 0 or pts_per_cycle < 1:
+        raise TypeError('pts_per_cycle should be a positive integer')
+    if scan_step_x_m is not None:
+        if not isinstance(scan_step_x_m, Number):
+            raise TypeError('scan_step_x_m should be a real number')
+    else:
+        scan_step_x_m = 1
+
     if h5_main.shape[1] % pts_per_cycle != 0:
         warn('Error in reshaping the provided dataset to pixels. Check points per pixel')
         raise ValueError
 
     num_cols = int(h5_main.shape[1] / pts_per_cycle)
 
-    h5_spec_vals = getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0]
-    h5_pos_vals = getAuxData(h5_main, auxDataName=['Position_Values'])[0]
-    single_AO = h5_spec_vals[:, :pts_per_cycle]
+    # TODO: DO NOT assume simple 1 spectral dimension!
+    single_ao = np.squeeze(h5_main.h5_spec_vals[:, :pts_per_cycle])
 
-    ds_spec_inds, ds_spec_vals = build_ind_val_dsets([single_AO.size], is_spectral=True,
-                                                     labels=h5_spec_vals.attrs['labels'],
-                                                     units=h5_spec_vals.attrs['units'], verbose=False)
-    ds_spec_vals.data = np.atleast_2d(single_AO)  # The data generated above varies linearly. Override.
+    spec_dims = Dimension(get_attr(h5_main.h5_spec_vals, 'labels')[0],
+                          get_attr(h5_main.h5_spec_vals, 'units')[0], single_ao)
 
-    ds_pos_inds, ds_pos_vals = build_ind_val_dsets([num_cols, h5_main.shape[0]], is_spectral=False,
-                                                   steps=[scan_step_x_m, h5_pos_vals[1, 0]],
-                                                   labels=['X', 'Y'], units=['m', 'm'], verbose=False)
+    # TODO: DO NOT assume simple 1D in positions!
+    pos_dims = [Dimension('X', 'm', np.linspace(0, scan_step_x_m, num_cols)),
+                Dimension('Y', 'm', np.linspace(0, h5_main.h5_pos_vals[1, 0], h5_main.shape[0]))]
 
-    ds_reshaped_data = MicroDataset('Reshaped_Data', data=np.reshape(h5_main.value, (-1, pts_per_cycle)),
-                                    compression='gzip', chunking=(10, pts_per_cycle))
+    h5_group = create_results_group(h5_main, 'Reshape')
+    # TODO: Create empty datasets and then write for very large datasets
+    h5_resh = write_main_dataset(h5_group, (num_cols * h5_main.shape[0], pts_per_cycle), 'Reshaped_Data',
+                                 get_attr(h5_main, 'quantity')[0], get_attr(h5_main, 'units')[0], pos_dims, spec_dims,
+                                 chunks=(10, pts_per_cycle), dtype=h5_main.dtype, compression=h5_main.compression)
 
-    # write this to H5 as some form of filtered data.
-    resh_grp = MicroDataGroup(h5_main.name.split('/')[-1] + '-Reshape_', parent=h5_main.parent.name)
-    resh_grp.addChildren([ds_reshaped_data, ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals])
-
-    hdf = ioHDF5(h5_main.file)
+    # TODO: DON'T write in one shot assuming small datasets fit in memory!
     print('Starting to reshape G-mode line data. Please be patient')
-    h5_refs = hdf.writeData(resh_grp)
-
-    h5_resh = getH5DsetRefs(['Reshaped_Data'], h5_refs)[0]
-    # Link everything:
-    linkRefs(h5_resh,
-             getH5DsetRefs(['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values'],
-                           h5_refs))
-
-    # Copy the two attributes that are really important but ignored:
-    copy_main_attributes(h5_main, h5_resh)
+    h5_resh[()] = np.reshape(h5_main[()], (-1, pts_per_cycle))
 
     print('Finished reshaping G-mode line data to rows and columns')
 

@@ -3,11 +3,10 @@
 Spectral Unmixing
 =================================================================
 
-S. Somnath\ :sup:`1,2`,  R. K. Vasudevan\ :sup:`1,3`\
+Suhas Somnath, Rama K. Vasudevan, Stephen Jesse
 
-* :sup:`1` Institute for Functional Imaging of Materials
-* :sup:`2` Advanced Data and Workflows Group
-* :sup:`3` Center for Nanophase Materials Sciences
+* Institute for Functional Imaging of Materials
+* Center for Nanophase Materials Sciences
 
 Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
 
@@ -26,7 +25,7 @@ Software Prerequisites:
 
 """
 
-#Import packages
+# Import packages
 
 # Ensure that this code works on both python 2 and python 3
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -35,11 +34,9 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 
 # The package used for creating and manipulating HDF5 files:
-import h5py
 
 # Plotting and visualization:
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # for downloading files:
 import wget
@@ -50,11 +47,16 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import NMF
 
 # finally import pycroscopy:
-import pycroscopy as px
+import pycroscopy.viz.cluster_utils
 
-"""
-  
-"""
+try:
+    import pycroscopy as px
+except ImportError:
+    print('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
+
 
 #####################################################################################
 # The Data
@@ -68,15 +70,16 @@ import pycroscopy as px
 # Fortunately, all statistical analysis, machine learning, spectral unmixing algorithms, etc. only accept data that is
 # formatted in the same manner of [position x spectra] in a two dimensional matrix.
 #
-# We will begin by downloading the BE-PFM dataset from Github
-#
+# We will be using an data file available on our GitHub project page by default. You are encouraged
+# to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own data instead.
+# When using your own data, you can skip this cell and provide the path to your data using the variable - data_file_path
 
 data_file_path = 'temp_um.h5'
 # download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
-_ = wget.download(url, data_file_path, bar=None)
+data_file_path = wget.download(url, data_file_path, bar=None)
 
-hdf = px.ioHDF5(data_file_path)
+hdf = px.HDFwriter(data_file_path)
 h5_file = hdf.file
 
 print('Contents of data file:')
@@ -87,14 +90,14 @@ print('----------------------')
 h5_meas_grp = h5_file['Measurement_000']
 
 # Extracting some basic parameters:
-num_rows = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_rows')
-num_cols = px.hdf_utils.get_attr(h5_meas_grp,'grid_num_cols')
+num_rows = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
+num_cols = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
 
 # Getting a reference to the main dataset:
 h5_main = px.PycroDataset(h5_meas_grp['Channel_000/Raw_Data'])
 
 # Extracting the X axis - vector of frequencies
-h5_spec_vals = px.hdf_utils.getAuxData(h5_main,'Spectroscopic_Values')[-1]
+h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
 freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 print('Data currently of shape:', h5_main.shape)
@@ -150,7 +153,7 @@ h5_v = h5_svd_group['V']
 h5_s = h5_svd_group['S']
 
 # Since the two spatial dimensions (x, y) have been collapsed to one, we need to reshape the abundance maps:
-abun_maps = np.reshape(h5_u[:,:25], (num_rows, num_cols, -1))
+abun_maps = np.reshape(h5_u[:, :25], (num_rows, num_cols, -1))
 
 # Visualize the variance / statistical importance of each component:
 px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with number of components')
@@ -158,13 +161,13 @@ px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with
 # Visualize the eigenvectors:
 first_evecs = h5_v[:9, :]
 
-px.plot_utils.plot_loops(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
-px.plot_utils.plot_loops(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label,
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)',
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
 
 # Visualize the abundance maps:
-px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps',
+px.plot_utils.plot_map_stack(abun_maps, num_comps=9, title='SVD Abundance Maps',
                              color_bar_mode='single', cmap='inferno')
 
 #####################################################################################
@@ -181,12 +184,12 @@ px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps
 
 num_clusters = 4
 
-estimators = px.Cluster(h5_main, KMeans(n_clusters=num_clusters))
+estimators = px.processing.Cluster(h5_main, KMeans(n_clusters=num_clusters))
 h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
+pycroscopy.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)

@@ -15,15 +15,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from ...be_hdf_utils import getActiveUDVSsteps, maxReadPixels
-from ...hdf_utils import getAuxData, getDataSet, getH5DsetRefs, linkRefs, get_attr, create_spec_inds_from_vals
-from ...io_hdf5 import ioHDF5
-from ...io_utils import getAvailableMem, recommendCores, in_ipynb
-from ...microdata import MicroDataset, MicroDataGroup
+from ....core.io.hdf_utils import get_auxillary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
+    get_attr
+from ....core.io.write_utils import create_spec_inds_from_vals
+from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....analysis.optimize import Optimize
-from ....processing.proc_utils import buildHistogram
-from ....viz.plot_utils import plot_histgrams
-from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram
+from ....processing.histogram import build_histogram
+from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
+from ...hdf_writer import HDFwriter
+from ...virtual_data import VirtualDataset, VirtualGroup
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -232,7 +232,7 @@ def requires_conjugate(chosen_spectra, default_q=10):
     opt = Optimize(data=chosen_spectra)
 
     fitguess_results = opt.computeGuess(strategy='complex_gaussian',
-                                        processors=recommendCores(chosen_spectra.shape[0]),
+                                        processors=recommend_cpu_cores(chosen_spectra.shape[0]),
                                         options={'frequencies': np.arange(chosen_spectra.shape[1])})
 
     q_results = np.array(fitguess_results)[:, 2]
@@ -305,7 +305,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
     return spectrogram_mat
 
 
-def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
+def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
                        max_mem_mb=1024, spec_label='None', ignore_plot_groups=[],
                        show_plots=True, save_plots=True, do_histogram=False,
                        debug=False):
@@ -317,8 +317,6 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
     ----------
     h5_main : H5 reference
         to the main dataset
-    hdf : active ioHDF instance 
-        for writing to same H5 file
     mean_resp : 1D numpy array
         spatially averaged amplitude
     folder_path : String
@@ -346,6 +344,9 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         If True, then extra debug statements are printed.
         Default False
     """
+    # Too
+    assert isinstance(h5_main, h5py.Dataset)
+    hdf = HDFwriter(h5_main.file)
 
     grp = h5_main.parent
     h5_freq = grp['Bin_Frequencies']
@@ -401,27 +402,27 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
         num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
         pg_data = np.repeat(UDVS[ref], num_bins)
 
-        ds_mean_spec = MicroDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
-        ds_step_avg = MicroDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
+        ds_mean_spec = VirtualDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
+        ds_step_avg = VirtualDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
         # cannot assume that this is DC offset, could be AC amplitude....
-        ds_spec_parm = MicroDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
+        ds_spec_parm = VirtualDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
         ds_spec_parm.attrs = {'name': spec_label}
-        ds_freq = MicroDataset('Bin_Frequencies', freq_vec)
+        ds_freq = VirtualDataset('Bin_Frequencies', freq_vec)
 
-        plot_grp = MicroDataGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
+        plot_grp = VirtualGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
         plot_grp.attrs['Name'] = col_name
-        plot_grp.addChildren([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
+        plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
 
-        h5_plt_grp_refs = hdf.writeData(plot_grp, print_log=debug)
+        h5_plt_grp_refs = hdf.write(plot_grp, print_log=debug)
 
-        h5_mean_spec = getH5DsetRefs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
-        h5_step_avg = getH5DsetRefs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
-        h5_spec_parm = getH5DsetRefs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
-        h5_freq_vec = getH5DsetRefs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
+        h5_mean_spec = get_h5_obj_refs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
+        h5_step_avg = get_h5_obj_refs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
+        h5_spec_parm = get_h5_obj_refs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
+        h5_freq_vec = get_h5_obj_refs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
 
         # Linking the datasets with the frequency and the spectroscopic variable:
-        linkRefs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
-        linkRefs(h5_step_avg, [h5_freq_vec])
+        link_h5_objects_as_attrs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
+        link_h5_objects_as_attrs(h5_step_avg, [h5_freq_vec])
 
         """
         Create Region Reference for the plot group in the Raw_Data, Spectroscopic_Indices 
@@ -446,32 +447,32 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             hist_mat, hist_labels, hist_indices, hist_indices_labels = \
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
                                         min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
-            ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
-                                   chunking=(1, hist_mat.shape[1]), compression='gzip')
+            ds_hist = VirtualDataset('Histograms', hist_mat, dtype=np.int32,
+                                     chunking=(1, hist_mat.shape[1]), compression='gzip')
             hist_slice_dict = dict()
             for hist_ind, hist_dim in enumerate(hist_labels):
                 hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
             ds_hist.attrs['labels'] = hist_slice_dict
             ds_hist.attrs['units'] = ['V', '', 'V', 'V']
-            ds_hist_indices = MicroDataset('Indices', hist_indices, dtype=np.uint)
-            ds_hist_values = MicroDataset('Values', hist_indices, dtype=np.float32)
+            ds_hist_indices = VirtualDataset('Indices', hist_indices, dtype=np.uint)
+            ds_hist_values = VirtualDataset('Values', hist_indices, dtype=np.float32)
             hist_ind_dict = dict()
             for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
                 hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
             ds_hist_indices.attrs['labels'] = hist_ind_dict
             ds_hist_values.attrs['labels'] = hist_ind_dict
 
-            hist_grp = MicroDataGroup('Histogram', h5_mean_spec.parent.name[1:])
+            hist_grp = VirtualGroup('Histogram', h5_mean_spec.parent.name[1:])
 
-            hist_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_values])
+            hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
 
-            h5_hist_grp_refs = hdf.writeData(hist_grp)
+            h5_hist_grp_refs = hdf.write(hist_grp)
 
-            h5_hist = getH5DsetRefs(['Histograms'], h5_hist_grp_refs)[0]
-            h5_hist_inds = getH5DsetRefs(['Indices'], h5_hist_grp_refs)[0]
-            h5_hist_vals = getH5DsetRefs(['Values'], h5_hist_grp_refs)[0]
+            h5_hist = get_h5_obj_refs(['Histograms'], h5_hist_grp_refs)[0]
+            h5_hist_inds = get_h5_obj_refs(['Indices'], h5_hist_grp_refs)[0]
+            h5_hist_vals = get_h5_obj_refs(['Values'], h5_hist_grp_refs)[0]
 
-            linkRefs(h5_hist, getH5DsetRefs(['Indices', 'Values'], h5_hist_grp_refs))
+            link_h5_objects_as_attrs(h5_hist, get_h5_obj_refs(['Indices', 'Values'], h5_hist_grp_refs))
 
             h5_hist.attrs['Spectroscopic_Indices'] = h5_hist_inds.ref
             h5_hist.attrs['Spectroscopic_Values'] = h5_hist_vals.ref
@@ -480,24 +481,30 @@ def generatePlotGroups(h5_main, hdf, mean_resp, folder_path, basename, max_resp=
             """
             Write the min and max response vectors so that histograms can be generated later.
             """
-            ds_max_resp = MicroDataset('Max_Response', max_resp)
-            ds_min_resp = MicroDataset('Min_Response', min_resp)
-            plot_grp.addChildren([ds_max_resp, ds_min_resp])
+            ds_max_resp = VirtualDataset('Max_Response', max_resp)
+            ds_min_resp = VirtualDataset('Min_Response', min_resp)
+            plot_grp.add_children([ds_max_resp, ds_min_resp])
 
         if save_plots or show_plots:
             fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
-            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
-            fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
+            path_1d = None
+            path_2d = None
+            path_hist = None
 
+            fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
             if save_plots:
                 path_1d = path.join(folder_path, basename + '_Step_Avg_' + fig_title + '.png')
                 path_2d = path.join(folder_path, basename + '_Mean_Spec_' + fig_title + '.png')
                 path_hist = path.join(folder_path, basename + '_Histograms_' + fig_title + '.png')
+
                 fig_1d.savefig(path_1d, format='png', dpi=300)
-                fig_2d.savefig(path_2d, format='png', dpi=300)
+            if mean_spec.shape[0] > 1:
+                fig_2d, axes_2d = plot_2d_spectrogram(mean_spec, freq_vec, title=fig_title)
+                if save_plots:
+                    fig_2d.savefig(path_2d, format='png', dpi=300)
 
             if do_histogram:
-                plot_histgrams(hist_mat, hist_indices, grp.name, figure_path=path_hist)
+                plot_histograms(hist_mat, hist_indices, grp.name, figure_path=path_hist)
 
             if show_plots:
                 plt.show()
@@ -571,7 +578,7 @@ def visualize_plot_groups(h5_filepath):
                     try:
                         hist_data = plt_grp['Histograms']
                         hist_bins = plt_grp['Histograms_Indicies']
-                        plot_histgrams(hist_data, hist_bins, plt_grp.attrs['Name'])
+                        plot_histograms(hist_data, hist_bins, plt_grp.attrs['Name'])
                     except:
                         pass
 
@@ -1226,16 +1233,16 @@ class BEHistogram:
         -------
         None
         """
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
         h5_file = hdf.file
 
         print('Adding Histograms to file {}'.format(h5_file.name))
         print('Path to HDF5 file is {}'.format(hdf.path))
 
-        max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * getAvailableMem())
+        max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * get_available_memory())
 
-        h5_main = getDataSet(h5_file, 'Raw_Data')
-        h5_udvs = getDataSet(h5_file, 'UDVS')
+        h5_main = find_dataset(h5_file, 'Raw_Data')
+        h5_udvs = find_dataset(h5_file, 'UDVS')
 
         m_groups = [data.parent for data in h5_main]
         print('{} Measurement groups found.'.format(len(m_groups)))
@@ -1244,15 +1251,15 @@ class BEHistogram:
 
             p_groups = []
 
-            mspecs = getDataSet(group, 'Mean_Spectrogram')
+            mspecs = find_dataset(group, 'Mean_Spectrogram')
             p_groups.extend([mspec.parent for mspec in mspecs])
 
             print('{} Plot groups in {}'.format(len(p_groups), group.name))
 
             for ip, p_group in enumerate(p_groups):
                 try:
-                    max_resp = getDataSet(group, 'Max_Response')
-                    min_resp = getDataSet(group, 'Min_Response')
+                    max_resp = find_dataset(group, 'Max_Response')
+                    min_resp = find_dataset(group, 'Min_Response')
                 except:
                     warn('Maximum and Minimum Response vectors not found for {}.'.format(p_group.name))
                     max_resp = []
@@ -1266,7 +1273,7 @@ class BEHistogram:
                 """
                 Add the BEHistogram for the current plot group
                 """
-                plot_grp = MicroDataGroup(p_group.name.split('/')[-1], group.name[1:])
+                plot_grp = VirtualGroup(p_group.name.split('/')[-1], group.name[1:])
                 plot_grp.attrs['Name'] = udvs_lab
                 hist = BEHistogram()
                 hist_mat, hist_labels, hist_indices, hist_indices_labels = \
@@ -1276,27 +1283,27 @@ class BEHistogram:
                                             min_response=min_resp,
                                             max_mem_mb=max_mem)
 
-                ds_hist = MicroDataset('Histograms', hist_mat, dtype=np.int32,
-                                       chunking=(1, hist_mat.shape[1]), compression='gzip')
+                ds_hist = VirtualDataset('Histograms', hist_mat, dtype=np.int32,
+                                         chunking=(1, hist_mat.shape[1]), compression='gzip')
 
                 hist_slice_dict = dict()
                 for hist_ind, hist_dim in enumerate(hist_labels):
                     hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
                 ds_hist.attrs['labels'] = hist_slice_dict
-                ds_hist_indices = MicroDataset('Histograms_Indices', hist_indices, dtype=np.int32)
+                ds_hist_indices = VirtualDataset('Histograms_Indices', hist_indices, dtype=np.int32)
                 hist_ind_dict = dict()
                 for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
                     hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
                 ds_hist_indices.attrs['labels'] = hist_ind_dict
-                ds_hist_labels = MicroDataset('Histograms_Labels', np.array(hist_labels))
-                plot_grp.addChildren([ds_hist, ds_hist_indices, ds_hist_labels])
-                hdf.writeData(plot_grp)
+                ds_hist_labels = VirtualDataset('Histograms_Labels', np.array(hist_labels))
+                plot_grp.add_children([ds_hist, ds_hist_indices, ds_hist_labels])
+                hdf.write(plot_grp)
 
                 if show_plot or save_plot:
                     if save_plot:
                         basename, junk = path.splitext(h5_path)
                         plotfile = '{}_MG{}_PG{}_Histograms.png'.format(basename, im, ip)
-                    plot_histgrams(hist_mat, hist_indices, p_group, plotfile)
+                    plot_histograms(hist_mat, hist_indices, p_group, plotfile)
                     if show_plot:
                         plt.show()
 
@@ -1320,7 +1327,7 @@ class BEHistogram:
 
         """
 
-        free_mem = getAvailableMem()
+        free_mem = get_available_memory()
         if debug:
             print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb * 1024 ** 2, 0.75 * free_mem)
@@ -1345,13 +1352,13 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+        spec_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
         self.N_spectral_steps = np.shape(spec_ind_mat)[0]
 
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Frequencies'])[0]
         x_hist = np.array(spec_ind_mat)
 
         self.N_bins = np.size(freqs_mat)
@@ -1410,7 +1417,7 @@ class BEHistogram:
             labels for the hist_indices array
 
         """
-        free_mem = getAvailableMem()
+        free_mem = get_available_memory()
         if debug:
             print('We have {} bytes of memory available'.format(free_mem))
         self.max_mem = min(max_mem_mb, 0.75 * free_mem)
@@ -1430,8 +1437,8 @@ class BEHistogram:
         """
         Load auxilary datasets and extract needed parameters
         """
-        step_ind_mat = getAuxData(h5_main, auxDataName=['UDVS_Indices'])[0].value
-        spec_ind_mat = getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0].value
+        step_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['UDVS_Indices'])[0].value
+        spec_ind_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0].value
         self.N_spectral_steps = np.size(step_ind_mat)
 
         active_udvs_steps = np.unique(step_ind_mat[active_spec_steps])
@@ -1440,7 +1447,7 @@ class BEHistogram:
         """
         Set up frequency axis of histogram, same for all histograms in a single dataset
         """
-        freqs_mat = getAuxData(h5_main, auxDataName=['Bin_Frequencies'])[0]
+        freqs_mat = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Frequencies'])[0]
         x_hist = np.array([spec_ind_mat[0], step_ind_mat], dtype=np.int32)
 
         self.N_bins = np.size(freqs_mat)
@@ -1603,15 +1610,15 @@ class BEHistogram:
         Get the Histograms and store in correct place in ds_hist
                 """
                 for ifunc, func in enumerate(func_list):
-                    chunk_hist = buildHistogram(this_x_hist,
-                                                data_mat,
-                                                N_x_bins,
-                                                self.N_y_bins,
-                                                weighting_vec,
-                                                min_list[ifunc],
-                                                max_list[ifunc],
-                                                func,
-                                                debug)
+                    chunk_hist = build_histogram(this_x_hist,
+                                                 data_mat,
+                                                 N_x_bins,
+                                                 self.N_y_bins,
+                                                 weighting_vec,
+                                                 min_list[ifunc],
+                                                 max_list[ifunc],
+                                                 func,
+                                                 debug)
                     if debug:
                         print('chunkhist-{}'.format(func.__name__), np.shape(chunk_hist))
                         print(chunk_hist.dtype)
@@ -1624,3 +1631,286 @@ class BEHistogram:
                         ds_hist[ifunc, ids_freq, :] = np.add(ds_hist[ifunc, ids_freq, :], chunk_hist[i, :])
 
         return ds_hist
+
+
+def maxReadPixels(max_memory, tot_pix, bins_per_step, bytes_per_bin=4):
+    """
+    Calculates the maximum number of pixels that can be loaded into the
+    specified memory size. This is particularly useful when applying a
+    (typically parallel) operation / processing on each pixel.
+    Example - Fitting response to a model.
+
+    Parameters
+    -------------
+    max_memory : unsigned int
+        Maximum memory (in bytes) that can be used.
+        For example 4 GB would be = 4*((2**10)**3) bytes
+    tot_pix : unsigned int
+        Total number of pixels in dataset
+    bins_per_step : unsigned int
+        Number of bins that will be read (can be portion of each pixel)
+    bytes_per_bin : (Optional) unsigned int
+        size of each bin - set to 4 bytes
+
+    Returns
+    -------
+    max_pix : unsigned int
+        Maximum number of pixels that will be loaded
+    """
+    # alternatively try .nbytes
+    bytes_per_step = bins_per_step * bytes_per_bin
+    max_pix = np.rint(max_memory / bytes_per_step)
+    # print('Allowed to read {} of {} pixels'.format(max_pix,tot_pix))
+    max_pix = max(1, min(tot_pix, max_pix))
+    return np.uint(max_pix)
+
+
+def getActiveUDVSsteps(h5_raw):
+    """
+    Returns all the active UDVS steps in the data
+
+    Parameters
+    ----------
+    h5_raw : HDF5 dataset reference
+        Reference to the raw data
+
+    Returns
+    -----------
+    steps : 1D numpy array
+        Active UDVS steps
+    """
+    udvs_step_vec = get_auxillary_datasets(h5_raw, aux_dset_name=['UDVS_Indices'])[0].value
+    return np.unique(udvs_step_vec)
+
+
+def getSliceForExcWfm(h5_bin_wfm, excit_wfm):
+    """
+    Returns the indices that correspond to the given excitation waveform
+    that can be used to slice the bin datasets
+    * Developer note - Replace the first parameter with the Raw_Data dataset
+
+    Parameters
+    ----------------
+    h5_bin_wfm : Reference to HDF5 dataset
+        Bin Waveform Indices
+    excit_wfm : integer
+        excitation waveform / wave type
+
+    Returns
+    --------------
+    slc : slice object
+        Slice with the start and end indices
+    """
+    temp = np.where(h5_bin_wfm.value == excit_wfm)[0]
+    return slice(temp[0], temp[-1] + 1)  # Need to add one additional index otherwise, the last index will be lost
+
+
+def getDataIndicesForUDVSstep(h5_udvs_inds, udvs_step_index):
+    """
+    Returns the spectroscopic indices that correspond to the given udvs_step_index
+    that can be used to slice the main data matrix.
+    * Developer note - Replace the first parameter with the Raw_Data dataset
+
+    Parameters
+    -------------
+    h5_udvs_inds : Reference to HDF5 dataset
+        UDVS_Indices dataset
+    udvs_step_index : usigned int
+        UDVS step index (base 0)
+
+    Returns
+    --------------
+    ans : 1D numpy array
+        Spectroscopic indices
+    """
+    spec_ind_udvs_step_col = h5_udvs_inds[h5_udvs_inds.attrs.get('UDVS_Step')]
+    return np.where(spec_ind_udvs_step_col == udvs_step_index)[0]
+
+
+def getSpecSliceForUDVSstep(h5_udvs_inds, udvs_step_index):
+    """
+    Returns the spectroscopic indices that correspond to the given udvs_step_index
+    that can be used to slice the main data matrix
+    * Developer note - Replace the first parameter with the Raw_Data dataset
+
+    Parameters
+    -------------
+    h5_udvs_inds : Reference to HDF5 dataset
+        UDVS_Indices dataset
+    udvs_step_index : unsigned int
+        UDVS step index (base 0)
+
+    Returns
+    ----------
+    slc : slice object
+        Object containing the start and end indices
+    """
+    temp = np.where(h5_udvs_inds.value == udvs_step_index)[0]
+    return slice(temp[0], temp[-1] + 1)  # Need to add one additional index otherwise, the last index will be lost
+
+
+def getForExcitWfm(h5_main, h5_other, wave_type):
+    """
+    Slices the provided H5 dataset by the provided wave type.
+    Note that this is applicable to only certain H5 datasets such as the bin frequences, bin FFT etc.
+
+    Parameters
+    ----------
+    h5_main : Reference to HDF5 dataset
+        Raw_Data dataset
+    h5_other :Reference to HDF5 dataset
+        The dataset that needs to be sliced such as bin frequencies
+    wave_type : unsigned int
+        Excitation waveform type
+
+    Returns
+    ---------
+    freq_vec : 1D numpy array
+        data specific to specified excitation waveform
+    """
+    h5_bin_wfm_type = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Wfm_Type'])[0]
+    inds = np.where(h5_bin_wfm_type.value == wave_type)[0]
+    return h5_other[slice(inds[0], inds[-1] + 1)]
+
+
+def getIndicesforPlotGroup(h5_udvs_inds, ds_udvs, plt_grp_name):
+    """
+    For a provided plot group name in the udvs table, this function
+    returns the corresponding spectroscopic indices that can be used to index / slice the main data set
+    and the data within the udvs table for the requested plot group
+    * Developer note - Replace the first parameter with the Raw_Data dataset
+
+    Parameters
+    ------------
+    h5_udvs_inds : Reference to HDF5 dataset
+        containing the UDVS indices
+    ds_udvs : Reference to HDF5 dataset
+        containing the UDVS table
+    plt_grp_name : string
+        name of the plot group in the UDVS table
+
+    Returns
+    -----------
+    step_bin_indices : 2D numpy array
+        Indices arranged as [step, bin] in the spectroscopic_indices table
+        This is useful for knowing the number of bins and steps in this plot group.
+        We are allowed to assume that the number of bins does NOT change within the plot group
+    oneD_indices : 1D numpy array
+        spectroscopic indices corresponding to the requested plot group
+    udvs_plt_grp_col : 1D numpy array
+        data contained within the udvs table for the requested plot group
+    """
+
+    # working on the UDVS table first:
+    # getting the numpy array corresponding the requested plot group
+    udvs_col_data = np.squeeze(ds_udvs[ds_udvs.attrs.get(plt_grp_name)])
+    # All UDVS steps that are NOT part of the plot grop are empty cells in the table
+    # and hence assume a nan value.
+    # getting the udvs step indices that belong to this plot group:
+    step_inds = np.where(np.isnan(udvs_col_data) is False)[0]
+    # Getting the values in that plot group that were non NAN
+    udvs_plt_grp_col = udvs_col_data[step_inds]
+
+    # ---------------------------------
+
+    # Now we use the udvs step indices calculated above to get
+    # the indices in the spectroscopic indices table
+    spec_ind_udvs_step_col = h5_udvs_inds[h5_udvs_inds.attrs.get('UDVS_Step')]
+    num_bins = len(np.where(spec_ind_udvs_step_col == step_inds[0])[0])
+    # Stepehen says that we can assume that the number of bins will NOT change in a plot group
+    step_bin_indices = np.zeros(shape=(len(step_inds), num_bins), dtype=int)
+
+    for indx, step in enumerate(step_inds):
+        step_bin_indices[indx, :] = np.where(spec_ind_udvs_step_col == step)[0]
+
+    oneD_indices = step_bin_indices.reshape((step_bin_indices.shape[0] * step_bin_indices.shape[1]))
+    return step_bin_indices, oneD_indices, udvs_plt_grp_col
+
+
+def generateTestSpectroscopicData(num_bins=7, num_steps=3, num_pos=4):
+    """
+    Generates a (preferably small) test data set using the given parameters.
+    Data is filled with indices (with base 1 for simplicity).
+    Use this for testing reshape operations etc.
+
+    Parameters
+    ----------
+    num_bins : unsigned int (Optional. Default = 7)
+        Number of bins
+    num_steps : unsigned int (Optional. Default = 3)
+        Number of spectroscopic steps
+    num_pos : unsigned int (Optional. Default = 4)
+        Number of fictional positions
+
+    Returns
+    --------------
+    full_data : 2D numpy array
+        Data organized as [steps x bins, positions]
+    """
+    full_data = np.zeros((num_steps * num_bins, num_pos))
+    for pos in range(num_pos):
+        bin_count = 0
+        for step in range(num_steps):
+            for bind in range(num_bins):
+                full_data[bin_count, pos] = (pos + 1) * 100 + (step + 1) * 10 + (bind + 1)
+                bin_count += 1
+    return full_data
+
+
+def isSimpleDataset(h5_main, isBEPS=True):
+    """
+    This function figures out if a single number defines the bins for all UDVS steps
+    In such cases (udvs_steps x bins, pos) can be reshaped to (bins, positions x steps)
+    for (theoretically) faster computation, especially for large datasets
+
+    Actually, things are a lot simpler. Only need to check if number of bins for all excitation waveforms are equal
+
+    Parameters
+    -------------
+    h5_main : Reference to HDF5 dataset
+        Raw_Data dataset
+    isBEPS : Boolean (default = True)
+        Whether or not this dataset is BEPS
+
+    Returns
+    ----------
+    data_type : Boolean
+        Whether or not this dataset can be unraveled / flattened
+    """
+
+    if isBEPS:
+        beps_modes = ['DC modulation mode', 'AC modulation mode with time reversal', 'current mode', 'Relaxation']
+        if h5_main.parent.parent.attrs['VS_mode'] in beps_modes:
+            # I am pretty sure that AC modulation also is simple
+            return True
+        else:
+            # Could be user defined or some other kind I am not aware of
+            # In many cases, some of these datasets could also potentially be simple datasets
+            ds_udvs = get_auxillary_datasets(h5_main, aux_dset_name=['UDVS'])[0]
+            excit_wfms = ds_udvs[ds_udvs.attrs.get('wave_mod')]
+            wfm_types = np.unique(excit_wfms)
+            if len(wfm_types) == 1:
+                # BEPS with single excitation waveform
+                print('Single BEPS excitation waveform')
+                return True
+            else:
+                # Multiple waveform types here
+                harm_types = np.unique(np.abs(wfm_types))
+                if len(harm_types) != 1:
+                    # eg - excitaiton waveforms 1, 2, 3 NOT -1, +1
+                    return False
+                # In this case a single excitation waveform with forward and reverse was used.
+                h5_bin_wfm_type = get_auxillary_datasets(h5_main, aux_dset_name=['Bin_Wfm_Type'])[0]
+                # Now for each wfm type, count number of bins.
+                wfm_bin_count = []
+                for wfm in wfm_types:
+                    wfm_bin_count.append(np.where(h5_bin_wfm_type.value == wfm)[0])
+                wfm_lengths = np.unique(np.array(wfm_bin_count))
+                if len(wfm_lengths) == 1:
+                    # BEPS with multiple excitation waveforms but each excitation waveform has same number of bins
+                    print('All BEPS excitation waves have same number of bins')
+                    return True
+            return False
+    else:
+        # BE-Line
+        return True

@@ -10,9 +10,9 @@ from warnings import warn
 import h5py
 import os
 import numpy as np
-from .translator import Translator
-from ..hdf_utils import get_attr, link_as_main, checkAndLinkAncillary, findH5group, findDataset, \
-    create_spec_inds_from_vals
+from ...core.io.translator import Translator
+from ...core.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
+from pycroscopy.core.io.write_utils import create_spec_inds_from_vals
 
 
 class LabViewH5Patcher(Translator):
@@ -60,8 +60,8 @@ class LabViewH5Patcher(Translator):
         Get the list of all Raw_Data Datasets
         Loop over the list and update the needed attributes
         '''
-        raw_list = findDataset(h5_file, 'Raw_Data')
-        for _, h5_raw in raw_list:
+        raw_list = find_dataset(h5_file, 'Raw_Data')
+        for h5_raw in raw_list:
             # Grab the channel and measurement group of the data to check some needed attributes
             h5_chan = h5_raw.parent
             try:
@@ -127,13 +127,13 @@ class LabViewH5Patcher(Translator):
             h5_freqs = h5_chan['Bin_Frequencies']
             aux_dset_names = ['Bin_Frequencies']
             aux_dset_refs = [h5_freqs.ref]
-            checkAndLinkAncillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
+            check_and_link_ancillary(h5_raw, aux_dset_names, anc_refs=aux_dset_refs)
 
             '''
             Get all SHO_Fit groups for the Raw_Data and loop over them
             Get the Guess and Spectroscopic Datasets for each SHO_Fit group
             '''
-            sho_list = findH5group(h5_raw, 'SHO_Fit')
+            sho_list = find_results_groups(h5_raw, 'SHO_Fit')
             for h5_sho in sho_list:
                 h5_sho_guess = h5_sho['Guess']
                 h5_sho_spec_inds = h5_sho['Spectroscopic_Indices']

@@ -9,17 +9,16 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 from os import path, listdir, remove
 from warnings import warn
-
+import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
-from .translator import Translator
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
+from ...core.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
+    create_indexed_group, write_simple_attrs, write_book_keeping_attrs
 
 
 class BEodfTranslator(Translator):
@@ -30,7 +29,6 @@ class BEodfTranslator(Translator):
 
     def __init__(self, *args, **kwargs):
         super(BEodfTranslator, self).__init__(*args, **kwargs)
-        self.hdf = None
         self.h5_raw = None
         self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
         self.FFT_BE_wave = None
@@ -60,6 +58,7 @@ class BEodfTranslator(Translator):
         h5_path : String / Unicode
             Absolute path of the resultant .h5 file
         """
+        file_path = path.abspath(file_path)
         (folder_path, basename) = path.split(file_path)
         (basename, path_dict) = self._parse_file_path(file_path)
 
@@ -156,12 +155,7 @@ class BEodfTranslator(Translator):
         bin_FFT = np.complex64(bin_FFT)
         ex_wfm = np.float32(ex_wfm)
 
-        ds_ex_wfm = MicroDataset('Excitation_Waveform', ex_wfm)
-
         self.FFT_BE_wave = bin_FFT
-
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_cols, num_rows], is_spectral=False,
-                                                     labels=['X', 'Y'], units=['m', 'm'], verbose=verbose)
 
         if isBEPS:
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
@@ -169,7 +163,7 @@ class BEodfTranslator(Translator):
             #             Remove the unused plot group columns before proceeding:
             (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
-            spec_inds = np.zeros(shape=(2, tot_bins), dtype=np.uint)
+            old_spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
 
             #             Will assume that all excitation waveforms have same number of bins
             num_actual_udvs_steps = UDVS_mat.shape[0] / udvs_denom
@@ -188,9 +182,9 @@ class BEodfTranslator(Translator):
                 if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
                     continue
                 # Bin step
-                spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=np.uint32)
+                old_spec_inds[0, stind:stind + bins_per_step] = np.arange(bins_per_step, dtype=INDICES_DTYPE)
                 # UDVS step
-                spec_inds[1, stind:stind + bins_per_step] = step_index * np.ones(bins_per_step, dtype=np.uint32)
+                old_spec_inds[1, stind:stind + bins_per_step] = step_index * np.ones(bins_per_step, dtype=INDICES_DTYPE)
                 stind += bins_per_step
             del stind, step_index
 
@@ -204,7 +198,7 @@ class BEodfTranslator(Translator):
             UDVS_mat = np.array([1, 0, parm_dict['BE_amplitude_[V]'], 1, 1, 1],
                                 dtype=np.float32).reshape(1, len(UDVS_labs))
 
-            spec_inds = np.vstack((np.arange(tot_bins, dtype=np.uint), np.zeros(tot_bins, dtype=np.uint32)))
+            old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE), np.zeros(tot_bins, dtype=INDICES_DTYPE)))
 
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
@@ -214,14 +208,6 @@ class BEodfTranslator(Translator):
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
             udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind + 1))
-        ds_UDVS = MicroDataset('UDVS', UDVS_mat)
-        ds_UDVS.attrs['labels'] = udvs_slices
-        ds_UDVS.attrs['units'] = UDVS_units
-        #         ds_udvs_labs = MicroDataset('UDVS_Labels',np.array(UDVS_labs))
-        ds_UDVS_inds = MicroDataset('UDVS_Indices', spec_inds[1])
-
-        #         ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
-        ds_bin_steps = MicroDataset('Bin_Step', np.arange(bins_per_step, dtype=np.uint32), dtype=np.uint32)
 
         # Need to add the Bin Waveform type - infer from UDVS        
         exec_bin_vec = self.signal_type * np.ones(len(bin_inds), dtype=np.int32)
@@ -234,19 +220,19 @@ class BEodfTranslator(Translator):
             # This is wrong but I don't know what else to do
             bin_FFT = np.hstack((bin_FFT, bin_FFT))
 
-        ds_bin_inds = MicroDataset('Bin_Indices', bin_inds, dtype=np.uint32)
-        ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
-        ds_bin_FFT = MicroDataset('Bin_FFT', bin_FFT)
-        ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
-
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
+        # This is an old and legacy way of doing things. Ideally, all we would need ot do is just get the unit values
         spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat,
-                                                                                                     spec_inds,
+                                                                                                     old_spec_inds,
                                                                                                      bin_freqs,
                                                                                                      exec_bin_vec,
                                                                                                      parm_dict,
                                                                                                      UDVS_labs,
                                                                                                      UDVS_units)
+        # Not sure what is happening here but this should work.
+        spec_dim_dict = dict()
+        for entry in spec_vals_labs_names:
+            spec_dim_dict[entry[0] + '_parameters'] = entry[1]
 
         spec_vals_slices = dict()
         #         if len(spec_vals_labs) == 1:
@@ -256,51 +242,13 @@ class BEodfTranslator(Translator):
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
 
-        ds_spec_mat = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
-        ds_spec_mat.attrs['labels'] = spec_vals_slices
-        ds_spec_mat.attrs['units'] = spec_vals_units
-        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
-        ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
-        ds_spec_vals_mat.attrs['units'] = spec_vals_units
-        for entry in spec_vals_labs_names:
-            label = entry[0] + '_parameters'
-            names = entry[1]
-            ds_spec_mat.attrs[label] = names
-            ds_spec_vals_mat.attrs[label] = names
+        if path.exists(h5_path):
+            remove(h5_path)
 
-        # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        ds_noise_floor = MicroDataset('Noise_Floor', np.zeros(shape=(num_pix, num_actual_udvs_steps), dtype=nf32),
-                                      chunking=(1, num_actual_udvs_steps))
+        # First create the file
+        h5_f = h5py.File(h5_path)
 
-        """
-        New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
-        of UDVS steps by pixels.  N is determined dynamically based on the dimensions of the
-        dataset.  Currently it is set such that individual chunks are less than 10kB in size.
-        
-        Chris Smith -- csmith55@utk.edu
-        """
-        BEPS_chunks = calc_chunks([num_pix, tot_bins],
-                                  np.complex64(0).itemsize,
-                                  unit_chunks=(1, bins_per_step))
-        ds_main_data = MicroDataset('Raw_Data', data=[],
-                                    maxshape=(num_pix, tot_bins),
-                                    dtype=np.complex64,
-                                    chunking=BEPS_chunks,
-                                    compression='gzip')
-
-        chan_grp = MicroDataGroup('Channel_')
-        chan_grp.attrs['Channel_Input'] = parm_dict['IO_Analog_Input_1']
-        chan_grp.addChildren([ds_main_data, ds_noise_floor])
-        chan_grp.addChildren([ds_ex_wfm, ds_pos_ind, ds_pos_val, ds_spec_mat, ds_UDVS,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_FFT,
-                              ds_wfm_typ, ds_spec_vals_mat, ds_UDVS_inds])
-
-        # technically should change the date, etc.
-        meas_grp = MicroDataGroup('Measurement_')
-        meas_grp.attrs = parm_dict
-        meas_grp.addChildren([chan_grp])
-
-        spm_data = MicroDataGroup('')
+        # Then write root level attributes
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
@@ -314,34 +262,77 @@ class BEodfTranslator(Translator):
         global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1
         global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'ODF'
+        write_simple_attrs(h5_f, global_parms)
+        write_book_keeping_attrs(h5_f)
 
-        spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        # Then create the measurement group
+        h5_meas_group = create_indexed_group(h5_f, 'Measurement')
 
-        if path.exists(h5_path):
-            remove(h5_path)
+        # Write attributes at the measurement group level
+        write_simple_attrs(h5_meas_group, parm_dict)
 
-        # Write everything except for the main data.
-        self.hdf = ioHDF5(h5_path)
+        # Create the Channel group
+        h5_chan_grp = create_indexed_group(h5_meas_group, 'Channel')
 
-        h5_refs = self.hdf.writeData(spm_data, print_log=verbose)
+        # Write channel group attributes
+        write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1'})
 
-        self.h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        # Now the datasets!
+        h5_ex_wfm = h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
 
-        # Now doing linkrefs:
-        aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'UDVS', 'Bin_Step', 'Bin_Indices', 'UDVS_Indices',
-                        'Bin_Frequencies', 'Bin_FFT', 'Bin_Wfm_Type', 'Noise_Floor', 'Spectroscopic_Values']
-        linkRefs(self.h5_raw, getH5DsetRefs(aux_ds_names, h5_refs))
+        h5_udvs = h5_chan_grp.create_dataset('UDVS', data=UDVS_mat)
+        write_region_references(h5_udvs, udvs_slices, add_labels_attr=True, verbose=verbose)
+        write_simple_attrs(h5_udvs, {'units': UDVS_units}, verbose=verbose)
+        
+        # ds_udvs_labs = MicroDataset('UDVS_Labels',np.array(UDVS_labs))
+        h5_UDVS_inds = h5_chan_grp.create_dataset('UDVS_Indices', data=old_spec_inds[1])
+
+        # ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
+        h5_bin_steps = h5_chan_grp.create_dataset('Bin_Step', data=np.arange(bins_per_step, dtype=INDICES_DTYPE), 
+                                                  dtype=INDICES_DTYPE)
+
+        h5_bin_inds = h5_chan_grp.create_dataset('Bin_Indices', data=bin_inds, dtype=INDICES_DTYPE)
+        h5_bin_freq = h5_chan_grp.create_dataset('Bin_Frequencies', data=bin_freqs)
+        h5_bin_FFT = h5_chan_grp.create_dataset('Bin_FFT', data=bin_FFT)
+        h5_wfm_typ = h5_chan_grp.create_dataset('Bin_Wfm_Type', data=exec_bin_vec)
+
+        pos_dims = [Dimension('X', 'm', np.arange(num_cols)), Dimension('Y', 'm', np.arange(num_rows))]
+        h5_pos_ind, h5_pos_val = write_ind_val_dsets(h5_chan_grp, pos_dims, is_spectral=False, verbose=verbose)
+
+        h5_spec_inds = h5_chan_grp.create_dataset('Spectroscopic_Indices', data=spec_inds, dtype=INDICES_DTYPE)        
+        h5_spec_vals = h5_chan_grp.create_dataset('Spectroscopic_Values', data=np.array(spec_vals), dtype=VALUES_DTYPE)
+        for dset in [h5_spec_inds, h5_spec_vals]:
+            write_region_references(dset, spec_vals_slices, add_labels_attr=True, verbose=verbose)
+            write_simple_attrs(dset, {'units': spec_vals_units}, verbose=verbose)
+            write_simple_attrs(dset, spec_dim_dict)
+
+        # Noise floor should be of shape: (udvs_steps x 3 x positions)
+        h5_noise_floor = h5_chan_grp.create_dataset('Noise_Floor', (num_pix, num_actual_udvs_steps), dtype=nf32,
+                                                    chunks=(1, num_actual_udvs_steps))
+
+        """
+        New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares
+        of UDVS steps by pixels.  N is determined dynamically based on the dimensions of the
+        dataset.  Currently it is set such that individual chunks are less than 10kB in size.
+
+        Chris Smith -- csmith55@utk.edu
+        """
+        BEPS_chunks = calc_chunks([num_pix, tot_bins],
+                                  np.complex64(0).itemsize,
+                                  unit_chunks=(1, bins_per_step))
+        self.h5_raw = write_main_dataset(h5_chan_grp, (num_pix, tot_bins), 'Raw_Data', 'Piezoresponse', 'V', None, None,
+                                         dtype=np.complex64, chunks=BEPS_chunks, compression='gzip',
+                                         h5_pos_inds=h5_pos_ind, h5_pos_vals=h5_pos_val, h5_spec_inds=h5_spec_inds,
+                                         h5_spec_vals=h5_spec_vals, verbose=verbose)
 
         self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix)
 
-        generatePlotGroups(self.h5_raw, self.hdf, self.mean_resp, folder_path, basename,
+        generatePlotGroups(self.h5_raw, self.mean_resp, folder_path, basename,
                            self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
                            spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram, debug=verbose)
 
-        self.hdf.close()
+        h5_f.close()
 
         return h5_path
 
@@ -382,7 +373,7 @@ class BEodfTranslator(Translator):
         else:
             # Large BEPS datasets OR those with in-and-out of field
             self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
-        self.hdf.file.flush()
+        self.h5_raw.file.flush()
 
     def __read_beps_data(self, path_dict, udvs_steps, mode, add_pixel=False):
         """
@@ -479,7 +470,7 @@ class BEodfTranslator(Translator):
             if take_conjugate:
                 raw_vec = np.conjugate(raw_vec)
             self.h5_raw[pix_indx, :] = np.complex64(raw_vec[:])
-            self.hdf.file.flush()
+            self.h5_raw.file.flush()
 
         # Add zeros to main_data for the missing pixel. 
         if add_pixel:
@@ -520,7 +511,7 @@ class BEodfTranslator(Translator):
         self.max_resp = np.amax(np.abs(raw_mat), axis=0)
         self.min_resp = np.amin(np.abs(raw_mat), axis=0)
         self.h5_raw[:, :] = np.complex64(raw_mat)
-        self.hdf.file.flush()
+        self.h5_raw.file.flush()
 
         print('---- Finished reading files -----')
 
@@ -868,7 +859,7 @@ class BEodfTranslator(Translator):
             vs_amp_vec = np.roll(vs_amp_vec,
                                  int(np.floor(VS_steps / VS_fraction * VS_shift)))  # apply phase shift to VS wave
             vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction / 2))]  # cut VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles * 2))  # repeat VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles * 2)  # repeat VS waveform
 
         if FORC_cycles > 1:
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))

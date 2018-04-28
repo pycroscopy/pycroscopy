@@ -13,12 +13,14 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .translator import Translator  # Because this class extends the abstract Translator class
-from .utils import make_position_mat, get_position_slicing, generate_dummy_main_parms
-from ..hdf_utils import getH5DsetRefs, linkRefs
-from ..io_hdf5 import ioHDF5  # Now the translator is responsible for writing the data.
+from ...core.io.translator import Translator, \
+    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from ...core.io.write_utils import Dimension, INDICES_DTYPE, VALUES_DTYPE
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ..write_utils import build_ind_val_dsets
+from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
 # The building blocks for defining heirarchical storage in the H5 file
-from ..microdata import MicroDataGroup, MicroDataset
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class SporcTranslator(Translator):
@@ -60,42 +62,36 @@ class SporcTranslator(Translator):
         num_cols = parm_dict['grid_num_cols']
         num_pix = num_rows * num_cols
 
-        pos_mat = make_position_mat([num_cols, num_rows])
-        pos_slices = get_position_slicing(['X', 'Y'], num_pix)
-
         # new data format
-        spec_ind_mat = np.transpose(np.float32(spec_ind_mat))
+        spec_ind_mat = np.transpose(VALUES_DTYPE(spec_ind_mat))
 
         # Now start creating datasets and populating:
-        ds_pos_ind = MicroDataset('Position_Indices', np.uint32(pos_mat))
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = MicroDataset('Position_Values', np.float32(pos_mat))
-        ds_pos_val.attrs['labels'] = pos_slices
-        ds_pos_val.attrs['units'] = ['um', 'um']
+        pos_desc = [Dimension('Y', 'm', np.arange(num_rows)), Dimension('X', 'm', np.arange(num_cols))]
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         spec_ind_labels = ['x index', 'y index', 'loop index', 'repetition index', 'slope index']
         spec_ind_dict = dict()
         for col_ind, col_name in enumerate(spec_ind_labels):
             spec_ind_dict[col_name] = (slice(col_ind, col_ind + 1), slice(None))
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', np.uint32(spec_ind_mat))
+        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', INDICES_DTYPE(spec_ind_mat))
         ds_spec_inds.attrs['labels'] = spec_ind_dict
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_ind_mat)
+        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_ind_mat)
         ds_spec_vals.attrs['labels'] = spec_ind_dict
         ds_spec_vals.attrs['units'] = ['V', 'V', '', '', '']
 
-        ds_excit_wfm = MicroDataset('Excitation_Waveform', np.float32(excit_wfm))
+        ds_excit_wfm = VirtualDataset('Excitation_Waveform', np.float32(excit_wfm))
 
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=(num_pix, len(excit_wfm)),
-                                   dtype=np.float16, chunking=(1, len(excit_wfm)),
-                                   compression='gzip')
+        ds_raw_data = VirtualDataset('Raw_Data', data=[],
+                                     maxshape=(num_pix, len(excit_wfm)),
+                                     dtype=np.float16, chunking=(1, len(excit_wfm)),
+                                     compression='gzip')
 
         # technically should change the date, etc.
 
-        chan_grp = MicroDataGroup('Channel_000')
+        chan_grp = VirtualGroup('Channel_000')
         chan_grp.attrs = parm_dict
-        chan_grp.addChildren([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                              ds_excit_wfm, ds_raw_data])
+        chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
+                               ds_excit_wfm, ds_raw_data])
 
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
@@ -106,26 +102,26 @@ class SporcTranslator(Translator):
         global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'SPORC'
 
-        meas_grp = MicroDataGroup('Measurement_000')
-        meas_grp.addChildren([chan_grp])
-        spm_data = MicroDataGroup('')
+        meas_grp = VirtualGroup('Measurement_000')
+        meas_grp.add_children([chan_grp])
+        spm_data = VirtualGroup('')
         spm_data.attrs = global_parms
-        spm_data.addChildren([meas_grp])
+        spm_data.add_children([meas_grp])
 
         if path.exists(h5_path):
             remove(h5_path)
 
         # Write everything except for the main data.
-        hdf = ioHDF5(h5_path)
+        hdf = HDFwriter(h5_path)
 
-        h5_refs = hdf.writeData(spm_data)
+        h5_refs = hdf.write(spm_data)
 
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
 
-        # Now doing linkrefs:
+        # Now doing link_h5_objects_as_attrs:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values',
                         'Spectroscopic_Indices', 'Spectroscopic_Values']
-        linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         print('reading raw data now...')
 
@@ -204,7 +200,7 @@ class SporcTranslator(Translator):
             second_path = path.join(fold, 'SPORC_wave.mat')
             h5_sporc_parms = h5py.File(second_path, 'r')  # Use this for v7.3 and beyond.
             excit_wfm = np.squeeze(h5_sporc_parms['FORC_vec'].value)
-            spec_ind_mat = np.float32(h5_sporc_parms['ind_vecs'].value)
+            spec_ind_mat = VALUES_DTYPE(h5_sporc_parms['ind_vecs'].value)
             h5_sporc_parms.close()
 
         return parm_dict, excit_wfm, spec_ind_mat

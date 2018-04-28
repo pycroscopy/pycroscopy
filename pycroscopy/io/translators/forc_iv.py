@@ -12,9 +12,10 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io import loadmat
 
-from .translator import Translator
-from .utils import build_ind_val_dsets
-from ..microdata import MicroDataset  # building blocks for defining hierarchical storage in the H5 file
+from ...core.io.translator import Translator
+from ...core.io.write_utils import Dimension
+from ..write_utils import build_ind_val_dsets
+from ..virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
 
 
 class ForcIVTranslator(Translator):
@@ -83,15 +84,14 @@ class ForcIVTranslator(Translator):
 
         parm_dict = self._read_parms(h5_f)
 
-        ds_main = MicroDataset('Raw_Data', data=current_data, dtype=np.float32, compression='gzip',
-                               chunking=(min(num_cols * num_rows, 100), num_iv_pts))
+        ds_main = VirtualDataset('Raw_Data', data=current_data, dtype=np.float32, compression='gzip',
+                                 chunking=(min(num_cols * num_rows, 100), num_iv_pts))
         ds_main.attrs = {'quantity': 'Current', 'units': '1E-9 A'}
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([num_rows, num_cols], is_spectral=False,
-                                                     labels=['Y', 'X'], units=['m', 'm'], verbose=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([num_iv_pts], is_spectral=True,
-                                                         labels=['DC Bias'], units=['V'], verbose=False)
-        ds_spec_vals.data = np.atleast_2d(excitation_vec)
+        pos_desc = [Dimension('Y', 'm', np.arange(num_rows)), Dimension('X', 'm', np.arange(num_cols))]
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
+        spec_desc = [Dimension('DC Bias', 'V', excitation_vec)]
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=False)
 
         return super(ForcIVTranslator, self).simple_write(h5_path, 'FORC_IV', ds_main,
                                                           [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],

@@ -85,6 +85,9 @@ import os
 from warnings import warn
 
 # Package for downloading online files:
+import pycroscopy.io.write_utils
+import pycroscopy.viz.cluster_utils
+
 try:
     # This package is not part of anaconda and may need to be installed.
     import wget
@@ -98,7 +101,6 @@ except ImportError:
 import numpy as np
 
 # The package used for creating and manipulating HDF5 files:
-import h5py
 
 # Packages for plotting:
 import matplotlib.pyplot as plt
@@ -145,7 +147,7 @@ h5_path = tran.translate(data_file_path)
 # instead.
 
 # opening the file:
-hdf = px.ioHDF5(h5_path)
+hdf = px.HDFwriter(h5_path)
 h5_file = hdf.file
 
 # Visualize the tree structure in the file
@@ -277,9 +279,9 @@ px.plot_utils.plot_cluster_results_together(np.reshape(labels, (num_rows, num_co
 #
 # In this case, `centroids` has `k` positions all in one dimension. Thus the matrix needs to be reshaped to `k x 1`
 
-ds_labels_spec_inds, ds_labels_spec_vals = px.io.translators.utils.build_ind_val_dsets([1], labels=['Label'])
-ds_cluster_inds, ds_cluster_vals = px.io.translators.utils.build_ind_val_dsets([centroids.shape[0]], is_spectral=False,
-                                                                               labels=['Cluster'])
+ds_labels_spec_inds, ds_labels_spec_vals = pycroscopy.io.write_utils.build_ind_val_dsets([1], labels=['Label'])
+ds_cluster_inds, ds_cluster_vals = pycroscopy.io.write_utils.build_ind_val_dsets([centroids.shape[0]], is_spectral=False,
+                                                                                 labels=['Cluster'])
 labels_mat = np.uint32(labels.reshape([-1, 1]))
 
 # Rename the datasets
@@ -299,11 +301,11 @@ print('Labels', labels_mat.shape)
 # Remember that it is important to either inherit or add the `quantity` and `units` attributes to each **main** dataset
 
 # The two main datasets
-ds_label_mat = px.MicroDataset('Labels', labels_mat, dtype=np.uint32)
+ds_label_mat = px.VirtualDataset('Labels', labels_mat, dtype=np.uint32)
 # Adding the mandatory attributes
 ds_label_mat.attrs = {'quantity': 'Cluster ID', 'units': 'a. u.'}
 
-ds_cluster_centroids = px.MicroDataset('Mean_Response', centroids, dtype=h5_main.dtype)
+ds_cluster_centroids = px.VirtualDataset('Mean_Response', centroids, dtype=h5_main.dtype)
 # Inhereting / copying the mandatory attributes
 px.hdf_utils.copy_main_attributes(h5_main, ds_cluster_centroids)
 
@@ -336,17 +338,17 @@ operation_name = 'Cluster'
 
 subtree_root_path = h5_main.parent.name[1:]
 
-cluster_grp = px.MicroDataGroup(source_dset_name + '-' + operation_name + '_',
-                                subtree_root_path)
+cluster_grp = px.VirtualGroup(source_dset_name + '-' + operation_name + '_',
+                              subtree_root_path)
 print('New group to be created with name:', cluster_grp.name)
 print('This group (subtree) will be appended to the H5 file under the group:', subtree_root_path)
 
 # Making a tree structure by adding the MicroDataset objects as children of this group
-cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_labels_spec_inds,
-                         ds_labels_spec_vals])
+cluster_grp.add_children([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_labels_spec_inds,
+                          ds_labels_spec_vals])
 
 print('\nWill write the following tree:')
-cluster_grp.showTree()
+cluster_grp.show_tree()
 
 cluster_grp.attrs['num_clusters'] = num_clusters
 cluster_grp.attrs['num_samples'] = h5_main.shape[0]
@@ -366,7 +368,7 @@ for at_name in cluster_grp.attrs:
 #
 # Once the tree is prepared (previous cell), ioHDF5 will handle all the file writing.
 
-h5_clust_refs = hdf.writeData(cluster_grp, print_log=True)
+h5_clust_refs = hdf.write(cluster_grp, print_log=True)
 
 h5_labels = px.hdf_utils.getH5DsetRefs(['Labels'], h5_clust_refs)[0]
 h5_centroids = px.hdf_utils.getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
@@ -421,7 +423,7 @@ px.hdf_utils.checkAndLinkAncillary(h5_centroids,
 # clustering results. The ancillary datasets linked to `labels` and `centroids` instructed the code about the
 # spatial and spectroscopic dimensionality and enabled it to automatically render the plots below
 
-px.plot_utils.plot_cluster_h5_group(h5_labels.parent, '');
+pycroscopy.viz.cluster_utils.plot_cluster_h5_group(h5_labels.parent, '');
 
 ###############################################################################
 # Cleanup

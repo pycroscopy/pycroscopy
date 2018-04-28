@@ -12,8 +12,7 @@ Submodules
     jupyter_utils
 
 """
-from . import tests
-from . import plot_utils
+from . import image_cleaning_utils
 from . import be_viz_utils
 
-__all__ = ['plot_utils', 'be_viz_utils', 'jupyter_utils']
+__all__ = ['be_viz_utils', 'image_cleaning_utils']

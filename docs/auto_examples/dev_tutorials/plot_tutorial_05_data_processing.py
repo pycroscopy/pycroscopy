@@ -128,9 +128,9 @@ class ShoGuess(px.Process):
         self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
         self.num_udvs_steps = len(self.step_start_inds)
         
-        ds_guess = px.MicroDataset('Guess', data=[],
-                                             maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
-                                             chunking=(1, self.num_udvs_steps), dtype=sho32)
+        ds_guess = px.VirtualDataset('Guess', data=[],
+                                     maxshape=(self.h5_main.shape[0], self.num_udvs_steps),
+                                     chunking=(1, self.num_udvs_steps), dtype=sho32)
 
         not_freq = px.hdf_utils.get_attr(h5_spec_inds, 'labels') != 'Frequency'
 
@@ -138,11 +138,11 @@ class ShoGuess(px.Process):
                                                                  self.step_start_inds)
 
         dset_name = self.h5_main.name.split('/')[-1]
-        sho_grp = px.MicroDataGroup('-'.join([dset_name, 'SHO_Fit_']), self.h5_main.parent.name[1:])
-        sho_grp.addChildren([ds_guess, ds_sho_inds, ds_sho_vals])
+        sho_grp = px.VirtualGroup('-'.join([dset_name, 'SHO_Fit_']), self.h5_main.parent.name[1:])
+        sho_grp.add_children([ds_guess, ds_sho_inds, ds_sho_vals])
         sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
-        h5_sho_grp_refs = self.hdf.writeData(sho_grp)
+        h5_sho_grp_refs = self.hdf.write(sho_grp)
 
         self.h5_guess = px.hdf_utils.getH5DsetRefs(['Guess'], h5_sho_grp_refs)[0]
         self.h5_results_grp = self.h5_guess.parent
@@ -180,14 +180,14 @@ class ShoGuess(px.Process):
         """
         # converting from a list to a 2D numpy array
         self._results = np.array(self._results, dtype=np.float32)
-        self.h5_guess[:, 0] = px.io_utils.realToCompound(self._results, sho32)
+        self.h5_guess[:, 0] = px.dtype_utils.stack_real_to_compound(self._results, sho32)
 
         # Now update the start position
         self._start_pos = self._end_pos
         # this should stop the computation.
 
     @staticmethod
-    def _unit_function():
+    def _map_function():
 
         return px.be_sho.SHOestimateGuess
 
@@ -239,7 +239,7 @@ resp_vec = h5_main[pix_ind]
 norm_guess_parms = h5_guess[pix_ind]
 
 # Converting from compound to real:
-norm_guess_parms = px.io_utils.compound_to_scalar(norm_guess_parms)
+norm_guess_parms = px.dtype_utils.flatten_compound_to_real(norm_guess_parms)
 print('Functional fit returned:', norm_guess_parms)
 norm_resp = px.be_sho.SHOfunc(norm_guess_parms, freq_vec)
 

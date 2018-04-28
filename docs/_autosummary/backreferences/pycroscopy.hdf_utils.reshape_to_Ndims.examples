@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.reshape_to_Ndims``
+Examples using ``pycroscopy.hdf_utils.reshape_to_n_dims``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

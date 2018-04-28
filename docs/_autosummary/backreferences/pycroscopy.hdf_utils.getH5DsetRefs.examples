@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.getH5DsetRefs``
+Examples using ``pycroscopy.hdf_utils.get_h5_obj_refs``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

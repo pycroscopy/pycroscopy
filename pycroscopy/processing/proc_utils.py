@@ -1,129 +1,98 @@
+# -*- coding: utf-8 -*-
 """
-Created on Mar 1, 2016
+Created on Tue Jan 05 07:55:56 2016
 
-@author: Chris Smith -- cmsith55@utk.edu
+@author: Chris Smith, Suhas Somnath
+
 """
 
 from __future__ import division, print_function, absolute_import
+import itertools
 import numpy as np
-import sys
-
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
-    disable_histogram = True
-else:
-    disable_histogram = False
-    from numpy_groupies import aggregate_np
 
 
-def buildHistogram(x_hist, data_mat, N_x_bins, N_y_bins, weighting_vec=1, min_resp=None, max_resp=None, func=None,
-                   debug=False, *args, **kwargs):
+def get_component_slice(components, total_components=None):
     """
-    Creates histogram for a single block of pixels
+    Check the components object to determine how to use it to slice the dataset
 
     Parameters
     ----------
-    x_hist : 1D numpy array
-        bins for x-axis of 2d histogram
-    data_mat : numpy array
-        data to be binned for y-axis of 2d histogram
-    weighting_vec : 1D numpy array or float
-        weights. If setting all to one value, can be a scalar
-    N_x_bins : integer
-        number of bins in the x-direction
-    N_y_bins : integer
-        number of bins in the y-direction
-    min_resp : float
-        minimum value for y binning
-    max_resp : float
-        maximum value for y binning
-    func : function
-        function to be used to bin data_vec.  All functions should take as input data_vec.
-        Arguments should be passed properly to func.  This has not been heavily tested.
-    debug : bool, optional
-        If True, extra debugging statements are printed.  Default False
+    components : {int, array-like of ints, slice, or None}
+        Input Options
+        integer: Components less than the input will be kept
+        length 2 iterable of integers: Integers define start and stop of component slice to retain
+        other iterable of integers or slice: Selection of component indices to retain
+        None: All components will be used
+    total_components : uint, optional. Default = None
+        Total number of spectral components in the dataset
 
     Returns
     -------
-    pixel_hist : 2D numpy array
-        contains the histogram of the input data
-
-    Apply func to input data, convert to 1D array, and normalize
+    comp_slice : slice or numpy.ndarray of uints
+        Slice or array specifying which components should be kept
+    num_comps : uint
+        Number of selected components
     """
-    if func is not None:
-        y_hist = func(data_mat, *args, **kwargs)
-    else:
-        y_hist = data_mat
+    num_comps = None
 
-    '''
-    Get the min_resp and max_resp from y_hist if they are none
-    '''
-    if min_resp is None:
-        min_resp = np.min(y_hist)
-    if max_resp is None:
-        max_resp = np.max(y_hist)
-    if debug:
-        print('min_resp', min_resp, 'max_resp', max_resp)
-
-    y_hist = __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug)
-
-    '''
-    Combine x_hist and y_hist into one matrix
-    '''
-    if debug:
-        print(np.shape(x_hist))
-        print(np.shape(y_hist))
-
-    try:
-        group_idx = np.zeros((2, x_hist.size), dtype=np.int32)
-        group_idx[0, :] = x_hist
-        group_idx[1, :] = y_hist
-    except:
-        raise
-
-    '''
-    Aggregate matrix for histogram of current chunk
-    '''
-    if debug:
-        print(np.shape(group_idx))
-        print(np.shape(weighting_vec))
-        print(N_x_bins, N_y_bins)
-
-    try:
-        if not disable_histogram:
-            pixel_hist = aggregate_np(group_idx, weighting_vec, func='sum', size=(N_x_bins, N_y_bins), dtype=np.int32)
+    if components is None:
+        num_comps = total_components
+        comp_slice = slice(0, num_comps)
+    elif isinstance(components, int):
+        # Component is integer
+        if total_components is not None:
+            num_comps = int(np.min([components, total_components]))
+        comp_slice = slice(0, num_comps)
+    elif hasattr(components, '__iter__') and not isinstance(components, dict):
+        # Component is array, list, or tuple
+        if len(components) == 2:
+            # If only 2 numbers are given, use them as the start and stop of a slice
+            comp_slice = slice(int(components[0]), int(components[1]))
+            num_comps = abs(comp_slice.stop - comp_slice.start)
         else:
-            pixel_hist = None
-    except:
-        raise
+            # Convert components to an unsigned integer array
+            comp_slice = np.uint(components)
+            # sort and take unique values only
+            comp_slice.sort()
+            comp_slice = np.unique(comp_slice)
+            num_comps = len(comp_slice)
+            # check to see if this giant list of integers is just a simple range
+            list_of_ranges = list(to_ranges(comp_slice))
+            if len(list_of_ranges) == 1:
+                # increment the second index by 1 to be consistent with python
+                comp_slice = slice(int(list_of_ranges[0][0]), int(list_of_ranges[0][1] + 1))
 
-    return pixel_hist
+    elif isinstance(components, slice):
+        # Components is already a slice
+        comp_slice = components
+        num_comps = abs(comp_slice.stop - comp_slice.start)
+    else:
+        raise TypeError('Unsupported component type supplied to clean_and_build.  '
+                        'Allowed types are integer, numpy array, list, tuple, and slice.')
+
+    return comp_slice, num_comps
 
 
-def __scale_and_discretize(y_hist, N_y_bins, max_resp, min_resp, debug=False):
+def to_ranges(iterable):
     """
-    Normalizes and discretizes the `y_hist` array 
-    
+    Converts a sequence of iterables to range tuples
+
+    From https://stackoverflow.com/questions/4628333/converting-a-list-of-integers-into-range-in-python
+
+    Credits: @juanchopanza and @luca
+
     Parameters
     ----------
-    y_hist : numpy.ndarray
-    N_y_bins : int
-    max_resp : float
-    min_resp : float
-    debug : bool
+    iterable : collections.Iterable object
+        iterable object like a list
 
     Returns
     -------
-    y_hist numpy.ndarray
+    iterable : generator object
+        Cast to list or similar to use
     """
-    y_hist = y_hist.flatten()
-    y_hist = np.clip(y_hist, min_resp, max_resp)
-    y_hist = np.add(y_hist, -min_resp)
-    y_hist = np.dot(y_hist, 1.0 / (max_resp - min_resp))
-    '''
-    Discretize y_hist
-    '''
-    y_hist = np.rint(y_hist * (N_y_bins - 1))
-    if debug:
-        print('ymin', min(y_hist), 'ymax', max(y_hist))
-
-    return y_hist
+    iterable = sorted(set(iterable))
+    for key, group in itertools.groupby(enumerate(iterable),
+                                        lambda t: t[1] - t[0]):
+        group = list(group)
+        yield group[0][1], group[-1][1]

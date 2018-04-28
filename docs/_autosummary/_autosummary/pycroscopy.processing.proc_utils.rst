@@ -9,7 +9,7 @@ pycroscopy\.processing\.proc\_utils
 
    .. autosummary::
    
-      buildHistogram
+      build_histogram
    
    
 

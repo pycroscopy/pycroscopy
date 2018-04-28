@@ -14,13 +14,14 @@ from skimage.measure import block_reduce
 from skimage.util import crop
 
 from .df_utils import dm4reader
-from .df_utils.io_image import read_image, read_dm3, parse_dm4_parms
-from .translator import Translator
-from .utils import generate_dummy_main_parms, make_position_mat, get_spectral_slicing, \
-    get_position_slicing, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from .df_utils.dm_utils import parse_dm4_parms, read_dm3
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import Dimension, calc_chunks
+from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
+from ...core.io.image import read_image
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
+from ..write_utils import build_ind_val_dsets
 
 
 class OneViewTranslator(Translator):
@@ -89,7 +90,7 @@ class OneViewTranslator(Translator):
         """
         # Open the hdf5 file and delete any contents
         try:
-            hdf = ioHDF5(h5_path)
+            hdf = HDFwriter(h5_path)
             hdf.clear()
         except:
             raise
@@ -178,13 +179,13 @@ class OneViewTranslator(Translator):
         Create the Measurement and Channel Groups to hold the
         image Datasets
         '''
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
 
-        meas_grp = MicroDataGroup('Measurement_')
+        meas_grp = VirtualGroup('Measurement_')
 
-        chan_grp = MicroDataGroup('Channel_')
-        root_grp.addChildren([meas_grp])
-        meas_grp.addChildren([chan_grp])
+        chan_grp = VirtualGroup('Channel_')
+        root_grp.add_children([meas_grp])
+        meas_grp.add_children([chan_grp])
 
         '''
         Set the Measurement Group attributes
@@ -196,46 +197,33 @@ class OneViewTranslator(Translator):
         meas_grp.attrs['translator'] = 'OneView'
         meas_grp.attrs['num_pixels'] = image.size
 
-        ds_rawimage = MicroDataset('Raw_Data', np.reshape(image, (-1, 1)))
+        ds_raw_image = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
 
         '''
         Build Spectroscopic and Position datasets for the image
         '''
-        pos_mat = make_position_mat(image.shape)
-        spec_mat = np.array([[0]], dtype=np.uint8)
+        spec_desc = Dimension('Intensity', 'a.u.', [1])
+        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
 
-        ds_spec_inds = MicroDataset('Spectroscopic_Indices', spec_mat)
-        ds_spec_vals = MicroDataset('Spectroscopic_Values', spec_mat, dtype=np.float32)
-        spec_lab = get_spectral_slicing(['Image'])
-        ds_spec_inds.attrs['labels'] = spec_lab
-        ds_spec_inds.attrs['units'] = ''
-        ds_spec_vals.attrs['labels'] = spec_lab
-        ds_spec_vals.attrs['units'] = ''
+        pos_desc = [Dimension('X', 'pixel', np.arange(image.shape[0])),
+                    Dimension('Y', 'pixel', np.arange(image.shape[1]))]
+        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_desc, is_spectral=False)
 
-        ds_pos_inds = MicroDataset('Position_Indices', pos_mat)
-        ds_pos_vals = MicroDataset('Position_Values', pos_mat, dtype=np.float32)
-
-        pos_lab = get_position_slicing(['X', 'Y'])
-        ds_pos_inds.attrs['labels'] = pos_lab
-        ds_pos_inds.attrs['units'] = ['pixel', 'pixel']
-        ds_pos_vals.attrs['labels'] = pos_lab
-        ds_pos_vals.attrs['units'] = ['pixel', 'pixel']
-
-        chan_grp.addChildren([ds_rawimage, ds_spec_inds, ds_spec_vals,
-                              ds_pos_inds, ds_pos_vals])
+        chan_grp.add_children([ds_raw_image, ds_spec_inds, ds_spec_vals,
+                               ds_pos_inds, ds_pos_vals])
 
         '''
         Write the data to file and get the handle for the image dataset
         '''
-        image_refs = self.hdf.writeData(root_grp)
+        image_refs = self.hdf.write(root_grp)
 
-        h5_image = getH5DsetRefs(['Raw_Data'], image_refs)[0]
+        h5_image = get_h5_obj_refs(['Raw_Data'], image_refs)[0]
 
         '''
         Link references to raw
         '''
         aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        link_as_main(h5_image, *getH5DsetRefs(aux_ds_names, image_refs))
+        link_as_main(h5_image, *get_h5_obj_refs(aux_ds_names, image_refs))
 
         self.root_image_list.append(h5_image)
 
@@ -463,49 +451,51 @@ class OneViewTranslator(Translator):
         main_parms.update(image_parms)
 
         # Create the hdf5 data Group
-        root_grp = MicroDataGroup('/')
+        root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
-        chan_grp = MicroDataGroup('Channel_000')
-        # Get the Position and Spectroscopic Datasets
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize), is_spectral=True,
-                                                        labels=['U', 'V'], units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y], is_spectral=False,
-                                                     labels=['X', 'Y'], units=['pixel', 'pixel'])
+        chan_grp = VirtualGroup('Channel_000')
+
+        # Build the Position and Spectroscopic Datasets
+        spec_desc = [Dimension('U', 'pixel', np.arange(usize)), Dimension('V', 'pixel', np.arange(vsize))]
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
+        pos_desc = [Dimension('X', 'pixel', np.arange(scan_size_x)),
+                    Dimension('Y', 'pixel', np.arange(scan_size_y))]
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
                                   unit_chunks=(1, num_pixels))
 
         # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
-                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
-        ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
-                                          data=np.zeros(num_pixels, dtype=np.float32),
-                                          dtype=np.float32)
-        ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
-                                         data=np.zeros(num_files, dtype=np.float32),
-                                         dtype=np.float32)
+        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_files, num_pixels),
+                                      chunking=ds_chunking, dtype=data_type, compression='gzip')
+        ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
+                                            data=np.zeros(num_pixels, dtype=np.float32),
+                                            dtype=np.float32)
+        ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
+                                           data=np.zeros(num_files, dtype=np.float32),
+                                           dtype=np.float32)
         # Add datasets as children of Measurement_000 data group
-        chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                              ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
-        meas_grp.addChildren([chan_grp])
+        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+        meas_grp.add_children([chan_grp])
 
-        root_grp.addChildren([meas_grp])
+        root_grp.add_children([meas_grp])
         # print('Writing following tree to this file:')
         # root_grp.showTree()
 
-        h5_refs = self.hdf.writeData(root_grp)
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-        h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
-        h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
+        h5_refs = self.hdf.write(root_grp)
+        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+        h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
+        h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]
         aux_ds_names = ['Position_Indices',
                         'Position_Values',
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
 

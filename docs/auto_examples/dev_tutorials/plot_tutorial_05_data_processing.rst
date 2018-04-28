@@ -131,7 +131,7 @@ Note that:
             super(ShoGuess, self).__init__(h5_main, cores=cores)
 
             # find the frequency vector
-            h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[-1]
+            h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
             self.freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
         def _create_results_datasets(self):
@@ -140,8 +140,8 @@ Note that:
             Just as the raw data is stored in the pycroscopy format, the results also need to conform to the same
             standards. Hence, the create_datasets function can appear to be a little longer than one might expect.
             """
-            h5_spec_inds = px.hdf_utils.getAuxData(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-            h5_spec_vals = px.hdf_utils.getAuxData(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+            h5_spec_inds = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+            h5_spec_vals = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
             self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
             self.num_udvs_steps = len(self.step_start_inds)
@@ -152,28 +152,28 @@ Note that:
 
             not_freq = px.hdf_utils.get_attr(h5_spec_inds, 'labels') != 'Frequency'
 
-            ds_sho_inds, ds_sho_vals = px.hdf_utils.buildReducedSpec(h5_spec_inds, h5_spec_vals, not_freq,
+            ds_sho_inds, ds_sho_vals = px.hdf_utils.build_reduced_spec_dsets(h5_spec_inds, h5_spec_vals, not_freq,
                                                                      self.step_start_inds)
 
             dset_name = self.h5_main.name.split('/')[-1]
             sho_grp = px.MicroDataGroup('-'.join([dset_name, 'SHO_Fit_']), self.h5_main.parent.name[1:])
-            sho_grp.addChildren([ds_guess, ds_sho_inds, ds_sho_vals])
+            sho_grp.add_children([ds_guess, ds_sho_inds, ds_sho_vals])
             sho_grp.attrs['SHO_guess_method'] = "pycroscopy BESHO"
 
-            h5_sho_grp_refs = self.hdf.writeData(sho_grp)
+            h5_sho_grp_refs = self.hdf.write(sho_grp)
 
-            self.h5_guess = px.hdf_utils.getH5DsetRefs(['Guess'], h5_sho_grp_refs)[0]
+            self.h5_guess = px.hdf_utils.get_h5_obj_refs(['Guess'], h5_sho_grp_refs)[0]
             self.h5_results_grp = self.h5_guess.parent
-            h5_sho_inds = px.hdf_utils.getH5DsetRefs(['Spectroscopic_Indices'],
+            h5_sho_inds = px.hdf_utils.get_h5_obj_refs(['Spectroscopic_Indices'],
                                                      h5_sho_grp_refs)[0]
-            h5_sho_vals = px.hdf_utils.getH5DsetRefs(['Spectroscopic_Values'],
+            h5_sho_vals = px.hdf_utils.get_h5_obj_refs(['Spectroscopic_Values'],
                                                      h5_sho_grp_refs)[0]
 
             # Reference linking before actual fitting
-            px.hdf_utils.linkRefs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
+            px.hdf_utils.link_h5_objects_as_attrs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
             # Linking ancillary position datasets:
-            aux_dsets = px.hdf_utils.getAuxData(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
-            px.hdf_utils.linkRefs(self.h5_guess, aux_dsets)
+            aux_dsets = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
+            px.hdf_utils.link_h5_objects_as_attrs(self.h5_guess, aux_dsets)
             print('Finshed creating datasets')
 
         def compute(self, *args, **kwargs):
@@ -258,7 +258,7 @@ dimensional matrix in accordance with the pycroscopy data format.
     h5_main = h5_meas_grp['Channel_000/Raw_Data']
 
     # Extracting the X axis - vector of frequencies
-    h5_spec_vals = px.hdf_utils.getAuxData(h5_main, 'Spectroscopic_Values')[-1]
+    h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
     freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 

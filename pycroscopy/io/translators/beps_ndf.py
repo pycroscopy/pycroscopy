@@ -17,11 +17,11 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from .translator import Translator
-from .utils import make_position_mat, generate_dummy_main_parms
-from ..hdf_utils import getH5DsetRefs, linkRefs, calc_chunks
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class BEPSndfTranslator(Translator):
@@ -76,6 +76,7 @@ class BEPSndfTranslator(Translator):
             Absolute path of the generated .h5 file
 
         """
+        data_filepath = path.abspath(data_filepath)
         # Read the parameter files
         self.debug = debug
         if debug:
@@ -146,7 +147,7 @@ class BEPSndfTranslator(Translator):
         s_pixels = np.array(parsers[0].get_spatial_pixels())
         self.pos_labels = ['Laser Spot', 'Z', 'Y', 'X']
         self.pos_labels = [self.pos_labels[i] for i in np.where(s_pixels > 1)[0]]
-        self.pos_mat = make_position_mat(s_pixels)
+        self.pos_mat = make_indices_matrix(s_pixels[np.argwhere(s_pixels > 1)].squeeze())
         self.pos_units = ['um' for _ in range(len(self.pos_labels))]
         #         self.pos_mat = np.int32(self.pos_mat)
 
@@ -164,14 +165,14 @@ class BEPSndfTranslator(Translator):
         main_parms['translator'] = 'NDF'
 
         # Writing only the root now:
-        spm_data = MicroDataGroup('')
+        spm_data = VirtualGroup('')
         spm_data.attrs = main_parms
-        self.hdf = ioHDF5(h5_path)
+        self.hdf = HDFwriter(h5_path)
         # self.hdf.clear()
 
         # cacheSettings = self.hdf.file.id.get_access_plist().get_cache()
 
-        self.hdf.writeData(spm_data)
+        self.hdf.write(spm_data)
 
         ########################################################
         # Reading and parsing the .dat file(s) 
@@ -279,10 +280,10 @@ class BEPSndfTranslator(Translator):
         for spat_ind, spat_dim in enumerate(self.pos_labels):
             pos_slice_dict[spat_dim] = (slice(None), slice(spat_ind, spat_ind + 1))
 
-        ds_pos_ind = MicroDataset('Position_Indices',
+        ds_pos_ind = VirtualDataset('Position_Indices',
                                   self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
                                                self.ds_pixel_index, :],
-                                  dtype=np.uint)
+                                    dtype=INDICES_DTYPE)
 
         ds_pos_ind.attrs['labels'] = pos_slice_dict
         ds_pos_ind.attrs['units'] = self.pos_units
@@ -305,7 +306,7 @@ class BEPSndfTranslator(Translator):
             # Z spectroscopy
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
-        pos_val_mat = np.float32(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+        pos_val_mat = VALUES_DTYPE(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
                                               self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
@@ -314,23 +315,23 @@ class BEPSndfTranslator(Translator):
                 # Replace indices with the x, y, z values from the pixels
                 pos_val_mat[:, dim_ind] = self.pos_vals_list[:, col_ind]
 
-        ds_pos_val = MicroDataset('Position_Values', pos_val_mat)
+        ds_pos_val = VirtualDataset('Position_Values', pos_val_mat)
         ds_pos_val.attrs['labels'] = pos_slice_dict
         ds_pos_val.attrs['units'] = self.pos_units
 
-        meas_grp = MicroDataGroup(meas_grp.name, '/')
-        meas_grp.addChildren([ds_pos_ind, ds_pos_val])
+        meas_grp = VirtualGroup(meas_grp.name, '/')
+        meas_grp.add_children([ds_pos_ind, ds_pos_val])
 
-        h5_refs += self.hdf.writeData(meas_grp)
+        h5_refs += self.hdf.write(meas_grp)
 
         # Do all the reference linking:
         aux_ds_names = ['Excitation_Waveform', 'Position_Indices', 'Position_Values', 'UDVS_Indices',
                         'Spectroscopic_Indices', 'Bin_Step', 'Bin_Indices', 'Bin_Wfm_Type',
                         'Bin_Frequencies', 'Bin_FFT', 'UDVS', 'UDVS_Labels', 'Noise_Floor', 'Spectroscopic_Values']
-        linkRefs(self.ds_main, getH5DsetRefs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
-        generatePlotGroups(self.ds_main, self.hdf, self.mean_resp,
+        generatePlotGroups(self.ds_main, self.mean_resp,
                            self.folder_path, self.basename,
                            self.max_resp, self.min_resp,
                            max_mem_mb=self.max_ram,
@@ -391,7 +392,7 @@ class BEPSndfTranslator(Translator):
         del pixl, stind
 
         # Make the index matrix that has the UDVS step number and bin indices
-        spec_inds = np.zeros(shape=(2, tot_pts), dtype=np.uint32)
+        spec_inds = np.zeros(shape=(2, tot_pts), dtype=INDICES_DTYPE)
         stind = 0
         # Need to go through the UDVS file and reconstruct chronologically
         for step_index, wave_type in enumerate(self.excit_type_vec):
@@ -405,13 +406,13 @@ class BEPSndfTranslator(Translator):
 
         self.spec_inds = spec_inds  # will need this for plot group generation
 
-        ds_ex_wfm = MicroDataset('Excitation_Waveform',
-                                 np.float32(np.real(np.fft.ifft(np.fft.ifftshift(self.BE_wave)))))
-        ds_bin_freq = MicroDataset('Bin_Frequencies', bin_freqs)
-        ds_bin_inds = MicroDataset('Bin_Indices', bin_inds - 1, dtype=np.uint32)  # From Matlab to Python (base 0)
-        ds_bin_fft = MicroDataset('Bin_FFT', bin_FFT)
-        ds_wfm_typ = MicroDataset('Bin_Wfm_Type', exec_bin_vec)
-        ds_bin_steps = MicroDataset('Bin_Step', np.arange(tot_bins, dtype=np.uint32))
+        ds_ex_wfm = VirtualDataset('Excitation_Waveform',
+                                   np.float32(np.real(np.fft.ifft(np.fft.ifftshift(self.BE_wave)))))
+        ds_bin_freq = VirtualDataset('Bin_Frequencies', bin_freqs)
+        ds_bin_inds = VirtualDataset('Bin_Indices', bin_inds - 1, dtype=np.uint32)  # From Matlab to Python (base 0)
+        ds_bin_fft = VirtualDataset('Bin_FFT', bin_FFT)
+        ds_wfm_typ = VirtualDataset('Bin_Wfm_Type', exec_bin_vec)
+        ds_bin_steps = VirtualDataset('Bin_Step', np.arange(tot_bins, dtype=np.uint32))
 
         curr_parm_dict = self.parm_dict
         # Some very basic information that can help the processing crew
@@ -420,18 +421,18 @@ class BEPSndfTranslator(Translator):
 
         # technically should change the date, etc.
         self.current_group = '{:s}'.format('Measurement_')
-        meas_grp = MicroDataGroup(self.current_group, '/')
+        meas_grp = VirtualGroup(self.current_group, '/')
         meas_grp.attrs = curr_parm_dict
 
-        chan_grp = MicroDataGroup('Channel_')
+        chan_grp = VirtualGroup('Channel_')
         chan_grp.attrs['Channel_Input'] = curr_parm_dict['IO_Analog_Input_1']
-        meas_grp.addChildren([chan_grp])
+        meas_grp.add_children([chan_grp])
 
         udvs_slices = dict()
         for col_ind, col_name in enumerate(self.udvs_labs):
             udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind + 1))
             # print('UDVS column index {} = {}'.format(col_ind,col_name))
-        ds_udvs_mat = MicroDataset('UDVS', self.udvs_mat)
+        ds_udvs_mat = VirtualDataset('UDVS', self.udvs_mat)
         ds_udvs_mat.attrs['labels'] = udvs_slices
         ds_udvs_mat.attrs['units'] = self.udvs_units
 
@@ -444,7 +445,7 @@ class BEPSndfTranslator(Translator):
 
         curr_parm_dict['num_udvs_steps'] = actual_udvs_steps
 
-        ds_udvs_inds = MicroDataset('UDVS_Indices', self.spec_inds[1])
+        ds_udvs_inds = VirtualDataset('UDVS_Indices', self.spec_inds[1])
         # ds_udvs_inds.attrs['labels'] = {'UDVS_step':(slice(None),)}
 
         '''
@@ -457,10 +458,10 @@ class BEPSndfTranslator(Translator):
         spec_vals_slices = dict()
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
-        ds_spec_vals_mat = MicroDataset('Spectroscopic_Values', np.array(spec_vals, dtype=np.float32))
+        ds_spec_vals_mat = VirtualDataset('Spectroscopic_Values', np.array(spec_vals, dtype=VALUES_DTYPE))
         ds_spec_vals_mat.attrs['labels'] = spec_vals_slices
         ds_spec_vals_mat.attrs['units'] = spec_vals_units
-        ds_spec_mat = MicroDataset('Spectroscopic_Indices', spec_inds, dtype=np.uint32)
+        ds_spec_mat = VirtualDataset('Spectroscopic_Indices', spec_inds, dtype=INDICES_DTYPE)
         ds_spec_mat.attrs['labels'] = spec_vals_slices
         ds_spec_mat.attrs['units'] = spec_vals_units
         for entry in spec_vals_labs_names:
@@ -481,27 +482,29 @@ class BEPSndfTranslator(Translator):
         beps_chunks = calc_chunks([num_pix, tot_pts],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, max_bins_per_pixel))
-        ds_main_data = MicroDataset('Raw_Data',
-                                    np.zeros(shape=(1, tot_pts), dtype=np.complex64),
-                                    chunking=beps_chunks,
-                                    resizable=True,
-                                    compression='gzip')
+        ds_main_data = VirtualDataset('Raw_Data',
+                                      np.zeros(shape=(1, tot_pts), dtype=np.complex64),
+                                      chunking=beps_chunks,
+                                      resizable=True,
+                                      compression='gzip',
+                                      attrs={'quantity': 'Piezoresponse',
+                                             'units': 'V'})
 
-        ds_noise = MicroDataset('Noise_Floor', np.zeros(shape=(1, actual_udvs_steps), dtype=nf32),
-                                chunking=(1, actual_udvs_steps), resizable=True, compression='gzip')
+        ds_noise = VirtualDataset('Noise_Floor', np.zeros(shape=(1, actual_udvs_steps), dtype=nf32),
+                                  chunking=(1, actual_udvs_steps), resizable=True, compression='gzip')
 
         # Allocate space for the first pixel for now and write along with the complete tree...
         # Positions CANNOT be written at this time since we don't know if the parameter changed
 
-        chan_grp.addChildren([ds_main_data, ds_noise, ds_ex_wfm, ds_spec_mat, ds_wfm_typ,
-                              ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_fft, ds_udvs_mat,
-                              ds_spec_vals_mat, ds_udvs_inds])
+        chan_grp.add_children([ds_main_data, ds_noise, ds_ex_wfm, ds_spec_mat, ds_wfm_typ,
+                               ds_bin_steps, ds_bin_inds, ds_bin_freq, ds_bin_fft, ds_udvs_mat,
+                               ds_spec_vals_mat, ds_udvs_inds])
 
         # meas_grp.showTree()
-        h5_refs = self.hdf.writeData(meas_grp)
+        h5_refs = self.hdf.write(meas_grp)
 
-        self.ds_noise = getH5DsetRefs(['Noise_Floor'], h5_refs)[0]
-        self.ds_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        self.ds_noise = get_h5_obj_refs(['Noise_Floor'], h5_refs)[0]
+        self.ds_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         self.pos_vals_list = list()
 
         # self.dset_index += 1 #  raise dset index after closing only

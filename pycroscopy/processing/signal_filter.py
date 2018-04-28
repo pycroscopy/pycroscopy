@@ -7,17 +7,16 @@ Created on Tue Nov 07 11:48:53 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-
-import time as tm
+import h5py
 import numpy as np
 from collections import Iterable
-from .process import Process, parallel_compute
-from ..io.microdata import MicroDataset, MicroDataGroup
-from ..io.hdf_utils import getH5DsetRefs, getAuxData, copyAttributes, link_as_main, linkRefs, check_for_old
-from ..io.translators.utils import build_ind_val_dsets
-from ..io.io_hdf5 import ioHDF5
+from ..core.processing.process import Process, parallel_compute
+from ..core.io.hdf_utils import create_results_group, write_main_dataset, write_simple_attrs, create_empty_dataset, \
+    write_ind_val_dsets
+from ..core.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-# TODO: implement phase compensation
+from .gmode_utils import test_filter
+
 # TODO: correct implementation of num_pix
 
 
@@ -107,7 +106,7 @@ class SignalFilter(Process):
         self.parms_dict['num_pix'] = self.num_effective_pix
 
         self.process_name = 'FFT_Filtering'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         self.data = None
         self.filtered_data = None
@@ -117,141 +116,101 @@ class SignalFilter(Process):
         self.h5_condensed = None
         self.h5_noise_floors = None
 
-    def _set_memory_and_cores(self, cores=1, mem=1024):
+    def test(self, pix_ind=None, excit_wfm=None, **kwargs):
         """
-        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
-        number of cores to be used by analysis methods.
+        Tests the signal filter on a single pixel (randomly chosen unless manually specified) worth of data.
 
         Parameters
         ----------
-        cores : uint, optional
-            Default - 1
-            How many cores to use for the computation
-        mem : uint, optional
-            Default - 1024
-            The amount a memory in Mb to use in the computation
+        pix_ind : int, optional. default = random
+            Index of the pixel whose data will be used for inference
+        excit_wfm : array-like, optional. default = None
+            Waveform against which the raw and filtered signals will be plotted. This waveform can be a fraction of the
+            length of a single pixel's data. For example, in the case of G-mode, where a single scan line is yet to be
+            broken down into pixels, the excitation waveform for a single pixel can br provided to automatically
+            break the raw and filtered responses also into chunks of the same size.
+
+        Returns
+        -------
+        fig, axes
         """
-        verbose = self.verbose
-        self.verbose = False
-
-        super(SignalFilter, self)._set_memory_and_cores(cores, mem)
-
-        self.verbose = verbose
-
-        max_data_chunk = self._max_mem_mb / self._cores
-
-        # Now calculate the number of positions that can be stored in memory in one go.
-        # Mem for initial data and final data before writing to file
-        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1e6 * 2
-        # Mem for fft of data
-        mb_per_position += np.complex128.dtype.__sizeof__() * self.h5_main.shape[1] / 1e6
-
-        self._max_pos_per_read = max_data_chunk // mb_per_position
-
-        if self.verbose:
-            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
-            print('Allowed to use up to', str(self._cores), 'cores and', str(self._max_mem_mb), 'MB of memory')
+        if pix_ind is None:
+            pix_ind = np.random.randint(0, high=self.h5_main.shape[0])
+        return test_filter(self.h5_main[pix_ind], frequency_filters=self.frequency_filters, excit_wfm=excit_wfm,
+                           noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True,
+                           **kwargs)
 
     def _create_results_datasets(self):
         """
         Creates all the datasets necessary for holding all parameters + data.
         """
 
-        grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        grp_filt = MicroDataGroup(grp_name, self.h5_main.parent.name)
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name)
 
         self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
-        grp_filt.attrs = self.parms_dict
+        write_simple_attrs(self.h5_results_grp, self.parms_dict)
+
+        assert isinstance(self.h5_results_grp, h5py.Group)
 
         if isinstance(self.composite_filter, np.ndarray):
-            ds_comp_filt = MicroDataset('Composite_Filter', np.float32(self.composite_filter))
-            grp_filt.addChildren([ds_comp_filt])
+            h5_comp_filt = self.h5_results_grp.create_dataset('Composite_Filter',
+                                                              data=np.float32(self.composite_filter))
+
+        # First create the position datsets if the new indices are smaller...
+        if self.num_effective_pix != self.h5_main.shape[0]:
+            # TODO: Do this part correctly. See past solution:
+            """
+            # need to make new position datasets by taking every n'th index / value:
+                new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
+                pos_descriptor = []
+                for name, units, leng in zip(h5_pos_inds.attrs['labels'], h5_pos_inds.attrs['units'],
+                                             [int(np.unique(h5_pos_inds[:, dim_ind]).size / self.num_effective_pix)
+                                              for dim_ind in range(h5_pos_inds.shape[1])]):
+                    pos_descriptor.append(Dimension(name, units, np.arange(leng)))
+                ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_descriptor, is_spectral=False, verbose=self.verbose)
+                h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
+                
+            """
+            h5_pos_inds_new, h5_pos_vals_new = write_ind_val_dsets(self.h5_results_grp,
+                                                                   Dimension('pixel', 'a.u.', self.num_effective_pix),
+                                                                   is_spectral=False, verbose=self.verbose)
+        else:
+            h5_pos_inds_new = self.h5_main.h5_pos_inds
+            h5_pos_vals_new = self.h5_main.h5_pos_vals
 
         if self.noise_threshold is not None:
-            ds_noise_floors = MicroDataset('Noise_Floors',
-                                           data=np.zeros(shape=(self.num_effective_pix, 1), dtype=np.float32))
-            ds_noise_spec_inds, ds_noise_spec_vals = build_ind_val_dsets([1], is_spectral=True,
-                                                                         labels=['arb'], units=[''],
-                                                                         verbose=self.verbose)
-            ds_noise_spec_inds.name = 'Noise_Spectral_Indices'
-            ds_noise_spec_vals.name = 'Noise_Spectral_Values'
-            grp_filt.addChildren([ds_noise_floors, ds_noise_spec_inds, ds_noise_spec_vals])
+            self.h5_noise_floors = write_main_dataset(self.h5_results_grp, (self.num_effective_pix, 1), 'Noise_Floors',
+                                                      'Noise', 'a.u.', None, Dimension('arb', '', [1]),
+                                                      dtype=np.float32, aux_spec_prefix='Noise_Spec_',
+                                                      h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
+                                                      verbose=self.verbose)
 
         if self.write_filtered:
-            ds_filt_data = MicroDataset('Filtered_Data', data=[], maxshape=self.h5_main.maxshape,
-                                        dtype=np.float32, chunking=self.h5_main.chunks, compression='gzip')
-            grp_filt.addChildren([ds_filt_data])
+            # Filtered data is identical to Main_Data in every way - just a duplicate
+            self.h5_filtered = create_empty_dataset(self.h5_main, self.h5_main.dtype, 'Filtered_Data',
+                                                    h5_group=self.h5_results_grp)
 
         self.hot_inds = None
-
-        h5_pos_inds = getAuxData(self.h5_main, auxDataName=['Position_Indices'])[0]
-        h5_pos_vals = getAuxData(self.h5_main, auxDataName=['Position_Values'])[0]
 
         if self.write_condensed:
             self.hot_inds = np.where(self.composite_filter > 0)[0]
             self.hot_inds = np.uint(self.hot_inds[int(0.5 * len(self.hot_inds)):])  # only need to keep half the data
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets([int(0.5 * len(self.hot_inds))], is_spectral=True,
-                                                             labels=['hot_frequencies'], units=[''],
-                                                             verbose=self.verbose)
-            ds_spec_vals.data = np.atleast_2d(self.hot_inds)  # The data generated above varies linearly. Override.
-            ds_cond_data = MicroDataset('Condensed_Data', data=[],
-                                        maxshape=(self.num_effective_pix, len(self.hot_inds)),
-                                        dtype=np.complex, chunking=(1, len(self.hot_inds)), compression='gzip')
-            grp_filt.addChildren([ds_spec_inds, ds_spec_vals, ds_cond_data])
-            if self.num_effective_pix > 1:
-                # need to make new position datasets by taking every n'th index / value:
-                new_pos_vals = np.atleast_2d(h5_pos_vals[slice(0, None, self.num_effective_pix), :])
-                ds_pos_inds, ds_pos_vals = build_ind_val_dsets([int(np.unique(h5_pos_inds[:, dim_ind]).size /
-                                                                    self.num_effective_pix)
-                                                                for dim_ind in range(h5_pos_inds.shape[1])],
-                                                               is_spectral=False,
-                                                               labels=h5_pos_inds.attrs['labels'],
-                                                               units=h5_pos_inds.attrs['units'], verbose=self.verbose)
-                h5_pos_vals.data = np.atleast_2d(new_pos_vals)  # The data generated above varies linearly. Override.
-                grp_filt.addChildren([ds_pos_inds, ds_pos_vals])
+            condensed_spec = Dimension('hot_frequencies', '', int(0.5 * len(self.hot_inds)))
+            self.h5_condensed = write_main_dataset(self.h5_results_grp, (self.num_effective_pix, len(self.hot_inds)),
+                                                   'Condensed_Data', 'Complex', 'a. u.', None, condensed_spec,
+                                                   h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
+                                                   dtype=np.complex, verbose=self.verbose)
 
-        if self.verbose:
-            grp_filt.showTree()
-        hdf = ioHDF5(self.h5_main.file)
-        h5_filt_refs = hdf.writeData(grp_filt, print_log=self.verbose)
-
-        if isinstance(self.composite_filter, np.ndarray):
-            h5_comp_filt = getH5DsetRefs(['Composite_Filter'], h5_filt_refs)[0]
-
-        if self.noise_threshold is not None:
-            self.h5_noise_floors = getH5DsetRefs(['Noise_Floors'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_noise_floors.parent
-            link_as_main(self.h5_noise_floors, h5_pos_inds, h5_pos_vals,
-                         getH5DsetRefs(['Noise_Spectral_Indices'], h5_filt_refs)[0],
-                         getH5DsetRefs(['Noise_Spectral_Values'], h5_filt_refs)[0])
-
-        # Now need to link appropriately:
+    def _get_existing_datasets(self):
+        """
+        Extracts references to the existing datasets that hold the results
+        """
         if self.write_filtered:
-            self.h5_filtered = getH5DsetRefs(['Filtered_Data'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_filtered.parent
-            copyAttributes(self.h5_main, self.h5_filtered, skip_refs=False)
-            if isinstance(self.composite_filter, np.ndarray):
-                linkRefs(self.h5_filtered, [h5_comp_filt])
-
-            """link_as_main(self.h5_filtered, h5_pos_inds, h5_pos_vals,
-                         getAuxData(h5_main, auxDataName=['Spectroscopic_Indices'])[0],
-                         getAuxData(h5_main, auxDataName=['Spectroscopic_Values'])[0])"""
-
+            self.h5_filtered = self.h5_results_grp['Filtered_Data']
         if self.write_condensed:
-            self.h5_condensed = getH5DsetRefs(['Condensed_Data'], h5_filt_refs)[0]
-            self.h5_results_grp = self.h5_condensed.parent
-            if isinstance(self.composite_filter, np.ndarray):
-                linkRefs(self.h5_condensed, [h5_comp_filt])
-            if self.noise_threshold is not None:
-                linkRefs(self.h5_condensed, [self.h5_noise_floors])
-
-            if self.num_effective_pix > 1:
-                h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_filt_refs)[0]
-                h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_filt_refs)[0]
-
-            link_as_main(self.h5_condensed, h5_pos_inds, h5_pos_vals,
-                         getH5DsetRefs(['Spectroscopic_Indices'], h5_filt_refs)[0],
-                         getH5DsetRefs(['Spectroscopic_Values'], h5_filt_refs)[0])
+            self.h5_condensed = self.h5_results_grp['Condensed_Data']
+        if self.noise_threshold is not None:
+            self.h5_noise_floors = self.h5_results_grp['Noise_Floors']
 
     def _write_results_chunk(self):
         """
@@ -270,82 +229,48 @@ class SignalFilter(Process):
         # Leaving in this provision that will allow restarting of processes
         self.h5_results_grp.attrs['last_pixel'] = self._end_pos
 
-        self.hdf.flush()
+        self.h5_main.file.flush()
 
         print('Finished processing upto pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
         # Now update the start position
         self._start_pos = self._end_pos
 
-    @staticmethod
-    def _unit_function():
-        return get_noise_floor
-
-    def compute(self, *args, **kwargs):
+    def _unit_computation(self, *args, **kwargs):
         """
-        Creates placeholders for the results, applies the filers to the data, and writes the output to the file.
+        Processing per chunk of the dataset
 
         Parameters
         ----------
-
-        Returns
-        -------
-        h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
-
+        args : list
+            Not used
+        kwargs : dictionary
+            Not used
         """
-        self._create_results_datasets()
+        # get FFT of the entire data chunk
+        self.data = np.fft.fftshift(np.fft.fft(self.data, axis=1), axes=1)
 
-        time_per_pix = 0
+        if self.noise_threshold is not None:
+            self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
+                                                 func_args=[self.noise_threshold])
 
-        num_pos = self.h5_main.shape[0]
+        if isinstance(self.composite_filter, np.ndarray):
+            # multiple fft of data with composite filter
+            self.data *= self.composite_filter
 
-        self._read_data_chunk()
-        while self.data is not None:
+        if self.noise_threshold is not None:
+            # apply thresholding
+            self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
 
-            t_start = tm.time()
+        if self.write_condensed:
+            # set self.condensed_data here
+            self.condensed_data = self.data[:, self.hot_inds]
 
-            # get FFT of the entire data chunk
-            self.data = np.fft.fftshift(np.fft.fft(self.data, axis=1), axes=1)
-
-            if self.noise_threshold is not None:
-                self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
-                                                     func_args=[self.noise_threshold])
-
-            if isinstance(self.composite_filter, np.ndarray):
-                # multiple fft of data with composite filter
-                self.data *= self.composite_filter
-
-            if self.noise_threshold is not None:
-                # apply thresholding
-                self.data[np.abs(self.data) < np.tile(np.atleast_2d(self.noise_floors), self.data.shape[1])] = 1E-16
-
-            if self.write_condensed:
-                # set self.condensed_data here
-                self.condensed_data = self.data[:, self.hot_inds]
-
-            if self.write_filtered:
-                # take inverse FFT
-                self.filtered_data = np.real(np.fft.ifft(np.fft.ifftshift(self.data, axes=1), axis=1))
-                if self.phase_rad > 0:
-                    # do np.roll on data
-                    # self.data = np.roll(self.data, 0, axis=1)
-                    pass
-
-            tot_time = np.round(tm.time() - t_start, decimals=2)
-
-            if self.verbose:
-                print('Done parallel computing in {} sec or {} sec per pixel'.format(tot_time,
-                                                                                     tot_time / self.data.shape[0]))
-            if self._start_pos == 0:
-                time_per_pix = tot_time / self._end_pos  # in seconds
-            else:
-                print('Time remaining: {} mins'.format(np.round((num_pos - self._end_pos) * time_per_pix / 60, 2)))
-
-            self._write_results_chunk()
-            self._read_data_chunk()
-
-        if self.verbose:
-            print('Finished processing the dataset completely')
-
-        return self.h5_results_grp
+        if self.write_filtered:
+            # take inverse FFT
+            self.filtered_data = np.real(np.fft.ifft(np.fft.ifftshift(self.data, axes=1), axis=1))
+            if self.phase_rad > 0:
+                # TODO: implement phase compensation
+                # do np.roll on data
+                # self.data = np.roll(self.data, 0, axis=1)
+                pass

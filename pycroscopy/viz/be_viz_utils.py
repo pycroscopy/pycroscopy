@@ -15,13 +15,14 @@ from IPython.display import display
 from matplotlib import pyplot as plt
 from functools import partial
 
-from .plot_utils import plot_loops, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, plot_complex_loop_stack, plot_complex_map_stack
-from pycroscopy.viz.jupyter_utils import save_fig_filebox_button
+from ..core.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+    plot_complex_spectra
+from ..core.viz.jupyter_utils import save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
-from ..io.hdf_utils import reshape_to_Ndims, getAuxData, get_sort_order, get_dimensionality, get_attr, \
+from ..core.io.hdf_utils import reshape_to_n_dims, get_auxillary_datasets, get_sort_order, get_dimensionality, get_attr, \
     get_source_dataset
-from ..io.pycro_data import PycroDataset
+from ..core.io.pycro_data import PycroDataset
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -49,15 +50,15 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
         plt_title = grp_name + '_' + win_title + '_Loops'
-        fig, ax = plot_loops(ac_vec, resp_mat, evenly_spaced=True, plots_on_side=5,
-                             x_label=spec_var_title, y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
+        fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, num_plots=25, x_label=spec_var_title,
+                              y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
         plt_title = grp_name + '_' + win_title + '_Snaps'
         fig, axes = plot_map_stack(resp_mat.reshape(num_rows, num_cols, resp_mat.shape[1]),
-                                   color_bar_mode="each", evenly_spaced=True, title='UDVS Step #',
-                                   heading=plt_title, cmap=cmap)
+                                   color_bar_mode="each", evenly_spaced=True, subtitle='UDVS Step #',
+                                   title=plt_title, cmap=cmap)
         if save_plots:
             fig.savefig(os.path.join(folder_path, basename + '_' + plt_title + '.png'), format='png', dpi=300)
 
@@ -273,7 +274,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     sho_dset_collapsed = np.reshape(guess_nd_data, final_guess_shape).squeeze()
 
     # Get the bias matrix:
-    bias_mat, _ = reshape_to_Ndims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
+    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
     bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
                             new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
     if bias_mat.ndim == 1:
@@ -311,8 +312,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         for key in not_step_chan:
             spatial_dict[key] = [0]
 
-    spatial_map = pc_sho_dset.slice(False, spatial_dict)[0][sho_quantity].squeeze()
-    resp_vec = resp_func(pc_sho_dset.slice(False, resp_dict)[0].reshape(bias_mat.shape))
+    spatial_map = pc_sho_dset.slice(slice_dict=spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
+    resp_vec = resp_func(pc_sho_dset.slice(as_scalar=False, slice_dict=resp_dict)[0].reshape(bias_mat.shape))
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
@@ -324,7 +325,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=None)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel(pos_labels[-1])
@@ -441,7 +442,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
     spec_labels = pc_main.spec_dim_labels
 
     ifreq = spec_labels.index('Frequency')
-    freqs_nd = reshape_to_Ndims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
+    freqs_nd = reshape_to_n_dims(h5_spec_vals, h5_spec=h5_spec_inds)[0][ifreq].squeeze()
     freqs_2d = freqs_nd.reshape(freqs_nd.shape[0], -1) / 1000  # Convert to kHz
 
     num_udvs_steps = int(np.prod([spec_dims[idim] for idim in range(len(spec_dims)) if idim != ifreq]))
@@ -476,10 +477,10 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
         crosshair = axes[0].plot(xdata, ydata, 'k+')[0]
 
         if len(spec_dims) > 1:
-            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=None, cmap=cmap,
+            amp_img, amp_cbar = plot_map(axes[1], np.abs(spectrogram), show_xy_ticks=True, cmap=cmap,
                                          extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, num_udvs_steps])
 
-            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=None, cmap=cmap,
+            phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=True, cmap=cmap,
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, num_udvs_steps])
 
             for axis in axes[1:3]:
@@ -698,23 +699,23 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
     # Prepare some variables for plotting loops fits and guesses
     # Plot the Loop Guess and Fit Results
-    proj_nd, _ = reshape_to_Ndims(h5_projected_loops)
-    guess_nd, _ = reshape_to_Ndims(h5_loop_guess)
-    fit_nd, _ = reshape_to_Ndims(h5_loop_fit)
+    proj_nd, _ = reshape_to_n_dims(h5_projected_loops)
+    guess_nd, _ = reshape_to_n_dims(h5_loop_guess)
+    fit_nd, _ = reshape_to_n_dims(h5_loop_fit)
 
     h5_projected_loops = h5_loop_guess.parent['Projected_Loops']
-    h5_proj_spec_inds = getAuxData(h5_projected_loops,
-                                   auxDataName='Spectroscopic_Indices')[-1]
-    h5_proj_spec_vals = getAuxData(h5_projected_loops,
-                                   auxDataName='Spectroscopic_Values')[-1]
-    h5_pos_inds = getAuxData(h5_projected_loops,
-                             auxDataName='Position_Indices')[-1]
-    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    h5_proj_spec_inds = get_auxillary_datasets(h5_projected_loops,
+                                               aux_dset_name='Spectroscopic_Indices')[-1]
+    h5_proj_spec_vals = get_auxillary_datasets(h5_projected_loops,
+                                               aux_dset_name='Spectroscopic_Values')[-1]
+    h5_pos_inds = get_auxillary_datasets(h5_projected_loops,
+                                         aux_dset_name='Position_Indices')[-1]
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
     pos_labels = get_attr(h5_pos_inds, 'labels')
 
     # reshape the vdc_vec into DC_step by Loop
-    spec_nd, _ = reshape_to_Ndims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
+    spec_nd, _ = reshape_to_n_dims(h5_proj_spec_vals, h5_spec=h5_proj_spec_inds)
     loop_spec_dims = np.array(spec_nd.shape[1:])
     loop_spec_labels = get_attr(h5_proj_spec_vals, 'labels')
 
@@ -763,8 +764,10 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     ax_map = plt.subplot2grid((1, 2), (0, 0), colspan=1, rowspan=1)
     ax_loop = plt.subplot2grid((1, 2), (0, 1), colspan=1, rowspan=1)
 
-    im_map, im_cbar = plot_map(ax_map, spatial_map.T, x_size=spatial_map.shape[0],
-                                           y_size=spatial_map.shape[1], cmap=cmap)
+    im_map, im_cbar = plot_map(ax_map, spatial_map.T,
+                               x_vec=np.arange(spatial_map.shape[0]),
+                               y_vec=np.arange(spatial_map.shape[1]),
+                               cmap=cmap)
 
     ax_map.set_xlabel('X')
     ax_map.set_ylabel('Y')
@@ -821,6 +824,12 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
 
         xdata = int(round(event.xdata))
         ydata = int(round(event.ydata))
+        current_pos = {pos_labels[0]: xdata, pos_labels[1]: ydata}
+
+        pos_dim_vals = list(range(len(pos_labels)))
+
+        for pos_dim_ind, pos_dim_name in enumerate(pos_labels):
+            pos_dim_vals[pos_dim_ind] = current_pos[pos_dim_name]
 
         crosshair.set_xdata(xdata)
         crosshair.set_ydata(ydata)
@@ -887,7 +896,7 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
         map_titles.append(' - '.join(title_list))
 
     fig, axes = plot_map_stack(parameter_map_stack, num_comps=num_cycles, color_bar_mode='each',
-                               title=map_titles, heading='Maps of Loop Parameter {}'.format(parameter_names[0]),
+                               subtitle=map_titles, title='Maps of Loop Parameter {}'.format(parameter_names[0]),
                                **kwargs)
 
     def update_loop_maps(parameter_name):
@@ -934,30 +943,29 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     h5_sho_fit = h5_sho_grp['Fit']
     h5_sho_guess = h5_sho_grp['Guess']
 
-
     h5_main = get_source_dataset(h5_sho_grp)
 
     # Now get the needed ancillary datasets for each main dataset
-    h5_pos_inds = getAuxData(h5_loop_parameters, 'Position_Indices')[0]
-    h5_pos_vals = getAuxData(h5_loop_parameters, 'Position_Values')[0]
+    h5_pos_inds = get_auxillary_datasets(h5_loop_parameters, 'Position_Indices')[0]
+    h5_pos_vals = get_auxillary_datasets(h5_loop_parameters, 'Position_Values')[0]
     pos_order = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_order)
     pos_labs = get_attr(h5_pos_inds, 'labels')
 
-    h5_loop_spec_inds = getAuxData(h5_loop_parameters, 'Spectroscopic_Indices')[0]
-    h5_loop_spec_vals = getAuxData(h5_loop_parameters, 'Spectroscopic_Values')[0]
+    h5_loop_spec_inds = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Indices')[0]
+    h5_loop_spec_vals = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Values')[0]
     loop_spec_order = get_sort_order(h5_loop_spec_inds)
     loop_spec_dims = get_dimensionality(h5_loop_spec_inds, loop_spec_order)
     loop_spec_labs = get_attr(h5_loop_spec_inds, 'labels')
 
-    h5_sho_spec_inds = getAuxData(h5_sho_fit, 'Spectroscopic_Indices')[0]
-    h5_sho_spec_vals = getAuxData(h5_sho_fit, 'Spectroscopic_Values')[0]
+    h5_sho_spec_inds = h5_sho_fit.h5_spec_inds
+    h5_sho_spec_vals = h5_sho_fit.h5_spec_vals
     sho_spec_order = get_sort_order(h5_sho_spec_inds)
     sho_spec_dims = get_dimensionality(h5_sho_spec_inds, sho_spec_order)
     sho_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
 
-    h5_main_spec_inds = getAuxData(h5_main, 'Spectroscopic_Indices')[0]
-    h5_main_spec_vals = getAuxData(h5_main, 'Spectroscopic_Values')[0]
+    h5_main_spec_inds = h5_main.h5_spec_inds
+    h5_main_spec_vals = h5_main.h5_spec_vals
     main_spec_order = get_sort_order(h5_main_spec_inds)
     main_spec_dims = get_dimensionality(h5_main_spec_inds, main_spec_order)
     main_spec_labs = get_attr(h5_main_spec_inds, 'labels')
@@ -991,7 +999,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     Get the frequency vector to be plotted against
     '''
     full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
-    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec, _ = reshape_to_n_dims(full_w_vec, h5_spec=h5_main_spec_inds)
     full_w_vec = full_w_vec.squeeze()
 
     '''
@@ -1044,7 +1052,7 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
         sho_fit = SHOfunc(sho_fit, w_vec)
 
         # Get the slice of the Raw Data
-        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec, _ = reshape_to_n_dims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
         raw_data_vec = np.moveaxis(raw_data_vec.squeeze(),
                                    main_bias_dim - len(pos_dims), -1)[selected_step][selected_loop_ndims]
 
@@ -1261,7 +1269,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     Get the frequency vector to be plotted against
     '''
     full_w_vec = h5_main_spec_vals[h5_main_spec_vals.attrs['Frequency']]
-    full_w_vec, _ = reshape_to_Ndims(full_w_vec, h5_spec=h5_main_spec_inds)
+    full_w_vec, _ = reshape_to_n_dims(full_w_vec, h5_spec=h5_main_spec_inds)
     full_w_vec = full_w_vec.squeeze()
 
     '''
@@ -1296,11 +1304,11 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         for spec_dim, dim_ind in zip(loop_spec_labs, selected_loop_ndims):
             slice_dict[spec_dim] = [dim_ind]
 
-        loop_proj_vec, _ = h5_loop_projections.slice(False, slice_dict)
+        loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, False)
         loop_proj_vec2 = np.roll(loop_proj_vec.squeeze(), shift_ind)
 
-        loop_guess_slice, _ = h5_loop_guess.slice(True, slice_dict)
-        loop_fit_slice, _ = h5_loop_fit.slice(True, slice_dict)
+        loop_guess_slice, _ = h5_loop_guess.slice(slice_dict, True)
+        loop_fit_slice, _ = h5_loop_fit.slice(slice_dict, True)
 
         # loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
         # loop_proj_vec2 = np.rollaxis(loop_proj_vec,
@@ -1337,7 +1345,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         sho_fit = SHOfunc(sho_fit, w_vec2)
 
         # Get the slice of the Raw Data
-        raw_data_vec, _ = reshape_to_Ndims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
+        raw_data_vec, _ = reshape_to_n_dims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
         # Move freqency dimension to the end
         raw_data_vec2 = np.rollaxis(raw_data_vec.squeeze(), main_freq_dim, len(main_spec_dims))
         # Now move the bias dimension to the front
@@ -1587,9 +1595,9 @@ def plot_1d_spectrum(data_vec, freq, title, **kwargs):
     freq *= 1E-3  # to kHz
 
     title = title + ': mean UDVS, mean spatial response'
-    fig, axes = plot_complex_loop_stack(np.expand_dims(data_vec, axis=0), freq, title=title,
-                                        subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
-                                        figsize=(5, 3), amp_units='V', **kwargs)
+    fig, axes = plot_complex_spectra(np.expand_dims(data_vec, axis=0), freq, title=title,
+                                     subtitle_prefix='', num_comps=1, x_label='Frequency (kHz)',
+                                     figsize=(5, 3), amp_units='V', **kwargs)
     return fig, axes
 
 
@@ -1619,11 +1627,84 @@ def plot_2d_spectrogram(mean_spectrogram, freq, title=None, **kwargs):
         else:
             raise ValueError('plot_2d_spectrogram: Incompatible data sizes!!!! spectrogram: '
                              + str(mean_spectrogram.shape) + ', frequency: ' + str(freq.shape))
-    freq *= 1E-3  # to kHz
 
-    fig, axes = plot_complex_map_stack(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
-                                       x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
-                                       extent=[freq[0], freq[-1], 0, mean_spectrogram.shape[0]],
-                                       figsize=(5, 3), origin='lower', stdevs=None, amp_units='V',
-                                       **kwargs)
+    fig, axes = plot_complex_spectra(np.expand_dims(mean_spectrogram, axis=0), num_comps=1, title=title,
+                                     x_label='Frequency (kHz)', y_label='UDVS step', subtitle_prefix='',
+                                     figsize=(5, 3), origin='lower', stdevs=None, amp_units='V', **kwargs)
+
+    # Changing the X axis labels
+    x_ticks = np.linspace(0, mean_spectrogram.shape[1] - 1, 5, dtype=int)
+    x_tick_labs = [str(np.round(freq[ind], 2)) for ind in x_ticks]
+
+    for axis in axes:
+        axis.set_xticks(x_ticks)
+        axis.set_xticklabels(x_tick_labs)
+
     return fig, axes
+
+
+def plot_histograms(p_hist, p_hbins, title, figure_path=None):
+    """
+    Plots the position averaged spectrogram
+
+    Parameters
+    ------------
+    p_hist : 2D numpy array
+        histogram data arranged as [physical quantity, frequency bin]
+    p_hbins : 1D numpy array
+        BE frequency that serves as the X axis of the plot
+    title : String
+        Plot group name
+    figure_path : String / Unicode
+        Absolute path of the file to write the figure to
+
+    Returns
+    ---------
+    fig : Matplotlib.pyplot figure
+        Figure handle
+    """
+
+    base_fig_size = 7
+    h_fig = base_fig_size
+    w_fig = base_fig_size * 4
+
+    fig = plt.figure(figsize=(w_fig, h_fig))
+    fig.suptitle(title)
+    iplot = 0
+
+    p_Nx, p_Ny = np.amax(p_hbins, axis=1) + 1
+
+    p_hist = np.reshape(p_hist, (4, p_Ny, p_Nx))
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Amp (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[0])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Phase (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[1])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Real (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[2])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    iplot += 1
+    p_plot_title = 'Spectral BEHistogram Imag (log10 of counts)'
+    p_plot = fig.add_subplot(1, 4, iplot, title=p_plot_title)
+    p_im = p_plot.imshow(np.rot90(np.log10(p_hist[3])), interpolation='nearest')
+    p_plot.axis('tight')
+    fig.colorbar(p_im, fraction=0.1)
+
+    if figure_path:
+        plt.savefig(figure_path, format='png')
+
+    return fig

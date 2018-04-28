@@ -69,28 +69,28 @@ data1 = np.random.rand(5, 7)
 # Now use the array to build the dataset.  This dataset will live
 # directly under the root of the file.  The MicroDataset class also implements the
 # compression and chunking parameters from h5py.Dataset.
-ds_main = px.MicroDataset('Main_Data', data=data1, parent='/')
+ds_main = px.VirtualDataset('Main_Data', data=data1, parent='/')
 
 ##############################################################################
 # We can also create an empty dataset and write the values in later
 # With this method, it is neccessary to specify the dtype and maxshape kwarg parameters.
-ds_empty = px.MicroDataset('Empty_Data', data=[], dtype=np.float32, maxshape=[7, 5, 3])
+ds_empty = px.VirtualDataset('Empty_Data', data=[], dtype=np.float32, maxshape=[7, 5, 3])
 
 ##############################################################################
 # We can also create groups and add other MicroData objects as children.
 # If the group's parent is not given, it will be set to root.
-data_group = px.MicroDataGroup('Data_Group', parent='/')
+data_group = px.VirtualGroup('Data_Group', parent='/')
 
-root_group = px.MicroDataGroup('/')
+root_group = px.VirtualGroup('/')
 
 # After creating the group, we then add an existing object as its child.
-data_group.addChildren([ds_empty])
-root_group.addChildren([ds_main, data_group])
+data_group.add_children([ds_empty])
+root_group.add_children([ds_main, data_group])
 
 ##############################################################################
 # The showTree method allows us to view the data structure before the hdf5 file is
 # created.
-root_group.showTree()
+root_group.show_tree()
 
 ##############################################################################
 # Now that we have created the objects, we can write them to an hdf5 file
@@ -99,13 +99,13 @@ root_group.showTree()
 h5_path = 'microdata_test.h5'
 
 # Then we use the ioHDF5 class to build the file from our objects.
-hdf = px.ioHDF5(h5_path)
+hdf = px.HDFwriter(h5_path)
 
 ##############################################################################
 # The writeData method builds the hdf5 file using the structure defined by the
 # MicroData objects.  It returns a list of references to all h5py objects in the
 # new file.
-h5_refs = hdf.writeData(root_group, print_log=True)
+h5_refs = hdf.write(root_group, print_log=True)
 
 # We can use these references to get the h5py dataset and group objects
 h5_main = px.io.hdf_utils.getH5DsetRefs(['Main_Data'], h5_refs)[0]

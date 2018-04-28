@@ -5,6 +5,11 @@ FFT & Filtering of Atomically Resolved Images
 
 **Stephen Jesse and Suhas Somnath**
 
+* Institute for Functional Imaging of Materials
+* Center for Nanophase Materials Sciences
+
+Oak Ridge National Laboratory, Oak Ridge TN 37831, USA
+
 9/28/2015
 
 Fourier transforms offer a very fast and convenient means to analyze and filter 
@@ -18,33 +23,48 @@ multiplying/dividing by iω in the Fourier domain (where ω is the transformed v
 We will take advantage of these properties and demonstrate simple image filtering and 
 convolution with example.   
 
-A few properties/uses of FFT’s are worth reviewing:
+A few properties/uses of FFT’s are worth reviewing.
+
+In this example we will load an image, Fourier transform it, apply a smoothing filter, and transform it back.
 """
 
 from __future__ import division, unicode_literals, print_function
-from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 import numpy as np
 import numpy.fft as npf
-# for downloading files:
-import wget
 import os
-
-import pycroscopy as px
+# for downloading files:
+try:
+    # This package is not part of anaconda and may need to be installed.
+    import wget
+except ImportError:
+    print('wget not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'wget'])
+    import wget
+try:
+    import pycroscopy as px
+except ImportError:
+    print('pycroscopy not found.  Will install with pip.')
+    import pip
+    pip.main(['install', 'pycroscopy'])
+    import pycroscopy as px
 
 ####################################################################################
-# In this example we will load an image, Fourier transform it, apply a smoothing filter, 
-# and transform it back. The images is stored as a tab delimited text file. One can load 
-# it using the following command: 
+# We will be using an image available on our GitHub project page by default. You are encouraged
+# to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own image instead.
+# When using your own image, you can skip this cell and provide the path to your data using the variable -
+# data_file_path
+#
+# Coming back to our example, lets start by downloading the file from GitHub:
 data_file_path = 'temp_STEM_STO.txt'
 # download the data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STEM_STO_2_20.txt'
 _ = wget.download(url, data_file_path, bar=None)
 
 ####################################################################################
-# In this example we will load an image, Fourier transform it, apply a smoothing filter, 
-# and transform it back. The images is stored as a tab delimited text file. One can load 
-# it using the following command: 
+# The image is stored as a tab delimited text file. One can load its contents to memory by using the following command:
+
 image_raw = np.loadtxt(data_file_path, dtype='str', delimiter='\t')
 
 # delete the temporarily downloaded file:
@@ -90,7 +110,7 @@ u_mat, v_mat = np.meshgrid(u_axis_vec, v_axis_vec)  # matrices of u-positions an
 # A plot of the data is shown below (STEM image of STO).
 fig, axis = plt.subplots(figsize=(5, 5))
 _ = px.plot_utils.plot_map(axis, image_raw, cmap=plt.cm.inferno, clim=[0, 6],
-                           x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                           x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
 axis.set_title('original image of STO captured via STEM')
 
 ####################################################################################
@@ -166,7 +186,7 @@ image_filtered = np.real(image_filtered)
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, img, title in zip(axes, [image_raw, image_filtered], ['original', 'filtered']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
 
@@ -179,7 +199,7 @@ image_w_background = image_raw + background_distortion
 fig, axes = plt.subplots(figsize=(10, 5), ncols=2)
 for axis, img, title in zip(axes, [background_distortion, image_w_background], ['background', 'image with background']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
 
@@ -217,6 +237,6 @@ for axis, img, title in zip(axes, [image_corrected, filtered_background],
                             ['image with background subtracted', 
                              'background component that was removed']):
     _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
-                               x_size=x_edge_length, y_size=y_edge_length, num_ticks=5)
+                               x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()

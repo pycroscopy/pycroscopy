@@ -4,25 +4,17 @@
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-import os
 import numpy as np
 from scipy.optimize import least_squares
 import itertools as itt
 import multiprocessing as mp
 import time as tm
-from _warnings import warn
-from sklearn.neighbors import KNeighborsClassifier
-import h5py
-
 import matplotlib.pyplot as plt
-import matplotlib.patches as patches
-import sys
 
-from ...io.io_utils import recommendCores, realToCompound
-from ...io.microdata import MicroDataset, MicroDataGroup
-from ...io.io_hdf5 import ioHDF5
-from ...viz import plot_utils
-from ..model import Model
+from ...core.io.io_utils import recommend_cpu_cores
+from ...io.virtual_data import VirtualDataset, VirtualGroup
+from ...io.hdf_writer import HDFwriter
+from ...core.viz.plot_utils import cmap_jet_white_center
 
 
 def do_fit(single_parm):
@@ -245,7 +237,7 @@ class Gauss_Fit(object):
 
         t_start = tm.time()
         if num_cores is None:
-            num_cores = recommendCores(self.num_atoms, requested_cores=num_cores, lengthy_computation=False)
+            num_cores = recommend_cpu_cores(self.num_atoms, requested_cores=num_cores, lengthy_computation=False)
 
         print('Setting up guesses')
         self.guess_parms = []
@@ -508,19 +500,19 @@ class Gauss_Fit(object):
                 Nearest_Neighbor_Indices
         """
 
-        ds_atom_guesses = MicroDataset('Gaussian_Guesses', data=self.guess_dataset)
-        ds_atom_fits = MicroDataset('Gaussian_Fits', data=self.fit_dataset)
-        ds_motif_guesses = MicroDataset('Motif_Guesses', data=self.motif_guess_dataset)
-        ds_motif_fits = MicroDataset('Motif_Fits', data=self.motif_converged_dataset)
-        ds_nearest_neighbors = MicroDataset('Nearest_Neighbor_Indices',
-                                            data=self.closest_neighbors_mat, dtype=np.uint32)
-        dgrp_atom_finding = MicroDataGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
+        ds_atom_guesses = VirtualDataset('Gaussian_Guesses', data=self.guess_dataset)
+        ds_atom_fits = VirtualDataset('Gaussian_Fits', data=self.fit_dataset)
+        ds_motif_guesses = VirtualDataset('Motif_Guesses', data=self.motif_guess_dataset)
+        ds_motif_fits = VirtualDataset('Motif_Fits', data=self.motif_converged_dataset)
+        ds_nearest_neighbors = VirtualDataset('Nearest_Neighbor_Indices',
+                                              data=self.closest_neighbors_mat, dtype=np.uint32)
+        dgrp_atom_finding = VirtualGroup(self.atom_grp.name.split('/')[-1], parent=self.atom_grp.parent.name)
         dgrp_atom_finding.attrs = self.fitting_parms
-        dgrp_atom_finding.addChildren([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
-                                       ds_motif_fits, ds_nearest_neighbors])
+        dgrp_atom_finding.add_children([ds_atom_guesses, ds_atom_fits, ds_motif_guesses,
+                                        ds_motif_fits, ds_nearest_neighbors])
 
-        hdf = ioHDF5(self.atom_grp.file)
-        h5_atom_refs = hdf.writeData(dgrp_atom_finding)
+        hdf = HDFwriter(self.atom_grp.file)
+        h5_atom_refs = hdf.write(dgrp_atom_finding)
         hdf.flush()
         return self.atom_grp
 
@@ -590,17 +582,17 @@ class Gauss_Fit(object):
             for i, ax_row in enumerate(np.atleast_2d(axes)):
                 # plot the original windows
                 ax_row[0].imshow(fit_region[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[0].set_title('Original Window')
 
                 # plot the initial guess windows
                 ax_row[1].imshow(self.motif_guesses[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[1].set_title('Initial Gaussian Guesses')
 
                 # plot the converged gaussians
                 ax_row[2].imshow(self.fit_motifs[i], interpolation='none',
-                                 cmap=plot_utils.cmap_jet_white_center())
+                                 cmap=cmap_jet_white_center())
                 ax_row[2].set_title('Converged Gaussians')
 
             fig.show()

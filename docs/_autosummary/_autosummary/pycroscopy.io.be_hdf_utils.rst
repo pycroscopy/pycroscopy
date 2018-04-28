@@ -16,11 +16,11 @@ pycroscopy\.io\.be\_hdf\_utils
       getIndicesforPlotGroup
       getSliceForExcWfm
       getSpecSliceForUDVSstep
-      isReshapable
+      is_reshapable
       isSimpleDataset
       maxReadPixels
-      reshapeToNsteps
-      reshapeToOneStep
+      reshape_to_n_steps
+      reshape_to_one_step
    
    
 

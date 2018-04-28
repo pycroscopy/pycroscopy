@@ -11,7 +11,7 @@ pycroscopy\.io\.io\_utils
    
       check_dtype
       check_ssh
-      complex_to_float
+      flatten_complex_to_real
       compound_to_scalar
       getAvailableMem
       getTimeStamp
@@ -20,7 +20,7 @@ pycroscopy\.io\.io\_utils
       recommendCores
       transformToReal
       transformToTargetType
-      uiGetFile
+      file_dialog
    
    
 

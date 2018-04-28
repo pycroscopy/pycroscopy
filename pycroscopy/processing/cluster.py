@@ -6,15 +6,19 @@ Created on Tue Jan 05 07:55:56 2016
 
 """
 from __future__ import division, print_function, absolute_import
+import time
 import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from .process import Process
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, copy_main_attributes
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType, to_ranges
-from ..io.microdata import MicroDataGroup, MicroDataset
+from .proc_utils import get_component_slice
+from ..core.processing.process import Process, parallel_compute
+from ..core.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
+    write_simple_attrs, link_h5_obj_as_alias, write_ind_val_dsets
+from ..core.io.pycro_data import PycroDataset
+from ..core.io.io_utils import format_time
+from ..core.io.write_utils import Dimension
+from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 
 
 class Cluster(Process):
@@ -57,7 +61,7 @@ class Cluster(Process):
         if num_comps is None:
             comp_attr = 'all'
 
-        comp_slice, num_comps = self._get_component_slice(num_comps)
+        comp_slice, num_comps = get_component_slice(num_comps, total_components=self.h5_main.shape[1])
 
         self.num_comps = num_comps
         self.data_slice = (slice(None), comp_slice)
@@ -95,42 +99,119 @@ class Cluster(Process):
 
         # check for existing datagroups with same results
         self.process_name = 'Cluster'
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        # Partial groups don't make any sense for statistical learning algorithms....
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
-         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
+         self.data_n_features, self.data_type_mult) = check_dtype(h5_main)
 
-    def compute(self, rearrange_clusters=True):
+        # supercharge h5_main!
+        self.h5_main = PycroDataset(self.h5_main)
+
+        self.__labels = None
+        self.__mean_resp = None
+
+    def test(self, rearrange_clusters=True, override=False):
         """
-        Clusters the hdf5 dataset, calculates mean response for each cluster, and writes the labels and mean response
-        back to the h5 file
+        Clusters the hdf5 dataset and calculates mean response for each cluster. This function does NOT write results to
+        the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
+        mean response vector for each cluster matrix is of the same data-type as the input matrix.
 
         Parameters
         ----------
-        rearrange_clusters : (Optional) Boolean. Default = True
+        rearrange_clusters : bool, optional. Default = True
             Whether or not the clusters should be re-ordered by relative distances between the mean response
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
+
+        Returns
+        -------
+        labels : 1D unsigned int array
+            Array of cluster labels as obtained from the fit
+        mean_response : 2D numpy array
+            Array of the mean response for each cluster arranged as [cluster number, response]
+        """
+        if not override:
+            if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
+                self.h5_results_grp = self.duplicate_h5_groups[-1]
+                print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
+                print('set the "override" flag to True to recompute results')
+                return np.squeeze(reshape_to_n_dims(self.h5_results_grp['Labels'])[0]), \
+                       reshape_to_n_dims(self.h5_results_grp['Mean_Response'])[0]
+
+        self.h5_results_grp = None
+
+        t1 = time.time()
+
+        print('Performing clustering on {}.'.format(self.h5_main.name))
+        # perform fit on the real dataset
+        results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+
+        print('Took {} to compute {}'.format(format_time(time.time() - t1), self.method_name))
+
+        t1 = time.time()
+        self.__mean_resp = self._get_mean_response(results.labels_)
+        print('Took {} to calculate mean response per cluster'.format(format_time(time.time() - t1)))
+
+        self.__labels = results.labels_
+        if rearrange_clusters:
+            self.__labels, self.__mean_resp = reorder_clusters(results.labels_, self.__mean_resp,
+                                                               self.data_transform_func)
+
+        # TODO: What if test() is called repeatedly?
+        labels_mat, success = reshape_to_n_dims(np.expand_dims(np.squeeze(self.__labels), axis=1),
+                                                h5_pos=self.h5_main.h5_pos_inds, h5_spec=np.expand_dims([0], axis=0))
+        if not success:
+            raise ValueError('Could not reshape labels to N-Dimensional dataset! Error:' + success)
+
+        centroid_mat, success = reshape_to_n_dims(self.__mean_resp, h5_spec=self.h5_main.h5_spec_inds,
+                                                  h5_pos=np.expand_dims(np.arange(self.__mean_resp.shape[0]), axis=1))
+
+        if not success:
+            raise ValueError('Could not reshape mean response to N-Dimensional dataset! Error:' + success)
+
+        return np.squeeze(labels_mat), centroid_mat
+
+    def delete_results(self):
+        """
+        Deletes results from memory.
+        """
+        del self.__labels, self.__mean_resp
+        self.__labels = None
+        self.__mean_resp = None
+        self.h5_results_grp = None
+
+    def compute(self, rearrange_clusters=True, override=False):
+        """
+        Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test() if it has
+        not already been called), and writes the labels and mean response back to the h5 file.
+
+        Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
+        upon writing to the HDF5 file
+
+        Parameters
+        ----------
+        rearrange_clusters : bool, optional. Default = True
+            Whether or not the clusters should be re-ordered by relative distances between the mean response
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         --------
         h5_group : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
-        self._fit()
-        new_mean_response = self._get_mean_response(self.results.labels_)
-        new_labels = self.results.labels_
-        if rearrange_clusters:
-            new_labels, new_mean_response = reorder_clusters(self.results.labels_, new_mean_response,
-                                                             self.data_transform_func)
-        return self._write_results_chunk(new_labels, new_mean_response)
+        if self.__labels is None and self.__mean_resp is None:
+            _ = self.test(rearrange_clusters=rearrange_clusters, override=override)
 
-    def _fit(self):
-        """
-        Fits the provided dataset
-        """
-        print('Performing clustering on {}.'.format(self.h5_main.name))
-        # perform fit on the real dataset
-        self.results = self.estimator.fit(self.data_transform_func(self.h5_main[self.data_slice]))
+        if self.h5_results_grp is None:
+            h5_group = self._write_results_chunk()
+            self.delete_results()
+        else:
+            h5_group = self.h5_results_grp
+
+        return h5_group
 
     def _get_mean_response(self, labels):
         """
@@ -148,184 +229,79 @@ class Cluster(Process):
         """
         print('Calculated the Mean Response of each cluster.')
         num_clusts = len(np.unique(labels))
-        mean_resp = np.zeros(shape=(num_clusts, self.num_comps), dtype=self.h5_main.dtype)
-        for clust_ind in range(num_clusts):
+
+        def __mean_resp_for_cluster(clust_ind, h5_raw, labels_vec, data_slice, xform_func):
             # get all pixels with this label
-            targ_pos = np.argwhere(labels == clust_ind)
+            targ_pos = np.argwhere(labels_vec == clust_ind)
             # slice to get the responses for all these pixels, ensure that it's 2d
-            data_chunk = np.atleast_2d(self.h5_main[targ_pos, self.data_slice[1]])
+            data_chunk = np.atleast_2d(h5_raw[:, data_slice[1]][targ_pos, :])
             # transform to real from whatever type it was
-            avg_data = np.mean(self.data_transform_func(data_chunk), axis=0, keepdims=True)
+            avg_data = np.mean(xform_func(data_chunk), axis=0, keepdims=True)
             # transform back to the source data type and insert into the mean response
-            mean_resp[clust_ind] = transformToTargetType(avg_data, self.h5_main.dtype)
+            return np.squeeze(stack_real_to_target_dtype(avg_data, h5_raw.dtype))
+
+        # TODO: Force usage of multiple threads. This should not take 3 cores
+        mean_resp = np.array(parallel_compute(np.arange(num_clusts), __mean_resp_for_cluster,
+                                              func_args=[self.h5_main, labels, self.data_slice,
+                                                         self.data_transform_func], lengthy_computation=True))
+
         return mean_resp
 
-    def _get_component_slice(self, components):
-        """
-        Check the components object to determine how to use it to slice the dataset
-
-        Parameters
-        ----------
-        components : {int, array-like of ints, slice, or None}
-            Input Options
-            integer: Components less than the input will be kept
-            length 2 iterable of integers: Integers define start and stop of component slice to retain
-            other iterable of integers or slice: Selection of component indices to retain
-            None: All components will be used
-
-        Returns
-        -------
-        comp_slice : slice or numpy.ndarray of uints
-            Slice or array specifying which components should be kept
-        """
-
-        if components is None:
-            num_comps = self.h5_main.shape[1]
-            comp_slice = slice(0, num_comps)
-        elif isinstance(components, int):
-            # Component is integer
-            num_comps = int(np.min([components, self.h5_main.shape[1]]))
-            comp_slice = slice(0, num_comps)
-        elif hasattr(components, '__iter__') and not isinstance(components, dict):
-            # Component is array, list, or tuple
-            if len(components) == 2:
-                # If only 2 numbers are given, use them as the start and stop of a slice
-                comp_slice = slice(int(components[0]), int(components[1]))
-                num_comps = abs(comp_slice.stop - comp_slice.start)
-            else:
-                # Convert components to an unsigned integer array
-                comp_slice = np.uint(components)
-                # sort and take unique values only
-                comp_slice.sort()
-                comp_slice = np.unique(comp_slice)
-                num_comps = len(comp_slice)
-                # check to see if this giant list of integers is just a simple range
-                list_of_ranges = list(to_ranges(comp_slice))
-                if len(list_of_ranges) == 1:
-                    # increment the second index by 1 to be consistent with python
-                    comp_slice = slice(int(list_of_ranges[0][0]), int(list_of_ranges[0][1] + 1))
-
-        elif isinstance(components, slice):
-            # Components is already a slice
-            comp_slice = components
-            num_comps = abs(comp_slice.stop - comp_slice.start)
-        else:
-            raise TypeError('Unsupported component type supplied to clean_and_build.  '
-                            'Allowed types are integer, numpy array, list, tuple, and slice.')
-
-        return comp_slice, num_comps
-
-    def _write_results_chunk(self, labels, mean_response):
+    def _write_results_chunk(self):
         """
         Writes the labels and mean response to the h5 file
 
-        Parameters
-        ------------
-        labels : 1D unsigned int array
-            Array of cluster labels as obtained from the fit
-        mean_response : 2D numpy array
-            Array of the mean response for each cluster arranged as [cluster number, response]
-
         Returns
         ---------
-        h5_labels : HDF5 Group reference
+        h5_group : HDF5 Group reference
             Reference to the group that contains the clustering results
         """
         print('Writing clustering results to file.')
-        num_clusters = mean_response.shape[0]
-        ds_label_mat = MicroDataset('Labels', np.uint32(labels.reshape([-1, 1])), dtype=np.uint32)
-        ds_label_mat.attrs['quantity'] = 'Cluster ID'
-        ds_label_mat.attrs['units'] = 'a. u.'
+        num_clusters = self.__mean_resp.shape[0]
 
-        clust_ind_mat = np.transpose(np.atleast_2d(np.arange(num_clusters)))
+        h5_cluster_group = create_results_group(self.h5_main, self.process_name)
 
-        ds_cluster_inds = MicroDataset('Cluster_Indices', np.uint32(clust_ind_mat))
-        ds_cluster_vals = MicroDataset('Cluster_Values', np.float32(clust_ind_mat))
-        ds_cluster_centroids = MicroDataset('Mean_Response', mean_response, dtype=mean_response.dtype)
-        # Main attributes will be copied from h5_main after writing
-        ds_label_inds = MicroDataset('Label_Spectroscopic_Indices', np.atleast_2d([0]), dtype=np.uint32)
-        ds_label_vals = MicroDataset('Label_Spectroscopic_Values', np.atleast_2d([0]), dtype=np.float32)
+        write_simple_attrs(h5_cluster_group, self.parms_dict)
+        h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
-        # write the labels and the mean response to h5
-        clust_slices = {'Cluster': (slice(None), slice(0, 1))}
-        ds_cluster_inds.attrs['labels'] = clust_slices
-        ds_cluster_inds.attrs['units'] = ['']
-        ds_cluster_vals.attrs['labels'] = clust_slices
-        ds_cluster_vals.attrs['units'] = ['']
+        h5_labels = write_main_dataset(h5_cluster_group, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
+                                       'Cluster ID', 'a. u.', None, Dimension('Cluster', 'ID', 1),
+                                       h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
+                                       aux_spec_prefix='Cluster_', dtype=np.uint32)
 
-        cluster_grp = MicroDataGroup(self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_', self.h5_main.parent.name[1:])
-        cluster_grp.addChildren([ds_label_mat, ds_cluster_centroids, ds_cluster_inds, ds_cluster_vals, ds_label_inds,
-                                 ds_label_vals])
+        # For now, link centroids with default spectroscopic indices and values.
+        h5_centroids = write_main_dataset(h5_cluster_group, self.__mean_resp, 'Mean_Response',
+                                          get_attr(self.h5_main, 'quantity')[0], get_attr(self.h5_main, 'units')[0],
+                                          Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
+                                          h5_spec_inds=self.h5_main.h5_spec_inds, aux_pos_prefix='Mean_Resp_Pos_',
+                                          h5_spec_vals=self.h5_main.h5_spec_vals)
 
-        # Write out all the parameters including those from the estimator
-        cluster_grp.attrs.update(self.parms_dict)
-
-        h5_spec_inds = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Indices']]
-        h5_spec_vals = self.h5_main.file[self.h5_main.attrs['Spectroscopic_Values']]
-
-        '''
-        Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
-        '''
         if self.num_comps != self.h5_main.shape[1]:
-            ds_centroid_indices = MicroDataset('Mean_Response_Indices', np.arange(self.num_comps, dtype=np.uint32))
-
+            '''
+            Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
+            Note that a sliced spectroscopic matrix may not be contiguous. Let's just lose the spectroscopic data
+            for now until a better method is figured out
+            '''
+            """
             if isinstance(self.data_slice[1], np.ndarray):
-                centroid_vals_mat = h5_spec_vals[self.data_slice[1].tolist()]
+                centroid_vals_mat = h5_centroids.h5_spec_vals[self.data_slice[1].tolist()]
 
             else:
-                centroid_vals_mat = h5_spec_vals[self.data_slice[1]]
+                centroid_vals_mat = h5_centroids.h5_spec_vals[self.data_slice[1]]
+    
+            ds_centroid_values.data[0, :] = centroid_vals_mat
+            """
+            if isinstance(self.data_slice[1], np.ndarray):
+                vals = self.data_slice[1].tolist()
+            else:
+                vals = self.data_slice[1]
+            new_spec = Dimension('Original_Spectral_Index', 'a.u.', vals)
+            h5_inds, h5_vals = write_ind_val_dsets(h5_cluster_group, new_spec, is_spectral=True)
+            # Now we need to link these two new datasets to h5_centroids
+            link_h5_obj_as_alias(h5_centroids, h5_inds, 'Spectroscopic_Indices')
+            link_h5_obj_as_alias(h5_centroids, h5_vals, 'Spectroscopic_Values')
 
-            ds_centroid_values = MicroDataset('Mean_Response_Values', centroid_vals_mat)
-
-            cluster_grp.addChildren([ds_centroid_indices, ds_centroid_values])
-
-        hdf = ioHDF5(self.h5_main.file)
-        h5_clust_refs = hdf.writeData(cluster_grp)
-
-        # Get the h5 objects we just created
-        h5_labels = getH5DsetRefs(['Labels'], h5_clust_refs)[0]
-        h5_centroids = getH5DsetRefs(['Mean_Response'], h5_clust_refs)[0]
-        h5_clust_inds = getH5DsetRefs(['Cluster_Indices'], h5_clust_refs)[0]
-        h5_clust_vals = getH5DsetRefs(['Cluster_Values'], h5_clust_refs)[0]
-        h5_label_inds = getH5DsetRefs(['Label_Spectroscopic_Indices'], h5_clust_refs)[0]
-        h5_label_vals = getH5DsetRefs(['Label_Spectroscopic_Values'], h5_clust_refs)[0]
-
-        # Add the attributes to label spectroscopic datasets
-        h5_label_inds.attrs['labels'] = np.array([''], dtype='S')
-        h5_label_inds.attrs['units'] = np.array([''], dtype='S')
-        h5_label_vals.attrs['labels'] = np.array([''], dtype='S')
-        h5_label_vals.attrs['units'] = np.array([''], dtype='S')
-
-        copy_main_attributes(self.h5_main, h5_centroids)
-
-        if isinstance(self.data_slice[1], np.ndarray):
-            h5_mean_resp_inds = getH5DsetRefs(['Mean_Response_Indices'], h5_clust_refs)[0]
-            h5_mean_resp_vals = getH5DsetRefs(['Mean_Response_Values'], h5_clust_refs)[0]
-            h5_mean_resp_inds.attrs['labels'] = np.array([''], dtype='S')
-            h5_mean_resp_inds.attrs['units'] = np.array([''], dtype='S')
-            h5_mean_resp_vals.attrs['labels'] = np.array([''], dtype='S')
-            h5_mean_resp_vals.attrs['units'] = np.array([''], dtype='S')
-        else:
-            h5_mean_resp_inds = h5_spec_inds
-            h5_mean_resp_vals = h5_spec_vals
-
-        checkAndLinkAncillary(h5_labels,
-                              ['Position_Indices', 'Position_Values'],
-                              h5_main=self.h5_main)
-        checkAndLinkAncillary(h5_labels,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_label_inds, h5_label_vals])
-
-        checkAndLinkAncillary(h5_centroids,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_mean_resp_inds, h5_mean_resp_vals])
-
-        checkAndLinkAncillary(h5_centroids,
-                              ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_clust_inds, h5_clust_vals])
-
-        # return the h5 group object
-        return h5_labels.parent
+        return h5_cluster_group
 
 
 def reorder_clusters(labels, mean_response, transform_function=None):
@@ -350,7 +326,6 @@ def reorder_clusters(labels, mean_response, transform_function=None):
     """
 
     num_clusters = mean_response.shape[0]
-
     # Get the distance between cluster means
     if transform_function is not None:
         distance_mat = pdist(transform_function(mean_response))

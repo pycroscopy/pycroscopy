@@ -12,12 +12,15 @@ import numpy as np
 from skimage.data import imread
 from skimage.measure import block_reduce
 
-from .df_utils.io_image import read_image, read_dm3, no_bin
-from .translator import Translator
-from .utils import generate_dummy_main_parms, build_ind_val_dsets
-from ..hdf_utils import getH5DsetRefs, calc_chunks, link_as_main
-from ..io_hdf5 import ioHDF5
-from ..microdata import MicroDataGroup, MicroDataset
+from .df_utils.image_utils import no_bin
+from .df_utils.dm_utils import read_dm3
+from ...core.io.image import read_image
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.write_utils import Dimension, calc_chunks
+from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
+from ..write_utils import build_ind_val_dsets
+from ..hdf_writer import HDFwriter
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class PtychographyTranslator(Translator):
@@ -75,7 +78,7 @@ class PtychographyTranslator(Translator):
 
         # Open the hdf5 file and delete any contents
         try:
-            hdf = ioHDF5(h5_path)
+            hdf = HDFwriter(h5_path)
             hdf.clear()
         except:
             raise
@@ -307,55 +310,53 @@ class PtychographyTranslator(Translator):
                       'translator': 'Ptychography',
                       'scan_size_x': scan_size_x,
                       'scan_size_y': scan_size_y}
-    # Create the hdf5 data Group
-        root_grp = MicroDataGroup('/')
+
+        # Create the hdf5 data Group
+        root_grp = VirtualGroup('/')
         root_grp.attrs = root_parms
-        meas_grp = MicroDataGroup('Measurement_000')
+        meas_grp = VirtualGroup('Measurement_000')
         meas_grp.attrs = main_parms
-        chan_grp = MicroDataGroup('Channel_000')
-    # Get the Position and Spectroscopic Datasets
-    #     ds_spec_ind, ds_spec_vals = self._buildspectroscopicdatasets(usize, vsize, num_pixels)
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets((usize, vsize),
-                                                        is_spectral=True,
-                                                        labels=['U', 'V'],
-                                                        units=['pixel', 'pixel'])
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets([scan_size_x, scan_size_y],
-                                                     is_spectral=False,
-                                                     labels=['X', 'Y'],
-                                                     units=['pixel', 'pixel'])
+        chan_grp = VirtualGroup('Channel_000')
+
+        # Build the Position and Spectroscopic Datasets
+        spec_desc = [Dimension('U', 'pixel', np.arange(usize)), Dimension('V', 'pixel', np.arange(vsize))]
+        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
+        pos_desc = [Dimension('X', 'pixel', np.arange(scan_size_x)),
+                    Dimension('Y', 'pixel', np.arange(scan_size_y))]
+        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
                                   unit_chunks=(1, num_pixels))
 
     # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = MicroDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
-                                    chunking=ds_chunking, dtype=data_type, compression='gzip')
-        ds_mean_ronch_data = MicroDataset('Mean_Ronchigram',
-                                          data=np.zeros(num_pixels, dtype=np.float32),
-                                          dtype=np.float32)
-        ds_mean_spec_data = MicroDataset('Spectroscopic_Mean',
-                                         data=np.zeros(num_files, dtype=np.float32),
-                                         dtype=np.float32)
+        ds_main_data = VirtualDataset('Raw_Data', data=[], maxshape=(num_files, num_pixels),
+                                      chunking=ds_chunking, dtype=data_type, compression='gzip')
+        ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
+                                            data=np.zeros(num_pixels, dtype=np.float32),
+                                            dtype=np.float32)
+        ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
+                                           data=np.zeros(num_files, dtype=np.float32),
+                                           dtype=np.float32)
     # Add datasets as children of Measurement_000 data group
-        chan_grp.addChildren([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                              ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
-        meas_grp.addChildren([chan_grp])
+        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
+                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+        meas_grp.add_children([chan_grp])
 
-        root_grp.addChildren([meas_grp])
+        root_grp.add_children([meas_grp])
         # print('Writing following tree to this file:')
         # root_grp.showTree()
 
-        h5_refs = self.hdf.writeData(root_grp)
-        h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
-        h5_ronch = getH5DsetRefs(['Mean_Ronchigram'], h5_refs)[0]
-        h5_mean_spec = getH5DsetRefs(['Spectroscopic_Mean'], h5_refs)[0]
+        h5_refs = self.hdf.write(root_grp)
+        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+        h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
+        h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]
         aux_ds_names = ['Position_Indices',
                         'Position_Values',
                         'Spectroscopic_Indices',
                         'Spectroscopic_Values']
 
-        link_as_main(h5_main, *getH5DsetRefs(aux_ds_names, h5_refs))
+        link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
 
         self.hdf.flush()
         

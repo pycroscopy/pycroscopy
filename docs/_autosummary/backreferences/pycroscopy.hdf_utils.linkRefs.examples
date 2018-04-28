@@ -1,6 +1,6 @@
 
 
-Examples using ``pycroscopy.hdf_utils.linkRefs``
+Examples using ``pycroscopy.hdf_utils.link_h5_objects_as_attrs``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. raw:: html

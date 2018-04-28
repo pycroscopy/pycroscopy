@@ -132,8 +132,8 @@ If the group's parent is not given, it will be set to root.
     root_group = px.MicroDataGroup('/')
 
     # After creating the group, we then add an existing object as its child.
-    data_group.addChildren([ds_empty])
-    root_group.addChildren([ds_main, data_group])
+    data_group.add_children([ds_empty])
+    root_group.add_children([ds_main, data_group])
 
 
 
@@ -141,14 +141,14 @@ If the group's parent is not given, it will be set to root.
 
 
 
-The showTree method allows us to view the data structure before the hdf5 file is
+The show_tree method allows us to view the data structure before the hdf5 file is
 created.
 
 
 
 .. code-block:: python
 
-    root_group.showTree()
+    root_group.show_tree()
 
 
 
@@ -182,7 +182,7 @@ Now that we have created the objects, we can write them to an hdf5 file
 
 
 
-The writeData method builds the hdf5 file using the structure defined by the
+The write method builds the hdf5 file using the structure defined by the
 MicroData objects.  It returns a list of references to all h5py objects in the
 new file.
 
@@ -190,11 +190,11 @@ new file.
 
 .. code-block:: python
 
-    h5_refs = hdf.writeData(root_group, print_log=True)
+    h5_refs = hdf.write(root_group, print_log=True)
 
     # We can use these references to get the h5py dataset and group objects
-    h5_main = px.io.hdf_utils.getH5DsetRefs(['Main_Data'], h5_refs)[0]
-    h5_empty = px.io.hdf_utils.getH5DsetRefs(['Empty_Data'], h5_refs)[0]
+    h5_main = px.io.hdf_utils.get_h5_obj_refs(['Main_Data'], h5_refs)[0]
+    h5_empty = px.io.hdf_utils.get_h5_obj_refs(['Empty_Data'], h5_refs)[0]
 
 
 

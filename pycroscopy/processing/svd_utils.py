@@ -7,18 +7,22 @@ Created on Mon Mar 28 09:45:08 2016
 
 from __future__ import division, print_function, absolute_import
 import time
-from warnings import warn
 from multiprocessing import cpu_count
 import numpy as np
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
 
-from .process import Process
-from ..io.hdf_utils import getH5DsetRefs, checkAndLinkAncillary, findH5group, \
-    getH5RegRefIndices, createRefFromIndices, checkIfMain, calc_chunks, copy_main_attributes, copyAttributes
-from ..io.io_hdf5 import ioHDF5
-from ..io.io_utils import check_dtype, transformToTargetType, getAvailableMem
-from ..io.microdata import MicroDataset, MicroDataGroup
+from ..core.processing.process import Process
+from .proc_utils import get_component_slice
+from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups,  get_indices_for_region_ref, \
+    create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
+    create_results_group, write_simple_attrs
+from ..io.hdf_writer import HDFwriter
+from ..core.io.io_utils import get_available_memory, format_time
+from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
+from ..io.virtual_data import VirtualDataset, VirtualGroup
+from ..core.io.write_utils import Dimension, calc_chunks
+from ..core.io.pycro_data import PycroDataset
 
 
 class SVD(Process):
@@ -33,7 +37,8 @@ class SVD(Process):
         We use the minimum of the actual dtype's itemsize and float32 since we
         don't want to read it in yet and do the proper type conversions.
         '''
-        self.data_transform_func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_main)
+        n_samples, n_features = h5_main.shape
+        self.data_transform_func, is_complex, is_compound, n_features, type_mult = check_dtype(h5_main)
 
         if num_components is None:
             num_components = min(n_samples, n_features)
@@ -41,19 +46,35 @@ class SVD(Process):
             num_components = min(n_samples, n_features, num_components)
         self.num_components = num_components
         self.parms_dict = {'num_components': num_components}
-        self.duplicate_h5_groups = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
-    def compute(self):
+        # supercharge h5_main!
+        self.h5_main = PycroDataset(self.h5_main)
+
+        self.__u = None
+        self.__v = None
+        self.__s = None
+
+    def test(self, override=False):
         """
-        Computes SVD and writes results to file
+        Applies randomised VD to the dataset. This function does NOT write results to the hdf5 file. Call compute() to
+        write to the file. Handles complex, compound datasets such that the V matrix is of the same data-type as the
+        input matrix.
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
 
         Returns
         -------
-         h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
+        U : numpy.ndarray
+            Abundance matrix
+        S : numpy.ndarray
+            variance vector
+        V : numpy.ndarray
+            eigenvector matrix
         """
-
-
         '''
         Check if a number of compnents has been set and ensure that the number is less than
         the minimum axis length of the data.  If both conditions are met, use fsvd.  If not
@@ -62,99 +83,98 @@ class SVD(Process):
         C.Smith -- We might need to put a lower limit on num_comps in the future.  I don't
                    know enough about svd to be sure.
         '''
-        print('Performing SVD')
+        if not override:
+            if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
+                self.h5_results_grp = self.duplicate_h5_groups[-1]
+                print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
+                print('set the "override" flag to True to recompute results')
+                return reshape_to_n_dims(self.h5_results_grp['U'])[0], self.h5_results_grp['S'][()], \
+                       reshape_to_n_dims(self.h5_results_grp['V'])[0]
+
+        self.h5_results_grp = None
 
         t1 = time.time()
 
-        U, S, V = randomized_svd(self.data_transform_func(self.h5_main), self.num_components, n_iter=3)
+        self.__u, self.__s, self.__v = randomized_svd(self.data_transform_func(self.h5_main), self.num_components,
+                                                      n_iter=3)
+        self.__v = stack_real_to_target_dtype(self.__v, self.h5_main.dtype)
 
-        print('SVD took {} seconds.  Writing results to file.'.format(round(time.time() - t1, 2)))
+        print('Took {} to compute randomized SVD'.format(format_time(time.time() - t1)))
 
-        self._write_results_chunk(U, S, V)
-        del U, S, V
+        u_mat, success = reshape_to_n_dims(self.__u, h5_pos=self.h5_main.h5_pos_inds,
+                                           h5_spec=np.expand_dims(np.arange(self.__u.shape[1]), axis=0))
+        if success == False:
+            raise ValueError('Could not reshape U to N-Dimensional dataset! Error:' + success)
 
-        return self.h5_results_grp
+        v_mat, success = reshape_to_n_dims(self.__v, h5_pos=np.expand_dims(np.arange(self.__u.shape[1]), axis=1),
+                                           h5_spec=self.h5_main.h5_spec_inds)
+        if success == False:
+            raise ValueError('Could not reshape V to N-Dimensional dataset! Error:' + success)
 
-    def _write_results_chunk(self, U, S, V):
+        return u_mat, self.__s, v_mat
+
+    def compute(self, override=False):
+        """
+        Computes SVD (by calling test_on_subset() if it has not already been called) and writes results to file.
+        Consider calling test() to check results before writing to file. Results are deleted from memory
+        upon writing to the HDF5 file
+
+        Parameters
+        ----------
+        override : bool, optional. default = False
+            Set to true to recompute results if prior results are available. Else, returns existing results
+
+        Returns
+        -------
+         h5_results_grp : h5py.Datagroup object
+            Datagroup containing all the results
+        """
+        if self.__u is None and self.__v is None and self.__s is None:
+            self.test(override=override)
+
+        if self.h5_results_grp is None:
+            self._write_results_chunk()
+            self.delete_results()
+
+        h5_group = self.h5_results_grp
+
+        return h5_group
+
+    def delete_results(self):
+        """
+        Deletes results from memory.
+        """
+        del self.__u, self.__s, self.__v
+        self.__u = None
+        self.__v = None
+        self.__s = None
+
+    def _write_results_chunk(self):
         """
         Writes the provided SVD results to file
 
         Parameters
         ----------
-        U : array-like
-            Abundance matrix
-        S : array-like
-            variance vector
-        V : array-like
-            eigenvector matrix
         """
+        comp_dim = Dimension('Principal Component', 'a. u.', len(self.__s))
 
-        ds_S = MicroDataset('S', data=np.float32(S))
-        ds_S.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_S.attrs['units'] = ['']
-        ds_inds = MicroDataset('Component_Indices', data=np.uint32(np.arange(len(S))))
-        ds_inds.attrs['labels'] = {'Principal Component': [slice(0, None)]}
-        ds_inds.attrs['units'] = ['']
-        del S
+        h5_svd_group = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = h5_svd_group
 
-        u_chunks = calc_chunks(U.shape, np.float32(0).itemsize)
-        ds_U = MicroDataset('U', data=np.float32(U), chunking=u_chunks)
-        del U
+        write_simple_attrs(h5_svd_group, self.parms_dict)
+        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0] - 1})
 
-        V = transformToTargetType(V, self.h5_main.dtype)
-        v_chunks = calc_chunks(V.shape, self.h5_main.dtype.itemsize)
-        ds_V = MicroDataset('V', data=V, chunking=v_chunks)
-        del V
+        h5_u = write_main_dataset(h5_svd_group, np.float32(self.__u), 'U', 'Abundance', 'a.u.', None, comp_dim,
+                                  h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
+                                  dtype=np.float32, chunks=calc_chunks(self.__u.shape, np.float32(0).itemsize))
+        # print(get_attr(self.h5_main, 'quantity')[0])
+        h5_v = write_main_dataset(h5_svd_group, self.__v, 'V', get_attr(self.h5_main, 'quantity')[0],
+                                  'a.u.', comp_dim, None, h5_spec_inds=self.h5_main.h5_spec_inds,
+                                  h5_spec_vals=self.h5_main.h5_spec_vals,
+                                  chunks=calc_chunks(self.__v.shape, self.h5_main.dtype.itemsize))
 
-        '''
-        Create the Group to hold the results and add the existing datasets as
-        children
-        '''
-        grp_name = self.h5_main.name.split('/')[-1] + '-' + self.process_name + '_'
-        svd_grp = MicroDataGroup(grp_name, self.h5_main.parent.name[1:])
-        svd_grp.addChildren([ds_V, ds_S, ds_U, ds_inds])
-
-        '''
-        Write the attributes to the group
-        '''
-        svd_grp.attrs = self.parms_dict
-        svd_grp.attrs.update({'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0] - 1})
-
-        '''
-        Write the data and retrieve the HDF5 objects then delete the Microdatasets
-        '''
-        hdf = ioHDF5(self.h5_main.file)
-        h5_svd_refs = hdf.writeData(svd_grp)
-
-        h5_U = getH5DsetRefs(['U'], h5_svd_refs)[0]
-        h5_S = getH5DsetRefs(['S'], h5_svd_refs)[0]
-        h5_V = getH5DsetRefs(['V'], h5_svd_refs)[0]
-        h5_svd_inds = getH5DsetRefs(['Component_Indices'], h5_svd_refs)[0]
-        self.h5_results_grp = h5_S.parent
-
-        # copy attributes
-        copy_main_attributes(self.h5_main, h5_V)
-        h5_V.attrs['units'] = np.array(['a. u.'], dtype='S')
-
-        del ds_S, ds_V, ds_U, svd_grp
-
-        # Will attempt to see if there is anything linked to this dataset.
-        # Since I was meticulous about the translators that I wrote, I know I will find something here
-        checkAndLinkAncillary(h5_U,
-                              ['Position_Indices', 'Position_Values'],
-                              h5_main=self.h5_main)
-
-        checkAndLinkAncillary(h5_V,
-                              ['Position_Indices', 'Position_Values'],
-                              anc_refs=[h5_svd_inds, h5_S])
-
-        checkAndLinkAncillary(h5_U,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              anc_refs=[h5_svd_inds, h5_S])
-
-        checkAndLinkAncillary(h5_V,
-                              ['Spectroscopic_Indices', 'Spectroscopic_Values'],
-                              h5_main=self.h5_main)
+        # No point making this 1D dataset a main dataset
+        h5_s = h5_svd_group.create_dataset('S', data=np.float32(self.__s))
 
         '''
         Check h5_main for plot group references.
@@ -164,13 +184,13 @@ class SVD(Process):
             if '_Plot_Group' not in key:
                 continue
 
-            ref_inds = getH5RegRefIndices(self.h5_main.attrs[key], self.h5_main, return_method='corners')
+            ref_inds = get_indices_for_region_ref(self.h5_main, self.h5_main.attrs[key], return_method='corners')
             ref_inds = ref_inds.reshape([-1, 2, 2])
-            ref_inds[:, 1, 0] = h5_V.shape[0] - 1
+            ref_inds[:, 1, 0] = h5_v.shape[0] - 1
 
-            svd_ref = createRefFromIndices(h5_V, ref_inds)
+            svd_ref = create_region_reference(h5_v, ref_inds)
 
-            h5_V.attrs[key] = svd_ref
+            h5_v.attrs[key] = svd_ref
 
 ###############################################################################
 
@@ -238,9 +258,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
         the rebuilt dataset
 
     """
-
-    hdf = ioHDF5(h5_main.file)
-    comp_slice = get_component_slice(components)
+    comp_slice, num_comps = get_component_slice(components, total_components=h5_main.shape[1])
     dset_name = h5_main.name.split('/')[-1]
 
     # Ensuring that at least one core is available for use / 2 cores are available for other use
@@ -251,7 +269,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     else:
         cores = max_cores
 
-    max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * getAvailableMem())
+    max_memory = min(max_RAM_mb * 1024 ** 2, 0.75 * get_available_memory())
     if cores != 1:
         max_memory = int(max_memory / 2)
 
@@ -259,20 +277,18 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     Get the handles for the SVD results
     '''
     try:
-        h5_svd = findH5group(h5_main, 'SVD')[-1]
+        h5_svd_group = find_results_groups(h5_main, 'SVD')[-1]
 
-        h5_S = h5_svd['S']
-        h5_U = h5_svd['U']
-        h5_V = h5_svd['V']
+        h5_S = h5_svd_group['S']
+        h5_U = h5_svd_group['U']
+        h5_V = h5_svd_group['V']
 
     except KeyError:
-        warnstring = 'SVD Results for {dset} were not found.'.format(dset=dset_name)
-        warn(warnstring)
-        return
+        raise KeyError('SVD Results for {dset} were not found.'.format(dset=dset_name))
     except:
         raise
 
-    func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_V)
+    func, is_complex, is_compound, n_features, type_mult = check_dtype(h5_V)
 
     '''
     Calculate the size of a single batch that will fit in the available memory
@@ -300,73 +316,32 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     for ibatch, batch in enumerate(batch_slices):
         rebuild[batch, :] += np.dot(h5_U[batch, comp_slice], ds_V)
 
-    rebuild = transformToTargetType(rebuild, h5_V.dtype)
+    rebuild = stack_real_to_target_dtype(rebuild, h5_V.dtype)
 
     print('Completed reconstruction of data from SVD results.  Writing to file.')
     '''
     Create the Group and dataset to hold the rebuild data
     '''
-    rebuilt_grp = MicroDataGroup('Rebuilt_Data_', h5_svd.name[1:])
+    rebuilt_grp = VirtualGroup('Rebuilt_Data_', h5_svd_group.name[1:])
 
-    ds_rebuilt = MicroDataset('Rebuilt_Data', rebuild,
-                              chunking=h5_main.chunks,
-                              compression=h5_main.compression)
-    rebuilt_grp.addChildren([ds_rebuilt])
+    ds_rebuilt = VirtualDataset('Rebuilt_Data', rebuild,
+                                chunking=h5_main.chunks,
+                                compression=h5_main.compression)
+    rebuilt_grp.add_children([ds_rebuilt])
 
     if isinstance(comp_slice, slice):
         rebuilt_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
     else:
         rebuilt_grp.attrs['components_used'] = components
 
-    h5_refs = hdf.writeData(rebuilt_grp)
+    hdf = HDFwriter(h5_main.file)
+    h5_refs = hdf.write(rebuilt_grp)
 
-    h5_rebuilt = getH5DsetRefs(['Rebuilt_Data'], h5_refs)[0]
-    copyAttributes(h5_main, h5_rebuilt, skip_refs=False)
+    h5_rebuilt = get_h5_obj_refs(['Rebuilt_Data'], h5_refs)[0]
+    copy_attributes(h5_main, h5_rebuilt, skip_refs=False)
 
     hdf.flush()
 
     print('Done writing reconstructed data to file.')
 
     return h5_rebuilt
-
-
-def get_component_slice(components):
-    """
-    Check the components object to determine how to use it to slice the dataset
-
-    Parameters
-    ----------
-    components : {int, iterable of ints, slice, or None}
-        Input Options
-        integer: Components less than the input will be kept
-        length 2 iterable of integers: Integers define start and stop of component slice to retain
-        other iterable of integers or slice: Selection of component indices to retain
-        None: All components will be used
-    Returns
-    -------
-    comp_slice : slice or numpy array of uints
-        Slice or array specifying which components should be kept
-
-    """
-
-    comp_slice = slice(None)
-
-    if isinstance(components, int):
-        # Component is integer
-        comp_slice = slice(0, components)
-    elif hasattr(components, '__iter__') and not isinstance(components, dict):
-        # Component is array, list, or tuple
-        if len(components) == 2:
-            # If only 2 numbers are given, use them as the start and stop of a slice
-            comp_slice = slice(int(components[0]), int(components[1]))
-        else:
-            # Convert components to an unsigned integer array
-            comp_slice = np.uint(np.round(components)).tolist()
-    elif isinstance(components, slice):
-        # Components is already a slice
-        comp_slice = components
-    elif components is not None:
-        raise TypeError('Unsupported component type supplied to clean_and_build.  '
-                        'Allowed types are integer, numpy array, list, tuple, and slice.')
-
-    return comp_slice

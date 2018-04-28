@@ -35,11 +35,9 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 
 # The package used for creating and manipulating HDF5 files:
-import h5py
 
 # Plotting and visualization:
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 # for downloading files:
 import wget
@@ -51,6 +49,7 @@ from sklearn.decomposition import NMF
 
 # finally import pycroscopy:
 import pycroscopy as px
+import pycroscopy.viz.cluster_utils
 
 """
   
@@ -76,7 +75,7 @@ data_file_path = 'temp_um.h5'
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 _ = wget.download(url, data_file_path, bar=None)
 
-hdf = px.ioHDF5(data_file_path)
+hdf = px.HDFwriter(data_file_path)
 h5_file = hdf.file
 
 print('Contents of data file:')
@@ -158,10 +157,10 @@ px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with
 # Visualize the eigenvectors:
 first_evecs = h5_v[:9, :]
 
-px.plot_utils.plot_loops(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
-px.plot_utils.plot_loops(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
-                         subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.abs(first_evecs), x_label=x_label, y_label=y_label, plots_on_side=3,
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Amplitude)', evenly_spaced=False)
+px.plot_utils.plot_curves(freq_vec, np.angle(first_evecs), x_label=x_label, y_label='Phase (rad)', plots_on_side=3,
+                          subtitle_prefix='Component', title='SVD Eigenvectors (Phase)', evenly_spaced=False)
 
 # Visualize the abundance maps:
 px.plot_utils.plot_map_stack(abun_maps, num_comps=9, heading='SVD Abundance Maps',
@@ -186,7 +185,7 @@ h5_kmeans_grp = estimators.compute(h5_main)
 h5_kmeans_labels = h5_kmeans_grp['Labels']
 h5_kmeans_mean_resp = h5_kmeans_grp['Mean_Response']
 
-px.plot_utils.plot_cluster_h5_group(h5_kmeans_grp)
+pycroscopy.viz.cluster_utils.plot_cluster_h5_group(h5_kmeans_grp)
 
 #####################################################################################
 # 3. Non-negative Matrix Factorization (NMF)

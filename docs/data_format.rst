@@ -8,38 +8,52 @@ Pycroscopy Data and File Format
 
 In this document we aim to provide a comprehensive overview, guidelines,
 and specifications for storing imaging data using the community-driven
-pycroscopy format. The credit for guidelines on structuring the data
-goes to **Dr. Stephen Jesse** and the credit for implementation goes to
-**Dr. Suhas Somnath** and **Chris R. Smith**
+pycroscopy format. **Dr. Stephen Jesse** conceive the original guidelines on structuring the data while
+**Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure in python and HDF5
 
 Why should you care?
 --------------------
 
 The quest for understanding more about samples has necessitated the
-development of a multitude of microscopes, each capable of numerous
+development of a multitude of instruments, each capable of numerous
 measurement modalities.
 
-Typically, each commercial microscope generates data files formatted in
+Typically, each commercial instruments generates data files formatted in
 proprietary data formats by the instrument manufacturer. The proprietary
 natures of these data formats impede scientific progress in the
-following ways: 1. By making it challenging for researchers to extract
-data from these files 2. Impeding the correlation of data acquired from
-different instruments. 3. Inability to store results back into the same
-file 4. Inflexibility to accomodate few kilobytes to several gigabytes
-of data 5. Requiring different versions of analysis routines for each
-format 6. In some cases, requiring proprietary software provided with
-the microscope to access the data
+following ways:
 
-Future concerns: 1. Several fields are moving towards the open science
-paradigm which will require journals and researchers to support journal
-papers with data and analysis software 2. US Federal agencies that
-support scientific research require curation of datasets in a clear and
-organized manner
+1. By making it challenging for researchers to extract data from these files
+2. Impeding the correlation of data acquired from different instruments.
+3. Inability to store results back into the same file
+4. Inflexibility to accommodate few kilobytes to several gigabytes of data
+5. Requiring different versions of analysis routines for each format
+6. In some cases, requiring proprietary software provided with the microscope to access the data
+
+Future concerns:
+
+1. Several fields are moving towards the open science paradigm which will require journals and researchers to support
+   journal papers with data and analysis software
+2. US Federal agencies that support scientific research require curation of datasets in a clear and organized manner
+
+Other problems:
+
+1. The vast majority of scientific software packages (e.g. X-array) aim to focus at information already available in
+   memory. In other words they do not solve the problem of storing data in a self-describing manner and reading +
+   processing this data.
+2. There are a few data formatting packages and approaches (Nexus, NetCDF). However, they are typically narrow in scope
+   and only solve the data formatting for specific communities
+3. Commercial image analysis software are often woefully limited in their capabilities and only work on simple 1, 2, and
+   in some cases- 3D datasets. There are barely any software for handling arbitrarily large multi-dimensional datasets.
+4. In many cases, especially electron and ion based microscopy, the very act of probing the sample damages the sample.
+   To minimize damage to the sample, researchers only sample data from a few random positions in the 2D grid and use
+   advanced algorithms to reconstruct the missing data. We have not come across any robust solutions for storing such
+   ``Compressed sensing / sparse sampling`` data. More in the ``Advanced Topics`` section.
 
 To solve the above and many more problems, we have developed an
 **instrument agnostic data format** that can be used to represent data
 from any instrument, size, dimensionality, or complexity. We store data
-in **heirarchical data format (HDF5)** files because we find them to be
+in **hierarchical data format (HDF5)** files because we find them to be
 best suited for the pycroscopy data format.
 
 Pycroscopy data format
@@ -51,13 +65,13 @@ Data in pycroscopy files are stored in three main kinds of datasets:
    the instrument as well as results from processing or analysis routines
    applied to the data
 #. Mandatory ``Ancillary`` datasets that are necessary to explain the
-   ``main`` data. Note - these datasets may sometimes be referred to ``Auxillary`` datasets in different parts of the package.
+   ``main`` data
 #. ``Extra`` datasets store any other data that may be of value
 
 ``Main`` Datasets
 ~~~~~~~~~~~~~~~~~
 
-Regardless of origin, modality, dimensionality or complexity, imaging data have one
+Regardless of origin, modality or complexity, imaging data have one
 thing in common:
 
 **The same measurement is performed at multiple spatial locations**
@@ -92,10 +106,10 @@ the 2D format:
   and a new dataset can be created to start from the current measurement.
   Thus, no space would be wasted.
 
-Here are some examples of how some familar data can be represented using
+Here are some examples of how some familiar data can be represented using
 this paradigm:
 
--  **Grayscale photographs**: A single value (intensity) in is recorded
+-  **Gray-scale photographs**: A single value (intensity) in is recorded
    at each pixel in a two dimensional grid. Thus, there are are two
    spatial dimensions - X, Y and one spectroscopic dimension -
    "Intensity". The data can be represented as a N x 1 matrix where N is
@@ -110,7 +124,7 @@ this paradigm:
    function of a single (spectroscopic) variable such as wavelength.
    Thus this data is represented as a 1 x P matrix, where P is the
    number of points in the spectra
--  **Scanning Tunneling Spectroscopy or IV spectroscopy**: The current
+-  **Scanning Tunnelling Spectroscopy or IV spectroscopy**: The current
    (A 1D array of size P) is recorded as a function of voltage at each
    position in a two dimensional grid of points (two spatial
    dimensions). Thus the data would be represented as a N x P matrix,
@@ -121,15 +135,15 @@ Using prefixes ``i`` for position and ``j`` for spectroscopic, the main
 dataset would be structured as:
 
 +------------+------------+------------+--------+--------------+--------------+
-| i0, j0     | i0, j1     | i0, j2     | ....   | i0, jP-2     | i0, jP-1     |
+| i0, j0     | i0, j1     | i0, j2     | <..>   | i0, jP-2     | i0, jP-1     |
 +------------+------------+------------+--------+--------------+--------------+
-| i1, j0     | i1, j1     | i1, j2     | ....   | i1, jP-2     | i1, jP-1     |
+| i1, j0     | i1, j1     | i1, j2     | <..>   | i1, jP-2     | i1, jP-1     |
 +------------+------------+------------+--------+--------------+--------------+
-| ........   | ........   | ........   | ....   | ..........   | ..........   |
+| <......>   | <......>   | <......>   | <..>   | <........>   | <........>   |
 +------------+------------+------------+--------+--------------+--------------+
-| iN-2, j0   | iN-2, j1   | iN-2, j2   | ....   | iN-2, jP-2   | iN-2, jP-1   |
+| iN-2, j0   | iN-2, j1   | iN-2, j2   | <..>   | iN-2, jP-2   | iN-2, jP-1   |
 +------------+------------+------------+--------+--------------+--------------+
-| iN-1, j0   | iN-1, j1   | iN-1, j2   | ....   | iN-1, jP-1   | iN-1, jP-1   |
+| iN-1, j0   | iN-1, j1   | iN-1, j2   | <..>   | iN-1, jP-1   | iN-1, jP-1   |
 +------------+------------+------------+--------+--------------+--------------+
 
 * If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P.
@@ -191,9 +205,9 @@ and utility of compound datasets are best described with examples:
   fit should actually be a N x 1 dataset where each element is a compound
   value made up of the S coefficients. Note that while some form of sequence
   can be forced onto the coefficients if the spectra were fit to polynomial
-  equations, the drawbacks outweigh the benefits:
+  equations, the drawbacks outweight the benefits:
 
-  * Storing data in compound datasets circumvents (slicing) problems associated
+  * Storing data in compund datasets circumvents (slicing) problems associated
     with getting a specific / the kth coeffient if the data were stored in a
     real-valued matrix instead.
   * Visualization also becomes a lot simpler since compound datasets cannot
@@ -341,7 +355,7 @@ channel could be a spectra (1D array) collected at each location on a 2D
 grid while another could be the temperature (single value) recorded by
 another sensor at the same spatial positions. In this case, the two
 datasets could indeed share the same ancillary position datasets but
-different spectroscopic datasets. Alternativeley, there could be other
+different spectroscopic datasets. Alternatively, there could be other
 cases where the average measurement over multiple spatial points is
 recorded separately (possibly by another detector). In this case, the
 two measurement datasets would not share the ancillary position datasets
@@ -355,19 +369,19 @@ While it is indeed possible to store data in the pycroscopy format in
 multiple kinds of file formats such at .mat files, plain binary files,
 etc., we chose the `HDF5 file
 format <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`__ since it
-comfortably accomodates the pycroscopy format and offers several
+comfortably accommodates the pycroscopy format and offers several
 advantageous features.
 
 Information can be stored in HDF5 files in several ways:
 
-* ``Datasets`` allow the storage of data matricies and these are the vessels used for storing the ``main``,
+* ``Datasets`` allow the storageo of data matricies and these are the vessels used for storing the ``main``,
   ``ancillary``, and any extra data matricies
-* ``Datagroups`` are similar to folders in conventional file systems and can be used to store any number of datasets or
-  datagroups themselves
+* ``Groups`` are similar to folders in conventional file systems and can be used to store any number of datasets or
+  groups themselves
 * ``Attributes`` are small pieces of information, such as experimental or analytical parameters, that are stored in
-  key-value pairs in the same way as dictionaries in python.  Both datagroups and datasets can store attributes.
+  key-value pairs in the same way as dictionaries in python.  Both groups and datasets can store attributes.
 * While they are not means to store data, ``Links`` or ``references`` can be used to provide shortcuts and aliases to
-  datasets and datagroups. This feature is especially useful for avoiding duplication of datasets when two ``main``
+  datasets and groups. This feature is especially useful for avoiding duplication of datasets when two ``main``
   datasets use the same ancillary datasets.
 
 Among the `various benefits <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`__
@@ -377,9 +391,9 @@ that they offer, HDF5 files:
 * scale very efficiently from few kilobytes to several terabytes
 * can be read and modified using any language including Python, Matlab,
   C/C++, Java, Fortran, Igor Pro, etc.
-* store data in a intuitive and familiar heirarchical / tree-like
+* store data in a intuitive and familiar hierarchical / tree-like
   structure that is similar to files and folders in personal computers.
-* faciliates storage of any number of experimental or analysis parameters
+* facilitates storage of any number of experimental or analysis parameters
   in addition to regular data.
 
 Implementation
@@ -391,7 +405,7 @@ pycroscopy format in HDF5 files.
 ``Main`` data:
 ~~~~~~~~~~~~~~
 
-**Dataset** structured as (positions x spectroscopic values)
+**Dataset** structured as (positions x time or spectroscopic values)
 
 * ``dtype`` : uint8, float32, complex64, compound if necessary, etc.
 * *Required* attributes:
@@ -408,14 +422,10 @@ pycroscopy format in HDF5 files.
   * ``Spectroscopic_Values`` - Reference to the spectroscopic values
     dataset
 
-* `chunking <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__  : 
-
-   * You may think of chunking as the division of a large matrix in to several small chunks wherein the data within the chunk is contiguous in order to improve data reading and writing speeds among other things. This is an optional argument that can be specified when creating a dataset if the typical pattern for reading the data is known a-priori. 
-   * For example, if it is known that data will ONLY be read position-by-position and not spectral index-by-spectral index (e.g. - specific frequency in a spectra) it makes sense to chunk a few consecutive positions (rows) together. That way, loading a single position's (row) value will cause h5py to load the entire data chunk that this position is present in into memory. While it may seem wasteful at first, it pays dividends in the cases when one is attempting to process data position-by-position. So, when we ask h5py to load the next position (row), if this row was already loaded as part of the chunk (already in memory), the desired data will be retrieved from memory (the chunk that also contains data for this row) instead of reading the HDF5 file, which is far slower a process compared to retrieving from memory. The drawback of chunking by rows only is that if data must be read by column (spectroscopic index), the entire dataset has to be loaded into memory since the column is actually distributed over ALL chunks. One solution to avoid such problems is to set the chunks to a handful of positions and spectral indices (like a square instead of very wide rectangles). This way, reading a single row would mean loading 4-5 chunks instead of one. However, at the same time, reading a single column might mean reading 10 chunks instead of ALL chunks.
-   * HDF group recommends that chunks be between 100 kB to 1 MB. This size needs to be translated to n positions x s spectroscopic indices depending on:
-   
-      * the size of each data element (unsigned integer / float / double, complex value etc.)
-      * how the data is likely to be read (position-by-position) or (spectroscopic index-by-spectroscopic index) or both
+* `chunking <https://support.hdfgroup.org/HDF5/doc1.8/Advanced/Chunking/index.html>`__
+  : HDF group recommends that chunks be between 100 kB to 1 MB. We
+  recommend chunking by whole number of positions since data is more
+  likely to be read by position rather than by specific spectral indices.
 
 Note that we are only storing references to the ancillary datasets. This
 allows multiple ``main`` datasets to share the same ancillary datasets
@@ -488,15 +498,15 @@ time)
 Attributes
 ~~~~~~~~~~
 
--  All datagroups and datasets must be created with the following two
+-  All groups and datasets must be created with the following two
    **mandatory** attributes for better traceability:
 -  ``time_stamp`` : '2017\_08\_15-22\_15\_45' (date and time of creation
-   of the datagroup or dataset formatted as 'YYYY\_MM\_DD-HH\_mm\_ss' as
+   of the group or dataset formatted as 'YYYY\_MM\_DD-HH\_mm\_ss' as
    a string)
 -  ``machine_id`` : 'mac1234.ornl.gov' (a fully qualified domain name as
    a string)
 
-Datagroups
+Groups
 ~~~~~~~~~~
 
 Datagroups in pycroscopy are used to organize datasets in an intuitive
@@ -509,95 +519,93 @@ Measurement data
    parameters during measurements. Even if these changes are minor, they
    can lead to misinterpretation of data if the changes are not handled
    robustly. To solve this problem, we recommend storing data under
-   datagroups named as **``Measurement_00x``**. Each time the parameters
+   groups named as **``Measurement_00x``**. Each time the parameters
    are changed, the dataset is truncated to the point until which data
-   was collected and a new datagroup is created to store the upcoming
+   was collected and a new group is created to store the upcoming
    new measurement data.
 -  Each **channel** of information acquired during the measurement gets
-   its own datagroup.
--  The ``main`` datasets would reside within these channel datagroups.
--  Similar to the measurement datagroups, the channel datagroups are
-   named as ``Channel_00x``. The index for the datagroup is incremented
+   its own group.
+-  The ``main`` datasets would reside within these channel groups.
+-  Similar to the measurement groups, the channel groups are
+   named as ``Channel_00x``. The index for the group is incremented
    according to the index of the information channel.
 -  Depending on the circumstances, the ancillary datasets can be shared
    among channels.
 
    -  Instead of the main dataset in Channel\_001 having references to
       the ancillary datasets in Channel\_000, we recommend placing the
-      ancillary datasets outside the Channel datagroups in a area common
-      to both channel datagroups. Typically, this is the
-      Measurement\_00x datagroup.
+      ancillary datasets outside the Channel groups in a area common
+      to both channel groups. Typically, this is the
+      Measurement\_00x group.
 
 -  This is what the tree structure in the file looks like when
    experimental parameters were changed twice and there are two channels
    of information being acquired during the measurements.
--  ``/`` (Root - also considered a datagroup)
+-  ``/`` (Root - also considered a group)
 -  Datasets common to all measurement groups (perhaps some calibration
    data that is acquired only once before all measurements)
--  ``Measurement_000`` (datagroup)
+-  ``Measurement_000`` (group)
 
-   -  ``Channel_000`` (datagroup)
+   -  ``Channel_000`` (group)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
-   -  ``Channel_001`` (datagroup)
+   -  ``Channel_001`` (group)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
-   -  Datasets common to Channel\_000 and Channel\_001 (e.g. - ``Channel_000`` and ``Channel_001`` could store ancillary datasets or some other datasets here to avoid duplication if they are both going to be the same. Note that the location of these ancillary datasets is not important so long as they are correctly linked to the Main dataset)
+   -  Datasets common to Channel\_000 and Channel\_001
 
--  ``Measurement_001`` (datagroup)
+-  ``Measurement_001`` (group)
 
-   -  ``Channel_000`` (datagroup)
+   -  ``Channel_000`` (group)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
-   -  ``Channel_001`` (datagroup)
+   -  ``Channel_001`` (group)
 
-      -  Main, Ancillary, and other datasets here
+      -  Datasets here
 
    -  Datasets common to Channel\_000 and Channel\_001
 
 -  ...
-
-Note that this heirarchical arrangement of datagroups and datasets is only a recommendation and not a requirement for either pycroscopy or HDF5. 
 
 Tool (analysis / processing)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  Each time an analysis or processing routine, refered generally as
    ``tool``, is performed on a dataset of interest, the results are
-   stored in new datasets within a datagroup.
--  A completely new dataset(s) and datagroup are created even if a minor
+   stored in new datasets within a group.
+-  A completely new dataset(s) and group are created even if a minor
    operation is being performed on the dataset.
 -  Almost always, the tool is applied to a ``main`` dataset (refered to
    as the ``parent`` dataset) and at least one of the results is
    typically also a ``main`` dataset. These new ``main`` datasets will
    either need to be linked to the ancillary matricies of the ``parent``
    or to new ancillary datasets that will need to be created.
--  The resultant dataset(s) are always stored in a datagroup whose name
+-  The resultant dataset(s) are always stored in a group whose name
    is derived from the names of the tool and the dataset. This makes the
    data **traceable**, meaning that the names of the datasets and
-   datagroups are sufficient to understand what processing or analysis
+   groups are sufficient to understand what processing or analysis
    steps were applied to the data to bring it to a particular point.
--  The datagroup is named as ``Parent_Dataset-Tool_Name_00x``, where a
+-  The group is named as ``Parent_Dataset-Tool_Name_00x``, where a
    ``tool`` named ``Tool_Name`` is applied to a ``main`` dataset named
    ``Parent_Dataset``.
 
    -  Since there is a possibility that the same tool could be applied
       to the very same dataset multiple times, we store the results of
-      each run of the tool in a separate datagroup. These datagroups are
-      differentiated by the index that is appended to the base-name of
-      the datagroup.
+      each run of the tool in a separate group. These groups are
+      differentiated by the index that is appened to the base-name of
+      the group.
    -  Note that a ``-`` separates the dataset name from the tool name
       and anything after the last ``_`` will be assumed to be the index
-      of the datagroup
+      of the group
 
 -  In general, the results from tools applied to datasets should be
    stored as:
 
     -  ``Parent_Dataset``
-    -  ``Parent_Dataset-Tool_Name_000`` (datagroup comtaining results from
+    -  ``Parent_Dataset-Tool_Name_000`` (group comtaining results from
        first run of the ``tool`` on ``Parent_Dataset``)
 
        -  Attributes:
@@ -610,7 +618,7 @@ Tool (analysis / processing)
        -  ``Dataset_Result0``
        -  ``Dataset_Result1`` ...
 
-    -  ``Parent_Dataset-Tool_Name_001`` (datagroup comtaining results from
+    -  ``Parent_Dataset-Tool_Name_001`` (group comtaining results from
        second run of the ``tool`` on ``Parent_Dataset``)
 
 -  This methodolody is illustrated with an example of applying
@@ -618,7 +626,7 @@ Tool (analysis / processing)
    mesurement:
 
     -  ``Raw_Data`` (``main`` dataset)
-    -  ``Raw_Data-Cluster_000`` (datagroup)
+    -  ``Raw_Data-Cluster_000`` (group)
     -  Attributes:
 
        -  ``time_stamp`` : '2017\_08\_15-22\_15\_45'
@@ -666,8 +674,86 @@ Tool (analysis / processing)
 Advanced topics:
 ----------------
 
--  ``Region references`` - These are references to sections of a
-   ``main`` or ``ancillary`` dataset that make it easy to access data
-   specfic to a specific portion of the measurement, or each column or
-   row in the ancillary datasets just by their alias (intuitive strings
-   for names).
+``Region references``
+~~~~~~~~~~~~~~~~~~~~~~
+These are references to sections of a ``main`` or ``ancillary`` dataset that make it easy to access data specfic to a
+specific portion of the measurement, or each column or row in the ancillary datasets just by their alias (intuitive
+strings for names).
+
+We have observed that the average pycroscopy user does not tend to use region references as much as we thought they
+might. Therefore, we do not require or enforce that region references be used
+
+Processing on multiple ``Main`` datasets
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+One popular scientific workflow we anticipate involves the usage of multiple `Main` datasets to create results.
+By definition, this breaks the current nomenclature of HDF5 groups that will contain results. This will be addressed by
+restructuring the code in such a way that the results group could be named as: `Multi_Dataset-Tool_Name_000`. To improve
+the robustness of the solution, we have already begun storing the necessary information as attributes of the HDF5
+results groups. Here are the attributes of the group that we expect to capture the references to all the datasets along
+with the name of the tool while relaxing the restrictions on the aforementioned nomenclature:
+
+* `tool` : `<string>` - Name of the tool / process applied to the datasets
+* `num_sources`: `<unsigned integer>` - Number of source datasets that take part in the process
+* `source_000` : `<HDF5 object reference>` - reference to the first source dataset
+* `source_001` : `<HDF5 object reference>` - reference to the second source dataset ...
+
+We would have to break the list of references to the source datasets into individual attributes since h5py / HDF5
+currently does not allow the value of an attribute to be a list of object references.
+
+Sparse Sampling / Compressed Sensing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In many cases, especially electron and ion based microscopy, the very act of probing the sample damages the sample.
+In order to minimize damage to the sample, researchers only sample data from a few random positions in the 2D grid of
+positions and use advanced algorithms to reconstruct the missing data. This scientific problem presents a data storage
+challenge. The naive approach would be to store a giant matrix of zeros with only a available positions filled in.
+This is highly inefficient since the space occupied by the data would be equal to that of the complete (non-sparse)
+dataset.
+
+For such sparse sampling problems, we propose that the indices for each position be identical and still range from `0`
+to `N-1` for a dataset with `N` randomly sampled positions. Thus, for an example dataset with two position dimensions,
+the indices would be arranged as:
+
++-------+-------+
+|   X   |   Y   |
++=======+=======+
+|  0    |   0   |
++-------+-------+
+|  1    |   1   |
++-------+-------+
+|  2    |   2   |
++-------+-------+
+|  .    |   .   |
++-------+-------+
+|  N-2  |  N-2  |
++-------+-------+
+|  N-1  |  N-1  |
++-------+-------+
+
+However, the position values would contain the actual values:
+
++-------+-------+
+|   X   |   Y   |
++=======+=======+
+|  9.5  |  1.5  |
++-------+-------+
+|  3.6  |  7.4  |
++-------+-------+
+|  5.4  |  8.2  |
++-------+-------+
+|  .    |   .   |
++-------+-------+
+|  1.2  |  3.9  |
++-------+-------+
+|  4.8  |  6.1  |
++-------+-------+
+
+The spectroscopic ancillary datasets would be constructed and defined in the traditional methods since the sampling in
+the spectroscopic dimension is identical for all measurements.
+
+The vast majority of the existing features including signal filtering, statistical machine learning algorithms, etc. in
+pycroscopy could still be applied to such datasets.
+
+By nature of its definition, such a dataset will certainly pose problems when attempting to reshape to its N-dimensional
+form among other things. Pycroscopy currently does not have any scientific algorithms or real datasets specifically
+written for such data but this will be addressed in the near future. This is section is presented to show that we
+have indeed thought about such advanced problems as well when designing the universal data structure.

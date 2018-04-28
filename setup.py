@@ -21,7 +21,7 @@ requirements = ['numpy_groupies>=0.9.6',
                 'psutil',
                 'scikit-image>=0.12.3',
                 'scipy>=0.17.1',
-                'numpy>=1.11.0',
+                'numpy>=1.13.0',
                 'ipywidgets>=5.2.2',
                 'ipython>=5.1.0,<6;python_version<"3.3"',  # IPython 6.0+ does not support Python 2.6, 2.7, 3.0, 3.1, or 3.2
                 'ipython>=6.0;python_version>="3.3"', # Beginning with IPython 6.0, Python 3.3 and above is required.
@@ -67,7 +67,7 @@ setup(
     tests_require=['pytest', 'Nose'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
-    test_suite='nose.collector',
+    test_suite='pytest',
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,

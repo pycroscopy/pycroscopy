@@ -74,18 +74,3 @@ How?
   and graphical results
 * Once a user converts their microscope's data format into a HDF5 format, by simply extending some of the
   classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
-
-Package Structure
------------------
-The package structure is simple, with 4 main modules:
-   1. **io**: Reading and writing to HDF5 files + translating data from custom & proprietary microscope formats to HDF5.
-   2. **processing**: multivariate statistics, machine Learning, and signal filtering.
-   3. **analysis**: model-dependent analysis of information.
-   4. **viz**: Plotting functions and interactive jupyter widgets to visualize multidimenional data
-   
-Branches
-~~~~~~~~
-* ``master`` : Stable code based off which the pip installer works. Recommended for most people.
-* ``dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough testing. Note that certain features may be broken on this branch. Also note that we have currently frozen the addition of new features and are focusing on releasing a version 1.0 via the ``unity_dev`` branch. 
-* ``unity_dev`` : Substantially restructured version of ``master`` aimed towards `version 1.0 <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst#v-1-0-goals>`_ for pycroscopy. Besides pycroscopy.core.io, no guarantees are made for the rest of the package. This branch will eventually become ``master`` by around mid 2018. Developers encouraged to add features on this branch.  
-* Other branches belong to individual users / developers.

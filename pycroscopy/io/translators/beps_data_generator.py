@@ -4,23 +4,26 @@ Utility functions for the Fake BEPS generator
 """
 import os
 import numpy as np
-from PIL import Image
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from ..io_hdf5 import ioHDF5
-from ..hdf_utils import calc_chunks, getH5DsetRefs, link_as_main, get_attr, buildReducedSpec
-from ..io_utils import realToCompound, compound_to_scalar
-from .utils import build_ind_val_dsets, generate_dummy_main_parms
-from .translator import Translator
-from ..microdata import MicroDataGroup, MicroDataset
-from ..pycro_data import PycroDataset
+from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr
+from ...core.io.dtype_utils import stack_real_to_compound
+from ...core.io.translator import Translator, generate_dummy_main_parms
+from ...core.io.pycro_data import PycroDataset
+from ...core.io.write_utils import Dimension, calc_chunks
+from ...core.io.image import read_image
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
-from ...analysis.be_sho_model import sho32
-from ...analysis.be_loop_model import loop_fit32
+from ...analysis.be_sho_fitter import sho32
+from ...analysis.be_loop_fitter import loop_fit32
 from .df_utils.beps_gen_utils import get_noise_vec, beps_image_folder
-from .df_utils.io_image import read_image, no_bin
+from .df_utils.image_utils import no_bin
+
+# Deprecated imports:
+from ..hdf_writer import HDFwriter
+from ..write_utils import build_reduced_spec_dsets, build_ind_val_dsets
+from ..virtual_data import VirtualGroup, VirtualDataset
 
 
 class FakeBEPSGenerator(Translator):
@@ -281,11 +284,11 @@ class FakeBEPSGenerator(Translator):
         coef_mat = np.hstack([coef_IF_mat[:, np.newaxis, :], coef_OF_mat[:, np.newaxis, :]])
         coef_mat = np.rollaxis(coef_mat, 1, coef_mat.ndim).reshape([coef_mat.shape[0], -1])
 
-        self.h5_loop_fit[:] = np.tile(realToCompound(coef_mat, loop_fit32),
+        self.h5_loop_fit[:] = np.tile(stack_real_to_compound(coef_mat, loop_fit32),
                                       [1, int(self.n_loops / self.n_fields)])
 
-        self.h5_loop_guess[:] = np.tile(realToCompound(coef_mat * get_noise_vec(coef_mat.shape, 0.1),
-                                                       loop_fit32),
+        self.h5_loop_guess[:] = np.tile(stack_real_to_compound(coef_mat * get_noise_vec(coef_mat.shape, 0.1),
+                                                               loop_fit32),
                                         [1, int(self.n_loops / self.n_fields)])
 
         self.h5_file.flush()
@@ -329,13 +332,13 @@ class FakeBEPSGenerator(Translator):
 
         Returns
         -------
-        ds_pos_inds : MicroDataset
+        ds_pos_inds : VirtualDataset
             Position Indices
-        ds_pos_vals : MicroDataset
+        ds_pos_vals : VirtualDataset
             Position Values
-        ds_spec_inds : MicroDataset
+        ds_spec_inds : VirtualDataset
             Spectrosocpic Indices
-        ds_spec_vals : MicroDataset
+        ds_spec_vals : VirtualDataset
             Spectroscopic Values
 
         """
@@ -372,20 +375,21 @@ class FakeBEPSGenerator(Translator):
         spec_start = [spec_start[idim] for idim in real_dims]
         spec_steps = [spec_steps[idim] for idim in real_dims]
 
-        spec_inds, spec_vals = build_ind_val_dsets(spec_dims,
-                                                   labels=spec_labs,
-                                                   units=spec_units,
-                                                   initial_values=spec_start,
-                                                   steps=spec_steps)
+        spec_dims = list()
+        for dim_size, dim_name, dim_units, step_size, init_val in zip(spec_dims, spec_labs, spec_units, spec_steps,
+                                                                      spec_start):
+            spec_dims.append(Dimension(dim_name, dim_units, np.arange(dim_size)*step_size + init_val))
+        spec_inds, spec_vals = build_ind_val_dsets(spec_dims, is_spectral=True)
 
         # Replace the dummy DC values with the correct ones
         spec_vals.data[spec_labs.index('DC_Offset'), :] = np.repeat(Vdc_vec, self.n_bins)
 
-        position_ind_mat, position_val_mat = build_ind_val_dsets([self.N_x, self.N_y], False,
-                                                                 steps=[10 / self.N_x, 10 / self.N_y],
-                                                                 initial_values=[-5, -5],
-                                                                 labels=['X', 'Y'],
-                                                                 units=['um', 'um'])
+        pos_dims = list()
+        for dim_size, dim_name, dim_units, step_size, init_val in zip([self.N_x, self.N_y], ['X', 'Y'], ['um', 'um'],
+                                                                      [10 / self.N_x, 10 / self.N_y], [-5, -5]):
+            pos_dims.append(Dimension(dim_name, dim_units, np.arange(dim_size) * step_size + init_val))
+
+        position_ind_mat, position_val_mat = build_ind_val_dsets(pos_dims, is_spectral=False)
 
         return position_ind_mat, position_val_mat, spec_inds, spec_vals
 
@@ -407,14 +411,14 @@ class FakeBEPSGenerator(Translator):
         Build the group structure down to the channel group
         '''
         # Set up the basic group structure
-        root_grp = MicroDataGroup('')
+        root_grp = VirtualGroup('')
         root_parms = generate_dummy_main_parms()
         root_parms['translator'] = 'FAKEBEPS'
         root_parms['data_type'] = data_gen_parms['data_type']
         root_grp.attrs = root_parms
 
-        meas_grp = MicroDataGroup('Measurement_')
-        chan_grp = MicroDataGroup('Channel_')
+        meas_grp = VirtualGroup('Measurement_')
+        chan_grp = VirtualGroup('Channel_')
 
         meas_grp.attrs.update(data_gen_parms)
 
@@ -426,34 +430,34 @@ class FakeBEPSGenerator(Translator):
                                    np.complex64(0).itemsize,
                                    unit_chunks=[1, self.n_bins])
 
-        ds_raw_data = MicroDataset('Raw_Data', data=[],
-                                   maxshape=[self.n_pixels, self.n_spec_bins],
-                                   dtype=np.complex64,
-                                   compression='gzip',
-                                   chunking=raw_chunking,
-                                   parent=meas_grp)
+        ds_raw_data = VirtualDataset('Raw_Data', data=None,
+                                     maxshape=[self.n_pixels, self.n_spec_bins],
+                                     dtype=np.complex64,
+                                     compression='gzip',
+                                     chunking=raw_chunking,
+                                     parent=meas_grp)
 
-        chan_grp.addChildren([ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals,
-                              ds_raw_data])
-        meas_grp.addChildren([chan_grp])
-        root_grp.addChildren([meas_grp])
+        chan_grp.add_children([ds_pos_inds, ds_pos_vals, ds_spec_inds, ds_spec_vals,
+                               ds_raw_data])
+        meas_grp.add_children([chan_grp])
+        root_grp.add_children([meas_grp])
 
-        hdf = ioHDF5(self.h5_path)
+        hdf = HDFwriter(self.h5_path)
         hdf.delete()
-        h5_refs = hdf.writeData(root_grp)
+        h5_refs = hdf.write(root_grp)
 
         # Delete the MicroDatasets to save memory
         del ds_raw_data, ds_spec_inds, ds_spec_vals, ds_pos_inds, ds_pos_vals
 
         # Get the file and Raw_Data objects
-        h5_raw = getH5DsetRefs(['Raw_Data'], h5_refs)[0]
+        h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
         h5_chan_grp = h5_raw.parent
 
         # Get the Position and Spectroscopic dataset objects
-        h5_pos_inds = getH5DsetRefs(['Position_Indices'], h5_refs)[0]
-        h5_pos_vals = getH5DsetRefs(['Position_Values'], h5_refs)[0]
-        h5_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_refs)[0]
-        h5_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_refs)[0]
+        h5_pos_inds = get_h5_obj_refs(['Position_Indices'], h5_refs)[0]
+        h5_pos_vals = get_h5_obj_refs(['Position_Values'], h5_refs)[0]
+        h5_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_refs)[0]
+        h5_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_refs)[0]
 
         # Link the Position and Spectroscopic datasets as attributes of Raw_Data
         link_as_main(h5_raw, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
@@ -461,12 +465,12 @@ class FakeBEPSGenerator(Translator):
         '''
         Build the SHO Group
         '''
-        sho_grp = MicroDataGroup('Raw_Data-SHO_Fit_', parent=h5_chan_grp.name)
+        sho_grp = VirtualGroup('Raw_Data-SHO_Fit_', parent=h5_chan_grp.name)
 
         # Build the Spectroscopic datasets for the SHO Guess and Fit
         sho_spec_starts = np.where(h5_spec_inds[h5_spec_inds.attrs['Frequency']].squeeze() == 0)[0]
         sho_spec_labs = get_attr(h5_spec_inds, 'labels')
-        ds_sho_spec_inds, ds_sho_spec_vals = buildReducedSpec(h5_spec_inds,
+        ds_sho_spec_inds, ds_sho_spec_vals = build_reduced_spec_dsets(h5_spec_inds,
                                                               h5_spec_vals,
                                                               keep_dim=sho_spec_labs != 'Frequency',
                                                               step_starts=sho_spec_starts)
@@ -475,32 +479,32 @@ class FakeBEPSGenerator(Translator):
                                     self.n_sho_bins],
                                    sho32.itemsize,
                                    unit_chunks=[1, 1])
-        ds_sho_fit = MicroDataset('Fit', data=[],
-                                  maxshape=[self.n_pixels, self.n_sho_bins],
-                                  dtype=sho32,
-                                  compression='gzip',
-                                  chunking=sho_chunking,
-                                  parent=sho_grp)
-        ds_sho_guess = MicroDataset('Guess', data=[],
+        ds_sho_fit = VirtualDataset('Fit', data=None,
                                     maxshape=[self.n_pixels, self.n_sho_bins],
                                     dtype=sho32,
                                     compression='gzip',
                                     chunking=sho_chunking,
                                     parent=sho_grp)
+        ds_sho_guess = VirtualDataset('Guess', data=None,
+                                      maxshape=[self.n_pixels, self.n_sho_bins],
+                                      dtype=sho32,
+                                      compression='gzip',
+                                      chunking=sho_chunking,
+                                      parent=sho_grp)
 
-        sho_grp.addChildren([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
+        sho_grp.add_children([ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals])
 
         # Write the SHO group and datasets to the file and delete the MicroDataset objects
-        h5_sho_refs = hdf.writeData(sho_grp)
+        h5_sho_refs = hdf.write(sho_grp)
         del ds_sho_fit, ds_sho_guess, ds_sho_spec_inds, ds_sho_spec_vals
 
         # Get the dataset handles for the fit and guess
-        h5_sho_fit = getH5DsetRefs(['Fit'], h5_sho_refs)[0]
-        h5_sho_guess = getH5DsetRefs(['Guess'], h5_sho_refs)[0]
+        h5_sho_fit = get_h5_obj_refs(['Fit'], h5_sho_refs)[0]
+        h5_sho_guess = get_h5_obj_refs(['Guess'], h5_sho_refs)[0]
 
         # Get the dataset handles for the SHO Spectroscopic datasets
-        h5_sho_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_sho_refs)[0]
-        h5_sho_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_sho_refs)[0]
+        h5_sho_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_sho_refs)[0]
+        h5_sho_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_sho_refs)[0]
 
         # Link the Position and Spectroscopic datasets as attributes of the SHO Fit and Guess
         link_as_main(h5_sho_fit, h5_pos_inds, h5_pos_vals, h5_sho_spec_inds, h5_sho_spec_vals)
@@ -509,12 +513,12 @@ class FakeBEPSGenerator(Translator):
         '''
         Build the loop group
         '''
-        loop_grp = MicroDataGroup('Fit-Loop_Fit_', parent=h5_sho_fit.parent.name)
+        loop_grp = VirtualGroup('Fit-Loop_Fit_', parent=h5_sho_fit.parent.name)
 
         # Build the Spectroscopic datasets for the loops
         loop_spec_starts = np.where(h5_sho_spec_inds[h5_sho_spec_inds.attrs['DC_Offset']].squeeze() == 0)[0]
         loop_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
-        ds_loop_spec_inds, ds_loop_spec_vals = buildReducedSpec(h5_sho_spec_inds,
+        ds_loop_spec_inds, ds_loop_spec_vals = build_reduced_spec_dsets(h5_sho_spec_inds,
                                                                 h5_sho_spec_vals,
                                                                 keep_dim=loop_spec_labs != 'DC_Offset',
                                                                 step_starts=loop_spec_starts)
@@ -523,32 +527,32 @@ class FakeBEPSGenerator(Translator):
         loop_chunking = calc_chunks([self.n_pixels, self.n_loops],
                                     loop_fit32.itemsize,
                                     unit_chunks=[1, 1])
-        ds_loop_fit = MicroDataset('Fit', data=[],
-                                   maxshape=[self.n_pixels, self.n_loops],
-                                   dtype=loop_fit32,
-                                   compression='gzip',
-                                   chunking=loop_chunking,
-                                   parent=loop_grp)
-
-        ds_loop_guess = MicroDataset('Guess', data=[],
+        ds_loop_fit = VirtualDataset('Fit', data=None,
                                      maxshape=[self.n_pixels, self.n_loops],
                                      dtype=loop_fit32,
                                      compression='gzip',
                                      chunking=loop_chunking,
                                      parent=loop_grp)
 
+        ds_loop_guess = VirtualDataset('Guess', data=None,
+                                       maxshape=[self.n_pixels, self.n_loops],
+                                       dtype=loop_fit32,
+                                       compression='gzip',
+                                       chunking=loop_chunking,
+                                       parent=loop_grp)
+
         # Add the datasets to the loop group then write it to the file
-        loop_grp.addChildren([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])
-        h5_loop_refs = hdf.writeData(loop_grp)
+        loop_grp.add_children([ds_loop_fit, ds_loop_guess, ds_loop_spec_inds, ds_loop_spec_vals])
+        h5_loop_refs = hdf.write(loop_grp)
 
         # Delete the MicroDatasets
         del ds_loop_spec_vals, ds_loop_spec_inds, ds_loop_guess, ds_loop_fit
 
         # Get the handles to the datasets
-        h5_loop_fit = getH5DsetRefs(['Fit'], h5_loop_refs)[0]
-        h5_loop_guess = getH5DsetRefs(['Guess'], h5_loop_refs)[0]
-        h5_loop_spec_inds = getH5DsetRefs(['Spectroscopic_Indices'], h5_loop_refs)[0]
-        h5_loop_spec_vals = getH5DsetRefs(['Spectroscopic_Values'], h5_loop_refs)[0]
+        h5_loop_fit = get_h5_obj_refs(['Fit'], h5_loop_refs)[0]
+        h5_loop_guess = get_h5_obj_refs(['Guess'], h5_loop_refs)[0]
+        h5_loop_spec_inds = get_h5_obj_refs(['Spectroscopic_Indices'], h5_loop_refs)[0]
+        h5_loop_spec_vals = get_h5_obj_refs(['Spectroscopic_Values'], h5_loop_refs)[0]
 
         # Link the Position and Spectroscopic datasets to the Loop Guess and Fit
         link_as_main(h5_loop_fit, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)
@@ -661,23 +665,23 @@ class FakeBEPSGenerator(Translator):
             q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat)*10
             phase = np.sign(R_mat) * np.pi / 2
 
-            self.h5_sho_fit[pix_batch, :] = realToCompound(np.hstack([amp,
-                                                                      resp,
-                                                                      q_val,
-                                                                      phase,
-                                                                      np.ones_like(R_mat)]),
-                                                           sho32)
+            self.h5_sho_fit[pix_batch, :] = stack_real_to_compound(np.hstack([amp,
+                                                                              resp,
+                                                                              q_val,
+                                                                              phase,
+                                                                              np.ones_like(R_mat)]),
+                                                                   sho32)
 
-            self.h5_sho_guess[pix_batch, :] = realToCompound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
-                                                                                            amp_noise),
-                                                                        resp * get_noise_vec(self.n_sho_bins,
+            self.h5_sho_guess[pix_batch, :] = stack_real_to_compound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
+                                                                                                    amp_noise),
+                                                                                resp * get_noise_vec(self.n_sho_bins,
                                                                                              resp_noise),
-                                                                        q_val * get_noise_vec(self.n_sho_bins,
+                                                                                q_val * get_noise_vec(self.n_sho_bins,
                                                                                               q_noise),
-                                                                        phase * get_noise_vec(self.n_sho_bins,
+                                                                                phase * get_noise_vec(self.n_sho_bins,
                                                                                               phase_noise),
-                                                                        np.ones_like(R_mat)]),
-                                                             sho32)
+                                                                                np.ones_like(R_mat)]),
+                                                                     sho32)
 
             self.h5_file.flush()
 
