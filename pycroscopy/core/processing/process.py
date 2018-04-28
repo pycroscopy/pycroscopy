@@ -255,7 +255,7 @@ class Process(object):
                                          lengthy_computation=False,
                                          func_args=args, func_kwargs=kwargs)
 
-    def compute(self, *args, override=False, **kwargs):
+    def compute(self, override=False, *args, **kwargs):
         """
         Creates placeholders for the results, applies the unit computation to chunks of the dataset
 
