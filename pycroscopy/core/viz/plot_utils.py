@@ -493,7 +493,7 @@ def plot_line_family(axis, x_vec, line_family, line_names=None, label_prefix='',
     cmap = get_cmap_object(kwargs.pop('cmap', None))
 
     if line_names is None:
-        label_prefix = 'Line '
+        # label_prefix = 'Line '
         line_names = [str(line_ind) for line_ind in range(num_lines)]
 
     line_names = ['{} {} {}'.format(label_prefix, cur_name, label_suffix) for cur_name in line_names]
@@ -1052,8 +1052,15 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if var is not None:
             if not isinstance(var, (str, unicode)):
                 raise TypeError(var_name + ' should be a string')
-        else:
-            var = ''
+
+    if title is None:
+        title = ''
+    if colorbar_label is None:
+        colorbar_label = ''
+    if x_label is None:
+        x_label = ''
+    if y_label is None:
+        y_label = ''
 
     if color_bar_mode not in [None, 'single', 'each']:
         raise ValueError('color_bar_mode must be either None, "single", or "each"')
