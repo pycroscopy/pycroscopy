@@ -60,6 +60,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 # The package for accessing files in directories, etc.:
 import os
+import zipfile
 
 # Warning package in case something goes wrong
 from warnings import warn
@@ -96,11 +97,23 @@ except ImportError:
 # 0. Select the Raw Data file
 # ===========================
 # Download the data file from Github:
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.asc'
-data_file_path = 'temp_1.asc'
-if os.path.exists(data_file_path):
-    os.remove(data_file_path)
-_ = wget.download(url, data_file_path, bar=None)
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.zip'
+zip_path = 'STS.zip'
+if os.path.exists(zip_path):
+    os.remove(zip_path)
+_ = wget.download(url, zip_path, bar=None)
+
+zip_path = os.path.abspath(zip_path)
+# figure out the folder to unzip the zip file to
+folder_path, _ = os.path.split(zip_path)
+zip_ref = zipfile.ZipFile(zip_path, 'r')
+# unzip the file
+zip_ref.extractall(folder_path)
+zip_ref.close()
+# delete the zip file
+os.remove(zip_path)
+
+data_file_path = 'STS.asc'
 
 ####################################################################################
 # 1. Exploring the Raw Data File
