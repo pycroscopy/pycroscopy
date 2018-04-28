@@ -192,7 +192,7 @@ for line_ind in range(num_pos):
 # 4.a Preparing some necessary parameters
 # =======================================
 
-max_v = 1 # This is the one parameter we are not sure about
+max_v = 1  # This is the one parameter we are not sure about
 
 folder_path, file_name = os.path.split(data_file_path)
 file_name = file_name[:-4] + '_'
@@ -205,17 +205,21 @@ h5_path = os.path.join(folder_path, file_name + '.h5')
 ####################################################################################
 # 4b. Calling the NumpyTranslator to create the pycroscopy data file
 # ==================================================================
-# The NumpyTranslator simplifies the ceation of pycroscopy compatible datasets. It handles the file creation,
-# dataset creation and writing, creation of ancillary datasets, datagroup creation, writing parameters, linking
+# The NumpyTranslator simplifies the creation of pycroscopy compatible datasets. It handles the HDF5 file creation,
+# HDF5 dataset creation and writing, creation of ancillary HDF5 datasets, group creation, writing parameters, linking
 # ancillary datasets to the main dataset etc. With a single call to the NumpyTranslator, we complete the translation
 # process.
 
+sci_data_type = 'STS'
+quantity = 'Current'
+units = 'nA'
+pos_dims = [px.write_utils.Dimension('X', 'a. u.', parm_dict['x-pixels']),
+            px.write_utils.Dimension('Y', 'a. u.', parm_dict['y-pixels'])]
+spec_dims = px.write_utils.Dimension('Bias', 'V', volt_vec)
+
 tran = px.NumpyTranslator()
-h5_path = tran.translate(h5_path, raw_data_2d, num_rows, num_cols,
-                         qty_name='Current', data_unit='nA', spec_name='Bias',
-                         spec_unit='V', spec_val=volt_vec, scan_height=100,
-                         scan_width=200, spatial_unit='nm', data_type='STS',
-                         translator_name='ASC', parms_dict=parm_dict)
+h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
+                         pos_dims, spec_dims, translator_name='Omicron_ASC_Translator', parm_dict=parm_dict)
 
 ####################################################################################
 # Notes on pycroscopy translation
@@ -252,6 +256,7 @@ with h5py.File(h5_path, mode='r') as h5_file:
     px.hdf_utils.print_tree(h5_file)
 
     h5_main = h5_file['Measurement_000/Channel_000/Raw_Data']
+    px.plot_utils.use_nice_plot_params()
     fig, axes = plt.subplots(ncols=2, figsize=(11, 5))
     spat_map = np.reshape(h5_main[:, 100], (100, 100))
     px.plot_utils.plot_map(axes[0], spat_map, origin='lower')
@@ -263,6 +268,8 @@ with h5py.File(h5_path, mode='r') as h5_file:
     axes[1].set_title('IV curve at a single pixel')
     axes[1].set_xlabel('Tip bias [V]')
     axes[1].set_ylabel('Current [nA]')
+
+    fig.tight_layout()
 
 # Remove both the original and translated files:
 os.remove(h5_path)
