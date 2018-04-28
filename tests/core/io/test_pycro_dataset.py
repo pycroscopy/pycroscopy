@@ -10,6 +10,8 @@ import os
 import sys
 import h5py
 import numpy as np
+from io import StringIO
+from contextlib import contextmanager
 sys.path.append("../../../pycroscopy/")
 from pycroscopy.core.io import PycroDataset, hdf_utils
 
@@ -17,6 +19,34 @@ if sys.version_info.major == 3:
     unicode = str
 
 test_h5_file_path = 'test_hdf_utils.h5'
+
+
+@contextmanager
+def capture_stdout():
+    """
+    context manager encapsulating a pattern for capturing stdout writes
+    and restoring sys.stdout even upon exceptions
+
+    Examples:
+    >>> with capture_stdout() as get_value:
+    >>>     print("here is a print")
+    >>>     captured = get_value()
+    >>> print('Gotcha: ' + captured)
+
+    >>> with capture_stdout() as get_value:
+    >>>     print("here is a print")
+    >>>     raise Exception('oh no!')
+    >>> print('Does printing still work?')
+    """
+    # Redirect sys.stdout
+    out = StringIO()
+    sys.stdout = out
+    # Yield a method clients can use to obtain the value
+    try:
+        yield out.getvalue
+    finally:
+        # Restore the normal stdout
+        sys.stdout = sys.__stdout__
 
 
 class TestPycroDataset(unittest.TestCase):
@@ -83,8 +113,8 @@ class TestPycroDataset(unittest.TestCase):
             TestPycroDataset.__write_aux_reg_ref(h5_pos_vals, pos_attrs['labels'], is_spec=False)
             TestPycroDataset.__write_string_list_as_attr(h5_pos_vals, pos_attrs)
 
-            source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
-                                          np.repeat(np.arange(num_cycles), num_cycle_pts)))
+            source_spec_data = np.vstack((np.repeat(np.arange(num_cycle_pts), num_cycles),
+                                          np.tile(np.arange(num_cycles), num_cycle_pts)))
             source_spec_attrs = {'units': ['V', ''], 'labels': ['Bias', 'Cycle']}
 
             h5_source_spec_inds = h5_raw_grp.create_dataset('Spectroscopic_Indices', data=source_spec_data,
@@ -175,7 +205,7 @@ class TestPycroDataset(unittest.TestCase):
 
     def __ensure_test_file(self):
         if not os.path.exists(test_h5_file_path):
-            TestPycroDataset._create_test_h5_file()
+            TestPycroDataset.__create_test_h5_file()
 
     def test_equality_correct_pycrodataset(self):
         self.__ensure_test_file()
@@ -525,12 +555,40 @@ class TestPycroDataset(unittest.TestCase):
             self.assertTrue(success)
 
     def test_toggle_sorting(self):
-        # To be added by Chris
-        assert False
+        # Need to change data file so that sorting actually does something
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            for label, size in zip(pycro_main.n_dim_labels, pycro_main.n_dim_sizes):
+                print('{}: {}'.format(label, size))
+            self.assertTrue(pycro_main.n_dim_labels == ['X', 'Y', 'Bias', 'Cycle'])
+
+            pycro_main.toggle_sorting()
+
+            for label, size in zip(pycro_main.n_dim_labels, pycro_main.n_dim_sizes):
+                print('{}: {}'.format(label, size))
+            self.assertTrue(pycro_main.n_dim_labels==['X', 'Y', 'Cycle', 'Bias'])
 
     def test_get_current_sorting(self):
-        # To be added by Chris
-        assert False
+        # Need to change data file so that sorting actually does something
+        self.__ensure_test_file()
+        with h5py.File(test_h5_file_path, mode='r') as h5_f:
+            pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
+            unsorted_str = 'Data dimensions are in the order they occur in the file.\n'
+            sorted_str = 'Data dimensions are sorted in order from fastest changing dimension to slowest.\n'
+            # Initial state should be unsorted
+            self.assertFalse(pycro_main._PycroDataset__sort_dims)
+            with capture_stdout() as get_value:
+                pycro_main.get_current_sorting()
+                test_str = get_value()
+            self.assertTrue(test_str == unsorted_str)
+            # Toggle sorting.  Sorting should now be true.
+            pycro_main.toggle_sorting()
+            self.assertTrue(pycro_main._PycroDataset__sort_dims)
+            with capture_stdout() as get_value:
+                pycro_main.get_current_sorting()
+                test_str = get_value()
+            self.assertTrue(test_str == sorted_str)
 
 
 if __name__ == '__main__':

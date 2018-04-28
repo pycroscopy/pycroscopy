@@ -1295,7 +1295,7 @@ def copy_attributes(source, dest, skip_refs=True):
             if not skip_refs and not isinstance(dest, h5py.Dataset):
                 warn('Skipping region reference named: {}'.format(att_name))
                 continue
-            # elif isinstance(att_val, h5py.RegionReference):
+            elif isinstance(att_val, h5py.RegionReference):
             #     """
             #     Dereference old reference, get the appropriate data
             #     slice and create new reference.
@@ -1315,7 +1315,7 @@ def copy_attributes(source, dest, skip_refs=True):
             #         continue
             #
             #     dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
-            #     continue
+                continue
             else:
                 dest.attrs[att_name] = att_val
                 continue
@@ -1484,6 +1484,7 @@ def copy_region_refs(h5_source, h5_target):
             source dataset to copy references from
     h5_target : HDF5 Dataset
             target dataset the references from h5_source are copied to
+
     """
     '''
     Check both h5_source and h5_target to ensure that are Main
