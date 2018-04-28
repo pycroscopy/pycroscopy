@@ -2,8 +2,9 @@
 Created on 11/11/16 10:08 AM
 @author: Suhas Somnath, Chris Smith
 """
-import os
 
+from __future__ import division, print_function, unicode_literals, absolute_import
+import os
 import matplotlib.pyplot as plt
 from IPython.display import display
 import ipywidgets as widgets

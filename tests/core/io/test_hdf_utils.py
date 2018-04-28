@@ -4,7 +4,7 @@ Created on Tue Nov  3 15:07:16 2017
 
 @author: Suhas Somnath
 """
-
+from __future__ import division, print_function, unicode_literals, absolute_import
 import unittest
 import os
 import sys
@@ -1919,7 +1919,10 @@ class TestHDFUtils(unittest.TestCase):
             for reg_ref_name, reg_ref_tuple in reg_refs.items():
                 h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
 
-            with self.assertWarns(UserWarning):
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    hdf_utils.copy_attributes(h5_dset_source, h5_f, skip_refs=False)
+            else:
                 hdf_utils.copy_attributes(h5_dset_source, h5_f, skip_refs=False)
 
             self.assertEqual(len(h5_f.attrs), len(easy_attrs))
@@ -1971,7 +1974,10 @@ class TestHDFUtils(unittest.TestCase):
             for reg_ref_name, reg_ref_tuple in reg_refs.items():
                 h5_dset_source.attrs[reg_ref_name] = h5_dset_source.regionref[reg_ref_tuple]
 
-            with self.assertWarns(UserWarning):
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    hdf_utils.copy_attributes(h5_dset_source, h5_dset_dest, skip_refs=False)
+            else:
                 hdf_utils.copy_attributes(h5_dset_source, h5_dset_dest, skip_refs=False)
 
     def test_copy_main_attributes_valid(self):
@@ -2021,9 +2027,9 @@ class TestHDFUtils(unittest.TestCase):
             h5_dset_source.attrs.update(existing_attrs)
             h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Duplicate', new_attrs=easy_attrs)
             self.assertIsInstance(h5_duplicate, h5py.Dataset)
-            self.assertTrue(h5_duplicate.parent, h5_dset_source.parent)
-            self.assertTrue(h5_duplicate.name, '/Group/Duplicate')
-            self.assertTrue(h5_duplicate.dtype, np.float16)
+            self.assertEqual(h5_duplicate.parent, h5_dset_source.parent)
+            self.assertEqual(h5_duplicate.name, '/Duplicate')
+            self.assertEqual(h5_duplicate.dtype, np.float16)
             for key, val in easy_attrs.items():
                 self.assertEqual(val, h5_duplicate.attrs[key])
             for key, val in existing_attrs.items():
@@ -2043,9 +2049,9 @@ class TestHDFUtils(unittest.TestCase):
             h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Duplicate',
                                                           h5_group=h5_group, new_attrs=easy_attrs)
             self.assertIsInstance(h5_duplicate, h5py.Dataset)
-            self.assertTrue(h5_duplicate.parent, h5_group)
-            self.assertTrue(h5_duplicate.name, '/Group/Duplicate')
-            self.assertTrue(h5_duplicate.dtype, np.float16)
+            self.assertEqual(h5_duplicate.parent, h5_group)
+            self.assertEqual(h5_duplicate.name, '/Group/Duplicate')
+            self.assertEqual(h5_duplicate.dtype, np.float16)
             for key, val in easy_attrs.items():
                 self.assertEqual(val, h5_duplicate.attrs[key])
             for key, val in existing_attrs.items():
@@ -2081,7 +2087,10 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(file_path) as h5_f:
             h5_dset_source = h5_f.create_dataset('Source', data=[1, 2, 3])
             _ = h5_f.create_dataset('Existing', data=[4, 5, 6])
-            with self.assertWarns(UserWarning):
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
+            else:
                 h5_duplicate = hdf_utils.create_empty_dataset(h5_dset_source, np.float16, 'Existing')
             self.assertIsInstance(h5_duplicate, h5py.Dataset)
             self.assertEqual(h5_duplicate.name, '/Existing')
