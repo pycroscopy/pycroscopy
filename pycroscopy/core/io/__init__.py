@@ -8,7 +8,7 @@ from . import dtype_utils
 from . import write_utils
 
 from .pycro_data import PycroDataset
-from .translator import *
+from .translator import Translator, generate_dummy_main_parms
 from .numpy_translator import NumpyTranslator
 from .image import ImageTranslator
 
