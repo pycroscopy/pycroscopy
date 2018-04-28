@@ -2,7 +2,7 @@
 """
 Created on Tue Nov  3 21:14:25 2015
 
-@author: Chris Smith, Suhas Somnath
+@author: Chris Smith
 """
 
 from warnings import warn

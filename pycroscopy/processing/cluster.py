@@ -104,7 +104,7 @@ class Cluster(Process):
 
         # figure out the operation that needs need to be performed to convert to real scalar
         (self.data_transform_func, self.data_is_complex, self.data_is_compound,
-         self.data_n_features, self.data_n_samples, self.data_type_mult) = check_dtype(h5_main)
+         self.data_n_features, self.data_type_mult) = check_dtype(h5_main)
 
         # supercharge h5_main!
         self.h5_main = PycroDataset(self.h5_main)

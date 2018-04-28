@@ -261,12 +261,12 @@ with h5py.File(file_path) as h5_f:
 
 def check_dataset(h5_dset):
     print('\tDataset being tested: {}'.format(h5_dset))
-    func, is_complex, is_compound, n_features, n_samples, type_mult = px.dtype_utils.check_dtype(h5_dset)
+    func, is_complex, is_compound, n_features, type_mult = px.dtype_utils.check_dtype(h5_dset)
     print('\tFunction to transform to real: %s' % func)
     print('\tis_complex? %s' % is_complex)
     print('\tis_compound? %s' % is_compound)
     print('\tShape of dataset in its current form: {}'.format(h5_dset.shape))
-    print('\tAfter flattening to real, shape is expected to be: ({}, {})'.format(n_samples, n_features))
+    print('\tAfter flattening to real, shape is expected to be: ({}, {})'.format(h5_dset.shape[0], n_features))
     print('\tByte-size of a single element in its current form: {}'.format(type_mult))
 
 

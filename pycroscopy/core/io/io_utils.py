@@ -22,6 +22,21 @@ __all__ = ['get_available_memory', 'get_time_stamp', 'recommend_cpu_cores', 'fil
            'format_time', 'format_size']
 
 
+def in_ipynb():
+    """
+    Checks whether the kernel is running in an iPython notebook or a regular python console
+
+    Returns
+    -------
+    state : bool
+        True if kernel in Jupyter notebook. False otherwise
+    """
+    if 'ipykernel' in sys.modules or 'IPython' in sys.modules:
+        return True
+    else:
+        return False
+
+
 def check_ssh():
     """
     Checks whether or not the python kernel is running locally (False) or remotely (True)
