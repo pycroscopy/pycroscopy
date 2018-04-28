@@ -259,7 +259,9 @@ fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 axes[0].imshow(atom_intensities, origin='lower')
 axes[0].set_title('Standard imshow')
 # Now plot_map with some options enabled:
-px.plot_utils.plot_map(axes[1], atom_intensities, stdevs=1.5, num_ticks=4, x_size=3, y_size=6, 
+px.plot_utils.plot_map(axes[1], atom_intensities, stdevs=1.5, num_ticks=4,
+                       x_vec=np.linspace(-1, 1, atom_intensities.shape[0]),
+                       y_vec=np.linspace(0, 500, atom_intensities.shape[1]),
                        cbar_label='intensity (a. u.)', tick_font_size=16)
 axes[1].set_title('plot_map')
 fig.tight_layout()
@@ -282,7 +284,7 @@ frequencies = [0.25, 0.5, 1, 2, 4 ,8, 16, 32, 64]
 image_stack = [get_sine_2d_image(freq) for freq in frequencies]
 image_stack = np.array(image_stack)
 
-fig, axes = px.plot_utils.plot_map_stack(image_stack, reverse_dims=False, fig_title_yoffset=0.95)
+fig, axes = px.plot_utils.plot_map_stack(image_stack, reverse_dims=False, title_yoffset=0.95)
 
 ################################################################################################
 # plot_complex_spectra()
@@ -303,7 +305,7 @@ def get_complex_2d_image(freq):
 frequencies = 2 ** np.arange(4)
 image_stack = [get_complex_2d_image(freq) for freq in frequencies]
 
-fig, axes = px.plot_utils.plot_complex_spectra(np.array(image_stack))
+fig, axes = px.plot_utils.plot_complex_spectra(np.array(image_stack), figsize=(3.5, 3))
 
 ################################################################################################
 # General Utilities
@@ -400,7 +402,6 @@ fig.tight_layout()
 x_vec = np.linspace(0, 2*np.pi, 256)
 freqs = range(1, 5)
 y_mat = np.array([np.sin(freq * x_vec) for freq in freqs])
-
 
 for nice in [False, True, False]:
     if nice:
