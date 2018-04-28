@@ -859,6 +859,7 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         Number of standard deviations to consider for plotting
 
     **kwargs will be passed on either to plot_map() or pyplot.plot()
+    kwarg: 'figsize' can be used to specify size of the subplots
 
     Returns
     ---------
@@ -896,9 +897,6 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         if not isinstance(stdevs, Number) or stdevs <= 0:
             raise TypeError('stdevs should be a positive number')
 
-    figsize = kwargs.pop('figsize', (4, 4))
-    figsize = (figsize[0] * num_comps, 8)
-
     num_comps = min(24, min(num_comps, map_stack.shape[0]))
 
     if evenly_spaced:
@@ -907,6 +905,9 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         chosen_pos = np.arange(num_comps, dtype=int)
 
     nrows, ncols = get_plot_grid_size(num_comps)
+
+    figsize = kwargs.pop('figsize', (4, 4))  # Individual plot size
+    figsize = (figsize[0] * ncols, figsize[1] * nrows)
 
     fig, axes = plt.subplots(nrows * 2, ncols, figsize=figsize)
     fig.subplots_adjust(hspace=0.1, wspace=0.4)
