@@ -152,9 +152,9 @@ class BELoopFitter(Fitter):
         '''
         Get the Spectroscopic and Position datasets from `self.h5_main`
         '''
-        self._sho_spec_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
-        self._sho_spec_vals = get_auxillary_datasets(self.h5_main, aux_dset_name=['Spectroscopic_Values'])[0]
-        self._sho_pos_inds = get_auxillary_datasets(self.h5_main, aux_dset_name=['Position_Indices'])[0]
+        self._sho_spec_inds = self.h5_main.h5_spec_inds
+        self._sho_spec_vals = self.h5_main.h5_spec_vals
+        self._sho_pos_inds = self.h5_main.h5_pos_inds
 
         '''
         Find the Spectroscopic index for the DC_Offset
@@ -173,7 +173,7 @@ class BELoopFitter(Fitter):
 
         self.h5_guess = h5_guess
 
-    def do_guess(self, max_mem=None, processors=None, get_loop_parameters=True):
+    def do_guess(self, max_mem=None, processors=None, get_loop_parameters=True, verbose=False):
         """
         Compute the loop projections and the initial guess for the loop parameters.
         
@@ -189,6 +189,9 @@ class BELoopFitter(Fitter):
         get_loop_parameters : bool, optional
             Should the physical loop parameters be calculated after the guess is done
             Default True
+        verbose : bool, optional
+            Whether or not to print debug statements
+            Default False
 
         Returns
         -------
@@ -204,7 +207,7 @@ class BELoopFitter(Fitter):
             max_mem = min(max_mem, self._maxMemoryMB)
             self._maxDataChunk = int(max_mem / self._maxCpus)
 
-        self._get_sho_chunk_sizes(max_mem)
+        self._get_sho_chunk_sizes(max_mem, verbose=verbose)
         self._create_guess_datasets()
 
         '''
@@ -218,8 +221,8 @@ class BELoopFitter(Fitter):
         '''
         Get the dc_offset and data_chunk for the first slice
         '''
-        self._get_dc_offset()
-        self._get_data_chunk()
+        self._get_dc_offset(verbose=verbose)
+        self._get_data_chunk(verbose=verbose)
 
         '''
         Loop over positions
@@ -238,7 +241,8 @@ class BELoopFitter(Fitter):
                 order_dc_offset_reverse = np.array([1, 0], dtype=np.uint8)
                 nd_mat_shape_dc_first = loops_2d.shape
             else:
-                loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data)
+                loops_2d, order_dc_offset_reverse, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
+                                                                                                    verbose=verbose)
 
             '''
             Do the projection and guess
@@ -250,10 +254,11 @@ class BELoopFitter(Fitter):
             if len(self._sho_all_but_forc_inds) != 1:
                 projected_loops_2d2 = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                           order_dc_offset_reverse,
-                                                                          nd_mat_shape_dc_first)
+                                                                          nd_mat_shape_dc_first,
+                                                                          verbose=verbose)
 
-            metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
-            guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
+            metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first, verbose=verbose)
+            guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first, verbose=verbose)
 
             # Store results
             self.h5_projected_loops[self._start_pos:self._end_pos, self._current_sho_spec_slice] = projected_loops_2d2
@@ -266,7 +271,7 @@ class BELoopFitter(Fitter):
             Change the starting position and get the next chunk of data
             '''
             self._start_pos = self._end_pos
-            self._get_data_chunk()
+            self._get_data_chunk(verbose=verbose)
 
         if get_loop_parameters:
             self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
@@ -275,7 +280,7 @@ class BELoopFitter(Fitter):
 
     def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
                obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
-               get_loop_parameters=True, h5_guess=None):
+               get_loop_parameters=True, h5_guess=None, verbose=False):
         """
         Fit the loops
 
@@ -335,7 +340,7 @@ class BELoopFitter(Fitter):
         Setup the datasets
         '''
         self._create_fit_datasets()
-        self._get_sho_chunk_sizes(max_mem)
+        self._get_sho_chunk_sizes(max_mem, verbose=verbose)
 
         '''
         Get the dc_vector and the data for the first loop
@@ -346,7 +351,7 @@ class BELoopFitter(Fitter):
                                              self.sho_spec_inds_per_forc * (self._current_forc + 1))
         self._current_met_spec_slice = slice(self.metrics_spec_inds_per_forc * self._current_forc,
                                              self.metrics_spec_inds_per_forc * (self._current_forc + 1))
-        self._get_dc_offset()
+        self._get_dc_offset(verbose=verbose)
         self._get_guess_chunk()
 
         '''
@@ -357,7 +362,8 @@ class BELoopFitter(Fitter):
             loops_2d = np.transpose(self.data)
             nd_mat_shape_dc_first = loops_2d.shape
         else:
-            loops_2d, _, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data)
+            loops_2d, _, nd_mat_shape_dc_first = self._reshape_sho_matrix(self.data,
+                                                                          verbose=verbose)
 
         '''
         Shift the loops and vdc vector
@@ -380,12 +386,12 @@ class BELoopFitter(Fitter):
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformat_results(temp, obj_func['obj_func'])
-                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
+                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first, verbose=verbose)
 
                 results.append(temp)
 
                 self._start_pos = self._end_pos
-                self._get_guess_chunk()
+                self._get_guess_chunk(verbose=verbose)
 
             self.fit = np.hstack(tuple(results))
             self._set_results()
@@ -401,7 +407,7 @@ class BELoopFitter(Fitter):
         if get_loop_parameters:
             self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
 
-        return self.h5_fit
+        return PycroDataset(self.h5_fit)
 
     @staticmethod
     def extract_loop_parameters(h5_loop_fit, nuc_threshold=0.03):

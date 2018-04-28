@@ -94,7 +94,7 @@ num_rows = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
 num_cols = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
 
 # Getting a reference to the main dataset:
-h5_main = h5_meas_grp['Channel_000/Raw_Data']
+h5_main = px.PycroDataset(h5_meas_grp['Channel_000/Raw_Data'])
 
 # Extracting the X axis - vector of frequencies
 h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
