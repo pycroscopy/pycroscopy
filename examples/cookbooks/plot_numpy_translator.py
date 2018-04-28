@@ -209,6 +209,9 @@ h5_path = os.path.join(folder_path, file_name + '.h5')
 # HDF5 dataset creation and writing, creation of ancillary HDF5 datasets, group creation, writing parameters, linking
 # ancillary datasets to the main dataset etc. With a single call to the NumpyTranslator, we complete the translation
 # process.
+#
+# Remember that the position and spectroscopic dimensions need to be specified in the correct order via
+# Dimension objects.
 
 sci_data_type = 'STS'
 quantity = 'Current'
