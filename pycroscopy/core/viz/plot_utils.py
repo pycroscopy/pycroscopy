@@ -416,7 +416,7 @@ def rainbow_plot(axis, x_vec, y_vec, num_steps=32, **kwargs):
 
     if not isinstance(num_steps, int):
         raise TypeError('num_steps must be an integer < size of x_vec')
-    if num_steps < 2 or num_steps >= x_vec // 2:
+    if num_steps < 2 or num_steps >= len(x_vec) // 2:
         raise ValueError('num_steps should be a positive number. 1/4 to 1/16th of x_vec')
     assert num_steps < x_vec.size, 'num_steps must be an integer < size of x_vec'
 
