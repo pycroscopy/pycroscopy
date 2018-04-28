@@ -1,10 +1,13 @@
+"""
+================================================================================
+Utilities for reading Pycroscopy HDF5 files
+================================================================================
+
+**Suhas Somnath**
+
+4/18/2018
+"""
 ########################################################################################################################
-# Utilities for reading Pycroscopy HDF5 files
-# ============================================
-# Suhas Somnath
-# 
-# 4/18/2018
-# 
 # Introduction
 # -------------
 # Pycroscopy uses a data-centric approach to data analysis and processing meaning that results from all data analysis
@@ -12,7 +15,7 @@
 # (HDF5) allows data, whether it is raw measured data or results of analysis, to be stored in multiple datasets within
 # the same file in a tree-like manner. Certain rules and considerations have been made in pycroscopy to ensure
 # consistent and easy access to any data.
-# 
+#
 # The h5py python package provides great functions to create, read, and manage data in HDF5 files. In
 # pycroscopy.hdf_utils, we have added functions that facilitate scientifically relevant, or pycroscopy specific
 # functionality such as checking if a dataset is a Main dataset, reshaping to / from the original N dimensional form of
@@ -20,15 +23,15 @@
 # parts - one that focuses on functions that facilitate reading and one that facilitate writing of data. The following
 # guide provides examples of how, and more importantly when, to use functions in pycroscopy.hdf_utils for various
 # scenarios.
-# 
+#
 # Recommended pre-requisite reading
 # ---------------------------------
 # * pycroscopy data format - https://pycroscopy.github.io/pycroscopy/data_format.html.
-# * Crash course on HDF5 and h5py - 
-# 
+# * Crash course on HDF5 and h5py -
+#
 # Import all necessary packages
 # -----------------------------
-# 
+#
 # Before we begin demonstrating the numerous functions in pycroscopy.hdf_utils, we need to import the necessary
 # packages. Here are a list of packages besides pycroscopy that will be used in this example:
 # * h5py - to open and close the file
@@ -88,18 +91,18 @@ h5_f = h5py.File(h5_path, mode='r')
 ########################################################################################################################
 # Inspect HDF5 contents
 # ======================
-# 
+#
 # The file contents are stored in a tree structure, just like files on a contemporary computer. The file contains
 # datagroups (similar to file folders) and datasets (similar to spreadsheets).
 # There are several datasets in the file and these store:
-# 
+#
 # * The actual measurement collected from the experiment
 # * Spatial location on the sample where each measurement was collected
 # * Information to support and explain the spectral data collected at each location
 # * Since pycroscopy stores results from processing and analyses performed on the data in the same file, these
 #   datasets and datagroups are present as well
 # * Any other relevant ancillary information
-# 
+#
 # print_tree()
 # ------------
 # Soon after opening any file, it is often of interest to list the contents of the file. While one can use the open
@@ -126,20 +129,20 @@ px.hdf_utils.print_tree(h5_f, main_dsets_only=True)
 ########################################################################################################################
 # Accessing Attributes
 # ==================================
-# 
+#
 # HDF5 datasets and datagroups can also store metadata such as experimental parameters. These metadata can be text,
 # numbers, small lists of numbers or text etc. These metadata can be very important for understanding the datasets
 # and guide the analysis routines.
-# 
+#
 # While one could use the basic h5py functionality to access attributes, one would encounter a lot of problems when
 # attempting to decode attributes whose values were strings or lists of strings due to some issues in h5py. This problem
 # has been demonstrated in our primer to HDF5. Instead of using the basic functionality of h5py, we recommend always
 # using the functions in pycroscopy that reliably and consistently work for any kind of attribute for any version of
 # python:
-# 
+#
 # get_attributes()
 # ----------------
-# 
+#
 # get_attributes() is a very handy function that returns all or a specified set of attributes in an HDF5 object. If no
 # attributes are explicitely requested, all attributes in the object are returned:
 
@@ -157,7 +160,7 @@ for key, val in proj_attrs.items():
 ########################################################################################################################
 # get_attr()
 # ----------
-# 
+#
 # If were sure that we only wanted a specific attribute, we could instead use get_attr() as:
 
 
@@ -169,7 +172,7 @@ print(px.hdf_utils.get_attr(h5_f, 'user_name'))
 # Consider the scenario where we are have several HDF5 files or Groups or datasets and we wanted to check each one to
 # see if they have the certain metadata / attributes. check_for_matching_attrs() is one very handy function that
 # simplifies the comparision operation.
-# 
+#
 # For example, let us check if this file was authored by 'John Doe':
 
 print(px.hdf_utils.check_for_matching_attrs(h5_f, new_parms={'user_name': 'John Doe'}))
@@ -177,14 +180,14 @@ print(px.hdf_utils.check_for_matching_attrs(h5_f, new_parms={'user_name': 'John 
 ########################################################################################################################
 # Finding datasets and groups
 # ============================
-# 
+#
 # There are numerous ways to search for and access datasets and datagroups in H5 files using the basic functionalities
 # of h5py. pycroscopy.hdf_utils contains several functions that simplify common searching / lookup operations as part of
 # scientific workflows.
-# 
+#
 # find_dataset()
 # ----------------
-# 
+#
 # The find_dataset() function will return alll datasets that whose names contain the provided string. In this case, we
 # are looking for any datasets containing the string 'UDVS' in their names. If you look above, there are two datasets
 # (UDVS and UDVS_Indices) that match this condition:
@@ -195,13 +198,13 @@ for item in udvs_dsets_2:
 
 ########################################################################################################################
 # As you might know by now, Pycroscopy HDF5 files contain three kinds of datasets:
-# 
+#
 # * Main datasets that contain data recorded / computed at multiple spatial locations.
 # * Ancillary datasets that support a main dataset
 # * Other datasets
-# 
+#
 # For more information, please refer to the documentation on the pycroscopy data format.
-# 
+#
 # check_if_main()
 # ---------------
 # check_if_main() is a very handy function that helps distinguish between Main datasets and other objects (Ancillary
@@ -232,7 +235,7 @@ for item in non_main_objs:
 ########################################################################################################################
 # The above script allowed us to distinguish Main datasets from all other objects only within the Group named
 # 'Channel_000'.
-# 
+#
 # get_all_main()
 # --------------
 # What if we want to quickly find all Main datasets even within the sub-Groups of 'Channel_000'? To do this, we have a
@@ -249,17 +252,17 @@ for dset in main_dsets:
 # called "Raw_Data-SHO_Fit_000" meaning that they are results of an operation called "SHO_Fit" performed on the Main
 # dataset - "Raw_Data". The first of the three main datasets is indeed the "Raw_Data" dataset from which the latter
 # two datasets (Fit and Guess) were derived.
-# 
+#
 # Pycroscopy allows the same operation, such as "SHO_Fit", to be performed on the same dataset (Raw_Data), multiple
 # times. Each time the operation is performed, a new datagroup is created to hold the new results. Often, we may
 # want to perform a few operations such as:
-# 
+#
 # * Find the (source / main) dataset from which certain results were derived
 # * Check if a particular operation was performed on a main dataset
 # * Find all datagroups corresponding to a particular operation (e.g. - SHO_Fit) being applied to a main dataset
-# 
-# hdf_utils has a few handy functions for many of these use cases. 
-# 
+#
+# hdf_utils has a few handy functions for many of these use cases.
+#
 # find_results_groups()
 # ----------------------
 # First, lets show that find_results_groups() finds all Groups containing the results of a "SHO_Fit" operation applied
@@ -276,10 +279,10 @@ print(h5_sho_group_list)
 ########################################################################################################################
 # As expected, the "SHO_Fit" operation was performed on "Raw_Data" dataset only once, which is why find_results_groups()
 # returned only one HDF5 Group - "SHO_Fit_000".
-# 
+#
 # check_for_old()
 # -----------------
-# 
+#
 # Often one may want to check if a certain operation was performed on a dataset with the very same parameters to
 # avoid recomputing the results. hdf_utils.check_for_old() is a very handy function that compares parameters (a
 # dictionary) for a new / potential operation against the metadata (attributes) stored in each existing results group
@@ -306,11 +309,11 @@ print(px.hdf_utils.check_for_old(h5_raw, 'SHO_Fit',
 # "Raw_Data",
 # check_for_old() only returned the group(s) where the operation was performed using the same specified parameters
 # ('sho_fit_method' in this case).
-# 
+#
 # Note that check_for_old() performs two operations - search for all groups with the matching nomenclature and then
 # compare the attributes. check_for_matching_attrs() is the handy function, that enables the latter operation of
 # comparing a giving dictionary of parameters against attributes in a given object.
-# 
+#
 # get_source_dataset()
 # ---------------------
 # hdf_utils.get_source_dataset() is a very handy function for the inverse scenario where we are interested in finding
@@ -326,7 +329,7 @@ print(h5_source_dset)
 ########################################################################################################################
 # Since the source dataset is always a Main dataset, get_source_dataset() results a PycroDataset object instead of a
 # regular HDF5 Dataset object.
-# 
+#
 # Note that hdf_utils.get_source_dataset() and find_results_groups() rely on the Pycroscopy rule that results of an
 # operation be stored in a Group named "Source_Dataset_Name-Operation_Name_00x".
 
@@ -338,7 +341,7 @@ print(h5_source_dset)
 # PycroDatasets. PycroDatasets need to have four attributes that are references to the Position and Spectroscopic
 # ancillary datasets. Note, that pycroscopy does not restrict or preclude the storage of other relevant datasets as
 # attributes of another dataset.
-# 
+#
 # For example, the 'Raw_Data' dataset appears to contain several attributes whose keys / names match the names of
 # datasets we see above and values all appear to be HDF5 object references:
 
@@ -349,7 +352,7 @@ for key, val in px.hdf_utils.get_attributes(h5_raw).items():
 # As the name suggests, these HDF5 object references are references or addresses to datasets located elsewhere in the
 # file. Conventionally, one would need to apply this reference to the file handle to get the actual HDF5 Dataset / Group
 # object.
-# 
+#
 # get_auxillary_datasets() simplifies this process by directly retrieving the actual Dataset / Group associated with the
 # attribute. Thus, we would be able to get a reference to the 'Bin_Frequencies' Dataset via:
 
@@ -361,15 +364,15 @@ print(h5_obj == h5_f['/Measurement_000/Channel_000/Bin_Frequencies'])
 ########################################################################################################################
 # Accessing Ancillary Datasets
 # =============================
-# 
+#
 # One of the major benefits of Pycroscopy is its ability to handle large multidimensional datasets at ease. Ancillary
 # datasets serve as the keys or legends for explaining the dimensionality, reshapability, etc. of a dataset. There are
 # several functions in hdf_utils that simplify many common operations on ancillary datasets. Before we dive into these
 # functions, let us understand the dataset we are working on.
-# 
+#
 # This scientific dataset
 # -----------------------
-# 
+#
 # For this example, we will be working with a Band Excitation Polarization Switching (BEPS) dataset acquired from
 # advanced atomic force microscopes. In the much simpler Band Excitation (BE) imaging datasets, a single spectra is
 # acquired at each location in a two dimensional grid of spatial locations. Thus, BE imaging datasets have two
@@ -377,7 +380,7 @@ print(h5_obj == h5_f['/Measurement_000/Channel_000/Bin_Frequencies'])
 # The BEPS dataset used in this example has a spectra for each combination of three other parameters (DC offset,
 # Field, and Cycle). Thus, this dataset has three new spectral dimensions in addition to the spectra itself. Hence,
 # this dataset becomes a 2+4 = 6 dimensional dataset
-# 
+#
 # Before we demonstrate the several useful functions in hdf_utils, lets access the position and spectroscopic ancillary
 # datasets using the get_auxillary_datasets() function we used above:
 
@@ -403,7 +406,7 @@ print(spec_dim_names)
 # As mentioned above, this is indeed a six dimensional dataset with two position dimensions and four spectroscopic
 # dimensions. The Field and Cycle dimensions do not have any units since they are dimensionless unlike the other
 # dimensions.
-# 
+#
 # get_dimensionality()
 # ---------------------
 # Now lets find out the number of steps in each of those dimensions using another handy function called
@@ -422,12 +425,12 @@ for name, length in zip(spec_dim_names, spec_dim_sizes):
 ########################################################################################################################
 # get_sort_order()
 # ----------------
-# 
+#
 # In a few (rare) cases, the spectroscopic / position dimensions are not arranged in descending order of rate of change.
 # In other words, the dimensions in these ancillary matrices are not arranged from fastest-varying to slowest.
 # To account for such discrepancies, hdf_utils has a very handy function that goes through each of the columns or
 # rows in the ancillary indices matrices and finds the order in which these dimensions vary.
-# 
+#
 # Below we illustrate an example of sorting the names of the spectroscopic dimensions from fastest to slowest in
 # a BEPS data file:
 
@@ -443,7 +446,7 @@ print(sorted_spec_labels)
 ########################################################################################################################
 # get_unit_values()
 # -----------------
-# 
+#
 # When visualizing the data it is essential to plot the data against appropriate values on the X, Y, Z axes.
 # Extracting a simple list or array of values to plot against may be challenging especially for multidimensional
 # dataset such as the one under consideration. Fortunately, hdf_utils has a very handy function for this as well:
@@ -462,17 +465,17 @@ for axis, name in zip(axes.flat, spec_dim_names):
     axis.set_title(name)
     name, units = name.split()
     axis.plot(spec_unit_values[name], 'o-')
-    
+
 fig.suptitle('Spectroscopic Dimensions', fontsize=16, y=1.05)
 fig.tight_layout()
 
 ########################################################################################################################
 # Reshaping Data
 # ==============
-# 
+#
 # reshape_to_n_dims()
 # -------------------
-# 
+#
 # Pycroscopy stores N dimensional datasets in a flattened 2D form of position x spectral values. It can become
 # challenging to retrieve the data in its original N-dimensional form, especially for multidimensional datasets such as
 # the one we are working on. Fortunately, all the information regarding the dimensionality of the dataset are contained

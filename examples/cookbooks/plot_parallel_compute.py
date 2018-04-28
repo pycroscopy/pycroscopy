@@ -1,11 +1,13 @@
+"""
+================================================================================
+Parallel Computing
+================================================================================
+
+**Suhas Somnath, Chris R. Smith**
+
+9/8/2017
+"""
 ########################################################################################################################
-# Parallel Computing
-# ==================
-# 
-# **Suhas Somnath, Chris R. Smith**
-# 
-# 9/8/2017
-# 
 # Introduction
 # -------------
 # Quite often, we need to perform the same operation on every single component in our data. One of the most popular
@@ -18,21 +20,21 @@
 #
 # **pycroscopy.parallel_compute()** is a very handy function that simplifies parallel computation significantly to a
 # **single function call** and will be discussed in this document.
-# 
+#
 # Example scientific problem
 # ---------------------------
 # For this example, we will be working with a Band Excitation Piezoresponse Force Microscopy (BE-PFM) imaging dataset
 # acquired from advanced atomic force microscopes. In this dataset, a spectra was collected for each position in a two
 # dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
 # dimensional matrix in accordance with the pycroscopy data format.
-# 
+#
 # Each spectra in this dataset is expected to have a single peak. The goal is to find the positions of the peaks in each
 # spectra. Clearly, the operation of finding the peak in one spectra is independent of the same operation on another
 # spectra. Thus, we could in theory divide the dataset in to N parts and use N CPU cores to compute the results much
 # faster than it would take a single core to compute the results. There is an important caveat to this statement and it
 # will be discussed at the end of this document.
-# 
-# **Here, we will learn how to fit the thousands of spectra using all available cores on a computer.** 
+#
+# **Here, we will learn how to fit the thousands of spectra using all available cores on a computer.**
 # Note, that this is applicable only for a single CPU. Please refer to another advanced example for multi-CPU computing.
 
 # Ensure python 3 compatibility:
@@ -128,23 +130,23 @@ num_rows, num_cols = h5_main.pos_dim_sizes
 # * **peak_widths** - something like [20, 50] that instructs the function to look for peaks that are 20-50 units wide.
 # The function will look for a peak with width of 20, then again for a peak of width - 21 and so on.
 # * **peak_step** - The number of steps within the possiple widths [20, 50], that the search must be performed
-# 
+#
 # The function has one output:
-# * **peak_indices** - an array of the positions at which peaks were found. 
-# 
+# * **peak_indices** - an array of the positions at which peaks were found.
+#
 # .. code-block:: python
-# 
+#
 #     @staticmethod
 #     def wavelet_peaks(vector, *args, **kwargs):
 #         """
 #         This is the function that will be mapped by multiprocess. This is a wrapper around the scipy function.
 #         It uses a parameter - wavelet_widths that is configured outside this function.
-# 
+#
 #         Parameters
 #         ----------
 #         vector : 1D numpy array
 #             Feature vector containing peaks
-# 
+#
 #         Returns
 #         -------
 #         peak_indices : list
@@ -157,14 +159,14 @@ num_rows, num_cols = h5_main.pos_dim_sizes
 #             kwargs.pop('peak_step')
 #             # The below numpy array is used to configure the returned function wpeaks
 #             wavelet_widths = np.linspace(peak_width_bounds[0], peak_width_bounds[1], peak_width_step)
-# 
+#
 #             peak_indices = find_peaks_cwt(np.abs(vector), wavelet_widths, **kwargs)
-# 
+#
 #             return peak_indices
-# 
+#
 #         except KeyError:
 #             warn('Error: Please specify "peak_widths" kwarg to use this method')
-#             
+#
 # For simplicity, lets get a shortcut to this function:
 
 
@@ -173,7 +175,7 @@ wavelet_peaks = px.analysis.guess_methods.GuessMethods.wavelet_peaks
 ########################################################################################################################
 # Testing the function
 # -------------------
-# Let’s see what the operation on an example spectra returns. 
+# Let’s see what the operation on an example spectra returns.
 
 row_ind, col_ind = 103, 19
 pixel_ind = col_ind + row_ind * num_cols
@@ -210,21 +212,21 @@ print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
 ########################################################################################################################
 # Parallel Computation
 # -------------------
-# 
+#
 # There are several libraries that can utilize multiple CPU cores to perform the same computation in parallel. Popular
 # examples are **Multiprocessing**, **Mutiprocess**, **Dask**, **Joblib** etc. Each of these has their own
 # strengths and weaknesses. An installation of **Anaconda** comes with **Multiprocessing** by default and could be
 # the example of choice. However, in our experience we found **Joblib** to offer the best balance of efficiency,
 # simplicity, portabiity, and ease of installation.
-# 
+#
 # For illustrative purposes, we will only be demonstrating how the above serial computation can be made parallel using
 # **Joblib**. We only need two lines to perform the parallel computation. The first line sets up the computational
 # jobs while the second performs the computation.
-# 
+#
 # Note that the first argument to the function **MUST** be the data vector itself. The other arguments (parameters),
 # such as the frequency vector in this case, must come after the data argument. This approach allows the specification
 # of both required arguments and optional (keyword) arguments.
-# 
+#
 # Parallel computing has been made more accessible via the **parallel_compute()** function in **pycroscopy.process**.
 # The below parallel computation is reduced to a **single line** with this function.
 
@@ -243,12 +245,12 @@ print('Parallel computation took', np.round(time.time()-t_0, 2), ' seconds')
 ########################################################################################################################
 # Compare the results
 # -------------------
-# 
+#
 # By comparing the run-times for the two approaches, we see that the parallel computation is substantially faster than
 # the serial computation. Note that the numbers will differ between computers. Also, the computation was performed on
 # a relatively small dataset for illustrative purposes. The benefits of using such parallel computation will be far
 # more apparent for much larger datasets.
-# 
+#
 # Let's compare the results from both the serial and parallel methods to ensure they give the same results:
 
 print('Result from serial computation: {}'.format(serial_results[pixel_ind]))
@@ -306,7 +308,7 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 
 
 def my_parallel_compute(data, func, cpu_cores):
-    t_0 = time.time() 
+    t_0 = time.time()
 
     # Execute the parallel computation
     _ = px.parallel_compute(data, func, cores=cpu_cores)
@@ -336,17 +338,17 @@ fig.tight_layout()
 ########################################################################################################################
 # Formalizing data processing and pycroscopy.Process
 # -----------------------------------------------
-# 
+#
 # Data processing / analysis typically involves a few basic operations:
 # 1. Reading data from file
 # 2. Parallel computation
 # 3. Writing results to disk
-# 
+#
 # The Process class in pycroscopy has modularized these operations for simpler and faster development of standardized,
 # easy-to-debug code. In the case of this example, one would only need to write the wavelet_peaks() function along with
 # the appropriate data reading and data writing functions. Otherc common operations can be inherited from
 # pycroscopy.Process.
-# 
+#
 # Please see another example on how to write a Process class for Pycroscopy based on this example
 
 ########################################################################################################################

@@ -1,10 +1,13 @@
+"""
+================================================================================
+Utilities for writing Pycroscopy data
+================================================================================
+
+**Suhas Somnath**
+
+4/18/2018
+"""
 ########################################################################################################################
-# Utilities for writing Pycroscopy data
-# ============================================
-# Suhas Somnath
-# 
-# 4/18/2018
-# 
 # Introduction
 # -------------
 # Pycroscopy takes a truly unique approach towards towards storing scientific observational data. Several helper
@@ -13,20 +16,20 @@
 # pycroscopy.write_utils consist mainly of two broad categories of functions:
 # * functions that assist in building ancillary datasets
 # * miscelaneous functions that assist in formatting data
-# 
+#
 # **Note that most of these are low-level functions that are used by popular high level functions in
 # pycroscopy.hdf_utils to simplify the writing of datasets.**
-# 
+#
 # Recommended pre-requisite reading
 # ---------------------------------
 # * pycroscopy data format - https://pycroscopy.github.io/pycroscopy/data_format.html.
-# 
+#
 # What to read after this:
 # -------------------------
-# * Crash course on HDF5 and h5py - 
-# * Utilities for writing Pycroscopy HDF5 files - 
+# * Crash course on HDF5 and h5py -
+# * Utilities for writing Pycroscopy HDF5 files -
 # * Utilities for reading Pycroscopy HDF5 files -
-# 
+#
 # Import necessary packages
 # --------------------------
 # We only need a handful of packages besides pycroscopy to illustrate the functions in pycroscopy.write_utils:
@@ -51,14 +54,14 @@ except ImportError:
 ########################################################################################################################
 # Building Ancillary datasets
 # ============================
-# 
+#
 # Pycroscopy uses pairs of ancillary matrics to support the instrument-independent and compact representation of
 # multidimensional datasets. While the creation of ancillary datasets is straightforward when the number of position and
 #  spectroscopic dimensions are relatively small (0-2), one needs to be careful when building these ancillary datasets
 # for datasets with large number of position / spectroscopic dimensions (> 2). The main challenge involves the careful
 # tiling and repetition of unit vectors for each dimension with respect to the sizes of all other dimensions.
 # Fortunately, pycroscopy.write_utils has many handy functions that solve this problem.
-# 
+#
 # In order to demonstrate the functions, lets say that we are workig on an example Main dataset that has three
 # spectrocopic dimensions (Bias, Field, Cycle). The Bias dimension varies as a bi-polar triangular waveform. This
 # waveform is repeated for two Fields over 3 Cycles meaning that the Field and Cycle dimensions are far simpler than
@@ -109,11 +112,11 @@ fig.tight_layout()
 # need the matrix with the values tiled and repeated in the same manner. Perhaps one of the most useful functions is
 # build_ind_val_matrices() which uses just the values over which each dimension is varied to automatically generate the
 #  indices and values matricies that form the ancillary datasets.
-# 
+#
 # In order to generate the indices and values matrices, we would just need to provide the list of values over which
 # these dimensions are varied to build_ind_val_matrices(). The results are two matricies - one for the indices and the
 # other for the values, of the same shape (3, 96).
-# 
+#
 # As mentioned in our document about the data structuring, the Bias would be in the first row, followed by Field,
 # finally followed by Cycle. The plots below illustrate what the indices and values look like for each dimension. For
 # example, notice how the bipolar triangular bias vector has been repeated 2 (Field) * 3 (Cycle) times. Also note how
@@ -161,17 +164,17 @@ fig.tight_layout()
 # ------------------------
 # Region references are a handy feature in HDF5 that allow users to refer to a certain section of data within a dataset
 # by name rather than the indices that define the region of interest.
-# 
+#
 # In pycroscopy, we use region references to define the row or column in the ancillary dataset that corresponds to each
 # dimension by its name. In other words, if we only wanted the 'Field' dimension we could directly get the data
 # corresponding to this dimension without having to remember or figure out the index in which this dimension exists.
-# 
+#
 # Let's take the example of the Field dimension which occurs at index 1 in the (3, 96) shaped spectroscopic index /
 # values matrix. We could extract the Field dimension from the 2D matrix by slicing each dimension using slice objects.
 # We need the second row so the first dimension would be sliced as slice(start=1, stop=2). We need all the colummns in
 # the second dimension so we would slice as slice(start=None, stop=None) meaning that we need all the columns. Doing
 # this by hand for each dimension is clearly tedious.
-# 
+#
 # get_aux_dset_slicing() helps generate the instructions for region references for each dimension in an ancillary
 # dataset. The instructions for each region reference in h5py are defined by tuples of slice objects. Lets see the
 # region-reference instructions that this function provides for our aforementioned example dataset with the three
@@ -220,7 +223,7 @@ spec_dims = [px.write_utils.Dimension('Bias', 'V', bi_triang),
 #
 # Misc writing utilities
 # ========================
-# 
+#
 # calc_chunks()
 # --------------
 # The h5py package automatically (virtually) breaks up HDF5 datasets into contiguous "chunks" to speed up reading and
@@ -253,7 +256,7 @@ print(ret_val)
 expected = ['a', 'bc', 'def']
 returned = px.write_utils.clean_string_att(expected)
 print('List of strings value: {} encoded to: {}'.format(expected, returned))
-    
+
 expected = [1, 2, 3.456]
 returned = px.write_utils.clean_string_att(expected)
 print('List of numbers value: {} returned as is: {}'.format(expected, returned))
