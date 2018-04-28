@@ -20,6 +20,7 @@ Documentation Index
 
 .. toctree::
     about
+    package_organization
     getting_started
     whats_new
     data_format
