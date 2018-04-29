@@ -257,6 +257,30 @@ class PycroDataset(h5py.Dataset):
 
         return n_dim_data
 
+    def __validate_slice_dict(self, slice_dict):
+        """
+        Validates the slice dictionary
+
+        Parameters
+        ----------
+        slice_dict : dict
+            Dictionary of array-likes.
+
+        Returns
+        -------
+        None
+        """
+        if not isinstance(slice_dict, dict):
+            raise TypeError('slice_dict should be a dictionary of slice objects')
+        for key, val in slice_dict.items():
+            # Make sure the dimension is valid
+            if key not in self.__n_dim_labs:
+                raise KeyError('Cannot slice on dimension {}.  '
+                               'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
+            if not isinstance(val, (slice, list, np.ndarray, tuple, int)):
+                raise TypeError('The slices must be array-likes or slice objects.')
+        return True
+
     def slice(self, slice_dict=None, as_scalar=False, verbose=False):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
@@ -266,10 +290,10 @@ class PycroDataset(h5py.Dataset):
         Parameters
         ----------
         slice_dict : dict, optional
-            Dictionary of array-likes.
+            Dictionary of array-likes. for any dimension one needs to slice
         as_scalar : bool, optional
             Should the data be returned as scalar values only.
-        verbose : bool, optionbal
+        verbose : bool, optional
             Whether or not to print debugging statements
 
         Returns
@@ -284,6 +308,13 @@ class PycroDataset(h5py.Dataset):
         """
         if slice_dict is None:
             slice_dict = dict()
+        else:
+            self.__validate_slice_dict(slice_dict)
+
+        if not isinstance(as_scalar, bool):
+            raise TypeError('as_scalar should be a bool')
+        if not isinstance(verbose, bool):
+            raise TypeError('verbose should be a bool')
 
         # Convert the slice dictionary into lists of indices for each dimension
         pos_slice, spec_slice = self._get_pos_spec_slices(slice_dict)
@@ -371,19 +402,11 @@ class PycroDataset(h5py.Dataset):
             Spectroscopic indices included in the slice
         """
         if not isinstance(slice_dict, dict):
-            raise TypeError('slice_dict should be a dictionary of slice objects')
+            self.__validate_slice_dict(slice_dict)
         if len(slice_dict) == 0:
             pos_slice = np.expand_dims(np.arange(self.shape[0]), axis=1)
             spec_slice = np.expand_dims(np.arange(self.shape[1]), axis=1)
             return pos_slice, spec_slice
-
-        for key, val in slice_dict.items():
-            # Make sure the dimension is valid
-            if key not in self.__n_dim_labs:
-                raise KeyError('Cannot slice on dimension {}.  '
-                               'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
-            if not isinstance(val, (slice, list, np.ndarray, tuple, int)):
-                raise TypeError('The slices must be array-likes or slice objects.')
 
         # Create default slices that include the entire dimension
         n_dim_slices = dict()
@@ -467,8 +490,7 @@ class PycroDataset(h5py.Dataset):
             pos_unit_values = get_unit_values(self.h5_pos_inds, self.h5_pos_vals)
 
         else:
-            if not isinstance(slice_dict, dict):
-                raise TypeError('slice_dict should be a dictionary')
+            self.__validate_slice_dict(slice_dict)
 
             # First work on slicing the ancillary matricies. Determine dimensionality before slicing n dims:
             pos_slices, spec_slices = self._get_pos_spec_slices(slice_dict)
