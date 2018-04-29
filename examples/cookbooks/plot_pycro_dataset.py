@@ -250,7 +250,7 @@ print(pd_raw.n_dim_labels)
 #
 # To get this, we would slice as:
 
-spat_map_1, success = pd_raw.slice(slice_dict={'Frequency': 43, 'DC_Offset': 14, 'Field': 0, 'Cycle': 1})
+spat_map_1, success = pd_raw.slice({'Frequency': 43, 'DC_Offset': 14, 'Field': 0, 'Cycle': 1})
 
 ########################################################################################################################
 # As a verification, lets try to plot the same spatial map by slicing the N dimensional form we got earlier and compare
