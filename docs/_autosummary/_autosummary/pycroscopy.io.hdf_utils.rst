@@ -22,7 +22,7 @@ pycroscopy\.io\.hdf\_utils
       create_spec_inds_from_vals
       find_dataset
       find_results_groups
-      get_auxillary_datasets
+      get_auxiliary_datasets
       get_datasets
       get_h5_obj_refs
       get_group_refs

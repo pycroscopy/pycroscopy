@@ -131,7 +131,7 @@ Note that:
             super(ShoGuess, self).__init__(h5_main, cores=cores)
 
             # find the frequency vector
-            h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
+            h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[-1]
             self.freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
         def _create_results_datasets(self):
@@ -140,8 +140,8 @@ Note that:
             Just as the raw data is stored in the pycroscopy format, the results also need to conform to the same
             standards. Hence, the create_datasets function can appear to be a little longer than one might expect.
             """
-            h5_spec_inds = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
-            h5_spec_vals = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
+            h5_spec_inds = px.hdf_utils.get_auxiliary_datasets(self.h5_main, auxDataName=['Spectroscopic_Indices'])[0]
+            h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(self.h5_main, auxDataName=['Spectroscopic_Values'])[0]
 
             self.step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
             self.num_udvs_steps = len(self.step_start_inds)
@@ -172,7 +172,7 @@ Note that:
             # Reference linking before actual fitting
             px.hdf_utils.link_h5_objects_as_attrs(self.h5_guess, [h5_sho_inds, h5_sho_vals])
             # Linking ancillary position datasets:
-            aux_dsets = px.hdf_utils.get_auxillary_datasets(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
+            aux_dsets = px.hdf_utils.get_auxiliary_datasets(self.h5_main, auxDataName=['Position_Indices', 'Position_Values'])
             px.hdf_utils.link_h5_objects_as_attrs(self.h5_guess, aux_dsets)
             print('Finshed creating datasets')
 
@@ -258,7 +258,7 @@ dimensional matrix in accordance with the pycroscopy data format.
     h5_main = h5_meas_grp['Channel_000/Raw_Data']
 
     # Extracting the X axis - vector of frequencies
-    h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[-1]
+    h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[-1]
     freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 

@@ -351,7 +351,7 @@ print(h5_source_dset)
 # Note that `hdf_utils.get_source_dataset()` and `find_results_groups()` rely on the Pycroscopy rule that results of an
 # operation be stored in a Group named `Source_Dataset_Name-Operation_Name_00x`.
 
-# get_auxillary_datasets()
+# get_auxiliary_datasets()
 # -------------------------
 # The association of datasets and groups with one another provides a powerful mechanism for conveying (richer)
 # information. One way to associate objects with each other is to store the reference of an object as an attribute of
@@ -371,10 +371,10 @@ for key, val in px.hdf_utils.get_attributes(h5_raw).items():
 # file. Conventionally, one would need to apply this reference to the file handle to get the actual HDF5 Dataset / Group
 # object.
 #
-# `get_auxillary_datasets()` simplifies this process by directly retrieving the actual Dataset / Group associated with
+# `get_auxiliary_datasets()` simplifies this process by directly retrieving the actual Dataset / Group associated with
 # the attribute. Thus, we would be able to get a reference to the `Bin_Frequencies` Dataset via:
 
-h5_obj = px.hdf_utils.get_auxillary_datasets(h5_raw, 'Bin_Frequencies')[0]
+h5_obj = px.hdf_utils.get_auxiliary_datasets(h5_raw, 'Bin_Frequencies')[0]
 print(h5_obj)
 # Lets prove that this object is the same as the 'Bin_Frequencies' object that can be directly addressed:
 print(h5_obj == h5_f['/Measurement_000/Channel_000/Bin_Frequencies'])
@@ -387,9 +387,9 @@ print(h5_obj == h5_f['/Measurement_000/Channel_000/Bin_Frequencies'])
 # several functions in hdf_utils that simplify many common operations on ancillary datasets.
 #
 # Before we demonstrate the several useful functions in hdf_utils, lets access the position and spectroscopic ancillary
-# datasets using the `get_auxillary_datasets()` function we used above:
+# datasets using the `get_auxiliary_datasets()` function we used above:
 
-dset_list = px.hdf_utils.get_auxillary_datasets(h5_raw, ['Position_Indices', 'Position_Values',
+dset_list = px.hdf_utils.get_auxiliary_datasets(h5_raw, ['Position_Indices', 'Position_Values',
                                                          'Spectroscopic_Indices', 'Spectroscopic_Values'])
 h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals = dset_list
 

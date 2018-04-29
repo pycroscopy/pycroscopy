@@ -20,7 +20,7 @@ from ..core.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, 
 from ..core.viz.jupyter_utils import save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
-from ..core.io.hdf_utils import reshape_to_n_dims, get_auxillary_datasets, get_sort_order, get_dimensionality, get_attr, \
+from ..core.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_sort_order, get_dimensionality, get_attr, \
     get_source_dataset
 from ..core.io.pycro_data import PycroDataset
 
@@ -704,11 +704,11 @@ def jupyter_visualize_beps_loops(h5_projected_loops, h5_loop_guess, h5_loop_fit,
     fit_nd, _ = reshape_to_n_dims(h5_loop_fit)
 
     h5_projected_loops = h5_loop_guess.parent['Projected_Loops']
-    h5_proj_spec_inds = get_auxillary_datasets(h5_projected_loops,
+    h5_proj_spec_inds = get_auxiliary_datasets(h5_projected_loops,
                                                aux_dset_name='Spectroscopic_Indices')[-1]
-    h5_proj_spec_vals = get_auxillary_datasets(h5_projected_loops,
+    h5_proj_spec_vals = get_auxiliary_datasets(h5_projected_loops,
                                                aux_dset_name='Spectroscopic_Values')[-1]
-    h5_pos_inds = get_auxillary_datasets(h5_projected_loops,
+    h5_pos_inds = get_auxiliary_datasets(h5_projected_loops,
                                          aux_dset_name='Position_Indices')[-1]
     pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = list(pos_nd.shape[:h5_pos_inds.shape[1]])
@@ -946,14 +946,14 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     h5_main = get_source_dataset(h5_sho_grp)
 
     # Now get the needed ancillary datasets for each main dataset
-    h5_pos_inds = get_auxillary_datasets(h5_loop_parameters, 'Position_Indices')[0]
-    h5_pos_vals = get_auxillary_datasets(h5_loop_parameters, 'Position_Values')[0]
+    h5_pos_inds = get_auxiliary_datasets(h5_loop_parameters, 'Position_Indices')[0]
+    h5_pos_vals = get_auxiliary_datasets(h5_loop_parameters, 'Position_Values')[0]
     pos_order = get_sort_order(np.transpose(h5_pos_inds))
     pos_dims = get_dimensionality(np.transpose(h5_pos_inds), pos_order)
     pos_labs = get_attr(h5_pos_inds, 'labels')
 
-    h5_loop_spec_inds = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Indices')[0]
-    h5_loop_spec_vals = get_auxillary_datasets(h5_loop_parameters, 'Spectroscopic_Values')[0]
+    h5_loop_spec_inds = get_auxiliary_datasets(h5_loop_parameters, 'Spectroscopic_Indices')[0]
+    h5_loop_spec_vals = get_auxiliary_datasets(h5_loop_parameters, 'Spectroscopic_Values')[0]
     loop_spec_order = get_sort_order(h5_loop_spec_inds)
     loop_spec_dims = get_dimensionality(h5_loop_spec_inds, loop_spec_order)
     loop_spec_labs = get_attr(h5_loop_spec_inds, 'labels')
