@@ -361,9 +361,9 @@ print(px.hdf_utils.get_attr(h5_raw, 'Position_Indices'))
 ########################################################################################################################
 # Object references as attributes
 # ================================
-# We can get access to linked datasets using `get_auxillary_datasets()`:
+# We can get access to linked datasets using `get_auxiliary_datasets()`:
 
-print(px.hdf_utils.get_auxillary_datasets(h5_raw, 'Position_Indices'))
+print(px.hdf_utils.get_auxiliary_datasets(h5_raw, 'Position_Indices'))
 
 ########################################################################################################################
 # Given that `h5_raw` is a `Main` dataset, and` Position_Indices` is one of the four essential components of a `Main`
@@ -426,7 +426,7 @@ for key, val in px.hdf_utils.get_attributes(h5_other).items():
 # The dataset named `Other` has a new attribute named `Mysterious_Dataset`. Let us show that this dataset is none other
 # than `Raw_Data`:
 
-h5_myst_dset = px.hdf_utils.get_auxillary_datasets(h5_other, 'Mysterious_Dataset')[0]
+h5_myst_dset = px.hdf_utils.get_auxiliary_datasets(h5_other, 'Mysterious_Dataset')[0]
 print(h5_myst_dset == h5_raw)
 
 ########################################################################################################################
@@ -489,9 +489,9 @@ px.hdf_utils.print_tree(h5_file)
 
 for anc_name in ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']:
     # get the handle to the ancillary dataset linked to 'Raw_Data'
-    raw_anc = px.hdf_utils.get_auxillary_datasets(h5_raw, anc_name)[0]
+    raw_anc = px.hdf_utils.get_auxiliary_datasets(h5_raw, anc_name)[0]
     # get the handle to the ancillary dataset linked to 'Normalized_Data'
-    norm_anc = px.hdf_utils.get_auxillary_datasets(h5_norm, anc_name)[0]
+    norm_anc = px.hdf_utils.get_auxiliary_datasets(h5_norm, anc_name)[0]
     # Show that these are indeed the same dataset
     print('Sharing {}: {}'.format(anc_name, raw_anc == norm_anc))
 

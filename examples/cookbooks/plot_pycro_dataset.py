@@ -174,7 +174,7 @@ print(pd_raw == h5_raw)
 # Let us compare accessing the Spectroscopic Indices via the PycroDataset and hdf_utils functionality:
 
 h5_spec_inds_1 = pd_raw.h5_spec_inds
-h5_spec_inds_2 = px.hdf_utils.get_auxillary_datasets(h5_raw, 'Spectroscopic_Indices')[0]
+h5_spec_inds_2 = px.hdf_utils.get_auxiliary_datasets(h5_raw, 'Spectroscopic_Indices')[0]
 print(h5_spec_inds_1 == h5_spec_inds_2)
 
 ########################################################################################################################

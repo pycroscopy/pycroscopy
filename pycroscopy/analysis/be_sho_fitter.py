@@ -10,7 +10,7 @@ import numpy as np
 from .fitter import Fitter
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.hdf_utils import copy_region_refs, write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
-                                create_empty_dataset, get_auxillary_datasets, write_main_dataset
+                                create_empty_dataset, get_auxiliary_datasets, write_main_dataset
 
 '''
 Custom dtype for the datasets created during fitting.
@@ -419,7 +419,7 @@ def is_reshapable(h5_main, step_start_inds=None):
         Whether or not the number of bins per step are constant in this dataset
     """
     if step_start_inds is None:
-        h5_spec_inds = get_auxillary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
+        h5_spec_inds = get_auxiliary_datasets(h5_main, aux_dset_name=['Spectroscopic_Indices'])[0]
         step_start_inds = np.where(h5_spec_inds[0] == 0)[0]
     # Adding the size of the main dataset as the last (virtual) step
     step_start_inds = np.hstack((step_start_inds, h5_main.shape[1]))

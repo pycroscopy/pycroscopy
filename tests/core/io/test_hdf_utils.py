@@ -282,7 +282,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos = h5_f['/Raw_Measurement/Position_Indices']
-            [ret_val] = hdf_utils.get_auxillary_datasets(h5_main, aux_dset_name='Position_Indices')
+            [ret_val] = hdf_utils.get_auxiliary_datasets(h5_main, aux_dset_name='Position_Indices')
             self.assertEqual(ret_val, h5_pos)
 
     def test_get_auxillary_datasets_single(self):
@@ -290,7 +290,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos = h5_f['/Raw_Measurement/Position_Indices']
-            [ret_val] = hdf_utils.get_auxillary_datasets(h5_main, aux_dset_name='Position_Indices')
+            [ret_val] = hdf_utils.get_auxiliary_datasets(h5_main, aux_dset_name='Position_Indices')
             self.assertEqual(ret_val, h5_pos)
 
     def test_get_auxillary_datasets_multiple(self):
@@ -299,7 +299,7 @@ class TestHDFUtils(unittest.TestCase):
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos_inds = h5_f['/Raw_Measurement/Position_Indices']
             h5_pos_vals = h5_f['/Raw_Measurement/Position_Values']
-            ret_val = hdf_utils.get_auxillary_datasets(h5_main, aux_dset_name=['Position_Indices',
+            ret_val = hdf_utils.get_auxiliary_datasets(h5_main, aux_dset_name=['Position_Indices',
                                                                                'Position_Values'])
             self.assertEqual(set(ret_val), set([h5_pos_inds, h5_pos_vals]))
 
@@ -311,7 +311,7 @@ class TestHDFUtils(unittest.TestCase):
                         h5_f['/Raw_Measurement/Position_Values'],
                         h5_f['/Raw_Measurement/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/Spectroscopic_Values']]
-            ret_val = hdf_utils.get_auxillary_datasets(h5_main)
+            ret_val = hdf_utils.get_auxiliary_datasets(h5_main)
             self.assertEqual(set(expected), set(ret_val))
 
     def test_get_auxillary_datasets_illegal(self):
@@ -319,7 +319,7 @@ class TestHDFUtils(unittest.TestCase):
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             with self.assertRaises(KeyError):
-                _ = hdf_utils.get_auxillary_datasets(h5_main, aux_dset_name='Does_Not_Exist')
+                _ = hdf_utils.get_auxiliary_datasets(h5_main, aux_dset_name='Does_Not_Exist')
 
     def test_get_data_descriptor_main(self):
         self.__ensure_test_h5_file()

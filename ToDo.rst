@@ -15,7 +15,6 @@ Urgent
 1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
 2. file dialog for Jupyter not working on Mac OS
 3. Chris - Address the remaining unit tests
-4. Rename get_auxillary_datasets() to get_auxiliary_datasets(). Update HDF read example
 
 Important
 ~~~~~~~~~
