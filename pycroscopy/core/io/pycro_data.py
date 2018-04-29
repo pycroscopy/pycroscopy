@@ -279,14 +279,14 @@ class PycroDataset(h5py.Dataset):
             raise TypeError('slice_dict should be a dictionary of slice objects')
         for key, val in slice_dict.items():
             # Make sure the dimension is valid
-            if key not in self.__n_dim_labs:
+            if key not in self.n_dim_labels:
                 raise KeyError('Cannot slice on dimension {}.  '
-                               'Valid dimensions are {}.'.format(key, self.__n_dim_labs.tolist()))
+                               'Valid dimensions are {}.'.format(key, self.n_dim_labels))
             if not isinstance(val, (slice, list, np.ndarray, tuple, int)):
                 raise TypeError('The slices must be array-likes or slice objects.')
         return True
 
-    def slice(self, slice_dict=None, as_scalar=False, verbose=False):
+    def slice(self, slice_dict, as_scalar=False, verbose=False):
         """
         Slice the dataset based on an input dictionary of 'str': slice pairs.
         Each string should correspond to a dimension label.  The slices can be
@@ -294,7 +294,7 @@ class PycroDataset(h5py.Dataset):
 
         Parameters
         ----------
-        slice_dict : dict, optional
+        slice_dict : dict
             Dictionary of array-likes. for any dimension one needs to slice
         as_scalar : bool, optional
             Should the data be returned as scalar values only.
@@ -406,8 +406,8 @@ class PycroDataset(h5py.Dataset):
         spec_slice : list of uints
             Spectroscopic indices included in the slice
         """
-        if not isinstance(slice_dict, dict):
-            self.__validate_slice_dict(slice_dict)
+        self.__validate_slice_dict(slice_dict)
+
         if len(slice_dict) == 0:
             pos_slice = np.expand_dims(np.arange(self.shape[0]), axis=1)
             spec_slice = np.expand_dims(np.arange(self.shape[1]), axis=1)
@@ -543,7 +543,7 @@ class PycroDataset(h5py.Dataset):
                                  '. Try slicing again'.format(len(pos_unit_values), len(spec_unit_values)))
 
             # now should be safe to slice:
-            data_slice, success = self.slice(slice_dict=slice_dict)
+            data_slice, success = self.slice(slice_dict)
             if success != True:
                 raise ValueError('Something went wrong when slicing the dataset. slice message: {}'.format(success))
             # don't forget to remove singular dimensions via a squeeze
