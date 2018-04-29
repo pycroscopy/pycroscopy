@@ -6,6 +6,9 @@ Utilities for reading Pycroscopy HDF5 files
 **Suhas Somnath**
 
 4/18/2018
+
+**This document illustrates the many handy functions in pycroscopy.hdf_utils that significantly simplify reading data
+and information in pycroscopy formatted HDF5 files**
 """
 ########################################################################################################################
 # Introduction

@@ -6,6 +6,9 @@ Utilities for writing Pycroscopy HDF5 files
 **Suhas Somnath**
 
 4/18/2018
+
+**This document illustrates the many handy functions in pycroscopy.hdf_utils that significantly simplify writing data
+and information in pycroscopy formatted HDF5 files**
 """
 ########################################################################################################################
 # Introduction
@@ -26,8 +29,10 @@ Utilities for writing Pycroscopy HDF5 files
 #
 # Recommended pre-requisite reading
 # ---------------------------------
-# * pycroscopy data format - https://pycroscopy.github.io/pycroscopy/data_format.html.
-# * Crash course on HDF5 and h5py -
+# * `pycroscopy data format <https://pycroscopy.github.io/pycroscopy/data_format.html>`_
+# * `Crash course on HDF5 and h5py <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_h5py.html>`_
+# * Utilities for `reading <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_hdf_utils_read.html>`_
+#   HDF5 files in pycroscopy
 #
 # Import all necessary packages
 # -----------------------------
