@@ -57,7 +57,7 @@ slicing, and visualizing N-dimensional Main datasets**
 # * `Crash course on HDF5 and h5py <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_h5py.html>`_
 # * Utilities for `reading <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_hdf_utils_read.html>`_
 #   and `writing <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_hdf_utils_write.html>`_
-#   HDF5 files in pycroscopy -
+#   HDF5 files in pycroscopy
 #
 # Example scientific dataset
 # ---------------------------
