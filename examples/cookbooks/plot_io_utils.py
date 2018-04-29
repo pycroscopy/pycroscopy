@@ -24,7 +24,7 @@ except ImportError:
 
 ########################################################################################################################
 # Computation related utilities
-# ============================
+# ===============================
 # recommend_cpu_cores()
 # ---------------------
 # Time is of the essence and every developer wants to make the best use of all available cores in a CPU for massively
@@ -129,14 +129,14 @@ print('Current time is: {}'.format(px.io_utils.get_time_stamp()))
 ########################################################################################################################
 # Communication utilities
 # ========================
-# check_ssh()
-# -----------
-# When developing workflows that need to work on remote or virtual machines in addition to one's own personal computer
-# such as a laptop, this function is handy at letting the developer know where the code is being executed
-print('Running on remote machine: {}'.format(px.io_utils.check_ssh()))
-
-########################################################################################################################
 # file_dialog()
 # -------------
 # This handy function generates a file window to select files. We encourage you to try this function out since it cannot
 # demonstrated within this static document.
+#
+# check_ssh()
+# -----------
+# When developing workflows that need to work on remote or virtual machines in addition to one's own personal computer
+# such as a laptop, this function is handy at letting the developer know where the code is being executed
+
+print('Running on remote machine: {}'.format(px.io_utils.check_ssh()))
