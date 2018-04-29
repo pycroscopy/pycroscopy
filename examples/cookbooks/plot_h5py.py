@@ -6,6 +6,8 @@ Primer to HDF5 and h5py
 **Suhas Somnath**
 
 4/18/2018
+
+**This document serves as a quick primer to HDF5 files and the h5py package used for reading and writing to such files**
 """
 ########################################################################################################################
 # Introduction
