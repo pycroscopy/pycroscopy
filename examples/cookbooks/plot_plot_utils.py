@@ -7,8 +7,11 @@ Plotting utilities
 
 8/12/2017
 
-This is a short walkthrough of useful plotting utilities available in pycroscopy. 
-Some of these functions fill gaps in the default matplotlib package, some were
+**This is a short walkthrough of useful plotting utilities available in pycroscopy**
+
+Introduction
+--------------
+Some of the functions in `pycroscopy.plot_utils` fill gaps in the default matplotlib package, some were
 developed for scientific applications, and others were developed specifically
 for handling pycroscopy datasets. These functions have been developed to substantially simplify
 the generation of high quality figures for journal publications. 

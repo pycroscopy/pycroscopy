@@ -7,9 +7,8 @@ Input / Output / Computing utilities
 
 8/12/2017
 
-Introduction
-------------
-This is a short walk-through of useful utilities in pycroscopy.io_utils that simplify common i/o and computation tasks.
+**This is a short walk-through of useful utilities in pycroscopy.io_utils that simplify common i/o and computational
+tasks.**
 """
 
 from __future__ import print_function, division, unicode_literals
