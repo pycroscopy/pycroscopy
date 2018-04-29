@@ -5,6 +5,7 @@ Created on Thu Sep  7 21:14:25 2017
 @author: Suhas Somnath, Chris Smith
 """
 
+from __future__ import division, print_function, unicode_literals, absolute_import
 import sys
 import numpy as np
 from collections import Iterable
@@ -12,7 +13,7 @@ from collections import Iterable
 from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
-           'Dimension', 'build_ind_val_matrices', 'calc_chunks']
+           'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
 
 if sys.version_info.major == 3:
     unicode = str

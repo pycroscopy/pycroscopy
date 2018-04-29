@@ -1,10 +1,13 @@
+"""
+================================================================================
+Utilities for writing Pycroscopy HDF5 files
+================================================================================
+
+**Suhas Somnath**
+
+4/18/2018
+"""
 ########################################################################################################################
-# Utilities for writing Pycroscopy HDF5 files
-# ============================================
-# Suhas Somnath
-# 
-# 4/18/2018
-# 
 # Introduction
 # -------------
 # Pycroscopy uses a data-centric approach to data analysis and processing meaning that results from all data analysis
@@ -12,7 +15,7 @@
 # (HDF5) allows data, whether it is raw measured data or results of analysis, to be stored in multiple datasets within
 # the same file in a tree-like manner. Certain rules and considerations have been made in pycroscopy to ensure
 # consistent and easy access to any data.
-# 
+#
 # The h5py python package provides great functions to create, read, and manage data in HDF5 files. In
 # pycroscopy.hdf_utils, we have added functions that facilitate scientifically relevant, or pycroscopy specific
 # functionality such as easy creation of Pycroscopy Main datasets, creation of automatically indexed groups to hold
@@ -20,12 +23,12 @@
 # split in two parts - one that focuses on functions that facilitate reading and one that facilitate writing of data.
 # The following guide provides examples of how, and more importantly when, to use functions in pycroscopy.hdf_utils for
 # various scenarios starting from recording data from instruments to storing analysis data.
-# 
+#
 # Recommended pre-requisite reading
 # ---------------------------------
 # * pycroscopy data format - https://pycroscopy.github.io/pycroscopy/data_format.html.
-# * Crash course on HDF5 and h5py - 
-# 
+# * Crash course on HDF5 and h5py -
+#
 # Import all necessary packages
 # -----------------------------
 # Before we begin demonstrating the numerous functions in pycroscopy.hdf_utils, we need to import the necessary
@@ -51,7 +54,7 @@ except ImportError:
     import pycroscopy as px
 
 ########################################################################################################################
-# Create a HDF5 file 
+# Create a HDF5 file
 # ===================
 # We will be using the h5py functionality to do basic operations on HDF5 files
 file_path = 'test.h5'
@@ -60,11 +63,11 @@ h5_file = h5py.File(file_path)
 ########################################################################################################################
 # HDF_Utils works with (and uses) h5py
 # ------------------------------------
-# 
+#
 # Pycroscopy and hdf_utils do not preclude the creation of groups and datasets using the h5py package. However, the many
 # functions in hdf_utils are present to make it easier to handle the reading and writing of multidimensional scientific
 # data formatted according to the Pycroscopy standard
-# 
+#
 # We can always use the h5py functionality to create a HDF5 group as shown below:
 
 h5_some_group = h5_file.create_group('Some_Group')
@@ -83,7 +86,7 @@ print(h5_some_dataset)
 # ---------------------
 # In order to accomodate the iterative nature of data recording (multiple sequential and related measurements) and
 # analysis (same analysis performed with different parameters) we add an index as a suffix to HDF5 Group names.
-# 
+#
 # Let us first create a HDF5 group to store some data recorded from an instrument. The below function will automatically
 # create a group with an index as a suffix and write certain book-keeping attributes to the group. We will see how this
 # and similar functions handle situations when similarly named groups already exist.
@@ -94,7 +97,7 @@ print(h5_meas_group)
 ########################################################################################################################
 # Since there were no other groups whose name started with 'Measurement', the function assigned the lowest index - 000
 # as a suffix to the requested group name.
-# 
+#
 # create_indexed_group() calls another handy function called assign_group_index() to get the suffix before creating a
 # HDF5 group. Should we want to create another new indexed group called 'Measurement', assign_group_index() will notice
 # that a group named 'Measurement_000' already exists and will assign the next index (001) to the new group - see below.
@@ -111,22 +114,22 @@ px.hdf_utils.print_tree(h5_file)
 ########################################################################################################################
 # Clearly, we have the 'Measurement_000' Group at the same level as a group named 'Some_Group'. The group 'Some_Group'
 # contains a dataset named 'Some_Dataset' under it.
-# 
+#
 # Both, 'Measurement_000' and 'Some_Group' have an underline below their name to indicate that they are groups unlike
 # the 'Some_Dataset' Dataset
-# 
+#
 # Writing attributes
 # ===================
 # HDF5 datasets and datagroups can also store metadata such as experimental parameters. These metadata can be text,
 # numbers, small lists of numbers or text etc. These metadata can be very important for understanding the datasets
 # and guide the analysis routines.
-# 
+#
 # While one could use the basic h5py functionality to write and access attributes, one would encounter a lot of problems
 # when attempting to encode or decode attributes whose values were strings or lists of strings due to some issues in
 # h5py. This problem has been demonstrated in our primer to HDF5. Instead of using the basic functionality of h5py, we
 # recommend always using the functions in pycroscopy that reliably and consistently work for any kind of attribute for
 # any version of python:
-# 
+#
 # Here's a look at the self-explanatory, default attribtues that will be written to the indexed group for traceability
 # and posterity. Note that we are using pycrocsopy's get_attributes() function instead of the base h5py capability
 
@@ -144,7 +147,7 @@ print(px.hdf_utils.get_attributes(h5_some_group))
 ########################################################################################################################
 # write_book_keeping_attrs()
 # --------------------------
-# 
+#
 # However, you can always manually add these basic attributes after creating the group using the
 # write_book_keeping_attrs(). Note that we can add these basic attributes to Datasets as well using this function.
 
@@ -181,7 +184,7 @@ for key, val in px.hdf_utils.get_attributes(h5_some_dataset).items():
 ########################################################################################################################
 # Writing Main datasets
 # ======================
-# 
+#
 # Set up a toy problem
 # --------------------
 # Let's set up a toy four-dimensional dataset that has:
@@ -191,8 +194,8 @@ for key, val in px.hdf_utils.get_attributes(h5_some_dataset).items():
 # * and two spectroscopic dimensions:
 #     * (sinusoidal) probing bias waveform
 #     * cycles over which this bias waveform is repeated
-#     
-# For simplicity, we will keep the size of each dimension small. 
+#
+# For simplicity, we will keep the size of each dimension small.
 
 num_rows = 3
 num_cols = 5
@@ -217,7 +220,7 @@ cycle_vals = np.arange(num_cycles)
 # In[16]:
 
 fig, axes = plt.subplots(ncols=2, nrows=2, figsize=(7, 7))
-for axis, vals, dim_name in zip(axes.flat, [rows_vals, cols_vals, bias_vals, cycle_vals], 
+for axis, vals, dim_name in zip(axes.flat, [rows_vals, cols_vals, bias_vals, cycle_vals],
                                 ['Rows', 'Cols', 'Bias', 'Cycle']):
     axis.set_title(dim_name, fontsize=15)
     axis.plot(vals, 'o-')
@@ -230,27 +233,27 @@ fig.tight_layout()
 # * units for the dimension
 # * values:
 #     * These can be the actual values over which the dimension was varied
-#     * or number of steps in case of linearly varying dimensions such as 'Cycle' below 
-#     
+#     * or number of steps in case of linearly varying dimensions such as 'Cycle' below
+#
 # Note that the Dimension objects in the lists for Positions and Spectroscopic must be arranged from fastest varying to
 # slowest varying to mimic how the data is actually arranged. For example, in this example, there are multiple
 # bias points per cycle and multiple columns (X) per row (Y) of data. Thus, the bias changes faster than the cycle and
 # the columns (X) change faster than the rows (Y). Therefore, the  Cols must come before the Rows and Bias must precede
 # the Cycle dimension:
 
-pos_dims = [px.write_utils.Dimension('Cols', 'nm', cols_vals), 
+pos_dims = [px.write_utils.Dimension('Cols', 'nm', cols_vals),
             px.write_utils.Dimension('Rows', 'um', rows_vals)]
-spec_dims = [px.write_utils.Dimension('Bias', 'V', bias_vals), 
+spec_dims = [px.write_utils.Dimension('Bias', 'V', bias_vals),
              px.write_utils.Dimension('Cycle', '', num_cycles)]
 
 ########################################################################################################################
 # write_main_dataset()
 # -------------------
-# 
+#
 # Often, data is is recorded (from instruments) or generated (as a result of some analysis) in chunks (for example - one
 # position at a time). Therefore, it makes sense to first create an empty dataset and then fill in the data as it is
 # generated / recorded.
-# 
+#
 # We will only create an empty dataset first by specifying how large the dataset should be and of what data type
 # (specified using the dtype keyword argument). Later, we will go over examples where the whole data is available when
 # creating the HDF5 dataset. The *write_main_dataset* is one of the most important and popularly used functions in
@@ -260,11 +263,11 @@ spec_dims = [px.write_utils.Dimension('Bias', 'V', bias_vals),
 # * the creation of the ancillary datasets (if necessary)
 # * linking the ancillary datasets such that the central dataset becomes a *Main* dataset
 # * writing attributes
-# 
+#
 # We could use the write_simple_attrs() function to write attributes to Raw_Data at a later stage but we can always pass
 # these attributes to be written at the time of dataset creation if they are already known
 
-h5_raw = px.hdf_utils.write_main_dataset(h5_meas_group, (num_rows * num_cols, bias_pts * num_cycles), 
+h5_raw = px.hdf_utils.write_main_dataset(h5_meas_group, (num_rows * num_cols, bias_pts * num_cycles),
                                          'Raw_Data', 'Current', 'nA', pos_dims, spec_dims, dtype=np.float32,
                                          main_dset_attrs={'IO_rate': 4E+6, 'Amplifier_Gain': 9})
 print(h5_raw)
@@ -272,10 +275,10 @@ print(h5_raw)
 ########################################################################################################################
 # Let us take a look at the contents of the file again using the print_tree() functon. What we see is that five new
 # datasets have been created:
-# * **Raw_Data** was created to contain the 4D measurement we are interested in storing. 
+# * **Raw_Data** was created to contain the 4D measurement we are interested in storing.
 # * **Spectrocopic_Indices** and **Spectrocopic_Values** contain the information about the spectroscopic dimensions
 # * **Position_Indices** and **Position_Values** contain the position related information
-# 
+#
 # The underline below **Measurement_000** indicates that this is a HDF5 Group
 
 px.hdf_utils.print_tree(h5_file)
@@ -283,7 +286,7 @@ px.hdf_utils.print_tree(h5_file)
 ########################################################################################################################
 # As mentioned in our document about the data_format, the four supporting datasets (Position and Spectroscopic Indices
 # and Values) help provide meaning to each element in Raw_Data such as dimensionality, etc.
-# 
+#
 # Only the Raw_Data dataset is a Pycroscopy Main dataset while all other datasets are just supporting datasets. We can
 # verify whether a dataset is a Main dataset or not using the check_if_main() function:
 
@@ -293,7 +296,7 @@ for dset in [h5_raw, h5_raw.h5_spec_inds, h5_raw.h5_pos_vals]:
 ########################################################################################################################
 # Populating the Dataset:
 # -----------------------
-# 
+#
 # Note that h5_main still does not contain the values we are interested in filling it in with:
 
 print(h5_raw[5])
@@ -318,13 +321,13 @@ print(h5_raw[5])
 ########################################################################################################################
 # Exploring attributes in Main datasets:
 # ---------------------------------------
-# 
+#
 # Some of the main requirements for promoting a regular dataset to a Main dataset are some mandatory attributes attached
 # to the dataset:
 # * quantity - What the stored data contains - for example: current, temperature, voltage, strain etc.
 # * units - the units for the quantity, such as Amperes, meters, etc.
-# * links to each of the four ancillary datasets 
-# 
+# * links to each of the four ancillary datasets
+#
 # Again, we can use the get_attributes() function to see if and how these attributes are stored:
 
 for key, val in px.hdf_utils.get_attributes(h5_raw).items():
@@ -346,7 +349,7 @@ print(px.hdf_utils.get_auxillary_datasets(h5_raw, 'Position_Indices'))
 ########################################################################################################################
 # Note that this function returns all datasets named 'Position_Indices' under a group or Dataset in a list. In this
 # case, we know that the list should only have one value.
-# 
+#
 # Given that h5_raw is a Main dataset, and Position_Indices is one of the four essential components of a Main dataset,
 # the Pycrodataset object makes it far easier to access the ancillary datasets without neededing to call a function as
 # above. PycroDataset will be discussed in greater detail in a separate notebook.
@@ -362,10 +365,10 @@ h5_other = h5_meas_group.create_dataset('Other', np.random.rand(5))
 # users tend to "walk" or "hop" through the file by stepping only on the Main datasets. Thus, we often want to link
 # supporting datasets to the relevant Main datasets. This way, such supporting datasets can be accessed via an attribute
 # of the Main dataset instead of having to manually specify the path of the supporting dataset.
-# 
+#
 # link_h5_objects_as_attrs()
 # --------------------------
-# 
+#
 # link_h5_objects_as_attrs() makes it easy to link a dataset or group to any other dataset or group. In this example we
 # will link the 'Other' dataset to the Main dataset:
 
@@ -383,15 +386,15 @@ for key, val in px.hdf_utils.get_attributes(h5_other).items():
     print('{} : {}'.format(key, val))
 
 ########################################################################################################################
-# What we see above is that 'Other' is now an attribute of the 'Raw_Data' dataset. 
-# 
+# What we see above is that 'Other' is now an attribute of the 'Raw_Data' dataset.
+#
 # One common scenario in scientific workflows is the storage of multiple Main Datasets within the same group. The first
 # Main dataset can be stored along with its four ancillary datasets without any problems. However, if the second Main
 # dataset also requires the storage of Position and Spectroscopic datasets, these datasets would need to be named
 # differently to avoid conflicts with existing datasets (associated with the first Main dataset). Moreover, these
 # ancillary datasets would need to be linked to the second Main dataset with the standard 'Position_..' and
 # 'Spectroscopic_..' names for the attributes.
-# 
+#
 # link_h5_obj_as_alias()
 # ----------------------
 # The link_h5_obj_as_alias() is handy in this scenario since it allows a dataset or group to be linked with a name
@@ -414,7 +417,7 @@ print(h5_myst_dset == h5_raw)
 # ========================
 # Let us assume that we are normalizing the data in some way and we need to write the results back to the file. As far
 # as the data shapes and dimensionality are concerned, let us assume that the data still remains a 4D dataset.
-# 
+#
 # create_results_group()
 # ---------------------
 # Let us first start off with creation of a HDF5 Group that will contain the results. If you recall, groups that contain
@@ -433,19 +436,19 @@ norm_data = np.random.rand(num_rows * num_cols, bias_pts * num_cycles)
 ########################################################################################################################
 # Writing the main dataset
 # --------------------------
-# 
+#
 # In this scenario we will demonstrate how one might write a Main dataset when having the complete processed (in this
 # case some normalization) data is available before even creating the dataset.
-# 
+#
 # One more important point to remember here is that the normalized data is of the same shape and dimensionality as
 # 'Raw_Data'. Therefore, we need not unnecessarily create ancillary datasets - we can simply refer to the ones that
 # support 'Raw_Data'. During the creation of 'Raw_Data', we passed the pos_dims and spec_dims parameters for the
 # creation of new Ancillary datasets. In this case, we will show how we can ask the write_main_dataset() to reuse
 # existing ancillary datasets:
 
-h5_norm = px.hdf_utils.write_main_dataset(h5_results_group_1, norm_data, 'Normalized_Data', 'Current', 'nA', 
-                                          None, None, 
-                                          h5_pos_inds=h5_raw.h5_pos_inds, h5_pos_vals=h5_raw.h5_pos_vals, 
+h5_norm = px.hdf_utils.write_main_dataset(h5_results_group_1, norm_data, 'Normalized_Data', 'Current', 'nA',
+                                          None, None,
+                                          h5_pos_inds=h5_raw.h5_pos_inds, h5_pos_vals=h5_raw.h5_pos_vals,
                                           h5_spec_inds=h5_raw.h5_spec_inds, h5_spec_vals=h5_raw.h5_spec_vals)
 print(h5_norm)
 
@@ -467,7 +470,7 @@ for anc_name in ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices',
     # get the handle to the ancillary dataset linked to 'Normalized_Data'
     norm_anc = px.hdf_utils.get_auxillary_datasets(h5_norm, anc_name)[0]
     # Show that these are indeed the same dataset
-    print('Sharing {}: {}'.format(anc_name, raw_anc == norm_anc)) 
+    print('Sharing {}: {}'.format(anc_name, raw_anc == norm_anc))
 
 ########################################################################################################################
 # Unlike last time with 'Raw_Data', we wrote the data to the file when creating 'Normalized_Data', so let us check to
@@ -478,7 +481,7 @@ print(h5_norm[5])
 ########################################################################################################################
 # Duplicating Datasets
 # =====================
-# 
+#
 # create_empty_dataset()
 # -----------------------
 # Let us say that we are interested in writing out another dataset that is again of the same shape and dimensionality as
@@ -491,7 +494,7 @@ print(h5_offsets)
 ########################################################################################################################
 # In this very specific scenario, we duplicated practically all aspects of 'Normalized_Data', including its links to the
 # ancillary datasets. Thus, this h5_offsets automatically also becomes a Main dataset.
-# 
+#
 # However, it is empty and needs to be populated
 
 print(h5_offsets[6])
@@ -505,7 +508,7 @@ print(h5_offsets[6])
 ########################################################################################################################
 # Creating Ancillary datasets
 # ===========================
-# 
+#
 # Often, certain processing of data involves the removal of one or more dimensions (typically Spectroscopic). This
 # necessitates careful generation of indices and values datasets. In our example, we will remove the spectroscopic
 # dimension - 'Bias' and leave the position dimensions as is. While we could simply regenerate the spectroscopic indices
@@ -514,7 +517,7 @@ print(h5_offsets[6])
 # are 3 or more spectroscopic dimensions and we do not know relationships between the spectroscopic dimensions or the
 # rates of change in these spectroscopic dimensions. Fortunately, hdf_utils.write_reduced_spec_dsets() substantially
 # simplifies this problem as shown below.
-# 
+#
 # First, we still need to create the results HDF5 group to hold the results:
 
 h5_analysis_group = px.hdf_utils.create_results_group(h5_norm, 'Fitting')
@@ -530,9 +533,9 @@ px.hdf_utils.print_tree(h5_file)
 # ---------------------------
 # Now we make the new spectroscopic indices and values datasets while removing the 'Bias' dimension
 
-h5_spec_inds, h5_spec_vals = px.hdf_utils.write_reduced_spec_dsets(h5_analysis_group, 
-                                                                   h5_norm.h5_spec_inds, 
-                                                                   h5_norm.h5_spec_vals, 
+h5_spec_inds, h5_spec_vals = px.hdf_utils.write_reduced_spec_dsets(h5_analysis_group,
+                                                                   h5_norm.h5_spec_inds,
+                                                                   h5_norm.h5_spec_vals,
                                                                    'Bias')
 print(h5_spec_inds)
 
@@ -545,11 +548,11 @@ px.hdf_utils.print_tree(h5_analysis_group)
 ########################################################################################################################
 # write_ind_val_dsets()
 # ---------------------
-# 
+#
 # Similar to write_reduced_spec_dsets(), hdf_utils also has another function called write_ind_val_dsets() that is handy
 # when one needs to create the ancillary datasets before write_main_dataset() is called. For example, consider a data
 # processing algorithm that may or may not change the position dimensions. You may need to structure your code this way:
-# 
+#
 # ```python
 # if position dimensions are unchanged:
 #     # get links to datasets from the source dataset
@@ -557,13 +560,13 @@ px.hdf_utils.print_tree(h5_analysis_group)
 # else:
 #     # Need to create fresh HDF5 datasets
 #     h5_pos_inds, h5_pos_vals = write_ind_val_dsets()
-# 
+#
 # # At this point, it does not matter how we got h5_pos_inds, h5_pos_vals. We can simply link them when we create the
 # # main dataset
 # h5_new_main = write_main_dataset(...., h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals)
-# 
+#
 # ```
-# 
+#
 # Even though we already decided that we would not be changing the position dimensions for this particular example, we
 # will demonstrate the usage of write_ind_val_dsets() to make position indices and values HDF5 datasets (that are
 # identical to the ones already linked to h5_norm)
@@ -582,7 +585,7 @@ px.hdf_utils.print_tree(h5_analysis_group)
 # + link them.
 
 reduced_main = np.random.rand(num_rows * num_cols, num_cycles)
-h5_cap_1 = px.hdf_utils.write_main_dataset(h5_analysis_group, reduced_main, 'Capacitance', 'Capacitance', 'pF', 
+h5_cap_1 = px.hdf_utils.write_main_dataset(h5_analysis_group, reduced_main, 'Capacitance', 'Capacitance', 'pF',
                                            None, None, h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
                                            h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals)
 print(h5_cap_1)
@@ -590,7 +593,7 @@ print(h5_cap_1)
 ########################################################################################################################
 # Multiple Main Datasets
 # =========================
-# 
+#
 # Let's say that we need to create a new Main dataset within the same folder as 'Capacitance' called 'Mean_Capacitance'.
 # 'Mean_Capacitance' would just be a spatial map with average capacitance so it would not even have the 'Cycle'
 # Spectroscopic dimension. This means that we can reuse the newly created Position ancillary datasets but we would need
@@ -603,9 +606,9 @@ print(h5_cap_1)
 # keyword argument (last line). This allows the creation of the new Main Dataset without any name clashes with existing
 # datasets:
 
-h5_cap_2 = px.hdf_utils.write_main_dataset(h5_analysis_group, np.random.rand(num_rows * num_cols, 1), 
-                                           'Mean_Capacitance', 'Capacitance', 'pF', 
-                                           None, px.write_utils.Dimension('Capacitance', 'pF', 1), 
+h5_cap_2 = px.hdf_utils.write_main_dataset(h5_analysis_group, np.random.rand(num_rows * num_cols, 1),
+                                           'Mean_Capacitance', 'Capacitance', 'pF',
+                                           None, px.write_utils.Dimension('Capacitance', 'pF', 1),
                                            h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
                                            aux_spec_prefix='Empty_Spec')
 print(h5_cap_2)
@@ -613,7 +616,7 @@ print(h5_cap_2)
 ########################################################################################################################
 # Clearly, 'Mean_Capacitance' and 'Capacitance' are two Main datasets that coexist in the same HDF5 group along with
 # their necessary ancillary datasets.
-# 
+#
 # Now, let us look at the contents of the group: Normalized_Data-Fitting_000 to verify this:
 
 px.hdf_utils.print_tree(h5_analysis_group)
@@ -621,7 +624,7 @@ px.hdf_utils.print_tree(h5_analysis_group)
 ########################################################################################################################
 # File status
 # ===========
-# 
+#
 # is_editable_h5()
 # ----------------
 # When writing a class or a function that modifies or adds data to an existing HDF5 file, it is a good idea to check to

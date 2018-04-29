@@ -508,7 +508,9 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
 
             if show_plots:
                 plt.show()
-            plt.close('all')
+            else:
+                plt.close('all')
+                
             # print('Generated spatially average data for group: %s' %(col_name))
     print('Completed generating spatially averaged plot groups')
 

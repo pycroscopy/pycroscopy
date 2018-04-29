@@ -37,7 +37,8 @@ class SVD(Process):
         We use the minimum of the actual dtype's itemsize and float32 since we
         don't want to read it in yet and do the proper type conversions.
         '''
-        self.data_transform_func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_main)
+        n_samples, n_features = h5_main.shape
+        self.data_transform_func, is_complex, is_compound, n_features, type_mult = check_dtype(h5_main)
 
         if num_components is None:
             num_components = min(n_samples, n_features)
@@ -287,7 +288,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     except:
         raise
 
-    func, is_complex, is_compound, n_features, n_samples, type_mult = check_dtype(h5_V)
+    func, is_complex, is_compound, n_features, type_mult = check_dtype(h5_V)
 
     '''
     Calculate the size of a single batch that will fit in the available memory

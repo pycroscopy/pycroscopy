@@ -121,21 +121,26 @@ class PycroDataset(h5py.Dataset):
     def __repr__(self):
         h5_str = super(PycroDataset, self).__repr__()
 
-        pos_str = ' \n'.join(['{} - size: {}'.format(dim_name, str(dim_size)) for dim_name, dim_size in
+        pos_str = ' \n'.join(['\t{} - size: {}'.format(dim_name, str(dim_size)) for dim_name, dim_size in
                               zip(self.__pos_dim_labels, self.__pos_dim_sizes)])
-        spec_str = ' \n'.join(['{} - size: {}'.format(dim_name, str(dim_size)) for dim_name, dim_size in
+        spec_str = ' \n'.join(['\t{} - size: {}'.format(dim_name, str(dim_size)) for dim_name, dim_size in
                                zip(self.__spec_dim_labels, self.__spec_dim_sizes)])
 
         pycro_str = ' \n'.join(['located at:',
-                                self.name,
-                                'Data contains:', self.data_descriptor,
+                                '\t' + self.name,
+                                'Data contains:', '\t' + self.data_descriptor,
                                 'Data dimensions and original shape:',
                                 'Position Dimensions:',
                                 pos_str,
                                 'Spectroscopic Dimensions:',
                                 spec_str])
 
-        r = '\n'.join([h5_str, pycro_str])
+        if self.dtype.fields is not None:
+            pycro_str = '\n'.join([pycro_str,
+                                  'Data Fields:', '\t' + ', '.join([field for field in self.dtype.fields])])
+        else:
+            pycro_str = '\n'.join([pycro_str,
+                                   'Data Type:', '\t' + self.dtype.name])
 
         if six.PY2:
             pycro_str = pycro_str.encode('utf8')

@@ -10,7 +10,7 @@ with open(os.path.join(here, 'README.rst')) as f:
 with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
     __version__ = f.read().split("'")[1]
 
-requirements = ['numpy_groupies>=0.9.6',
+requirements = ['numpy_groupies==0.9.7', # New build of 0.9.8.4 appears to cause build problems
                 'pyqtgraph>=0.10',
                 'h5py>=2.6.0',
                 'igor',

@@ -164,10 +164,19 @@ class Process(object):
         """
 
         if cores is None:
-            self._cores = psutil.cpu_count() - 2
+            self._cores = max(1, psutil.cpu_count() - 2)
         else:
+            if not isinstance(cores, int):
+                raise TypeError('cores should be an integer but got: {}'.format(cores))
             cores = int(abs(cores))
-            self._cores = min(psutil.cpu_count(), max(1, cores))
+            self._cores = max(1, min(psutil.cpu_count(), cores))
+
+        if mem is None:
+            mem = 1024
+        else:
+            if not isinstance(mem, int):
+                raise TypeError('mem must be a whole number')
+            mem = abs(mem)
 
         _max_mem_mb = get_available_memory() / 1E6  # in MB
 
@@ -255,7 +264,7 @@ class Process(object):
                                          lengthy_computation=False,
                                          func_args=args, func_kwargs=kwargs)
 
-    def compute(self, *args, override=False, **kwargs):
+    def compute(self, override=False, *args, **kwargs):
         """
         Creates placeholders for the results, applies the unit computation to chunks of the dataset
 

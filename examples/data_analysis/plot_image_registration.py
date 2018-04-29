@@ -274,7 +274,7 @@ axis.set_title('Images overlayed')
 #
 # Inside this loop we are registering an image, getting the transform, applying it to the ‘moving’ data set and
 # inspecting the results.
-# Since we weren’t sure which transform to pick, we are trying all of them one at a time – hence why this code is
+# Since we are not sure which transform to pick, we are trying all of them one at a time – hence why this code is
 # inside a ‘for’ loop
 # We use the Pearson Correlation to look at how well (higher number is better) each of the transforms performed
 

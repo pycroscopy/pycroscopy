@@ -67,7 +67,7 @@ class VirtualGroup(VirtualData):
             Default value assumes that this group sits at the root of the file
         attrs : dict (Optional). Default = None
             Attributes to be attached to the h5py.Group object
-         children : MicroData or list of MicroData objects. (Optional)
+         children : VirtualData or list of VirtualData objects. (Optional)
             Children can be a mixture of groups and datasets
         """
 
@@ -94,7 +94,7 @@ class VirtualGroup(VirtualData):
 
         Parameters
         ----------
-        children : MicroData or list of MicroData objects
+        children : VirtualData or list of VirtualData objects
             Children can be a mixture of groups and datasets
 
         Returns
@@ -108,7 +108,7 @@ class VirtualGroup(VirtualData):
                 child.parent = self.parent + self.name
                 self.children.append(child)
             else:
-                warn('Children must be of type MicroData. child ignored')
+                warn('Children must be of type VirtualData. child ignored')
 
     def __str__(self):
         self.show_tree()
@@ -298,7 +298,7 @@ class VirtualDataset(VirtualData):
         Parameters
         ----------
         other : VirtualDataset object
-            The other MicroDatset object to compare to
+            The other VirtualDatset object to compare to
 
         Returns
         -------

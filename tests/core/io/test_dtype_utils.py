@@ -5,6 +5,7 @@ Created on Tue Nov  3 15:07:16 2017
 @author: Suhas Somnath
 """
 
+from __future__ import division, print_function, unicode_literals, absolute_import
 import unittest
 import sys
 import numpy as np
@@ -139,7 +140,7 @@ class TestDtypeUtils(unittest.TestCase):
             with self.assertRaises(TypeError):
                 _ = dtype_utils.stack_real_to_complex(h5_f['complex'])
 
-            with self.assertRaises(ValueError):
+            with self.assertRaises(TypeError):
                 _ = dtype_utils.stack_real_to_complex(h5_f['compound'])
 
     def test_complex_to_real_compound_illegal(self):
@@ -349,24 +350,22 @@ class TestDtypeUtils(unittest.TestCase):
 
     def test_check_dtype_real_numpy(self):
         # real_matrix = np.random.rand(5, 7)
-        # func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(real_matrix)
+        # func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(real_matrix)
         with h5py.File(get_h5_file_path(), mode='r') as h5_f:
-            func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(h5_f['real'])
+            func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(h5_f['real'])
             self.assertEqual(func, h5_f['real'].dtype.type)
             self.assertEqual(is_complex, False)
             self.assertEqual(is_compound, False)
             self.assertEqual(n_features, h5_f['real'].shape[1])
-            self.assertEqual(n_samples, h5_f['real'].shape[0])
             self.assertEqual(type_mult, h5_f['real'].dtype.type(0).itemsize)
 
     def test_check_dtype_complex_numpy(self):
         with h5py.File(get_h5_file_path(), mode='r') as h5_f:
-            func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(h5_f['complex'])
+            func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(h5_f['complex'])
             self.assertEqual(func, dtype_utils.flatten_complex_to_real)
             self.assertEqual(is_complex, True)
             self.assertEqual(is_compound, False)
             self.assertEqual(n_features, 2 * h5_f['complex'].shape[1])
-            self.assertEqual(n_samples, h5_f['complex'].shape[0])
             self.assertEqual(type_mult, 2 * np.real(h5_f['complex'][0, 0]).dtype.itemsize)
 
     def test_check_dtype_compound_numpy(self):
@@ -375,14 +374,13 @@ class TestDtypeUtils(unittest.TestCase):
         # structured_array['r'] = np.random.random(size=num_elems)
         # structured_array['g'] = np.random.randint(0, high=1024, size=num_elems)
         # structured_array['b'] = np.random.random(size=num_elems)
-        # func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(structured_array)
+        # func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(structured_array)
         with h5py.File(get_h5_file_path(), mode='r') as h5_f:
-            func, is_complex, is_compound, n_features, n_samples, type_mult = dtype_utils.check_dtype(h5_f['compound'])
+            func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(h5_f['compound'])
             self.assertEqual(func, dtype_utils.flatten_compound_to_real)
             self.assertEqual(is_complex, False)
             self.assertEqual(is_compound, True)
             self.assertEqual(n_features, 3 * h5_f['compound'].shape[1])
-            self.assertEqual(n_samples, h5_f['compound'].shape[0])
             self.assertEqual(type_mult, 3 * np.float32(0).itemsize)
 
     def test_get_compound_sub_dtypes_valid(self):

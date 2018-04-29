@@ -5,6 +5,7 @@ Created on Tue Nov  3 21:14:25 2015
 @author: Suhas Somnath, Chris Smith
 """
 
+from __future__ import division, absolute_import, unicode_literals, print_function
 import h5py
 import numpy as np
 from collections import Iterable
@@ -173,19 +174,17 @@ def check_dtype(h5_dset):
         is the input dataset compound?
     n_features : Unsigned integer, the length of the 2nd dimension of
         the data after func is called on it
-    n_samples : Unsigned integer
-        the length of the 1st dimension of the data
     type_mult : Unsigned integer
         multiplier that converts from the typesize of the input dtype to the
         typesize of the data after func is run on it
     """
-    # TODO: avoid assuming 2d shape
     if not isinstance(h5_dset, h5py.Dataset):
         raise TypeError('h5_dset should be a h5py.Dataset object')
     is_complex = False
     is_compound = False
     in_dtype = h5_dset.dtype
-    n_samples, n_features = h5_dset.shape
+    # TODO: avoid assuming 2d shape - why does one even need n_samples!? We only care about the last dimension!
+    n_features = h5_dset.shape[-1]
     if is_complex_dtype(h5_dset.dtype):
         is_complex = True
         new_dtype = np.real(h5_dset[0, 0]).dtype
@@ -213,7 +212,7 @@ def check_dtype(h5_dset):
 
         func = new_dtype
 
-    return func, is_complex, is_compound, n_features, n_samples, type_mult
+    return func, is_complex, is_compound, n_features, type_mult
 
 
 def stack_real_to_complex(ds_real):
@@ -236,7 +235,7 @@ def stack_real_to_complex(ds_real):
         if not isinstance(ds_real, Iterable):
             raise TypeError("Expected at least an iterable like a list or tuple")
         ds_real = np.array(ds_real)
-    if isinstance(ds_real.dtype, np.void):
+    if len(ds_real.dtype) > 0:
         raise TypeError("Array cannot have a compound dtype")
     if is_complex_dtype(ds_real.dtype):
         raise TypeError("Array cannot have complex dtype")
