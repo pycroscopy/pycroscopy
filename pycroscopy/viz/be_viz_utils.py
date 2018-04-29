@@ -2,7 +2,7 @@
 """
 Created on Thu Jan 05 13:29:12 2017
 
-@author: Suhas Somnath, Chris R. Smith
+@author: Chris R. Smith, Suhas Somnath
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
 
@@ -239,12 +239,12 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     h5_sho_spec_inds = pc_sho_dset.h5_spec_inds
     h5_sho_spec_vals = pc_sho_dset.h5_spec_vals
-    spec_nd, _ = reshape_to_Ndims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
+    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
     sho_spec_dims = pc_sho_dset.spec_dim_sizes
     sho_spec_labels = pc_sho_dset.spec_dim_labels
 
     h5_pos_inds = pc_sho_dset.h5_pos_inds
-    pos_nd, _ = reshape_to_Ndims(h5_pos_inds, h5_pos=h5_pos_inds)
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
     pos_dims = pc_sho_dset.pos_dim_sizes
     pos_labels = pc_sho_dset.pos_dim_labels
 
@@ -312,8 +312,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         for key in not_step_chan:
             spatial_dict[key] = [0]
 
-    spatial_map = pc_sho_dset.slice(slice_dict=spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
-    resp_vec = resp_func(pc_sho_dset.slice(as_scalar=False, slice_dict=resp_dict)[0].reshape(bias_mat.shape))
+    spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
+    resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape))
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
@@ -352,7 +352,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     def update_sho_plots(sho_quantity, step_ind):
         bias_slider.set_xdata((step_ind, step_ind))
         spatial_dict[step_chan] = [step_ind]
-        spatial_map = pc_sho_dset.slice(False, spatial_dict)[0][sho_quantity].squeeze()
+        spatial_map = pc_sho_dset.slice(spatial_dict,  as_scalar=False)[0][sho_quantity].squeeze()
         map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
         ax_map.set_title(map_title)
         img_map.set_data(spatial_map.T)
@@ -361,7 +361,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
     def update_resp_plot(resp_dict):
-        resp_vec = resp_func(np.atleast_2d(pc_sho_dset.slice(False, resp_dict)[0].squeeze()))
+        resp_vec = resp_func(np.atleast_2d(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].squeeze()))
         for line_handle, data in zip(line_handles, resp_vec):
             line_handle.set_ydata(data)
 
@@ -1304,11 +1304,11 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         for spec_dim, dim_ind in zip(loop_spec_labs, selected_loop_ndims):
             slice_dict[spec_dim] = [dim_ind]
 
-        loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, False)
+        loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, as_scalar=False)
         loop_proj_vec2 = np.roll(loop_proj_vec.squeeze(), shift_ind)
 
-        loop_guess_slice, _ = h5_loop_guess.slice(slice_dict, True)
-        loop_fit_slice, _ = h5_loop_fit.slice(slice_dict, True)
+        loop_guess_slice, _ = h5_loop_guess.slice(slice_dict, as_scalar=True)
+        loop_fit_slice, _ = h5_loop_fit.slice(slice_dict, as_scalar=True)
 
         # loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
         # loop_proj_vec2 = np.rollaxis(loop_proj_vec,

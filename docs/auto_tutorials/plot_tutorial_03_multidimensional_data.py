@@ -275,7 +275,7 @@ print(pd_main.n_dim_sizes)
 #
 slice_dict = dict(X=[2], Y=[3], Field=[0], Cycle=[1])
 
-nd_spec, success = pd_main.slice(slice_dict=slice_dict)
+nd_spec, success = pd_main.slice(slice_dict)
 print(success)
 print(nd_spec.shape)
 

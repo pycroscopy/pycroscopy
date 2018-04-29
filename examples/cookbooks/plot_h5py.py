@@ -6,6 +6,8 @@ Primer to HDF5 and h5py
 **Suhas Somnath**
 
 4/18/2018
+
+**This document serves as a quick primer to HDF5 files and the h5py package used for reading and writing to such files**
 """
 ########################################################################################################################
 # Introduction
@@ -19,9 +21,10 @@ Primer to HDF5 and h5py
 #
 # HDF5 is a remarkably straightforward file format to understand since it mimics the familiar folders and files paradigm
 # exposed to users by all operating systems such as Windows, Mac OS, Linux, etc. HDF5 files can contain:
-# * Datasets - similar to spreadsheets and text files with tabular data.
-# * Groups - similar to folders in a regular file system
-# * Attributes - small metadata that provide additional information about the Group or Dataset they are attached to.
+#
+# * **Datasets** - similar to spreadsheets and text files with tabular data.
+# * **Groups** - similar to folders in a regular file system
+# * **Attributes** - small metadata that provide additional information about the Group or Dataset they are attached to.
 # * other advanced features such as hard links, soft links, object and region references, etc.
 #
 # h5py is the official software package for reading and writing to HDF5 files in python. Consequently, Pycroscopy relies
@@ -32,11 +35,12 @@ Primer to HDF5 and h5py
 # HDF5 files via h5py.
 #
 # Import all necessary packages
-# -----------------------------
+# -------------------------------
 # For this primer, we only need some very basic packages, all of which come with the standard Anaconda distribution:
-# * os - to manipulate and remove files
-# * numpy - for basic numerical work
-# * h5py - the package that will be the focus of this primer
+#
+# * `os` - to manipulate and remove files
+# * `numpy` - for basic numerical work
+# * `h5py` - the package that will be the focus of this primer
 
 from __future__ import print_function, division, unicode_literals
 import os
@@ -56,20 +60,21 @@ print(h5_file)
 # value - h5_file is necessary to perform other operations on the file including creating groups and datasets.
 #
 # Groups
-# ======
+# ===========
 # create_group()
-# --------------
-# We can use the create_group() function on an existing object such as the open file handle (h5_file) to create a group:
+# ----------------
+# We can use the `create_group()` function on an existing object such as the open file handle (`h5_file`) to create a
+# group:
 
 h5_group_1 = h5_file.create_group('Group_1')
 print(h5_group_1)
 
 ########################################################################################################################
-# The output of the above print statement reveals that a group named 'Group_1' was successfully created at location: '/'
+# The output of the above print statement reveals that a group named `Group_1` was successfully created at location: '/'
 # (which stands for the root of the file). Furthermore, this group contains 0 objects or members.
 # .name
-# -----
-# One can find the full / absolute path where this object is located from its 'name' property:
+# -------
+# One can find the full / absolute path where this object is located from its `name` property:
 
 print(h5_group_1.name)
 
@@ -79,8 +84,8 @@ print(h5_group_1.name)
 # Much like folders in a computer, these groups can themselves contain more groups and datasets.
 #
 # Let us create a few more groups the same way. Except, let us create these groups within the newly created. To do this,
-# we would need to call the create_group() function on the h5_group_1 object and not the h5_file object. Doing the
-# latter would result in groups created under the file at the same level as Group_1 instead of inside Group_1.
+# we would need to call the `create_group()` function on the h5_group_1 object and not the h5_file object. Doing the
+# latter would result in groups created under the file at the same level as `Group_1` instead of inside `Group_1`.
 
 h5_group_1_1 = h5_group_1.create_group('Group_1_1')
 h5_group_1_2 = h5_group_1.create_group('Group_1_2')
@@ -96,12 +101,12 @@ print(h5_group_1)
 print(h5_group_1_1)
 
 ########################################################################################################################
-# The above print statement shows that this group named 'Group_1_1' exists at a path: "/Group_1/Group_1_1". In other
+# The above print statement shows that this group named `Group_1_1` exists at a path: `"/Group_1/Group_1_1"`. In other
 # words, this is similar to a folder contained inside another folder.
 #
 # .parent
-# -------
-# The heirarchical nature of HDF5 allows us to access datasets and datagroups using relationships or paths. For example,
+# ---------
+# The hierarchical nature of HDF5 allows us to access datasets and groups using relationships or paths. For example,
 # every HDF5 object has a parent. In the case of 'Group_1' - its parent is the root or h5_file itself. Similarly, the
 # parent object of 'Group_1_1' is 'Group_1':
 
@@ -116,16 +121,16 @@ print(h5_group_1_1.parent == h5_group_1)
 
 ########################################################################################################################
 # Accessing H5 objects
-# --------------------
+# ----------------------
 # Imagine a file or a folder on a computer that is several folders deep from where one is (e.g. -
 # /Users/Joe/Documents/Projects/2018/pycroscopy).One could either reach the desired file or folder by opening one folder
 # after another or directly by using a long path string. If you were at root (/), you would need to paste the entire
-# path (absolute path) of the desired file -  /Users/Joe/Documents/Projects/2018/pycroscopy. Alternatively, if you were
-# in an intermediate directory (e.g. -  /Users/Joe/Documents/), you would need to paste what is called the relative path
-# (in this case -  Projects/2018/pycroscopy) to get to the desired file.
+# path (absolute path) of the desired file -  `/Users/Joe/Documents/Projects/2018/pycroscopy`. Alternatively, if you
+# were in an intermediate directory (e.g. -  `/Users/Joe/Documents/`), you would need to paste what is called the
+# relative path (in this case -  `Projects/2018/pycroscopy`) to get to the desired file.
 #
-# In the same way, we can also access HDF5 objects either through relative paths, or absolute paths. Here are a few ways
-# one could get to the group 'Group_1_2':
+# In the same way, we can also access HDF5 objects either through `relative paths`, or `absolute paths`. Here are a few
+# ways one could get to the group `Group_1_2`:
 
 print(h5_file['/Group_1/Group_1_2'])
 print(h5_group_1['Group_1_2'])
@@ -140,7 +145,7 @@ for item in h5_group_1:
 
 ########################################################################################################################
 # .items()
-# --------
+# ----------
 # Essentially, h5py group objects contain a dictionary of key-value pairs where they key is the name of the object and
 # the value is a reference to the object itself.
 #
@@ -148,9 +153,7 @@ for item in h5_group_1:
 # get the actual dataset object itself, we would need to use the aforementioned addressing techniques to get the actual
 # Group objects.
 #
-# Let us see how we would then try to find the object for the goup named 'Group_1_2':
-
-# In[11]:
+# Let us see how we would then try to find the object for the group named 'Group_1_2':
 
 for key, value in h5_group_1.items():
     if key == 'Group_1_2':
@@ -158,33 +161,36 @@ for key, value in h5_group_1.items():
 
 ########################################################################################################################
 # Datasets
-# ========
+# ===========
 # create_dataset()
 # ----------------
-# We can create a dataset within 'Group_1' using a function that is similar to create_group(), called create_dataset().
-# Unlike create_group() which just takes the path of the desired group as an input, create_dataset() is highly
-# customizable and flexible.
+# We can create a dataset within `Group_1` using a function that is similar to `create_group()`, called
+# `create_dataset()`. Unlike create_group() which just takes the path of the desired group as an input,
+# `create_dataset()` is highly customizable and flexible.
 #
 # In our experience, there are three modes of creating datasets that are highly relevant for scientific applications:
+#
 # * dataset with data at time of creation - where the data is already available at the time of creating the dataset
 # * empty dataset - when one knows the size of data but the entire data is not available
-# * resizable dataset - when one does not even know how large the data can be.
+# * resizable dataset - when one does not even know how large the data can be. *This case is rare*
 #
 # Creating Dataset with available data:
 # -------------------------------------
 # Let as assume we want to store a simple greyscale (floating point values) image with 256 x 256 pixels. We would create
 # and store the data as shown below. As the size of the dataset becomes very large, the precision with which the data is
-# stored can signfiicantly affect the size of hte dataset and the file. Therefore, we recommend purposefully specifying
-# the dtype during creation.
+# stored can significantly affect the size of the dataset and the file. Therefore, we recommend purposefully specifying
+# the data-type (via the `dtype` keyword argument) during creation.
 
-h5_simple_dataset = h5_group_1.create_dataset('Simple_Dataset', data=np.random.rand(256, 256), dtype=np.float32)
+h5_simple_dataset = h5_group_1.create_dataset('Simple_Dataset',
+                                              data=np.random.rand(256, 256),
+                                              dtype=np.float32)
 print(h5_simple_dataset)
 
 ########################################################################################################################
 # Accessing data
-# ~~~~~~~~~~~~~~
-# We can access data contained in the dataset just like accessing a numpy arary. For example, if we want the value at
-# row 29 and column 167, we would read it as:
+# ----------------
+# We can access data contained in the dataset just like accessing a numpy array. For example, if we want the value at
+# row `29` and column `167`, we would read it as:
 
 print(h5_simple_dataset[29, 167])
 
@@ -205,7 +211,9 @@ print(h5_file['/Group_1/Simple_Dataset'])
 # For example, assume that we have 128 files each having 1D spectra (amplitude + phase or complex value) of length 1024.
 # Here is how one may create the HDF5 dataset to hold the data:
 
-h5_empty_dataset = h5_group_1.create_dataset('Empty_Dataset', shape=(128, 1024), dtype=np.complex64)
+h5_empty_dataset = h5_group_1.create_dataset('Empty_Dataset',
+                                             shape=(128, 1024),
+                                             dtype=np.complex64)
 print(h5_empty_dataset)
 
 ########################################################################################################################
@@ -216,15 +224,15 @@ print(h5_empty_dataset[5, 102])
 
 ########################################################################################################################
 # populating with data
-# ~~~~~~~~~~~~~~~~~~~~
+# ----------------------
 # One could populate each chunk of the dataset just like filling in a numpy array:
 
 h5_empty_dataset[0] = np.random.rand(1024) + 1j * np.random.rand(1024)
 
 ########################################################################################################################
 # flush()
-# ~~~~~~~
-# It is a good idea to ensure that this data is indeed commited to the file using regular flush() operations. There are
+# --------
+# It is a good idea to ensure that this data is indeed committed to the file using regular flush() operations. There are
 # chances where the data is still in the memory / buffer and not yet in the file if one does not flush():
 
 h5_file.flush()
@@ -245,7 +253,9 @@ h5_file.flush()
 # In such cases, it is easier just to create datasets that can expand one pixel at a time. For this specific example,
 # one may want to create a 2D dataset of shape (1, 128) that could grow up to a maxshape of (256, 128) as shown below:
 
-h5_expandable_dset = h5_group_1.create_dataset('Expandable_Dataset', shape=(1, 128), maxshape=(256, 128),
+h5_expandable_dset = h5_group_1.create_dataset('Expandable_Dataset',
+                                               shape=(1, 128),
+                                               maxshape=(256, 128),
                                                dtype=np.float32)
 print(h5_expandable_dset)
 
@@ -267,18 +277,18 @@ print(h5_expandable_dset)
 #
 # It is very important to note that there is a non-trivial storage overhead associated with each resize operation. In
 # other words, a file containing this resizeable dataset that has been resized 255 times will certainly be larger than
-# a similar file where the dataset space was preallocated and never expanded. Therefore this mode of creating datasets
+# a similar file where the dataset space was pre-allocated and never expanded. Therefore this mode of creating datasets
 # should used sparingly.
 #
 # Attributes
-# ==========
-# * are metadata that can convey information that cannot be efficently conveyed using Group or Dataset objects.
+# ===========
+# * are metadata that can convey information that cannot be efficiently conveyed using Group or Dataset objects.
 # * are almost exactly like python dictionaries in that they have a key-value pairs.
 # * can be stored in either Group or Dataset objects.
 # * are not appropriate for storing large amounts of information. Consider datasets instead
 # * are best suited for things like experimental parameter such as beam intensity, scan rate, scan width, etc.
 # Writing
-# -------
+# ---------
 # Storing attributes in objects is identical to appending to python dictionaries. Lets store some simple attributes in
 # the group named 'Group_1':
 
@@ -288,7 +298,7 @@ h5_simple_dataset.attrs.update({'list_of_nums': [1, 6.534, -65],
 
 ########################################################################################################################
 # Reading
-# -------
+# ----------
 # We would read the attributes just like we would treat a dictionary in python:
 
 for key, val in h5_simple_dataset.attrs.items():
@@ -303,11 +313,13 @@ print('single_string: {}'.format(h5_simple_dataset.attrs['single_string'] == 'he
 
 ########################################################################################################################
 # Caveat
-# ------
+# --------
 # While the low-level attribute writing and reading does appear to work and is simple, it does not work for a list of
 # strings in python 3. Hence the following line will not work and will cause problems.
 #
-# h5_simple_dataset.attrs['list_of_strings'] = ['a', 'bc', 'def']
+# .. code-block:: python
+#
+#     h5_simple_dataset.attrs['list_of_strings'] = ['a', 'bc', 'def']
 #
 # Instead, we recommend writing lists of strings by casting them as numpy arrays:
 
@@ -323,8 +335,8 @@ print('list_of_strings: {}'.format(h5_simple_dataset.attrs['list_of_strings'] ==
 #
 # To avoid manual encoding and decoding of attributes (different strategies for different versions of python), we
 # recommend:
-# * writing attributes using: pycroscopy.hdf_utils.write_simple_attrs()
-# * reading attributes using: pycroscopy.hdf_utils.get_attr() or get_attributes()
+# * writing attributes using: `pycroscopy.hdf_utils.write_simple_attrs()`
+# * reading attributes using: `pycroscopy.hdf_utils.get_attr() or get_attributes()`
 #
 # Both these functions work reliably and consistently across all python versions and fix this problem in h5py.
 #
