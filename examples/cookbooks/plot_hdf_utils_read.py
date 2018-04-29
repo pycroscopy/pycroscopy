@@ -130,10 +130,11 @@ print('Contents of the H5 file:')
 px.hdf_utils.print_tree(h5_f)
 
 ########################################################################################################################
-# By default, `print_tree()` presents a clean tree view of the contents of the group. Alternatively, it can print the
-# full  paths of each dataset and group by setting the `full_paths` keyword argument. `print_tree()` could also be used
-# to display the contents of and HDF5 group instead of complete HDF5 file as we have done above. Lets configure it to
-# print the relative paths of all objects within the `Channel_000` group:
+# By default, `print_tree()` presents a clean tree view of the contents of the group. In this mode, only the group names
+# are underlined. Alternatively, it can print the full  paths of each dataset and group by setting the `full_paths`
+# keyword argument. `print_tree()` could also be used to display the contents of and HDF5 group instead of complete HDF5
+# file as we have done above. Lets configure it to print the relative paths of all objects within the `Channel_000`
+# group:
 
 px.hdf_utils.print_tree(h5_f['/Measurement_000/Channel_000/'], rel_paths=True)
 
