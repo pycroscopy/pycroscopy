@@ -8,8 +8,8 @@ Submodules
     :toctree: _autosummary
 
     be_viz_utils
-    plot_utils
-    jupyter_utils
+    cluster_utils
+    image_cleaning_utils
 
 """
 from . import image_cleaning_utils

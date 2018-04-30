@@ -18,7 +18,7 @@ from pycroscopy.core.io import PycroDataset, hdf_utils
 if sys.version_info.major == 3:
     unicode = str
 
-test_h5_file_path = 'test_hdf_utils.h5'
+test_h5_file_path = 'test_pycro_dataset.h5'
 
 
 @contextmanager
@@ -50,6 +50,9 @@ def capture_stdout():
 
 
 class TestPycroDataset(unittest.TestCase):
+
+    def tearDown(self):
+        os.remove(test_h5_file_path)
 
     @staticmethod
     def __write_safe_attrs(h5_object, attrs):
