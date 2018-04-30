@@ -427,8 +427,11 @@ class TestHDFWriter(unittest.TestCase):
             self.assertIsInstance(h5_dset, h5py.Dataset)
 
             attrs = {'labels': ['row_1', 'row_2']}
-
-            writer._write_dset_attributes(h5_dset, attrs.copy())
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    writer._write_dset_attributes(h5_dset, attrs.copy())
+            else:
+                writer._write_dset_attributes(h5_dset, attrs.copy())
             h5_f.flush()
 
             # two atts point to region references. one for labels

@@ -389,7 +389,11 @@ class TestHDFUtils(unittest.TestCase):
             group_prefix = 'source_main-Fitter'
             expected_objs = set([h5_f['/Raw_Measurement/source_main-Fitter_000'],
                                  h5_f['/Raw_Measurement/source_main-Fitter_001']])
-            ret_vals = set(hdf_utils.get_group_refs(group_prefix, h5_refs))
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    ret_vals = set(hdf_utils.get_group_refs(group_prefix, h5_refs))
+            else:
+                ret_vals = set(hdf_utils.get_group_refs(group_prefix, h5_refs))
             self.assertTrue(ret_vals == expected_objs)
 
     def test_get_group_refs_failure(self):
@@ -400,7 +404,11 @@ class TestHDFUtils(unittest.TestCase):
                        np.arange(15),
                        h5_f['/Raw_Measurement/source_main-Fitter_000/results_main']]
             group_prefix = 'source_main_Blah'
-            self.assertTrue(hdf_utils.get_group_refs(group_prefix, h5_refs) == [])
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    self.assertTrue(hdf_utils.get_group_refs(group_prefix, h5_refs) == [])
+            else:
+                self.assertTrue(hdf_utils.get_group_refs(group_prefix, h5_refs) == [])
 
     def test_get_h5_obj_refs_legal_01(self):
         self.__ensure_test_h5_file()
@@ -1647,7 +1655,11 @@ class TestHDFUtils(unittest.TestCase):
             dim_names = ['Bias', 'Cycle']
             expected = {'Bias': (slice(0, 1), slice(None)),
                         'Cycle': (slice(1, 2), slice(None))}
-            cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            else:
+                cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
             for key, value in expected.items():
                 self.assertEqual(value, cleaned[key])
         os.remove(file_path)
@@ -1660,7 +1672,11 @@ class TestHDFUtils(unittest.TestCase):
             dim_names = ['Bias', 'Cycle']
             expected = {'Bias': (slice(None), slice(0, 1)),
                         'Cycle': (slice(None), slice(1, 2))}
-            cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            if sys.version_info.major == 3:
+                with self.assertWarns(UserWarning):
+                    cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
+            else:
+                cleaned = hdf_utils.attempt_reg_ref_build(h5_dset, dim_names)
             for key, value in expected.items():
                 self.assertEqual(value, cleaned[key])
         os.remove(file_path)
