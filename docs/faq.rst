@@ -11,7 +11,7 @@ What is pycroscopy and how is it different from python?
 `Python <https://www.python.org>`_ is an (interpreted) programming langauge similar to R, Java, C, C++, Fortran etc. `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html#what>`_ is an addon module to python that provides it the ability to analyze scientific imaging / microscopy data. As an (oversimplified) analogy, think of python as Windows or Mac OS and pycroscopy as Firefox or Chrome or Safari. 
 
 Is pycroscopy only for the scientific imaging / microscopy communities? 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Not at all. We have ensured that the basic data and file formatting paradigm is general enough that it can be extended to any other scientific domain so long as each experiment involves N identical measurements of S values. Our data and file format can easily be extended to neutron science, nuclear sciences, etc. Note that one of the major strengths of pycroscopy is its ability to handle large, multi-dimensional / hyper spectral data like no other software can. Furthermore, some of our scientific analysis algorithms such as curve-fitting for spectra, image denoising can easily find applications in scientific domains beyond imaging and microscopy.
 
 Who uses pycroscopy?
@@ -24,21 +24,21 @@ How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
 `xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy. 
 
 Why is pycroscopy written in python and not C / Fortran / Julia?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 One of the main objectives of pycroscopy is to lower the barrier to advanced data analytics for domain scientists such as material scientists. A C / Fortran version of pycroscopy would certainly have been more efficient than the current python code-base. However, the learning curve for writing efficient C code is far steeper compared to python / Julia / Matlab for the average domain scientist. Focusing on science is a big enough job for domain scientists and we want to make it as easy as possible to adopt pycroscopy even for those who are novices at programming. Furthermore, our code makes heavy use of highly efficient numerical and scientific libraries such as Numpy and Scipy that are comparable in speed to C so we do not expect our code to be substantially slower than C / Fortran. Julia is a (relatively) new language similar to python that promises to be as fast as C and as easy as python and purpose-built for efficient computing. However, as of this writing, Julia unfortunately still does not have open-source package ecosystem that is as large or diverse (think of the many packages necessary to read obscure proprietary microscopy file formats as an example) as python. Furthermore, python's unchallenged leadership in the data analytics / deep learning field have only validated it as the language of choice. These are among the main reasons pycroscopy is written in python. 
 
 Pycroscopy is written in python, so it is going to be slow since it cannot use all the cores on my CPU, right?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Actually, all data processing / analysis algorithms we have written in pycroscopy can use every single core on your CPU. Given N CPU cores, you should notice a nearly N-fold speed up in your computation. By default, we set aside 2 cores for the operating system and other user applications such as an internet browser, Microsoft Word, etc. 
 
 Using pycroscopy
 ----------------
 I don't know programming. Does this preclude me from using pycroscopy?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Not at all. One of the tenets of pycroscopy is lowering the barrier for scientists and researchers. To this end, we have developed `several notebooks <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/>`_ that make data visualization, discovery, and analysis interactive. You should have absolutely no trouble in using these notebooks even if you do not know programming. That being said, you would be able to make the fullest use of pycroscopy if you knew basic programming in python. 
 
 What sort of computer do I need to run pycroscopy?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can use practically any laptop / desktop / virtual machine running Windows / Mac OS / Linux. Pycroscopy is not tested on 32 bit operating systems (very unlikely that your computer is a 32 bit system. Even your phone uses a 64 bit operating system).  
 
 Why doesn't pycroscopy use graphical user interfaces?
@@ -75,7 +75,7 @@ Why not use established file formats from other domains?
 It is true that we really don't want yet another format in our lives. We wanted to adopt a file format that is already widely accepted in supercomputing, scientific research, can be accessed from any programming language. We chose HDF5 since it suits our needs perfectly. We found that existing data formats in science such as the `Nexus data format <http://www.nexusformat.org>`_, `XDMF <http://www.xdmf.org/index.php/Main_Page>`_, and `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_ were designed for narrow scientific purposes and we did not want to shoehorn our data structure into those formats. Furthermore, despite being some of the more popular scientific data formats, it is not immidiately straightforward to read those files on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_ python distribution does not come with any packages for reading these file formats. Moreover, `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_, Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_ files are actually (now) just custom flavors of HDF5 files thereby unanimously validating our decision to choose HDF5 as our file format. Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy. 
 
 Can Pycroscopy read data files from instrument X?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some popular file formats and store the information in HDF5 files. You can find a list of available `translators here <https://github.com/pycroscopy/pycroscopy/tree/master/pycroscopy/io/translators>`_.
 
 I could not find a data translator for my data format. What do I do now?
