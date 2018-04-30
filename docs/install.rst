@@ -42,7 +42,7 @@ Once the `conda-forge` channel has been enabled, `pycroscopy` can be installed w
   conda install pycroscopy
   
 Installing from a specific branch (advanced users **ONLY**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here, we are installing pycroscopy from the latest development branch. Note that we do not recommend installing pycroscopy this way. 
 
