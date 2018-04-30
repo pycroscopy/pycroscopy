@@ -11,7 +11,7 @@ Plotting utilities
 
 Introduction
 --------------
-Some of the functions in `pycroscopy.plot_utils` fill gaps in the default matplotlib package, some were
+Some of the functions in ``pycroscopy.plot_utils`` fill gaps in the default matplotlib package, some were
 developed for scientific applications, and others were developed specifically
 for handling pycroscopy datasets. These functions have been developed to substantially simplify
 the generation of high quality figures for journal publications. 
@@ -132,7 +132,7 @@ px.plot_utils.rainbow_plot(axis, np.cos(t_vec)*np.linspace(0, 1, num_pts),
 # ---------------------
 # Note that from the above plot it may not be clear if the signal is radiating outwards or spiraling inwards.
 # In these cases it helps to add a colorbar. However, colorbars can typically only be added for 2D images.
-# In such cases we can use a handy function: `cbar_for_line_plot()`
+# In such cases we can use a handy function: ``cbar_for_line_plot()``
 
 num_pts = 1024
 t_vec = np.linspace(0, 10*np.pi, num_pts)
@@ -342,9 +342,9 @@ for num_plots in range(1, 17):
 ################################################################################################
 # make_scalar_mappable()
 # ----------------------
-# This is a low-level function that is used by `cbar_for_line_plot()` to generate the color bar manually.
+# This is a low-level function that is used by ``cbar_for_line_plot()`` to generate the color bar manually.
 # Here we revisit the example for plot_line_family() but we generate the colorbar by hand using
-# `make_scalar_mappable()`. In this case, we make the colorbar horizontal just as an example.
+# ``make_scalar_mappable()``. In this case, we make the colorbar horizontal just as an example.
 
 x_vec = np.linspace(0, 2*np.pi, 256)
 freqs = range(1, 5)

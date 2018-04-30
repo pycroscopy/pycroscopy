@@ -28,7 +28,7 @@ Formalizing Data Processing
 # code.
 #
 # For many researchers, formalizing data processing or analysis may seem like a daunting task due to the complexity of
-# and the number of sub-operations that need to performed. **pycroscopy.Process** greatly simplifies the process of
+# and the number of sub-operations that need to performed. ``pycroscopy.Process`` greatly simplifies the process of
 # formalizing code by lifting or reducing the burden of implementing important, yet tedious tasks and considerations
 # such as:
 #
@@ -43,7 +43,7 @@ Formalizing Data Processing
 # * **testing before computation** - checking the processing / analysis on a single unit (typically a single pixel) of
 #   data before the entire data is processed. This is particularly useful for lengthy computations.
 #
-# Using **pycroscopy.Process**, the user only needs to address the following basic operations:
+# Using ``pycroscopy.Process``, the user only needs to address the following basic operations:
 #
 # 1. Reading data from file
 # 2. Computation on a single unit of data
@@ -54,19 +54,19 @@ Formalizing Data Processing
 # -----------------------------------
 # The most important functions in the Process class are:
 #
-# * **__init__()** - instantiates a 'Process' object of this class after validating the inputs.
-# * **_create_results_datasets()** - creates the HDF5 datasets and Group(s) to store the results.
-# * **_map_function()** - the operation that will per be performed on each element in the dataset.
-# * **test()** - This simple function lets the user test the **map_function** on a unit of data (a single pixel
+# * ``__init__()`` - instantiates a 'Process' object of this class after validating the inputs.
+# * ``_create_results_datasets()`` - creates the HDF5 datasets and Group(s) to store the results.
+# * ``_map_function()`` - the operation that will per be performed on each element in the dataset.
+# * ``test()`` - This simple function lets the user test the ``map_function`` on a unit of data (a single pixel
 #   typically) to see if it returns the desired results. It saves a lot of computational time by allowing the user to
 #   spot-check results before computing on the entire dataset
-# * **_read_data_chunk()** - reads the input data from one or more datasets.
-# * **_write_results_chunk()** - writes the computed results back to the file
-# * **_unit_computation()** - Defines how to process a chunk (multiple units) of data. This allows room for
+# * ``_read_data_chunk()`` - reads the input data from one or more datasets.
+# * ``_write_results_chunk()`` - writes the computed results back to the file
+# * ``_unit_computation()`` - Defines how to process a chunk (multiple units) of data. This allows room for
 #   pre-processing of input data and post-processing of results if necessary. If neither are required, this function
-#   essentially applies the parallel computation on `_map_function()`.
-# * **compute()** - this does the bulk of the work of (iteratively) reading a chunk of data >> processing in parallel
-#   via `_unit_computation()` >> calling `write_results_chunk()` to write data. Most sub-classes, including the one
+#   essentially applies the parallel computation on ``_map_function()``.
+# * ``compute()`` - this does the bulk of the work of (iteratively) reading a chunk of data >> processing in parallel
+#   via ``_unit_computation()`` >> calling ``write_results_chunk()`` to write data. Most sub-classes, including the one
 #   below, do not need to extend / modify this function.
 #
 # Recommended pre-requisite reading
@@ -136,7 +136,7 @@ except ImportError:
 #
 # Defining the class
 # ===================
-# In order to solve our problem, we would need to implement a **sub-class** of pycroscopy.Process or in other words -
+# In order to solve our problem, we would need to implement a ``sub-class`` of pycroscopy.Process or in other words -
 # **extend pycroscopy.Process**. As mentioned above, the pycroscopy.Process class already generalizes several important
 # components of data processing. We only need to extend this class by implementing the science-specific functionality.
 # The rest of the capabilities will be **inherited** from pycroscopy.Process.
@@ -146,13 +146,13 @@ except ImportError:
 # map_function()
 # --------------
 # The most important component in our new Process class is the unit computation that needs to be performed on each
-# spectra. **map_function()** needs to take as input a single spectra and return the amplitude at the peak (a single
-# value). The **compute()** and **unit_computation()** will handle the parallelization.
+# spectra. ``map_function()`` needs to take as input a single spectra and return the amplitude at the peak (a single
+# value). The ``compute()`` and ``unit_computation()`` will handle the parallelization.
 #
 # Pycroscopy already has a function called wavelet_peaks() that facilitates the seach for one or more peaks in a spectra
-# located in pycroscopy.analysis.guess_methods. The exact methodolody for finding the peaks is not of interest for this
+# located in pycroscopy.analysis.guess_methods. The exact methodology for finding the peaks is not of interest for this
 # particular example. However, this function only finds the index of one or more peaks in the spectra. We only expect
-# one peak at the center of the spectra. Therefore, we can use the `wavelet_peaks()` function to find the peaks and
+# one peak at the center of the spectra. Therefore, we can use the ``wavelet_peaks()`` function to find the peaks and
 # address those situations when too few or too many (> 1) peaks are found in a single spectra. Finally, we need to use
 # the index of the peak to find the amplitude from the spectra.
 #
@@ -161,7 +161,7 @@ except ImportError:
 # A useful test function should be able to find the peak amplitude for any single spectra in the dataset. So, given the
 # index of a pixel (provided by the user), we should perform two operations:
 # * read the spectra corresponding to that index from the HDF5 dataset
-# * apply the **map_function()** to this spectra and return the result.
+# * apply the ``map_function()`` to this spectra and return the result.
 #
 # create_results_datasets()
 # -------------------------
@@ -172,9 +172,9 @@ except ImportError:
 # * storing any relevant metadata regarding this processing as attributes of the HDF5 group for provenance, traceability
 #   , and reproducibility.
 #
-#     * 'last_pixel' is a reserved attribute that serves as a flag indicating the last pixel that was successfully
+#     * ``last_pixel`` is a reserved attribute that serves as a flag indicating the last pixel that was successfully
 #       processed and written to the results dataset. This attribute is key for resuming partial computations.
-# * the creation of HDF5 dataset(s) to hold the results. **map_function()** takes a spectra (1D array) and returns the
+# * the creation of HDF5 dataset(s) to hold the results. ``map_function()`` takes a spectra (1D array) and returns the
 #   amplitude (a single value). Thus the input dataset (position, spectra) will be reduced to (position, 1). So, we only
 #   need to create a single empty dataset to hold the results.
 #
@@ -182,13 +182,13 @@ except ImportError:
 #
 # write_results_chunk()
 # ---------------------
-# The result of **compute()** will be a list of amplitude values. All we need to do is:
+# The result of ``compute()`` will be a list of amplitude values. All we need to do is:
 #
 # * write the results into the HDF5 dataset
-# * Set the **last_pixel** attribute to the value of the **end_pos** internal variable to indicate that pixels upto
-# **end_pos** were succesfully processed. Should the computation be interrupted after this point, we could resume from
-# **end_pos** instead of starting from **0** again.
-# * update the **start_pos** internal variable to guide compute() to process the next batch of positions / pixels
+# * Set the ``last_pixel`` attribute to the value of the ``end_pos`` internal variable to indicate that pixels upto
+# ``end_pos`` were successfully processed. Should the computation be interrupted after this point, we could resume from
+# ``end_pos`` instead of starting from ``0`` again.
+# * update the ``start_pos`` internal variable to guide compute() to process the next batch of positions / pixels
 
 
 class PeakFinder(px.Process):
@@ -306,7 +306,7 @@ class PeakFinder(px.Process):
 # Comments
 # ---------
 # * The class appears to be large mainly because of comments that explain what each line of code is doing.
-# * Several functions of pycroscopy.Process such as __init__() and **compute()** were inherited from the
+# * Several functions of pycroscopy.Process such as __init__() and ``compute()`` were inherited from the
 #   pycroscopy.Process class.
 # * In simple cases such as this, we don't even have to implement a function to read the data from the dataset since
 #   pycroscopy.Process automatically calculates how much of the data iss safe to load into memory. In this case, the
@@ -314,7 +314,7 @@ class PeakFinder(px.Process):
 # * In this example, we did not need any pre-processing or post-processing of results but those can be implemented too
 #   if necessary.
 # * The majority of the code in this class would have to be written regardless of whether the intention is formalize the
-#   data processing or not. In fact, we would argue that **more** code may need to be written than what is shown below
+#   data processing or not. In fact, we would argue that ``more** code may need to be written than what is shown below
 #   if one were **not** formalizing the data processing (data reading, parallel computing, memory management, etc.)
 # * This is the simplest possible implementation of Process. Certain features such as checking for existing results and
 #   resuming partial computations have not been shown in this example.
@@ -359,7 +359,7 @@ freq_vec = h5_main.get_spec_values('Frequency') * 1E-3
 
 ########################################################################################################################
 # Use the Process class
-# ============
+# ======================
 #
 # Instantiation
 # -------------
@@ -446,5 +446,5 @@ os.remove(h5_path)
 # Please see the following pycroscopy classes to learn more about the advanced functionalities such as resuming
 # computations, checking of existing results, etc.:
 #
-# * pycroscopy.processing.SignalFilter
-# * pycroscopy.analysis.GIVBayesian
+# * ``pycroscopy.processing.SignalFilter``
+# * ``pycroscopy.analysis.GIVBayesian``

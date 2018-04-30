@@ -193,7 +193,7 @@ spectra_length = int(parm_dict['z-points'])
 ####################################################################################
 # Step 3.b Read the data
 # ========================
-# Data is present after the first `403` lines of parameters.
+# Data is present after the first ``403`` lines of parameters.
 
 # num_headers = len(string_lines) - num_pos
 num_headers = 403
@@ -226,7 +226,7 @@ units = 'nA'
 ####################################################################################
 # Step 4.b. Defining the Dimensions
 # ===================================
-# Position and spectroscopic dimensions need to defined using `Dimension` objects. Remember that the position and
+# Position and spectroscopic dimensions need to defined using ``Dimension`` objects. Remember that the position and
 # spectroscopic dimensions need to be specified in the correct order.
 
 pos_dims = [px.write_utils.Dimension('X', 'a. u.', parm_dict['x-pixels']),
@@ -254,7 +254,7 @@ h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
 #   `AscTranslator https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_.
 #   This custom translator packages the same code used above into functions that focus on the individual tasks such
 #   as extracting parameters, reading data, and writing to h5. The NumpyTranslator uses
-#   `pycroscopy.hdf_utils.write_main_dataset()` function underneath to write its data.
+#   ``pycroscopy.hdf_utils.write_main_dataset()`` function underneath to write its data.
 # * There are many benefits to writing such a formal Translator class instead of standalone scripts like this including:
 #
 #   * Unlike such a stand-alone script, a Translator class in the package can be used by everyone repeatedly
