@@ -48,7 +48,7 @@ Other problems:
 4. In many cases, especially electron and ion based microscopy, the very act of probing the sample damages the sample.
    To minimize damage to the sample, researchers only sample data from a few random positions in the 2D grid and use
    advanced algorithms to reconstruct the missing data. We have not come across any robust solutions for storing such
-   ``Compressed sensing / sparse sampling`` data. More in the ``Advanced Topics`` section.
+   **Compressed sensing / sparse sampling** data. More in the **Advanced Topics** section.
 
 To solve the above and many more problems, we have developed an
 **instrument agnostic data format** that can be used to represent data
@@ -90,10 +90,10 @@ the 2D format:
   take much longer to acquire. This has necessitated approaches such as
   sparse sampling or `compressed sensing
   <https://en.wikipedia.org/wiki/Compressed_sensing>`__ wherein
-  measurements are acqurired from a few randomly sampled positions and the
+  measurements are acquired from a few randomly sampled positions and the
   data for the rest of the positions are inferred using complex
   algorithms. Storing such sparse sampled data in the N dimensional format
-  would baloon the size of the stored data even though the majority of the
+  would balloon the size of the stored data even though the majority of the
   data is actually empty. Two dimensional datasets would allow the random
   measurements to be written without any empty sections.
 * When acquiring measurement data, users often adjust experimental parameters
