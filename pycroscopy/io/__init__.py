@@ -7,12 +7,8 @@ Submodules
 .. autosummary::
     :toctree: _autosummary
 
-    be_hdf_utils
-    hdf_utils
-    io_hdf5
-    io_utils
-    microdata
     translators
+    write_utils
 
 """
 from . import translators

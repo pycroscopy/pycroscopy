@@ -1,3 +1,21 @@
+"""
+Pycroscopy's Core I/O module
+
+Submodules
+----------
+
+.. autosummary::
+    :toctree: _autosummary
+
+    hdf_utils
+    image
+    ioutils
+    numpy_translator
+    pycro_data
+    translator
+    write_utils
+
+"""
 from . import pycro_data
 from . import translator
 from . import numpy_translator

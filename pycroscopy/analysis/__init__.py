@@ -7,11 +7,12 @@ Submodules
 .. autosummary::
     :toctree: _autosummary
 
-    be_loop_model
-    be_sho_model
+    be_loop_fitter
+    be_sho_fitter
     fit_methods
+    fitter
+    giv_bayesian
     guess_methods
-    model
     optimize
 
 """

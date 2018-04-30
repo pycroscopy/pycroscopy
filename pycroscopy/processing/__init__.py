@@ -7,17 +7,14 @@ Submodules
 .. autosummary::
     :toctree: _autosummary
 
-    atom_finding
     cluster
+    contrib
     decomposition
-    feature_extraction
     fft
-    giv_utils
     gmode_utils
     image_processing
-    image_transformation
     proc_utils
-    process
+    signal_filter
     svd_utils
 
 """
