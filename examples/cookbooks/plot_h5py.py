@@ -22,9 +22,9 @@ Primer to HDF5 and h5py
 # HDF5 is a remarkably straightforward file format to understand since it mimics the familiar folders and files paradigm
 # exposed to users by all operating systems such as Windows, Mac OS, Linux, etc. HDF5 files can contain:
 #
-# * **Datasets** - similar to spreadsheets and text files with tabular data.
-# * **Groups** - similar to folders in a regular file system
-# * **Attributes** - small metadata that provide additional information about the Group or Dataset they are attached to.
+# * ``Datasets`` - similar to spreadsheets and text files with tabular data.
+# * ``Groups`` - similar to folders in a regular file system
+# * ``Attributes`` - small metadata that provide additional information about the Group or Dataset they are attached to.
 # * other advanced features such as hard links, soft links, object and region references, etc.
 #
 # h5py is the official software package for reading and writing to HDF5 files in python. Consequently, Pycroscopy relies
@@ -38,9 +38,9 @@ Primer to HDF5 and h5py
 # -------------------------------
 # For this primer, we only need some very basic packages, all of which come with the standard Anaconda distribution:
 #
-# * `os` - to manipulate and remove files
-# * `numpy` - for basic numerical work
-# * `h5py` - the package that will be the focus of this primer
+# * ``os`` - to manipulate and remove files
+# * ``numpy`` - for basic numerical work
+# * ``h5py`` - the package that will be the focus of this primer
 
 from __future__ import print_function, division, unicode_literals
 import os
@@ -63,18 +63,18 @@ print(h5_file)
 # ===========
 # create_group()
 # ----------------
-# We can use the `create_group()` function on an existing object such as the open file handle (`h5_file`) to create a
+# We can use the ``create_group()`` function on an existing object such as the open file handle (``h5_file``) to create a
 # group:
 
 h5_group_1 = h5_file.create_group('Group_1')
 print(h5_group_1)
 
 ########################################################################################################################
-# The output of the above print statement reveals that a group named `Group_1` was successfully created at location: '/'
+# The output of the above print statement reveals that a group named ``Group_1`` was successfully created at location: '/'
 # (which stands for the root of the file). Furthermore, this group contains 0 objects or members.
 # .name
 # -------
-# One can find the full / absolute path where this object is located from its `name` property:
+# One can find the full / absolute path where this object is located from its ``name`` property:
 
 print(h5_group_1.name)
 
@@ -84,8 +84,8 @@ print(h5_group_1.name)
 # Much like folders in a computer, these groups can themselves contain more groups and datasets.
 #
 # Let us create a few more groups the same way. Except, let us create these groups within the newly created. To do this,
-# we would need to call the `create_group()` function on the h5_group_1 object and not the h5_file object. Doing the
-# latter would result in groups created under the file at the same level as `Group_1` instead of inside `Group_1`.
+# we would need to call the ``create_group()`` function on the h5_group_1 object and not the h5_file object. Doing the
+# latter would result in groups created under the file at the same level as ``Group_1`` instead of inside ``Group_1``.
 
 h5_group_1_1 = h5_group_1.create_group('Group_1_1')
 h5_group_1_2 = h5_group_1.create_group('Group_1_2')
@@ -101,7 +101,7 @@ print(h5_group_1)
 print(h5_group_1_1)
 
 ########################################################################################################################
-# The above print statement shows that this group named `Group_1_1` exists at a path: `"/Group_1/Group_1_1"`. In other
+# The above print statement shows that this group named ``Group_1_1`` exists at a path: ``"/Group_1/Group_1_1"``. In other
 # words, this is similar to a folder contained inside another folder.
 #
 # .parent
@@ -125,12 +125,12 @@ print(h5_group_1_1.parent == h5_group_1)
 # Imagine a file or a folder on a computer that is several folders deep from where one is (e.g. -
 # /Users/Joe/Documents/Projects/2018/pycroscopy).One could either reach the desired file or folder by opening one folder
 # after another or directly by using a long path string. If you were at root (/), you would need to paste the entire
-# path (absolute path) of the desired file -  `/Users/Joe/Documents/Projects/2018/pycroscopy`. Alternatively, if you
-# were in an intermediate directory (e.g. -  `/Users/Joe/Documents/`), you would need to paste what is called the
-# relative path (in this case -  `Projects/2018/pycroscopy`) to get to the desired file.
+# path (absolute path) of the desired file -  ``/Users/Joe/Documents/Projects/2018/pycroscopy``. Alternatively, if you
+# were in an intermediate directory (e.g. -  ``/Users/Joe/Documents/``), you would need to paste what is called the
+# relative path (in this case -  ``Projects/2018/pycroscopy``) to get to the desired file.
 #
-# In the same way, we can also access HDF5 objects either through `relative paths`, or `absolute paths`. Here are a few
-# ways one could get to the group `Group_1_2`:
+# In the same way, we can also access HDF5 objects either through ``relative paths``, or ``absolute paths``. Here are a few
+# ways one could get to the group ``Group_1_2``:
 
 print(h5_file['/Group_1/Group_1_2'])
 print(h5_group_1['Group_1_2'])
@@ -164,9 +164,9 @@ for key, value in h5_group_1.items():
 # ===========
 # create_dataset()
 # ----------------
-# We can create a dataset within `Group_1` using a function that is similar to `create_group()`, called
-# `create_dataset()`. Unlike create_group() which just takes the path of the desired group as an input,
-# `create_dataset()` is highly customizable and flexible.
+# We can create a dataset within ``Group_1`` using a function that is similar to ``create_group()``, called
+# ``create_dataset()``. Unlike create_group() which just takes the path of the desired group as an input,
+# ``create_dataset()`` is highly customizable and flexible.
 #
 # In our experience, there are three modes of creating datasets that are highly relevant for scientific applications:
 #
@@ -179,7 +179,7 @@ for key, value in h5_group_1.items():
 # Let as assume we want to store a simple greyscale (floating point values) image with 256 x 256 pixels. We would create
 # and store the data as shown below. As the size of the dataset becomes very large, the precision with which the data is
 # stored can significantly affect the size of the dataset and the file. Therefore, we recommend purposefully specifying
-# the data-type (via the `dtype` keyword argument) during creation.
+# the data-type (via the ``dtype`` keyword argument) during creation.
 
 h5_simple_dataset = h5_group_1.create_dataset('Simple_Dataset',
                                               data=np.random.rand(256, 256),
@@ -190,7 +190,7 @@ print(h5_simple_dataset)
 # Accessing data
 # ----------------
 # We can access data contained in the dataset just like accessing a numpy array. For example, if we want the value at
-# row `29` and column `167`, we would read it as:
+# row ``29`` and column ``167``, we would read it as:
 
 print(h5_simple_dataset[29, 167])
 
@@ -335,8 +335,8 @@ print('list_of_strings: {}'.format(h5_simple_dataset.attrs['list_of_strings'] ==
 #
 # To avoid manual encoding and decoding of attributes (different strategies for different versions of python), we
 # recommend:
-# * writing attributes using: `pycroscopy.hdf_utils.write_simple_attrs()`
-# * reading attributes using: `pycroscopy.hdf_utils.get_attr() or get_attributes()`
+# * writing attributes using: ``pycroscopy.hdf_utils.write_simple_attrs()``
+# * reading attributes using: ``pycroscopy.hdf_utils.get_attr() or get_attributes()``
 #
 # Both these functions work reliably and consistently across all python versions and fix this problem in h5py.
 #
