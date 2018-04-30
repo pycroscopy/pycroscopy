@@ -128,3 +128,4 @@ started on git:
 * Tutorial on the `basics of git <https://www.atlassian.com/git/tutorials>`_
 * Our favorite git client - `GitKraken <https://support.gitkraken.com/>`_
 * Our favorite IDE with `excellent integration with Git: PyCharm <https://www.youtube.com/watch?v=vIReqoQYud8>`_
+* Our own guide to `setting up and using git with PyCharm <https://github.com/pycroscopy/pycroscopy/blob/master/docs/Using%20PyCharm%20to%20manage%20repository.pdf>`_

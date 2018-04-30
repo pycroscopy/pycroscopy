@@ -7,6 +7,9 @@ Translation and the NumpyTranslator
 
 8/8/2017
 
+**This document illustrates an example of extracting data out of proprietary raw data files and writing the information
+into a pycroscopy HDF5 file using the pycroscopy.NumpyTranslator**
+
 Introduction
 ------------
 
@@ -25,16 +28,17 @@ Simply put, so long as one has the metadata and the actual data extracted from t
 the **pycroscopy.NumpyTranslator** will correctly write the contents to a Pycroscopy formatted HDF5 file.
 Note that the complexity or size of the raw data may necessitate a custom Translator class. However, the rough process
 of translation is the same regardless of the origin, complexity, or size of the raw data:
+
 * Investigating how to open the proprietary raw data file
 * Reading the metadata
 * Extracting the data
 * Writing to Pycroscopy formatted HDF5 file
 
-**The goal of this document is to demonstrate how one would extract data and parameters from a Scanning Tunnelling
+The goal of this document is to demonstrate how one would extract data and parameters from a Scanning Tunnelling
 Spectroscopy (STS) raw data file obtained from an Omicron Scanning Tunneling Microscope (STM) into a pycroscopy
-compatible HDF5 file.**
+compatible HDF5 file.
 
-While there is an **AscTranslator** avialable in pycroscopy that can translate these files in just a **single** line,
+While there is an `AscTranslator <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_ avialable in pycroscopy that can translate these files in just a **single** line,
 we will intentionally assume that no such translator is available. Using a handful of useful functions in pycroscopy,
 we will translate the files from the source **.asc** format to the pycroscopy compatible **.h5** in just a few lines.
 The code developed below is essentially the **AscTranslator**. The same methodology can be used to translate other data
@@ -46,8 +50,7 @@ Recommended pre-requisite reading
 
 Before proceeding with this example, we recommend reading the previous documents to learn more about:
 
-* Pycroscopy data and file formatting - https://pycroscopy.github.io/pycroscopy/data_format.html.
-
+* `Pycroscopy data format <https://pycroscopy.github.io/pycroscopy/data_format.html>`_
 
 Import all necessary packages
 -----------------------------
@@ -94,9 +97,10 @@ except ImportError:
     import pycroscopy as px
 
 ####################################################################################
-# 0. Select the Raw Data file
-# ===========================
-# Download the data file from Github:
+# Step 0. Procure the Raw Data file
+# =================================
+
+# Download the compressed data file from Github:
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STS.zip'
 zip_path = 'STS.zip'
 if os.path.exists(zip_path):
@@ -116,15 +120,15 @@ os.remove(zip_path)
 data_file_path = 'STS.asc'
 
 ####################################################################################
-# 1. Exploring the Raw Data File
-# ==============================
+# Step 1. Exploring the Raw Data File
+# ====================================
 #
 # Inherently, one may not know how to read these **.asc** files. One option is to try and read the file as a text file
 # one line at a time.
 #
 # It turns out that these .asc files are effectively the standard **ASCII** text files.
 #
-# Here is how we tested to see if the **asc** files could be interpreted as text files. Below, we read just thefirst 10
+# Here is how we tested to see if the **asc** files could be interpreted as text files. Below, we read just the first 10
 # lines in the file
 
 with open(data_file_path, 'r') as file_handle:
@@ -132,8 +136,8 @@ with open(data_file_path, 'r') as file_handle:
         print(file_handle.readline())
 
 ####################################################################################
-# 2. Loading the data
-# ===================
+# Step 2. Loading the data
+# =========================
 # Now that we know that these files are simple text files, we can manually go through the file to find out which lines
 # are important, at what lines the data starts etc.
 # Manual investigation of such .asc files revealed that these files are always formatted in the same way. Also, they
@@ -151,8 +155,8 @@ string_lines = file_handle.readlines()
 file_handle.close()
 
 ####################################################################################
-# 3. Read the parameters
-# ======================
+# Step 3. Read the parameters
+# ==============================
 # The parameters in these files are present in the first few lines of the file
 
 # Reading parameters stored in the first few rows of the file
@@ -176,8 +180,8 @@ for key in parm_dict.keys():
     print(key, ':\t', parm_dict[key])
 
 ####################################################################################
-# 3.a Prepare to read the data
-# ============================
+# Step 3.a Prepare to read the data
+# ==================================
 # Before we read the data, we need to make an empty array to store all this data. In order to do this, we need to read
 # the dictionary of parameters we made in step 2 and extract necessary quantities
 
@@ -187,9 +191,9 @@ num_pos = num_rows * num_cols
 spectra_length = int(parm_dict['z-points'])
 
 ####################################################################################
-# 3.b Read the data
-# =================
-# Data is present after the first 403 lines of parameters.
+# Step 3.b Read the data
+# ========================
+# Data is present after the first `403` lines of parameters.
 
 # num_headers = len(string_lines) - num_pos
 num_headers = 403
@@ -202,8 +206,8 @@ for line_ind in range(num_pos):
     raw_data_2d[line_ind] = np.array(string_spectrum, dtype=np.float32)
 
 ####################################################################################
-# 4.a Preparing some necessary parameters
-# =======================================
+# Step 4.a Preparing some necessary parameters
+# =============================================
 
 max_v = 1  # This is the one parameter we are not sure about
 
@@ -215,23 +219,27 @@ volt_vec = np.linspace(-1 * max_v, 1 * max_v, spectra_length)
 
 h5_path = os.path.join(folder_path, file_name + '.h5')
 
+sci_data_type = 'STS'
+quantity = 'Current'
+units = 'nA'
+
 ####################################################################################
-# 4b. Calling the NumpyTranslator to create the pycroscopy data file
-# ==================================================================
+# Step 4.b. Defining the Dimensions
+# ===================================
+# Position and spectroscopic dimensions need to defined using `Dimension` objects. Remember that the position and
+# spectroscopic dimensions need to be specified in the correct order.
+
+pos_dims = [px.write_utils.Dimension('X', 'a. u.', parm_dict['x-pixels']),
+            px.write_utils.Dimension('Y', 'a. u.', parm_dict['y-pixels'])]
+spec_dims = px.write_utils.Dimension('Bias', 'V', volt_vec)
+
+####################################################################################
+# Step 4.c. Calling the NumpyTranslator to create the pycroscopy data file
+# ==========================================================================
 # The NumpyTranslator simplifies the creation of pycroscopy compatible datasets. It handles the HDF5 file creation,
 # HDF5 dataset creation and writing, creation of ancillary HDF5 datasets, group creation, writing parameters, linking
 # ancillary datasets to the main dataset etc. With a single call to the NumpyTranslator, we complete the translation
 # process.
-#
-# Remember that the position and spectroscopic dimensions need to be specified in the correct order via
-# Dimension objects.
-
-sci_data_type = 'STS'
-quantity = 'Current'
-units = 'nA'
-pos_dims = [px.write_utils.Dimension('X', 'a. u.', parm_dict['x-pixels']),
-            px.write_utils.Dimension('Y', 'a. u.', parm_dict['y-pixels'])]
-spec_dims = px.write_utils.Dimension('Bias', 'V', volt_vec)
 
 tran = px.NumpyTranslator()
 h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
@@ -242,18 +250,18 @@ h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
 # ===============================
 # * Steps 1-3 would be performed anyway in order to begin data analysis
 # * The actual pycroscopy translation step are reduced to just 3-4 lines in step 4.
-# * A modular / formal version of this translator has been implemented as a class in pycroscopy as the AscTranslator
-#   found at: https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py .
+# * A modular / formal version of this translator has been implemented as a class in pycroscopy as the
+#   `AscTranslator https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_.
 #   This custom translator packages the same code used above into functions that focus on the individual tasks such
-#   as extracting parameters, reading data, and writing to h5. Once the necessary pieces (parameters, data) are gathered
-#  , the h5 file can be written very easily using pycroscopy.io.Translator 's .simple_write() function.
-#   The NumpyTranslator used above uses the very same .simple_write() function underneath to write its data as well.
+#   as extracting parameters, reading data, and writing to h5. The NumpyTranslator uses
+#   `pycroscopy.hdf_utils.write_main_dataset()` function underneath to write its data.
 # * There are many benefits to writing such a formal Translator class instead of standalone scripts like this including:
 #
 #   * Unlike such a stand-alone script, a Translator class in the package can be used by everyone repeatedly
 #   * The custom Translator class can ensure consistency when translating multiple files. 
-#   * A single, robust Translator class can handle the finer variations / modes in the data. See the IgorIBWTranslator
-#     as an example - https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/igor_ibw.py.
+#   * A single, robust Translator class can handle the finer variations / modes in the data. See the
+#     `IgorIBWTranslator <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/igor_ibw.py>`_
+#     as an example.
 #
 # * While this approach is feasible and encouraged for simple and small data, it may be necessary to use lower level
 #   calls to write efficient translators. As an example, please see the BEPSndfTranslator at:

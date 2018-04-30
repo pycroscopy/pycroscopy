@@ -7,8 +7,11 @@ Plotting utilities
 
 8/12/2017
 
-This is a short walkthrough of useful plotting utilities available in pycroscopy. 
-Some of these functions fill gaps in the defult matplotlib package, some were 
+**This is a short walkthrough of useful plotting utilities available in pycroscopy**
+
+Introduction
+--------------
+Some of the functions in `pycroscopy.plot_utils` fill gaps in the default matplotlib package, some were
 developed for scientific applications, and others were developed specifically
 for handling pycroscopy datasets. These functions have been developed to substantially simplify
 the generation of high quality figures for journal publications. 
@@ -33,7 +36,7 @@ except ImportError:
 # 1D plot utilities
 # ===========================
 # plot_curves()
-# ------------
+# --------------
 # This function is particularly useful when we need to plot a 1D signal acquired at multiple locations.
 # The function is rather flexible and can take on several optional arguments that will be alluded to below
 # In the below example, we are simply simulating sine waveforms for different frequencies (think of these as
@@ -63,7 +66,7 @@ px.plot_utils.plot_curves([x_vec_1, x_vec_2], [y_mat_1, y_mat_2],
 
 ################################################################################################
 # plot_line_family()
-# ------------------
+# -------------------
 # Often there is a need to visualize multiple spectra or signals on the same plot. plot_line_family
 # is a handy function ideally suited for this purpose and it is highly configurable for different styles and purposes
 # A few example applications include visualizing X ray / IR spectra (with y offsets), centroids from clustering
@@ -93,7 +96,7 @@ axes[2].set_title('Line family with colorbar')
 
 ################################################################################################
 # plot_complex_spectra()
-# ----------------------
+# -----------------------
 # This handy function plots the amplitude and phase components of multiple complex valued spectra
 # Here we simulate the signal coming from a simple harmonic oscillator (SHO). 
 
@@ -112,14 +115,14 @@ fig, axis = px.plot_utils.plot_complex_spectra(spectra, w_vec, title='Oscillator
 
 ################################################################################################
 # rainbow_plot()
-# --------------
+# ---------------
 # This function is ideally suited for visualizing a signal that varies as a function of time or when 
 # the directionality of the signal is important
 
 num_pts = 1024
 t_vec = np.linspace(0, 10*np.pi, num_pts)
 
-fig, axis = plt.subplots()
+fig, axis = plt.subplots(figsize=(4, 4))
 px.plot_utils.rainbow_plot(axis, np.cos(t_vec)*np.linspace(0, 1, num_pts),
                            np.sin(t_vec)*np.linspace(0, 1, num_pts),
                            num_steps=32)
@@ -129,12 +132,12 @@ px.plot_utils.rainbow_plot(axis, np.cos(t_vec)*np.linspace(0, 1, num_pts),
 # ---------------------
 # Note that from the above plot it may not be clear if the signal is radiating outwards or spiraling inwards.
 # In these cases it helps to add a colorbar. However, colorbars can typically only be added for 2D images.
-# In such cases we can use a handy function: cbar_for_line_plot
+# In such cases we can use a handy function: `cbar_for_line_plot()`
 
 num_pts = 1024
 t_vec = np.linspace(0, 10*np.pi, num_pts)
 
-fig, axis = plt.subplots(figsize=(6,5))
+fig, axis = plt.subplots(figsize=(4.5, 4))
 px.plot_utils.rainbow_plot(axis, np.cos(t_vec)*np.linspace(0, 1, num_pts),
                            np.sin(t_vec)*np.linspace(0, 1, num_pts),
                            num_steps=32)
@@ -147,7 +150,7 @@ cbar.set_label('Time (sec)')
 # ------------
 # One of the results of applying Singular Value Decomposition is the variance or statistical significance
 # of the resultant components. This data is best visualized via a log-log plot and plot_scree is available
-# exclusively to vvisualizethis kind of data
+# exclusively to visualize this kind of data
 
 scree = np.exp(-1 * np.arange(100))
 px.plot_utils.plot_scree(scree, color='r')
@@ -190,7 +193,7 @@ for axis, title, cmap in zip(axes.flat,
                               px.plot_utils.discrete_cmap(8, cmap='jet')]):
     im_handle = axis.imshow(test, cmap=cmap)
     cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
-                            fraction=0.046, pad=0.04, use_gridspec=True)
+                        fraction=0.046, pad=0.04, use_gridspec=True)
     axis.set_title(title)
 fig.tight_layout()
 
@@ -241,10 +244,11 @@ px.plot_utils.get_cmap_object('jet') == px.plot_utils.get_cmap_object(plt.cm.jet
 
 ################################################################################################
 # 2D plot utilities
-# ===========================
+# ==================
 # plot_map()
 # -----------
 # This function adds several popularly used features to the basic image plotting function in matplotlib including:
+#
 # * easy addition of a colorbar
 # * custom x and y tick values
 # * clipping the colorbar to N standard deviations of the mean
@@ -309,9 +313,9 @@ fig, axes = px.plot_utils.plot_complex_spectra(np.array(image_stack), figsize=(3
 
 ################################################################################################
 # General Utilities
-# =================
+# ==================
 # set_tick_font_size()
-# --------------------
+# ---------------------
 # Adjusting the font sizes of the tick marks is often necessary for preparing figures for journal papers.
 # However, adjusting the tick sizes is actually tedious in python and this function makes this easier.
 
@@ -338,9 +342,9 @@ for num_plots in range(1, 17):
 ################################################################################################
 # make_scalar_mappable()
 # ----------------------
-# This is a low-level function that is used by cbar_for_line_plot() to generate the color bar manually.
+# This is a low-level function that is used by `cbar_for_line_plot()` to generate the color bar manually.
 # Here we revisit the example for plot_line_family() but we generate the colorbar by hand using
-# make_scalar_mappable(). In this case, we make the colorbar horizontal just as an example.
+# `make_scalar_mappable()`. In this case, we make the colorbar horizontal just as an example.
 
 x_vec = np.linspace(0, 2*np.pi, 256)
 freqs = range(1, 5)
@@ -384,7 +388,7 @@ for axis, title, cmap in zip(axes.flat,
                              [plt.cm.jet, new_cmap]):
     im_handle = axis.imshow(test, cmap=cmap)
     cbar = plt.colorbar(im_handle, ax=axis, orientation='vertical',
-                            fraction=0.046, pad=0.04, use_gridspec=True)
+                        fraction=0.046, pad=0.04, use_gridspec=True)
     axis.set_title(title)
 fig.tight_layout()
 

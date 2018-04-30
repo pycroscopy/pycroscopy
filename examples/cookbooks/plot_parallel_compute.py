@@ -6,6 +6,9 @@ Parallel Computing
 **Suhas Somnath, Chris R. Smith**
 
 9/8/2017
+
+**This document will demonstrate how `pycroscopy.parallel_compute()` can significantly speed up data processing by
+using all available CPU cores in a computer**
 """
 ########################################################################################################################
 # Introduction
@@ -126,12 +129,14 @@ num_rows, num_cols = h5_main.pos_dim_sizes
 # Pycroscopy already has a function called wavelet_peaks() that facilitates the seach for one or more peaks in a spectra
 # located in pycroscopy.analysis.guess_methods. For the purposes of this example, we do not be concerned with how this
 # function works. All we need to know is that this function takes 3 inputs:
+#
 # * **vector** - a 1D array containing the spectra at a single location
 # * **peak_widths** - something like [20, 50] that instructs the function to look for peaks that are 20-50 units wide.
-# The function will look for a peak with width of 20, then again for a peak of width - 21 and so on.
+#   The function will look for a peak with width of 20, then again for a peak of width - 21 and so on.
 # * **peak_step** - The number of steps within the possiple widths [20, 50], that the search must be performed
 #
 # The function has one output:
+#
 # * **peak_indices** - an array of the positions at which peaks were found.
 #
 # .. code-block:: python
@@ -174,7 +179,7 @@ wavelet_peaks = px.analysis.guess_methods.GuessMethods.wavelet_peaks
 
 ########################################################################################################################
 # Testing the function
-# -------------------
+# ----------------------
 # Let’s see what the operation on an example spectra returns.
 
 row_ind, col_ind = 103, 19
@@ -217,7 +222,7 @@ print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
 # examples are **Multiprocessing**, **Mutiprocess**, **Dask**, **Joblib** etc. Each of these has their own
 # strengths and weaknesses. An installation of **Anaconda** comes with **Multiprocessing** by default and could be
 # the example of choice. However, in our experience we found **Joblib** to offer the best balance of efficiency,
-# simplicity, portabiity, and ease of installation.
+# simplicity, portability, and ease of installation.
 #
 # For illustrative purposes, we will only be demonstrating how the above serial computation can be made parallel using
 # **Joblib**. We only need two lines to perform the parallel computation. The first line sets up the computational
@@ -258,7 +263,7 @@ print('Result from parallel computation: {}'.format(parallel_results[pixel_ind])
 
 ########################################################################################################################
 # Simplifying the function
-# -----------------------
+# --------------------------
 # Note that the **peak_widths** and **peak_step** arguments will not be changed from one pixel to another. It would be
 # great if we didn't have to keep track of these constant arguments. We can use a very handy python tool called
 # **partial()** to do just this. Below, all we are doing is creating a new function that always pases our prefered
@@ -279,9 +284,9 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 # While it may seem tempting to do everything in parallel, it is important to be aware of some of the trade-offs and
 # best-practices for parallel computing (multiple CPU cores) when compared to traditional serial computing (single
 # CPU core):
-# * There is noticable time overhead involved with setting up each parallel computing job. For very simple or small
+# * There is noticeable time overhead involved with setting up each parallel computing job. For very simple or small
 # computations, this overhead may outweigh the speed-up gained with using multiple cores.
-# * Parallelizing computations that read and write to files at each iteration may be actually be noticably __slower__
+# * Parallelizing computations that read and write to files at each iteration may be actually be noticeably *slower*
 # than serial computation since each core will compete with all other cores for rights to read and write to the file(s)
 # and these input/output operations are by far the slowest components of the computation. Instead, it makes sense to
 # read large amounts of data from the necessary files once, perform the computation, and then write to the files once
@@ -338,8 +343,8 @@ fig.tight_layout()
 ########################################################################################################################
 # Formalizing data processing and pycroscopy.Process
 # -----------------------------------------------
-#
 # Data processing / analysis typically involves a few basic operations:
+#
 # 1. Reading data from file
 # 2. Parallel computation
 # 3. Writing results to disk

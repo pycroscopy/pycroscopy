@@ -22,6 +22,6 @@ pycroscopy is a `python <http://www.python.org/>`_ package for image processing 
 
 Please visit our `homepage <https://pycroscopy.github.io/pycroscopy/about.html>`_ for more information and installation instructions.
 
-If you use pycroscopy for research, you can use the following citation:
+If you use pycroscopy for research, we would appreciate if you could cite us as:
 
 ``Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.59.7. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.``

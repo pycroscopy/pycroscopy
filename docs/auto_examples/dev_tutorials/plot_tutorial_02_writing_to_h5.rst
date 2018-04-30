@@ -192,7 +192,7 @@ instead.
     y_label = px.hdf_utils.get_attr(h5_main, 'quantity') + ' [' + px.hdf_utils.get_attr(h5_main, 'units') + ']'
 
     # Get the voltage vector that this data was acquired as a function of:
-    h5_spec_vals = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[0]
+    h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[0]
     volt_vec = np.squeeze(h5_spec_vals[()])
 
     # Get the descriptor for this
@@ -653,7 +653,7 @@ rather easy by a few pycroscopy functions.
 
 
     # we already got the reference to the spectroscopic values in the first few cells
-    h5_spec_inds = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Indices')[0]
+    h5_spec_inds = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Indices')[0]
 
     px.hdf_utils.check_and_link_ancillary(h5_labels,
                           ['Position_Indices', 'Position_Values'],

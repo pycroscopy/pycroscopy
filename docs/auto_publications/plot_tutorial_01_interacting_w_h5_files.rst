@@ -1469,7 +1469,7 @@ These datasets can be accessed easily via a handy hdf_utils function:
 .. code-block:: python
 
 
-    print(px.hdf_utils.get_auxillary_datasets(pycro_main, auxDataName='Bin_FFT'))
+    print(px.hdf_utils.get_auxiliary_datasets(pycro_main, auxDataName='Bin_FFT'))
 
 
 
@@ -1521,10 +1521,10 @@ and position dimensions.
 .. code-block:: python
 
 
-    # We can use the get_auxillary_datasets function again to get the ancillary datasets linked with the main dataset:
+    # We can use the get_auxiliary_datasets function again to get the ancillary datasets linked with the main dataset:
     # The [0] slicing is to take the one and only position indices and spectroscopic indices linked with the dataset
-    h5_pos_inds = px.hdf_utils.get_auxillary_datasets(h5_raw, auxDataName='Position_Indices')[0]
-    h5_spec_inds = px.hdf_utils.get_auxillary_datasets(h5_raw, auxDataName='Spectroscopic_Indices')[0]
+    h5_pos_inds = px.hdf_utils.get_auxiliary_datasets(h5_raw, auxDataName='Position_Indices')[0]
+    h5_spec_inds = px.hdf_utils.get_auxiliary_datasets(h5_raw, auxDataName='Spectroscopic_Indices')[0]
 
     # Need to state that the array needs to be of the spectral shape.
     print('Spectroscopic dimensions:')
@@ -1637,8 +1637,8 @@ dataset such as the one under consideration. Fortunately, hdf_utils has a very h
 .. code-block:: python
 
 
-    h5_spec_inds = px.hdf_utils.get_auxillary_datasets(pycro_main, auxDataName='Spectroscopic_Indices')[0]
-    h5_spec_vals = px.hdf_utils.get_auxillary_datasets(pycro_main, auxDataName='Spectroscopic_Values')[0]
+    h5_spec_inds = px.hdf_utils.get_auxiliary_datasets(pycro_main, auxDataName='Spectroscopic_Indices')[0]
+    h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(pycro_main, auxDataName='Spectroscopic_Values')[0]
     dimension_name = 'DC_Offset'
     dc_dict = px.hdf_utils.get_unit_values(h5_spec_inds, h5_spec_vals, dim_names=dimension_name)
     print(dc_dict)

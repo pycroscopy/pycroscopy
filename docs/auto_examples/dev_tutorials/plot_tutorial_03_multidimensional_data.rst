@@ -191,10 +191,10 @@ slice the data. For that we need the ancillary datasets that support this main d
 
 
     # pycroscopy has a convenient function to access datasets linked to a given dataset:
-    h5_spec_ind = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Indices')[0]
-    h5_spec_val = px.hdf_utils.get_auxillary_datasets(h5_main, 'Spectroscopic_Values')[0]
-    h5_pos_ind = px.hdf_utils.get_auxillary_datasets(h5_main, 'Position_Indices')[0]
-    h5_pos_val = px.hdf_utils.get_auxillary_datasets(h5_main, 'Position_Values')[0]
+    h5_spec_ind = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Indices')[0]
+    h5_spec_val = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[0]
+    h5_pos_ind = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Position_Indices')[0]
+    h5_pos_val = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Position_Values')[0]
 
 
 

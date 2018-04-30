@@ -14,6 +14,7 @@ Formalizing Data Processing
 # ------------
 # Most of code written for scientific research is in the form of single-use / one-off scripts due to a few common
 # reasons:
+#
 # * the author feels that it is the fastest mode to accomplishing a research task
 # * the author feels that they are unlikely to perform the same operation again
 # * the author does not anticipate the possibility that others may need to run their code
@@ -23,25 +24,27 @@ Formalizing Data Processing
 #  live in an era of open science where the scientific community and an ever-increasing number of scientific journals
 # are moving towards a paradigm where the data and code need to be made available with journal papers. Therefore, in the
 # interest of saving time, energy, and reputation (you do not want to show ugly code / data. Instead you want to be the
-# paragon of clean intellgible data and code), it makes a lot more sense to formalize (parts of) one's data analysis
+# paragon of clean intelligible data and code), it makes a lot more sense to formalize (parts of) one's data analysis
 # code.
 #
 # For many researchers, formalizing data processing or analysis may seem like a daunting task due to the complexity of
 # and the number of sub-operations that need to performed. **pycroscopy.Process** greatly simplifies the process of
 # formalizing code by lifting or reducing the burden of implementing important, yet tedious tasks and considerations
 # such as:
+#
 # * **memory management** - reading chunks of datasets that can be processed with the available memory, something very
-# crcuial for very large datasets that cannot entirely fit into the computer's memory
+#   crucial for very large datasets that cannot entirely fit into the computer's memory
 # * **considerate CPU usage for parallel computing** - using all but one or two CPU cores for the (parallel) computation
-#  , which allows the user to continue using the computer for other activities such as reading mail, etc.
+#   , which allows the user to continue using the computer for other activities such as reading mail, etc.
 # * **pausing and resuming computation** - interrupting and resuming the computation at a more convenient time,
-# something that is especially valuable for lengthy computations.
+#   something that is especially valuable for lengthy computations.
 # * **avoiding repeated computation and returning existing results** - pycroscopy.Process will return existing results
-# computed using the exact same parameters instead of re-computing and storing duplicate copies of the same results.
+#   computed using the exact same parameters instead of re-computing and storing duplicate copies of the same results.
 # * **testing before computation** - checking the processing / analysis on a single unit (typically a single pixel) of
-# data before the entire data is processed. This is particularly useful for lengthy computations.
+#   data before the entire data is processed. This is particularly useful for lengthy computations.
 #
 # Using **pycroscopy.Process**, the user only needs to address the following basic operations:
+#
 # 1. Reading data from file
 # 2. Computation on a single unit of data
 # 3. Writing results to disk
@@ -50,20 +53,21 @@ Formalizing Data Processing
 # Components of pycroscopy.Process
 # -----------------------------------
 # The most important functions in the Process class are:
+#
 # * **__init__()** - instantiates a 'Process' object of this class after validating the inputs.
 # * **_create_results_datasets()** - creates the HDF5 datasets and Group(s) to store the results.
 # * **_map_function()** - the operation that will per be performed on each element in the dataset.
 # * **test()** - This simple function lets the user test the **map_function** on a unit of data (a single pixel
-# typically) to see if it returns the desired results. It saves a lot of computational time by allowing the user to
-# spot-check results before computing on the entire dataset
+#   typically) to see if it returns the desired results. It saves a lot of computational time by allowing the user to
+#   spot-check results before computing on the entire dataset
 # * **_read_data_chunk()** - reads the input data from one or more datasets.
 # * **_write_results_chunk()** - writes the computed results back to the file
 # * **_unit_computation()** - Defines how to process a chunk (multiple units) of data. This allows room for
-# pre-processing of input data and post-processing of results if necessary. If neither are required, this function
-# essentially appliest parallel computation on _map_function().
+#   pre-processing of input data and post-processing of results if necessary. If neither are required, this function
+#   essentially applies the parallel computation on `_map_function()`.
 # * **compute()** - this does the bulk of the work of (iteratively) reading a chunk of data >> processing in parallel
-# via _unit_computation() >> calling write_results_chunk() to write data. Most sub-classes, including the one below, do
-# not need to extend / modify this function.
+#   via `_unit_computation()` >> calling `write_results_chunk()` to write data. Most sub-classes, including the one
+#   below, do not need to extend / modify this function.
 #
 # Recommended pre-requisite reading
 # ---------------------------------
@@ -148,7 +152,7 @@ except ImportError:
 # Pycroscopy already has a function called wavelet_peaks() that facilitates the seach for one or more peaks in a spectra
 # located in pycroscopy.analysis.guess_methods. The exact methodolody for finding the peaks is not of interest for this
 # particular example. However, this function only finds the index of one or more peaks in the spectra. We only expect
-# one peak at the center of the spectra. Therefore, we can use the wavelet_peaks() function to find the peaks and
+# one peak at the center of the spectra. Therefore, we can use the `wavelet_peaks()` function to find the peaks and
 # address those situations when too few or too many (> 1) peaks are found in a single spectra. Finally, we need to use
 # the index of the peak to find the amplitude from the spectra.
 #
@@ -162,20 +166,24 @@ except ImportError:
 # create_results_datasets()
 # -------------------------
 # Every Process involves a few tasks for this function:
+#
 # * the creation of a HDF5 group to hold the datasets containing the results - pycroscopy.hdf_utils has a handy function
-# that takes care of this.
+#   that takes care of this.
 # * storing any relevant metadata regarding this processing as attributes of the HDF5 group for provenance, traceability
-# , and reproducability.
+#   , and reproducibility.
+#
 #     * 'last_pixel' is a reserved attribute that serves as a flag indicating the last pixel that was successfully
-# processed and written to the results dataset. This attribute is key for resuming partial computations.
+#       processed and written to the results dataset. This attribute is key for resuming partial computations.
 # * the creation of HDF5 dataset(s) to hold the results. **map_function()** takes a spectra (1D array) and returns the
-# amplitude (a single value). Thus the input dataset (position, spectra) will be reduced to (position, 1). So, we only
-# need to create a single empty dataset to hold the results.
+#   amplitude (a single value). Thus the input dataset (position, spectra) will be reduced to (position, 1). So, we only
+#   need to create a single empty dataset to hold the results.
+#
 # We just need to ensure that we have a reference to the results dataset so that we can populate it with the results.
 #
 # write_results_chunk()
 # ---------------------
 # The result of **compute()** will be a list of amplitude values. All we need to do is:
+#
 # * write the results into the HDF5 dataset
 # * Set the **last_pixel** attribute to the value of the **end_pos** internal variable to indicate that pixels upto
 # **end_pos** were succesfully processed. Should the computation be interrupted after this point, we could resume from
@@ -218,7 +226,7 @@ class PeakFinder(px.Process):
         px.hdf_utils.write_simple_attrs(self.h5_results_grp,
                                         {'last_pixel': 0, 'algorithm': 'wavelet_peaks'})
 
-        # Explicitely stating all the inputs to write_main_dataset
+        # Explicitly stating all the inputs to write_main_dataset
         # The process will reduce the spectra at each position to a single value
         # Therefore, the result is a 2D dataset with the same number of positions as self.h5_main
         results_shape = (self.h5_main.shape[0], 1)
@@ -299,17 +307,17 @@ class PeakFinder(px.Process):
 # ---------
 # * The class appears to be large mainly because of comments that explain what each line of code is doing.
 # * Several functions of pycroscopy.Process such as __init__() and **compute()** were inherited from the
-# pycroscopy.Process class.
+#   pycroscopy.Process class.
 # * In simple cases such as this, we don't even have to implement a function to read the data from the dataset since
-# pycroscopy.Process automatically calculates how much of the data iss safe to load into memory. In this case, the
-# dataset is far smaller than the computer memory, so the entire dataset can be loaded and processed at once.
+#   pycroscopy.Process automatically calculates how much of the data iss safe to load into memory. In this case, the
+#   dataset is far smaller than the computer memory, so the entire dataset can be loaded and processed at once.
 # * In this example, we did not need any pre-processing or post-processing of results but those can be implemented too
-# if necessary
+#   if necessary.
 # * The majority of the code in this class would have to be written regardless of whether the intention is formalize the
-# data processing or not. In fact, we would argue that **more** code may need to be written than what is shown below if
-# one were **not** formalizing the data processing (data reading, parallel computing, memory management, etc.)
+#   data processing or not. In fact, we would argue that **more** code may need to be written than what is shown below
+#   if one were **not** formalizing the data processing (data reading, parallel computing, memory management, etc.)
 # * This is the simplest possible implementation of Process. Certain features such as checking for existing results and
-# resuming partial computations have not been shown in this example.
+#   resuming partial computations have not been shown in this example.
 #
 # Use the class
 # ==============
@@ -330,7 +338,6 @@ _ = wget.download(url, h5_path, bar=None)
 ########################################################################################################################
 # Lets open the file in an editable (r+) mode and look at the contents:
 
-
 h5_file = h5py.File(h5_path, mode='r+')
 print('File contents:\n')
 px.hdf_utils.print_tree(h5_file)
@@ -338,7 +345,6 @@ px.hdf_utils.print_tree(h5_file)
 ########################################################################################################################
 # The focus of this example is not on the data storage or formatting but rather on demonstrating our new Process class
 # so lets dive straight into the main dataset that requires analysis of the spectra:
-
 
 h5_chan_grp = h5_file['Measurement_000/Channel_000']
 
@@ -360,14 +366,12 @@ freq_vec = h5_main.get_spec_values('Frequency') * 1E-3
 # Note that the instantiation of the new PeakFinder Process class only requires that we supply the main dataset on which
 # the computation will be performed:
 
-
 fitter = PeakFinder(h5_main)
 
 ########################################################################################################################
 # test()
 # ------
 # As advised, lets test the PeakFinder on an example pixel:
-
 
 row_ind, col_ind = 103, 19
 pixel_ind = col_ind + row_ind * num_cols
@@ -377,7 +381,6 @@ amplitude = fitter.test(pixel_ind)
 
 ########################################################################################################################
 # Now, let's visualize the results of the test:
-
 
 spectra = h5_main[pixel_ind]
 
@@ -397,7 +400,6 @@ axis.set_title('PeakFinder applied to pixel\nat row: {}, col: {}'.format(row_ind
 # compute()
 # ---------
 # Now that we know that the PeakFitter appears to be performing as expected, we can apply the amplitude finding
-
 
 h5_results_grp = fitter.compute()
 print(h5_results_grp)
@@ -443,5 +445,6 @@ os.remove(h5_path)
 # -----------------
 # Please see the following pycroscopy classes to learn more about the advanced functionalities such as resuming
 # computations, checking of existing results, etc.:
-# * pycroscopy.prcessing.SignalFilter
+#
+# * pycroscopy.processing.SignalFilter
 # * pycroscopy.analysis.GIVBayesian
