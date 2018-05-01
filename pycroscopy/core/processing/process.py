@@ -381,9 +381,11 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=N
     else:
         if not isinstance(func_kwargs, dict):
             raise TypeError('Keyword arguments to the mapped function should be specified via a dictionary')
-
+    req_cores = cores
     cores = recommend_cpu_cores(data.shape[0], requested_cores=cores,
                                 lengthy_computation=lengthy_computation)
+
+    print('Starting computing on {} cores (requested {} cores)'.format(cores, req_cores))
 
     if cores > 1:
         values = [joblib.delayed(func)(x, *func_args, **func_kwargs) for x in data]

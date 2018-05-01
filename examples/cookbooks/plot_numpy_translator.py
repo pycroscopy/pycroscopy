@@ -123,12 +123,12 @@ data_file_path = 'STS.asc'
 # Step 1. Exploring the Raw Data File
 # ====================================
 #
-# Inherently, one may not know how to read these **.asc** files. One option is to try and read the file as a text file
+# Inherently, one may not know how to read these ``.asc`` files. One option is to try and read the file as a text file
 # one line at a time.
 #
-# It turns out that these .asc files are effectively the standard **ASCII** text files.
+# It turns out that these ``.asc`` files are effectively the standard ``ASCII`` text files.
 #
-# Here is how we tested to see if the **asc** files could be interpreted as text files. Below, we read just the first 10
+# Here is how we tested to see if the ``asc`` files could be interpreted as text files. Below, we read just the first 10
 # lines in the file
 
 with open(data_file_path, 'r') as file_handle:
@@ -140,9 +140,9 @@ with open(data_file_path, 'r') as file_handle:
 # =========================
 # Now that we know that these files are simple text files, we can manually go through the file to find out which lines
 # are important, at what lines the data starts etc.
-# Manual investigation of such .asc files revealed that these files are always formatted in the same way. Also, they
-# contain parameters in the first 403 lines and then contain data which is arranged as one pixel per row.
-# STS experiments result in 3 dimensional datasets (X, Y, current). In other words, a 1D array of current data (as a
+# Manual investigation of such ``.asc`` files revealed that these files are always formatted in the same way. Also, they
+# contain parameters in the first ``403`` lines and then contain data which is arranged as one pixel per row.
+# STS experiments result in 3 dimensional datasets ``(X, Y, current)``. In other words, a 1D array of current data (as a
 # function of excitation bias) is sampled at every location on a two dimensional grid of points on the sample.
 # By knowing where the parameters are located and how the data is structured, it is possible to extract the necessary
 # information from these files.
@@ -193,7 +193,7 @@ spectra_length = int(parm_dict['z-points'])
 ####################################################################################
 # Step 3.b Read the data
 # ========================
-# Data is present after the first `403` lines of parameters.
+# Data is present after the first ``403`` lines of parameters.
 
 # num_headers = len(string_lines) - num_pos
 num_headers = 403
@@ -226,7 +226,7 @@ units = 'nA'
 ####################################################################################
 # Step 4.b. Defining the Dimensions
 # ===================================
-# Position and spectroscopic dimensions need to defined using `Dimension` objects. Remember that the position and
+# Position and spectroscopic dimensions need to defined using ``Dimension`` objects. Remember that the position and
 # spectroscopic dimensions need to be specified in the correct order.
 
 pos_dims = [px.write_utils.Dimension('X', 'a. u.', parm_dict['x-pixels']),
@@ -254,7 +254,7 @@ h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
 #   `AscTranslator https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_.
 #   This custom translator packages the same code used above into functions that focus on the individual tasks such
 #   as extracting parameters, reading data, and writing to h5. The NumpyTranslator uses
-#   `pycroscopy.hdf_utils.write_main_dataset()` function underneath to write its data.
+#   ``pycroscopy.hdf_utils.write_main_dataset()`` function underneath to write its data.
 # * There are many benefits to writing such a formal Translator class instead of standalone scripts like this including:
 #
 #   * Unlike such a stand-alone script, a Translator class in the package can be used by everyone repeatedly

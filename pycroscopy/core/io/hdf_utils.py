@@ -22,7 +22,7 @@ from .dtype_utils import contains_integers, validate_dtype
 from ...__version__ import version as pycroscopy_version
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
-           'get_auxillary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
+           'get_auxiliary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
            'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor',
            'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
            'link_h5_obj_as_alias',
@@ -127,7 +127,7 @@ def get_all_main(parent, verbose=False):
     return main_list
 
 
-def get_auxillary_datasets(h5_object, aux_dset_name=None):
+def get_auxiliary_datasets(h5_object, aux_dset_name=None):
     """
     Returns auxiliary dataset objects associated with some DataSet through its attributes.
     Note - region references will be ignored.
@@ -595,7 +595,7 @@ def check_and_link_ancillary(h5_dset, anc_names, h5_main=None, anc_refs=None):
         elif isinstance(h5_obj_ref, h5py.Dataset):
             h5_dset.attrs[target_ref_name] = h5_obj_ref.ref
         elif h5_main is not None:
-            h5_anc = get_auxillary_datasets(h5_main, aux_dset_name=[target_ref_name])
+            h5_anc = get_auxiliary_datasets(h5_main, aux_dset_name=[target_ref_name])
             if len(h5_anc) == 1:
                 link_h5_obj_as_alias(h5_dset, h5_anc[0], target_ref_name)
         else:
@@ -931,11 +931,20 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
     Now we transpose the axes for both the position and spectroscopic dimensions
     so that they are in the same order as in the index array
     """
-    if not sort_dims:
-        swap_axes = np.append(pos_sort.size - 1 - pos_sort,
-                              spec_sort.size - spec_sort - 1 + len(pos_dims))
+
+    swap_axes = list()
+    if sort_dims:
+        for lab in pos_labs[pos_sort]:
+            swap_axes.append(np.argwhere(all_labels == lab).squeeze())
+        for lab in spec_labs[spec_sort]:
+            swap_axes.append(np.argwhere(all_labels == lab).squeeze())
     else:
-        swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_dims))
+        for lab in pos_labs:
+            swap_axes.append(np.argwhere(all_labels == lab).squeeze())
+        for lab in spec_labs:
+            swap_axes.append(np.argwhere(all_labels == lab).squeeze())
+
+    swap_axes = np.array(swap_axes)
 
     if verbose:
         print('\nAxes will permuted in this order:', swap_axes)
@@ -952,18 +961,7 @@ def reshape_to_n_dims(h5_main, h5_pos=None, h5_spec=None, get_labels=False, verb
         '''
         Get the labels in the proper order
         '''
-        if isinstance(h5_pos, h5py.Dataset):
-            pos_labs = get_attr(h5_pos, 'labels')
-        else:
-            pos_labs = np.array(['' for _ in pos_dims])
-        if isinstance(h5_spec, h5py.Dataset):
-            spec_labs = get_attr(h5_spec, 'labels')
-        else:
-            spec_labs = np.array(['' for _ in spec_dims])
-
-        ds_labels = np.hstack([pos_labs[pos_sort[::-1]], spec_labs[spec_sort[::-1]]])
-
-        results.append(ds_labels[swap_axes])
+        results.append(all_labels[swap_axes])
 
     return results
 

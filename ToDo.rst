@@ -13,18 +13,19 @@ v 0.60.0 goals
 Urgent
 ~~~~~~
 1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
-2. file dialog for Jupyter not working on Mac OS
-3. Chris - Address the remaining unit tests
-4. Rename get_auxillary_datasets() to get_auxiliary_datasets(). Update HDF read example
+2. Chris - Address the remaining unit tests
+3. Chris - test BE workflow on latest master (especially jupyter functions)
+4. Update conda and pip with latest master
+5. Update change-log with version numbers instead of pull numbers
 
 Important
 ~~~~~~~~~
 1. pycro data. Do slicing on ND dataset if available
-2. test - Handle complex and compound data in the machine learning classes.
-3. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
-4. unit tests for basic data science (Cluster, SVD, Decomposition)
-5. Swap out remaining usages of VirtualData + HDFWriter to hdf_utils (especially outside io.translators)
-6. Test all translators, image cleaning and to make sure they still work.
+2. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
+3. unit tests for basic data science (Cluster, SVD, Decomposition)
+4. Swap out remaining usages of VirtualData + HDFWriter to hdf_utils (especially outside io.translators)
+5. Test all translators, image cleaning and to make sure they still work.
+6. file dialog for Jupyter not working on Mac OS
 7. Address pending TODOs
 8. Address edge case - Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
 
@@ -59,6 +60,8 @@ Done
   * DONE - Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
   * DONE - Need explanation of what is where and why
   * DONE - comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
+
+14. DONE - Handle complex and compound data in the machine learning classes.
 
 v 0.60.1 goals
 --------------

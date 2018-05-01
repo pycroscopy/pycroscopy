@@ -40,9 +40,19 @@ Once the `conda-forge` channel has been enabled, `pycroscopy` can be installed w
 .. code:: bash
 
   conda install pycroscopy
+
+Installing a legacy version
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The latest version of pycroscopy (as of May 2018) has been thoroughly revamped and is likely to have caused some incompatibilities in your existing code.
+In order to go back to / install the last version of pycroscopy before this major revision, please use the following commands in a terminal:
+
+.. code:: bash
+
+  pip install pycroscopy==0.59.8
+
   
 Installing from a specific branch (advanced users **ONLY**)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here, we are installing pycroscopy from the latest development branch. Note that we do not recommend installing pycroscopy this way. 
 

@@ -27,11 +27,11 @@ except ImportError:
 # recommend_cpu_cores()
 # ---------------------
 # Time is of the essence and every developer wants to make the best use of all available cores in a CPU for massively
-# parallel computations. `recommend_cpu_cores()` is a popular function that looks at the number of parallel operations,
+# parallel computations. ``recommend_cpu_cores()`` is a popular function that looks at the number of parallel operations,
 # available CPU cores, duration of each computation to recommend the number of cores that should be used for any
 # computation. If the developer / user requests the use of N CPU cores, this function will validate this number against
 # the number of available cores and the nature (lengthy / quick) of each computation. Unless, a suggested number of
-# cores is specified, `recommend_cpu_cores()` will always recommend the usage of N-2 CPU cores, where N is the total
+# cores is specified, ``recommend_cpu_cores()`` will always recommend the usage of N-2 CPU cores, where N is the total
 # number of logical cores (Intel uses hyper-threading) on the CPU to avoid using up all computational resources and
 # preventing the computation from making the computer otherwise unusable until the computation is complete
 # Here, we demonstrate this function being used in a few use cases:
@@ -90,21 +90,21 @@ print('Available memory in this machine: {} GB'.format(px.io_utils.get_available
 # format_size()
 # --------------
 # One function that uses this functionality to print the size of files etc. is format_size(). While one can manually
-# print the available memory in gibibytes (see above), `format_size()` simplifies this substantially:
+# print the available memory in gibibytes (see above), ``format_size()`` simplifies this substantially:
 print('Available memory in this machine: {}'.format(px.io_utils.format_size(px.io_utils.get_available_memory())))
 
 ########################################################################################################################
 # format_time()
 # -------------
-# On the same lines, `format_time()` is another handy function that is great at formatting time and is often used in
+# On the same lines, ``format_time()`` is another handy function that is great at formatting time and is often used in
 # Process and Fitter to print the remaining time
 print('{} seconds = {}'.format(14497.34, px.io_utils.format_time(14497.34)))
 
 ########################################################################################################################
 # format_quantity()
 # -----------------
-# You can generate your own formatting function based using the generic function: `format_quantity()`.
-# For example, if `format_time()` were not available, we could get the same functionality via:
+# You can generate your own formatting function based using the generic function: ``format_quantity()``.
+# For example, if ``format_time()`` were not available, we could get the same functionality via:
 units = ['msec', 'sec', 'mins', 'hours']
 factors = [0.001, 1, 60, 3600]
 time_value = 14497.34

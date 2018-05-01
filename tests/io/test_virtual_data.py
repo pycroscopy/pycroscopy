@@ -40,7 +40,11 @@ class TestVirtualDataSet(unittest.TestCase):
         self.assertEqual(child, mg.children[0])
 
     def test_children_for_virtualgroup_illegal(self):
-        mg = VirtualGroup('test_group', children=np.arange(4))
+        if sys.version_info.major == 3:
+            with self.assertWarns(UserWarning):
+                mg = VirtualGroup('test_group', children=np.arange(4))
+        else:
+            mg = VirtualGroup('test_group', children=np.arange(4))
         self.assertEqual(len(mg.children), 0)
 
     def test_attrs_for_virtualgroup_legal(self):
@@ -239,8 +243,11 @@ class TestVirtualGroup(unittest.TestCase):
     def test_add_single_child_illegal_01(self):
         group_name = 'indexed_group_'
         group = VirtualGroup(group_name)
-        # with self.assertWarns('Children must be of type VirtualData. child ignored'):
-        group.add_children(np.arange(4))
+        if sys.version_info.major == 3:
+            with self.assertWarns(UserWarning):
+                group.add_children(np.arange(4))
+        else:
+            group.add_children(np.arange(4))
         self.assertEqual(len(group.children), 0)
 
     def test_add_children_legal_01(self):

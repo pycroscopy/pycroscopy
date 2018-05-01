@@ -1,13 +1,13 @@
 """
 ================================================================================
-Parallel Computing
+Speed up computations with parallel_compute()
 ================================================================================
 
 **Suhas Somnath, Chris R. Smith**
 
 9/8/2017
 
-**This document will demonstrate how `pycroscopy.parallel_compute()` can significantly speed up data processing by
+**This document will demonstrate how ``pycroscopy.parallel_compute()`` can significantly speed up data processing by
 using all available CPU cores in a computer**
 """
 ########################################################################################################################
@@ -21,12 +21,12 @@ using all available CPU cores in a computer**
 # prudent to make use of these unused cores whenever possible. Fortunately, there are a few python packages that
 # facilitate the efficient use of all CPU cores with minimal modifications to the existing code.
 #
-# **pycroscopy.parallel_compute()** is a very handy function that simplifies parallel computation significantly to a
-# **single function call** and will be discussed in this document.
+# ``pycroscopy.parallel_compute()`` is a very handy function that simplifies parallel computation significantly to a
+# ``single function call`` and will be discussed in this document.
 #
 # Example scientific problem
 # ---------------------------
-# For this example, we will be working with a Band Excitation Piezoresponse Force Microscopy (BE-PFM) imaging dataset
+# For this example, we will be working with a ``Band Excitation Piezoresponse Force Microscopy (BE-PFM)`` imaging dataset
 # acquired from advanced atomic force microscopes. In this dataset, a spectra was collected for each position in a two
 # dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
 # dimensional matrix in accordance with the pycroscopy data format.
@@ -37,7 +37,7 @@ using all available CPU cores in a computer**
 # faster than it would take a single core to compute the results. There is an important caveat to this statement and it
 # will be discussed at the end of this document.
 #
-# **Here, we will learn how to fit the thousands of spectra using all available cores on a computer.**
+# ``Here, we will learn how to fit the thousands of spectra using all available cores on a computer.``
 # Note, that this is applicable only for a single CPU. Please refer to another advanced example for multi-CPU computing.
 
 # Ensure python 3 compatibility:
@@ -122,6 +122,8 @@ print('\nThe main dataset:\n------------------------------------')
 print(h5_main)
 
 num_rows, num_cols = h5_main.pos_dim_sizes
+cores_vec = list()
+times_vec = list()
 
 ########################################################################################################################
 # The operation
@@ -130,14 +132,14 @@ num_rows, num_cols = h5_main.pos_dim_sizes
 # located in pycroscopy.analysis.guess_methods. For the purposes of this example, we do not be concerned with how this
 # function works. All we need to know is that this function takes 3 inputs:
 #
-# * **vector** - a 1D array containing the spectra at a single location
-# * **peak_widths** - something like [20, 50] that instructs the function to look for peaks that are 20-50 units wide.
+# * ``vector`` - a 1D array containing the spectra at a single location
+# * ``peak_widths`` - something like [20, 50] that instructs the function to look for peaks that are 20-50 units wide.
 #   The function will look for a peak with width of 20, then again for a peak of width - 21 and so on.
-# * **peak_step** - The number of steps within the possiple widths [20, 50], that the search must be performed
+# * ``peak_step`` - The number of steps within the possiple widths [20, 50], that the search must be performed
 #
 # The function has one output:
 #
-# * **peak_indices** - an array of the positions at which peaks were found.
+# * ``peak_indices`` - an array of the positions at which peaks were found.
 #
 # .. code-block:: python
 #
@@ -212,45 +214,44 @@ serial_results = list()
 t_0 = time.time()
 for ind, vector in enumerate(raw_data):
     serial_results.append(wavelet_peaks(vector, peak_widths=[20, 60], peak_step=30))
-print('Serial computation took', np.round(time.time()-t_0, 2), ' seconds')
+times_vec.append(time.time()-t_0)
+cores_vec.append(1)
+print('Serial computation took', np.round(times_vec[-1], 2), ' seconds')
 
 ########################################################################################################################
-# Parallel Computation
-# -------------------
+# pycroscopy.parallel_compute()
+# -----------------------------
 #
 # There are several libraries that can utilize multiple CPU cores to perform the same computation in parallel. Popular
-# examples are **Multiprocessing**, **Mutiprocess**, **Dask**, **Joblib** etc. Each of these has their own
-# strengths and weaknesses. An installation of **Anaconda** comes with **Multiprocessing** by default and could be
-# the example of choice. However, in our experience we found **Joblib** to offer the best balance of efficiency,
-# simplicity, portability, and ease of installation.
+# examples are ``Multiprocessing``, ``Mutiprocess``, ``Dask``, ``Joblib`` etc. Each of these has their own
+# strengths and weaknesses. Some of them have painful caveats such as the inability to perform the parallel computation
+# within a jupyter notebook. In order to lower the barrier to parallel computation, we have developed a very handy
+# function called ``pycroscopy.parallel_compute()`` that simplifies the process to a single function call.
 #
-# For illustrative purposes, we will only be demonstrating how the above serial computation can be made parallel using
-# **Joblib**. We only need two lines to perform the parallel computation. The first line sets up the computational
-# jobs while the second performs the computation.
+# It is a lot **more straightforward** to provide the arguments and keyword arguments of the function that needs to be
+# applied to the entire dataset. Furthermore, this function intelligently assigns the number of CPU cores for the
+# parallel computation based on the size of the dataset and the computational complexity of the unit computation.
+# For instance, it scales down the number of cores for small datasets if each computation is short. It also ensures that
+# 1-2 cores fewer than all available cores are used by default so that the user can continue using their computer for
+# other purposes while the computation runs.
 #
-# Note that the first argument to the function **MUST** be the data vector itself. The other arguments (parameters),
-# such as the frequency vector in this case, must come after the data argument. This approach allows the specification
-# of both required arguments and optional (keyword) arguments.
-#
-# Parallel computing has been made more accessible via the **parallel_compute()** function in **pycroscopy.process**.
-# The below parallel computation is reduced to a **single line** with this function.
+# Lets apply this ``parallel_compute`` to this problem:
 
 cpu_cores = 2
 kwargs = {'peak_widths': [20, 60], 'peak_step': 30}
 
 t_0 = time.time()
 
-# Set up the parallel computation using joblib.delayed
-values = [joblib.delayed(wavelet_peaks)(x, **kwargs) for x in raw_data]
 # Execute the parallel computation
-parallel_results = joblib.Parallel(n_jobs=cpu_cores)(values)
+parallel_results = px.parallel_compute(raw_data, wavelet_peaks, cores=cpu_cores, func_kwargs=kwargs)
 
-print('Parallel computation took', np.round(time.time()-t_0, 2), ' seconds')
+cores_vec.append(cpu_cores)
+times_vec.append(time.time()-t_0)
+print('Parallel computation with {} cores took {} seconds'.format(cpu_cores, np.round(times_vec[-1], 2)))
 
 ########################################################################################################################
 # Compare the results
 # -------------------
-#
 # By comparing the run-times for the two approaches, we see that the parallel computation is substantially faster than
 # the serial computation. Note that the numbers will differ between computers. Also, the computation was performed on
 # a relatively small dataset for illustrative purposes. The benefits of using such parallel computation will be far
@@ -264,19 +265,52 @@ print('Result from parallel computation: {}'.format(parallel_results[pixel_ind])
 ########################################################################################################################
 # Simplifying the function
 # --------------------------
-# Note that the **peak_widths** and **peak_step** arguments will not be changed from one pixel to another. It would be
+# Note that the ``peak_widths`` and ``peak_step`` arguments will not be changed from one pixel to another. It would be
 # great if we didn't have to keep track of these constant arguments. We can use a very handy python tool called
-# **partial()** to do just this. Below, all we are doing is creating a new function that always pases our prefered
-# values for **peak_widths** and **peak_step** arguments to wavelet_peaks. While it may seem like this is unimportant,
+# ``partial()`` to do just this. Below, all we are doing is creating a new function that always passes our preferred
+# values for ``peak_widths`` and ``peak_step`` arguments to wavelet_peaks. While it may seem like this is unimportant,
 # it is very convenient when setting up the parallel computing:
 
 find_peaks = partial(wavelet_peaks, peak_widths=[20, 60], peak_step=30)
 
 ########################################################################################################################
-# Let's try calling our simplified function, **find_peak()** to make sure that it results in the same peak index for the
+# Let's try calling our simplified function, ``find_peak()`` to make sure that it results in the same peak index for the
 # aforementioned chosen spectra:
 
 print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind])))
+
+########################################################################################################################
+# More cores!
+# -----------
+# Lets use ``find_peaks()`` instead of ``wavelet_peaks`` on the entire dataset but increase the number of cores to 3.
+# Note that we do not need to specify ``func_kwargs`` anymore. Also note that this is a very simple function and the
+# benefits of ``partial()`` will be greater for more complex problems.
+
+cpu_cores = 3
+
+t_0 = time.time()
+
+# Execute the parallel computation
+parallel_results = px.parallel_compute(raw_data, find_peaks, cores=cpu_cores)
+
+cores_vec.append(cpu_cores)
+times_vec.append(time.time()-t_0)
+print('Parallel computation with {} cores took {} seconds'.format(cpu_cores, np.round(times_vec[-1], 2)))
+
+########################################################################################################################
+# Scalability
+# -----------
+# Now lets see how the computational time relates to the number of cores.
+# Depending on your computer (and what was running on your computer along with this computation), you are likely to see
+# diminishing benefits of additional cores beyond 2 cores for this specific problem in the plot below. This is because
+# the dataset is relatively small and each peak-finding operation is relatively quick. The overhead of adding additional
+# cores quickly outweighs the speedup in distributing the work among multiple CPU cores.
+
+fig, axis = plt.subplots(figsize=(3.5, 3.5))
+axis.scatter(cores_vec, times_vec)
+axis.set_xlabel('CPU cores', fontsize=14)
+axis.set_ylabel('Compute time (sec)', fontsize=14)
+fig.tight_layout()
 
 ########################################################################################################################
 # Best practices for parallel computing
@@ -284,65 +318,19 @@ print('find_peaks found peaks at index: {}'.format(find_peaks(h5_main[pixel_ind]
 # While it may seem tempting to do everything in parallel, it is important to be aware of some of the trade-offs and
 # best-practices for parallel computing (multiple CPU cores) when compared to traditional serial computing (single
 # CPU core):
+#
 # * There is noticeable time overhead involved with setting up each parallel computing job. For very simple or small
-# computations, this overhead may outweigh the speed-up gained with using multiple cores.
+#   computations, this overhead may outweigh the speed-up gained with using multiple cores.
 # * Parallelizing computations that read and write to files at each iteration may be actually be noticeably *slower*
-# than serial computation since each core will compete with all other cores for rights to read and write to the file(s)
-# and these input/output operations are by far the slowest components of the computation. Instead, it makes sense to
-# read large amounts of data from the necessary files once, perform the computation, and then write to the files once
-# after all the computation is complete. In fact, this is what we automatically do in the **Fitter** and
-# **Process** classes in pycroscopy
+#   than serial computation since each core will compete with all other cores for rights to read and write to the file(s)
+#   and these input/output operations are by far the slowest components of the computation. Instead, it makes sense to
+#   read large amounts of data from the necessary files once, perform the computation, and then write to the files once
+#   after all the computation is complete. In fact, this is what we automatically do in the ``Fitter`` and
+#   ``Process`` classes in pycroscopy
 #
-# pycroscopy.parallel_compute()
-# -----------------------------
-# This is a handy function that simplifies the parallel computation even further to a **single** function call!
-# It is a lot **more straightforward** to provide the arguments and keyword arguments of the function that needs to be
-# applied to the entire dataset. Furthermore, this function intelligently assigns the number of CPU cores for the
-# parallel computation based on the size of the dataset and the computational complexity of the unit computation.
-# For instance, it scales down the number of cores for small datasets if each computation is short. It also ensures that
-# 1-2 cores fewer than all available cores are used by default so that the user can continue using their computer for
-# other purposes while the computation runs. We will see an example of how to use this function in the next section.
-#
-# Scalability
-# -------------
-# Lets see how the computation time decreases as the number of CPU cores is increased. This time lets use the find_peaks
-# function instead of wavelet_peaks. The benefit of **partial** will be clearly evident in the set up of the parallel
-# computation - we would not need to specify the keyword arguments (kwargs) at all! Note that this is a very simple
-# function and the benefits of **partial()** will be greater for more complex problems. Also note that we are using
-# pycroscopy.parallel_compute() instead of **joblib** as an illustration of its simplicity.
-
-
-def my_parallel_compute(data, func, cpu_cores):
-    t_0 = time.time()
-
-    # Execute the parallel computation
-    _ = px.parallel_compute(data, func, cores=cpu_cores)
-
-    # Return only the time difference
-    return time.time()-t_0
-
-
-print('Now we will test the speed up for different numbers of CPU cores.\nThis will take some time:')
-core_vec = np.arange(1, max(4, cpu_count())+1)
-time_vec = []
-for cpu_cores in core_vec:
-    time_vec.append(my_parallel_compute(raw_data, find_peaks, cpu_cores))
-
-########################################################################################################################
-# Depending on your computer (and what was running on your computer along with this computation), you are likely to see
-# diminishing benefits of additional cores beyond 2 cores for this specific problem in the plot below. This is because
-# the dataet is relatively small and each peak-finding operation is relatively quick. The overhead of adding additional
-# cores quickly outweighs the speedup in distributing the work among multiple CPU cores.
-
-fig, axis = plt.subplots(figsize=(3.5, 3.5))
-axis.scatter(core_vec, time_vec)
-axis.set_xlabel('CPU cores', fontsize=14)
-axis.set_ylabel('Compute time (sec)', fontsize=14)
-fig.tight_layout()
-
 ########################################################################################################################
 # Formalizing data processing and pycroscopy.Process
-# -----------------------------------------------
+# --------------------------------------------------
 # Data processing / analysis typically involves a few basic operations:
 #
 # 1. Reading data from file
@@ -351,7 +339,7 @@ fig.tight_layout()
 #
 # The Process class in pycroscopy has modularized these operations for simpler and faster development of standardized,
 # easy-to-debug code. In the case of this example, one would only need to write the wavelet_peaks() function along with
-# the appropriate data reading and data writing functions. Otherc common operations can be inherited from
+# the appropriate data reading and data writing functions. Other common operations can be inherited from
 # pycroscopy.Process.
 #
 # Please see another example on how to write a Process class for Pycroscopy based on this example

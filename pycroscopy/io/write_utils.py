@@ -107,7 +107,7 @@ def build_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, keep_d
 
 def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=None):
     """
-    Creates VirtualDatasets for the position OR spectroscopic indices and values of the data.
+    Creates VirtualDatasets for the position or spectroscopic indices and values of the data.
     Remember that the contents of the dataset can be changed if need be after the creation of the datasets.
     For example if one of the spectroscopic dimensions (e.g. - Bias) was sinusoidal and not linear, The specific
     dimension in the Spectroscopic_Values dataset can be manually overwritten.
