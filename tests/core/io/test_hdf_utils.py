@@ -35,11 +35,6 @@ class TestHDFUtils(unittest.TestCase):
             os.remove(file_path)
 
     @staticmethod
-    def __ensure_test_h5_file():
-        if not os.path.exists(test_h5_file_path):
-            TestHDFUtils.__create_test_h5_file()
-
-    @staticmethod
     def __write_safe_attrs(h5_object, attrs):
         for key, val in attrs.items():
             h5_object.attrs[key] = val
@@ -64,11 +59,8 @@ class TestHDFUtils(unittest.TestCase):
             h5_dset.attrs[reg_ref_name] = h5_dset.regionref[reg_ref_tuple]
         TestHDFUtils.__write_string_list_as_attr(h5_dset, {'labels': list(attrs.keys())})
 
-    @staticmethod
-    def __create_test_h5_file():
+    def setUp(self):
 
-        if os.path.exists(test_h5_file_path):
-            os.remove(test_h5_file_path)
         with h5py.File(test_h5_file_path) as h5_f:
 
             h5_raw_grp = h5_f.create_group('Raw_Measurement')
@@ -188,57 +180,50 @@ class TestHDFUtils(unittest.TestCase):
             for dset in [h5_pos_inds, h5_pos_vals, h5_results_2_spec_inds, h5_results_2_spec_vals]:
                 h5_results_2_main.attrs[dset.name.split('/')[-1]] = dset.ref
 
-    # start off with the most popular functions:
+    def tearDown(self):
+        os.remove(test_h5_file_path)
+
     def test_get_attr_illegal_01(self):
-        self.__ensure_test_h5_file()
         with self.assertRaises(TypeError):
             hdf_utils.get_attr(np.arange(3), 'units')
 
     def test_get_attr_illegal_02(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(TypeError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], 14)
 
     def test_get_attr_illegal_03(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(TypeError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], ['quantity', 'units'])
 
     def test_get_region_illegal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(KeyError):
                 hdf_utils.get_region(h5_f['/Raw_Measurement/source_main'], 'non_existent')
 
     def test_get_region_legal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_source = h5_f['/Raw_Measurement/source_main']
             returned = hdf_utils.get_region(h5_source, 'even_rows')
             self.assertTrue(np.all(returned == h5_source[range(0, h5_source.shape[0], 2)]))
 
     def test_get_attr_illegal_04(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(KeyError):
                 hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], 'non_existent')
 
     def test_get_attr_legal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             returned = hdf_utils.get_attr(h5_f['/Raw_Measurement/source_main'], 'units')
             self.assertEqual(returned, 'A')
 
     def test_get_attr_legal_02(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             returned = hdf_utils.get_attr(h5_f['/Raw_Measurement/Position_Indices'], 'labels')
             self.assertTrue(np.all(returned == ['X', 'Y']))
 
     def test_get_attr_legal_03(self):
-        self.__ensure_test_h5_file()
         attrs = {'att_1': 'string_val', 'att_2': 1.2345,
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
@@ -247,7 +232,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(hdf_utils.get_attr(h5_group, key) == expected_value))
 
     def test_get_attributes_01(self):
-        self.__ensure_test_h5_file()
         attrs = {'att_1': 'string_val', 'att_2': 1.2345,
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         sub_attrs = ['att_1', 'att_4', 'att_3']
@@ -259,7 +243,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(returned_attrs[key] == attrs[key]))
 
     def test_get_attributes_all(self):
-        self.__ensure_test_h5_file()
         attrs = {'att_1': 'string_val', 'att_2': 1.2345,
                  'att_3': [1, 2, 3, 4], 'att_4': ['str_1', 'str_2', 'str_3']}
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
@@ -270,7 +253,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(returned_attrs[key] == attrs[key]))
 
     def test_get_attributes_illegal(self):
-        self.__ensure_test_h5_file()
         sub_attrs = ['att_1', 'att_4', 'does_not_exist']
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement/source_main-Fitter_000']
@@ -278,7 +260,6 @@ class TestHDFUtils(unittest.TestCase):
                 _ = hdf_utils.get_attributes(h5_group, sub_attrs)
 
     def test_get_auxillary_datasets_single(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos = h5_f['/Raw_Measurement/Position_Indices']
@@ -286,7 +267,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(ret_val, h5_pos)
 
     def test_get_auxillary_datasets_single(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos = h5_f['/Raw_Measurement/Position_Indices']
@@ -294,7 +274,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(ret_val, h5_pos)
 
     def test_get_auxillary_datasets_multiple(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             h5_pos_inds = h5_f['/Raw_Measurement/Position_Indices']
@@ -304,7 +283,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(ret_val), set([h5_pos_inds, h5_pos_vals]))
 
     def test_get_auxillary_datasets_all(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             expected = [h5_f['/Raw_Measurement/Position_Indices'],
@@ -315,26 +293,22 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(expected), set(ret_val))
 
     def test_get_auxillary_datasets_illegal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             with self.assertRaises(KeyError):
                 _ = hdf_utils.get_auxiliary_datasets(h5_main, aux_dset_name='Does_Not_Exist')
 
     def test_get_data_descriptor_main(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             self.assertEqual(hdf_utils.get_data_descriptor(h5_main), 'Current (A)')
 
     def test_get_data_descriptor_main(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_pos = h5_f['/Raw_Measurement/Ancillary']
             self.assertEqual(hdf_utils.get_data_descriptor(h5_pos), 'unknown quantity (unknown units)')
 
     def test_get_dimensionality_legal_no_sort(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -346,7 +320,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(exp_shape == hdf_utils.get_dimensionality(h5_dset)))
 
     def test_get_dimensionality_legal_w_sort(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -361,7 +334,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(exp_shape == hdf_utils.get_dimensionality(h5_dset, index_sort=s_oder)))
 
     def test_get_formatted_labels_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -371,7 +343,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(exp_labs == hdf_utils.get_formatted_labels(h5_dset)))
 
     def test_get_formatted_labels_illegal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Ancillary'],
                         h5_f['/Raw_Measurement/source_main']]  # This will have labels and units but of different sizes
@@ -380,7 +351,6 @@ class TestHDFUtils(unittest.TestCase):
                     _ = hdf_utils.get_formatted_labels(h5_dset)
 
     def test_get_group_refs_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_refs = [h5_f['/Raw_Measurement/Ancillary'],
                        h5_f['/Raw_Measurement/source_main-Fitter_000'],
@@ -397,7 +367,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertTrue(ret_vals == expected_objs)
 
     def test_get_group_refs_failure(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_refs = [h5_f['/Raw_Measurement/Ancillary'],
                        h5_f,
@@ -411,7 +380,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(hdf_utils.get_group_refs(group_prefix, h5_refs) == [])
 
     def test_get_h5_obj_refs_legal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_obj_refs = [h5_f,
                               4.123,
@@ -431,7 +399,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(chosen_objs), set(returned_h5_objs))
 
     def test_get_h5_obj_refs_same_name(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_obj_refs = [h5_f['/Raw_Measurement/source_main-Fitter_001/Spectroscopic_Indices'],
                            h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -446,7 +413,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(expected_objs), set(returned_h5_objs))
 
     def test_check_is_main_legal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             expected_dsets = [h5_f['/Raw_Measurement/source_main'],
                               h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
@@ -455,7 +421,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(hdf_utils.check_if_main(dset))
 
     def test_check_is_main_illegal_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             not_main_dsets = [h5_f,
                               4.123,
@@ -468,7 +433,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertFalse(hdf_utils.check_if_main(dset))
 
     def test_get_sort_order_simple(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
                         h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -478,7 +442,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(exp_order == hdf_utils.get_sort_order(h5_dset)))
 
     def test_get_sort_order_reversed(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_dsets = [np.flipud(h5_f['/Raw_Measurement/Spectroscopic_Indices']),
                         h5_f['/Raw_Measurement/source_main-Fitter_000/Spectroscopic_Indices'],
@@ -488,7 +451,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.all(exp_order == hdf_utils.get_sort_order(h5_dset)))
 
     def test_get_source_dataset_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_groups = [h5_f['/Raw_Measurement/source_main-Fitter_000'],
                         h5_f['/Raw_Measurement/source_main-Fitter_001']]
@@ -497,13 +459,11 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertEqual(h5_main, hdf_utils.get_source_dataset(h5_grp))
 
     def test_get_source_dataset_illegal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             with self.assertRaises(ValueError):
                 _ = hdf_utils.get_source_dataset(h5_f['/Raw_Measurement/Misc'])
 
     def test_get_unit_values_source_spec_all(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
@@ -516,7 +476,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, ret_val[key]))
 
     def test_get_unit_values_source_spec_all_explicit(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
@@ -529,7 +488,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, ret_val[key]))
 
     def test_get_unit_values_illegal_key(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
@@ -537,7 +495,6 @@ class TestHDFUtils(unittest.TestCase):
                 _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Does not exist'])
 
     def test_get_unit_values_illegal_dset(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Ancillary']
@@ -545,7 +502,6 @@ class TestHDFUtils(unittest.TestCase):
                 _ = hdf_utils.get_unit_values(h5_inds, h5_vals, dim_names=['Cycle', 'Bias'])
 
     def test_get_unit_values_source_spec_single(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Spectroscopic_Indices']
             h5_vals = h5_f['/Raw_Measurement/Spectroscopic_Values']
@@ -557,7 +513,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, ret_val[key]))
 
     def test_get_unit_values_source_pos_all(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Position_Indices']
             h5_vals = h5_f['/Raw_Measurement/Position_Values']
@@ -571,7 +526,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, ret_val[key]))
 
     def test_get_unit_values_source_pos_single(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_inds = h5_f['/Raw_Measurement/Position_Indices']
             h5_vals = h5_f['/Raw_Measurement/Position_Values']
@@ -583,7 +537,6 @@ class TestHDFUtils(unittest.TestCase):
                 self.assertTrue(np.allclose(exp, ret_val[key]))
 
     def test_find_dataset_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement/']
             expected_dsets = [h5_f['/Raw_Measurement/Spectroscopic_Indices'],
@@ -593,14 +546,12 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(ret_val), set(expected_dsets))
 
     def test_find_dataset_illegal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement/']
             ret_val = hdf_utils.find_dataset(h5_group, 'Does_Not_Exist')
             self.assertEqual(len(ret_val), 0)
 
     def test_find_results_groups_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             expected_groups = [h5_f['/Raw_Measurement/source_main-Fitter_000'],
@@ -609,34 +560,29 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(set(ret_val), set(expected_groups))
 
     def test_find_results_groups_illegal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             ret_val = hdf_utils.find_results_groups(h5_main, 'Blah')
             self.assertEqual(len(ret_val), 0)
 
     def test_check_for_matching_attrs_dset_no_attrs(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             self.assertTrue(hdf_utils.check_for_matching_attrs(h5_main, new_parms=None))
 
     def test_check_for_matching_attrs_dset_matching_attrs(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'units': 'A', 'quantity':'Current'}
             self.assertTrue(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_dset_one_mismatched_attrs(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'units': 'A', 'blah': 'meh'}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_grp(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_1': 'string_val', 'att_2': 1.2345,
@@ -644,35 +590,30 @@ class TestHDFUtils(unittest.TestCase):
             self.assertTrue(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_grp_mismatched_types_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_4': 'string_val'}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_grp_mismatched_types_02(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_1': ['str_1', 'str_2', 'str_3']}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_grp_mismatched_types_03(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_4': [1, 4.234, 'str_3']}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_matching_attrs_grp_mismatched_types_04(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main-Fitter_000']
             attrs = {'att_4': [1, 4.234, 45]}
             self.assertFalse(hdf_utils.check_for_matching_attrs(h5_main, new_parms=attrs))
 
     def test_check_for_old_exact_match(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'att_1': 'string_val', 'att_2': 1.2345,
@@ -681,7 +622,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_000'])
 
     def test_check_for_old_subset_but_match(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'att_2': 1.2345,
@@ -690,7 +630,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_000'])
 
     def test_check_for_old_exact_match_02(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'att_1': 'other_string_val', 'att_2': 5.4321,
@@ -699,7 +638,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(h5_ret_grp, h5_f['/Raw_Measurement/source_main-Fitter_001'])
 
     def test_check_for_old_fail_01(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'att_1': [4, 1, 3], 'att_2': ['s', 'str_2', 'str_3'],
@@ -709,7 +647,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertEqual(len(ret_val), 0)
 
     def test_check_for_old_fail_02(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             attrs = {'att_x': [4, 1, 3], 'att_z': ['s', 'str_2', 'str_3'],
@@ -888,7 +825,6 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_reshape_to_n_dims_h5_no_sort_reqd(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             num_rows = 3
@@ -909,7 +845,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertTrue(np.allclose(expected_n_dim, n_dim))
 
     def test_reshape_to_n_dims_h5_not_main_dset(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/Ancillary']
             h5_pos = h5_f['/Raw_Measurement/Position_Indices']
@@ -1164,7 +1099,6 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_get_all_main_legal(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             expected_dsets = [h5_f['/Raw_Measurement/source_main'],
                               h5_f['/Raw_Measurement/source_main-Fitter_000/results_main'],
@@ -1173,7 +1107,7 @@ class TestHDFUtils(unittest.TestCase):
             # self.assertEqual(set(main_dsets), set(expected_dsets))
             self.assertEqual(len(main_dsets), len(expected_dsets))
             self.assertTrue(np.all([x.name == y.name for x, y in zip(main_dsets, expected_dsets)]))
-    
+
     def __validate_aux_dset_pair(self, h5_group, h5_inds, h5_vals, dim_names, dim_units, inds_matrix,
                                  vals_matrix=None, base_name=None, h5_main=None, is_spectral=True):
         if vals_matrix is None:
@@ -1306,14 +1240,12 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_assign_group_index_existing(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
             ret_val = hdf_utils.assign_group_index(h5_group, 'source_main-Fitter')
             self.assertEqual(ret_val, 'source_main-Fitter_002')
 
     def test_assign_group_index_new(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
             ret_val = hdf_utils.assign_group_index(h5_group, 'blah_')
@@ -1358,7 +1290,6 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_is_editable_h5_read_only(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
             h5_main = h5_f['/Raw_Measurement/Ancillary']
@@ -1367,7 +1298,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertFalse(hdf_utils.is_editable_h5(h5_main))
 
     def test_is_editable_h5_r_plus(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r+') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
             h5_main = h5_f['/Raw_Measurement/Ancillary']
@@ -1393,7 +1323,6 @@ class TestHDFUtils(unittest.TestCase):
             _ = hdf_utils.is_editable_h5(np.arange(4))
 
         # closed file
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_group = h5_f['/Raw_Measurement']
 
@@ -1764,7 +1693,6 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(file_path)
 
     def test_write_reduced_spec_dsets_2d_to_1d(self):
-        self.__ensure_test_h5_file()
         duplicate_path = 'copy_test_hdf_utils.h5'
         self.__delete_existing_file(duplicate_path)
         shutil.copy(test_h5_file_path, duplicate_path)
@@ -1801,7 +1729,6 @@ class TestHDFUtils(unittest.TestCase):
         os.remove(duplicate_path)
 
     def test_get_indices_for_region_ref_corners(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             reg_ref = hdf_utils.get_attr(h5_main, 'even_rows')
@@ -1812,7 +1739,6 @@ class TestHDFUtils(unittest.TestCase):
             self.assertTrue(np.allclose(ret_val, expected_corners))
 
     def test_get_indices_for_region_ref_slices(self):
-        self.__ensure_test_h5_file()
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             h5_main = h5_f['/Raw_Measurement/source_main']
             reg_ref = hdf_utils.get_attr(h5_main, 'even_rows')
