@@ -439,7 +439,7 @@ print(h5_myst_dset == h5_raw)
 # ----------------------
 # Let us first start off with creation of a HDF5 Group that will contain the results. If you recall, groups that contain
 # the results of some processing / analysis on a source dataset are named as ``Source_Dataset_name-Process_Name_00x``
-# where ```` the index of the group. The ``create_results_group()`` function makes it very easy to create a group with such
+# where the index of the group. The ``create_results_group()`` function makes it very easy to create a group with such
 # nomenclature and indexing:
 
 h5_results_group_1 = px.hdf_utils.create_results_group(h5_raw, 'Normalization')

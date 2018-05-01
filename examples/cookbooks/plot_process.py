@@ -21,7 +21,7 @@ Formalizing Data Processing
 #
 # However, more often than not, nearly all researchers have found that one or more of these assumptions fail and a lot
 # of time is spent on fixing bugs and generalizing / formalizing code such that it can be shared or reused. Moreover, we
-#  live in an era of open science where the scientific community and an ever-increasing number of scientific journals
+# live in an era of open science where the scientific community and an ever-increasing number of scientific journals
 # are moving towards a paradigm where the data and code need to be made available with journal papers. Therefore, in the
 # interest of saving time, energy, and reputation (you do not want to show ugly code / data. Instead you want to be the
 # paragon of clean intelligible data and code), it makes a lot more sense to formalize (parts of) one's data analysis
@@ -186,8 +186,8 @@ except ImportError:
 #
 # * write the results into the HDF5 dataset
 # * Set the ``last_pixel`` attribute to the value of the ``end_pos`` internal variable to indicate that pixels upto
-# ``end_pos`` were successfully processed. Should the computation be interrupted after this point, we could resume from
-# ``end_pos`` instead of starting from ``0`` again.
+#   ``end_pos`` were successfully processed. Should the computation be interrupted after this point, we could resume
+#   from ``end_pos`` instead of starting from ``0`` again.
 # * update the ``start_pos`` internal variable to guide compute() to process the next batch of positions / pixels
 
 

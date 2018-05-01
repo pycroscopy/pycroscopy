@@ -123,12 +123,12 @@ data_file_path = 'STS.asc'
 # Step 1. Exploring the Raw Data File
 # ====================================
 #
-# Inherently, one may not know how to read these **.asc** files. One option is to try and read the file as a text file
+# Inherently, one may not know how to read these ``.asc`` files. One option is to try and read the file as a text file
 # one line at a time.
 #
-# It turns out that these .asc files are effectively the standard **ASCII** text files.
+# It turns out that these ``.asc`` files are effectively the standard ``ASCII`` text files.
 #
-# Here is how we tested to see if the **asc** files could be interpreted as text files. Below, we read just the first 10
+# Here is how we tested to see if the ``asc`` files could be interpreted as text files. Below, we read just the first 10
 # lines in the file
 
 with open(data_file_path, 'r') as file_handle:
@@ -140,9 +140,9 @@ with open(data_file_path, 'r') as file_handle:
 # =========================
 # Now that we know that these files are simple text files, we can manually go through the file to find out which lines
 # are important, at what lines the data starts etc.
-# Manual investigation of such .asc files revealed that these files are always formatted in the same way. Also, they
-# contain parameters in the first 403 lines and then contain data which is arranged as one pixel per row.
-# STS experiments result in 3 dimensional datasets (X, Y, current). In other words, a 1D array of current data (as a
+# Manual investigation of such ``.asc`` files revealed that these files are always formatted in the same way. Also, they
+# contain parameters in the first ``403`` lines and then contain data which is arranged as one pixel per row.
+# STS experiments result in 3 dimensional datasets ``(X, Y, current)``. In other words, a 1D array of current data (as a
 # function of excitation bias) is sampled at every location on a two dimensional grid of points on the sample.
 # By knowing where the parameters are located and how the data is structured, it is possible to extract the necessary
 # information from these files.
