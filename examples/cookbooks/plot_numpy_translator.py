@@ -251,7 +251,7 @@ h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
 # * Steps 1-3 would be performed anyway in order to begin data analysis
 # * The actual pycroscopy translation step are reduced to just 3-4 lines in step 4.
 # * A modular / formal version of this translator has been implemented as a class in pycroscopy as the
-#   `AscTranslator https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_.
+#   `AscTranslator <https://github.com/pycroscopy/pycroscopy/blob/master/pycroscopy/io/translators/omicron_asc.py>`_.
 #   This custom translator packages the same code used above into functions that focus on the individual tasks such
 #   as extracting parameters, reading data, and writing to h5. The NumpyTranslator uses
 #   ``pycroscopy.hdf_utils.write_main_dataset()`` function underneath to write its data.

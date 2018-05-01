@@ -306,7 +306,7 @@ class PeakFinder(px.Process):
 # Comments
 # ---------
 # * The class appears to be large mainly because of comments that explain what each line of code is doing.
-# * Several functions of pycroscopy.Process such as __init__() and ``compute()`` were inherited from the
+# * Several functions of pycroscopy.Process such as ``__init__()`` and ``compute()`` were inherited from the
 #   pycroscopy.Process class.
 # * In simple cases such as this, we don't even have to implement a function to read the data from the dataset since
 #   pycroscopy.Process automatically calculates how much of the data iss safe to load into memory. In this case, the
@@ -314,7 +314,7 @@ class PeakFinder(px.Process):
 # * In this example, we did not need any pre-processing or post-processing of results but those can be implemented too
 #   if necessary.
 # * The majority of the code in this class would have to be written regardless of whether the intention is formalize the
-#   data processing or not. In fact, we would argue that ``more** code may need to be written than what is shown below
+#   data processing or not. In fact, we would argue that **more** code may need to be written than what is shown below
 #   if one were **not** formalizing the data processing (data reading, parallel computing, memory management, etc.)
 # * This is the simplest possible implementation of Process. Certain features such as checking for existing results and
 #   resuming partial computations have not been shown in this example.
@@ -363,15 +363,15 @@ freq_vec = h5_main.get_spec_values('Frequency') * 1E-3
 #
 # Instantiation
 # -------------
-# Note that the instantiation of the new PeakFinder Process class only requires that we supply the main dataset on which
-# the computation will be performed:
+# Note that the instantiation of the new ``PeakFinder`` Process class only requires that we supply the main dataset on
+# which the computation will be performed:
 
 fitter = PeakFinder(h5_main)
 
 ########################################################################################################################
 # test()
 # ------
-# As advised, lets test the PeakFinder on an example pixel:
+# As advised, lets test the ``PeakFinder`` on an example pixel:
 
 row_ind, col_ind = 103, 19
 pixel_ind = col_ind + row_ind * num_cols
@@ -393,26 +393,26 @@ axis.set_ylim([0, 1.1 * np.max(np.abs(spectra))])
 axis.set_title('PeakFinder applied to pixel\nat row: {}, col: {}'.format(row_ind, col_ind), fontsize=16);
 
 ########################################################################################################################
-# If we weren't happy with the results, we could tweak some parameters when initializing the PeakFinder object and try
+# If we weren't happy with the results, we could tweak some parameters when initializing the ``PeakFinder`` object and try
 # again. However, for the sake of simplicity, we don't have any parameters we can / want to adjust in this case. So,
 # lets proceed.
 #
 # compute()
 # ---------
-# Now that we know that the PeakFitter appears to be performing as expected, we can apply the amplitude finding
+# Now that we know that the ``PeakFinder`` appears to be performing as expected, we can apply the amplitude finding
 
 h5_results_grp = fitter.compute()
 print(h5_results_grp)
 
 ########################################################################################################################
-# Lets take a look again at the file contents. We should be seeing a new group called Raw_Data-Peak_Finding_000 and
-# three datasets within the group. Among the datasets is 'Peak_Response' that contains the peak amplitudes we are
+# Lets take a look again at the file contents. We should be seeing a new HDF5 group called ``Raw_Data-Peak_Finding_000`` and
+# three datasets within the group. Among the datasets is ``Peak_Response`` that contains the peak amplitudes we are
 # interested in.
 
 px.hdf_utils.print_tree(h5_file)
 
 ########################################################################################################################
-# Lets look at this 'Peak_Response' dataset:
+# Lets look at this ``Peak_Response`` dataset:
 
 h5_peak_amps = px.PycroDataset(h5_results_grp['Peak_Response'])
 print(h5_peak_amps)
@@ -420,7 +420,7 @@ print(h5_peak_amps)
 ########################################################################################################################
 # Visualize
 # ---------
-# Since 'Peak_Response' is a PycroDataset, we could use its ability to provide its own N dimensional form:
+# Since ``Peak_Response`` is a PycroDataset, we could use its ability to provide its own N dimensional form:
 
 amplitudes = np.squeeze(h5_peak_amps.get_n_dim_form())
 print('N dimensional shape of Peak_Response: {}'.format(amplitudes.shape))
