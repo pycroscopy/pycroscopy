@@ -1,24 +1,49 @@
 What's New
 ==========
 
-`Apr 28 2018: <https://github.com/pycroscopy/pycroscopy/pull/143>`_
--------------------------------------------------------------------
+`Apr 29 2018 2: <https://github.com/pycroscopy/pycroscopy/pull/148>`_
+------------------------------------------------------------------------
+* Centralized verification of slice dictionary in ``pycroscopy.PycroDataset``
+* The ``slice_dict`` kwarg in ``pycroscopy.PycroDataset.slice()`` now the first required argument
+* Lots of minor formatting changes to examples.
+* Removed jupyter notebooks from which the examples were generated.
+
+`Apr 29 2018 1: <https://github.com/pycroscopy/pycroscopy/pull/147>`_
+------------------------------------------------------------------------
+* Fixed errors in broken examples
+* Replaced example BE datasets with ones where the central datasets now have ``quantity`` and ``units`` attributes to make them ``Main datasets``
+* Replaced example STS dataset with a zip file which will download a lot faster for examples. Corrected the example on NumpyTranslator
+
+`Apr 28 2018 2: <https://github.com/pycroscopy/pycroscopy/pull/146>`_
+-----------------------------------------------------------------------
+* Fixed unit tests for python 2. assertWarns() only applied to python 3 now
+* Added ``from future`` import statement to all modules in ``pycroscopy.core``
+
+`Apr 28 2018 1: <https://github.com/pycroscopy/pycroscopy/pull/143>`_
+-----------------------------------------------------------------------
 **(Massive) merge of (skunkworks) branch ``unity_dev`` into ``master``**
 
 * Added unit tests for all (feasible) modules in ``pycroscopy.core``
-* Added examples for every single function or class in ``pycroscopy.core``
+* Added examples for every single function or class in ``pycroscopy.core`` (**10** cookbooks in total!)
+* Added a primer to h5py and HDF5
 * Added document with instructions on converting unit tests to examples of functions.
-* Added document with links to external tutorials
+* Added web page with links to external tutorials
+* Added web page describing contents of package, organization,
+* Added web page with FAQs
+* Moved a simplified (non ptychography version of) ImageTranslator to ``pycroscopy.core``
 * Package reconfigured to use ``pytests`` instead of ``Nose``
 * Converted last few ``assert`` statements into descriptive ``Errors``
-* Legacy HDF writing classes and functions now **deprecated**:
+* Legacy HDF writing classes and functions **deprecated now** and will be removed in a future release:
 
     * ``hdf_writer`` and ``virtual_data`` modules moved out of ``pycroscopy.core.io`` and back into ``pycroscopy.io``.
     * Moved functions in ``pycroscopy.write_utils`` using above deprecated classes into ``pycroscopy.io.write_utils``. These functions are also deprecated
     * ``pycroscopy.translators.BEODFTranslator``, ``pycroscopy.analysis.BESHOFitter``, and ``pycroscopy.BELoopFitter``,
-      ``pycroscopy.processing.SignalFilter``, ``pycroscopy.analysis.GIVBayesian``, ``pycroscopy.processing.gmode_utils``, etc.
+      ``pycroscopy.processing.SignalFilter``, ``pycroscopy.translators.GIVTranslator``, ``pycroscopy.analysis.GIVBayesian``, ``pycroscopy.processing.gmode_utils``, etc.
       now do **not** use deprecated classes as proof that even the most complex classes can easily be transitioned to using
       functions in ``pycroscopy.core.io.hdf_utils`` and ``pycroscopy.core.io.write_utils``
+    * Unit tests for modules in **pycroscopy.core.io** rewritten to not use deprecated functions or classes.
+    * Deprecated classes only being used in translators, two analyses modules and two process modules
+    * Removed old examples, especially on deprecated classes
 * Upgrades to ``pycroscopy.Process``:
 
     * ``pycroscopy.Process`` now has a new function - ``test()`` that allows much easier in-place testing of processes before applying to the entire dataset
@@ -29,7 +54,7 @@ What's New
 * More robust ``pycroscopy.gmode_utils`` functions
 * Updates to ``pycroscopy.plot_utils``:
 
-    * ``plot_complex_loop_stack`` merged into ``plot_complex_spectra()
+    * ``plot_complex_loop_stack`` merged into ``plot_complex_spectra()``
     * new function that provides best row / column configuration for (identical) subplots: ``get_plot_grid_size()``
     * moved clustering related utilities into ``pycroscopy.viz.cluster_utils`` <-- significantly revised many functions in there
     * ``plot_map_stack()`` accepts x, y labels. ``plot_map()`` accepts X and Y vectors instead of sizes for more granular control
@@ -40,7 +65,20 @@ What's New
     * ``pycroscopy.write_utils.AncillaryDescriptor`` and ``pycroscopy.jupyter_utils.VizDimension`` merged and significantly simplified to ``pycroscopy.write_utils.Dimension``
     * Swapped all usages of ``AncillaryDescriptor`` with ``Dimension`` in the entire package
     * More robust handling of attributes with numpy strings as values
-    * Added new functions to simplify building of matrices for ancillary datasets
+    * Added new functions to simplify building of matrices for ancillary datasets - ``build_ind_val_matrices()``
+
+* Updates to ``pycroscopy.hdf_utils``:
+
+    * Functions updated to using the new ``Dimension`` objects
+    * Added a few new functions such as ``write_book_keeping_attrs()``, ``create_indexed_group()``, ``create_results_group()``
+    * ``write_main_dataset()`` can now write empty datasets, use different prefixes for ancillary dataset names, etc.
+    * Centralized the writing of book-keeping attributes to ``write_book_keeping_attrs()``
+    * generalized certain functions such as ``copy_attributes``, ``write_simple_attributes()`` so that they can be applied to any HDF5 object
+    * ``write_main_dataset()`` and ``create_empty_dataset()`` now validate the ``dtype`` correctly
+    * ``print_tree()`` now prints cleaner versions of the tree, only ``Main datasets`` if requested.
+    * ``write_book_keeping_attrs()`` now writes the operating system version and pycroscopy version in addition to the timestamp and machine ID
+    * Region references functions such as ``copy_region_refs()`` now more robust
+* bug fixes to BE translation, visualization, plotting
 
 
 `Mar 27 2018: <https://github.com/pycroscopy/pycroscopy/pull/138>`_
