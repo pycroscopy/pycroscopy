@@ -8,24 +8,50 @@ Pycroscopy philosophy
 
 What is pycroscopy and how is it different from python?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-`Python <https://www.python.org>`_ is an (interpreted) programming langauge similar to R, Java, C, C++, Fortran etc. `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html#what>`_ is an addon module to python that provides it the ability to analyze scientific imaging / microscopy data. As an (oversimplified) analogy, think of python as Windows or Mac OS and pycroscopy as Firefox or Chrome or Safari. 
+`Python <https://www.python.org>`_ is an (interpreted) programming langauge similar to R, Java, C, C++, Fortran etc. `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html#what>`_ is an addon module to python that provides it the ability to analyze scientific data (especially imaging data). As an (oversimplified) analogy, think of python as Windows or Mac OS and pycroscopy as Firefox or Chrome or Safari.
 
 Is pycroscopy only for the scientific imaging / microscopy communities? 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Not at all. We have ensured that the basic data and file formatting paradigm is general enough that it can be extended to any other scientific domain so long as each experiment involves N identical measurements of S values. Our data and file format can easily be extended to neutron science, nuclear sciences, etc. Note that one of the major strengths of pycroscopy is its ability to handle large, multi-dimensional / hyper spectral data like no other software can. Furthermore, some of our scientific analysis algorithms such as curve-fitting for spectra, image denoising can easily find applications in scientific domains beyond imaging and microscopy.
+**Not at all**. We have ensured that the basic data and file formatting paradigm is general enough that it can be extended to any other scientific domain so long as each experiment involves ``N`` identical measurements of ``S`` values.
+
+Note that one of the major strengths of pycroscopy is that it can be **science- and instrument-agnostic**. For example, some of our scientific analysis algorithms such as curve-fitting for spectra, image denoising are written in a general enough manner that they can easily find applications in scientific domains beyond imaging and microscopy.
+
+Our data and file format as well as programming framework can easily be extended to or adopted by other scientific domains such as neutron science, nuclear sciences, etc.
 
 Who uses pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~
-`The Institute for Functional Imaging of Materials (IFIM) <http://ifim.ornl.gov>`_ at `Oak Ridge National Laboratory <www.ornl.gov>`_ uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques. There are several research groups in universities and national labs including University of Washington, and Idaho National Laboratory, who are beginning to use this package for their research.
+* `The Institute for Functional Imaging of Materials (IFIM) <http://ifim.ornl.gov>`_ at `Oak Ridge National Laboratory <www.ornl.gov>`_ uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques.
+* There are several research groups in universities and national labs including University of Washington, and Idaho National Laboratory, who are beginning to use this package for their research.
 
 How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-`ImageJ <https://imagej.nih.gov/ij/>`_, `FIJI <https://fiji.sc>`_, `ImageSXM <https://www.liverpool.ac.uk/~sdb/ImageSXM/>`_, `WSxM <http://www.wsxm.es/download.html>`_, `SpectraFox <https://spectrafox.com>`_, and `OpenFovea <http://www.freesbi.ch/en/openfovea>`_ are all excellent software packages for dealing with conventional and popular microscopy data such as 2D images or a handful of (simple) spectra. We think that pycroscopy is complementary to these  other softwares and packages. Pycroscopy was built for a completely different purpose and with a unique philosophy. Pycroscopy solves some truly challenging problems that none of the other packages do - It can handle arbitrarily large datasets (Gigabytes / Terabytes / or even larger) with arbitrary dimensionality (any combination of dimensionality in position and spectral space. We have had absolutely no problem dealing with datasets with more than 9 unique dimensions - see `Band Excitation Polarization Switching + First Order Reversal Curve probing <https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_03_multidimensional_data.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-03-multidimensional-data-py>`_). In addition, Pycroscopy takes a data centric approach aimed towards open science wherein all the data starting from the raw measurement from the instrument, all the way to the final data that is plotted in the resulting scientific publication, are contained in the same file. The processing steps applied to the data are completely transparent and traceable. Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. `GXSM <http://gxsm.sourceforge.net>`_ is another software package that focuses more on the data acquistion than advanced data analysis.
-`xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy. 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* **Data sizes and dimensionality**: `ImageJ <https://imagej.nih.gov/ij/>`_, `FIJI <https://fiji.sc>`_, `ImageSXM <https://www.liverpool.ac.uk/~sdb/ImageSXM/>`_,
+  `WSxM <http://www.wsxm.es/download.html>`_, `SpectraFox <https://spectrafox.com>`_, and `OpenFovea <http://www.freesbi.ch/en/openfovea>`_ are all excellent
+  software packages for dealing with conventional and popular microscopy data such as 2D images or a handful of (simple) spectra that are at best 1- 100 MB in size. We think that pycroscopy is
+  complementary to these  other software and packages. Pycroscopy was built from scratch to handle **arbitrarily large datasets** (gigabytes / terabytes) of
+  datasets which regularly have a large number of position or spectroscopic dimensions (we have had absolutely no problem dealing with datasets with more than
+  9 unique dimensions - see `Band Excitation Polarization Switching + First Order Reversal Curve probing <https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_03_multidimensional_data.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-03-multidimensional-data-py>`_).
+* **Data centric**: In addition, Pycroscopy takes a data centric approach aimed towards open science wherein all the data starting from the raw measurement from
+  the instrument, all the way to the final data that is plotted in the resulting scientific publication, are contained in the same file. The processing steps applied
+  to the data are completely transparent and traceable.
+* **Data Processing framework**: Most of the aforementioned packages are a collection of several popularly used algorithms applied to data. Again, most of these are applied to small datasets in memory.
+  Perhaps more importantly, the algorithms are tied to a specific scientific domain / application. In contrast, the universal data format used by pycroscopy allows the development of a
+  single version of an algorithm that can be applied to any data.
+* **Scalable**: Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. Nearly all the aforementioned
+  software are applicable to laptops only. Supercomputer / cloud computing scaling in pycroscopy will arrive in the later part of 2018.
+* **Other complimentary software**:
+
+  * `GXSM <http://gxsm.sourceforge.net>`_ is another software package that focuses more on the data acquisition from instruments rather than advanced data analysis.
+  * `xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy.
 
 Why is pycroscopy written in python and not C / Fortran / Julia?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-One of the main objectives of pycroscopy is to lower the barrier to advanced data analytics for domain scientists such as material scientists. A C / Fortran version of pycroscopy would certainly have been more efficient than the current python code-base. However, the learning curve for writing efficient C code is far steeper compared to python / Julia / Matlab for the average domain scientist. Focusing on science is a big enough job for domain scientists and we want to make it as easy as possible to adopt pycroscopy even for those who are novices at programming. Furthermore, our code makes heavy use of highly efficient numerical and scientific libraries such as Numpy and Scipy that are comparable in speed to C so we do not expect our code to be substantially slower than C / Fortran. Julia is a (relatively) new language similar to python that promises to be as fast as C and as easy as python and purpose-built for efficient computing. However, as of this writing, Julia unfortunately still does not have open-source package ecosystem that is as large or diverse (think of the many packages necessary to read obscure proprietary microscopy file formats as an example) as python. Furthermore, python's unchallenged leadership in the data analytics / deep learning field have only validated it as the language of choice. These are among the main reasons pycroscopy is written in python. 
+Here are some of the main reasons pycroscopy is written in python:
+
+* **Ease of use**: One of the main objectives of pycroscopy is to **lower the barrier** to advanced data analytics for domain scientists such as material scientists. A C / Fortran version of pycroscopy would certainly have been more efficient than the current python code-base. However, the learning curve for writing efficient C code is far steeper compared to python / Julia / Matlab for the average domain scientist. Focusing on science is a big enough job for domain scientists and we want to make it as easy as possible to adopt pycroscopy even for those who are novices at programming.
+* **Optimized core packages**: Furthermore, our code makes heavy use of highly efficient numerical and scientific libraries such as Numpy and Scipy that are comparable in speed to C so we do not expect our code to be substantially slower than C / Fortran.
+* **Support**: Julia is a (relatively) new language similar to python that promises to be as fast as C and as easy as python and purpose-built for efficient computing. However, as of this writing, Julia unfortunately still does not have open-source package ecosystem that is as large or diverse (think of the many packages necessary to read obscure proprietary file formats generated by instruments as an example) as python.
+* **Industry standard**: Furthermore, python's unchallenged leadership in the data analytics / deep learning field have only validated it as the language of choice.
 
 Pycroscopy is written in python, so it is going to be slow since it cannot use all the cores on my CPU, right?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,7 +82,7 @@ What do I do when something is broken?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Often, others may have encountered the same problem and may have brought up a similar issue. Try searching on google and trying out some suggested solutions. If this does not work, raise an ``issue`` `here <https://github.com/pycroscopy/pycroscopy/issues>`_ and one of us will work with you to resolve the problem.
 
-Do I still need to use standard softwares for plotting figures for papers?
+Do I still need to use standard software for plotting figures for papers?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Not at all. Python has an excellent set of libraries for generating even complicated figures for journal papers. Pycroscopy has `several functions <https://pycroscopy.github.io/pycroscopy/auto_examples/user_tutorials/plot_utils.html#sphx-glr-auto-examples-user-tutorials-plot-utils-py>`_ that make it easier to quickly generate publication-ready figures. There are `several publications <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_ that have only used pycroscopy and matplotlib to generate figures for papers. If you are still not convinced, you can always export your data to text / csv files and use conventional softwares like `Origin Pro <https://www.originlab.com>`_.
 
@@ -68,11 +94,23 @@ Data
 ----
 What do you mean by multidimensional data?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We consider data recorded for all combinations of 2 or more variables as multi-dimensional datasets. For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be 1 dimensional and the dimension would be - bias. If the bias is cycled C times, the data is said to be two dimensional. If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have 4 dimensions (Y, X, C, B). As a different example, let us suppose that the petal width, length, and weight were measured for F different kinds of flowers. This would result in a 1 dimensional dataset with the kind of flower being the sole dimension. Such a dataset is not a 3 dimensional dataset because the petal width, length, and weight are only different features for each measurement. A quantity is not being measured for all combinations of petal width, length, and weight to make this dataset 3 dimensional.
+* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets:
+
+  * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
+  * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
+  * If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have ``4 dimensions:`` ``(Rows, Columns, Cycle, Bias)``.
+* ``Multi-feature``: As a different example, let us suppose that the ``petal width``, ``length``, and ``weight`` were measured for ``F`` different kinds of flowers. This would result in a ``1 dimensional dataset`` with the kind of flower being the sole dimension. Such a dataset is **not** a 3 dimensional dataset because the ``petal width, length``, and ``weight`` are only different ``features`` for each measurement. Some quantity needs to be **measured for all combinations of** petal width, length, and weight to make this dataset 3 dimensional. Most examples observed in data mining, simple machine learning actually fall into this category
 
 Why not use established file formats from other domains?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-It is true that we really don't want yet another format in our lives. We wanted to adopt a file format that is already widely accepted in supercomputing, scientific research, can be accessed from any programming language. We chose HDF5 since it suits our needs perfectly. We found that existing data formats in science such as the `Nexus data format <http://www.nexusformat.org>`_, `XDMF <http://www.xdmf.org/index.php/Main_Page>`_, and `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_ were designed for narrow scientific purposes and we did not want to shoehorn our data structure into those formats. Furthermore, despite being some of the more popular scientific data formats, it is not immidiately straightforward to read those files on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_ python distribution does not come with any packages for reading these file formats. Moreover, `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_, Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_ files are actually (now) just custom flavors of HDF5 files thereby unanimously validating our decision to choose HDF5 as our file format. Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy. 
+* It is true that we really don't want yet another format in our lives. We wanted to adopt a file format that is already **widely accepted in supercomputing**, **scientific research**, and can be **accessed from any programming language**. We chose **HDF5** since it suits our needs perfectly.
+* We found that existing data formats in science such as the `Nexus data format <http://www.nexusformat.org>`_, `XDMF <http://www.xdmf.org/index.php/Main_Page>`_, and `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_:
+
+  * were designed for **specific / narrow scientific domains only** and we did not want to shoehorn our data structure into those formats.
+  * Furthermore, despite being some of the more popular scientific data formats, it is not immediately straightforward to read those files on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_ python distribution does not come with any packages for reading these file formats.
+* **HDF5 is the De facto standard**: Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_ files are actually (now) **just custom flavors of HDF5 files** thereby unanimously validating our decision to choose HDF5 as our file format.
+* Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
+* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_ is perhaps the ultimate file format for supercomputers but we find the learning curve for average users to be unnecessarily steep, especially if they don't use supercomputers.
 
 Can Pycroscopy read data files from instrument X?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,7 +130,7 @@ You can still contribute your code.
 
 I would like to help but I don't know programming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Your contributions are very valuable to the microscopy, imaging, and scientific community at large. You can help even if you DON'T know how to program! 
+Your contributions are very valuable to the imaging and scientific community at large. You can help even if you DON'T know how to program!
 
 * You can spread the word - tell anyone who you think may benefit from using pycroscopy. 
 * Tell us what you think of our documentation or share your own. 
@@ -104,10 +142,10 @@ Chances are that you are far better at python than you might think! Interesting 
 
 You can contribute in numerous ways including but not limited to:
 
-* Writing translators to convert data from proprietary formats to the pycroscopy format - We are missing some for Park Systems, Bruker, Anasys AFMs and certain electron microscopy formats. 
+* Writing ``translators`` to convert data from proprietary formats to the pycroscopy format
 * Writing image processing, signal processing code, functional fitting, etc.
 
-Our current efforts are focussed on `making pycroscopy substantially more robust and user-friendly <https://github.com/pycroscopy/pycroscopy/blob/master/ToDo.rst#v-1-0-goals>`_. We could certainly use your help there too. Send us an email at pycroscopy@gmail.com or a message on our `slack group <https://pycroscopy.slack.com/>`_. 
+Send us an email at pycroscopy@gmail.com or a message on our `slack group <https://pycroscopy.slack.com/>`_.
 
 Can you add my code to pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

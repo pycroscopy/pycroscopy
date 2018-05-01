@@ -13,12 +13,11 @@ v 0.60.0 goals
 Urgent
 ~~~~~~
 1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
-2. file dialog for Jupyter not working on Mac OS
-3. Chris - Address the remaining unit tests
-4. Chris - test BE workflow on latest master (especially jupyter functions)
-5. Add instructions to install pre-unity dev versions of pycroscopy
-6. Update conda and pip with latest master
-7. Update change-log
+2. Chris - Address the remaining unit tests
+3. Chris - test BE workflow on latest master (especially jupyter functions)
+4. Add instructions to install pre-unity dev versions of pycroscopy
+5. Update conda and pip with latest master
+6. Update change-log with version numbers instead of pull numbers
 
 Important
 ~~~~~~~~~
@@ -27,8 +26,9 @@ Important
 3. unit tests for basic data science (Cluster, SVD, Decomposition)
 4. Swap out remaining usages of VirtualData + HDFWriter to hdf_utils (especially outside io.translators)
 5. Test all translators, image cleaning and to make sure they still work.
-6. Address pending TODOs
-7. Address edge case - Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
+6. file dialog for Jupyter not working on Mac OS
+7. Address pending TODOs
+8. Address edge case - Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
 
 Low priority
 ~~~~~~~~~~~~
