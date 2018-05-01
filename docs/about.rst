@@ -19,7 +19,7 @@ With pycroscopy we aim to:
 
 
 To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this
-`short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
+`short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_.
 
 Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
