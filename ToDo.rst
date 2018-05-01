@@ -15,9 +15,8 @@ Urgent
 1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
 2. Chris - Address the remaining unit tests
 3. Chris - test BE workflow on latest master (especially jupyter functions)
-4. Add instructions to install pre-unity dev versions of pycroscopy
-5. Update conda and pip with latest master
-6. Update change-log with version numbers instead of pull numbers
+4. Update conda and pip with latest master
+5. Update change-log with version numbers instead of pull numbers
 
 Important
 ~~~~~~~~~
