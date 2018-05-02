@@ -534,7 +534,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
             for key in pos_labels[:-2]:
                 spatial_slice_dict[key] = [pos_sliders[key].value]
 
-            spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+            spatial_slice, _ = pc_main._get_pos_spec_slices(slice_dict=spatial_slice_dict)
 
             return spatial_slice
 
