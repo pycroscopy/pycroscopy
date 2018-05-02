@@ -293,7 +293,7 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     '''
     Calculate the size of a single batch that will fit in the available memory
     '''
-    n_comps = h5_S[comp_slice].size
+    n_comps = h5_S[list(comp_slice)].size
     mem_per_pix = (h5_U.dtype.itemsize + h5_V.dtype.itemsize * h5_V.shape[1]) * n_comps
     fixed_mem = h5_main.size * h5_main.dtype.itemsize
 
