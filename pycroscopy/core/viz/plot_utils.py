@@ -524,10 +524,14 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
-    x_vec : array-like, 1D, optional
-        The references values that will be used for tick values on the X axis
-    y_vec : array-like, 1D, optional
-        The references values that will be used for tick values on the Y axis
+    x_vec : 1-D array-like or Number, optional
+        if an array-like is provided - these will be used for the tick values on the X axis
+        if a Number is provided, this will serve as an extent for tick values in the X axis.
+        For example x_vec=1.5 would cause the x tick labels to range from 0 to 1.5
+    y_vec : 1-D array-like or Number, optional
+        if an array-like is provided - these will be used for the tick values on the Y axis
+        if a Number is provided, this will serve as an extent for tick values in the Y axis.
+        For example y_vec=225 would cause the y tick labels to range from 0 to 225
     num_ticks : unsigned int, optional, default = 4
         Number of tick marks on the X and Y axes
     stdevs : unsigned int (Optional. Default = None)
@@ -583,10 +587,13 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
     im_handle = axis.imshow(img, **kwargs)
     assert isinstance(show_xy_ticks, bool)
-    if show_xy_ticks is True:
+
+    if show_xy_ticks is True or x_vec is not None:
 
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         if x_vec is not None:
+            if isinstance(x_vec, Number):
+                x_vec = np.linspace(0, x_vec, img.shape[1])
             if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
                 raise ValueError('x_vec should be array-like with shape equal to the second axis of img')
             x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
@@ -596,8 +603,15 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         axis.set_xticks(x_ticks)
         axis.set_xticklabels(x_tick_labs)
 
+        set_tick_font_size(axis, tick_font_size)
+    else:
+        axis.set_xticks([])
+
+    if show_xy_ticks is True or y_vec is not None:
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         if y_vec is not None:
+            if isinstance(y_vec, Number):
+                y_vec = np.linspace(0, y_vec, img.shape[0])
             if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
                 raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
             y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
@@ -609,7 +623,6 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         set_tick_font_size(axis, tick_font_size)
     else:
-        axis.set_xticks([])
         axis.set_yticks([])
 
     cbar = None
