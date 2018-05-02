@@ -416,7 +416,7 @@ class TestDtypeUtils(unittest.TestCase):
         for dtype in [np.float32, np.float16, np.uint8, np.int16, struct_dtype, bool]:
             self.assertFalse(dtype_utils.is_complex_dtype(dtype))
 
-        for dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+        for dtype in [np.complex, np.complex64, np.complex128]:
             self.assertTrue(dtype_utils.is_complex_dtype(dtype))
 
 
