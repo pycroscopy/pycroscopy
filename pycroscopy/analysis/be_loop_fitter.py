@@ -605,9 +605,6 @@ class BELoopFitter(Fitter):
             print('Shape of N dimensional dataset:', fit_nd.shape)
             print('Dimensions of order:', dim_names_orig)
 
-        # order_dc_outside_nd = np.roll(range(fit_nd.ndim), -self._dc_offset_index)
-        # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
-
         # step 5: Move the voltage dimension to the first dim
         order_dc_outside_nd = [self._fit_offset_index] + list(range(self._fit_offset_index)) + \
                               list(range(self._fit_offset_index + 1, len(fit_nd.shape)))

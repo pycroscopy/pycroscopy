@@ -371,12 +371,6 @@ class TestDtypeUtils(unittest.TestCase):
             self.assertEqual(type_mult, 2 * np.real(h5_f['complex'][0, 0]).dtype.itemsize)
 
     def test_check_dtype_compound_numpy(self):
-        # num_elems = (2, 5)
-        # structured_array = np.zeros(shape=num_elems, dtype=struc_dtype)
-        # structured_array['r'] = np.random.random(size=num_elems)
-        # structured_array['g'] = np.random.randint(0, high=1024, size=num_elems)
-        # structured_array['b'] = np.random.random(size=num_elems)
-        # func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(structured_array)
         with h5py.File(file_path, mode='r') as h5_f:
             func, is_complex, is_compound, n_features, type_mult = dtype_utils.check_dtype(h5_f['compound'])
             self.assertEqual(func, dtype_utils.flatten_compound_to_real)

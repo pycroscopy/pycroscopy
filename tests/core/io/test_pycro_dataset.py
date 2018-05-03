@@ -523,19 +523,14 @@ class TestPycroDataset(unittest.TestCase):
         # Need to change data file so that sorting actually does something
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
-            for label, size in zip(pycro_main.n_dim_labels, pycro_main.n_dim_sizes):
-                print('{}: {}'.format(label, size))
+
             self.assertTrue(pycro_main.n_dim_labels == ['X', 'Y', 'Bias', 'Cycle'])
 
             pycro_main.toggle_sorting()
 
-            for label, size in zip(pycro_main.n_dim_labels, pycro_main.n_dim_sizes):
-                print('{}: {}'.format(label, size))
-            # TODO: Fix this test. Overriden only temporarily
-            # self.assertTrue(pycro_main.n_dim_labels==['X', 'Y', 'Cycle', 'Bias'])
+            self.assertTrue(pycro_main.n_dim_labels==['X', 'Y', 'Cycle', 'Bias'])
 
     def test_get_current_sorting(self):
-        # Need to change data file so that sorting actually does something
         with h5py.File(test_h5_file_path, mode='r') as h5_f:
             pycro_main = PycroDataset(h5_f['/Raw_Measurement/source_main'])
             unsorted_str = 'Data dimensions are in the order they occur in the file.\n'
