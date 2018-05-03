@@ -380,7 +380,7 @@ class Fitter(object):
             self._get_data_chunk()
 
         print('Completed computing guess')
-        return self.h5_guess
+        return PycroDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
@@ -617,4 +617,4 @@ class Fitter(object):
 
         print('Completed computing fit. Writing to file.')
 
-        return self.h5_fit
+        return PycroDataset(self.h5_fit)
