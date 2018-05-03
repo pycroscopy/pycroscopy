@@ -2226,7 +2226,7 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, dim_na
 
         for dset in [h5_inds, h5_vals]:
             write_region_references(dset, reg_ref_slices, verbose=False)
-            write_simple_attrs(dset, {'labels': 'Single_Step', 'units': ''})
+            write_simple_attrs(dset, {'labels': ['Single_Step'], 'units': ['a.u.']})
 
     return h5_inds, h5_vals
 
