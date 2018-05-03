@@ -287,6 +287,7 @@ print(h5_expandable_dset)
 # * can be stored in either Group or Dataset objects.
 # * are not appropriate for storing large amounts of information. Consider datasets instead
 # * are best suited for things like experimental parameter such as beam intensity, scan rate, scan width, etc.
+#
 # Writing
 # ---------
 # Storing attributes in objects is identical to appending to python dictionaries. Lets store some simple attributes in

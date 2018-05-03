@@ -1,6 +1,6 @@
 """
 ================================================================================
-Utilities for writing Pycroscopy data
+Utilities that assist in writing Pycroscopy data
 ================================================================================
 
 **Suhas Somnath**

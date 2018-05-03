@@ -421,7 +421,7 @@ class BELoopFitter(Fitter):
         h5_loop_parm : h5py.Dataset
             Dataset of physical parameters
         """
-        dset_name = h5_loop_fit.name + '_Loop_Parameters'
+        dset_name = h5_loop_fit.name.split('/')[-1] + '_Loop_Parameters'
         h5_loop_parameters = create_empty_dataset(h5_loop_fit, dtype=switching32,
                                                   dset_name=dset_name,
                                                   new_attrs={'nuc_threshold': nuc_threshold})
@@ -604,9 +604,6 @@ class BELoopFitter(Fitter):
         if self._verbose:
             print('Shape of N dimensional dataset:', fit_nd.shape)
             print('Dimensions of order:', dim_names_orig)
-
-        # order_dc_outside_nd = np.roll(range(fit_nd.ndim), -self._dc_offset_index)
-        # order_dc_offset_reverse = np.roll(range(fit_nd.ndim), self._dc_offset_index)
 
         # step 5: Move the voltage dimension to the first dim
         order_dc_outside_nd = [self._fit_offset_index] + list(range(self._fit_offset_index)) + \

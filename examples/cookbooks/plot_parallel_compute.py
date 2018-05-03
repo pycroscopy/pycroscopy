@@ -220,7 +220,7 @@ print('Serial computation took', np.round(times_vec[-1], 2), ' seconds')
 
 ########################################################################################################################
 # pycroscopy.parallel_compute()
-# --------------------
+# -----------------------------
 #
 # There are several libraries that can utilize multiple CPU cores to perform the same computation in parallel. Popular
 # examples are ``Multiprocessing``, ``Mutiprocess``, ``Dask``, ``Joblib`` etc. Each of these has their own

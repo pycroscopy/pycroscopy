@@ -353,6 +353,6 @@ def is_complex_dtype(dtype):
         True if the dtype was a complex dtype. Else returns False
     """
     validate_dtype(dtype)
-    if dtype in [np.complex, np.complex64, np.complex128, np.complex256]:
+    if dtype in [np.complex, np.complex64, np.complex128]:
         return True
     return False

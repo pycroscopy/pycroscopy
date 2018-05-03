@@ -458,7 +458,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
 
         spectrogram_slice_dict = {key: [0] for key in pos_labels}
 
-        spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+        spatial_slice, _ = pc_main._get_pos_spec_slices(slice_dict=spatial_slice_dict)
 
         x_size = pos_dims[-1]
         y_size = pos_dims[-2]
@@ -466,8 +466,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
         spatial_map = np.abs(np.reshape(pc_main[spatial_slice, 0], (y_size, x_size)))
         spectrogram = np.reshape(pc_main[0], (num_udvs_steps, -1))
         fig, axes = plt.subplots(ncols=3, figsize=(12, 4), subplot_kw={'adjustable': 'box'})
-        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), x_size=x_size,
-                                                         y_size=y_size, cmap=cmap)
+        spatial_img, spatial_cbar = plot_map(axes[0], np.abs(spatial_map), cmap=cmap)
         axes[0].set_aspect('equal')
         axes[0].set_xlabel(pos_labels[-1])
         axes[0].set_ylabel(pos_labels[-2])
@@ -482,6 +481,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
 
             phase_img, phase_cbar = plot_map(axes[2], np.angle(spectrogram), show_xy_ticks=True, cmap=cmap,
                                              extent=[freqs_2d[0, 0], freqs_2d[-1, 0], 0, num_udvs_steps])
+            phase_img.set_clim(vmin=-np.pi, vmax=np.pi)
 
             for axis in axes[1:3]:
                 axis.set_ylabel('BE step')
@@ -535,7 +535,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
             for key in pos_labels[:-2]:
                 spatial_slice_dict[key] = [pos_sliders[key].value]
 
-            spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+            spatial_slice, _ = pc_main._get_pos_spec_slices(slice_dict=spatial_slice_dict)
 
             return spatial_slice
 
@@ -545,7 +545,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
             for key in pos_labels[:-2]:
                 spatial_slice_dict[key] = [pos_sliders[key].value]
 
-            spatial_slice, _ = pc_main.get_pos_spec_slices(slice_dict=spatial_slice_dict)
+            spatial_slice, _ = pc_main._get_pos_spec_slices(slice_dict=spatial_slice_dict)
 
             spatial_map = np.abs(np.reshape(pc_main[spatial_slice, step], (x_size, y_size)))
             spatial_img.set_data(spatial_map)
@@ -581,8 +581,12 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
             spectrogram = np.reshape(pc_main[spatial_slice, :], (num_udvs_steps, -1))
 
             if len(spec_dims) > 1:
+                amp_map = np.abs(spectrogram)
                 amp_img.set_data(np.abs(spectrogram))
                 phase_img.set_data(np.angle(spectrogram))
+                amp_mean = np.mean(amp_map)
+                amp_std = np.std(amp_map)
+                amp_img.set_clim(vmin=amp_mean - 3 * amp_std, vmax=amp_mean + 3 * amp_std)
             else:
                 amp_img.set_ydata(np.abs(spectrogram))
                 phase_img.set_ydata(np.angle(spectrogram))
