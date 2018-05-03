@@ -380,7 +380,7 @@ class Fitter(object):
             self._get_data_chunk()
 
         print('Completed computing guess')
-        return self.h5_guess
+        return PycroDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
@@ -415,6 +415,8 @@ class Fitter(object):
         """
         # First find all groups that match the basic condition of matching tool name
         all_groups = find_results_groups(self.h5_main, self._fitter_name)
+        if self._verbose:
+            print('Groups that matched the nomenclature: {}'.format(all_groups))
 
         # Next sort these groups into three categories:
         completed_guess = []
@@ -442,6 +444,8 @@ class Fitter(object):
                 if 'Guess' in h5_group.keys():
                     h5_guess = h5_group['Guess']
                     if h5_guess.attrs['last_pixel'] == self.h5_main.shape[0]:
+                        if self._verbose:
+                            print('{} was a completed Guess'.format(h5_guess.name))
                         completed_guess.append(h5_guess)
                     else:
                         if self._verbose:
@@ -613,4 +617,4 @@ class Fitter(object):
 
         print('Completed computing fit. Writing to file.')
 
-        return self.h5_fit
+        return PycroDataset(self.h5_fit)
