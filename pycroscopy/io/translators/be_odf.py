@@ -69,8 +69,9 @@ class BEodfTranslator(Translator):
         if 'parm_txt' in path_dict.keys():
             (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
         elif 'old_mat_parms' in path_dict.keys():
-            isBEPS = True
             parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
+            if parm_dict['VS_steps_per_full_cycle']==0: isBEPS=False
+            else: isBEPS=True
         else:
             raise IOError('No parameters file found! Cannot translate this dataset!')
 
