@@ -165,7 +165,8 @@ class Cluster(Process):
         if not success:
             raise ValueError('Could not reshape labels to N-Dimensional dataset! Error:' + success)
 
-        centroid_mat, success = reshape_to_n_dims(self.__mean_resp, h5_spec=self.h5_main.h5_spec_inds,
+        centroid_mat, success = reshape_to_n_dims(self.__mean_resp,
+                                                  h5_spec=self.h5_main.h5_spec_inds[:, :self.num_comps],
                                                   h5_pos=np.expand_dims(np.arange(self.__mean_resp.shape[0]), axis=1))
 
         if not success:
@@ -269,13 +270,6 @@ class Cluster(Process):
                                        h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
                                        aux_spec_prefix='Cluster_', dtype=np.uint32)
 
-        # For now, link centroids with default spectroscopic indices and values.
-        h5_centroids = write_main_dataset(h5_cluster_group, self.__mean_resp, 'Mean_Response',
-                                          get_attr(self.h5_main, 'quantity')[0], get_attr(self.h5_main, 'units')[0],
-                                          Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
-                                          h5_spec_inds=self.h5_main.h5_spec_inds, aux_pos_prefix='Mean_Resp_Pos_',
-                                          h5_spec_vals=self.h5_main.h5_spec_vals)
-
         if self.num_comps != self.h5_main.shape[1]:
             '''
             Setup the Spectroscopic Indices and Values for the Mean Response if we didn't use all components
@@ -288,18 +282,27 @@ class Cluster(Process):
 
             else:
                 centroid_vals_mat = h5_centroids.h5_spec_vals[self.data_slice[1]]
-    
+
             ds_centroid_values.data[0, :] = centroid_vals_mat
             """
             if isinstance(self.data_slice[1], np.ndarray):
-                vals = self.data_slice[1].tolist()
+                vals_slice = self.data_slice[1].tolist()
             else:
-                vals = self.data_slice[1]
+                vals_slice = self.data_slice[1]
+            vals = self.h5_main.h5_spec_vals[:, vals_slice].squeeze()
             new_spec = Dimension('Original_Spectral_Index', 'a.u.', vals)
             h5_inds, h5_vals = write_ind_val_dsets(h5_cluster_group, new_spec, is_spectral=True)
-            # Now we need to link these two new datasets to h5_centroids
-            link_h5_obj_as_alias(h5_centroids, h5_inds, 'Spectroscopic_Indices')
-            link_h5_obj_as_alias(h5_centroids, h5_vals, 'Spectroscopic_Values')
+
+        else:
+            h5_inds = self.h5_main.h5_spec_inds
+            h5_vals = self.h5_main.h5_spec_vals
+
+        # For now, link centroids with default spectroscopic indices and values.
+        h5_centroids = write_main_dataset(h5_cluster_group, self.__mean_resp, 'Mean_Response',
+                                          get_attr(self.h5_main, 'quantity')[0], get_attr(self.h5_main, 'units')[0],
+                                          Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
+                                          h5_spec_inds=h5_inds, aux_pos_prefix='Mean_Resp_Pos_',
+                                          h5_spec_vals=h5_vals)
 
         return h5_cluster_group
 
