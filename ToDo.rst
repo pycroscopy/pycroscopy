@@ -14,9 +14,8 @@ Urgent
 ~~~~~~
 1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
 2. Chris - Address the remaining unit tests
-3. Chris - test BE workflow on latest master (especially jupyter functions)
-4. Update conda and pip with latest master
-5. Update change-log with version numbers instead of pull numbers
+3. Update conda and pip with latest master
+4. Update change-log with version numbers instead of pull numbers
 
 Important
 ~~~~~~~~~
@@ -62,6 +61,7 @@ Done
   * DONE - comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
 
 14. DONE - Handle complex and compound data in the machine learning classes.
+16. DONE - test BE workflow on latest master (especially jupyter functions)
 
 v 0.60.1 goals
 --------------
