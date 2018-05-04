@@ -1223,7 +1223,7 @@ def export_fig_data(fig, filename, include_images=False):
             for im in ims:
                 # Image data
                 im_lab = im.get_label()
-                im_dict[im_lab] = im.get_array().data
+                im_dict['data'] = im.get_array().data
 
                 # X-Axis
                 x_ax = ax.get_xaxis()
@@ -1231,7 +1231,7 @@ def export_fig_data(fig, filename, include_images=False):
                 if x_lab == '':
                     x_lab = 'X'
 
-                im_dict[im_lab + x_lab] = x_ax.get_data_interval()
+                im_dict[x_lab] = x_ax.get_data_interval()
 
                 # Y-Axis
                 y_ax = ax.get_yaxis()
@@ -1239,9 +1239,9 @@ def export_fig_data(fig, filename, include_images=False):
                 if y_lab == '':
                     y_lab = 'Y'
 
-                im_dict[im_lab + y_lab] = y_ax.get_data_interval()
+                im_dict[y_lab] = y_ax.get_data_interval()
 
-            ax_dict['Images'] = im_dict
+                ax_dict['Images'] = {im_lab: im_dict}
 
         lines = ax.get_lines()
         if len(lines) != 0:
@@ -1282,6 +1282,8 @@ def export_fig_data(fig, filename, include_images=False):
     for ax_lab, ax in axes_dict.items():
         data_file.write('Axis: {} \n'.format(ax_lab))
 
+        if 'Images' not in ax:
+            continue
         for im_lab, im in ax['Images'].items():
             data_file.write('Image: {} \n'.format(im_lab))
             data_file.write('\n')
@@ -1299,6 +1301,8 @@ def export_fig_data(fig, filename, include_images=False):
 
             data_file.write(spacer)
 
+        if 'Lines' not in ax:
+            continue
         for line_lab, line_dict in ax['Lines'].items():
             data_file.write('Line: {} \n'.format(line_lab))
             data_file.write('\n')
