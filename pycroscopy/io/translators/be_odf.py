@@ -870,7 +870,7 @@ class BEodfTranslator(Translator):
             FORC_amp_vec = (FORC_A_vec - FORC_B_vec) / 2
             FORC_off_vec = (FORC_A_vec + FORC_B_vec) / 2
 
-            VS_amp_mat = np.tile(vs_amp_vec, [FORC_cycles, 1])
+            VS_amp_mat = np.tile(vs_amp_vec, [int(FORC_cycles), 1])
             FORC_amp_mat = np.tile(FORC_amp_vec, [len(vs_amp_vec), 1]).transpose()
             FORC_off_mat = np.tile(FORC_off_vec, [len(vs_amp_vec), 1]).transpose()
             VS_amp_mat = VS_amp_mat * FORC_amp_mat + FORC_off_mat
