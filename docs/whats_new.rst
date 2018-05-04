@@ -1,6 +1,20 @@
 What's New
 ==========
 
+`May 01 2018 2: <https://github.com/pycroscopy/pycroscopy/pull/150>`_
+------------------------------------------------------------------------
+* Revised / updated the ``about`` page
+* Minor text formatting fixes
+
+`May 01 2018 1: <https://github.com/pycroscopy/pycroscopy/pull/149>`_
+------------------------------------------------------------------------
+* Minor corrections to documentation formatting
+* ``pycroscopy.hdf_utils.get_auxillary_datasets()`` renamed to ``pycroscopy.hdf_utils.get_auxiliary_datasets()``
+* Example on parallel computing rewritten to focus on ``pycroscopy.parallel_compute()``
+* Added ``setUp()`` and ``tearDown()`` to unit testing classes for ``hdf_utils`` and ``PycroDataset``
+* Fixed bug in the sorting capability of ``pycroscopy.hdf_utils.reshape_to_n_dims()``
+* Added logo to website
+
 `Apr 29 2018 2: <https://github.com/pycroscopy/pycroscopy/pull/148>`_
 ------------------------------------------------------------------------
 * Centralized verification of slice dictionary in ``pycroscopy.PycroDataset``
@@ -21,7 +35,7 @@ What's New
 
 `Apr 28 2018 1: <https://github.com/pycroscopy/pycroscopy/pull/143>`_
 -----------------------------------------------------------------------
-**(Massive) merge of (skunkworks) branch ``unity_dev`` into ``master``**
+**(Massive) merge of (skunkworks) branch unity_dev into master``**
 
 * Added unit tests for all (feasible) modules in ``pycroscopy.core``
 * Added examples for every single function or class in ``pycroscopy.core`` (**10** cookbooks in total!)
@@ -41,9 +55,9 @@ What's New
       ``pycroscopy.processing.SignalFilter``, ``pycroscopy.translators.GIVTranslator``, ``pycroscopy.analysis.GIVBayesian``, ``pycroscopy.processing.gmode_utils``, etc.
       now do **not** use deprecated classes as proof that even the most complex classes can easily be transitioned to using
       functions in ``pycroscopy.core.io.hdf_utils`` and ``pycroscopy.core.io.write_utils``
-    * Unit tests for modules in **pycroscopy.core.io** rewritten to not use deprecated functions or classes.
+    * Unit tests for modules in ``pycroscopy.core.io`` rewritten to not use deprecated functions or classes.
     * Deprecated classes only being used in translators, two analyses modules and two process modules
-    * Removed old examples, especially on deprecated classes
+    * Removed old examples and tutorials, especially on deprecated classes
 * Upgrades to ``pycroscopy.Process``:
 
     * ``pycroscopy.Process`` now has a new function - ``test()`` that allows much easier in-place testing of processes before applying to the entire dataset

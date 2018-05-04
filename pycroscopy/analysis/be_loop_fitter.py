@@ -951,7 +951,11 @@ class BELoopFitter(Fitter):
         Creates the HDF5 Guess dataset and links the it to the ancillary datasets.
         """
         self.h5_guess = create_empty_dataset(self.h5_loop_metrics, loop_fit32, 'Guess')
-        self._h5_group.attrs['guess method'] = 'pycroscopy statistical'
+        write_simple_attrs(self._h5_group, {'guess method': 'pycroscopy statistical'})
+
+        # This is necessary comparing against new runs to avoid re-computation + resuming partial computation
+        write_simple_attrs(self.h5_guess, self._parms_dict)
+        write_simple_attrs(self.h5_guess, {'Loop_fit_method': "pycroscopy statistical", 'last_pixel': 0})
 
         self.h5_main.file.flush()
 
@@ -1087,7 +1091,11 @@ class BELoopFitter(Fitter):
             return
 
         self.h5_fit = create_empty_dataset(self.h5_guess, loop_fit32, 'Fit')
-        self._h5_group.attrs['fit method'] = 'pycroscopy functional'
+        write_simple_attrs(self._h5_group, {'fit method': 'pycroscopy functional'})
+
+        # This is necessary comparing against new runs to avoid re-computation + resuming partial computation
+        write_simple_attrs(self.h5_fit, self._parms_dict)
+        write_simple_attrs(self.h5_fit, {'Loop_fit_method': "pycroscopy functional", 'last_pixel': 0})
 
     def _reformat_results(self, results, strategy='BE_LOOP'):
         """

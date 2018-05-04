@@ -434,7 +434,7 @@ without having to duplicate them.
 ``Ancillary`` data:
 ~~~~~~~~~~~~~~~~~~~
 
-**Position\_Indices** structured as (positions x spatial dimensions)
+``Position_Indices`` structured as (``positions`` x ``spatial dimensions``)
 
 * dimensions are arranged in ascending order of rate of change. In other
   words, the fastest changing dimension is in the first column and the
@@ -448,7 +448,7 @@ without having to duplicate them.
 * Optional attributes:
   * Region references based on column names
 
-**Position\_Values** structured as (positions x spatial dimensions)
+``Position_Values`` structured as (``positions`` x ``spatial dimensions``)
 
 * dimensions are arranged in ascending order of rate of change. In other
   words, the fastest changing dimension is in the first column and the
@@ -462,8 +462,8 @@ without having to duplicate them.
 * Optional attributes:
   * Region references based on column names
 
-**Spectroscopic\_Indices** structured as (spectroscopic dimensions x
-time)
+``Spectroscopic_Indices`` structured as (``spectroscopic dimensions`` x
+``time``)
 
 * dimensions are arranged in ascending order of rate of change.
   In other words, the fastest changing dimension is in the first row and
@@ -478,8 +478,8 @@ time)
 * Optional attributes:
   * Region references based on row names
 
-**Spectroscopic\_Values** structured as (spectroscopic dimensions x
-time)
+``Spectroscopic_Values`` structured as (``spectroscopic dimensions`` x
+``time``)
 
 * dimensions are arranged in ascending order of rate of change.
   In other words, the fastest changing dimension is in the first row and
@@ -497,20 +497,21 @@ time)
 
 Attributes
 ~~~~~~~~~~
+All groups and (at least ``Main``) datasets must be created with the following **mandatory** attributes for better traceability:
 
--  All groups and datasets must be created with the following two
-   **mandatory** attributes for better traceability:
 -  ``time_stamp`` : '2017\_08\_15-22\_15\_45' (date and time of creation
    of the group or dataset formatted as 'YYYY\_MM\_DD-HH\_mm\_ss' as
    a string)
 -  ``machine_id`` : 'mac1234.ornl.gov' (a fully qualified domain name as
    a string)
+-  ``pycroscopy_version`` : '0.60.0'
+-  ``platform`` : 'Windows10....' or something like 'Darwin-17.4.0-x86_64-i386-64bit' (for Mac OS) -
+   a long string providing detailed information about the operating system
 
 Groups
 ~~~~~~~~~~
 
-Datagroups in pycroscopy are used to organize datasets in an intuitive
-manner.
+HDF5 Groups in pycroscopy are used to organize categories of information (raw measurements from instruments, results from data analysis, etc.) in an intuitive manner.
 
 Measurement data
 ^^^^^^^^^^^^^^^^
@@ -518,30 +519,29 @@ Measurement data
 -  As mentioned earlier, microscope users may change experimental
    parameters during measurements. Even if these changes are minor, they
    can lead to misinterpretation of data if the changes are not handled
-   robustly. To solve this problem, we recommend storing data under
-   groups named as **``Measurement_00x``**. Each time the parameters
+   robustly. To solve this problem, we recommend storing data under **indexed**
+   groups named as ``Measurement_00x``. Each time the parameters
    are changed, the dataset is truncated to the point until which data
    was collected and a new group is created to store the upcoming
    new measurement data.
 -  Each **channel** of information acquired during the measurement gets
    its own group.
--  The ``main`` datasets would reside within these channel groups.
+-  The ``Main`` datasets would reside within these channel groups.
 -  Similar to the measurement groups, the channel groups are
    named as ``Channel_00x``. The index for the group is incremented
    according to the index of the information channel.
 -  Depending on the circumstances, the ancillary datasets can be shared
    among channels.
 
-   -  Instead of the main dataset in Channel\_001 having references to
-      the ancillary datasets in Channel\_000, we recommend placing the
+   -  Instead of the main dataset in ``Channel_001`` having references to
+      the ancillary datasets in ``Channel_000``, we recommend placing the
       ancillary datasets outside the Channel groups in a area common
       to both channel groups. Typically, this is the
-      Measurement\_00x group.
+      ``Measurement_00x`` group.
 
 -  This is what the tree structure in the file looks like when
    experimental parameters were changed twice and there are two channels
    of information being acquired during the measurements.
--  ``/`` (Root - also considered a group)
 -  Datasets common to all measurement groups (perhaps some calibration
    data that is acquired only once before all measurements)
 -  ``Measurement_000`` (group)
@@ -554,7 +554,7 @@ Measurement data
 
       -  Datasets here
 
-   -  Datasets common to Channel\_000 and Channel\_001
+   -  Datasets common to ``Channel_000`` and ``Channel_001``
 
 -  ``Measurement_001`` (group)
 
@@ -566,91 +566,93 @@ Measurement data
 
       -  Datasets here
 
-   -  Datasets common to Channel\_000 and Channel\_001
+   -  Datasets common to ``Channel_000`` and ``Channel_001``
 
 -  ...
 
 Tool (analysis / processing)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
--  Each time an analysis or processing routine, refered generally as
+-  Each time an analysis or processing routine, referred generally as
    ``tool``, is performed on a dataset of interest, the results are
-   stored in new datasets within a group.
+   stored in new HDF5 datasets within a new HSF5 group.
 -  A completely new dataset(s) and group are created even if a minor
-   operation is being performed on the dataset.
--  Almost always, the tool is applied to a ``main`` dataset (refered to
-   as the ``parent`` dataset) and at least one of the results is
+   operation is being performed on the dataset. In other words, we **do NOT modify existing datasets**.
+-  Almost always, the tool is applied to one (or more) ``main`` datasets (referred to
+   as the ``source`` dataset) and at least one of the results is
    typically also a ``main`` dataset. These new ``main`` datasets will
-   either need to be linked to the ancillary matricies of the ``parent``
+   either need to be linked to the ancillary matrices of the ``source``
    or to new ancillary datasets that will need to be created.
 -  The resultant dataset(s) are always stored in a group whose name
    is derived from the names of the tool and the dataset. This makes the
    data **traceable**, meaning that the names of the datasets and
    groups are sufficient to understand what processing or analysis
    steps were applied to the data to bring it to a particular point.
--  The group is named as ``Parent_Dataset-Tool_Name_00x``, where a
+-  The group is named as ``Source_Dataset-Tool_Name_00x``, where a
    ``tool`` named ``Tool_Name`` is applied to a ``main`` dataset named
-   ``Parent_Dataset``.
+   ``Source_Dataset``.
 
    -  Since there is a possibility that the same tool could be applied
       to the very same dataset multiple times, we store the results of
       each run of the tool in a separate group. These groups are
-      differentiated by the index that is appened to the base-name of
+      differentiated by the index that is appended to the name of
       the group.
    -  Note that a ``-`` separates the dataset name from the tool name
       and anything after the last ``_`` will be assumed to be the index
       of the group
+   -  Please refer to the advanced topics section for tools that have **more than one**
+      ``source`` datasets
 
 -  In general, the results from tools applied to datasets should be
    stored as:
 
-    -  ``Parent_Dataset``
-    -  ``Parent_Dataset-Tool_Name_000`` (group comtaining results from
-       first run of the ``tool`` on ``Parent_Dataset``)
+    -  ``Source_Dataset``
+    -  ``Source_Dataset-Tool_Name_000`` (group containing results from
+       first run of the ``tool`` on ``Source_Dataset``)
 
        -  Attributes:
 
-          -  ``time_stamp``
-          -  ``machine_id``
+          -  all mandatory attributes
           -  ``algorithm``
           -  Other tool-relevant attributes
+          -  ``source_000`` - reference to ``Source_Dataset``
 
        -  ``Dataset_Result0``
        -  ``Dataset_Result1`` ...
 
-    -  ``Parent_Dataset-Tool_Name_001`` (group comtaining results from
-       second run of the ``tool`` on ``Parent_Dataset``)
+    -  ``Source_Dataset-Tool_Name_001`` (group containing results from
+       second run of the ``tool`` on ``Source_Dataset``)
 
--  This methodolody is illustrated with an example of applying
-   ``K-Means Clustering`` on the ``Raw_Data`` acquired from a
-   mesurement:
+-  This methodology is illustrated with an example of applying
+   ``K-Means Clustering`` on the ``Raw_Data`` acquired from a measurement:
 
     -  ``Raw_Data`` (``main`` dataset)
     -  ``Raw_Data-Cluster_000`` (group)
     -  Attributes:
 
-       -  ``time_stamp`` : '2017\_08\_15-22\_15\_45'
-       -  ``machine_id`` : 'mac1234.ornl.gov'      \* ``algorithm`` :
-          'K-Means'
+           -  all mandatory attributes
+           -  ``algorithm`` : 'K-Means'
+           -  ``source_000`` : reference to ``Raw_Data``
 
-    -  ``Label_Indices`` (ancillary spectroscopic dataset)
-    -  ``Label_Values`` (ancillary spectroscopic dataset)
-    -  ``Labels`` (main dataset)
+    -  ``Label_Indices`` (ancillary spectroscopic dataset with 1 dimension of size 1)
+    -  ``Label_Values`` (ancillary spectroscopic dataset with 1 dimension of size 1)
+    -  ``Labels`` (Main dataset)
 
        -  Attributes:
 
           -  ``quantity`` : 'Cluster labels'
-          -  ``units`` : ''
-          -  ``Position_Indicies`` : Reference to ``Position_Indices`` from
+          -  ``units`` : 'a. u.'
+          -  ``Position_Indices`` : Reference to ``Position_Indices`` from
              attribute of ``Raw_Data``
           -  ``Position_Values`` : Reference to ``Position_Values`` from
              attribute of ``Raw_Data``
-          -  ``Spectrocopic_Indices`` : Reference to ``Label_Indices``
-          -  ``Spectrocopic_Values`` : Reference to ``Label_Values``
+          -  ``Spectroscopic_Indices`` : Reference to ``Label_Indices``
+          -  ``Spectroscopic_Values`` : Reference to ``Label_Values``
+          -  all mandatory attributes
 
-    -  ``Cluster_Indices`` (ancillary positions dataset)
-    -  ``Cluster_Values`` (ancillary positions dataset)
-    -  ``Mean_Response`` (main dataset) <- This dataset stores the endmember
+    -  ``Cluster_Indices`` (ancillary positions dataset with 1 dimension of size equal to number of clusters)
+    -  ``Cluster_Values`` (ancillary positions dataset with 1 dimension of size equal to number of clusters)
+    -  ``Mean_Response`` (main dataset) <- This dataset stores the endmembers
        or mean response for each cluster
 
        -  Attributes:
@@ -658,12 +660,13 @@ Tool (analysis / processing)
           -  ``quantity`` : copy from the ``quantity`` attribute in
              ``Raw_Data``
           -  ``units`` : copy from the ``units`` attribute in ``Raw_Data``
-          -  ``Position_Indicies`` : Reference to ``Cluster_Indices``
+          -  ``Position_Indices`` : Reference to ``Cluster_Indices``
           -  ``Position_Values`` : Reference to ``Cluster_Values``
-          -  ``Spectrocopic_Indices`` : Reference to
-             ``Spectrocopic_Indices`` from attribute of ``Raw_Data``
-          -  ``Spectrocopic_Values`` : Reference to ``Spectrocopic_Values``
+          -  ``Spectroscopic_Indices`` : Reference to ``Spectroscopic_Indices``
              from attribute of ``Raw_Data``
+          -  ``Spectroscopic_Values`` : Reference to ``Spectroscopic_Values``
+             from attribute of ``Raw_Data``
+          -  all mandatory attributes
 
 -  Note that the spectroscopic datasets that the ``Labels`` dataset link
    to are not called ``Spectroscopic_Indices`` or
@@ -685,17 +688,17 @@ might. Therefore, we do not require or enforce that region references be used
 
 Processing on multiple ``Main`` datasets
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-One popular scientific workflow we anticipate involves the usage of multiple `Main` datasets to create results.
+One popular scientific workflow we anticipate involves the usage of multiple ``source`` datasets to create results.
 By definition, this breaks the current nomenclature of HDF5 groups that will contain results. This will be addressed by
-restructuring the code in such a way that the results group could be named as: `Multi_Dataset-Tool_Name_000`. To improve
+restructuring the code in such a way that the results group could be named as: ``Multi_Dataset-Tool_Name_000``. To improve
 the robustness of the solution, we have already begun storing the necessary information as attributes of the HDF5
 results groups. Here are the attributes of the group that we expect to capture the references to all the datasets along
 with the name of the tool while relaxing the restrictions on the aforementioned nomenclature:
 
-* `tool` : `<string>` - Name of the tool / process applied to the datasets
-* `num_sources`: `<unsigned integer>` - Number of source datasets that take part in the process
-* `source_000` : `<HDF5 object reference>` - reference to the first source dataset
-* `source_001` : `<HDF5 object reference>` - reference to the second source dataset ...
+* ``tool`` : <string> - Name of the tool / process applied to the datasets
+* ``num_sources``: <unsigned integer> - Number of source datasets that take part in the process
+* ``source_000`` : <HDF5 object reference> - reference to the first source dataset
+* ``source_001`` : <HDF5 object reference> - reference to the second source dataset ...
 
 We would have to break the list of references to the source datasets into individual attributes since h5py / HDF5
 currently does not allow the value of an attribute to be a list of object references.
@@ -709,8 +712,8 @@ challenge. The naive approach would be to store a giant matrix of zeros with onl
 This is highly inefficient since the space occupied by the data would be equal to that of the complete (non-sparse)
 dataset.
 
-For such sparse sampling problems, we propose that the indices for each position be identical and still range from `0`
-to `N-1` for a dataset with `N` randomly sampled positions. Thus, for an example dataset with two position dimensions,
+For such sparse sampling problems, we propose that the indices for each position be identical and still range from ``0``
+to ``N-1`` for a dataset with ``N`` randomly sampled positions. Thus, for an example dataset with two position dimensions,
 the indices would be arranged as:
 
 +-------+-------+
