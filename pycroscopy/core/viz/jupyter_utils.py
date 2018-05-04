@@ -367,7 +367,7 @@ def save_fig_filebox_button(fig, filename):
                             layout={'width': '50%'})
     save_button = widgets.Button(description='Save figure')
 
-    def _save_fig(junk):
+    def _save_fig(*args):
         filename = name_box.value
         save_path = os.path.join(file_dir, filename)
         _, ext = os.path.splitext(filename)
