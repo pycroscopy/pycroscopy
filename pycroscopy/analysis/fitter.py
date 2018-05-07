@@ -71,7 +71,7 @@ class Fitter(object):
         self.fit = None
 
         self._fitter_name = None  # Reset this in the extended classes
-        self._parms_dict = None
+        self._parms_dict = dict()
 
     def _set_memory_and_cores(self):
         """
