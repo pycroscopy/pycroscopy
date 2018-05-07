@@ -361,7 +361,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
     def update_resp_plot(resp_dict):
-        resp_vec = resp_func(np.atleast_2d(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].squeeze()))
+        resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape)).T
         for line_handle, data in zip(line_handles, resp_vec):
             line_handle.set_ydata(data)
 
