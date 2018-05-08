@@ -7,9 +7,10 @@ Pycroscopy Data and File Format
 8/8/2017
 
 In this document we aim to provide a comprehensive overview, guidelines,
-and specifications for storing imaging data using the community-driven
-pycroscopy format. **Dr. Stephen Jesse** conceive the original guidelines on structuring the data while
-**Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure in python and HDF5
+and specifications for storing scientific data using the community-driven pycroscopy format.
+
+**Dr. Stephen Jesse** conceived the original guidelines on structuring the data while
+**Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure into the hierarchical data format (HDF5)
 
 Why should you care?
 --------------------
@@ -17,6 +18,9 @@ Why should you care?
 The quest for understanding more about samples has necessitated the
 development of a multitude of instruments, each capable of numerous
 measurement modalities.
+
+Proprietary file formats
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Typically, each commercial instruments generates data files formatted in
 proprietary data formats by the instrument manufacturer. The proprietary
@@ -28,20 +32,22 @@ following ways:
 3. Inability to store results back into the same file
 4. Inflexibility to accommodate few kilobytes to several gigabytes of data
 5. Requiring different versions of analysis routines for each format
-6. In some cases, requiring proprietary software provided with the microscope to access the data
+6. In some cases, requiring proprietary software provided with the instrument to access the data
 
-Future concerns:
+Future concerns
+~~~~~~~~~~~~~~~~
 
 1. Several fields are moving towards the open science paradigm which will require journals and researchers to support
    journal papers with data and analysis software
 2. US Federal agencies that support scientific research require curation of datasets in a clear and organized manner
 
-Other problems:
+Other problems
+~~~~~~~~~~~~~~~
 
 1. The vast majority of scientific software packages (e.g. X-array) aim to focus at information already available in
    memory. In other words they do not solve the problem of storing data in a self-describing manner and reading +
    processing this data.
-2. There are a few data formatting packages and approaches (Nexus, NetCDF). However, they are typically narrow in scope
+2. There are a few file formatting packages and approaches (Nexus, NetCDF). However, they are typically narrow in scope
    and only solve the data formatting for specific communities
 3. Commercial image analysis software are often woefully limited in their capabilities and only work on simple 1, 2, and
    in some cases- 3D datasets. There are barely any software for handling arbitrarily large multi-dimensional datasets.
@@ -50,14 +56,38 @@ Other problems:
    advanced algorithms to reconstruct the missing data. We have not come across any robust solutions for storing such
    **Compressed sensing / sparse sampling** data. More in the **Advanced Topics** section.
 
+Nomenclature
+--------------
+Data structuring
+~~~~~~~~~~~~~~~~~
+Data structuring refers to the way the data is arranged. This does not depend on the exact implementation in a particular file format
+
+File format
+~~~~~~~~~~~~
+This corresponds to the kind of file, such as a spreadsheet (.CSV), an image (.PNG), a text file (.TXT) within which information is contained.
+
+Data format
+~~~~~~~~~~~~
+Data formats often refer to the implementation of / structuring of data in a particular file format
+
+Dimensionality
+~~~~~~~~~~~~~~~
+* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets:
+
+  * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
+  * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
+  * If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have ``4 dimensions:`` ``(Rows, Columns, Cycle, Bias)``.
+* ``Multi-feature``: As a different example, let us suppose that the ``petal width``, ``length``, and ``weight`` were measured for ``F`` different kinds of flowers. This would result in a ``1 dimensional dataset`` with the kind of flower being the sole dimension. Such a dataset is **not** a 3 dimensional dataset because the ``petal width, length``, and ``weight`` are only different ``features`` for each measurement. Some quantity needs to be **measured for all combinations of** petal width, length, and weight to make this dataset 3 dimensional. Most examples observed in data mining, simple machine learning actually fall into this category
+
+
 To solve the above and many more problems, we have developed an
 **instrument agnostic data format** that can be used to represent data
 from any instrument, size, dimensionality, or complexity. We store data
 in **hierarchical data format (HDF5)** files because we find them to be
-best suited for the pycroscopy data format.
+best suited for the pycroscopy data structure.
 
-Pycroscopy data format
-----------------------
+Pycroscopy data structure
+---------------------------
 
 Data in pycroscopy files are stored in three main kinds of datasets:
 
@@ -71,7 +101,7 @@ Data in pycroscopy files are stored in three main kinds of datasets:
 ``Main`` Datasets
 ~~~~~~~~~~~~~~~~~
 
-Regardless of origin, modality or complexity, imaging data have one
+Regardless of origin, modality or complexity, imaging data (and most scientific data for that matter) have one
 thing in common:
 
 **The same measurement is performed at multiple spatial locations**
@@ -362,20 +392,59 @@ two measurement datasets would not share the ancillary position datasets
 as well. Other specifics regarding the implementation of different
 channels will be discussed in a later section.
 
-File Format (HDF5)
-------------------
+File Format
+-------------
 
-While it is indeed possible to store data in the pycroscopy format in
-multiple kinds of file formats such at .mat files, plain binary files,
-etc., we chose the `HDF5 file
-format <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`__ since it
-comfortably accommodates the pycroscopy format and offers several
-advantageous features.
+Requirements
+~~~~~~~~~~~~~~
+No one really wants yet another file format in their lives. We wanted to adopt a file format that satisfies some basic requirements:
 
+* already widely accepted in scientific research
+* readily compatible with high-performance computing machines and inherently support parallel read and write capabilities.
+* store multiple datasets of different shapes, dimensionalities, precision and sizes.
+* scale very efficiently from few kilobytes to several terabytes
+* can be (readily) read and modified using any language including Python, R, Matlab,
+  C/C++, Java, Fortran, Igor Pro, etc. without requiring installation of modules that are hard to install
+* store and organize data in a intuitive and familiar hierarchical / tree-like
+  structure that is similar to files and folders in personal computers.
+* facilitates storage of any number of experimental or analysis parameters
+  in addition to regular data.
+* highly flexible and poses minimal restrictions on how the data can and should be stored.
+
+Candidates
+~~~~~~~~~~~~
+* We found that existing file formats in science such as the `Nexus data format <http://www.nexusformat.org>`_,
+  `XDMF <http://www.xdmf.org/index.php/Main_Page>`_, and `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_:
+
+  * were designed for **specific / narrow scientific domains only** and we did not want to shoehorn our data structure into those formats.
+  * Furthermore, despite being some of the more popular scientific data formats, it is **not immediately straightforward to read those files**
+    on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_
+    python distribution does not come with any packages for reading these file formats.
+* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_ is perhaps the ultimate file format for supercomputers but
+  we find the learning curve for average users to be unnecessarily steep, especially if they don't use supercomputers.
+* The `hierarchical data format (HDF5) <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`_ is the implicitly or explicitly the **de-facto standard in scientific research**.
+  Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
+  files are actually (now) just custom flavors of HDF5 thereby validating the statement that HDF5 is the **unanimous the file format of choice**
+
+Besides `HDF5 <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_, every alternative had some
+major shortcomings / did not satisfy one or more requirements. Hence, pycroscopy has officially adopted the HD5 file format
+
+
+* Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5
+    file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
+
+Implementation in HDF5
+-----------------------
+
+Here we discuss guidelines and specifications for implementing the
+pycroscopy data structure in HDF5 files.
+
+Quick basics of HDF5
+~~~~~~~~~~~~~~~~~~~~~
 Information can be stored in HDF5 files in several ways:
 
-* ``Datasets`` allow the storageo of data matricies and these are the vessels used for storing the ``main``,
-  ``ancillary``, and any extra data matricies
+* ``Datasets`` allow the storage of data matrices and these are the vessels used for storing the ``main``,
+  ``ancillary``, and any extra data matrices
 * ``Groups`` are similar to folders in conventional file systems and can be used to store any number of datasets or
   groups themselves
 * ``Attributes`` are small pieces of information, such as experimental or analytical parameters, that are stored in
@@ -383,24 +452,6 @@ Information can be stored in HDF5 files in several ways:
 * While they are not means to store data, ``Links`` or ``references`` can be used to provide shortcuts and aliases to
   datasets and groups. This feature is especially useful for avoiding duplication of datasets when two ``main``
   datasets use the same ancillary datasets.
-
-Among the `various benefits <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`__
-that they offer, HDF5 files:
-
-* are readily compatible with high-performance computing facilities
-* scale very efficiently from few kilobytes to several terabytes
-* can be read and modified using any language including Python, Matlab,
-  C/C++, Java, Fortran, Igor Pro, etc.
-* store data in a intuitive and familiar hierarchical / tree-like
-  structure that is similar to files and folders in personal computers.
-* facilitates storage of any number of experimental or analysis parameters
-  in addition to regular data.
-
-Implementation
---------------
-
-Here we discuss guidelines and specifications for implementing the
-pycroscopy format in HDF5 files.
 
 ``Main`` data:
 ~~~~~~~~~~~~~~
@@ -516,7 +567,7 @@ HDF5 Groups in pycroscopy are used to organize categories of information (raw me
 Measurement data
 ^^^^^^^^^^^^^^^^
 
--  As mentioned earlier, microscope users may change experimental
+-  As mentioned earlier, instrument users may change experimental
    parameters during measurements. Even if these changes are minor, they
    can lead to misinterpretation of data if the changes are not handled
    robustly. To solve this problem, we recommend storing data under **indexed**
@@ -674,7 +725,7 @@ Tool (analysis / processing)
    specifications outlined above. The same is true for the position
    datasets for ``Mean_Response``.
 
-Advanced topics:
+Advanced topics
 ----------------
 
 ``Region references``
