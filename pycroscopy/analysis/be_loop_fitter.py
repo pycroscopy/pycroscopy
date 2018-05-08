@@ -385,11 +385,13 @@ class BELoopFitter(Fitter):
 
                 results.append(temp)
 
+                self.fit = np.hstack(tuple(results))
+                self._set_results()
+
                 self._start_pos = self._end_pos
                 self._get_guess_chunk()
 
-            self.fit = np.hstack(tuple(results))
-            self._set_results()
+
 
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % solver_type)
