@@ -338,6 +338,7 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
 
     return fig
 
+
 def save_fig_filebox_button(fig, filename):
     """
     Create ipython widgets to allow the user to save a figure to the

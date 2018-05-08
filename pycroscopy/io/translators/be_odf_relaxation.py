@@ -85,7 +85,6 @@ class BEodfRelaxationTranslator(Translator):
         if real_size != imag_size:
             raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
 
-        add_pix = False
         num_rows = int(parm_dict['grid_num_rows'])
         num_cols = int(parm_dict['grid_num_cols'])
         num_pix = num_rows * num_cols
@@ -103,7 +102,6 @@ class BEodfRelaxationTranslator(Translator):
         elif not check_bins % 1:
             tot_bins = check_bins
             warn('Warning:  A pixel seems to be missing from the data.  File will be padded with zeros.')
-            add_pix = True
 
         tot_bins = int(tot_bins)
         (bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec) = self.__readOldMatBEvecs(path_dict['old_mat_parms'])

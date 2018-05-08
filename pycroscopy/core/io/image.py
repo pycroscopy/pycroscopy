@@ -155,10 +155,10 @@ class ImageTranslator(Translator):
         pos_dims = [Dimension('X', 'a.u.', np.arange(usize)), Dimension('Y', 'a.u.', np.arange(vsize))]
 
         chunking = calc_chunks([num_pixels, 1],
-                                  data_type(0).itemsize,
-                                  unit_chunks=[1, 1])
+                               data_type(0).itemsize,
+                               unit_chunks=[1, 1])
 
-        h5_main = write_main_dataset(chan_grp, (usize*vsize, 1), 'Raw_Data', 'Intensity', 'a.u.',
+        h5_main = write_main_dataset(chan_grp, (usize * vsize, 1), 'Raw_Data', 'Intensity', 'a.u.',
                                      pos_dims, Dimension('None', 'a.u.', [1]), dtype=data_type, chunks=chunking)
 
         self.h5_file.flush()

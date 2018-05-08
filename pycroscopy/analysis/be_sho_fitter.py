@@ -22,7 +22,7 @@ sho32 = np.dtype({'names': field_names,
 
 class BESHOfitter(Fitter):
 
-    def __init__(self, h5_main, variables=['Frequency'], **kwargs):
+    def __init__(self, h5_main, variables=None, **kwargs):
         """
         Analysis of Band excitation spectra with harmonic oscillator responses.
 
@@ -34,7 +34,11 @@ class BESHOfitter(Fitter):
         variables : list(string), Default ['Frequency']
            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
         """
+        if variables is None:
+            variables = ['Frequency']
+
         super(BESHOfitter, self).__init__(h5_main, variables, **kwargs)
+
         self.step_start_inds = None
         self.is_reshapable = True
         self.num_udvs_steps = None

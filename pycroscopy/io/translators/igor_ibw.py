@@ -61,7 +61,7 @@ class IgorIBWTranslator(Translator):
         images = ibw_wave.get('wData')
 
         if images.shape[2] != len(chan_labels):
-            chan_labels = chan_labels[1:] # for layer 0 null set errors in older AR software
+            chan_labels = chan_labels[1:]  # for layer 0 null set errors in older AR software
 
         if images.ndim == 3:  # Image stack
             if verbose:
@@ -111,7 +111,8 @@ class IgorIBWTranslator(Translator):
         # Prepare the list of raw_data datasets
         chan_raw_dsets = list()
         for chan_data, chan_name, chan_unit in zip(images, chan_labels, chan_units):
-            ds_raw_data = VirtualDataset('Raw_Data', data=np.atleast_2d(chan_data), dtype=np.float32, compression='gzip')
+            ds_raw_data = VirtualDataset('Raw_Data', data=np.atleast_2d(chan_data), dtype=np.float32,
+                                         compression='gzip')
             ds_raw_data.attrs['quantity'] = chan_name
             ds_raw_data.attrs['units'] = [chan_unit]
             chan_raw_dsets.append(ds_raw_data)
@@ -188,7 +189,7 @@ class IgorIBWTranslator(Translator):
             try:
                 parm_string = parm_string.decode(codec)
             except:
-                parm_string = parm_string.decode('ISO-8859-1') # for older AR software
+                parm_string = parm_string.decode('ISO-8859-1')  # for older AR software
         parm_string = parm_string.rstrip('\r')
         parm_list = parm_string.split('\r')
         parm_dict = dict()

@@ -14,7 +14,7 @@ from sklearn.utils.extmath import randomized_svd
 
 from ..core.processing.process import Process
 from .proc_utils import get_component_slice
-from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups,  get_indices_for_region_ref, \
+from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups, get_indices_for_region_ref, \
     create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs
 from ..io.hdf_writer import HDFwriter
@@ -191,6 +191,7 @@ class SVD(Process):
             svd_ref = create_region_reference(h5_v, ref_inds)
 
             h5_v.attrs[key] = svd_ref
+
 
 ###############################################################################
 

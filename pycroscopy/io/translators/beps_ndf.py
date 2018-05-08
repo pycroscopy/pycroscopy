@@ -30,6 +30,7 @@ class BEPSndfTranslator(Translator):
     files to .h5
 
     """
+
     def __init__(self, *args, **kwargs):
         super(BEPSndfTranslator, self).__init__(*args, **kwargs)
         self.debug = False
@@ -281,8 +282,8 @@ class BEPSndfTranslator(Translator):
             pos_slice_dict[spat_dim] = (slice(None), slice(spat_ind, spat_ind + 1))
 
         ds_pos_ind = VirtualDataset('Position_Indices',
-                                  self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                               self.ds_pixel_index, :],
+                                    self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+                                                                          self.ds_pixel_index, :],
                                     dtype=INDICES_DTYPE)
 
         ds_pos_ind.attrs['labels'] = pos_slice_dict
@@ -307,7 +308,7 @@ class BEPSndfTranslator(Translator):
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
         pos_val_mat = VALUES_DTYPE(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                              self.ds_pixel_index, :])
+                                                                         self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
             if targ_dim_name in self.pos_labels:

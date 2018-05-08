@@ -558,9 +558,11 @@ class PycroDataset(h5py.Dataset):
 
         if verbose:
             print('Position VizDimensions:')
-            for item in pos_dims: print('{}\n{}'.format(len(item.values), item))
+            for item in pos_dims:
+                print('{}\n{}'.format(len(item.values), item))
             print('Spectroscopic VizDimensions:')
-            for item in spec_dims: print('{}\n{}'.format(len(item.values), item))
+            for item in spec_dims:
+                print('{}\n{}'.format(len(item.values), item))
             print('N dimensional data sent to visualizer of shape: {}'.format(data_slice.shape))
 
         simple_ndim_visualizer(data_slice, pos_dims, spec_dims, verbose=verbose, **kwargs)

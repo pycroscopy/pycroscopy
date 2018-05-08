@@ -123,13 +123,13 @@ class NanonisFile(object):
 
             if byte_offset == -1:
                 raise FileHeaderNotFoundError(
-                        'Could not find the {} end tag in {}'.format(tag, self.basename)
-                        )
+                    'Could not find the {} end tag in {}'.format(tag, self.basename)
+                )
 
         return byte_offset
 
-class Grid(NanonisFile):
 
+class Grid(NanonisFile):
     """
     Nanonis grid file class.
 
@@ -205,7 +205,7 @@ class Grid(NanonisFile):
         f.close()
 
         # pixel size in bytes
-        exp_size_per_pix = num_param + num_sweep*num_chan
+        exp_size_per_pix = num_param + num_sweep * num_chan
 
         # reshape from 1d to 3d
         griddata_shaped = griddata.reshape((nx, ny, exp_size_per_pix))
@@ -217,7 +217,7 @@ class Grid(NanonisFile):
         # extract data for each channel
         for i, chann in enumerate(self.header['channels']):
             start_ind = num_param + i * num_sweep
-            stop_ind = num_param + (i+1) * num_sweep
+            stop_ind = num_param + (i + 1) * num_sweep
             data_dict[chann] = griddata_shaped[:, :, start_ind:stop_ind]
 
         return data_dict
@@ -261,7 +261,6 @@ class Grid(NanonisFile):
 
 
 class Scan(NanonisFile):
-
     """
     Nanonis scan file class.
 
@@ -348,7 +347,6 @@ class Scan(NanonisFile):
 
 
 class Spec(NanonisFile):
-
     """
     Nanonis point spectroscopy file class.
 
@@ -407,7 +405,6 @@ class Spec(NanonisFile):
 
 
 class UnhandledFileError(Exception):
-
     """
     To be raised when unknown file extension is passed.
     """
@@ -415,7 +412,6 @@ class UnhandledFileError(Exception):
 
 
 class FileHeaderNotFoundError(Exception):
-
     """
     To be raised when no header information could be determined.
     """
@@ -458,7 +454,7 @@ def _parse_3ds_header(header_raw):
     header_dict['dim_px'] = [int(val) for val in dim_px_str.split(' x ')]
 
     # grid frame center position, size, angle
-    grid_str = raw_dict.pop('Grid settings', [0,0,0,0])
+    grid_str = raw_dict.pop('Grid settings', [0, 0, 0, 0])
     header_dict['pos_xy'] = [float(val) for val in grid_str[:2]]
     header_dict['size_xy'] = [float(val) for val in grid_str[2:4]]
     header_dict['angle'] = float(grid_str[-1])
@@ -540,15 +536,15 @@ def _parse_sxm_header(header_raw):
     for i, entry in enumerate(header_entries):
         if entry == ':DATA_INFO:' or entry == ':Z-CONTROLLER:':
             count = 1
-            for j in range(i+1, len(header_entries)):
+            for j in range(i + 1, len(header_entries)):
                 if header_entries[j].startswith(':'):
                     break
                 if header_entries[j][0] == '\t':
                     count += 1
-            header_dict[entry.strip(':').lower()] = _parse_scan_header_table(header_entries[i+1:i+count])
+            header_dict[entry.strip(':').lower()] = _parse_scan_header_table(header_entries[i + 1:i + count])
             continue
         if entry.startswith(':'):
-            header_dict[entry.strip(':').lower()] = header_entries[i+1].strip()
+            header_dict[entry.strip(':').lower()] = header_entries[i + 1].strip()
 
     for key in entries_to_be_split:
         header_dict[key] = header_dict[key].split()

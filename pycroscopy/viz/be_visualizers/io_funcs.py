@@ -7,7 +7,6 @@ Created on Apr 20, 2016
 import sys
 import numpy as np
 import h5py
-
 sys.path.append('../')
 from scipy.io import loadmat
 from ...io.hdf_writer import HDFwriter

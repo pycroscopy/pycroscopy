@@ -43,12 +43,12 @@ class NumpyTranslator(Translator):
         units : String / Unicode
             Name of units for the quantity stored in the dataset. Example - 'A' for amperes
         pos_dims : Dimension or array-like of Dimension objects
-            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
-            datasets
+            Sequence of Dimension objects that provides all necessary instructions for constructing the
+            indices and values datasets
             Object specifying the instructions necessary for building the Position indices and values datasets
         spec_dims : Dimension or array-like of Dimension objects
-            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
-            datasets
+            Sequence of Dimension objects that provides all necessary instructions for constructing the
+            indices and values datasets
             Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
         translator_name : String / unicode, Optional
             Name of the translator. Example - 'HitachiSEMTranslator'

@@ -306,7 +306,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
 
 
 def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
-                       max_mem_mb=1024, spec_label='None', ignore_plot_groups=[],
+                       max_mem_mb=1024, spec_label='None',
                        show_plots=True, save_plots=True, do_histogram=False,
                        debug=False):
     """
@@ -331,8 +331,6 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
         Maximum memory that can be used for generating histograms
     spec_label : String
         Parameter that is varying
-    ignore_plot_groups : (optional) List of strings
-        Names of the plot groups (UDVS columns) that should be ignored
     show_plots : (optional) Boolean
         Whether or not to show plots
     save_plots : (optional) Boolean
@@ -487,9 +485,6 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
 
         if save_plots or show_plots:
             fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
-            path_1d = None
-            path_2d = None
-            path_hist = None
 
             fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
             if save_plots:
@@ -510,7 +505,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
                 plt.show()
             else:
                 plt.close('all')
-                
+
             # print('Generated spatially average data for group: %s' %(col_name))
     print('Completed generating spatially averaged plot groups')
 
@@ -1083,7 +1078,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
 
-    def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, iSpecVals, udvs_units):
+    def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, udvs_labs, iSpecVals, udvs_units):
         """
         Calculates Spectroscopic Values for BEPS data in generic mode
         
@@ -1093,7 +1088,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         inSpecVals : list holding initial guess at spectral values 
         bin_freqs : 1D numpy array of frequencies
         bin_wfm_type : numpy array containing the waveform type for each frequency index
-        parm_dict : parameter dictinary for dataset            
         udvs_labs : list of labels for the columns of the UDVS matrix
             
         Returns
@@ -1201,6 +1195,7 @@ class BEHistogram:
     Class just functions as a container so we can have shared objects
     Chris Smith -- csmith55@utk.edu
     """
+
     def __init__(self):
         self.max_mem = None
         self.max_response = None

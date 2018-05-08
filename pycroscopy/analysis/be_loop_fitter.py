@@ -66,8 +66,12 @@ class BELoopFitter(Fitter):
     
     """
 
-    def __init__(self, h5_main, variables=['DC_Offset'], parallel=True):
+    def __init__(self, h5_main, variables=None, parallel=True):
+        if variables is None:
+            variables = ['DC_Offset']
+
         super(BELoopFitter, self).__init__(h5_main, variables, parallel)
+
         self._h5_group = None
         self.h5_guess_parameters = None
         self.h5_fit_parameters = None
@@ -88,7 +92,7 @@ class BELoopFitter(Fitter):
         self._maxDataChunk = 1
         self._fit_dim_name = variables[0]
 
-    def _is_legal(self, h5_main, variables=['DC_Offset']):
+    def _is_legal(self, h5_main, variables=None):
         """
         Checks whether or not the provided object can be analyzed by this class.
 
@@ -106,6 +110,9 @@ class BELoopFitter(Fitter):
             Whether or not this dataset satisfies the necessary conditions for analysis
 
         """
+        if variables is None:
+            variables = ['DC_Offset']
+
         file_data_type = get_attr(h5_main.file, 'data_type')
         meas_grp_name = h5_main.name.split('/')
         h5_meas_grp = h5_main.file[meas_grp_name[1]]
@@ -250,8 +257,8 @@ class BELoopFitter(Fitter):
             # Reshape back
             if len(self._sho_all_but_forc_inds) != 1:
                 projected_loops_2d2 = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
-                                                                          order_dc_offset_reverse,
-                                                                          nd_mat_shape_dc_first)
+                                                                           order_dc_offset_reverse,
+                                                                           nd_mat_shape_dc_first)
 
             metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
             guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
@@ -274,8 +281,8 @@ class BELoopFitter(Fitter):
 
         return PycroDataset(self.h5_guess)
 
-    def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options={'jac': '2-point'},
-               obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])},
+    def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options=None,
+               obj_func=None,
                get_loop_parameters=True, h5_guess=None):
         """
         Fit the loops
@@ -308,6 +315,10 @@ class BELoopFitter(Fitter):
             List of the results returned by the solver
 
         """
+        if obj_func is None:
+            obj_func = {'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': np.array([])}
+        if solver_options is None:
+            solver_options = {'jac': '2-point'}
         '''
         Set the number of processors and the ammount of RAM to use in the fit
         '''
@@ -388,8 +399,6 @@ class BELoopFitter(Fitter):
 
                 self._start_pos = self._end_pos
                 self._get_guess_chunk()
-
-
 
         elif legit_obj_func:
             warn('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % solver_type)
@@ -592,9 +601,9 @@ class BELoopFitter(Fitter):
         """
         # step 4: reshape to N dimensions
         fit_nd, success = reshape_to_n_dims(raw_2d,
-                                           h5_pos=None,
-                                           h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
-                                                                       self._current_sho_spec_slice])
+                                            h5_pos=None,
+                                            h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                                        self._current_sho_spec_slice])
         if not success:
             warn('Error - could not reshape provided raw data chunk...')
             return None
@@ -657,9 +666,9 @@ class BELoopFitter(Fitter):
             print('Projected loops after moving DC offset inwards:', projected_loops_nd_2.shape)
         # step 11: reshape back to 2D
         proj_loops_2d, success = reshape_from_n_dims(projected_loops_nd_2,
-                                                    h5_pos=None,
-                                                    h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
-                                                                                self._current_sho_spec_slice])
+                                                     h5_pos=None,
+                                                     h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                                                 self._current_sho_spec_slice])
         if not success:
             warn('unable to reshape projected loops')
             return None
@@ -668,7 +677,7 @@ class BELoopFitter(Fitter):
 
         return proj_loops_2d
 
-    def _reshape_results_for_h5(self, raw_results, nd_mat_shape_dc_first, verbose=False):
+    def _reshape_results_for_h5(self, raw_results, nd_mat_shape_dc_first):
         """
         Reshapes the 1D loop metrics to the format such that they can be written to the h5 file
 
@@ -680,8 +689,6 @@ class BELoopFitter(Fitter):
         nd_mat_shape_dc_first : 1D numpy unsigned int array
             Shape of the N dimensional array that the raw_results can be turned into.
             We use the order_dc_offset_reverse after this reshape
-        verbose : Boolean (Optional. Default is False)
-            Whether or not to print debugging statements
 
         Returns
         -------
@@ -703,8 +710,8 @@ class BELoopFitter(Fitter):
 
         # step 11: reshape back to 2D
         metrics_2d, success = reshape_from_n_dims(loop_metrics_nd,
-                                                 h5_pos=None,
-                                                 h5_spec=spec_inds)
+                                                  h5_pos=None,
+                                                  h5_spec=spec_inds)
         if not success:
             warn('unable to reshape ND results back to 2D')
             return None
@@ -727,18 +734,12 @@ class BELoopFitter(Fitter):
         dc_vec : 1D float numpy array
             DC offsets for the current FORC step
         """
-
-
-        spec_sort = get_sort_order(self._sho_spec_inds[self._sho_all_but_forc_inds, self._current_sho_spec_slice])
-        # get the size for each of these dimensions
-        spec_dims = self.h5_main.spec_dim_sizes
-
         # apply this knowledge to reshape the spectroscopic values
         # remember to reshape such that the dimensions are arranged in reverse order (slow to fast)
         spec_vals_nd, success = reshape_to_n_dims(self._sho_spec_vals[self._sho_all_but_forc_inds,
-                                                                     self._current_sho_spec_slice],
-                                                 h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
-                                                                             self._current_sho_spec_slice])
+                                                                      self._current_sho_spec_slice],
+                                                  h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
+                                                                              self._current_sho_spec_slice])
         # This should result in a N+1 dimensional matrix where the first index contains the actual data
         # the other dimensions are present to easily slice the data
         spec_labels_sorted = np.hstack(('Dim', self.h5_main.spec_dim_labels))
@@ -943,7 +944,7 @@ class BELoopFitter(Fitter):
             self.data = None
 
         guess = self.h5_guess[self._start_pos:self._end_pos,
-                              self._current_met_spec_slice].reshape([-1, 1])
+                self._current_met_spec_slice].reshape([-1, 1])
         self.guess = flatten_compound_to_real(guess)[:, :-1]
 
     def _create_guess_datasets(self):

@@ -127,19 +127,19 @@ def make_indices_matrix(num_steps, is_position=True):
     for indx, curr_steps in enumerate(num_steps):
         if curr_steps > 1:
 
-            part1 = np.prod(num_steps[:indx+1])
+            part1 = np.prod(num_steps[:indx + 1])
 
             if indx > 0:
                 part2 = np.prod(num_steps[:indx])
             else:
                 part2 = 1
 
-            if indx+1 == len(num_steps):
+            if indx + 1 == len(num_steps):
                 part3 = 1
             else:
-                part3 = np.prod(num_steps[indx+1:])
+                part3 = np.prod(num_steps[indx + 1:])
 
-            indices_matrix[:, dim_ind] = np.tile(np.floor(np.arange(part1)/part2), part3)
+            indices_matrix[:, dim_ind] = np.tile(np.floor(np.arange(part1) / part2), part3)
             dim_ind += 1
 
     if not is_position:

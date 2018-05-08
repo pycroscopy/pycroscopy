@@ -3,10 +3,12 @@ import struct
 import array
 import warnings
 import re
+
 try:
     import StringIO.StringIO
 except ImportError:
     from io import StringIO
+
     unicode = str
 except:
     raise
@@ -34,7 +36,7 @@ treat_as_string_names = ['.*Name']
 def get_from_file(f, stype):
     # print("reading", stype, "size", struct.calcsize(stype))
     src = f.read(struct.calcsize(stype))
-    assert(len(src) == struct.calcsize(stype))
+    assert (len(src) == struct.calcsize(stype))
     d = struct.unpack(stype, src)
     if verbose:
         print(d)
@@ -49,7 +51,9 @@ def put_into_file(f, stype, *args):
     f.write(struct.pack(
         stype, *args))
 
-read_array = lambda f, a, l: a.fromstring(f.read(l*struct.calcsize(a.typecode))) if isinstance(f, StringIO) else a.fromfile(f, l)
+
+read_array = lambda f, a, l: a.fromstring(f.read(l * struct.calcsize(a.typecode))) \
+    if isinstance(f, StringIO) else a.fromfile(f, l)
 write_array = lambda f, a: f.write(a.tostring()) if isinstance(f, StringIO) else a.tofile(f)
 
 
@@ -58,8 +62,9 @@ class structarray(object):
     A class to represent struct arrays. We store the data as a list of
     tuples, with the dm_types telling us the dm id for the  types
     """
+
     def __init__(self, typecodes):
-        #self.dm_types = dm_types
+        # self.dm_types = dm_types
         self.typecodes = typecodes
         self.raw_data = None
 
@@ -74,7 +79,7 @@ class structarray(object):
 
     def num_elements(self):
         b = self.bytelen(1)
-        assert(len(self.raw_data) % b == 0)
+        assert (len(self.raw_data) % b == 0)
         return len(self.raw_data) // b
 
     def from_file(self, f, num_elements):
@@ -110,8 +115,8 @@ def parse_dm_header(f, outdata=None):
         put_into_file(f, "> l l", enda, endb)
     else:
         version, file_size, endianness = get_from_file(f, "> l l l")
-        assert(version == 3)
-        assert(endianness == 1)
+        assert (version == 3)
+        assert (endianness == 1)
         start = f.tell()
         ret = parse_dm_tag_root(f, outdata)
         end = f.tell()
@@ -121,7 +126,7 @@ def parse_dm_header(f, outdata=None):
         # other times not. Let's just ignore it for the moment
         # assert(file_size == end - start)
         enda, endb = get_from_file(f, "> l l")
-        assert(enda == endb == 0)
+        assert (enda == endb == 0)
         return ret
 
 
@@ -141,7 +146,7 @@ def parse_dm_tag_root(f, outdata=None):
             for key in outdata:
                 if verbose:
                     print("Writing", key, outdata[key])
-                assert(key is not None)
+                assert (key is not None)
                 parse_dm_tag_entry(f, outdata[key], key)
     else:
         is_dict, _open, num_tags = get_from_file(f, "> b b l")
@@ -151,7 +156,7 @@ def parse_dm_tag_root(f, outdata=None):
             new_obj = {}
             for i in range(num_tags):
                 name, data = parse_dm_tag_entry(f)
-                assert(name is not None)
+                assert (name is not None)
                 if verbose:
                     print("Read name", name, "at", f.tell())
                 new_obj[name] = data
@@ -159,7 +164,7 @@ def parse_dm_tag_root(f, outdata=None):
             new_obj = []
             for i in range(num_tags):
                 name, data = parse_dm_tag_entry(f)
-                assert(name is None)
+                assert (name is None)
                 if verbose:
                     print("appending...", i, "at", f.tell())
                 new_obj.append(data)
@@ -214,7 +219,7 @@ def parse_dm_tag_data(f, outdata=None):
     # structs (15) can be 7,9,11,19
     # arrays (20) can be 3 or 11
     if outdata is not None:
-            # can we get away with a limited set that we write?
+        # can we get away with a limited set that we write?
         # ie can all numbers be doubles or ints, and we have lists
         _, data_type = get_structdmtypes_for_python_typeorobject(outdata)
         if verbose:
@@ -225,14 +230,14 @@ def parse_dm_tag_data(f, outdata=None):
         put_into_file(f, "> 4s l l", _delim, 0, data_type)
         pos = f.tell()
         header = dm_types[data_type](f, outdata)
-        f.seek(pos-8)  # where our header_len starts
-        put_into_file(f, "> l", header+1)
+        f.seek(pos - 8)  # where our header_len starts
+        put_into_file(f, "> l", header + 1)
         f.seek(0, 2)
     else:
         _delim, header_len, data_type = get_from_file(f, "> 4s l l")
-        assert(_delim == "%%%%")
+        assert (_delim == "%%%%")
         ret, header = dm_types[data_type](f)
-        assert(header + 1 == header_len)
+        assert (header + 1 == header_len)
         return ret
 
 
@@ -324,15 +329,19 @@ def standard_dm_read(datatype_num, desc):
         returns the data if reading and the number of bytes of header
         """
         if outdata is not None:
-            put_into_file(f, "<"+structchar, outdata)
+            put_into_file(f, "<" + structchar, outdata)
             return 0
         else:
-            return get_from_file(f, "<"+structchar), 0
+            return get_from_file(f, "<" + structchar), 0
+
     return dm_read_x
+
 
 dm_types = {}
 for key, val in dm_simple_names.items():
     dm_types[key] = standard_dm_read(key, val)
+
+
 # 8 is boolean, and relatively easy:
 
 
@@ -342,7 +351,11 @@ def dm_read_bool(f, outdata=None):
         return 0
     else:
         return get_from_file(f, "<b") != 0, 0
+
+
 dm_types[get_dmtype_for_name('bool')] = dm_read_bool
+
+
 # string is 18:
 
 
@@ -364,6 +377,7 @@ def dm_read_string(f, outdata=None):
             print("Got String", unicode(raws, "utf_16_le"), "at", f.tell())
         return unicode(raws, "utf_16_le"), header_size
 
+
 dm_types[get_dmtype_for_name('string')] = dm_read_string
 
 
@@ -375,17 +389,17 @@ def dm_read_struct_types(f, outtypes=None):
         for t in outtypes:
             _len = 0
             put_into_file(f, "> l l", _len, t)
-        return 2+2*len(outtypes)
+        return 2 + 2 * len(outtypes)
     else:
         types = []
         _len, nfields = get_from_file(f, "> l l")
-        assert(_len == 0)  # is it always?
+        assert (_len == 0)  # is it always?
         for i in range(nfields):
             _len, dtype = get_from_file(f, "> l l")
             types.append(dtype)
-            assert(_len == 0)
-            assert(dtype != 15)  # we don't allow structs of structs?
-        return types, 2+2*nfields
+            assert (_len == 0)
+            assert (dtype != 15)  # we don't allow structs of structs?
+        return types, 2 + 2 * nfields
 
 
 def dm_read_struct(f, outdata=None):
@@ -405,9 +419,9 @@ def dm_read_struct(f, outdata=None):
             f.seek(start)
             # dm_read_struct first writes a length which we overwrite here
             # I think the length ignores the length field (4 bytes)
-            put_into_file(f, "> l", end-start-4)
+            put_into_file(f, "> l", end - start - 4)
             f.seek(0, 2)  # the very end (2 is pos from end)
-            assert(f.tell() == end)
+            assert (f.tell() == end)
         return header
     else:
         types, header = dm_read_struct_types(f)
@@ -419,6 +433,7 @@ def dm_read_struct(f, outdata=None):
             d, h = dm_types[t](f)
             ret.append(d)
         return tuple(ret), header
+
 
 dm_types[get_dmtype_for_name('struct')] = dm_read_struct
 
@@ -438,7 +453,7 @@ def dm_read_array(f, outdata=None):
         elif isinstance(outdata, (str, unicode, array.array)):
             if isinstance(outdata, (str, unicode)):
                 outdata = array.array('H', outdata.encode("utf_16_le"))
-            assert(isinstance(outdata, array.array))
+            assert (isinstance(outdata, array.array))
             dtype = get_dmtype_for_structchar(outdata.typecode)
             put_into_file(f, "> l", dtype)
             put_into_file(f, "> L", len(outdata))
@@ -489,5 +504,6 @@ def dm_read_array(f, outdata=None):
             if verbose:
                 print("Done Array type %d len %d" % (dtype, alen), "at", f.tell())
             return ret, array_header
+
 
 dm_types[get_dmtype_for_name('array')] = dm_read_array
