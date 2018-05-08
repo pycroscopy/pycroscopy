@@ -23,7 +23,7 @@ from ...__version__ import version as pycroscopy_version
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxiliary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
-           'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor',
+           'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor', 'check_for_matching_attrs'
            'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
            'link_h5_obj_as_alias',
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
