@@ -185,7 +185,7 @@ def cbar_for_line_plot(axis, num_steps, discrete_ticks=True, **kwargs):
     cmap = get_cmap_object(kwargs.pop('cmap', None))
     cmap = discrete_cmap(num_steps, cmap=cmap.name)
 
-    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap, **kwargs)
+    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap)
 
     if discrete_ticks:
         kwargs.update({'ticks': np.arange(num_steps)})
@@ -872,7 +872,6 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         Number of standard deviations to consider for plotting
 
     **kwargs will be passed on either to plot_map() or pyplot.plot()
-    kwarg: 'figsize' can be used to specify size of the subplots
 
     Returns
     ---------

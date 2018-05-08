@@ -231,7 +231,7 @@ class BESHOfitter(Fitter):
         if strategy == 'complex_gaussian':
             options.update({'frequencies': self.freq_vec})
         super(BESHOfitter, self).do_guess(processors=processors, strategy=strategy, options=options,
-                                          h5_partial_guess=h5_partial_guess, override=override, **kwargs)
+                                          h5_partial_guess=h5_partial_guess, override=override)
 
         return self.h5_guess
 

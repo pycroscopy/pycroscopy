@@ -590,17 +590,17 @@ class FakeBEPSGenerator(Translator):
         """
 
         # Setup the limits on the coefficients
-        coef_limits = [[-1.0, -0.4]]  # 0 - loop bottom edge
-        coef_limits.append([0.5, 2.0])  # 1 - loop height
-        coef_limits.append([3.0, 5.0])  # 2 - loop crossing 1
-        coef_limits.append([-5.0, -3.0])  # 3 - loop crossing 2
-        coef_limits.append([-0.001, 0.0])  # 4 - loop slope
-        coef_limits.append([self.loop_a, self.loop_b])  # 5 - loop corner sharpness 1
-        coef_limits.append([self.loop_a / 4, self.loop_b / 4])  # 6 - loop corner shaprness 2
-        coef_limits.append([self.loop_a / 4, self.loop_b / 4])  # 7 - loop corner sharpness 3
-        coef_limits.append([self.loop_a, self.loop_b])  # 8 - loop corner sharpness 4
-        coef_limits.append([275E3, 325E3])  # 9 - resonant frequency
-        coef_limits.append([100.0, 150.0])  # 10 - Q factor
+        coef_limits = [[-1.0, -0.4],                        # 0 - loop bottom edge
+                       [0.5, 2.0],                          # 1 - loop height
+                       [3.0, 5.0],                          # 2 - loop crossing 1
+                       [-5.0, -3.0],                        # 3 - loop crossing 2
+                       [-0.001, 0.0],                       # 4 - loop slope
+                       [self.loop_a, self.loop_b],          # 5 - loop corner sharpness 1
+                       [self.loop_a / 4, self.loop_b / 4],  # 6 - loop corner shaprness 2
+                       [self.loop_a / 4, self.loop_b / 4],  # 7 - loop corner sharpness 3
+                       [self.loop_a, self.loop_b],          # 8 - loop corner sharpness 4
+                       [275E3, 325E3],                      # 9 - resonant frequency
+                       [100.0, 150.0]]                      # 10 - Q factor
 
         # build loop coef matrix
         coef_mat = np.zeros([self.n_pixels, 11])

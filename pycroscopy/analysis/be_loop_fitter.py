@@ -301,8 +301,6 @@ class BELoopFitter(Fitter):
         h5_guess : h5py.Dataset
             Existing guess to use as input to fit.
             Default None
-        verbose : Boolean
-            Whether or not to print debugging statements
 
         Returns
         -------
