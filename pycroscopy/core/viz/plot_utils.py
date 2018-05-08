@@ -587,9 +587,15 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         if x_vec is not None:
-            if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
-                raise ValueError('x_vec should be array-like with shape equal to the second axis of img')
-            x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
+            if isinstance(x_vec, (int,float)):
+                if x_vec > 0.01:
+                    x_tick_labs = [str(np.round(ind* x_vec/img.shape[1],2)) for ind in x_ticks]
+                else:
+                    x_tick_labs = ['{0:.2e}'.format(ind* x_vec/img.shape[1]) for ind in x_ticks]
+            else:
+                if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
+                    raise ValueError('x_vec should be array-like with shape equal to the second axis of img or img_size')
+                x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
         else:
             x_tick_labs = [str(ind) for ind in x_ticks]
 
@@ -598,11 +604,15 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         if y_vec is not None:
-            if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
-                raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
-            y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
-        else:
-            y_tick_labs = [str(ind) for ind in y_ticks]
+            if isinstance(y_vec, (int,float)):
+                if y_vec > 0.01:
+                    y_tick_labs = [str(np.round(ind* y_vec/img.shape[1],2)) for ind in y_ticks]
+                else:
+                    y_tick_labs = ['{0:.2e}'.format(ind* y_vec/img.shape[1]) for ind in y_ticks]
+            else:
+                if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
+                    raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
+                y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
 
         axis.set_yticks(y_ticks)
         axis.set_yticklabels(y_tick_labs)
