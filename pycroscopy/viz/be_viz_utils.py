@@ -1220,7 +1220,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
 
     h5_main = get_source_dataset(h5_sho_grp)
-    h5_main.toggle_sorting()
+    # h5_main.toggle_sorting()
 
     # Now get the needed ancillary datasets for each main dataset
     pos_dims = h5_loop_parameters.pos_dim_sizes
@@ -1250,10 +1250,10 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     loop_parameter_names = h5_loop_parameters.dtype.names
     loop_num_cycles = h5_loop_parameters.shape[1]
     # loop_parameter_spec_labs = h5_loop_parameters.spec_dim_labels
-    sho_bias_dim = np.argwhere(np.array(sho_spec_labs) == step_chan).squeeze()
+    sho_bias_dim = sho_spec_labs.index(step_chan)
     steps_per_loop = sho_spec_dims[sho_bias_dim]
-    main_bias_dim = np.argwhere(np.array(main_spec_labs) == step_chan).squeeze()
-    main_freq_dim = np.argwhere(np.array(main_spec_labs) == 'Frequency').squeeze()
+    main_bias_dim = main_spec_labs.index(step_chan)
+    main_freq_dim = main_spec_labs.index('Frequency')
 
     if selected_loop_parm is None:
         selected_loop_parm = loop_parameter_names[0]
@@ -1295,7 +1295,7 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         return loop_parameter_map, loop_map_title
 
     def _get_loops(selected_loop_cycle, selected_loop_pos):
-        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims[::-1], order='F')
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
         # Now build the loop plot for the selected position in the loop map
         selected_loop_bias_vec = loop_bias_vec[:, selected_loop_cycle]
 
@@ -1314,12 +1314,6 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         loop_guess_slice, _ = h5_loop_guess.slice(slice_dict, as_scalar=True)
         loop_fit_slice, _ = h5_loop_fit.slice(slice_dict, as_scalar=True)
 
-        # loop_proj_vec = h5_loop_projections[pos_ind].reshape(sho_spec_dims[::-1])
-        # loop_proj_vec2 = np.rollaxis(loop_proj_vec,
-        #                             len(sho_spec_dims)-sho_bias_dim-1,
-        #                             len(sho_spec_dims))[selected_loop_ndims]
-        # loop_proj_vec3 = np.roll(loop_proj_vec2, shift_ind)
-
         loop_guess_vec = loop_fit_function(selected_loop_bias_vec,
                                            loop_guess_slice.squeeze().tolist())
         loop_fit_vec = loop_fit_function(selected_loop_bias_vec,
@@ -1328,34 +1322,30 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
         return selected_loop_bias_vec, loop_proj_vec2, loop_guess_vec, loop_fit_vec
 
     def _get_sho(selected_loop_pos, selected_step, selected_loop_cycle):
-        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims[::-1], order='F')
+        selected_loop_ndims = np.unravel_index(selected_loop_cycle, loop_spec_dims, order='F')
         # get the SHO Guess and Fit and Raw Data for the selected position, cycle, and step
         pos_ind = np.ravel_multi_index(selected_loop_pos, pos_dims)
 
-        # Get the frequency vector for the selected step
-        w_vec = np.rollaxis(full_w_vec, main_freq_dim, len(main_spec_dims))  # Move frequency to the end
-        w_vec2 = np.rollaxis(w_vec, main_bias_dim-1, 0)[selected_step][selected_loop_ndims[::-1]]
-
         # Get the slice of the sho guess and fit
-        sho_guess = h5_sho_guess[pos_ind].reshape(sho_spec_dims[::-1])
-        sho_guess = np.rollaxis(sho_guess,
-                                len(sho_spec_dims)-sho_bias_dim-1,
-                                len(sho_spec_dims))[selected_loop_ndims][selected_step]
-        sho_guess = SHOfunc(sho_guess, w_vec2)
-        sho_fit = h5_sho_fit[pos_ind].reshape(sho_spec_dims[::-1])
-        sho_fit = np.rollaxis(sho_fit,
-                              len(sho_spec_dims)-sho_bias_dim-1,
-                              len(sho_spec_dims))[selected_loop_ndims][selected_step]
-        sho_fit = SHOfunc(sho_fit, w_vec2)
+        sho_slice = {key: int(val) for key, val in zip(pos_labs, selected_loop_pos)}
+        sho_slice[sho_spec_labs[sho_bias_dim]] = selected_step
+        for key, val in zip(loop_spec_labs, selected_loop_ndims):
+            sho_slice[key] = int(val)
 
         # Get the slice of the Raw Data
-        raw_data_vec, _ = reshape_to_n_dims(np.atleast_2d(h5_main[pos_ind]), h5_spec=h5_main_spec_inds)
-        # Move freqency dimension to the end
-        raw_data_vec2 = np.rollaxis(raw_data_vec.squeeze(), main_freq_dim, len(main_spec_dims))
-        # Now move the bias dimension to the front
-        raw_data_vec3 = np.rollaxis(raw_data_vec2, main_bias_dim-1, 0)[selected_step][selected_loop_ndims[::-1]]
+        raw_data_vec = h5_main.slice(sho_slice)[0]
 
-        return w_vec2, sho_guess, sho_fit, raw_data_vec3
+        # Get the frequency vector for the selected step
+        w_vec = np.moveaxis(full_w_vec, main_freq_dim, len(main_spec_dims)-1)  # Move frequency to the end
+        w_vec2 = np.rollaxis(w_vec, main_bias_dim-1, 0)[selected_step][selected_loop_ndims]
+
+        sho_guess = h5_sho_guess.slice(sho_slice)[0].tolist()
+
+        sho_guess = SHOfunc(sho_guess, w_vec2)
+        sho_fit = h5_sho_fit.slice(sho_slice)[0].tolist()
+        sho_fit = SHOfunc(sho_fit, w_vec2)
+
+        return w_vec2, sho_guess, sho_fit, raw_data_vec
 
     '''
     Get the starting values
