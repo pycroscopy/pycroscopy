@@ -544,7 +544,7 @@ class PycroDataset(h5py.Dataset):
 
             # now should be safe to slice:
             data_slice, success = self.slice(slice_dict)
-            if success != True:
+            if not success:
                 raise ValueError('Something went wrong when slicing the dataset. slice message: {}'.format(success))
             # don't forget to remove singular dimensions via a squeeze
             data_slice = np.squeeze(data_slice)

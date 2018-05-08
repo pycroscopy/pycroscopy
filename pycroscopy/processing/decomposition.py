@@ -117,14 +117,14 @@ class Decomposition(Process):
         projection_mat, success = reshape_to_n_dims(self.__projection, h5_pos=self.h5_main.h5_pos_inds,
                                                     h5_spec=np.expand_dims(np.arange(self.__projection.shape[1]),
                                                                            axis=0))
-        if success == False:
+        if not success:
             raise ValueError('Could not reshape projections to N-Dimensional dataset! Error:' + success)
 
         components_mat, success = reshape_to_n_dims(self.__components, h5_spec=self.h5_main.h5_spec_inds,
                                                     h5_pos=np.expand_dims(np.arange(self.__components.shape[0]),
                                                                           axis=1))
 
-        if success == False:
+        if not success:
             raise ValueError('Could not reshape components to N-Dimensional dataset! Error:' + success)
 
         return components_mat, projection_mat
