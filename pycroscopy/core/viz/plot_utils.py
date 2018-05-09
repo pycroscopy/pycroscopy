@@ -1145,9 +1145,6 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
         if key in kwargs:
             figkwargs.update({key: kwargs.pop(key)})
 
-    if 'fig_title_yoffset' in kwargs:
-        figkwargs['y'] = kwargs.pop('fig_title_yoffset')
-
     fig = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h), **figkwargs)
 
     '''
