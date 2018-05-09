@@ -623,6 +623,8 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
                 if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
                     raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
                 y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
+        else:
+            y_tick_labs = [str(ind) for ind in y_ticks]
 
         axis.set_yticks(y_ticks)
         axis.set_yticklabels(y_tick_labs)
@@ -1142,6 +1144,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
     for key in inspec_func(plt.figure).args:
         if key in kwargs:
             figkwargs.update({key: kwargs.pop(key)})
+
+    if 'fig_title_yoffset' in kwargs:
+        figkwargs['y'] = kwargs.pop('fig_title_yoffset')
 
     fig = plt.figure(figsize=(p_cols * fig_w, p_rows * fig_h), **figkwargs)
 
