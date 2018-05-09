@@ -336,7 +336,7 @@ class ImageWindow(object):
             Create the Windows Dataset and Datagroup
             '''
             ds_windows = VirtualDataset('Image_Windows',
-                                        data=[],
+                                        data=None,
                                         maxshape=[n_wins, win_pix],
                                         dtype=win_type,
                                         chunking=win_chunks,
