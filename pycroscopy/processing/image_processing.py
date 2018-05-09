@@ -970,7 +970,7 @@ class ImageWindow(object):
             return
 
         print('Cleaning the image by removing unwanted components.')
-        comp_slice = get_component_slice(components)
+        comp_slice, num_comps = get_component_slice(components)
 
         '''
         Read the 1st n_comp components from the SVD results
@@ -1083,11 +1083,12 @@ class ImageWindow(object):
         self.hdf.flush()
 
         h5_clean = get_h5_obj_refs(['Cleaned_Image'], image_refs)[0]
-        h5_comp_inds = h5_clean.file[h5_V.attrs['Position_Indices']]
+        h5_comp_inds = h5_clean.file[h5_U.attrs['Spectroscopic_Indices']]
+        h5_comp_vals = h5_clean.file[h5_U.attrs['Spectroscopic_Values']]
         h5_pos_inds = self.h5_file[self.h5_raw.attrs['Position_Indices']]
         h5_pos_vals = self.h5_file[self.h5_raw.attrs['Position_Values']]
 
-        link_as_main(h5_clean, h5_pos_inds, h5_pos_vals, h5_comp_inds, h5_S)
+        link_as_main(h5_clean, h5_pos_inds, h5_pos_vals, h5_comp_inds, h5_comp_vals)
 
         self.h5_clean = h5_clean
 
