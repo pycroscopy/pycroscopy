@@ -185,7 +185,7 @@ def format_size(size_in_bytes, decimals=2):
         String with size formatted correctly
     """
     units = ['bytes', 'kB', 'MB', 'GB', 'TB']
-    factors = 1024 ** np.arange(len(units))
+    factors = 1024 ** np.arange(len(units), dtype=np.int64)
     return format_quantity(size_in_bytes, units, factors, decimals=decimals)
 
 
