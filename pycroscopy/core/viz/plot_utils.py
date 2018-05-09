@@ -21,6 +21,8 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 if sys.version_info.major == 3:
     unicode = str
+else:
+    unicode = unicode
 
 default_cmap = plt.cm.viridis
 
