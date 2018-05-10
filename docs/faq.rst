@@ -88,7 +88,7 @@ Not at all. Python has an excellent set of libraries for generating even complic
 
 How can I reference pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.59.7. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
+Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.60.0. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
 
 Data
 ----
