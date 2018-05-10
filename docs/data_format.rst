@@ -62,13 +62,9 @@ Data structuring
 ~~~~~~~~~~~~~~~~~
 Data structuring refers to the way the data is arranged. This does not depend on the exact implementation in a particular file format
 
-File format
-~~~~~~~~~~~~
+Data / File format
+~~~~~~~~~~~~~~~~~~~~
 This corresponds to the kind of file, such as a spreadsheet (.CSV), an image (.PNG), a text file (.TXT) within which information is contained.
-
-Data format
-~~~~~~~~~~~~
-Data formats often refer to the implementation of / structuring of data in a particular file format
 
 Dimensionality
 ~~~~~~~~~~~~~~~
@@ -113,9 +109,13 @@ temperature, cycle, voltage, etc.). **In pycroscopy, the spatial
 dimensions are collapsed onto a single dimension and the spectroscopic
 dimensions are flattened to the other dimensions.** Thus, all data are
 stored as two dimensional grids. While the data could indeed be stored
-in the original N-dimensional form, there are a few key advantages to
-the 2D format:
+in the original N-dimensional form, there are a few key **advantages to
+the 2D format**:
 
+* The data is already of the same structure expected by machine learning algorithms and requires minimal
+  to no pre-processing or post-processing.
+* In certain cases, the data simply cannot be represented in an N-dimensional form since one of the dimensions
+  has multiple sizes in different contexts.
 * Researchers want to acquire ever larger datasets that
   take much longer to acquire. This has necessitated approaches such as
   sparse sampling or `compressed sensing
@@ -196,6 +196,12 @@ dataset would be structured as:
 -  The abundance maps obtained from decomposition algorithms like
    ``Singular Value Decomposition (SVD)`` or
    ``Non-negetive matrix factorization (NMF)``
+
+Complicated?
+~~~~~~~~~~~~~
+This data format may seem unnecessarily complicated for very simple / rigid data such as 2D images or 1D spectra.
+However, bear in mind that this paradigm was designed to represent any information regardless of dimensionality, origin, complexity, etc.
+Thus, encoding data in this format will allow seamless sharing, exchange, and interpretation of data.
 
 Compound Datasets:
 ^^^^^^^^^^^^^^^^^^
@@ -420,18 +426,15 @@ Candidates
   * Furthermore, despite being some of the more popular scientific data formats, it is **not immediately straightforward to read those files**
     on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_
     python distribution does not come with any packages for reading these file formats.
-* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_ is perhaps the ultimate file format for supercomputers but
-  we find the learning curve for average users to be unnecessarily steep, especially if they don't use supercomputers.
-* The `hierarchical data format (HDF5) <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`_ is the implicitly or explicitly the **de-facto standard in scientific research**.
-  Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
+* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_ is perhaps the ultimate file format for storing petabyte sized data on supercomputers but
+  it was specifically designed for simulations, check-pointing, and it trades flexibility, and ease-of-use for performance.
+* The `hierarchical data format (HDF5) <https://support.hdfgroup.org/HDF5/doc/H5.intro.html>`_ is the implicitly or explicitly the
+  `de-facto standard in scientific research <https://support.hdfgroup.org/HDF5/users5.html>`_.
+  In fact, Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
   files are actually (now) just custom flavors of HDF5 thereby validating the statement that HDF5 is the **unanimous the file format of choice**
 
 Besides `HDF5 <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_, every alternative had some
 major shortcomings / did not satisfy one or more requirements. Hence, pycroscopy has officially adopted the HD5 file format
-
-
-* Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5
-    file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
 
 Implementation in HDF5
 -----------------------
