@@ -27,13 +27,16 @@ def unnest_parm_dicts(image_parms, prefix=''):
     new_parms = dict()
     for name in image_parms.keys():
         val = image_parms[name]
-        # print 'name',name,'val',val
+        # print('name',name,'val',val)
         name = '-'.join([prefix] + name.split()).strip('-')
         if isinstance(val, dict):
             new_parms.update(unnest_parm_dicts(val, name))
-        elif isinstance(val, list) and isinstance(val[0], dict):
-            for thing in val:
-                new_parms.update(unnest_parm_dicts(thing, name))
+        elif isinstance(val, list):
+            if len(val)==0:
+                continue
+            elif isinstance(val[0], dict):
+                for thing in val:
+                    new_parms.update(unnest_parm_dicts(thing, name))
         else:
             new_parms[name] = try_tag_to_string(val)
 
