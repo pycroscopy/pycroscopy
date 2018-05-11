@@ -54,7 +54,7 @@ def get_component_slice(components, total_components=None):
             comp_slice = np.uint(components)
             # sort and take unique values only
             comp_slice.sort()
-            comp_slice = np.unique(comp_slice)
+            comp_slice = np.unique(comp_slice).tolist()
             num_comps = len(comp_slice)
             # check to see if this giant list of integers is just a simple range
             list_of_ranges = list(to_ranges(comp_slice))
