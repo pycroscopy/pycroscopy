@@ -27,7 +27,7 @@ requirements = ['numpy_groupies==0.9.7', # New build of 0.9.8.4 appears to cause
                 'ipython>=6.0;python_version>="3.3"', # Beginning with IPython 6.0, Python 3.3 and above is required.
                 'unittest2;python_version<"3.0"',
                 'six',
-                'pyqt4;python_version<"3.5"',
+                # 'pyqt;python_version<"3.5"',
                 'pyqt5;python_version>="3.5"',
                 ]
 
