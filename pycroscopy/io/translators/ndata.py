@@ -236,7 +236,7 @@ class NDataTranslator(Translator):
 
         for ifile, (this_file, this_channel) in enumerate(zip(file_list, h5_channels)):
             _, ext = os.path.splitext(this_file)
-            if ext == '.ndata1':
+            if ext in ['.ndata1', '.ndata']:
                 '''
                 Extract the data file from the zip archive and read it into an array
                 '''
@@ -413,7 +413,7 @@ class NDataTranslator(Translator):
         file_list : list of strings
             names of all files in directory located at path
         """
-        allowed_image_types = ['.ndata1', '.npy']
+        allowed_image_types = ['.ndata1', '.npy', '.ndata']
         if os.path.isdir(image_path):
             # Image path is to a directory
             file_list = list()
@@ -451,7 +451,7 @@ class NDataTranslator(Translator):
 
         for fpath in file_list:
             base, ext = os.path.splitext(fpath)
-            if ext == '.ndata1':
+            if ext in ['.ndata1', '.ndata']:
                 zfile = zipfile.ZipFile(fpath, 'r')
                 tmp_path = zfile.extract('metadata.json')
             elif ext == '.npy':
