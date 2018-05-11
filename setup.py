@@ -26,7 +26,9 @@ requirements = ['numpy_groupies==0.9.7', # New build of 0.9.8.4 appears to cause
                 'ipython>=5.1.0,<6;python_version<"3.3"',  # IPython 6.0+ does not support Python 2.6, 2.7, 3.0, 3.1, or 3.2
                 'ipython>=6.0;python_version>="3.3"', # Beginning with IPython 6.0, Python 3.3 and above is required.
                 'unittest2;python_version<"3.0"',
-               ]
+                'six',
+                'pyqt5' or 'pyqt4',
+                ]
 
 setup(
     name='pycroscopy',
