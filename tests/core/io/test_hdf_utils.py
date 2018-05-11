@@ -60,6 +60,8 @@ class TestHDFUtils(unittest.TestCase):
         TestHDFUtils.__write_string_list_as_attr(h5_dset, {'labels': list(attrs.keys())})
 
     def setUp(self):
+        if os.path.exists(test_h5_file_path):
+            os.remove(test_h5_file_path)
 
         with h5py.File(test_h5_file_path) as h5_f:
 
