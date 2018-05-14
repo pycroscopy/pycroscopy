@@ -85,15 +85,14 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
 
     try:
-        h5_pos = h5_file[get_attr(h5_main, 'Position_Indices')]
+        h5_pos = h5_main.h5_pos_inds
     except KeyError:
         print('No Position_Indices found as attribute of {}'.format(h5_main.name))
         print('Rows and columns will be calculated from dataset shape.')
         num_rows = int(np.floor((np.sqrt(h5_main.shape[0]))))
         num_cols = int(np.reshape(h5_main, [num_rows, -1, h5_main.shape[1]]).shape[1])
     else:
-        num_rows = len(np.unique(h5_pos[:, 0]))
-        num_cols = len(np.unique(h5_pos[:, 1]))
+        num_rows, num_cols = h5_main.pos_dim_sizes
 
     try:
         h5_spec_vals = h5_file[get_attr(h5_main, 'Spectroscopic_Values')]
@@ -155,10 +154,10 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         phase_mat = phase_mat.reshape(num_rows, num_cols)
         rsqr_mat = rsqr_mat.reshape(num_rows, num_cols)
 
-        fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)),
-                                       num_comps=5, color_bar_mode='each', heading=grp_name,
-                                       title=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
-                                              'R^2 Criterion'], cmap=cmap)
+        fig_ms, ax_ms = plot_map_stack(np.dstack((amp_mat, freq_mat, q_mat, phase_mat, rsqr_mat)).T,
+                                       num_comps=5, color_bar_mode='each', title=grp_name,
+                                       subtitle=['Amplitude (mV)', 'Frequency (kHz)', 'Quality Factor', 'Phase (deg)',
+                                                 'R^2 Criterion'], cmap=cmap)
 
         fig_list.append(fig_ms)
         if save_plots:
