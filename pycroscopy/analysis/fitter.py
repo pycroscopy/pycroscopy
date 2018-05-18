@@ -255,7 +255,11 @@ class Fitter(object):
         partial_dsets = []
 
         for dset in datasets:
-            if dset.attrs['last_pixel'] < self.h5_main.shape[0]:
+            last_pix = getattr(dset, 'last_pixel', None)
+            # Skip datasets without last_pixel attribute
+            if last_pix is None:
+                continue
+            elif last_pix < self.h5_main.shape[0]:
                 partial_dsets.append(dset)
             else:
                 completed_dsets.append(dset)
@@ -299,6 +303,10 @@ class Fitter(object):
 
         # check for old:
         partial_dsets, completed_dsets = self._check_for_old_guess()
+
+        if len(completed_dsets) == 0 and len(partial_dsets) == 0:
+            print('No existing datasets found')
+            override = True
 
         if not override:
             # First try to simply return any completed computation
@@ -424,6 +432,7 @@ class Fitter(object):
         completed_fits = []
 
         for h5_group in all_groups:
+
             if 'Fit' in h5_group.keys():
                 # check group for fit attribute
 
@@ -436,14 +445,26 @@ class Fitter(object):
                     continue
 
                 # sort this dataset:
-                if h5_fit.attrs['last_pixel'] < self.h5_main.shape[0]:
+                last_pix = getattr(h5_fit, 'last_pixel', None)
+
+                # For now skip any fits that are missing 'last_pixel'
+                if last_pix is None:
+                    continue
+                elif last_pix < self.h5_main.shape[0]:
                     partial_fits.append(h5_fit.parent)
                 else:
                     completed_fits.append(h5_fit)
             else:
                 if 'Guess' in h5_group.keys():
                     h5_guess = h5_group['Guess']
-                    if h5_guess.attrs['last_pixel'] == self.h5_main.shape[0]:
+
+                    # sort this dataset:
+                    last_pix = getattr(h5_guess, 'last_pixel', None)
+
+                    # For now skip any fits that are missing 'last_pixel'
+                    if last_pix is None:
+                        continue
+                    elif last_pix == self.h5_main.shape[0]:
                         if self._verbose:
                             print('{} was a completed Guess'.format(h5_guess.name))
                         completed_guess.append(h5_guess)
@@ -536,12 +557,14 @@ class Fitter(object):
 
             # Next, attempt to resume automatically:
             elif len(partial_fit_groups) > 0:
-                print('Will resume fitting in {}. You can supply a dataset using the h5_partial_fit argument'.format(partial_fit_groups[-1].name))
+                print('Will resume fitting in {}. '
+                      'You can supply a dataset using the h5_partial_fit argument'.format(partial_fit_groups[-1].name))
                 _resume_fit(self, partial_fit_groups[-1])
 
             # Finally, attempt to do fresh fitting using completed Guess:
             elif len(completed_guess) > 0:
-                print('Will use {} for generating new Fit. You can supply a dataset using the h5_guess argument'.format(completed_guess[-1].name))
+                print('Will use {} for generating new Fit. '
+                      'You can supply a dataset using the h5_guess argument'.format(completed_guess[-1].name))
                 _start_fresh_fit(self, completed_guess[-1])
 
             else:
