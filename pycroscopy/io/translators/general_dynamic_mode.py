@@ -11,15 +11,14 @@ from os import path, remove  # File Path formatting
 
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
+import h5py
 
 from .df_utils.gmode_utils import readGmodeParms
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-# The building blocks for defining heirarchical storage in the H5 file
-from ..virtual_data import VirtualGroup, VirtualDataset
+from ...core.io.write_utils import VALUES_DTYPE, Dimension
+from ...core.io.hdf_utils import link_h5_objects_as_attrs, create_indexed_group, \
+    write_simple_attrs, write_main_dataset
 
 
 class GDMTranslator(Translator):
@@ -83,66 +82,46 @@ class GDMTranslator(Translator):
 
         num_pix = num_rows * num_cols
 
-        pos_mat = make_indices_matrix([num_cols, num_rows])
-        pos_slices = get_aux_dset_slicing(['X', 'Y'], last_ind=num_pix, is_spectroscopic=False)
-
-        # Now start creating datasets and populating:
-        ds_pos_ind = VirtualDataset('Position_Indices', INDICES_DTYPE(pos_mat))
-        ds_pos_ind.attrs['labels'] = pos_slices
-        ds_pos_val = VirtualDataset('Position_Values', VALUES_DTYPE(pos_mat))
-        ds_pos_val.attrs['labels'] = pos_slices
-
-        ds_spec_inds = VirtualDataset('Spectroscopic_Indices', INDICES_DTYPE(spec_ind_mat))
-        ds_spec_inds.attrs['labels'] = {'Response Bin Index': (slice(0, 1), slice(None)),
-                                        'Excitation Frequency Index': (slice(1, 2), slice(None))}
-
-        ds_spec_vals = VirtualDataset('Spectroscopic_Values', spec_val_mat)
-        ds_spec_vals.attrs['labels'] = {'Response Bin': (slice(0, 1), slice(None)),
-                                        'Excitation Frequency': (slice(1, 2), slice(None))}
-
-        ds_ex_freqs = VirtualDataset('Excitation_Frequencies', freq_array)
-        ds_bin_freq = VirtualDataset('Bin_Frequencies', w_vec)
-
-        # Minimize file size to the extent possible.
-        # DAQs are rated at 16 bit so float16 should be most appropriate.
-        # For some reason, compression is more effective on time series data
-        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_pix, len(freq_array) * num_bins),
-                                      dtype=np.float32, chunking=(1, num_bins), compression='gzip')
-
-        chan_grp = VirtualGroup('Channel_000')
-        chan_grp.attrs = parm_dict
-        chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                               ds_ex_freqs, ds_bin_freq, ds_main_data])
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.add_children([chan_grp])
-
-        spm_data = VirtualGroup('')
         global_parms = generate_dummy_main_parms()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
-        # assuming that the experiment was completed:        
+        # assuming that the experiment was completed:
         global_parms['current_position_x'] = parm_dict['grid_num_cols'] - 1
         global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1
         global_parms['data_type'] = parm_dict['data_type']  # self.__class__.__name__
         global_parms['translator'] = 'W2'
-        spm_data.attrs = global_parms
-        spm_data.add_children([meas_grp])
 
+        # Now start creating datasets and populating:
         if path.exists(h5_path):
             remove(h5_path)
 
-        # Write everything except for the main data.
-        hdf = HDFwriter(h5_path)
+        h5_f = h5py.File(h5_path, 'w')
+        write_simple_attrs(h5_f, global_parms)
 
-        h5_refs = hdf.write(spm_data)
+        meas_grp = create_indexed_group(h5_f, 'Measurement')
+        chan_grp = create_indexed_group(meas_grp, 'Channel')
+        write_simple_attrs(chan_grp, parm_dict)
 
-        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+
+        pos_dims = [Dimension('X', 'nm', num_rows),
+                    Dimension('Y', 'nm', num_cols)]
+        spec_dims = [Dimension('Response Bin', 'a.u.', num_bins),
+                     Dimension('Excitation Frequency ', 'Hz', len(freq_array))]
+
+        # Minimize file size to the extent possible.
+        # DAQs are rated at 16 bit so float16 should be most appropriate.
+        # For some reason, compression is more effective on time series data
+
+        h5_main = write_main_dataset(chan_grp, (num_pix, num_bins), 'Raw_Data',
+                                     'Deflection', 'V',
+                                     pos_dims, spec_dims,
+                                     chunks=(1, num_bins), dtype=np.float32)
+
+        h5_ex_freqs = chan_grp.create_dataset('Excitation_Frequencies', freq_array)
+        h5_bin_freq = chan_grp.create_dataset('Bin_Frequencies', w_vec)
 
         # Now doing link_h5_objects_as_attrs:
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values',
-                        'Excitation_Frequencies', 'Bin_Frequencies']
-        link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
+        link_h5_objects_as_attrs(h5_main, [h5_ex_freqs, h5_bin_freq])
 
         # Now read the raw data files:
         pos_ind = 0
@@ -159,13 +138,13 @@ class GDMTranslator(Translator):
                     # Verified with Matlab - no conjugate required here.
                     pix_vec = pix_mat.transpose().reshape(pix_mat.size)
                     h5_main[pos_ind, :] = np.float32(pix_vec)
-                    hdf.flush()  # flush from memory!
+                    h5_f.flush()  # flush from memory!
                 else:
                     print('File not found for: row {} col {}'.format(row_ind, col_ind))
                 pos_ind += 1
                 if (100.0 * pos_ind / num_pix) % 10 == 0:
                     print('completed translating {} %'.format(int(100 * pos_ind / num_pix)))
 
-        hdf.close()
+        h5_f.close()
 
         return h5_path

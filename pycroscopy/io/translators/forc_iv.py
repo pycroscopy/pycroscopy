@@ -14,8 +14,7 @@ from scipy.io import loadmat
 
 from ...core.io.translator import Translator
 from ...core.io.write_utils import Dimension
-from ..write_utils import build_ind_val_dsets
-from ..virtual_data import VirtualDataset  # building blocks for defining hierarchical storage in the H5 file
+from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
 
 class ForcIVTranslator(Translator):
@@ -51,22 +50,23 @@ class ForcIVTranslator(Translator):
         h5_path = path.join(folder_path, file_name[:-4] + '.h5')
         if path.exists(h5_path):
             remove(h5_path)
+        h5_f = h5py.File(h5_path, 'w')
 
         self.h5_read = True
         try:
-            h5_f = h5py.File(raw_data_path, 'r')
+            h5_raw = h5py.File(raw_data_path, 'r')
         except ImportError:
             self.h5_read = False
-            h5_f = loadmat(raw_data_path)
+            h5_raw = loadmat(raw_data_path)
 
-        excite_cell = h5_f['dc_amp_cell3']
+        excite_cell = h5_raw['dc_amp_cell3']
         test = excite_cell[0][0]
         if self.h5_read:
-            excitation_vec = h5_f[test]
+            excitation_vec = h5_raw[test]
         else:
             excitation_vec = np.float32(np.squeeze(test))
 
-        current_cell = h5_f['current_cell3']
+        current_cell = h5_raw['current_cell3']
 
         num_rows = current_cell.shape[0]
         num_cols = current_cell.shape[1]
@@ -77,25 +77,27 @@ class ForcIVTranslator(Translator):
             for col_ind in range(num_cols):
                 pix_ind = row_ind * num_cols + col_ind
                 if self.h5_read:
-                    curr_val = np.squeeze(h5_f[current_cell[row_ind][col_ind]].value)
+                    curr_val = np.squeeze(h5_raw[current_cell[row_ind][col_ind]].value)
                 else:
                     curr_val = np.float32(np.squeeze(current_cell[row_ind][col_ind]))
                 current_data[pix_ind, :] = 1E+9 * curr_val
 
-        parm_dict = self._read_parms(h5_f)
-
-        ds_main = VirtualDataset('Raw_Data', data=current_data, dtype=np.float32, compression='gzip',
-                                 chunking=(min(num_cols * num_rows, 100), num_iv_pts))
-        ds_main.attrs = {'quantity': 'Current', 'units': '1E-9 A'}
+        parm_dict = self._read_parms(h5_raw)
+        parm_dict.update({'translator': 'FORC_IV'})
 
         pos_desc = [Dimension('Y', 'm', np.arange(num_rows)), Dimension('X', 'm', np.arange(num_cols))]
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
         spec_desc = [Dimension('DC Bias', 'V', excitation_vec)]
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True, verbose=False)
 
-        return super(ForcIVTranslator, self).simple_write(h5_path, 'FORC_IV', ds_main,
-                                                          [ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals],
-                                                          parm_dict)
+        meas_grp = create_indexed_group(h5_f, 'Measurement')
+        chan_grp = create_indexed_group(meas_grp, 'Channel')
+
+        write_simple_attrs(chan_grp, parm_dict)
+
+        h5_main = write_main_dataset(chan_grp, current_data, 'Raw_Data',
+                                     'Current', '1E-9 A',
+                                     pos_desc, spec_desc)
+
+        return
 
     def _read_parms(self, raw_data_file_handle):
         """
