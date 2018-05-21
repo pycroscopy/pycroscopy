@@ -14,7 +14,7 @@ from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
-from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs
+from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
 from .optimize import Optimize
 
 
@@ -255,7 +255,11 @@ class Fitter(object):
         partial_dsets = []
 
         for dset in datasets:
-            last_pix = getattr(dset, 'last_pixel', None)
+            try:
+                last_pix = get_attr(dset, 'last_pixel')
+            except KeyError:
+                last_pix = None
+                
             # Skip datasets without last_pixel attribute
             if last_pix is None:
                 continue
@@ -445,7 +449,10 @@ class Fitter(object):
                     continue
 
                 # sort this dataset:
-                last_pix = getattr(h5_fit, 'last_pixel', None)
+                try:
+                    last_pix = get_attr(h5_fit, 'last_pixel')
+                except KeyError:
+                    last_pix = None
 
                 # For now skip any fits that are missing 'last_pixel'
                 if last_pix is None:
@@ -459,7 +466,10 @@ class Fitter(object):
                     h5_guess = h5_group['Guess']
 
                     # sort this dataset:
-                    last_pix = getattr(h5_guess, 'last_pixel', None)
+                    try:
+                        last_pix = get_attr(h5_guess, 'last_pixel')
+                    except KeyError:
+                        last_pix = None
 
                     # For now skip any fits that are missing 'last_pixel'
                     if last_pix is None:
