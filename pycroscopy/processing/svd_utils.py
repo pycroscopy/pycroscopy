@@ -325,13 +325,13 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     '''
     Create the Group and dataset to hold the rebuild data
     '''
-    rebuilt_grp = create_indexed_group('Rebuilt_Data', h5_svd_group.name[1:])
+    rebuilt_grp = create_indexed_group(h5_svd_group, 'Rebuilt_Data')
     h5_rebuilt = write_main_dataset(rebuilt_grp, rebuild, 'Rebuilt_Data',
-                                    getattr(h5_main, 'quantity'), getattr(h5_main, 'units'),
+                                    get_attr(h5_main, 'quantity'), get_attr(h5_main, 'units'),
                                     None, None,
                                     h5_pos_inds=h5_main.h5_pos_inds, h5_pos_vals=h5_main.h5_pos_vals,
                                     h5_spec_inds=h5_main.h5_spec_inds, h5_spec_vals=h5_main.h5_spec_vals,
-                                    chunking=h5_main.chunks, compression=h5_main.compression)
+                                    chunks=h5_main.chunks, compression=h5_main.compression)
 
     if isinstance(comp_slice, slice):
         rebuilt_grp.attrs['components_used'] = '{}-{}'.format(comp_slice.start, comp_slice.stop)
