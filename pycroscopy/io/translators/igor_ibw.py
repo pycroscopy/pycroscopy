@@ -8,18 +8,14 @@ Created on Wed Dec 07 16:04:34 2016
 from __future__ import division, print_function, absolute_import, unicode_literals
 from os import path, remove  # File Path formatting
 import numpy as np  # For array operations
-
+import h5py
 from igor import binarywave as bw
 
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import VALUES_DTYPE
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-from ..virtual_data import VirtualGroup, \
-    VirtualDataset  # The building blocks for defining hierarchical storage in the H5 file
+from ...core.io.write_utils import VALUES_DTYPE, Dimension
+from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, create_indexed_group, \
+    write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
 class IgorIBWTranslator(Translator):
@@ -46,12 +42,21 @@ class IgorIBWTranslator(Translator):
         h5_path : String / unicode
             Absolute path of the .h5 file
         """
+        # Prepare the .h5 file:
+        folder_path, base_name = path.split(file_path)
+        base_name = base_name[:-4]
+        h5_path = path.join(folder_path, base_name + '.h5')
+        if path.exists(h5_path):
+            remove(h5_path)
+
+        h5_file = h5py.File(h5_path, 'w')
 
         # Load the ibw file first
         ibw_obj = bw.load(file_path)
         ibw_wave = ibw_obj.get('wave')
         parm_dict = self._read_parms(ibw_wave, parm_encoding)
         chan_labels, chan_units = self._get_chan_labels(ibw_wave, parm_encoding)
+
         if verbose:
             print('Channels and units found:')
             print(chan_labels)
@@ -76,10 +81,8 @@ class IgorIBWTranslator(Translator):
 
             pos_desc = [Dimension('X', 'm', np.linspace(0, parm_dict['FastScanSize'], num_cols)),
                         Dimension('Y', 'm', np.linspace(0, parm_dict['SlowScanSize'], num_rows))]
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=verbose)
 
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('arb', 'a.u.', [1]), is_spectral=True,
-                                                             verbose=verbose)
+            spec_desc = Dimension('arb', 'a.u.', [1])
 
         else:  # single force curve
             if verbose:
@@ -89,81 +92,54 @@ class IgorIBWTranslator(Translator):
             images = np.atleast_3d(images)  # now [Z, chan, 1]
             images = images.transpose((1, 2, 0))  # [chan ,1, Z] force curve
 
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets(Dimension('X', 'm', [1]), is_spectral=False, verbose=verbose)
-
-            ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Z', 'm', np.arange(images.shape[2])),
-                                                             is_spectral=True, verbose=verbose)
             # The data generated above varies linearly. Override.
             # For now, we'll shove the Z sensor data into the spectroscopic values.
 
             # Find the channel that corresponds to either Z sensor or Raw:
             try:
                 chan_ind = chan_labels.index('ZSnsr')
-                ds_spec_vals.data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
+                spec_data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
             except ValueError:
                 try:
                     chan_ind = chan_labels.index('Raw')
-                    ds_spec_vals.data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
+                    spec_data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
                 except ValueError:
                     # We don't expect to come here. If we do, spectroscopic values remains as is
-                    pass
+                    spec_data = np.arange(images.shape[2])
 
-        # Prepare the list of raw_data datasets
-        chan_raw_dsets = list()
-        for chan_data, chan_name, chan_unit in zip(images, chan_labels, chan_units):
-            ds_raw_data = VirtualDataset('Raw_Data', data=np.atleast_2d(chan_data), dtype=np.float32,
-                                         compression='gzip')
-            ds_raw_data.attrs['quantity'] = chan_name
-            ds_raw_data.attrs['units'] = [chan_unit]
-            chan_raw_dsets.append(ds_raw_data)
-        if verbose:
-            print('Finished preparing raw datasets')
+            pos_desc = Dimension('X', 'm', [1])
+            spec_desc = Dimension('Z', 'm', spec_data)
 
-        # Prepare the tree structure
-        # technically should change the date, etc.
-        spm_data = VirtualGroup('')
+        # Create measurement group
+        meas_grp = create_indexed_group(h5_file, 'Measurement')
+
+        # Write file and measurement level parameters
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'IgorIBW_' + type_suffix
         global_parms['translator'] = 'IgorIBW'
-        spm_data.attrs = global_parms
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
-        spm_data.add_children([meas_grp])
+        write_simple_attrs(h5_file, global_parms)
+
+        write_simple_attrs(meas_grp, parm_dict)
+
+        # Create Position and spectroscopic datasets
+        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
+
+        # Prepare the list of raw_data datasets
+        for chan_data, chan_name, chan_unit in zip(images, chan_labels, chan_units):
+            chan_grp = create_indexed_group(meas_grp, 'Channel')
+
+            write_main_dataset(chan_grp, np.atleast_2d(chan_data), 'Raw_Data',
+                               chan_name, chan_unit,
+                               None, None,
+                               h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
+                               h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
+                               dtype=np.float32)
 
         if verbose:
-            print('Finished preparing tree trunk')
+            print('Finished preparing raw datasets')
 
-        # Prepare the .h5 file:
-        folder_path, base_name = path.split(file_path)
-        base_name = base_name[:-4]
-        h5_path = path.join(folder_path, base_name + '.h5')
-        if path.exists(h5_path):
-            remove(h5_path)
-
-        # Write head of tree to file:
-        hdf = HDFwriter(h5_path)
-        # spm_data.showTree()
-        hdf.write(spm_data, print_log=verbose)
-
-        if verbose:
-            print('Finished writing tree trunk')
-
-        # Standard list of auxiliary datasets that get linked with the raw dataset:
-        aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-
-        # Create Channels, populate and then link:
-        for chan_index, raw_dset in enumerate(chan_raw_dsets):
-            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
-            chan_grp.attrs['name'] = raw_dset.attrs['quantity']
-            chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals, raw_dset])
-            h5_refs = hdf.write(chan_grp, print_log=verbose)
-            h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-            link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
-
-        if verbose:
-            print('Finished writing all channels')
-
-        hdf.close()
+        h5_file.close()
         return h5_path
 
     @staticmethod
