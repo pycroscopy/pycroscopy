@@ -6,9 +6,14 @@ Pycroscopy
 
 What?
 ------
-pycroscopy is a `python <http://www.python.org/>`_ package for storing, processing, analyzing, and visualizing multidimensional scientific data.
-pycroscopy uses a data-centric model wherein the raw data collected from the instrument, results from analysis
-and processing routines are all written to standardized **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
+* pycroscopy is a `python <http://www.python.org/>`_ package for storing, processing, analyzing, and visualizing multidimensional scientific data.
+* pycroscopy uses a data-centric model wherein the raw data collected from the instrument, results from analysis
+  and processing routines are all written to standardized **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
+* pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
+* You can choose to perform your analysis outside pycroscopy if you prefer and use pycroscopy to standardize the data storage.
+* See a high-level overview of pycroscopy in this `presentation <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_
+* See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
+* Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 With pycroscopy we aim to:
 
@@ -16,12 +21,6 @@ With pycroscopy we aim to:
 2. serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
 3. provide a community-driven, open standard for data formatting
 4. provide a framework for developing origin-agnostic / universal data analysis routines
-
-
-To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this
-`short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_.
-
-Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 Why?
 -----
@@ -38,7 +37,7 @@ As we see it, there are a few opportunities in scientific imaging (that surely a
 **3. Multiple file formats**
   * Different formats from each instrument. Proprietary in most cases
   * Incompatible for correlation
-  * *Need: Open, instrument independent data format*
+  * *Need: Open, instrument-independent data format*
 
 **4. Disjoint communities**
   * Similar analysis routines written by each community (SPM, STEM, TOF SIMs, XRD...) *independently*!
@@ -66,7 +65,7 @@ How?
   supercomputer compatibility, storage of important metadata.
 * Once the relevant data and metadata are extracted from proprietary raw data files and written into pycroscopy formatted HDF5 files
   via a `translation process <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_numpy_translator.html>`_,
-  the user gains access to the rest of the utilities present in ``pycroscopy.\*``.
+  the user gains access to the rest of the utilities present in ``pycroscopy.*``.
 * Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
   that are interactive and portable web applications containing text, images, code / scripts, and graphical results.
   Notebooks containing the complete / parts of workflow from raw data to publishable figures often become supplementary

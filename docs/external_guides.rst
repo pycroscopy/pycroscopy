@@ -1,5 +1,5 @@
-Handy Tutorials on the Basics
-=============================
+Tutorials on Basics
+====================
 Here are a list of excellent tutorials from other websites and sources that describe some of the many important topics
 on reading, using / running and writing code:
 
@@ -94,6 +94,7 @@ conveying information and a narrative. These documents are neither text editors 
 
 * Notebook `basics <http://nbviewer.jupyter.org/github/jupyter/notebook/blob/master/docs/source/examples/Notebook/Notebook%20Basics.ipynb>`_
 * `Video <https://www.datacamp.com/community/tutorials/tutorial-jupyter-notebook>`_ tutorial
+* Another `video overview <https://www.youtube.com/watch?v=HW29067qVWk>`_.
 
 Software development basics
 ---------------------------
