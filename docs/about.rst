@@ -6,12 +6,14 @@ Pycroscopy
 
 What?
 ------
-pycroscopy is a `python <http://www.python.org/>`_ package for storing, processing, analyzing, and visualizing multidimensional scientific data.
-pycroscopy uses a data-centric model wherein the raw data collected from the instrument, results from analysis
-and processing routines are all written to standardized **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
-
-Pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, etc. for most of the computation and analysis.
-You can choose to perform your analysis outside pycroscopy if you prefer and use pycroscopy to standardize the data storage.
+* pycroscopy is a `python <http://www.python.org/>`_ package for storing, processing, analyzing, and visualizing multidimensional scientific data.
+* pycroscopy uses a data-centric model wherein the raw data collected from the instrument, results from analysis
+  and processing routines are all written to standardized **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
+* pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
+* You can choose to perform your analysis outside pycroscopy if you prefer and use pycroscopy to standardize the data storage.
+* See a high-level overview of pycroscopy in this `presentation <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_
+* See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
+* Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 With pycroscopy we aim to:
 
@@ -19,12 +21,6 @@ With pycroscopy we aim to:
 2. serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
 3. provide a community-driven, open standard for data formatting
 4. provide a framework for developing origin-agnostic / universal data analysis routines
-
-
-To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this
-`short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_.
-
-Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 Why?
 -----
