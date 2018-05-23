@@ -3,6 +3,7 @@ Data Translators
 * Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `pycroscopy formatted HDF5 files <https://pycroscopy.github.io/pycroscopy/data_format.html>`_. 
 * You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_numpy_translator.html>`_
 * Below is a list of ``Translators`` already available in pycroscopy to translate data. We tend to add new ``Translators`` to this list frequently. 
+* We are interested in collaborating with industry members to integrate pycroscopy into instrumentation or analysis software.
 * These translators can be accessed via ``pycroscopy.io.translators`` or ``pycroscopy.translators``
 
 Generic File Formats
