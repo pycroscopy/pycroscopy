@@ -1,70 +1,97 @@
 .. contents::
 
-Help topics
-----------------
-* Fix all translators, Fitters, Processes, notebooks to use the updated functions correctly - test them with real examples
-* Thoroughly test, beautify, and try to break plot_utils
-* Upload clean exports of notebooks that were part of past journal papers `here <https://github.com/pycroscopy/papers>`_ (Eg - Liam's Gmode papers)
-* Add papers (users + postdocs) that are not on the `list <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_.
-* Add more notebooks (Sabine's cKPFM for example) for papers that are not already on that list - may need to talk to all the postdocs and staff at IFIM.
+Goals
+-------
 
-v 0.60.0 goals
---------------
-Urgent
-~~~~~~
-1. Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
-2. Chris - Address the remaining unit tests
-3. Update conda and pip with latest master
-4. Update change-log with version numbers instead of pull numbers
-
-Important
+Immdiate
 ~~~~~~~~~
-1. pycro data. Do slicing on ND dataset if available
-2. Chris - Image Processing must be a subclass of Process and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
-3. unit tests for basic data science (Cluster, SVD, Decomposition)
-4. Swap out remaining usages of VirtualData + HDFWriter to hdf_utils (especially outside io.translators)
-5. Test all translators, image cleaning and to make sure they still work.
-6. file dialog for Jupyter not working on Mac OS
-7. Address pending TODOs
-8. Address edge case - Reshaping a N dimensional dataset whose dimension(s) change sizes - Relaxation data - Chris
+* Clear and obvious examples showing what pycroscopy actually does for people
+  
+  * Image cleaning - Chris
+  * Signal Filtering - Suhas
+  * Two more examples
+* Move ``.core`` out of pycroscopy and think about branding
 
-Low priority
+  * continuous integration
+  * documentation, website, etc.
+  * pypi and conda installers
+  * pycroscopy should import core and alias it for now
+
+* region reference related functionality
+
+  * Move functions to separate file outside ``hdf_utils``
+  * Relax restrictions with regards to expecting region references
+* ``PycroDataset`` - Do slicing on ND dataset if available by flattening to 2D and then slicing
+* Chris - ``Image Processing`` must be a subclass of ``Process`` and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
+* Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
+* Test all translators, image cleaning and to make sure they still work.
+
+Short-term - by Jul 1 2018
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
+* Update change-log with version numbers / releases instead of pull numbers
+* unit tests for basic data science (``Cluster``, ``SVD``, ``Decomposition``)
+* Add requirements.txt
+* Add ability to export data as txt probably via numpy.savetext
+* Examples within docs for popular functions
+* file dialog for Jupyter not working on Mac OS
+* Revisit and address as many pending TODOs as possible
+
+Medium-term - by Aug 1 2018
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* Technical poster for pycroscopy
+* Explore Azure Notebooks for live tutorials
+* ``PycroDataset.slice()`` and ``get_n_dim_form()`` should return ``Xarray`` objects
+* Notebooks need to be updated to require pycroscopy version
+* Translators for ``FIJI``, ``ImageJ``, ``Gwyddion`` (pygwyddion) formats
+* Find more files from microscopes that require translation - this will guide the development of community standards
+
+  * Nanonis? - Chris Smith + Rama
+  * Bruker - Nina / Stephen
+  * NTMDT - Anton?
+  * Anasys - Alex / Olga co.
+* Itk for visualization - https://github.com/InsightSoftwareConsortium/itk-jupyter-widgets
+* New package for facilitating **scalable ensemble runs**:
+
+  * Compare scalability, simplicity, portability of various solutions:
+    
+    * MPI4py
+    * Dask (Matthew Rocklin)
+    * pyspark
+    * ipyparallel... 
+  * Deploy on CADES SHPC Condo, Eos, Rhea (CPU partition).
+  * Use stand-alone GIV or SHO Fitting as an example
+  * Develop some generalized class equivalent to / close to ``Process``
+
+Long-term
+~~~~~~~~~~
+* Rewrite ``Process`` to use ``Dask`` and ignore ``parallel_compute()`` - try on SHO guess
+* Think about implementing costly algorithms in a deep learning framework like ``TensorFlow`` / ``PyTorch`` to use GPUs. Test with full Bayesian / simple Bayesian (anything computationally expensive)
+* Look into versioneer
+* A sister package with the base labview subvis that enable writing pycroscopy compatible hdf5 files. The actual acquisition can be ignored.
+* Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
+* Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
+* function for saving sub-tree to new h5 file
+* Windows compatible function for deleting sub-tree
+* Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure!
+* Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets. This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
+* Profile code to see where things are slow
+
+Back-burner
 ~~~~~~~~~~~~
-1. Add ability to export data as txt probably via numpy.savetext
-2. mostly done, needs thorough testing and beautification - good utils for generating publishable plots
-3. Examples within docs for popular functions
+* Cloud deployment
+  * Container installation
+  * Check out HDF5Cloud
+  * AWS cloud cluster
+* Look into ``Tasmanian`` (mainly modeling) - Miroslav Stoyanov
+* Look into ``Adios`` i(William G; Norbert is affiliated with ADWG)
+* ``Pydap.client``: wrapper of ``opendap`` – accessing data remotely and remote execution of notebooks - https://github.com/caseyjlaw/jupyter-notebooks/blob/master/vlite_hdfits_opendap_demo.ipynb
+* Alternate visualization packages - http://lightning-viz.org
 
-Done
-~~~~
-1. DONE - move core (non-scientific) modules into .core. This will be moved into a new package. `contrib` to have
-   non-verified code
-2. DONE - Make core as robust as possible with type / value checking, raising exceptions.
-3. DONE - unit tests for .core io
-4. DONE - a single function that will take numpy arrays to create main and ancillary datasets in the HDF5 file and link everything.
-5. DONE - Restructure Process to allow testing, checking for previous results, etc.
-6. DONE - Carlo Dri - Get pycroscopy on conda forge
-7. DONE - Fitter must absorb new features in Process if it is not possible to extend it
-8. DONE - generic visualizer - we now have something that can visualize up to 4D datasets reliably.
-9. DONE - Move Image Translator to core. Perhaps make a new subfolder in core.io.translators
-10. DONE - Cookbooks for every module in core
-11. DONE - good utilities for interrogating data - pycro data
-12. DONE - Address edge cases:
+Reogranization
+---------------
 
-  * DONE - Sparse sampling - simulate on BE-line. Indices should be [[0,0], [1,1], [2,2], ..., [N,N]]. Values should take the actual value
-  * DONE - Process on multiple datasets - G-mode KPFM
-
-13. DONE - documentation:
-
-  * DONE - Need to add the ability to swap out the data for user provided data in the examples - Eg FFT filtering
-  * DONE - Need to add statement - shift + enter to advance to next cell / link to jupyter notebook operation within each notebook
-  * DONE - Need explanation of what is where and why
-  * DONE - comprehensive getting started page that will point everyone towards all necessary prerequisites including python, data analytics, jupyter, pycharm, git, etc.
-
-14. DONE - Handle complex and compound data in the machine learning classes.
-16. DONE - test BE workflow on latest master (especially jupyter functions)
-
-v 0.60.1 goals
---------------
 1.  Reorganize code - This is perhaps the last opportunity for major restructuring and renaming.
 
   * Subpackages within processing: statistics, image, signal, misc
@@ -79,53 +106,8 @@ v 0.60.1 goals
 
     * One possible strategy - .core, .process (science independent), .instrument?. For example px.instrument.AFM.BE would contain translators under a .translators, the two analysis modules and accompanying functions under .analysis and visualization utilities under a .viz submodule. The problem with this is that users may find this needlessly complicated. Retaining existing package structure means that all the modalities are mixed in .analysis, .translators and .viz.
 
-2. set up CI
-3. website
-4. Twitter? etc.
-5. Find more files from microscopes that require translation - this will guide the development of community standards
-
-  * Nanonis? - Chris Smith + Rama
-  * Bruker - Nina / Stephen
-  * NTMDT - Anton?
-  * Anasys - Alex / Olga co.
-
-v 0.60.2 goals
----------------
-1. Profile code to see where things are slow
-2. Compare scalability, simplicity, portability of various solutions - MPI4py, Dask (Matthew Rocklin, XArray), pyspark, ipyparallel... - Use stand-alone GIV or SHO Fitting as an example
-3. New package for facilitating scalable ensemble runs
-4. Deploy on CADES SHPC Condo, Eos, Rhea (CPU partition).
-
-Documentation
--------------
-
-Rama's (older and more applied / specific) tutorial requests
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. Open a translated and fitted FORC-PFM file, and plot the SHO Fit from cycle k corresponding to voltage p, along with the raw spectrogram for that location and the SHO guess. Plot both real and imaginary, and do so for both on and off-field.
-2. Continuing above, determine the average of the quality factor coming from cycles 1,3,4 for spatial points stored in vector b for the on-field part for a predetermined voltage range given by endpoints [e,f]. Compare the results with the SHO guess and fit for the quality factor.
-3. After opening a h5 file containing results from a relaxation experiment, plot the response at a particular point and voltage, run exponential fitting and then store the results of the fit in the same h5 file using iohdf and/or numpy translators.
-4. Take a FORC IV ESM dataset and break it up into forward and reverse branches, along with positive and negative branches. Do correlation analysis between PFM and IV for different branches and store the results in the file, and readily access them for plotting again.
-5. A guide to using the model fitter for parallel fitting of numpy array-style datasets. This one can be merged with number
-
-New features
-------------
-Core development
-~~~~~~~~~~~~~~~~
-* function for saving sub-tree to new h5 file
-* Windows compatible function for deleting sub-tree
-* Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
-* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure!
-* Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets. This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
-
-Long-term
-~~~~~~~~~
-* A sister package with the base labview subvis that enable writing pycroscopy compatible hdf5 files. The actual acquisition can be ignored.
-* multi-node computing capability in parallel_compute
-* Intelligent method (using timing) to ensure that process and Fitter compute over small chunks and write to file periodically. Alternatively expose number of positions to user and provide intelligent guess by default
-* Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
-
 External user contributions
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+----------------------------
 * Sabine Neumeyer's cKPFM code
 * Incorporate sliding FFT into pycroscopy - Rama
 * Create an IR analysis notebook - Suhas should have something written in IF Drive
@@ -133,28 +115,10 @@ External user contributions
 * Ondrej Dyck’s atom finding code – written well but needs to work on images with different kinds of atoms
 * Nina Wisinger’s processing code (Tselev) – in progress
 * Port everything from IFIM Matlab -> Python translation exercises
-* Iaroslav Gaponenko's Distort correct code from - https://github.com/paruch-group/distortcorrect.
-
-Software Engineering
---------------------
-
-Package
-~~~~~~~
-* Add requirements.txt
-
-Testing
-~~~~~~~
-* Use https://docs.pytest.org/en/latest/ instead of nose (nose is no longer maintained)
-* Write test code for scientific functions in addition to just core
-* Longer tests using data (real or generated) for the workflow tests
-
-Formatting changes
-~~~~~~~~~~~~~~~~~~
-* Fix remaining PEP8 problems
-* Ensure code and documentation is standardized
+* Iaroslav Gaponenko's `Distort correct <https://github.com/paruch-group/distortcorrect>`_
 
 Scaling to HPC
--------------------
+--------------
 We have two kinds of large computational jobs and one kind of large I/O job:
 
 * I/O - reading and writing large amounts of data:
