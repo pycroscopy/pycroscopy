@@ -20,8 +20,8 @@ Documentation Index
 
 .. toctree::
     about
-    install
     getting_started
+    install
     external_guides
     package_organization
     auto_examples/index
