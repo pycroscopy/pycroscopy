@@ -12,6 +12,32 @@ and specifications for storing scientific data using the community-driven pycros
 **Dr. Stephen Jesse** conceived the original guidelines on structuring the data while
 **Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure into the hierarchical data format (HDF5)
 
+Nomenclature
+--------------
+Before we start off, lets clarify some nomenclature to avoid confusion.
+
+Data model
+~~~~~~~~~~~
+Data model refers to the way the data is arranged. This does not depend on the implementation in a particular file format
+
+File format
+~~~~~~~~~~~~
+This corresponds to the kind of file, such as a spreadsheet (.CSV), an image (.PNG), a text file (.TXT) within which information is contained.
+
+Data format
+~~~~~~~~~~~~
+`data format <https://en.wikipedia.org/wiki/Data_format>`_ is actually a rather broad term. However, we have observed that
+people often refer to the combination of a data model implemented within a file format as a ``data format``.
+
+Dimensionality
+~~~~~~~~~~~~~~~
+* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets or ``tensors`` of order ``N``:
+
+  * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
+  * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
+  * If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have ``4 dimensions:`` ``(Rows, Columns, Cycle, Bias)``.
+* ``Multi-feature``: As a different example, let us suppose that the ``petal width``, ``length``, and ``weight`` were measured for ``F`` different kinds of flowers. This would result in a ``1 dimensional dataset`` with the kind of flower being the sole dimension. Such a dataset is **not** a 3 dimensional dataset because the ``petal width, length``, and ``weight`` are only different ``features`` for each measurement. Some quantity needs to be **measured for all combinations of** petal width, length, and weight to make this dataset 3 dimensional. Most examples observed in data mining, simple machine learning actually fall into this category
+
 Why should you care?
 --------------------
 
@@ -23,15 +49,15 @@ Proprietary file formats
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Typically, each commercial instruments generates data files formatted in
-proprietary data formats by the instrument manufacturer. The proprietary
-natures of these data formats impede scientific progress in the
+proprietary file formats by the instrument manufacturer. The proprietary
+nature of these file formats and the obfuscated data model within the files impede scientific progress in the
 following ways:
 
 1. By making it challenging for researchers to extract data from these files
 2. Impeding the correlation of data acquired from different instruments.
 3. Inability to store results back into the same file
 4. Inflexibility to accommodate few kilobytes to several gigabytes of data
-5. Requiring different versions of analysis routines for each format
+5. Requiring different versions of analysis routines for each data format
 6. In some cases, requiring proprietary software provided with the instrument to access the data
 
 Future concerns
@@ -56,34 +82,12 @@ Other problems
    advanced algorithms to reconstruct the missing data. We have not come across any robust solutions for storing such
    **Compressed sensing / sparse sampling** data. More in the **Advanced Topics** section.
 
-Nomenclature
---------------
-Data structuring
-~~~~~~~~~~~~~~~~~
-Data structuring refers to the way the data is arranged. This does not depend on the exact implementation in a particular file format
-
-Data / File format
-~~~~~~~~~~~~~~~~~~~~
-This corresponds to the kind of file, such as a spreadsheet (.CSV), an image (.PNG), a text file (.TXT) within which information is contained.
-
-Dimensionality
-~~~~~~~~~~~~~~~
-* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets:
-
-  * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
-  * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
-  * If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have ``4 dimensions:`` ``(Rows, Columns, Cycle, Bias)``.
-* ``Multi-feature``: As a different example, let us suppose that the ``petal width``, ``length``, and ``weight`` were measured for ``F`` different kinds of flowers. This would result in a ``1 dimensional dataset`` with the kind of flower being the sole dimension. Such a dataset is **not** a 3 dimensional dataset because the ``petal width, length``, and ``weight`` are only different ``features`` for each measurement. Some quantity needs to be **measured for all combinations of** petal width, length, and weight to make this dataset 3 dimensional. Most examples observed in data mining, simple machine learning actually fall into this category
-
+Pycroscopy Data Model
+---------------------------
 
 To solve the above and many more problems, we have developed an
-**instrument agnostic data format** that can be used to represent data
-from any instrument, size, dimensionality, or complexity. We store data
-in **hierarchical data format (HDF5)** files because we find them to be
-best suited for the pycroscopy data structure.
-
-Pycroscopy data structure
----------------------------
+**instrument agnostic data model** that can be used to represent data
+from any instrument, size, dimensionality, or complexity.
 
 Data in pycroscopy files are stored in three main kinds of datasets:
 
@@ -102,7 +106,7 @@ thing in common:
 
 **The same measurement is performed at multiple spatial locations**
 
-The data format in pycroscopy is based on this one simple ground truth.
+The data model in pycroscopy is based on this one simple ground-truth.
 The data always has some ``spatial dimensions`` (X, Y, Z) and some
 ``spectroscopic dimensions`` (time, frequency, intensity, wavelength,
 temperature, cycle, voltage, etc.). **In pycroscopy, the spatial
@@ -110,7 +114,7 @@ dimensions are collapsed onto a single dimension and the spectroscopic
 dimensions are flattened to the other dimensions.** Thus, all data are
 stored as two dimensional grids. While the data could indeed be stored
 in the original N-dimensional form, there are a few key **advantages to
-the 2D format**:
+the 2D structuring**:
 
 * The data is already of the same structure expected by machine learning algorithms and requires minimal
   to no pre-processing or post-processing.
@@ -122,7 +126,7 @@ the 2D format**:
   <https://en.wikipedia.org/wiki/Compressed_sensing>`__ wherein
   measurements are acquired from a few randomly sampled positions and the
   data for the rest of the positions are inferred using complex
-  algorithms. Storing such sparse sampled data in the N dimensional format
+  algorithms. Storing such sparse sampled data in the N dimensional form
   would balloon the size of the stored data even though the majority of the
   data is actually empty. Two dimensional datasets would allow the random
   measurements to be written without any empty sections.
@@ -199,9 +203,9 @@ dataset would be structured as:
 
 Complicated?
 ~~~~~~~~~~~~~
-This data format may seem unnecessarily complicated for very simple / rigid data such as 2D images or 1D spectra.
+This data model may seem unnecessarily complicated for very simple / rigid data such as 2D images or 1D spectra.
 However, bear in mind that this paradigm was designed to represent any information regardless of dimensionality, origin, complexity, etc.
-Thus, encoding data in this format will allow seamless sharing, exchange, and interpretation of data.
+Thus, encoding data in this manner will allow seamless sharing, exchange, and interpretation of data.
 
 Compound Datasets:
 ^^^^^^^^^^^^^^^^^^
@@ -218,7 +222,7 @@ and utility of compound datasets are best described with examples:
   blue, green) or four (cyan, black, magenta, yellow) values. One would
   naturally be tempted to simply treat these datasets as N x 3 datasets
   and it certainly is not wrong to represent data this way. However,
-  storing the data in this format would mean that the red intensity was
+  storing the data in this model would mean that the red intensity was
   collected first, followed by the green, and finally by the blue. In
   other words, a notion of chronology is attached to both the position
   and spectroscopic axis if one strictly follows the pycroscopy defenition.
@@ -274,7 +278,7 @@ datasets are necessary for explaining:
 * how to reshape the data back to its N dimensional form
 
 Much like ``main`` datasets, the ``ancillary`` datasets are also two
-dimensional matricies regardless of the number of position or
+dimensional matrices regardless of the number of position or
 spectroscopic dimensions. Given a main dataset with ``N`` positions in
 ``U`` dimensions and ``P`` spectral values in ``V`` dimensions:
 
@@ -284,7 +288,7 @@ spectroscopic dimensions. Given a main dataset with ``N`` positions in
   change. In other words, the first column would be the fastest changing
   position dimension and the last column would be the slowest.
 
-  * A simple grayscale photograph with N pixels would have ancillary position
+  * A simple gray-scale photograph with N pixels would have ancillary position
     datasets of size N x 2. The first column would be the columns (faster)
     and the second would be the rows assuming that the data was collected
     column-by-column and then row-by-row.
@@ -384,8 +388,7 @@ Cycle, Step.
 
 Channels
 ^^^^^^^^
-
-The pycroscopy data format also allows multiple channels of information
+The pycroscopy data model also allows multiple channels of information
 to be recorded as separate datasets in the same file. For example, one
 channel could be a spectra (1D array) collected at each location on a 2D
 grid while another could be the temperature (single value) recorded by
@@ -406,7 +409,7 @@ Requirements
 No one really wants yet another file format in their lives. We wanted to adopt a file format that satisfies some basic requirements:
 
 * already widely accepted in scientific research
-* readily compatible with high-performance computing machines and inherently support parallel read and write capabilities.
+* support parallel read and write capabilities.
 * store multiple datasets of different shapes, dimensionalities, precision and sizes.
 * scale very efficiently from few kilobytes to several terabytes
 * can be (readily) read and modified using any language including Python, R, Matlab,
@@ -416,6 +419,7 @@ No one really wants yet another file format in their lives. We wanted to adopt a
 * facilitates storage of any number of experimental or analysis parameters
   in addition to regular data.
 * highly flexible and poses minimal restrictions on how the data can and should be stored.
+* readily compatible with high-performance computing (``HPC``) and cloud-computing
 
 Candidates
 ~~~~~~~~~~~~
@@ -432,9 +436,22 @@ Candidates
   `de-facto standard in scientific research <https://support.hdfgroup.org/HDF5/users5.html>`_.
   In fact, Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
   files are actually (now) just custom flavors of HDF5 thereby validating the statement that HDF5 is the **unanimous the file format of choice**
+* The `DREAM.3D <http://dream3d.bluequartz.net/binaries/Help/DREAM3D/nativedream3d.html>`_ is yet another group that uses HDF5
+  as the base container to store their data. We are currently evaluating compatibility with and feasibility of their data model.
 
-Besides `HDF5 <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_, every alternative had some
-major shortcomings / did not satisfy one or more requirements. Hence, pycroscopy has officially adopted the HD5 file format
+We found that `HDF5 <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_, works best for us compared to the alternatives.
+Hence, pycroscopy has officially adopted the HD5 file format.
+
+We acknowledge that it is nearly impossible to find the perfect file format and HDF5 too has its fair share of drawbacks.
+One common observation among file formats is that a file format optimized for the cloud or cluster computing often does
+not perform well (or at all) on HPC due to the conflicting nature of the computing paradigms.
+As of this writing, HDF5 is optimized for HPC and not for cloud-based applications.
+For cloud-based environments it is beneficial to in fact break up the data into
+small chunks that can be individually addressed and used. We think `Zarr <https://zarr.readthedocs.io/en/stable/>`_ and
+`N5 <https://github.com/saalfeldlab/n5>`_ would be good alternatives; however, most of these file formats are very much in
+their infancy and have not proven themselves like HDF5 has. This being said, the HDF organization
+`just announced <https://www.youtube.com/watch?v=3tP3lT5y-QA>`_ a `cloud flavor <https://www.hdfgroup.org/solutions/hdf-cloud/>`_
+of HDF5 and we plan to look into this once h5py or other python packages support such capabilities.
 
 Implementation in HDF5
 -----------------------
