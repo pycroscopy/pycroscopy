@@ -23,7 +23,7 @@ pycroscopy at International conferences
 ---------------------------------------
 * Aug 5th 2018 - `Tutorial <https://www.microscopy.org/MandM/2018/program/short_courses.cfm>`_ at Microscopy and Microanalysis Conference 2018.
 * May 16-18 2018 - Poster at `ORNL Software Expo <https://software.ornl.gov/expo/program>`_
-* May 18 2018 - **Invited talk** at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
+* May 18 2018 - **Invited** `talk <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_ at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
 * Feb 28 2018 - Webinar on `Jupyter for Supporting a Materials Imaging User Facility (and beyond) <https://www.exascaleproject.org/event/jupyter/>`_. see this `Youtube video <https://www.youtube.com/watch?v=aKah_O5OZdE&t=31m53s>`_
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Nov 27 2017 - `Tutorial on Machine Learning for Image and Hyperspectral Data <https://mrsfall.zerista.com/event/member/434841>`_
