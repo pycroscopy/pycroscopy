@@ -1,13 +1,15 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import division, print_function, absolute_import, unicode_literals
+
 import os
 import numpy as np
-
-from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
+import h5py
+from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, Dimension, \
+    write_ind_val_dsets
 from ...core.io.translator import Translator
 from ...core.io.write_utils import get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
-from ..virtual_data import VirtualDataset, VirtualGroup
-from ..hdf_writer import HDFwriter
-from ..write_utils import build_ind_val_dsets
 
 
 class NanonisTranslator(Translator):
@@ -81,56 +83,42 @@ class NanonisTranslator(Translator):
             for channel in data_channels:
                 print(channel)
 
-        num_points = self.data_dict['Position Indices'].shape[0]
+        if os.path.exists(self.h5_path):
+            os.remove(self.h5_path)
+
+        h5_file = h5py.File(self.h5_path, 'w')
+
+        meas_grp = create_indexed_group(h5_file, 'Measurement')
+
         dc_offset = self.data_dict['sweep_signal']
 
         spec_label, spec_units = self.parm_dict['sweep_signal'].split()
         spec_units = spec_units.strip('()')
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets([dc_offset.size], labels=[spec_label], units=[spec_units])
-        ds_spec_vals.data[:] = dc_offset
+        spec_dim = Dimension(spec_label, spec_units, dc_offset)
+        pos_dims = self.data_dict['Position Dimensions']
 
-        ds_pos_inds = VirtualDataset('Position_Indices', self.data_dict['Position Indices'])
-        ds_pos_vals = VirtualDataset('Position_Values', self.data_dict['Position Values'])
+        h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_dims, is_spectral=False)
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_dim, is_spectral=True)
 
-        ds_pos_inds.attrs['labels'] = self.data_dict['Position labels']
-        ds_pos_inds.attrs['units'] = self.data_dict['Position units']
-        ds_pos_vals.attrs['labels'] = self.data_dict['Position labels']
-        ds_pos_vals.attrs['units'] = self.data_dict['Position units']
-
-        ds_meas_grp = VirtualGroup('Measurement_')
-        ds_meas_grp.addChildren([ds_spec_vals, ds_spec_inds, ds_pos_inds, ds_pos_vals])
-
-        if os.path.exists(self.h5_path):
-            os.remove(self.h5_path)
-        hdf = HDFwriter(self.h5_path)
-        h5_refs = hdf.writeData(ds_meas_grp, print_log=True)
-
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values']
-
-        h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals = get_h5_obj_refs(aux_ds_names, h5_refs)
+        num_points = h5_pos_inds.shape[0]
 
         for data_channel in data_channels:
             raw_data = self.data_dict[data_channel].reshape([num_points, -1]) * 1E9  # Convert to nA
 
-            ds_raw = VirtualDataset('Raw_Data', raw_data)
+            chan_grp = create_indexed_group(meas_grp, 'Channel')
+
             data_label, data_unit = data_channel.rsplit(maxsplit=1)
             data_unit = data_unit.strip('()')
-            ds_raw.attrs['units'] = data_unit
-            ds_raw.attrs['quantity'] = data_label
 
-            ds_chan_grp = VirtualGroup('Channel_', parent=ds_meas_grp.name)
+            write_main_dataset(chan_grp, raw_data, 'Raw_Data',
+                               data_label, data_unit,
+                               None, None,
+                               h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
+                               h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals)
 
-            ds_chan_grp.addChildren([ds_raw])
-            ds_meas_grp.addChildren([ds_chan_grp])
+            h5_file.flush()
 
-            h5_refs = hdf.writeData(ds_chan_grp, print_log=verbose)
-            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-            link_as_main(h5_main, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
-
-            hdf.file.flush()
-
-        hdf.close()
+        h5_file.close()
         print('Nanonis translation complete.')
 
         return self.h5_path
@@ -163,24 +151,17 @@ class NanonisTranslator(Translator):
         parm_dict['num_rows'] = ny
 
         num_points = nx * ny
-        xinds, yinds = np.ogrid[0:nx, 0:ny]
-        xinds = np.repeat(xinds.flatten(), ny)
-        yinds = np.tile(yinds.flatten(), nx)
-        pos_dims = np.hstack([parm_dict['X (m)'].reshape(-1, 1), parm_dict['Y (m)'].reshape(-1, 1)])
-        pos_inds = np.hstack([xinds.reshape(-1, 1), yinds.reshape(-1, 1)])
+        pos_vals = np.hstack([parm_dict['X (m)'].reshape(-1, 1), parm_dict['Y (m)'].reshape(-1, 1)])
         z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
-        pos_dims = np.hstack([pos_dims, z_data])
-        pos_dims *= 1E9
-        pos_inds = np.hstack([pos_inds, np.arange(z_data.size).reshape(z_data.shape)])
-        pos_labs = get_aux_dset_slicing(['X', 'Y', 'Z'], is_spectroscopic=False)
-        pos_units = ['nm', 'nm', 'nm']
+        pos_vals = np.hstack([pos_vals, z_data])
+        pos_vals *= 1E9
+
+        pos_dims = (Dimension(label, 'nm', values) for label, values in zip(['X', 'Y', 'Z'],
+                                                                            pos_vals.T))
 
         self.parm_dict = parm_dict
         self.data_dict = signal_dict
-        self.data_dict['Position Indices'] = pos_inds
-        self.data_dict['Position Values'] = pos_dims
-        self.data_dict['Position labels'] = pos_labs
-        self.data_dict['Position units'] = pos_units
+        self.data_dict['Position Dimensions'] = pos_dims
 
         return
 
