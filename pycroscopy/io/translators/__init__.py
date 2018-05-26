@@ -31,7 +31,7 @@ from .oneview import OneViewTranslator
 from .ptychography import PtychographyTranslator
 from .sporc import SporcTranslator
 from .time_series import MovieTranslator
-
+from .bruker_afm import BrukerAFMTranslator
 from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 from .nanonis import NanonisTranslator
@@ -40,4 +40,4 @@ __all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
            'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
-           'LabViewH5Patcher', 'TRKPFMTranslator']
+           'LabViewH5Patcher', 'TRKPFMTranslator', 'BrukerAFMTranslator']

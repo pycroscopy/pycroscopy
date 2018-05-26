@@ -14,8 +14,7 @@ from igor import binarywave as bw
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
 from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, create_indexed_group, \
-    write_main_dataset, write_simple_attrs, write_ind_val_dsets
+from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
 class IgorIBWTranslator(Translator):
