@@ -19,7 +19,23 @@ from .df_utils.base_utils import read_binary_data
 
 class BrukerAFMTranslator(Translator):
 
-    def translate(self, file_path):
+    def translate(self, file_path, *args, **kwargs):
+        """
+        Translates a given Bruker / Veeco AFM derived file to HDF5. Currently handles scans, force curves, and force
+        maps
+
+        Note that this translator was written with a single example file for each modality and may be buggy.
+
+        Parameters
+        ----------
+        file_path : str / unicode
+            path to data file
+
+        Returns
+        -------
+        h5_path : str / unicode
+            path to translated HDF5 file
+        """
         self.file_path = file_path
         self.meta_data, other_parms = self._extract_metadata()
 
@@ -76,7 +92,8 @@ class BrukerAFMTranslator(Translator):
 
     def _translate_force_curve(self, h5_meas_grp):
         """
-        Reads the force curves from the proprietary file and writes it to HDF5 datasets
+        Reads the force curves from the proprietary file and writes them to HDF5 datasets
+
         Parameters
         ----------
         h5_meas_grp : h5py.Group object
@@ -86,6 +103,7 @@ class BrukerAFMTranslator(Translator):
         h5_pos_inds, h5_pos_vals = write_ind_val_dsets(h5_meas_grp, Dimension('single', 'a. u.', 1), is_spectral=False)
 
         # Find out the size of the force curves from the metadata:
+        layer_info = None
         for class_name in self.meta_data.keys():
             if 'Ciao force image list' in class_name:
                 layer_info = self.meta_data[class_name]
@@ -112,7 +130,8 @@ class BrukerAFMTranslator(Translator):
 
     def _translate_image_stack(self, h5_meas_grp):
         """
-        Reads the scan images from the proprietary file and writes it to HDF5 datasets
+        Reads the scan images from the proprietary file and writes them to HDF5 datasets
+
         Parameters
         ----------
         h5_meas_grp : h5py.Group object
@@ -122,6 +141,7 @@ class BrukerAFMTranslator(Translator):
         h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_meas_grp, Dimension('single', 'a. u.', 1), is_spectral=True)
 
         # Find out the size of the force curves from the metadata:
+        layer_info = None
         for class_name in self.meta_data.keys():
             if 'Ciao image list' in class_name:
                 layer_info = self.meta_data[class_name]
@@ -149,7 +169,8 @@ class BrukerAFMTranslator(Translator):
 
     def _translate_force_map(self, h5_meas_grp):
         """
-        Reads the scan images from the proprietary file and writes it to HDF5 datasets
+        Reads the scan image + force map from the proprietary file and writes it to HDF5 datasets
+
         Parameters
         ----------
         h5_meas_grp : h5py.Group object
@@ -191,11 +212,13 @@ class BrukerAFMTranslator(Translator):
 
         Returns
         -------
-        meta_data : OrderedDict
-            Ordered dictionary with all possible metadata scraped from the header
+        meas_parms : OrderedDict
+            Ordered dictionary of Ordered dictionaries (one per image / force channel, etc.)
+        other_parms : OrderedDict
+            Ordered Dictionary of Ordered dictionaries containing all other metadata
         """
         other_parms = OrderedDict()
-        meta_data = OrderedDict()
+        meas_parms = OrderedDict()
         curr_category = ''
         temp_dict = OrderedDict()
         with open(self.file_path, "rb") as file_handle:
@@ -219,22 +242,22 @@ class BrukerAFMTranslator(Translator):
                             # In certain cases the same class name occurs multiple times.
                             # Append suffix to existing name and to this name
                             count = 0
-                            for class_name in meta_data.keys():
+                            for class_name in meas_parms.keys():
                                 if curr_category in class_name:
                                     count += 1
                             if count == 0:
-                                meta_data[curr_category] = temp_dict.copy()
+                                meas_parms[curr_category] = temp_dict.copy()
                             else:
                                 if count == 1:
-                                    for class_name in meta_data.keys():
+                                    for class_name in meas_parms.keys():
                                         if curr_category == class_name:
                                             # Remove and add back again with suffix
                                             # This should only ever happen once.
                                             # The next time we come across the same class, all elements already have
                                             # suffixes
-                                            meta_data[curr_category + '_0'] = meta_data.pop(curr_category)
+                                            meas_parms[curr_category + '_0'] = meas_parms.pop(curr_category)
                                             break
-                                meta_data[curr_category + '_' + str(count)] = temp_dict.copy()
+                                meas_parms[curr_category + '_' + str(count)] = temp_dict.copy()
                         else:
                             curr_category = curr_category.replace('Ciao ', '')
                             other_parms[curr_category] = temp_dict.copy()
@@ -255,9 +278,22 @@ class BrukerAFMTranslator(Translator):
                 else:
                     print(split_data)
 
-        return meta_data, other_parms
+        return meas_parms, other_parms
 
     def _read_data_vector(self, layer_info):
+        """
+        Reads data relevant to a single image, force curve, or force map
+
+        Parameters
+        ----------
+        layer_info : OrderedDictionary
+            Parameters describing the data offset, length and precision in the binary file
+
+        Returns
+        -------
+        data_vec : np.ndarray
+            1D array containing data represented by binary data
+        """
         data_vec = read_binary_data(self.file_path, layer_info['Data offset'], layer_info['Data length'],
                                     layer_info['Bytes/pixel'])
 
@@ -267,38 +303,19 @@ class BrukerAFMTranslator(Translator):
         return data_vec
 
     def _read_image_layer(self, layer_info):
+        """
+        Reads a single scan image layer / channel
+
+        Parameters
+        ----------
+        layer_info : OrderedDictionary
+            Parameters describing the data offset, length and precision in the binary file
+
+        Returns
+        -------
+        data_mat : numpy.ndarray
+            2D array representing the requested channel of information
+        """
         data_vec = self._read_data_vector(layer_info)
         data_mat = data_vec.reshape(layer_info['Number of lines'], layer_info['Samps/line'])
         return data_mat
-
-    def _read_all_image_layers(self):
-        all_data = OrderedDict()
-        for class_name in self.meta_data.keys():
-            if 'Ciao image list' in class_name:
-                layer_info = self.meta_data[class_name]
-                # Think about removing offset, data length, bytes/pixel, etc.
-                # Think about standardizing rows and columns
-                data = self._read_image_layer(layer_info)
-                all_data[class_name] = {'info': layer_info, 'data': data}
-        return all_data
-
-    def _read_all_force_layers(self):
-        all_data = OrderedDict()
-        for class_name in self.meta_data.keys():
-            if 'Ciao force image list' in class_name:
-                layer_info = self.meta_data[class_name]
-                # Think about removing offset, data length, bytes/pixel, etc.
-                # Think about standardizing rows and columns
-                data = self._read_data_vector(layer_info)
-                all_data[class_name] = {'info': layer_info, 'data': data}
-        return all_data
-
-    def _read_all_force_map_layers(self):
-        image_mat = self._read_image_layer(self.meta_data['Ciao image list'])
-        layer_info = self.meta_data['Ciao force image list']
-        data_vec = self._read_data_vector(layer_info)
-        tr_rt = [int(item) for item in layer_info['Samps/line'].split(' ')]
-        ndim_size = tuple(list(image_mat.shape) + [np.sum(tr_rt)])
-        force_map = np.reshape(data_vec, ndim_size)
-        return {'force_map': {'data': force_map, 'info': layer_info},
-                'image_map': {'data': image_mat, 'info': self.meta_data['Ciao image list']}}
