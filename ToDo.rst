@@ -10,12 +10,31 @@ Immdiate
   * Image cleaning - Chris
   * Signal Filtering - Suhas
   * Two more examples
-* Move ``.core`` out of pycroscopy and think about branding
+* Solicit brand names:
+
+  * Data model:
+
+    * Not Another Data Format - NADF
+    * Spectral Data Format - SDF
+  * package - pyNADF, pySDF
+* Move ``.core`` out of pycroscopy
 
   * continuous integration
   * documentation, website, etc.
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
+* Bare MINIMUM translators:
+
+  * ``FIJI``
+  * ``ImageJ``
+  * ``Gwyddion`` (.gwy) formats using pygwy
+  * ``WsXM``
+  * Park Systems - No data - Liam Collins may have some
+  * Agilent - Rama / Evgheni may have some
+  * Anasys - Alex / Olga co. + some example data and code available online
+  * NT-MDT - Anton? <-- niche enough that it can be ignored
+  * Ginger Group - J. Kong <-- niche enough that it can be ignored
+* development of community standards for AFM, STM, STEM, etc.
 
 * region reference related functionality
 
@@ -43,13 +62,6 @@ Medium-term - by Aug 1 2018
 * Explore Azure Notebooks for live tutorials
 * ``PycroDataset.slice()`` and ``get_n_dim_form()`` should return ``Xarray`` objects
 * Notebooks need to be updated to require pycroscopy version
-* Translators for ``FIJI``, ``ImageJ``, ``Gwyddion`` (pygwyddion) formats
-* Find more files from microscopes that require translation - this will guide the development of community standards
-
-  * Nanonis? - Chris Smith + Rama
-  * Bruker - Nina / Stephen
-  * NTMDT - Anton?
-  * Anasys - Alex / Olga co.
 * Itk for visualization - https://github.com/InsightSoftwareConsortium/itk-jupyter-widgets
 * New package for facilitating **scalable ensemble runs**:
 
