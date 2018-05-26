@@ -88,5 +88,5 @@ The structure of the ``pycroscopy.core`` subpackage mimics that of pycroscopy an
 Branches
 --------
 * ``master`` : Stable code based off which the pip installer works. Recommended for most people.
-* ``unity_dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough
-  testing. By its very definition, this package Recommended only for developers.
+* ``dev`` : Experimental code with new features that will be made available in ``master`` periodically after thorough
+  testing. By its very definition, this branch is recommended only for developers.
