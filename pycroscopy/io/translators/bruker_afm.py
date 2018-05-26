@@ -19,7 +19,7 @@ from .df_utils.base_utils import read_binary_data
 
 class BrukerAFMTranslator(Translator):
 
-    def translate(self, file_path, *args, **kwargs):
+    def translate(self, file_path):
         self.file_path = file_path
         self.meta_data, other_parms = self._extract_metadata()
 
@@ -54,9 +54,17 @@ class BrukerAFMTranslator(Translator):
         global_parms['translator'] = 'Bruker_AFM'
         write_simple_attrs(h5_file, global_parms)
 
+        # too many parameters. Making a dummy group just for the parameters.
+        h5_parms_grp = h5_file.create_group('Parameters')
+        # We currently have a dictionary of dictionaries. This needs to be flattened
+        flat_dict = dict()
+        for class_name, sub_dict in other_parms.items():
+            for key, val in sub_dict.items():
+                flat_dict[class_name + '_' + key] = val
+        write_simple_attrs(h5_parms_grp, flat_dict)
+
         # Create measurement group
         h5_meas_grp = create_indexed_group(h5_file, 'Measurement')
-        write_simple_attrs(h5_meas_grp, other_parms)
 
         # Call the data specific translation function
         trans_funcs = [self._translate_image_stack, self._translate_force_curve, self._translate_force_map]
@@ -84,7 +92,7 @@ class BrukerAFMTranslator(Translator):
                 break
         tr_rt = [int(item) for item in layer_info['Samps/line'].split(' ')]
 
-        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_meas_grp, Dimension('Z', 'nm', np.sum(tr_rt)),
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(h5_meas_grp, Dimension('Z', 'nm', int(np.sum(tr_rt))),
                                                          is_spectral=True)
 
         for class_name in self.meta_data.keys():
@@ -173,7 +181,7 @@ class BrukerAFMTranslator(Translator):
                            quantity, 'a. u.',
                            [Dimension('X', 'nm', image_parms['Samps/line']),
                             Dimension('Y', 'nm', image_parms['Number of lines'])],
-                           Dimension('Z', 'nm', np.sum(tr_rt)), dtype=np.float32)
+                           Dimension('Z', 'nm', int(np.sum(tr_rt))), dtype=np.float32)
         # Think about standardizing attributes
         write_simple_attrs(h5_chan_grp, force_map_parms)
 
@@ -227,8 +235,9 @@ class BrukerAFMTranslator(Translator):
                                             meta_data[curr_category + '_0'] = meta_data.pop(curr_category)
                                             break
                                 meta_data[curr_category + '_' + str(count)] = temp_dict.copy()
-                    else:
-                        other_parms[curr_category] = temp_dict.copy()
+                        else:
+                            curr_category = curr_category.replace('Ciao ', '')
+                            other_parms[curr_category] = temp_dict.copy()
 
                     if "*File list end" in trimmed:
                         break
