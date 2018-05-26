@@ -104,7 +104,7 @@ class BrukerAFMTranslator(Translator):
                 write_main_dataset(h5_chan_grp, np.expand_dims(data, axis=0), 'Raw_Data',
                                    # Quantity and Units needs to be fixed by someone who understands these files better
                                    quantity, 'a. u.',
-                                   None, None, dtype=np.float32,
+                                   None, None, dtype=np.float32, compression='gzip',
                                    h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
                                    h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals)
                 # Think about standardizing attributes
@@ -141,7 +141,7 @@ class BrukerAFMTranslator(Translator):
                 write_main_dataset(h5_chan_grp, np.reshape(data, (-1, 1)), 'Raw_Data',
                                    # Quantity and Units needs to be fixed by someone who understands these files better
                                    quantity, 'a. u.',
-                                   None, None, dtype=np.float32,
+                                   None, None, dtype=np.float32, compression='gzip',
                                    h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
                                    h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals)
                 # Think about standardizing attributes for rows and columns
@@ -165,7 +165,7 @@ class BrukerAFMTranslator(Translator):
                            quantity, 'a. u.',
                            [Dimension('X', 'nm', image_parms['Samps/line']),
                             Dimension('Y', 'nm', image_parms['Number of lines'])],
-                           Dimension('single', 'a. u.', 1), dtype=np.float32)
+                           Dimension('single', 'a. u.', 1), dtype=np.float32, compression='gzip')
         # Think about standardizing attributes for rows and columns
         write_simple_attrs(h5_chan_grp, image_parms)
 
@@ -181,7 +181,7 @@ class BrukerAFMTranslator(Translator):
                            quantity, 'a. u.',
                            [Dimension('X', 'nm', image_parms['Samps/line']),
                             Dimension('Y', 'nm', image_parms['Number of lines'])],
-                           Dimension('Z', 'nm', int(np.sum(tr_rt))), dtype=np.float32)
+                           Dimension('Z', 'nm', int(np.sum(tr_rt))), dtype=np.float32, compression='gzip')
         # Think about standardizing attributes
         write_simple_attrs(h5_chan_grp, force_map_parms)
 
