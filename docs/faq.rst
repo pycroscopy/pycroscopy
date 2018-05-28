@@ -65,7 +65,7 @@ Not at all. One of the tenets of pycroscopy is lowering the barrier for scientis
 
 What sort of computer do I need to run pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You can use practically any laptop / desktop / virtual machine running Windows / Mac OS / Linux. Pycroscopy is not tested on 32 bit operating systems (very unlikely that your computer is a 32 bit system. Even your phone uses a 64 bit operating system).  
+You can use practically any laptop / desktop / virtual machine running Windows / Mac OS / Linux. Pycroscopy is not tested on 32 bit operating systems (very rare).
 
 Why doesn't pycroscopy use graphical user interfaces?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,13 +115,13 @@ We found that established community standards (like Nexus, XDMF, NetCDF):
 Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure.
 Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
 
+We are currently exploring collaboration / translators to and from `DREAM.3D's HDF5 data model <http://dream3d.bluequartz.net/binaries/Help/DREAM3D/nativedream3d.html>`_
+
 Can Pycroscopy read data files from instrument X?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some popular file formats and store the information in HDF5 files. You can find a list of available `translators here <https://github.com/pycroscopy/pycroscopy/tree/master/pycroscopy/io/translators>`_.
-
-I could not find a data translator for my data format. What do I do now?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Chances are that there is a (or multiple) python package out there already that reads the data from your file into python. All you will need to do is to write the data and metadata to HDF5 files by writing your own Translator. We have `examples available here <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html#developer-tutorials>`_.
+Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some
+popular file formats and store the information in HDF5 files.
+You can find a list of available `translators here <./translators.html>`_.
 
 Becoming a part of the effort
 -----------------------------
@@ -137,7 +137,9 @@ Your contributions are very valuable to the imaging and scientific community at 
 
 * You can spread the word - tell anyone who you think may benefit from using pycroscopy. 
 * Tell us what you think of our documentation or share your own. 
-* Let us know what you would like to see in pycroscopy. 
+* Let us know what you would like to see in pycroscopy.
+* Put us in touch with others working on similar efforts so that we can join forces.
+* Guide us in `developing data translators <./translators.html>`_
 
 I would like to help and I am OK at programming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
