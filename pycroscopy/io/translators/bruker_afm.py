@@ -15,6 +15,7 @@ from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import Dimension
 from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 from .df_utils.base_utils import read_binary_data
+# TODO: Adopt missing aspects / features from https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/readNanoscope.py
 
 
 class BrukerAFMTranslator(Translator):
