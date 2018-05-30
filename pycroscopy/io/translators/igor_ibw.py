@@ -14,8 +14,7 @@ from igor import binarywave as bw
 from ...core.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
 from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, create_indexed_group, \
-    write_main_dataset, write_simple_attrs, write_ind_val_dsets
+from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
 class IgorIBWTranslator(Translator):
@@ -76,7 +75,7 @@ class IgorIBWTranslator(Translator):
             num_rows = parm_dict['ScanLines']
             num_cols = parm_dict['ScanPoints']
 
-            images = images.transpose(2, 0, 1)  # now ordered as [chan, Y, X] image
+            images = images.transpose(2, 1, 0)  # now ordered as [chan, Y, X] image
             images = np.reshape(images, (images.shape[0], -1, 1))  # 3D [chan, Y*X points,1]
 
             pos_desc = [Dimension('X', 'm', np.linspace(0, parm_dict['FastScanSize'], num_cols)),
