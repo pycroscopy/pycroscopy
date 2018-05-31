@@ -160,8 +160,11 @@ except ImportError:
 # ------
 # A useful test function should be able to find the peak amplitude for any single spectra in the dataset. So, given the
 # index of a pixel (provided by the user), we should perform two operations:
+#
 # * read the spectra corresponding to that index from the HDF5 dataset
 # * apply the ``map_function()`` to this spectra and return the result.
+# The goal here is to load the smallest necessary portion of data from the HDF5 dataset to memory and test it against
+# the ``map_function()``
 #
 # create_results_datasets()
 # -------------------------
@@ -252,7 +255,7 @@ class PeakFinder(px.Process):
         In this case, there isn't any more additional post-processing required
         """
         # write the results to the file
-        self.h5_results[:, 0] = np.array(self._results)
+        self.h5_results[self._start_pos: self._end_pos, 0] = np.array(self._results)
 
         # Flush the results to ensure that they have indeed been written to the file
         self.h5_main.file.flush()
@@ -441,6 +444,58 @@ h5_file.close()
 os.remove(h5_path)
 
 ########################################################################################################################
+# Flow of functions
+# -----------------
+#
+# By default, very few functions (``test()``, ``compute()``) are exposed to users. This means that one of these
+# functions calls a chain of the other functions in the class.
+#
+# init()
+# ~~~~~~
+# Instantiating the class via something like: ``fitter = PeakFinder(h5_main)`` happens in two parts:
+#
+# 1. First the subclass (``PeakFinder``) calls the initialization function in ``Process`` to let it run some checks:
+#
+#   * Check if the provided ``h5_main`` is indeed a ``Main`` dataset
+#   * call ``set_memory_and_cores()`` to figure out how many pixels can be read into memory at any given time
+#   * Initialize some basic variables
+# 2. Next, the subclass continues any further validation / checks / initialization - this was not implemented for
+#    ``PeakFinder`` but here are some things that can be done:
+#
+#    * Find HDF5 groups which either have partial or fully computed results already for the same parameters by calling
+#      ``check_for_duplicates()``
+#
+# test()
+# ~~~~~~~
+# This function only calls the ``map_function()`` by definition
+#
+# compute()
+# ~~~~~~~~~~
+# Here is how compute() works:
+#
+# * Check if you can return existing results for the requested computation and return if available by calling either:
+#
+#   * ``get_existing_datasets()`` - reads all necessary parameters and gets references to the HDF5 datasets that should
+#      contain the results
+#   * ``use_partial_computation()`` - pick the first partially computed results group that was discovered by
+#     ``check_for_duplicates()``
+# * call ``create_results_datasets()`` to create the HDF5 datasets and group objects
+# * read the first chunk of data via ``read_data_chunk()`` into ``self._data``
+# * Until the source dataset is fully read (``self._data is not None``), do:
+#
+#   * call ``unit_computation()`` on ``self._data``
+#
+#     * By default ``unit_computation()`` just maps ``map_function()`` onto ``self._data``
+#   * call ``write_results_chunk()`` to write ``self._results`` into the HDF5 datasets
+#   * read the next chunk of data into ``self._data``
+#
+# use_partial_computation()
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Not used in ``PeakFinder`` but this function can be called to manually specify an HDF5 group containing partial
+# results
+#
+# We encourage you to read the source code for more information.
+#
 # Advanced examples
 # -----------------
 # Please see the following pycroscopy classes to learn more about the advanced functionalities such as resuming
@@ -452,8 +507,9 @@ os.remove(h5_path)
 # Tips and tricks
 # ---------------
 # Here we will cover a few common use-cases that will hopefully guide you in structuring your computational problem
+#
 # Juggling dimensions
-# ~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~
 # We intentionally chose a simple example above to quickly illustrate the main components / philosophy of the Process
 # class. The above example had two position dimensions collapsed into the first axis of the dataset and a single
 # spectroscopic dimension (``Frequency``). What if the spectra were acquired as a function of other variables such as a
@@ -485,11 +541,11 @@ os.remove(h5_path)
 #
 # From here, on, the computation would continue as is but as expected, the results would also consequently be of shape
 # ``(P*N)``. We would have to reverse the reshape operation to get back the results in the form: ``(P, N)``. So we
-# would prepend the reverse reshape operation to ``_create_results_datasets()``:
+# would prepend the reverse reshape operation to ``_write_results_chunk()``:
 #
 # .. code-block:: python
 #
-#     def _create_results_datasets(self):
+#     def _write_results_chunk(self):
 #         # Recall that the results from the computation are stored in a list called self._results
 #         self._results = np.array(self._results)  # convert from list to numpy array
 #         self._results = self._results.reshape(-1, num_spectra)
