@@ -99,6 +99,7 @@ class TRKPFMTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
+        parm_path = path.abspath(parm_path)
         parm_dict, excit_wfm = self._read_parms(parm_path)
 
         self._parse_file_path(parm_path)

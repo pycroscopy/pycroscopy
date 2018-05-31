@@ -101,6 +101,7 @@ class NDataTranslator(Translator):
         Get the list of all files with the .tif extension and
         the number of files in the list
         '''
+        image_path = os.path.abspath(image_path)
         file_list = self._parse_file_path(image_path)
 
         image_parm_list = self._getimageparms(file_list)

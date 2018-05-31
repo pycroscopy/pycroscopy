@@ -74,6 +74,9 @@ class PtychographyTranslator(Translator):
 
         """
         self.image_ext = image_type
+        
+        image_path = os.path.abspath(image_path)
+        h5_path = os.path.abspath(h5_path)
 
         # Open the hdf5 file and delete any contents
         if os.path.exists(h5_path):

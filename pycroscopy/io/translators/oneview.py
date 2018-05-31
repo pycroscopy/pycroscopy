@@ -99,6 +99,7 @@ class OneViewTranslator(Translator):
         Get the list of all files with the .tif extension and
         the number of files in the list
         '''
+        image_path = os.path.abspath(image_path)
         root_file_list, file_list = self._parse_file_path(image_path)
 
         size, image_parms = self._getimageparms(file_list[0])

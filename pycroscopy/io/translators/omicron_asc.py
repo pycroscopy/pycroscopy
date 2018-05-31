@@ -36,6 +36,7 @@ class AscTranslator(NumpyTranslator):
 
         max_v = abs(max_v)
 
+        file_path = path.abspath(file_path)
         folder_path, file_name = path.split(file_path)
         file_name = file_name[:-4]
 

@@ -41,6 +41,7 @@ class IgorIBWTranslator(Translator):
         h5_path : String / unicode
             Absolute path of the .h5 file
         """
+        file_path = path.abspath(file_path)
         # Prepare the .h5 file:
         folder_path, base_name = path.split(file_path)
         base_name = base_name[:-4]

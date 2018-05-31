@@ -67,12 +67,14 @@ class MovieTranslator(Translator):
         """
         self.image_ext = image_type
 
-        # Open the hdf5 file and delete any contents
+        image_path = os.path.abspath(image_path)
+        h5_path = os.path.abspath(h5_path)
+        
         if os.path.exists(h5_path):
             os.remove(h5_path)
 
         self.h5_file = h5py.File(h5_path, 'w')
-
+        
         '''
         Get the list of all files with the provided extension and the number of files in the list
         '''

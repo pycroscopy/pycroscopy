@@ -45,6 +45,7 @@ class ForcIVTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
+        raw_data_path = path.abspath(raw_data_path)
         folder_path, file_name = path.split(raw_data_path)
 
         h5_path = path.join(folder_path, file_name[:-4] + '.h5')
