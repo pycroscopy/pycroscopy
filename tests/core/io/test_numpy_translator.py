@@ -65,6 +65,8 @@ class TestNumpyTranslator(unittest.TestCase):
                  'att_3': [1, 2, 3, 4],
                  'att_4': ['str_1', 'str_2', 'str_3']}
 
+        extra_dsets = {'dset_1': np.random.rand(5), 'dset_2': np.arange(25)}
+
         file_path = 'test_numpy_translator.h5'
         self.__delete_existing_file(file_path)
         main_data = np.random.rand(15, 14)
@@ -92,7 +94,8 @@ class TestNumpyTranslator(unittest.TestCase):
                                np.repeat(np.arange(2), 7)))
 
         translator = NumpyTranslator()
-        _ = translator.translate(file_path, data_name, main_data, quantity, units, pos_dims, spec_dims, parm_dict=attrs)
+        _ = translator.translate(file_path, data_name, main_data, quantity, units, pos_dims, spec_dims, parm_dict=attrs,
+                                 extra_dsets=extra_dsets)
 
         with h5py.File(file_path, mode='r') as h5_f:
             # we are not interested in most of the attributes under root besides two:
@@ -117,7 +120,7 @@ class TestNumpyTranslator(unittest.TestCase):
             self.assertIsInstance(h5_chan_grp, h5py.Group)
 
             # This channel group is not expected to have any attributes but it will contain the main dataset
-            self.assertEqual(len(h5_chan_grp.items()), 5)
+            self.assertEqual(len(h5_chan_grp.items()), 5 + len(extra_dsets))
             for dset_name in ['Raw_Data', 'Position_Indices', 'Position_Values', 'Spectroscopic_Indices',
                               'Spectroscopic_Values']:
                 self.assertTrue(dset_name in h5_chan_grp.keys())
@@ -137,6 +140,14 @@ class TestNumpyTranslator(unittest.TestCase):
             self.__validate_aux_dset_pair(h5_chan_grp, pycro_main.h5_spec_inds, pycro_main.h5_spec_vals, spec_names,
                                           spec_units,
                                           spec_data, h5_main=pycro_main, is_spectral=True)
+
+            # Now validate each of the extra datasets:
+            for key, val in extra_dsets.items():
+                self.assertTrue(key in h5_chan_grp.keys())
+                h5_dset = h5_chan_grp[key]
+                self.assertIsInstance(h5_dset, h5py.Dataset)
+                self.assertTrue(np.allclose(val, h5_dset[()]))
+
         os.remove(file_path)
 
 

@@ -2420,9 +2420,6 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     available for either/or the positions / spectroscopic, they can be specified using the keyword arguments. In this
     case, fresh datasets will not be generated.
 
-    kwargs will be passed onto the creation of the dataset. Please pass chunking, compression, dtype, and other
-    arguments this way
-
     Parameters
     ----------
     h5_parent_group : h5py.Group
@@ -2460,6 +2457,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Default prefix for Position datasets. Default = 'Position_'
     verbose : bool, Optional, default=False
         If set to true - prints debugging logs
+    kwargs will be passed onto the creation of the dataset. Please pass chunking, compression, dtype, and other
+    arguments this way
 
     Returns
     -------

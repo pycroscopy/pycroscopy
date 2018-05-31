@@ -10,6 +10,7 @@ from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write
 from ...core.io.translator import Translator
 from ...core.io.write_utils import get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
+# TODO: Adopt any missing features from https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py
 
 
 class NanonisTranslator(Translator):
