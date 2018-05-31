@@ -84,6 +84,7 @@ class PtychographyTranslator(Translator):
             raise
 
         self.hdf = hdf
+        image_path = os.path.abspath(image_path)
 
         # Get the list of all files with the .tif extension and the number of files in the list
         if image_type == '.dm3':

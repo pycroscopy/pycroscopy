@@ -48,7 +48,7 @@ class SporcTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
-
+        parm_path = path.abspath(parm_path)
         (folder_path, file_name) = path.split(parm_path)
         (file_name, base_name) = path.split(folder_path)
         h5_path = path.join(folder_path, base_name + '.h5')

@@ -27,6 +27,7 @@ class NanonisTranslator(Translator):
         """
         super(Translator, self).__init__(*args, **kwargs)
 
+        filepath = os.path.abspath(filepath)
         folder, basename = self._parse_file_path(filepath)
 
         self.data_path = filepath

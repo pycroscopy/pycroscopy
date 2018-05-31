@@ -22,8 +22,8 @@ class BrukerAFMTranslator(Translator):
 
     def translate(self, file_path, *args, **kwargs):
         """
-        Translates a given Bruker / Veeco AFM derived file to HDF5. Currently handles scans, force curves, and force
-        maps
+        Translates a given Bruker / Veeco / Nanoscope AFM derived file to HDF5. Currently handles scans, force curves,
+        and force-distance maps
 
         Note that this translator was written with a single example file for each modality and may be buggy.
 
@@ -37,7 +37,7 @@ class BrukerAFMTranslator(Translator):
         h5_path : str / unicode
             path to translated HDF5 file
         """
-        self.file_path = file_path
+        self.file_path = path.abspath(file_path)
         self.meta_data, other_parms = self._extract_metadata()
 
         # These files are weirdly named with extensions such as .001

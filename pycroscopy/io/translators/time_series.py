@@ -75,7 +75,7 @@ class MovieTranslator(Translator):
         except:
             raise
         self.hdf = hdf
-
+        image_path = os.path.abspath(image_path)
         '''
         Get the list of all files with the provided extension and the number of files in the list
         '''

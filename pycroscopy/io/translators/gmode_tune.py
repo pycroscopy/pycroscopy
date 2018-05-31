@@ -48,6 +48,7 @@ class GTuneTranslator(GLineTranslator):
             Absolute path of the h5 file
 
         """
+        file_path = path.abspath(file_path)
         # Figure out the basename of the data:
         (basename, parm_paths, data_paths) = super(GTuneTranslator, self)._parse_file_path(file_path)
 
