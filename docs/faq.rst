@@ -39,10 +39,13 @@ How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
   single version of an algorithm that can be applied to any data.
 * **Scalable**: Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. Nearly all the aforementioned
   software are applicable to laptops only. Supercomputer / cloud computing scaling in pycroscopy will arrive in the later part of 2018.
+* **Flexibility / Customizable**: Like ImageJ / FIJI, it is far easier to add features to pycroscopy when compared to  WSxM or Gwyddion
+* **User Interface**: Pycroscopy relies on Jupyter notebooks + interactive widgets instead of graphical interface used in most other alternatives.
 * **Other complimentary software**:
 
   * `GXSM <http://gxsm.sourceforge.net>`_ is another software package that focuses more on the data acquisition from instruments rather than advanced data analysis.
   * `xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy.
+* For simple data operations such as flattening, finding maximum, etc. on 2D images or spectra, ImageJ / Gwyddion / WSxM may be better alternatives to pycroscopy.
 
 Why is pycroscopy written in python and not C / Fortran / Julia?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -102,12 +105,13 @@ In our documentation about the data structure and `file format <https://pycrosco
 we discuss our requirements and our thoughts about the feasibility of established scientific formats including:
 
 * `Nexus data format <http://www.nexusformat.org>`_
+* `Nearly Raw Raster Data (NRRD) <http://teem.sourceforge.net/nrrd/format.html>`_
 * `XDMF <http://www.xdmf.org/index.php/Main_Page>`_,
 * `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_
 * `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
 * `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_
 
-We found that established community standards (like Nexus, XDMF, NetCDF):
+We found that established community standards (like Nexus, XDMF, NetCDF, NRRD):
 
 * were designed for specific / narrow scientific domains only and we did not want to shoehorn our data structure into those formats.
 * it is not immediately straightforward to read those files on every computer using any programming language.

@@ -3,50 +3,74 @@
 Goals
 -------
 
-Immdiate
+Immediate
 ~~~~~~~~~
-* Clear and obvious examples showing what pycroscopy actually does for people
-  
-  * Image cleaning - Chris
-  * Signal Filtering - Suhas
-  * Two more examples
 * Solicit brand names:
 
   * Data model:
 
-    * Not Another Data Format - NADF
-    * Spectral Data Format - SDF
-  * package - pyNADF, pySDF
+    * Keywords: Open, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
+    * @rama - Not Another Data Format - NADF
+    * @rama - Spectral Data Format - SDF
+  * package:
+
+    * Keywords: Open, Python, HDF5, + all from above
+    * @rama - pyNADF, pySDF
+* Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
+* Test all existing translators and to make sure they still work.
+* Move ``requirements`` to requirements.txt
+* Gateway translators for SPM:
+
+  * ``Gwyddion``:
+
+    * For native ``.gwy`` format use package - `gwyfile <https://github.com/tuxu/gwyfile>`_
+    * For simpler ``.gsf`` format use `Carlo Dri's reader <https://gist.github.com/carlodri/66c471498e6b52caf213>`_
+  * ``WsXM``:
+
+    * Adopt `Iaroslav Gaponenko's reader <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/readWSxM.py>`_
+    * Note that the above file only reads scan images and does not appear to work on other kinds of data
+
+* Translators for popular AFM / SPM formats
+
+  * Bruker / Veeco / Digital Instruments - Done but look into `Iaroslav Gaponenko's code <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/readNanoscope.py>`_
+    to add any missing functionality / normalization of data. etc. Also check against `this project <https://github.com/nikhartman/nanoscope>`_.
+  * Nanonis - done but look into `Iaroslav Gaponenko reader <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py>`_
+    to make sure nothing is missed out / done incorrectly.
+  * Park Systems - Yunseok is helping here
+  * JPK - No data / code available
+  * Niche data formats:
+
+    * NT-MDT - Data available. translator pending.
+    * PiFM - J. Kong from Ginger Group will write a translator upon her visit to CNMS in summer of 2018.
+    * Anasys - import `anasyspythontools <https://github.com/AnasysInstruments/anasys-python-tools>`_ - comes with test data
+
+      * This package does `NOT <https://pypi.org/search/?q=anasyspythontools>`_ have a `pypi installer <https://github.com/AnasysInstruments/anasys-python-tools/issues/2>`_
+      * This package does not look like it is finished.
+
 * Move ``.core`` out of pycroscopy
 
   * continuous integration
   * documentation, website, etc.
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
-* Bare MINIMUM translators:
+* Start writing the journal paper!
+* Write plugins to export to pycroscopy HDF5 for ``ImageJ`` and ``FIJI``. There are HDF5 plugins already available.
 
-  * ``FIJI``
-  * ``ImageJ``
-  * ``Gwyddion`` (.gwy) formats using pygwy
-  * ``WsXM``
-  * Park Systems - No data - Liam Collins may have some
-  * Agilent - Rama / Evgheni may have some
-  * Anasys - Alex / Olga co. + some example data and code available online
-  * NT-MDT - Anton? <-- niche enough that it can be ignored
-  * Ginger Group - J. Kong <-- niche enough that it can be ignored
+Short-term - by Jul 1 2018
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 * development of community standards for AFM, STM, STEM, etc.
-
 * region reference related functionality
 
   * Move functions to separate file outside ``hdf_utils``
   * Relax restrictions with regards to expecting region references
 * ``PycroDataset`` - Do slicing on ND dataset if available by flattening to 2D and then slicing
 * Chris - ``Image Processing`` must be a subclass of ``Process`` and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
-* Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
-* Test all translators, image cleaning and to make sure they still work.
+* Clear and obvious examples showing what pycroscopy actually does for people
 
-Short-term - by Jul 1 2018
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  * Image cleaning - Chris
+  * Signal Filtering - Suhas
+  * Two more examples
 * Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
 * Update change-log with version numbers / releases instead of pull numbers
 * unit tests for basic data science (``Cluster``, ``SVD``, ``Decomposition``)
