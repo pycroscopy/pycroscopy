@@ -11,16 +11,15 @@ import os
 import numpy as np
 from skimage.data import imread
 from skimage.measure import block_reduce
+import h5py
 
 from .df_utils.image_utils import no_bin
 from .df_utils.dm_utils import read_dm3
 from ...core.io.image import read_image
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
+    write_simple_attrs, create_indexed_group
 
 
 class PtychographyTranslator(Translator):
@@ -32,7 +31,7 @@ class PtychographyTranslator(Translator):
 
         self.rebin = False
         self.bin_factor = 1
-        self.hdf = None
+        self.h5_file = None
         self.binning_func = no_bin
         self.bin_func = None
         self.image_ext = None
@@ -75,16 +74,16 @@ class PtychographyTranslator(Translator):
 
         """
         self.image_ext = image_type
+        
+        image_path = os.path.abspath(image_path)
+        h5_path = os.path.abspath(h5_path)
 
         # Open the hdf5 file and delete any contents
-        try:
-            hdf = HDFwriter(h5_path)
-            hdf.clear()
-        except:
-            raise
+        if os.path.exists(h5_path):
+            os.remove(h5_path)
+        h5_file = h5py.File(h5_path, 'w')
 
-        self.hdf = hdf
-        image_path = os.path.abspath(image_path)
+        self.h5_file = h5_file
 
         # Get the list of all files with the .tif extension and the number of files in the list
         if image_type == '.dm3':
@@ -175,10 +174,10 @@ class PtychographyTranslator(Translator):
 
             mean_ronch += image
 
-            self.hdf.flush()
+            self.h5_file.flush()
 
         h5_ronch[:] = mean_ronch / num_files
-        self.hdf.flush()
+        self.h5_file.flush()
 
     # def downSampRoncVec(self, ronch_vec, binning_factor):
     #     """
@@ -313,54 +312,33 @@ class PtychographyTranslator(Translator):
                       'scan_size_y': scan_size_y}
 
         # Create the hdf5 data Group
-        root_grp = VirtualGroup('/')
-        root_grp.attrs = root_parms
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = main_parms
-        chan_grp = VirtualGroup('Channel_000')
+        write_simple_attrs(self.h5_file, root_parms)
+        meas_grp = create_indexed_group(self.h5_file, 'Measurement')
+        write_simple_attrs(meas_grp, main_parms)
+        chan_grp = create_indexed_group(meas_grp, 'Channel')
 
         # Build the Position and Spectroscopic Datasets
         spec_desc = [Dimension('U', 'pixel', np.arange(usize)), Dimension('V', 'pixel', np.arange(vsize))]
-        ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
         pos_desc = [Dimension('X', 'pixel', np.arange(scan_size_x)),
                     Dimension('Y', 'pixel', np.arange(scan_size_y))]
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
         ds_chunking = calc_chunks([num_files, num_pixels],
                                   data_type(0).itemsize,
                                   unit_chunks=(1, num_pixels))
 
     # Allocate space for Main_Data and Pixel averaged Data
-        ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_files, num_pixels),
-                                      chunking=ds_chunking, dtype=data_type, compression='gzip',
-                                      attrs={'quantity': 'Intensity', 'units': 'a.u.'})
-        ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
-                                            data=np.zeros(num_pixels, dtype=np.float32),
-                                            dtype=np.float32)
-        ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
-                                           data=np.zeros(num_files, dtype=np.float32),
+        h5_main = write_main_dataset(chan_grp, (num_files, num_pixels), 'Raw_Data',
+                                     'Intensity', 'a.u.',
+                                     pos_desc, spec_desc,
+                                     chunks=ds_chunking, dtype=data_type)
+        h5_ronch = meas_grp.create_dataset('Mean_Ronchigram',
+                                           data=np.zeros(num_pixels, dtype=np.float32),
                                            dtype=np.float32)
-    # Add datasets as children of Measurement_000 data group
-        chan_grp.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                               ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
-        meas_grp.add_children([chan_grp])
+        h5_mean_spec = meas_grp.create_dataset('Spectroscopic_Mean',
+                                               data=np.zeros(num_files, dtype=np.float32),
+                                               dtype=np.float32)
 
-        root_grp.add_children([meas_grp])
-        # print('Writing following tree to this file:')
-        # root_grp.showTree()
-
-        h5_refs = self.hdf.write(root_grp)
-        h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-        h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
-        h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]
-        aux_ds_names = ['Position_Indices',
-                        'Position_Values',
-                        'Spectroscopic_Indices',
-                        'Spectroscopic_Values']
-
-        link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
-
-        self.hdf.flush()
+        self.h5_file.flush()
         
         return h5_main, h5_mean_spec, h5_ronch
 
