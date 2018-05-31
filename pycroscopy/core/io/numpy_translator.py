@@ -97,6 +97,8 @@ class NumpyTranslator(Translator):
                 # Now check for data:
                 if not isinstance(val, (list, tuple, np.ndarray)):
                     raise TypeError('values for extra_dsets should be a tuple, list, or numpy array')
+        else:
+            extra_dsets = dict()
 
         if path.exists(h5_path):
             remove(h5_path)
