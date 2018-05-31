@@ -36,6 +36,9 @@ Immediate
     to add any missing functionality / normalization of data. etc. Also check against `this project <https://github.com/nikhartman/nanoscope>`_.
   * Nanonis - done but look into `Iaroslav Gaponenko reader <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py>`_
     to make sure nothing is missed out / done incorrectly.
+
+    * Address .SXM and .DAT translation issues
+  * Asylum ARDF - Use Liam's data + files from asylum
   * Park Systems - Yunseok is helping here
   * JPK - No data / code available
   * Niche data formats:
