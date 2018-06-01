@@ -42,5 +42,5 @@ def read_nanonis_file(file_path):
 
     data = reader(file_path)
 
-    return data.header, data.signals
+    return data, file_ext
 
