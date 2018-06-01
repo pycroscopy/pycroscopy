@@ -28,6 +28,7 @@ Documentation Index
     data_format
     translators
     papers_conferences
+    contribution_guidelines
     faq
     contact
     credits
