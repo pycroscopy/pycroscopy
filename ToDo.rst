@@ -56,6 +56,8 @@ Immediate
   * documentation, website, etc.
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
+* Write a comprehensive document on "Contribution guidelines"
+* Embed presentation into "About"
 * Start writing the journal paper!
 * Write plugins to export to pycroscopy HDF5 for ``ImageJ`` and ``FIJI``. There are HDF5 plugins already available.
 
