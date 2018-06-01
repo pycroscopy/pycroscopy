@@ -7,11 +7,15 @@ Immediate
 ~~~~~~~~~
 * Solicit brand names:
 
-  * Data model:
+  * Data model (does NOT include storage in HDF5):
 
     * Keywords: Open, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
     * @rama - Not Another Data Format - NADF
     * @rama - Spectral Data Format - SDF
+    * @ssomnath - Open MutiDimensional Imaging and Spectroscopy Data - MISD / OMDISD
+    * @ssomnath - Open Spectral Data - OSD
+    * @ssomnath - Open HyperSpectral Data - OSD / OHSD
+  * File Format - h5<Data Model Acronym>
   * package:
 
     * Keywords: Open, Python, HDF5, + all from above
@@ -23,8 +27,9 @@ Immediate
 
   * ``Gwyddion``:
 
-    * For native ``.gwy`` format use package - `gwyfile <https://github.com/tuxu/gwyfile>`_
-    * For simpler ``.gsf`` format use `Carlo Dri's reader <https://gist.github.com/carlodri/66c471498e6b52caf213>`_
+    * Fill in details into new skeleton translator. Use jupyter notebook for reference.
+    * For native ``.gwy`` format use package - `gwyfile <https://github.com/tuxu/gwyfile>`_ (already added to requirements)
+    * For simpler ``.gsf`` format use ``gsf_read()``
   * ``WsXM``:
 
     * Adopt `Iaroslav Gaponenko's reader <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/readWSxM.py>`_
@@ -37,7 +42,7 @@ Immediate
   * Nanonis - done but look into `Iaroslav Gaponenko reader <https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py>`_
     to make sure nothing is missed out / done incorrectly.
 
-    * Address .SXM and .DAT translation issues
+    * Address .SXM, .3DS, and .DAT translation issues
   * Asylum ARDF - Use Liam's data + files from asylum
   * Park Systems - Yunseok is helping here
   * JPK - No data / code available
@@ -56,6 +61,8 @@ Immediate
   * documentation, website, etc.
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
+* Write a comprehensive document on "Contribution guidelines"
+* Embed presentation into "About"
 * Start writing the journal paper!
 * Write plugins to export to pycroscopy HDF5 for ``ImageJ`` and ``FIJI``. There are HDF5 plugins already available.
 
