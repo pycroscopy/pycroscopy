@@ -108,9 +108,9 @@ class NanonisTranslator(Translator):
             raw_data = self.data_dict[data_channel].reshape([num_points, -1]) * 1E9  # Convert to nA
 
             chan_grp = create_indexed_group(meas_grp, 'Channel')
-
             data_label, data_unit = data_channel.rsplit(maxsplit=1)
             data_unit = data_unit.strip('()')
+            write_simple_attrs(chan_grp, self.parm_dict['channel_parms'][data_label])
 
             write_main_dataset(chan_grp, raw_data, 'Raw_Data',
                                data_label, data_unit,
@@ -139,26 +139,31 @@ class NanonisTranslator(Translator):
         None
 
         """
-        header_dict, signal_dict = read_nanonis_file(grid_file_path)
+        data, file_ext = read_nanonis_file(grid_file_path)
 
-        parm_dict = dict()
-        for key, parm_grid in zip(header_dict['fixed_parameters'] + header_dict['experimental_parameters'],
-                                  signal_dict['params'].T):
-            parm_dict[key] = parm_grid
+        header_dict = data.header
+        signal_dict = data.signals
 
-        parm_dict['channels'] = header_dict['channels']
-        parm_dict['sweep_signal'] = header_dict['sweep_signal']
-        nx, ny = header_dict['dim_px']
-        parm_dict['num_cols'] = nx
-        parm_dict['num_rows'] = ny
+        if file_ext == '.3ds':
+            parm_dict = self._parse_3ds_parms(header_dict, signal_dict)
 
+        elif file_ext == '.sxm':
+            parm_dict = self._parse_sxm_parms(header_dict, signal_dict)
+        else:
+            parm_dict = self._parse_dat_parms(header_dict, signal_dict)
+
+        nx = parm_dict['num_cols']
+        ny = parm_dict['num_rows']
         num_points = nx * ny
         pos_vals = np.hstack([parm_dict['X (m)'].reshape(-1, 1), parm_dict['Y (m)'].reshape(-1, 1)])
-        z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
-        pos_vals = np.hstack([pos_vals, z_data])
+        pos_names = ['X', 'Y']
+        if file_ext == '.3ds':
+            z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
+            pos_vals = np.hstack([pos_vals, z_data])
+            pos_names.append('Z')
         pos_vals *= 1E9
 
-        pos_dims = (Dimension(label, 'nm', values) for label, values in zip(['X', 'Y', 'Z'],
+        pos_dims = (Dimension(label, 'nm', values) for label, values in zip(pos_names,
                                                                             pos_vals.T))
 
         self.parm_dict = parm_dict
@@ -166,6 +171,76 @@ class NanonisTranslator(Translator):
         self.data_dict['Position Dimensions'] = pos_dims
 
         return
+
+    @staticmethod
+    def _parse_sxm_parms(header_dict, signal_dict):
+        """
+
+        Parameters
+        ----------
+        header_dict
+        signal_dict
+
+        Returns
+        -------
+        parm_dict
+
+        """
+        parm_dict = dict()
+        parm_dict['channels'] = header_dict.pop('scan>channels')
+        parm_dict['sweep_signal'] = 'Single Point'
+        signal_dict['sweep_signal'] = np.arange(1, dtype=np.float32)
+        nx, ny = header_dict['scan_pixels']
+        parm_dict['num_cols'] = nx
+        parm_dict['num_rows'] = ny
+        # Reorganize the channel parameters
+        info_dict = header_dict.pop('data_info', dict())
+        chan_names = info_dict.pop('Name')
+        parm_dict['channel_parms'] = {name: dict() for name in chan_names}
+        for field_name, field_val in info_dict.items():
+            for name, val in zip(chan_names, field_val):
+                parm_dict['channel_parms'][name][field_name] = val
+        return parm_dict
+
+    @staticmethod
+    def _parse_3ds_parms(header_dict, signal_dict):
+        """
+
+        Parameters
+        ----------
+        header_dict
+        signal_dict
+
+        Returns
+        -------
+        parm_dict
+
+        """
+        parm_dict = dict()
+        for key, parm_grid in zip(header_dict['fixed_parameters'] + header_dict['experimental_parameters'],
+                                  signal_dict['params'].T):
+            parm_dict[key] = parm_grid
+        parm_dict['channels'] = header_dict['channels']
+        parm_dict['sweep_signal'] = header_dict['sweep_signal']
+        nx, ny = header_dict['dim_px']
+        parm_dict['num_cols'] = nx
+        parm_dict['num_rows'] = ny
+        return parm_dict
+
+    @staticmethod
+    def _parse_dat_parms(header_dict, signal_dict):
+        """
+
+        Parameters
+        ----------
+        header_dict
+        signal_dict
+
+        Returns
+        -------
+
+        """
+        pass
 
     def _parse_file_path(self, file_path):
         """
