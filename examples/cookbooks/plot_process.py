@@ -445,13 +445,13 @@ os.remove(h5_path)
 
 ########################################################################################################################
 # Flow of functions
-# -----------------
+# ==================
 #
 # By default, very few functions (``test()``, ``compute()``) are exposed to users. This means that one of these
 # functions calls a chain of the other functions in the class.
 #
 # init()
-# ~~~~~~
+# -------
 # Instantiating the class via something like: ``fitter = PeakFinder(h5_main)`` happens in two parts:
 #
 # 1. First the subclass (``PeakFinder``) calls the initialization function in ``Process`` to let it run some checks:
@@ -466,11 +466,11 @@ os.remove(h5_path)
 #      ``check_for_duplicates()``
 #
 # test()
-# ~~~~~~~
+# -----------
 # This function only calls the ``map_function()`` by definition
 #
 # compute()
-# ~~~~~~~~~~
+# ----------
 # Here is how compute() works:
 #
 # * Check if you can return existing results for the requested computation and return if available by calling either:
@@ -490,7 +490,7 @@ os.remove(h5_path)
 #   * read the next chunk of data into ``self._data``
 #
 # use_partial_computation()
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~
+# --------------------------
 # Not used in ``PeakFinder`` but this function can be called to manually specify an HDF5 group containing partial
 # results
 #
@@ -505,11 +505,11 @@ os.remove(h5_path)
 # * ``pycroscopy.analysis.GIVBayesian``
 #
 # Tips and tricks
-# ---------------
+# ================
 # Here we will cover a few common use-cases that will hopefully guide you in structuring your computational problem
 #
 # Juggling dimensions
-# ~~~~~~~~~~~~~~~~~~~~~
+# -------------------
 # We intentionally chose a simple example above to quickly illustrate the main components / philosophy of the Process
 # class. The above example had two position dimensions collapsed into the first axis of the dataset and a single
 # spectroscopic dimension (``Frequency``). What if the spectra were acquired as a function of other variables such as a
@@ -552,7 +552,7 @@ os.remove(h5_path)
 #         # Now self._results is of shape (P, N) and we can store it in the HDF5 dataset as we did above.
 #
 # Computing on chunks instead of mapping
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# --------------------------------------
 # In certain cases, the computation is a little more complex that the ``map_function()`` cannot directly be mapped to
 # the data. Alternatively, in some cases the ``map_function()`` needs to mapped multiple times or different sections of
 # the ``self.data``. For such cases, the ``_unit_computation()`` in ``Process`` provides far more flexibility to the
