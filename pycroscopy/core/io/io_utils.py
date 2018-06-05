@@ -212,7 +212,7 @@ def get_available_memory():
     return mem
 
 
-def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=False):
+def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=False, verbose=False):
     """
     Decides the number of cores to use for parallel computing
 
@@ -227,6 +227,8 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
         a hit in terms of starting and using a larger number of cores, so use fewer cores instead.
         Eg- BE SHO fitting is fast (<1 sec) so set this value to False,
         Eg- Bayesian Inference is very slow (~ 10-20 sec)so set this to True
+    verbose : Boolean (Optional.  Default = False)
+        Whether or not to print statements that aid in debugging
 
     Returns
     -------
@@ -236,23 +238,33 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
 
     max_cores = max(1, cpu_count() - 2)
 
+
     if requested_cores is None:
         # conservative allocation
+        if verbose:
+            print('No requested_cores given.  Using estimate of {}.'.format(max_cores))
         requested_cores = max_cores
     else:
         # Respecting the explicit request
+        if verbose:
+            print('{} cores requested.'.format(requested_cores))
         requested_cores = max(min(int(abs(requested_cores)), cpu_count()), 1)
+        if verbose:
+            print('Using {} cores.'.format(requested_cores))
 
     jobs_per_core = max(int(num_jobs / requested_cores), 1)
     min_jobs_per_core = 20  # I don't like to hard-code things here but I don't have a better idea for now
 
     if not lengthy_computation:
+        if verbose:
+            print('Computations are not lengthy.')
         if requested_cores > 1 and jobs_per_core < min_jobs_per_core:
             # cut down the number of cores if there are too few jobs
             jobs_per_core = 2 * min_jobs_per_core
             # intelligently set the cores now.
             requested_cores = max(1, min(requested_cores, int(num_jobs / jobs_per_core)))
-            # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
+            if verbose:
+                print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
 
     return int(requested_cores)
 
