@@ -6,7 +6,6 @@ _end_tags = dict(grid=':HEADER_END:', scan='SCANIT_END', spec='[DATA]')
 
 
 class NanonisFile(object):
-
     """
     Base class for Nanonis data files (grid, scan, point spectroscopy).
 
@@ -137,7 +136,6 @@ class NanonisFile(object):
 
 
 class Grid(NanonisFile):
-
     """
     Nanonis grid file class.
 
@@ -275,7 +273,6 @@ class Grid(NanonisFile):
 
 
 class Scan(NanonisFile):
-
     """
     Nanonis scan file class.
 
@@ -362,7 +359,6 @@ class Scan(NanonisFile):
 
 
 class Spec(NanonisFile):
-
     """
     Nanonis point spectroscopy file class.
 
@@ -422,7 +418,6 @@ class Spec(NanonisFile):
 
 
 class UnhandledFileError(Exception):
-
     """
     To be raised when unknown file extension is passed.
     """
@@ -430,7 +425,6 @@ class UnhandledFileError(Exception):
 
 
 class FileHeaderNotFoundError(Exception):
-
     """
     To be raised when no header information could be determined.
     """
