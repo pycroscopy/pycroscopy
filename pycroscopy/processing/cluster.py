@@ -244,7 +244,8 @@ class Cluster(Process):
         # TODO: Force usage of multiple threads. This should not take 3 cores
         mean_resp = np.array(parallel_compute(np.arange(num_clusts), __mean_resp_for_cluster,
                                               func_args=[self.h5_main, labels, self.data_slice,
-                                                         self.data_transform_func], lengthy_computation=True))
+                                                         self.data_transform_func], lengthy_computation=True,
+                                              verbose=self.verbose))
 
         return mean_resp
 
