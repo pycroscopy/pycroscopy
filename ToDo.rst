@@ -44,8 +44,8 @@ Immediate
 
     * Address .SXM, .3DS, and .DAT translation issues
   * Asylum ARDF - Use Liam's data + files from asylum
-  * Park Systems - Yunseok is helping here
-  * JPK - No data / code available
+  * Park Systems - DaeHee Seol and Prof. Yunseok Kim may help here
+  * JPK - No data available. `GitHub project <https://github.com/rosscarter3/JPKforceparse>`_ available for translation from Ross Carter
   * Niche data formats:
 
     * NT-MDT - Data available. translator pending.
