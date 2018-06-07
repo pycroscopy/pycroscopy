@@ -59,6 +59,7 @@ Immediate
 
   * continuous integration
   * documentation, website, etc.
+  * Add `coverage calculation <https://coveralls.io>`_
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
 * Write a comprehensive document on "Contribution guidelines"
@@ -69,6 +70,7 @@ Immediate
 Short-term - by Jul 1 2018
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Look into making notebooks for workshops available through `mybinder <https://mybinder.org>`_
 * development of community standards for AFM, STM, STEM, etc.
 * region reference related functionality
 
@@ -97,6 +99,7 @@ Medium-term - by Aug 1 2018
 * ``PycroDataset.slice()`` and ``get_n_dim_form()`` should return ``Xarray`` objects
 * Notebooks need to be updated to require pycroscopy version
 * Itk for visualization - https://github.com/InsightSoftwareConsortium/itk-jupyter-widgets
+* Use integrate hyperspy with pycroscopy
 * New package for facilitating **scalable ensemble runs**:
 
   * Compare scalability, simplicity, portability of various solutions:
