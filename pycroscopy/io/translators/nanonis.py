@@ -146,7 +146,6 @@ class NanonisTranslator(Translator):
 
         if file_ext == '.3ds':
             parm_dict = self._parse_3ds_parms(header_dict, signal_dict)
-
         elif file_ext == '.sxm':
             parm_dict = self._parse_sxm_parms(header_dict, signal_dict)
         else:
@@ -163,8 +162,8 @@ class NanonisTranslator(Translator):
             pos_names.append('Z')
         pos_vals *= 1E9
 
-        pos_dims = (Dimension(label, 'nm', values) for label, values in zip(pos_names,
-                                                                            pos_vals.T))
+        pos_dims = [Dimension(label, 'nm', values) for label, values in zip(pos_names,
+                                                                            pos_vals.T)]
 
         self.parm_dict = parm_dict
         self.data_dict = signal_dict
@@ -219,7 +218,21 @@ class NanonisTranslator(Translator):
         parm_dict = dict()
         for key, parm_grid in zip(header_dict['fixed_parameters'] + header_dict['experimental_parameters'],
                                   signal_dict['params'].T):
+            # Collapse the parm_grid along one axis if it's constant along said axis
+            if parm_grid.ndim > 1:
+                dim_slice = list()
+                # Find dimensions that are constant
+                for idim in range(parm_grid.ndim):
+                    tmp_grid = np.moveaxis(parm_grid.copy(), idim, 0)
+                    if np.all(np.equal(tmp_grid[0], tmp_grid[1])):
+                        dim_slice.append(0)
+                    else:
+                        dim_slice.append(slice(None))
+                # print(key, dim_slice)
+                # print(parm_grid[tuple(dim_slice)])
+                parm_grid = parm_grid[tuple(dim_slice)]
             parm_dict[key] = parm_grid
+
         parm_dict['channels'] = header_dict['channels']
         parm_dict['sweep_signal'] = header_dict['sweep_signal']
         nx, ny = header_dict['dim_px']
