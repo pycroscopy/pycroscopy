@@ -145,40 +145,17 @@ class NanonisTranslator(Translator):
         signal_dict = data.signals
 
         if file_ext == '.3ds':
-            parm_dict = self._parse_3ds_parms(header_dict, signal_dict)
+            parm_dict, data_dict = self._parse_3ds_parms(header_dict,
+                                                         signal_dict)
         elif file_ext == '.sxm':
-            parm_dict = self._parse_sxm_parms(header_dict, signal_dict)
+            parm_dict, data_dict = self._parse_sxm_parms(header_dict,
+                                                         signal_dict)
         else:
-            parm_dict = self._parse_dat_parms(header_dict, signal_dict)
-
-        nx = parm_dict['num_cols']
-        ny = parm_dict['num_rows']
-        num_points = nx * ny
-
-        if 'X (m)' in parm_dict:
-            row_vals = parm_dict.pop('X (m)')
-        else:
-            row_vals = np.arange(nx, dtype=np.float32)
-
-        if 'Y (m)' in parm_dict:
-            col_vals = parm_dict.pop('Y (m)')
-        else:
-            col_vals = np.arange(ny, dtype=np.float32)
-
-        pos_vals = np.hstack([row_vals.reshape(-1, 1), col_vals.reshape(-1, 1)])
-        pos_names = ['X', 'Y']
-        if file_ext == '.3ds':
-            z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
-            pos_vals = np.hstack([pos_vals, z_data])
-            pos_names.append('Z')
-        pos_vals *= 1E9
-
-        pos_dims = [Dimension(label, 'nm', values) for label, values in zip(pos_names,
-                                                                            pos_vals.T)]
+            parm_dict, data_dict = self._parse_dat_parms(header_dict,
+                                                         signal_dict)
 
         self.parm_dict = parm_dict
-        self.data_dict = signal_dict
-        self.data_dict['Position Dimensions'] = pos_dims
+        self.data_dict = data_dict
 
         return
 
@@ -210,7 +187,8 @@ class NanonisTranslator(Translator):
         for field_name, field_val in info_dict.items():
             for name, val in zip(chan_names, field_val):
                 parm_dict['channel_parms'][name][field_name] = val
-        return parm_dict
+        data_dict = signal_dict
+        return parm_dict, data_dict
 
     @staticmethod
     def _parse_3ds_parms(header_dict, signal_dict):
@@ -249,7 +227,36 @@ class NanonisTranslator(Translator):
         nx, ny = header_dict['dim_px']
         parm_dict['num_cols'] = nx
         parm_dict['num_rows'] = ny
-        return parm_dict
+
+        nx = parm_dict['num_cols']
+        ny = parm_dict['num_rows']
+        num_points = nx * ny
+
+        if 'X (m)' in parm_dict:
+            row_vals = parm_dict.pop('X (m)')
+        else:
+            row_vals = np.arange(nx, dtype=np.float32)
+
+        if 'Y (m)' in parm_dict:
+            col_vals = parm_dict.pop('Y (m)')
+        else:
+            col_vals = np.arange(ny, dtype=np.float32)
+
+        pos_vals = np.hstack([row_vals.reshape(-1, 1),
+                              col_vals.reshape(-1, 1)])
+        pos_names = ['X', 'Y']
+
+        z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
+        pos_vals = np.hstack([pos_vals, z_data])
+        pos_names.append('Z')
+        pos_vals *= 1E9
+
+        pos_dims = [Dimension(label, 'nm', values)
+                    for label, values in zip(pos_names, pos_vals.T)]
+
+        data_dict = signal_dict
+        data_dict['Position Dimensions'] = pos_dims
+        return parm_dict, data_dict
 
     @staticmethod
     def _parse_dat_parms(header_dict, signal_dict):
