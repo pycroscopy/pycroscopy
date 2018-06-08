@@ -48,7 +48,7 @@ class NanonisTranslator(Translator):
         self._read_data(self.data_path)
 
         print("The following channels were found in the file:")
-        for channel in self.parm_dict['channels']:
+        for channel in self.parm_dict['channel_parms'].keys():
             print(channel)
 
         print('You may specify which channels to use when calling translate.')
@@ -78,7 +78,7 @@ class NanonisTranslator(Translator):
 
         if data_channels is None:
             print('No channels specified.  All channels in file will be used.')
-            data_channels = self.parm_dict['channels']
+            data_channels = self.parm_dict['channel_parms'].keys()
 
         if verbose:
             print('Using the following channels')
@@ -110,7 +110,7 @@ class NanonisTranslator(Translator):
             chan_grp = create_indexed_group(meas_grp, 'Channel')
             data_label, data_unit = data_channel.rsplit(maxsplit=1)
             data_unit = data_unit.strip('()')
-            write_simple_attrs(chan_grp, self.parm_dict['channel_parms'][data_label])
+            write_simple_attrs(chan_grp, self.parm_dict['channel_parms'][data_channel])
 
             write_main_dataset(chan_grp, raw_data, 'Raw_Data',
                                data_label, data_unit,
@@ -187,6 +187,7 @@ class NanonisTranslator(Translator):
         for field_name, field_val in info_dict.items():
             for name, val in zip(chan_names, field_val):
                 parm_dict['channel_parms'][name][field_name] = val
+
         data_dict = signal_dict
         return parm_dict, data_dict
 
@@ -222,7 +223,9 @@ class NanonisTranslator(Translator):
                 parm_grid = parm_grid[tuple(dim_slice)]
             parm_dict[key] = parm_grid
 
-        parm_dict['channels'] = header_dict['channels']
+        for chan_name in header_dict['channels']:
+            parm_dict['channel_parms'] = {chan_name: {'Name': chan_name}}
+
         parm_dict['sweep_signal'] = header_dict['sweep_signal']
         nx, ny = header_dict['dim_px']
         parm_dict['num_cols'] = nx
@@ -230,7 +233,7 @@ class NanonisTranslator(Translator):
 
         nx = parm_dict['num_cols']
         ny = parm_dict['num_rows']
-        num_points = nx * ny
+        # num_points = nx * ny
 
         if 'X (m)' in parm_dict:
             row_vals = parm_dict.pop('X (m)')
@@ -246,10 +249,11 @@ class NanonisTranslator(Translator):
                               col_vals.reshape(-1, 1)])
         pos_names = ['X', 'Y']
 
-        z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
-        pos_vals = np.hstack([pos_vals, z_data])
-        pos_names.append('Z')
-        pos_vals *= 1E9
+        # all channels are (nx, ny, nsweep), so not going to treat Z as position
+        # z_data = np.mean(parm_dict['Z (m)'], axis=0).reshape([num_points, -1])
+        # pos_vals = np.hstack([pos_vals, z_data])
+        # pos_names.append('Z')
+        # pos_vals *= 1E9
 
         pos_dims = [Dimension(label, 'nm', values)
                     for label, values in zip(pos_names, pos_vals.T)]
