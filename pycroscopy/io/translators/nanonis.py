@@ -105,7 +105,7 @@ class NanonisTranslator(Translator):
         num_points = h5_pos_inds.shape[0]
 
         for data_channel in data_channels:
-            raw_data = self.data_dict[data_channel].reshape([num_points, -1]) * 1E9  # Convert to nA
+            raw_data = self.data_dict[data_channel].reshape([num_points, -1])
 
             chan_grp = create_indexed_group(meas_grp, 'Channel')
             data_label, data_unit = data_channel.rsplit(maxsplit=1)
@@ -154,7 +154,18 @@ class NanonisTranslator(Translator):
         nx = parm_dict['num_cols']
         ny = parm_dict['num_rows']
         num_points = nx * ny
-        pos_vals = np.hstack([parm_dict['X (m)'].reshape(-1, 1), parm_dict['Y (m)'].reshape(-1, 1)])
+
+        if 'X (m)' in parm_dict:
+            row_vals = parm_dict.pop('X (m)')
+        else:
+            row_vals = np.arange(nx, dtype=np.float32)
+
+        if 'Y (m)' in parm_dict:
+            col_vals = parm_dict.pop('Y (m)')
+        else:
+            col_vals = np.arange(ny, dtype=np.float32)
+
+        pos_vals = np.hstack([row_vals.reshape(-1, 1), col_vals.reshape(-1, 1)])
         pos_names = ['X', 'Y']
         if file_ext == '.3ds':
             z_data = signal_dict['Z (m)'][:, :, 0].reshape([num_points, -1])
@@ -186,7 +197,7 @@ class NanonisTranslator(Translator):
 
         """
         parm_dict = dict()
-        parm_dict['channels'] = header_dict.pop('scan>channels')
+        parm_dict['channels'] = header_dict.pop('scan>channels').split(';')
         parm_dict['sweep_signal'] = 'Single Point'
         signal_dict['sweep_signal'] = np.arange(1, dtype=np.float32)
         nx, ny = header_dict['scan_pixels']
