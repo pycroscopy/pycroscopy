@@ -9,8 +9,8 @@ from __future__ import division, print_function, unicode_literals, absolute_impo
 import sys
 import numpy as np
 from collections import Iterable
-
-from .dtype_utils import contains_integers
+import datetime
+from dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
            'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
@@ -359,3 +359,73 @@ def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=102
     chunking = tuple(unit_chunks)
 
     return chunking
+
+def write_dset_to_txt(input_file, output_file='output.csv'):
+    """
+    Output an h5 file or a PycroDataset in csv format
+
+    Parameters
+    ----------
+    input_file : str
+        path to the h5 input file that is to be translated into csv format
+    output_file : str, optional
+        path that the output file should be written to
+    """
+    try:
+        import h5py
+        import pycroscopy as px
+        import os
+    except ImportError:
+        print('something is not installed properly')
+    
+    if not isinstance(input_file, str):
+        raise TypeError('input_file should be a path to an h5 file')
+
+    h5File = h5py.File(input_file)    
+    pdRaw = px.PycroDataset(h5File['Measurement_000/Channel_000/Raw_Data'])
+    
+    specVals = pdRaw.h5_spec_vals
+    posVals = pdRaw.h5_pos_vals
+    dimUnits = pdRaw.spec_dim_descriptors
+    pdPosDims = pdRaw.pos_dim_labels
+    pdSpecDims = pdRaw.spec_dim_labels
+    
+    header = ''
+    for idx, spec in enumerate(specVals):
+
+        """
+        Obtain the units from the spectral dimension descriptors then
+        create each line of the header with a spacer between the dimensions and the data
+        """
+        unitStart = dimUnits[idx].find('(') + 1
+        unitEnd = dimUnits[idx].find(')')
+        unit = dimUnits[idx][unitStart:unitEnd]
+        header = header + ','.join(str(freq) + ' ' + unit for freq in spec) + '\n'
+    header = header + ','.join('--------------------------------------------------------------' for idx in specVals[0])
+           
+    """
+    Create the spectral and position labels for the dataset in string form then
+    create the position value array in string form, right-strip the last comma from the 
+    string to deliver the correct number of values, append all of the labels and values together,
+    save the data and header to a temporary csv output
+    """
+    specLabel = ''
+    for dim in pdSpecDims:
+        specLabel = specLabel + ','.join('' for idx in pdPosDims) + str(dim) + ',\n'
+    
+    posLabel = ','.join(posL for posL in pdPosDims) + ',\n'    
+    
+    posValOut = ''
+    for val, posDim in enumerate(posVals):
+        posValOut = posValOut + ','.join(str(posVal) for posVal in posVals[val]) + ',\n'
+    posValOut = posValOut.rstrip('\n')
+    output = specLabel + posLabel + posValOut
+    np.savetxt('temp.csv', pdRaw, delimiter=',', header=header, comments='')
+
+    left_dset = output.splitlines()
+    with open('temp.csv', 'r+') as f, open(output_file, 'w') as b:
+        for left_line, right_line in zip(left_dset, f):
+            right_line = left_line + right_line
+            b.write(right_line)
+    os.remove('temp.csv')
+    return output_file

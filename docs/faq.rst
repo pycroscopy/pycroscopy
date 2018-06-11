@@ -158,11 +158,4 @@ Send us an email at pycroscopy@gmail.com or a message on our `slack group <https
 
 Can you add my code to pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We would like to thank you and several others who have offered their code. We are more than happy to add your code to this project. Just as we strive to ensure that you get the best possible software from us, we ask that you do the same for others. We do NOT ask that your code be as efficient as possible. Instead, we have some simpler and easier requests:
-
-* Encapsulate independent sections of your code into functions that can be used individually if required.
-* Ensure that your code (functions) is well documented (`numpy format <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_) - expected inputs and outputs, purpose of functions
-* Ensure that your code works in python 2.7 and python 3.5 (ideally using packages that are easy to install on Windows, Mac, and Linux). It is quite likely that Anaconda (upon which pycroscopy is based) has a comprehensive list packages for science and data that handle most needs. We recommend sticking to Anaconda packages if possible.
-* Provide a few examples on how one might use your code - preferably via a jupyter notebook
-
-You can look at our code in our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_ to get an idea of how we organize, document, and submit our code.
+Please see our `guidelines for contributing code <./contribution_guidelines.html>`_
