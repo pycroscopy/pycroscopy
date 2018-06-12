@@ -46,13 +46,19 @@ from __future__ import print_function, division, unicode_literals
 from warnings import warn
 import numpy as np
 import matplotlib.pyplot as plt
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
+# Package for downloading online files:
 # Finally import pycroscopy.
 try:
     import pycroscopy as px
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ########################################################################################################################

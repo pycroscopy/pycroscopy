@@ -49,6 +49,11 @@ from __future__ import print_function, division, unicode_literals
 import os
 # Warning package in case something goes wrong
 from warnings import warn
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 # Package for downloading online files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -56,7 +61,7 @@ try:
 except ImportError:
     warn('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install(wget)
     import wget
 import h5py
 import numpy as np
@@ -67,7 +72,7 @@ try:
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install(pycroscopy)
     import pycroscopy as px
 
 ########################################################################################################################
@@ -91,7 +96,7 @@ except ImportError:
 
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BEPS_small.h5'
 h5_path = 'temp.h5'
-_ = wget.download(url, h5_path)
+_ = wget.download(url, h5_path, bar=None)
 
 print('Working on:\n' + h5_path)
 

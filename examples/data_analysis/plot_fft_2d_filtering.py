@@ -33,6 +33,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import numpy.fft as npf
 import os
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 # for downloading files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -40,14 +45,14 @@ try:
 except ImportError:
     print('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install('wget')
     import wget
 try:
     import pycroscopy as px
 except ImportError:
     print('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ####################################################################################
