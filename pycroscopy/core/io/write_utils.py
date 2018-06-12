@@ -370,6 +370,11 @@ def write_dset_to_txt(input_file, output_file='output.csv'):
         path to the h5 input file that is to be translated into csv format
     output_file : str, optional
         path that the output file should be written to
+    
+    Returns
+    -------
+    output_file: str
+        
     """
     try:
         import h5py
