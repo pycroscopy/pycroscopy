@@ -3,26 +3,28 @@
 """
 Created on Wed Jul 27 3:19:46 2017
 
-@author: anugrahsaxena, Suhas Somnath, Chris R. Smith
+@author: anugrahsaxena
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
-from os import path, remove
+from os import path, listdir, remove
 from warnings import warn
 
 import numpy as np
+from h5py import File
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from ...core.io.translator import generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from  ... import hdf_utils
+from ... import write_utils
+
+#from pycroscopy.hdf_utils import generate_dummy_main_parms, build_ind_val_dsets
+
+
+#from ..io_hdf5 import ioHDF5
+#from ..microdata import MicroDataGroup, MicroDataset
 
 
 class GTuneTranslator(GLineTranslator):
@@ -36,7 +38,7 @@ class GTuneTranslator(GLineTranslator):
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file
-        
+
         Parameters
         ----------
         file_path : String / unicode
@@ -48,7 +50,6 @@ class GTuneTranslator(GLineTranslator):
             Absolute path of the h5 file
 
         """
-        file_path = path.abspath(file_path)
         # Figure out the basename of the data:
         (basename, parm_paths, data_paths) = super(GTuneTranslator, self)._parse_file_path(file_path)
 
@@ -122,19 +123,29 @@ class GTuneTranslator(GLineTranslator):
         self.__bytes_per_row__ = int(file_size / self.num_rows)
 
         # First finish writing all global parameters, create the file too:
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
+        # meas_grp = MicroDataGroup('Measurement_000')
+        # meas_grp.attrs = parm_dict
 
-        spm_data = VirtualGroup('')
-        global_parms = generate_dummy_main_parms()
-        global_parms['data_type'] = 'G_mode_line'
-        global_parms['translator'] = 'G_mode_line'
-        spm_data.attrs = global_parms
-        spm_data.add_children([meas_grp])
+        # spm_data = MicroDataGroup('')
+        #global_parms = generate_dummy_main_parms()
+        #global_parms['data_type'] = 'G_mode_line'
+        #global_parms['translator'] = 'G_mode_line'
+        #spm_data.attrs = global_parms
+        #spm_data.addChildren([meas_grp])
 
-        hdf = HDFwriter(h5_path)
+
+
+        # Create an h5 file
+        h5_file = File(h5_path)
+        # Create measurement group
+        h5_meas_group = hdf_utils.create_indexed_group(h5_file, 'Measurement')
+
+        hdf_utils.write_simple_attrs(h5_meas_group, {'Instrument': 'Atomic Force Microscope',
+                                                        'User': 'Joe Smith',
+                                                        'Room Temperature [C]': 23})
+        # hdf = ioHDF5(h5_path)
         # hdf.clear()
-        hdf.write(spm_data)
+        # hdf.writeData(spm_data)
 
         # Now that the file has been created, go over each raw data file:
         # 1. write all ancillary data. Link data. 2. Write main data sequentially
@@ -145,37 +156,57 @@ class GTuneTranslator(GLineTranslator):
         The auxiliary datasets will not change with each raw data file since
         only one excitation waveform is used
         """
-        ds_main_data = VirtualDataset('Raw_Data', data=None,
-                                      maxshape=(self.num_rows, self.points_per_pixel * num_cols),
-                                      chunking=(1, self.points_per_pixel), dtype=np.float16)
-        ds_main_data.attrs['quantity'] = ['Deflection']
-        ds_main_data.attrs['units'] = ['V']
+        # ds_main_data = MicroDataset('Raw_Data', data=[],
+        #                            maxshape=(self.num_rows, self.points_per_pixel * num_cols),
+        #                            chunking=(1, self.points_per_pixel), dtype=np.float16)
+        # ds_main_data.attrs['quantity'] = ['Deflection']
+        # ds_main_data.attrs['units'] = ['V']
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(Dimension('Y', 'm', np.arange(self.num_rows)), is_spectral=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Excitation', 'V',
-                                                                   np.tile(VALUES_DTYPE(be_wave), num_cols)),
-                                                         is_spectral=True)
+        # ds_pos_ind, ds_pos_val = build_ind_val_dsets([self.num_rows], is_spectral=False,
+        #                                             labels=['Y'], units=['m'])
+        # ds_spec_inds, ds_spec_vals = build_ind_val_dsets([self.points_per_pixel * num_cols], is_spectral=True,
+        #                                                 labels=['Excitation'], units=['V'])
+        # ds_spec_vals.data = np.atleast_2d(np.tile(np.float32(be_wave), num_cols))  # Override the default waveform
 
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values']
+        # aux_ds_names = ['Position_Indices', 'Position_Values',
+        #                'Spectroscopic_Indices', 'Spectroscopic_Values']
+
+        # Write our dimensions
+
+        row_vals = np.arange(0, self.num_rows)
+        pos_dims = [write_utils.Dimension('Rows', 'um', row_vals)]
+        spec_dims = [write_utils.Dimension('Bias', 'V', be_wave_train)]
 
         for f_index in data_paths.keys():
-            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
-            chan_grp.add_children([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
+            h5_chan_group = hdf_utils.create_indexed_group(h5_meas_group, 'Channel')
+            h5_main = hdf_utils.write_main_dataset(h5_chan_group,  # parent HDF5 group
+                                                      (self.num_rows, self.points_per_line),  # shape of Main dataset
+                                                      'Raw_Data',  # Name of main dataset
+                                                      'Deflection',  # Physical quantity contained in Main dataset
+                                                      'a.u.',  # Units for the physical quantity
+                                                      pos_dims,  # Position dimensions
+                                                      spec_dims,  # Spectroscopic dimensions
+                                                      dtype=np.float32,  # data type / precision
+                                                      main_dset_attrs={'IO_rate_[Hz]': samp_rate})
+            # chan_grp = MicroDataGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
+            # chan_grp.addChildren([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
 
             # print('Writing following tree to file:')
             # chan_grp.showTree()
-            h5_refs = hdf.write(chan_grp)
+            #  h5_refs = hdf.writeData(chan_grp)
 
-            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
+            #   h5_main = getH5DsetRefs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
 
-            # Reference linking can certainly take place even before the datasets have reached their final size         
-            link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
+            # Reference linking can certainly take place even before the datasets have reached their final size
+            #   linkRefs(h5_main, getH5DsetRefs(aux_ds_names, h5_refs))
 
             # Now transfer scan data in the dat file to the h5 file:
             super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)
+        h5_file.flush()
+        print(h5_file)
+        # hdf.close()
+        h5_file.close()
 
-        hdf.close()
         print('G-Tune translation complete!')
 
         return h5_path
