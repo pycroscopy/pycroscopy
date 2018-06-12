@@ -1057,7 +1057,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
         if not np.all([x in data_n_dim.shape for x in pos_dims]):
             raise ValueError('Dimension sizes in pos_dims: {} do not exist in data_n_dim shape: '
                              '{}'.format(pos_dims, data_n_dim.shape))
-        spec_dims = [col for col in list(data_n_dim.shape) if col not in pos_dims]
+        spec_dims = [col for col in list(data_n_dim.shape[len(pos_dims):])]
         if verbose:
             print('data has dimensions: {}. Provided position indices had dimensions of size: {}. Spectral dimensions '
                   'will built with dimensions: {}'.format(data_n_dim.shape, pos_dims, spec_dims))
@@ -1071,7 +1071,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
         if not np.all([x in data_n_dim.shape for x in spec_dims]):
             raise ValueError('Dimension sizes in spec_dims: {} do not exist in data_n_dim shape: '
                              '{}'.format(spec_dims, data_n_dim.shape))
-        pos_dims = [col for col in list(data_n_dim.shape) if col not in spec_dims]
+        pos_dims = [col for col in list(data_n_dim.shape[:data_n_dim.ndim-len(spec_dims)])]
         if verbose:
             print('data has dimensions: {}. Spectroscopic position indices had dimensions of size: {}. Position '
                   'dimensions will built with dimensions: {}'.format(data_n_dim.shape, spec_dims, pos_dims))
@@ -1094,22 +1094,22 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     Now we transpose the axes associated with the spectroscopic dimensions
     so that they are in the same order as in the index array
     '''
-    swap_axes = np.append(np.argsort(pos_sort), spec_sort + len(pos_sort))
+    swap_axes = np.append(np.argsort(pos_sort), spec_sort[::-1] + len(pos_sort))
 
     if verbose:
         print('swap axes: {} to be applied to N dimensional data of shape {}'.format(swap_axes, data_n_dim.shape))
 
-    data_n_dim = np.transpose(data_n_dim, swap_axes)
+    data_n_dim_2 = np.transpose(data_n_dim, swap_axes)
 
     if verbose:
-        print('N dimensional data shape after axes swap: {}'.format(data_n_dim.shape))
+        print('N dimensional data shape after axes swap: {}'.format(data_n_dim_2.shape))
 
     '''
     Now we reshape the dataset based on those dimensions
     We must use the spectroscopic dimensions in reverse order
     '''
     try:
-        ds_2d = np.reshape(data_n_dim, [ds_pos.shape[0], ds_spec.shape[1]])
+        ds_2d = np.reshape(data_n_dim_2, [ds_pos.shape[0], ds_spec.shape[1]])
     except ValueError:
         raise ValueError('Could not reshape dataset to full N-dimensional form')
 
