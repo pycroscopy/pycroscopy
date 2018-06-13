@@ -33,6 +33,7 @@ Documentation Index
     contact
     credits
     whats_new
+    matlab_to_python
     api
 
 Indices and tables

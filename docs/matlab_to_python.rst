@@ -2,6 +2,8 @@ Upgrading from Matlab
 =====================
 **Chris R. Smith**
 
+Here are some one-to-one translations for many popular functions in Matlab and python that should make it easier to switch from Matlab to Python
+
 System functions
 ----------------
 +------------------+-------------------+-------------+
