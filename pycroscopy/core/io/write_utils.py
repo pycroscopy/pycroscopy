@@ -9,8 +9,7 @@ from __future__ import division, print_function, unicode_literals, absolute_impo
 import sys
 import numpy as np
 from collections import Iterable
-import datetime
-from dtype_utils import contains_integers
+from .dtype_utils import contains_integers
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
            'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
