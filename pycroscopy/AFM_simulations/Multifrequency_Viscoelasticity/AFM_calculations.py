@@ -8,11 +8,18 @@ Description: this library contains functions for postprocessing of results of AF
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 def E_diss(z, Fts, dt, fo1):
-    """Output: this function calculates the tip-sample dissipation per fundamental period"""
-    """Input: tip position, tip-sample force, time arrays, and fundamental frequency"""
+    """This function calculates the tip-sample dissipation per oscillating period    
+    Args:
+        z: tip deflection
+        Fts: tip-sample interacting force
+        dt: simulation timestep
+        fo1: eigenmode resonance frequency
+    
+    Output:
+        Ediss/number_of_periods: total dissipated energy per oscillating period       
+    """
     Ediss = 0.0
     for i in range(1,len(z)-1):
         Ediss -= Fts[i]*(z[i+1]-z[i-1])/2.0   #based on integral of Fts*dz/dt*dt, dz/dt=(z[i+1]-z[i-1])/(2.0*dt) Central difference approx
@@ -22,15 +29,27 @@ def E_diss(z, Fts, dt, fo1):
     return Ediss/number_of_periods
 
 def V_ts(z, Fts, dt):
-    """Output: virial"""
-    """Input: tip position and tip-sample force arrays, and timestep"""
+    """This function calculates the virial of the interaction
+    A more detailed description of this quantity is given in: 
+    San Paulo, Alvaro, and Ricardo García. Phys Rev B 64.19 (2001): 193411.
+    Args:
+        z: tip deflection
+        Fts: tip-sample interacting force
+        dt: simulation timestep
+    Output: 
+        Vts/(dt*len(z)): virial of the tip-sample interaction"""
     Vts = 0.0
     for i in range(len(z)):
         Vts = Vts + Fts[i]*z[i]*dt
     return Vts/(dt*len(z))     #virial is 1/T*S(Fts*z*dt) from 0 to T, being T total experimental time
 
 def av_dt(array):
-    "this function returns the average of the timesteps in a time array"
+    """this function returns the average of the timesteps in a time array
+    Input:
+        array: generally unequally spaced time-array
+    Output:
+        dt: averaged timestep of the unequally spacet time array
+    """
     i = 0
     k = 0.0
     for i in range(np.size(array)-1):
@@ -39,7 +58,16 @@ def av_dt(array):
     return dt
 
 def Amp_Phase(t, f_t, freq):
-    """this function calculates amplitude and phase using the in-phase and in-quadrature integrals for a given frequency"""
+    """this function calculates amplitude and phase using the in-phase and in-quadrature integrals for a given frequency
+    Input:
+        t: time array of the simulation
+        f_t: signal in time whose amplitude and phase at certain frequency is extracted
+        freq: distinct frequency at which the amplitude and phase will be calculated
+    Output:
+        Amp: amplitude of the signal related to freq
+        Phase: Phase pf the signal related to freq
+    """
+    
     if t[0] > 0.0:
         t-= t[0]
     dt = av_dt(t)
@@ -54,16 +82,45 @@ def Amp_Phase(t, f_t, freq):
         Phase = Phase + 180.0
     return Amp, Phase
 
-def Ediss_Tamayo(k, Q, A_free, A, Phase):
+def Ediss_obs(k, Q, A_free, A, Phase):
+    """Dissipated energy calculated from the dynamic AFM observables. Equation details
+    can be seen in: J Tamayo, R Garcı́a Applied Physics Letters 73 (20), 2926-2928
+    
+    Args:
+        k: eigenmode's stiffness
+        Q: eigenmode's quality factor
+        A_free: free oscillating amplitude (oscillating amplitude in the absence of tip-sample interaction)
+        A: tapping amplitude (oscillating amplitude in the presence of tip-sample interaction)
+    Output:
+        Ediss: dissipated energy per oscillating period (calculated from AFM observables)
+    """
     Ediss = (np.pi*k*A**2/Q)*( (A_free/A)*np.sin(Phase*np.pi/180.0) - 1.0 )
     return Ediss
 
-def virial_Lozano(k, Q, A_free, A, Phase):
+def virial_obs(k, Q, A_free, A, Phase):
+    """Virial of the interaction calculated from the dynamic AFM observables.
+    Details of the equation in: San Paulo, Alvaro, and Ricardo García. Phys Rev B 64.19 (2001): 193411.
+    
+    Args:
+        k: eigenmode's stiffness
+        Q: eigenmode's quality factor
+        A_free: free oscillating amplitude (oscillating amplitude in the absence of tip-sample interaction)
+        A: tapping amplitude (oscillating amplitude in the presence of tip-sample interaction)
+    Output:
+        Vts: virial of the interaction (calculated from AFM observables)
+    """
     Vts = -(k*A*A_free)/(2.0*Q)*np.cos(Phase*np.pi/180.0)
     return Vts
 
 def derivative_cd(f_t, t):
-    """this function calculates the derivative of a given array using central difference scheme"""
+    """this function calculates the derivative of a given array using central difference scheme
+    
+    Args:
+        t: time trace
+        f_t: function trace whose 1st derivative is to be numerically calculated using the central difference scheme
+    Output:
+        f_prime: first derivative of the f_t trace
+    """
     f_prime = np.zeros(np.size(f_t))
     for i in range(np.size(f_t)):  #calculation of derivative using central difference scheme
         if i == 0:
@@ -75,13 +132,3 @@ def derivative_cd(f_t, t):
                 f_prime[i] = (f_t[i+1]-f_t[i-1])/(t[i+1]-t[i-1])
     return f_prime
 
-def figannotate(text='a',fs=8,ff='helvetica',fw='bold',pos=(-0.02,1),ax=0,ha='right',va='top'):
-    """Function created by Hanaul Noh to add annotation to figures"""
-    if ax==0:
-        ax = plt.gcf().axes
-    for i in range(len(ax)):
-        ax[i].text(pos[0],pos[1],text,ha=ha,va=va,fontsize=fs,family=ff,weight=fw,transform=ax[i].transAxes)
-        if len(text)>2:
-            text = text[0]+'%s'%(chr(ord(text[1])+1))+text[2:]
-        else:
-            text = '%s'%(chr(ord(text[0])+1))+text[1:]
