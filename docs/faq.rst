@@ -18,6 +18,8 @@ Note that one of the major strengths of pycroscopy is that it can be **science- 
 
 Our data and file format as well as programming framework can easily be extended to or adopted by other scientific domains such as neutron science, nuclear sciences, etc.
 
+We are eager to hear about the many research domains that find our data format and package useful. Please send us an email at pycroscopy@gmail.com
+
 Who uses pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~
 * `The Institute for Functional Imaging of Materials (IFIM) <http://ifim.ornl.gov>`_ at `Oak Ridge National Laboratory <www.ornl.gov>`_ uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques.
