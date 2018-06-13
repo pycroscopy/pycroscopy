@@ -23,7 +23,17 @@ We are eager to hear about the many research domains that find our data format a
 Who uses pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~
 * `The Institute for Functional Imaging of Materials (IFIM) <http://ifim.ornl.gov>`_ at `Oak Ridge National Laboratory <www.ornl.gov>`_ uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques.
-* There are several research groups in universities and national labs including University of Washington, and Idaho National Laboratory, who are beginning to use this package for their research.
+* Synchrotron Radiation Research at Lund University
+* Nuclear Engineering and Health Physics, Idaho State University
+* Prof. David Ginger's group at Department of Chemistry, University of Washington
+* Idaho National Laboratory
+* Central Michigan University
+* Iowa State University
+* George Western University
+* Brown University
+* University of Mons
+* and many more groups in universities and national labs.
+* Please get in touch with us if you would like your group / university to be added here.
 
 How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
