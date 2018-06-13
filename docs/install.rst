@@ -13,10 +13,11 @@ Compatibility
 ~~~~~~~~~~~~~
 * Pycroscopy was initially developed in python 2 but all current / future development for pycroscopy will be on python 3.5+. Nonetheless, we will do our best to ensure continued compatibility with python 2. 
 * We currently do not support 32 bit architectures
+* We only support text that is UTF-8 compliant due to restrictions posed by HDF5
    
 Installing pycroscopy
 ---------------------
-Once the appropriate Anaconda distribtuion has been successfully installed, pycroscopy can be installed easily either via the python package index (pypi / pip) or conda-forge (conda). 
+Once the appropriate Anaconda distribution has been successfully installed, pycroscopy can be installed easily either via the python package index (pypi / pip) or conda-forge (conda).
 
 pip installation
 ~~~~~~~~~~~~~~~~
