@@ -393,6 +393,7 @@ class Fitter(object):
             self._get_data_chunk()
 
         print('Completed computing guess')
+        print()
         return PycroDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):

@@ -46,14 +46,19 @@ import os
 # multivariate analysis:
 from sklearn.cluster import KMeans
 from sklearn.decomposition import NMF
+import subprocess
+import sys
 
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
+# Package for downloading online files:
 # finally import pycroscopy:
 try:
     import pycroscopy as px
 except ImportError:
     print('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 from pycroscopy.viz import cluster_utils
 
