@@ -14,32 +14,92 @@ from numba import jit
 
 
 def verlet(zb, Fo1, Fo2, Fo3, Q1, Q2, Q3, k_L1, k_L2, k_L3, time, z1, z2,z3, v1,v2,v3, z1_old, z2_old, z3_old, Fts, dt, fo1,fo2,fo3, f1,f2,f3):
-    """This function performs verlet algorithm (central difference) for numerical integration of the differential equations of three harmonic oscillator equations (each corresponding to a distinct cantilever eigenmode)
+    """This function performs verlet algorithm (central difference) for numerical integration.
+    
+    It integrates the differential equations of three harmonic oscillator equations (each corresponding to a distinct cantilever eigenmode)
     This function does not assume ideal Euler-Bernoulli scaling but instead the cantilever parameters are passed to the function
-    The dynamic of the cantilever are assumed to be contained in the first three flexural modes.
-    This function will be called each simulation timestep by a main wrap around function which will contain the specific contact-mechanics model
-    
-    
-    Args:
-        zb: z equilibrium postion (average tip postion with respect to the sample)
-        Fo1, Fo2, Fo3: amplitude of the sinuosidal excitation force terms (driving force) for each of 1st 3 eigenmodes
-        Q1, Q2, Q3: three first eigenmodes' quality factor
-        k_L1, k_L2, k_L3: three first eigenmodes' stiffnesses
-        time: instant time of simulation
-        z1, z2, z3: instant eigenmode trajectory
-        v1,v2,v3: instant eigenmode velocity
-        z1_old, z2_old, z3_old: position of the 1st three eigenmodes corresponding to previous timestep
-        Fts: tip-sample interacting force
-        dt: simulation timestep
-        fo1,fo2,fo3: first three eigenmodes' resonance freuquencies
-        f1,f2,f3: excitation frequencies (often chosen to be equal to the eigenmodes' frequencies)
+    The dynamic of the cantilever are assumed to be contained in the first three flexural modes
+    This function will be called each simulation timestep by a main wrap around function which will contain the specific contact-mechanics model.
+        
+    Parameters:
+    ----------    
+    zb : float
+        z equilibrium position (average tip postion with respect to the sample)
+    Fo1 : float
+        amplitude of the sinuosidal excitation force term (driving force) for the first eigenmode
+    Fo2 : float
+        amplitude of the sinuosidal excitation force term (driving force) for the second eigenmode
+    Fo3 : float
+        amplitude of the sinuosidal excitation force term (driving force) for the third eigenmode
+    Q1 : float
+        first eigenmode's quality factor
+    Q2 : float
+        second eigenmode's quality factor
+    Q3 : float
+        third eigenmode's quality factor
+    k_L1 : float
+        1st eigenmode's stiffness
+    k_L2 : float
+        2nd eigenmode's stiffness
+    k_L3 : float
+        3rd eigenmode's stiffness
+    z1 : float
+        instant 1st eigenmode deflection contribution
+    z2 : float
+        instant 2nd eigenmode deflection contribution
+    z3 : float
+        instant 3rd eigenmode deflection contribution
+    v1 : float
+        instant 1st eigenmode velocity
+    v2 : float
+        instant 2nd eigenmode velocity
+    v3 : float
+        instant 3rd eigenmode velocity
+    z1_old : float
+        instant 1st eigenmode deflection contribution corresponding to previous timestep
+    z2_old : float
+        instant 2nd eigenmode deflection contribution corresponding to previous timestep
+    z3_old : float
+        instant 3rd eigenmode deflection contribution corresponding to previous timestep
+    Fts : float
+        tip-sample interacting force
+    dt : float
+        simulation timestep
+    fo1 : float
+        1st eigenmode resonance frequency
+    fo2 : float
+        2nd eigenmode resonance frequency
+    fo3 : float
+        3rd eigenmode resonance frequency
+    f1 : float
+        1st sinusoidal excitation frequency
+    f2 : float
+        2nd sinusoidal excitation frequency
+    f3 : float
+        3rd sinusoidal excitation frequency
     
     Returns:
-        tip: instant tip position for new simulation timestep
-        z1, z2, z3: eigenmodes' positions updated for new timestep
-        v1, v2, v3: eigenmodes' velocities calculated for new timestep
-        z1_old, z2_old, z3_old: eigenmodes' positions for previous timestep  
-    
+    -------
+    tip: float
+        instant tip position for new simulation timestep
+    z1 : float
+        instant 1st eigenmode deflection contribution for new simulation timestep
+    z2 : float
+        instant 2nd eigenmode deflection contribution for new simulation timestep
+    z3 : float
+        instant 3rd eigenmode deflection contribution for new simulation timestep
+    v1 : float
+        instant 1st eigenmode velocity for new simulation timestep
+    v2 : float
+        instant 2nd eigenmode velocity for new simulation timestep
+    v3 : float
+        instant 3rd eigenmode velocity for new simulation timestep
+    z1_old : float
+        instant 1st eigenmode deflection contribution corresponding to current timestep
+    z2_old : float
+        instant 2nd eigenmode deflection contribution corresponding to current timestep
+    z3_old : float
+        instant 3rd eigenmode deflection contribution corresponding to current timestep    
     """    
     
     a1 = ( -z1 - v1/(Q1*(fo1*2*np.pi)) + ( Fo1*np.cos((f1*2*np.pi)*time) + Fo2*np.cos((f2*2*np.pi)*time) + Fo3*np.cos((f3*2*np.pi)*time)  + Fts)/k_L1  )* (fo1*2.0*np.pi)**2
@@ -73,25 +133,65 @@ numba_verlet = jit()(verlet)
 
 
 def GenMaxwell_LR(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_m2, k_m3, A1, A2, A3, zb, printstep = 1, Ge = 0.0, Q1=100, Q2=200, Q3=300, H=2.0e-19):
-    """This function is designed for multifrequency simulations performed over a Generalized Maxwell (Wiechert) viscoelastic surface
+    """This function is designed for multifrequency simulations performed over a Generalized Maxwell (Wiechert) viscoelastic surface.
+    
     The contact mechanics are performed over the framework of Lee and Radok (Lee, E. Ho, and Jens Rainer Maria Radok. "The contact problem for viscoelastic bodies." Journal of Applied Mechanics 27.3 (1960): 438-444.) 
     The cantilever dynamics are assumed to be contained in the first three eigenmodes. 
     The numerical integration is performed with the aid of the verlet function(defined above)
     
-    Args:
-        G: moduli of the springs in the Maxwell arms of a generalized Maxwell model (also called Wiechert model)
-        teu: relaxation times of the Maxwell arms
-        R: tip radius
-        dt: simulation timestep
-        fo1,fo2,fo3: first three eigenmodes' resonance freuquencies
-        k_m1, k_m2, k_m3: three first eigenmodes' stiffnesses
-        A1, A2, A3: target oscillating amplitude of each cantilever eigenmode
+    Parameters:
+    ---------- 
+    G :  numpy.ndarray
+        moduli of the springs in the Maxwell arms of a generalized Maxwell model (also called Wiechert model)
+    tau: numpy.ndarray
+        relaxation times of the Maxwell arms
+    R : float
+        tip radius
+    dt : float
+        simulation timestep
+    fo1 : float
+        1st eigenmode resonance frequency
+    fo2 : float
+        2nd eigenmode resonance frequency
+    fo3 : float
+        3rd eigenmode resonance frequency
+    k_m1 : float
+        1st eigenmode's stiffness
+    k_m2 : float
+        2nd eigenmode's stiffness
+    k_m3 : float
+        3rd eigenmode's stiffness
+    A1 : float
+        target oscillating amplitude of 1st cantilever eigenmode
+    A2 : float
+        target oscillating amplitude of 2nd cantilever eigenmode
+    A3 : float
+        target oscillating amplitude of 3rd cantilever eigenmode
+    zb : float
+        cantilever equilibrium position (average tip-sample distance)
+    printstep : float, optional
+        how often the data will be stored, default is timestep
+    Ge : float, optional
+        rubbery modulus, the default value is zero
+    Q1 : float, optional
+        first eigenmode's quality factor
+    Q2 : float, optional
+        second eigenmode's quality factor
+    Q3 : float, optional
+        third eigenmode's quality factor
+    H : float, optional
+        Hammaker constant
     
     Returns:
-        np.array(t_a) : numpy array containing the time trace
-        np.array(tip_a): numpy array containing the tip trajectory
-        np.array(Fts_a): numpy array containing the tip-sample interacting force
-        np.array(xb_a): numpy array containing the instant position of the viscoelastic surface    
+    -------  
+    np.array(t_a) : numpy.ndarray
+        time trace
+    np.array(tip_a) : numpy.ndarray
+        array containing the tip trajectory
+    np.array(Fts_a) : numpy.ndarray
+        array containing the tip-sample interacting force
+    np.array(xb_a) : numpy.ndarray
+        numpy array containing the instant position of the viscoelastic surface    
     """
     G_a = []
     tau_a = []
