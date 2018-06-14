@@ -16,7 +16,7 @@ Substantial contributions from many developers including:
 * `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
-* `@nmosto  <https://github.com/nmosto >`_ (Nick Mostovych)
+* `@nmosto <https://github.com/nmosto>`_ (Nick Mostovych)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * Arpitha Nagaraj for our logo
 * and many more
