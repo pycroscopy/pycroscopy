@@ -2,17 +2,15 @@ Package Organization
 ====================
 Sub-packages
 ------------
-The package structure is simple, with 5 main modules:
+The package structure is simple, with 6 main modules:
 
 1. ``io``: Translators to extract data from custom & proprietary microscope formats and write them to HDF5 files.
 2. ``analysis``: Physics-dependent analysis of information.
 3. ``processing``: Physics-independent processing of data including  machine learning, image processing, signal
    filtering.
 4. ``viz``: Plotting functions and interactive jupyter widgets for scientific applications
-5. ``core``: Science-independent engineering components that form the foundation for the aforementioned four packages.
-   In the next release of pycroscopy, this engineering-focused sub-package will become an independent package that will
-   support science-focused packages such as pycroscopy similar to how scipy depends on numpy.
-
+5. ``simulation``: Simulations and modelling here
+6. ``core``: Science-independent engineering components that form the foundation for the aforementioned four packages.
 
 ``pycroscopy.io``
 ~~~~~~~~~~~~~~~~~~~
@@ -50,12 +48,19 @@ The package structure is simple, with 5 main modules:
 * ``GIVBayesian`` - A class that performs Bayesian inference on G-mode current-voltage data
 * ``contrib`` - A collection of user contribution code
 
+``pycroscopy.simulation``
+~~~~~~~~~~~~~~~~~~~~~~~~~
+* AFM simulation and many more to come.
+
 ``pycroscopy.core``
 ~~~~~~~~~~~~~~~~~~~
 The structure of the ``pycroscopy.core`` subpackage mimics that of pycroscopy and it has three main modules:
 1. ``io``: utilities that simplify the storage and accessing of data stored in pycroscopy formatted HDF5 files
 2. ``processing``: utilities and classes that support the piecewise (parallel) processing of arbitrarily large datasets
 3. ``viz``: plotting utilities and jupyter widgets that simplify common scientific visualization problems
+
+In the next release of pycroscopy, this engineering-focused sub-package will become an independent package that will
+support science-focused packages such as pycroscopy similar to how scipy depends on numpy.
 
 ``io``
 ^^^^^^^^
