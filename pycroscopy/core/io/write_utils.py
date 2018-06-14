@@ -7,10 +7,11 @@ Created on Thu Sep  7 21:14:25 2017
 
 from __future__ import division, print_function, unicode_literals, absolute_import
 import sys
+import os
 import numpy as np
 from collections import Iterable
-import datetime
-from dtype_utils import contains_integers
+from .dtype_utils import contains_integers
+from .pycro_data import PycroDataset
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
            'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
@@ -360,14 +361,14 @@ def calc_chunks(dimensions, dtype_byte_size, unit_chunks=None, max_chunk_mem=102
 
     return chunking
 
-def write_dset_to_txt(input_file, output_file='output.csv'):
+def write_dset_to_txt(pdRaw, output_file='output.csv'):
     """
-    Output an h5 file or a PycroDataset in csv format
+    Output a PycroDataset in csv format
 
     Parameters
     ----------
-    input_file : str
-        path to the h5 input file that is to be translated into csv format
+    pdRaw : PycroDataset
+        the PycroDataset that will be exported as a csv
     output_file : str, optional
         path that the output file should be written to
     
@@ -376,19 +377,9 @@ def write_dset_to_txt(input_file, output_file='output.csv'):
     output_file: str
         
     """
-    try:
-        import h5py
-        import pycroscopy as px
-        import os
-    except ImportError:
-        print('something is not installed properly')
-    
-    if not isinstance(input_file, str):
-        raise TypeError('input_file should be a path to an h5 file')
+    if not isinstance(pdRaw, PycroDataset):
+        raise TypeError('pdRaw should be a PycroDataset')
 
-    h5File = h5py.File(input_file)    
-    pdRaw = px.PycroDataset(h5File['Measurement_000/Channel_000/Raw_Data'])
-    
     specVals = pdRaw.h5_spec_vals
     posVals = pdRaw.h5_pos_vals
     dimUnits = pdRaw.spec_dim_descriptors
