@@ -11,9 +11,12 @@ Substantial contributions from many developers including:
 
 * `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
 * `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
+* `@str-eat <https://github.com/str-eat>`_ (Daniel Streater)
+* `@ealopez <https://github.com/ealopez>`_ (Enrique Alejandro Lopez-Guerra)
 * `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
+* `@nmosto  <https://github.com/nmosto >`_ (Nick Mostovych)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * and many more
 
