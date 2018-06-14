@@ -9,17 +9,15 @@ Immediate
 
   * Data model (does NOT include storage in HDF5):
 
-    * Keywords: Open, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
+    * Keywords: Open, universal, flexible, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
+    * We want the name to be easy to understand and descriptive - this data model allows one to represent ANY measurement data regardless of dimensionality, instrument, modality, etc.
     * @rama - Not Another Data Format - NADF
     * @rama - Spectral Data Format - SDF
     * @ssomnath - Open MutiDimensional Imaging and Spectroscopy Data - MISD / OMDISD
     * @ssomnath - Open Spectral Data - OSD
     * @ssomnath - Open HyperSpectral Data - OSD / OHSD
-  * File Format - h5<Data Model Acronym>
-  * package:
-
-    * Keywords: Open, Python, HDF5, + all from above
-    * @rama - pyNADF, pySDF
+  * File Format - h5<Data Model Acronym / name>
+  * package: py<Data Model Acronym / name>
 * Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
 * Test all existing translators and to make sure they still work.
 * Move ``requirements`` to requirements.txt
