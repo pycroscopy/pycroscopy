@@ -11,7 +11,6 @@ import os
 import numpy as np
 from collections import Iterable
 from .dtype_utils import contains_integers
-from .pycro_data import PycroDataset
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
            'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
@@ -377,6 +376,7 @@ def write_dset_to_txt(pdRaw, output_file='output.csv'):
     output_file: str
         
     """
+    from .pycro_data import PycroDataset
     if not isinstance(pdRaw, PycroDataset):
         raise TypeError('pdRaw should be a PycroDataset')
 
