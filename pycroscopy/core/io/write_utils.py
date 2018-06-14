@@ -14,7 +14,7 @@ from .dtype_utils import contains_integers
 <<<<<<< HEAD
 from .pycro_data import PycroDataset
 =======
->>>>>>> 6aac7d88d909c047c040df79cabc9c337539d225
+>>>>>>>
 
 __all__ = ['clean_string_att', 'get_aux_dset_slicing', 'make_indices_matrix', 'INDICES_DTYPE', 'VALUES_DTYPE',
            'Dimension', 'build_ind_val_matrices', 'calc_chunks', 'create_spec_inds_from_vals']
