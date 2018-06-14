@@ -4,13 +4,13 @@ Created on Sun Aug 20 21:28:05 2017
 
 @author: Enrique Alejandro
 
-Description: this library contains functions for postprocessing of results of AFM simulations
+Description: this library contains functions for postprocessing of results of AFM simulation
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 
 
-def E_diss(defl, f_ts, dt, fo1):
+def e_diss(defl, f_ts, dt, fo1):
     """This function calculates the tip-sample dissipation per oscillating period.    
     
     Parameters
@@ -39,7 +39,7 @@ def E_diss(defl, f_ts, dt, fo1):
     return energy_diss/number_of_periods
 
 
-def V_ts(defl, f_ts, dt):
+def v_ts(defl, f_ts, dt):
     """This function calculates the virial of the interaction.
     
     A more detailed description of this quantity is given in: 
@@ -88,7 +88,7 @@ def av_dt(array):
     return dt
 
 
-def Amp_Phase(time_vec, f_t, freq):
+def amp_phase(time_vec, f_t, freq):
     """this function calculates amplitude and phase using the in-phase and in-quadrature integrals for a given frequency
     
     Parameters
@@ -122,7 +122,7 @@ def Amp_Phase(time_vec, f_t, freq):
     return amp, phase
 
 
-def Ediss_obs(stiffness, qual_fac, amp_free, amp_ts, phase):
+def e_diss_obs(stiffness, qual_fac, amp_free, amp_ts, phase):
     """Dissipated energy calculated from the dynamic AFM observables. 
     
     Equation details can be seen in: J Tamayo, R Garcı́a Applied Physics Letters 73 (20), 2926-2928
