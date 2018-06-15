@@ -12,6 +12,8 @@ and specifications for storing scientific data using the community-driven pycros
 **Dr. Stephen Jesse** conceived the original guidelines on structuring the data while
 **Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure into the hierarchical data format (HDF5)
 
+.. contents::
+
 Nomenclature
 --------------
 Before we start off, lets clarify some nomenclature to avoid confusion.
@@ -28,6 +30,18 @@ Data format
 ~~~~~~~~~~~~
 `data format <https://en.wikipedia.org/wiki/Data_format>`_ is actually a rather broad term. However, we have observed that
 people often refer to the combination of a data model implemented within a file format as a ``data format``.
+
+Measurements
+~~~~~~~~~~~~
+In all measurements, some ``quantity`` such as voltage, resistance, current, amplitude, or intensity is collected
+as a function of (typically all combinations of) one or more ``independent variables``. For example, a gray-scale image represents the
+quantity - intensity being recorded for all combinations of the variables - row and column. A (simple) spectrum represents
+a quantity such as amplitude or phase recorded as a function of a reference variable such as wavelength or frequency.
+
+Data collected from measurements result in N-dimensional datasets where each ``dimension`` corresponds to a variable that
+was varied. Going back to the above examples a gray-scale image would be represented by a 2 dimensional dataset whose
+dimensions are row and column. Similarly, a simple spectrum wold be a 1 dimensional dataset whose sole dimension would
+be frequency for example.
 
 Dimensionality
 ~~~~~~~~~~~~~~~
@@ -104,69 +118,21 @@ Data in pycroscopy files are stored in three main kinds of datasets:
 Regardless of origin, modality or complexity, imaging data (and most scientific data for that matter) have one
 thing in common:
 
-**The same measurement is performed at multiple spatial locations**
+**The same measurement / operation is performed at each spatial position**
 
 The data model in pycroscopy is based on this one simple ground-truth.
 The data always has some ``spatial dimensions`` (X, Y, Z) and some
 ``spectroscopic dimensions`` (time, frequency, intensity, wavelength,
 temperature, cycle, voltage, etc.). **In pycroscopy, the spatial
 dimensions are collapsed onto a single dimension and the spectroscopic
-dimensions are flattened to the other dimensions.** Thus, all data are
-stored as two dimensional grids. While the data could indeed be stored
-in the original N-dimensional form, there are a few key **advantages to
-the 2D structuring**:
+dimensions are flattened into the second dimension.** Thus, all data are
+stored as **two dimensional arrays**. The data would be arranged in the same manner that
+reflects the sequence in which the individual data points were collected. Examples below
+will simplify this data-representation paradigm significantly.
 
-* The data is already of the same structure expected by machine learning algorithms and requires minimal
-  to no pre-processing or post-processing.
-* In certain cases, the data simply cannot be represented in an N-dimensional form since one of the dimensions
-  has multiple sizes in different contexts.
-* Researchers want to acquire ever larger datasets that
-  take much longer to acquire. This has necessitated approaches such as
-  sparse sampling or `compressed sensing
-  <https://en.wikipedia.org/wiki/Compressed_sensing>`__ wherein
-  measurements are acquired from a few randomly sampled positions and the
-  data for the rest of the positions are inferred using complex
-  algorithms. Storing such sparse sampled data in the N dimensional form
-  would balloon the size of the stored data even though the majority of the
-  data is actually empty. Two dimensional datasets would allow the random
-  measurements to be written without any empty sections.
-* When acquiring measurement data, users often adjust experimental parameters
-  during the experiment that may affect the size of the data, especially the
-  spectral sizes. Thus, changes in experimental parameters would mean that the
-  existing N dimensional set would have to be left partially (in most cases
-  largely) empty and a new N dimensional dataset would have to be allocated
-  with the first few positions left empty. In the case of flattened datasets,
-  the current dataset can be truncated at the point of the parameter change
-  and a new dataset can be created to start from the current measurement.
-  Thus, no space would be wasted.
-
-Here are some examples of how some familiar data can be represented using
-this paradigm:
-
--  **Gray-scale photographs**: A single value (intensity) in is recorded
-   at each pixel in a two dimensional grid. Thus, there are are two
-   spatial dimensions - X, Y and one spectroscopic dimension -
-   "Intensity". The data can be represented as a N x 1 matrix where N is
-   the product of the number of rows and columns of pixels. The second
-   axis has size of 1 since we only record one value (intensity) at each
-   location. *The positions will be arranged as row0-col0, row0-col1....
-   row0-colN, row1-col0....* Color images or photographs will be
-   discussed below due to some very important subtleties about the
-   measurement.
--  A **single Raman spectra**: In this case, the measurement is recorded
-   at a single location. At this position, data is recorded as a
-   function of a single (spectroscopic) variable such as wavelength.
-   Thus this data is represented as a 1 x P matrix, where P is the
-   number of points in the spectra
--  **Scanning Tunnelling Spectroscopy or IV spectroscopy**: The current
-   (A 1D array of size P) is recorded as a function of voltage at each
-   position in a two dimensional grid of points (two spatial
-   dimensions). Thus the data would be represented as a N x P matrix,
-   where N is the product of the number of rows and columns in the grid
-   and P is the number of spectroscopic points recorded.
-
-Using prefixes ``i`` for position and ``j`` for spectroscopic, the main
-dataset would be structured as:
+In general, if a measurement of length ``P`` was recorded for each of ``N`` positions,
+it would be structured as shown in the table below here the prefixes ``i`` correspond to
+the positions and ``j`` for spectroscopic:
 
 +------------+------------+------------+--------+--------------+--------------+
 | i0, j0     | i0, j1     | i0, j2     | <..>   | i0, jP-2     | i0, jP-1     |
@@ -180,31 +146,123 @@ dataset would be structured as:
 | iN-1, j0   | iN-1, j1   | iN-1, j2   | <..>   | iN-1, jP-1   | iN-1, jP-1   |
 +------------+------------+------------+--------+--------------+--------------+
 
-* If the same voltage sweep were performed twice at each location, the data would be represented as N x 2 P.
-  The data is still saved as a long (2*P) 1D array at each location. The number of spectroscopic dimensions
-  would change from just ['Voltage'] to ['Voltage', 'Cycle'] where the second spectroscopic dimension would
-  account for repetitions of this bias sweep.
+While the data could indeed be stored in the original N-dimensional form,
+there are a few key **advantages to the 2D structuring**:
 
-  * **The spectroscopic data would be stored as it would be recorded as volt_0-cycle_0, volt_1-cycle_0.....
-    volt_P-1-cycle_0, volt_0-cycle_1.....volt_P-1-cycle-1. Just like the positions**
+* The data is already of the **same structure expected by machine learning algorithms** and requires minimal
+  to no pre-processing or post-processing. Briefly, the data is simply arranged in the standard form of ``instances x features``,
+  where ``instances`` makes up the locations and ``features`` which contains all the observables per entry.
+* In certain cases, the data simply **cannot be represented in an N-dimensional form** since one of the dimensions
+  has multiple sizes in different contexts.
+* Researchers want to acquire ever larger datasets that
+  take much longer to acquire. This has necessitated approaches such as
+  **sparse sampling** or `compressed sensing
+  <https://en.wikipedia.org/wiki/Compressed_sensing>`__ wherein
+  measurements are acquired from a few randomly sampled positions and the
+  data for the rest of the positions are inferred using complex
+  algorithms. Storing such sparse sampled data in the N dimensional form
+  would balloon the size of the stored data even though the majority of the
+  data is actually empty. Two dimensional datasets would allow the random
+  measurements to be written without any empty sections.
+* When acquiring measurement data, users often adjust experimental parameters
+  during the experiment that may affect the size of the data, especially the
+  spectral sizes. Thus, **changes in experimental parameters** would mean that the
+  existing N dimensional set would have to be left partially (in most cases
+  largely) empty and a new N dimensional dataset would have to be allocated
+  with the first few positions left empty. In the case of flattened datasets,
+  the current dataset can be truncated at the point of the parameter change
+  and a new dataset can be created to start from the current measurement.
+  Thus, no space would be wasted.
 
-* Now, if the bias was swept thrice from -1 to +1V and then thrice again from -2 to 2V, the data bacomes
-  N x 2 * 3 P. The data now has two position dimensions (X, Y) and three spectrosocpic dimensions ['Voltage',
-  'Cycle', 'Step']. The data is still saved as a (P * 2 * 3) 1D array at each location.
+Here are some examples of how some familiar data can be represented using
+this paradigm:
+
+Spectrum
+^^^^^^^^
+.. image:: ./assets_data_format/1D_spectra.svg
+
+This case encompasses examples such as a **single** Raman spectrum, force-distance curve in
+atomic force microscopy, current-voltage spectroscopy, etc. In this case, the measurement is recorded
+at a single location meaning that this dataset has a single *arbitrary* ``position dimension``
+of size 1. At this position, data is recorded as a
+function of a single variable (``spectroscopic dimension``) such as *wavelength* or *frequency*.
+Thus, if the spectrum contained ``S`` data points, the pycroscopy representation of this
+data would be a ``1 x S`` matrix. The ``quantity`` represented by this data would be
+
+Gray-scale images
+^^^^^^^^^^^^^^^^^
+.. image:: ./assets_data_format/2D_images.svg
+
+In such data, a single value (``quantity`` is *intensity*) in is recorded
+at each location in a two dimensional grid. Thus, there are are two
+``position dimensions`` - *X*, *Y*. The value at each pixel was not really acquired
+as a function of any variable so the data has one *arbitrary* ``spectroscopic dimension``.
+Thus, if the image had ``P`` rows and ``Q`` columns, it would have to be flattened and
+represented as a ``P*Q x 1`` array in the pycroscopy format. The second
+axis has size of 1 since we only record one value (intensity) at each
+location. In theory, the flattened data could be arranged column-by-column (as in the figure above)
+and then row-by-row or vice-versa depending on how the data was (sequentially)
+captured. The sequence in this particular case is debatable in this particular example.
+
+Popular examples of such data include imaging data from raster scans (e.g. - height channel in atomic force microscopy),
+black-and-white photographs, scanning electron microscopy (SEM) images. etc.
+
+Color images will be discussed separately below due to some very important subtleties about the
+measurement.
+
+Spectral maps
+^^^^^^^^^^^^^
+.. image:: ./assets_data_format/3D_map_of_spectra.svg
+
+If a spectrum of length ``S`` were acquired at each location in a two dimensional grid of positions
+with ``P`` rows and ``Q`` columns, it would result in a three dimensional dataset.
+This example is a combination of the two examples above. The above 3D dataset has two
+``position dimensions`` - *X* and *Y*, and has one ``spectroscopic dimension`` - *Frequency*.
+Each data point in the dataset contains the same physical ``quantity`` - *Amplitude*.
+In order to represent this 3D dataset in the 2D pycroscopy form, the two ``position dimensions``
+in such data would need to be flattened along the vertical axis and the spectrum at each position
+would be laid out along the horizontal axis or the spectroscopic axis.
+Thus the original ``P x Q x S`` 3D array would be flattened to a 2D array of shape - ``P*Q x S``.
+Assuming that the data was acquired column-by-column and then row-by-row, the rows in the flattened
+2D dataset would also be laid out in the same manner: row\ :sub:`0`\ col\ :sub:`0`\ , row\ :sub:`0`\ col\ :sub:`1`\ , row\ :sub:`0`\ col\ :sub:`2`\ ,
+... , row\ :sub:`0`\ col\ :sub:`Q`\ , row\ :sub:`1`\ col\ :sub:`0`\ , row\ :sub:`1`\ col\ :sub:`1`\ , ...
+
+Popular examples of such datasets include Scanning Tunnelling Spectroscopy (STS) and
+current-voltage spectroscopy
+
+High dimensional data
+^^^^^^^^^^^^^^^^^^^^^
+This general representation for data was developed to express datasets with 7, 8, 9, or higher dimensional datasets.
+
+The **spectral map** example above only had one ``spectroscopic dimension``. If spectra of length ``S`` were
+acquired for ``T`` different *Temperatures*, the resultant dataset would have two ``spectroscopic dimensions`` -
+*Frequency* and *Temperature* and would be of shape - ``P x Q x T x S``. Just as the two ``position dimensions``
+were flattened along the vertical axis in the example above, now the two spectroscopic dimensions would also need
+to be flattened along the horizontal axis. Thus the horizontal axis would be flattend as:
+Temperature\ :sub:`0`\ Frequency\ :sub:`0`\ , Temperature\ :sub:`0`\ Frequency\ :sub:`1`\ ,Temperature\ :sub:`0`\ Frequency\ :sub:`2`\ , ...
+, Temperature\ :sub:`0`\ Frequency\ :sub:`S`\ , Temperature\ :sub:`1`\ Frequency\ :sub:`0`\ , Temperature\ :sub:`1`\ Frequency\ :sub:`1`\ , ...
+This four dimensional dataset would be flattened into a two dimensional array of shape ``P*Q x T*S``.
+
+In the same manner, one could keep adding additional dimensions to either the position or spectroscopic axis.
+
+Non Measurements
+^^^^^^^^^^^^^^^^^
+This same flattened representation can also be applied to results of data analyses or
+data that were not directly recorded from an instrument. Here are some examples:
 
 -  A collection of ``k`` chosen spectra would also be considered
-   ``main`` datasets since the data is still structured as
-   ``[instance, features]``. Some examples include:
--  the cluster centers obtained from a clustering algorithm like
-   ``k-Means clustering``.
+   ``Main`` datasets since the data is still structured as
+   ``[instance, features]``
+-  Similarly, the centroids obtained from a clustering algorithm like
+   ``k-Means clustering``
 -  The abundance maps obtained from decomposition algorithms like
    ``Singular Value Decomposition (SVD)`` or
    ``Non-negetive matrix factorization (NMF)``
 
 Complicated?
-~~~~~~~~~~~~~
+^^^^^^^^^^^^^
 This data model may seem unnecessarily complicated for very simple / rigid data such as 2D images or 1D spectra.
-However, bear in mind that this paradigm was designed to represent any information regardless of dimensionality, origin, complexity, etc.
+However, bear in mind that **this paradigm was designed to represent any information regardless of dimensionality, origin, complexity**, etc.
 Thus, encoding data in this manner will allow seamless sharing, exchange, and interpretation of data.
 
 Compound Datasets:
@@ -255,10 +313,18 @@ and utility of compound datasets are best described with examples:
     avoids plots with alternating coefficients that are several orders of
     magnitude larger / smaller than each other.
 
+While one could represent multiple channels of information simultaneously acquired by instruments
+(for example - height, amplitude, phase channels in atomic force microscopy scan images) using compound datasets,
+this is **not** the intended purpose of compound datasets. We use recommend storing each
+channel of information separately for consistency across scientific disciplines.
+For example, there are modalities in microscopy where some channels provide high
+resolution topography data while others provide low-resolution but spectroscopy data.
+
 For more information on compound datasets see the `tutorial
-<https://support.hdfgroup.org/HDF5/Tutor/compound.html>` from the HDF Group
+<https://support.hdfgroup.org/HDF5/Tutor/compound.html>`_ from the HDF Group
 and the `h5py Datasets documentation
-<http://docs.h5py.org/en/latest/high/dataset.html#reading-writing-data>`
+<http://docs.h5py.org/en/latest/high/dataset.html#reading-writing-data>`_
+
 
 ``Ancillary`` Datasets
 ~~~~~~~~~~~~~~~~~~~~~~

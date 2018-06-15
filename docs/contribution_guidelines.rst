@@ -28,4 +28,4 @@ We recommend that you follow the steps below. Again, if you are ever need help, 
 4. Add / modify code
 5. ``Commit`` your changes (equivalent to saving locally on your laptop). Do this regularly.
 6. Repeat steps 4-5. After you reach a certain milestone, ``push`` your commits to your ``remote branch``. To avoid losing work due to problems with your computer, consider ``pushing commits`` once at least every day / every few days.
-7. Repeat steps 3-5 till you are ready to have your code added to the parent pycroscopy repository. At this point, `create a pull request <https://help.github.com/articles/creating-a-pull-request-from-a-fork/>`_. Someone on the development team will review your ``pull request`` and then ``merge`` these changes to ``master``.
+7. Repeat steps 4-6 till you are ready to have your code added to the parent pycroscopy repository. At this point, `create a pull request <https://help.github.com/articles/creating-a-pull-request-from-a-fork/>`_. Someone on the development team will review your ``pull request`` and then ``merge`` these changes to ``master``.
