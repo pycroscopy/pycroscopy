@@ -9,17 +9,15 @@ Immediate
 
   * Data model (does NOT include storage in HDF5):
 
-    * Keywords: Open, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
+    * Keywords: Open, universal, flexible, Spectroscopy, Imaging, MultiDimensional, Tensor, Model / Data Format
+    * We want the name to be easy to understand and descriptive - this data model allows one to represent ANY measurement data regardless of dimensionality, instrument, modality, etc.
     * @rama - Not Another Data Format - NADF
     * @rama - Spectral Data Format - SDF
     * @ssomnath - Open MutiDimensional Imaging and Spectroscopy Data - MISD / OMDISD
     * @ssomnath - Open Spectral Data - OSD
     * @ssomnath - Open HyperSpectral Data - OSD / OHSD
-  * File Format - h5<Data Model Acronym>
-  * package:
-
-    * Keywords: Open, Python, HDF5, + all from above
-    * @rama - pyNADF, pySDF
+  * File Format - h5<Data Model Acronym / name>
+  * package: py<Data Model Acronym / name>
 * Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
 * Test all existing translators and to make sure they still work.
 * Move ``requirements`` to requirements.txt
@@ -59,16 +57,19 @@ Immediate
 
   * continuous integration
   * documentation, website, etc.
+  * Add `coverage calculation <https://coveralls.io>`_
   * pypi and conda installers
   * pycroscopy should import core and alias it for now
-* Write a comprehensive document on "Contribution guidelines"
+* Write a comprehensive document on ``Contribution guidelines`` that tells people to fork >> push >> pull request
 * Embed presentation into "About"
 * Start writing the journal paper!
-* Write plugins to export to pycroscopy HDF5 for ``ImageJ`` and ``FIJI``. There are HDF5 plugins already available.
+* Write plugins to export to pycroscopy HDF5 for ``ImageJ``, and possibly ``Gwyddion``. There are HDF5 plugins already available for ImageJ.
 
 Short-term - by Jul 1 2018
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+* Get DOI for core and pycroscopy via Zenodo
+* Look into making notebooks for workshops available through `mybinder <https://mybinder.org>`_
 * development of community standards for AFM, STM, STEM, etc.
 * region reference related functionality
 
@@ -97,6 +98,7 @@ Medium-term - by Aug 1 2018
 * ``PycroDataset.slice()`` and ``get_n_dim_form()`` should return ``Xarray`` objects
 * Notebooks need to be updated to require pycroscopy version
 * Itk for visualization - https://github.com/InsightSoftwareConsortium/itk-jupyter-widgets
+* Use integrate hyperspy with pycroscopy
 * New package for facilitating **scalable ensemble runs**:
 
   * Compare scalability, simplicity, portability of various solutions:
