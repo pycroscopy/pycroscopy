@@ -1,8 +1,8 @@
 Guides to Pycroscopy
 --------------------
-The documents below should be sufficient for you to learn how to use and even write code for pycroscopy.
-If you haven't already, please go through the external tutorials on python, scientific data analysis in python, etc.
-All the documents listed below will assume that you understand the pycroscopy data format.
+* The documents below should be sufficient for you to learn how to use and even write code for pycroscopy.
+* If you haven't already, please go through the external tutorials on python, scientific data analysis in python, etc.
+* All the documents listed below will assume that you understand the pycroscopy data format. Please read that document before beginning
 
 To learn how to use pycroscopy, go through the following documents in the recommended order:
 1. Primer to h5py
