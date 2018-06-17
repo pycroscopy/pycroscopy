@@ -420,9 +420,9 @@ Let's assume that data points were collected as a function of 8 values of the (s
 Let's assume that the data was collected as a function of *Frequency* over a band ranging from ``300`` to ``320`` kHz.
 In that case, the ``Spectroscopic Values`` would be as shown below:
 
-+-----------+-----+-----+-----+-----+-----+
-| Frequency | 300 | 305 | 310 | 315 | 320 |
-+-----------+-----+-----+-----+-----+-----+
++---------------+-----+-----+-----+-----+-----+
+| **Frequency** | 300 | 305 | 310 | 315 | 320 |
++---------------+-----+-----+-----+-----+-----+
 
 This means that for all positions in the ``main`` dataset, the ``4th`` column would always correspond to data collected
 for the *Frequency* of ``315 kHz``.
@@ -433,22 +433,24 @@ In this particular case, the dataset is trivial and just a linearly increasing a
 Note that indices start from ``0`` instead of ``1`` and
 end at ``5-1`` instead of ``5`` in line with common programming languages such as *C* or *python* as shown below:
 
-+-----------+-----+-----+-----+-----+-----+
-| Frequency | 0   | 1   | 2   | 3   | 4   |
-+-----------+-----+-----+-----+-----+-----+
++---------------+-----+-----+-----+-----+-----+
+| **Frequency** | 0   | 1   | 2   | 3   | 4   |
++---------------+-----+-----+-----+-----+-----+
 
 Given that the spectrum only had a single *arbitrary* ``position dimension`` which was varied over a single (arbitrary)
 value, the ``Position Indices`` and ``Position Values`` datasets would have a shape of ``1 x 1``.
 
 ``Position Indices``:
-+------+-----+
-| arb. | 0   |
-+------+-----+
+
++-----------+-----+
+| **arb.**  | 0   |
++-----------+-----+
 
 ``Position Values``:
-+------+-------+
-| arb. | 0.0   |
-+------+-------+
+
++-----------+-----+
+| **arb.**  | 0   |
++-----------+-----+
 
 Gray-scale image
 ^^^^^^^^^^^^^^^^
@@ -515,14 +517,16 @@ Similar to the ``position dimensions`` for a spectrum, gray-scale images only ha
 ``spectroscopic dimension``. Thus, both ``Spectroscopic`` datasets have shape of ``1 x 1``:
 
 ``Spectroscopic Indices``:
-+------+-----+
-| arb. | 0   |
-+------+-----+
+
++-----------+-----+
+| **arb.**  | 0   |
++-----------+-----+
 
 ``Spectroscopic Values``:
-+------+-------+
-| arb. | 0.0   |
-+------+-------+
+
++-----------+-----+
+| **arb.**  | 0   |
++-----------+-----+
 
 Spectral maps
 ^^^^^^^^^^^^^
@@ -532,6 +536,7 @@ If the dataset was varied over ``3`` values of *X*, ``2`` values of *Y* and ``5`
 ``ancillary`` datasets would be based on the solutions for the two examples above:
 
 ``Position Indices``:
+
 +-------+-----+
 |   X   | Y   |
 +=======+=====+
@@ -549,6 +554,7 @@ If the dataset was varied over ``3`` values of *X*, ``2`` values of *Y* and ``5`
 +-------+-----+
 
 ``Position Values``:
+
 +----------+-----------+
 | X        | Y         |
 +==========+===========+
@@ -566,14 +572,16 @@ If the dataset was varied over ``3`` values of *X*, ``2`` values of *Y* and ``5`
 +----------+-----------+
 
 ``Spectroscopic Indices``:
-+-----------+-----+-----+-----+-----+-----+
-| Frequency | 0   | 1   | 2   | 3   | 4   |
-+-----------+-----+-----+-----+-----+-----+
+
++---------------+-----+-----+-----+-----+-----+
+| **Frequency** | 0   | 1   | 2   | 3   | 4   |
++---------------+-----+-----+-----+-----+-----+
 
 ``Spectroscopic Values``:
-+-----------+-----+-----+-----+-----+-----+
-| Frequency | 300 | 305 | 310 | 315 | 320 |
-+-----------+-----+-----+-----+-----+-----+
+
++---------------+-----+-----+-----+-----+-----+
+| **Frequency** | 300 | 305 | 310 | 315 | 320 |
++---------------+-----+-----+-----+-----+-----+
 
 High dimensional data
 ^^^^^^^^^^^^^^^^^^^^^
@@ -587,18 +595,19 @@ varies faster than the *Temperature* dimension (i.e.- the *Frequency* is varied 
 *Temperature* of ``30 C``, **then** the *Frequency* is varied from ``300`` to ``320`` for a *Temperature* of ``40 C``
 and so on), the ``Spectroscopic Indices`` would be as follows:
 
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-| Frequency   | 0   | 1   | 2   | 3   | 4   | 0   | 1   | 2   | 3   | 4   | 0   | 1   | 2   | 3   | 4   |
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-| Temperature | 0   | 0   | 0   | 0   | 0   | 1   | 1   | 1   | 1   | 1   | 2   | 2   | 2   | 2   | 2   |
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+| **Frequency**   | 0   | 1   | 2   | 3   | 4   | 0   | 1   | 2   | 3   | 4   | 0   | 1   | 2   | 3   | 4   |
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+| **Temperature** | 0   | 0   | 0   | 0   | 0   | 1   | 1   | 1   | 1   | 1   | 2   | 2   | 2   | 2   | 2   |
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
 
 Correspondingly, the ``Spectroscopic Values`` would look like:
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-| Frequency   | 300 | 305 | 310 | 315 | 320 | 300 | 305 | 310 | 315 | 320 | 300 | 305 | 310 | 315 | 320 |
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
-| Temperature | 30  | 30  | 30  | 30  | 30  | 40  | 40  | 40  | 40  | 40  | 50  | 50  | 50  | 50  | 50  |
-+-------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+| **Frequency**   | 300 | 305 | 310 | 315 | 320 | 300 | 305 | 310 | 315 | 320 | 300 | 305 | 310 | 315 | 320 |
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
+| **Temperature** | 30  | 30  | 30  | 30  | 30  | 40  | 40  | 40  | 40  | 40  | 50  | 50  | 50  | 50  | 50  |
++-----------------+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+
 
 Since the manner and values over which the positions are varied remains unchanged from the *spectral maps* example,
 the ``Position Indices`` and ``Position Values`` datasets for this example would be identical those of the *spectral maps* example
