@@ -1,6 +1,6 @@
 """
 ================================================================================
-7. Speed up computations with parallel_compute()
+07. Speed up computations with parallel_compute()
 ================================================================================
 
 **Suhas Somnath, Chris R. Smith**

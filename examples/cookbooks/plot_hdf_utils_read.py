@@ -1,6 +1,6 @@
 """
 ================================================================================
-5. Utilities for reading Pycroscopy HDF5 files
+05. Utilities for reading Pycroscopy HDF5 files
 ================================================================================
 
 **Suhas Somnath**

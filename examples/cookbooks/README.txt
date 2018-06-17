@@ -5,6 +5,7 @@ Guides to Pycroscopy
 * All the documents listed below will assume that you understand the pycroscopy data format. Please read that document before beginning
 
 To learn how to use pycroscopy, go through the following documents in the recommended order:
+
 1. Primer to h5py
 2. The PycroDataset
 3. Data translation and the NumpyTranslator
@@ -13,11 +14,10 @@ To learn how to use pycroscopy, go through the following documents in the recomm
 6. Data type manipulation utilities
 7. Parallel computation
 
-To learn how to write to pycroscopy HDF5 files, go through these additional documents in the recommended order:
+To learn how to write to pycroscopy HDF5 files, write data processing classes, or adding functionality to pycroscopy, go through these additional documents in the recommended order:
+
 8. Utilities that assist in writing data
 9. Utilities to write pycroscopy HDF5 files
-
-To learn how to write data processing classes or adding functionality to pycroscopy, go through these documents:
 10. Formalizing Data Processing
 11. Input / Output / Computing utilities
 
