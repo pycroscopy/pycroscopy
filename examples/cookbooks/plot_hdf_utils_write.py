@@ -1,6 +1,6 @@
 """
 ================================================================================
-Utilities for writing Pycroscopy HDF5 files
+9. Utilities for writing Pycroscopy HDF5 files
 ================================================================================
 
 **Suhas Somnath**

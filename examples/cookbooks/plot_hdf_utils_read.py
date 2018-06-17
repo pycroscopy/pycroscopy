@@ -1,6 +1,6 @@
 """
 ================================================================================
-Utilities for reading Pycroscopy HDF5 files
+5. Utilities for reading Pycroscopy HDF5 files
 ================================================================================
 
 **Suhas Somnath**
@@ -52,9 +52,11 @@ from warnings import warn
 import subprocess
 import sys
 
+
 def install(package):
     subprocess.call([sys.executable, "-m", "pip", "install", package])
 # Package for downloading online files:
+
 try:
     # This package is not part of anaconda and may need to be installed.
     import wget
