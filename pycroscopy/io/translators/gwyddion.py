@@ -23,7 +23,6 @@ import gwyfile
 class GwyddionTranslator(Translator):
 
     def translate(self, file_path, *args, **kwargs):
-
         # Two kinds of files:
         # 1. Simple GSF files -> use metadata, data = gsf_read(file_path)
         # 2. Native .gwy files -> use the gwyfile package
@@ -60,7 +59,7 @@ class GwyddionTranslator(Translator):
             """
             # Read the data in from the specified file
             gsf_meta, gsf_values = gsf_read(file_path)
-            print(gsf_meta.keys())
+            
             # Write parameters where available specifically for sample_name
             # data_type, comments and experiment_date to file-level parms
             global_parms['sample_name'] = gsf_meta['Title']
@@ -112,12 +111,12 @@ class GwyddionTranslator(Translator):
             
             # Build the main dataset
             raster_height = gsf_values
-            write_main_dataset(chan_grp, # np.reshape(raster_height, len(pos_desc[0].values) * len(pos_desc[1].values)),
-                                # raster_height,
-                                np.atleast_2d(np.reshape(raster_height, len(pos_desc[0].values) * len(pos_desc[1].values))).transpose(),
-                                'Raw_Data', 'Raster_Height', gsf_meta['ZUnits'], pos_desc, spec_desc,
-                                 global_parms, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals,
-                                 'Raster_', 'Position_')
+            write_main_dataset(chan_grp,
+                    np.atleast_2d(np.reshape(raster_height, len(pos_desc[0].values) * len(pos_desc[1].values))).transpose(),
+                        'Raw_Data', 'Raster_Height', gsf_meta['ZUnits'], pos_desc, spec_desc,
+                            global_parms, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals,
+                                'Raster_', 'Position_')
+            
             return h5_path
 
         if file_path.endswith('gwy'):
