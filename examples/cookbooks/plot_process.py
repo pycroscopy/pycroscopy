@@ -1,6 +1,6 @@
 """
 ================================================================================
-Formalizing Data Processing
+10. Formalizing Data Processing
 ================================================================================
 
 **Suhas Somnath**
@@ -99,7 +99,11 @@ import os
 
 # Warning package in case something goes wrong
 from warnings import warn
+import subprocess
+import sys
 
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 # Package for downloading online files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -107,7 +111,7 @@ try:
 except ImportError:
     warn('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install('wget')
     import wget
 
 # The mathematical computation package:
@@ -125,7 +129,7 @@ try:
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ########################################################################################################################

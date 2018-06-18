@@ -1,6 +1,6 @@
 """
 ================================================================================
-Primer to HDF5 and h5py
+01. Primer to HDF5 and h5py
 ================================================================================
 
 **Suhas Somnath**
@@ -336,6 +336,7 @@ print('list_of_strings: {}'.format(h5_simple_dataset.attrs['list_of_strings'] ==
 #
 # To avoid manual encoding and decoding of attributes (different strategies for different versions of python), we
 # recommend:
+#
 # * writing attributes using: ``pycroscopy.hdf_utils.write_simple_attrs()``
 # * reading attributes using: ``pycroscopy.hdf_utils.get_attr() or get_attributes()``
 #

@@ -1,6 +1,6 @@
 """
 ======================================================================================
-Plotting utilities
+04. Plotting utilities
 ======================================================================================
 
 **Suhas Somnath**
@@ -23,12 +23,18 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import numpy as np
 from warnings import warn
 import matplotlib.pyplot as plt
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
+# Package for downloading online files:
 try:
     import pycroscopy as px
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 

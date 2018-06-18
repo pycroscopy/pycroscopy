@@ -4,7 +4,9 @@ python:
   - '3.6'
 before_install:
   - sudo apt-get update -qq
-install: python setup.py install
+#  Using pip to install instead of setup.py for now to fix numba issue.
+#install: python setup.py install
+install: pip install .
 script: pytest
 after_success:
   - pip install sphinx sphinx-gallery sphinx-rtd-theme numpydoc wget pysptools cvxopt

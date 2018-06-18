@@ -1,6 +1,6 @@
 """
 ================================================================================
-Speed up computations with parallel_compute()
+07. Speed up computations with parallel_compute()
 ================================================================================
 
 **Suhas Somnath, Chris R. Smith**
@@ -48,7 +48,11 @@ import os
 
 # Warning package in case something goes wrong
 from warnings import warn
+import subprocess
+import sys
 
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 # Package for downloading online files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -56,7 +60,7 @@ try:
 except ImportError:
     warn('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install(wget)
     import wget
 
 # The mathematical computation package:
@@ -74,7 +78,7 @@ try:
 except ImportError:
     warn('joblib not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'joblib'])
+    install('joblib')
     import joblib
 
 # Timing
@@ -92,7 +96,7 @@ try:
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ########################################################################################################################
@@ -105,7 +109,7 @@ h5_path = 'temp.h5'
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/BELine_0004.h5'
 if os.path.exists(h5_path):
     os.remove(h5_path)
-_ = wget.download(url, h5_path)
+_ = wget.download(url, h5_path, bar=None)
 
 ########################################################################################################################
 # Now, lets open this HDF5 file. The focus of this example is not on the data storage or arrangement but rather on
