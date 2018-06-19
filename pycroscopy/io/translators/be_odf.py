@@ -536,8 +536,8 @@ class BEodfTranslator(Translator):
         (folder_path, basename) = path.split(data_filepath)
         (super_folder, basename) = path.split(folder_path)
 
-        if basename.endswith('_d'):
-            # Old old data format where the folder ended with a _d for some reason
+        if basename.endswith('_d') or basename.endswith('_c'):
+            # Old old data format where the folder ended with a _d or _c to denote a completed spectroscopic run
             basename = basename[:-2]
         """
         A single pair of real and imaginary files are / were generated for:
