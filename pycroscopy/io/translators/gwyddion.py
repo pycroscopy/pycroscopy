@@ -103,7 +103,7 @@ class GwyddionTranslator(Translator):
             h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)            
             
             # Build the ancillary spectral datasets
-            spec_desc = Dimension('Raster Height', gsf_meta['ZUnits'], [1])            
+            spec_desc = Dimension('Raster', gsf_meta['ZUnits'], [1])            
             h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
 
             # Create the channel-level group
@@ -120,17 +120,23 @@ class GwyddionTranslator(Translator):
             return h5_path
 
         if file_path.endswith('gwy'):
-            # gwyfile.load(file_path).keys()
-            # global_parms['data_type'] = 'GwyddionGWY_' + type_suffix
-            # Do gwy to h5 conversion stuff
+            """
+            For more information on the .gwy file format visit the link below - 
+            http://gwyddion.net/documentation/user-guide-en/gwyfile-format.html
+            """
+            # Read the data in from the specified file
+            gwy_data = gwyfile.load(file_path)
+            
+            # Write parameters where available specifically for sample_name
+            # data_type, comments and experiment_date to file-level parms         
+            
+            # Create Position and spectroscopic datasets
         
-        # Create Position and spectroscopic datasets
-        
-        # Write file and measurement level parameters
+            # Write file and measurement level parameters
 
-        # Prepare the list of raw_data datasets
-            return h5_path
-        # raise NotImplementedError('This translator has not yet been implemented')
+            # Prepare the list of raw_data datasets
+            return file_path
+        
 
     def _translate_image_stack(self):
         """
