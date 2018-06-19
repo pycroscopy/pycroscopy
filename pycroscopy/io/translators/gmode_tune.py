@@ -18,7 +18,7 @@ from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
 from ...core.io.translator import generate_dummy_main_parms
 from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import write_simple_attrs, create_indexed_group, build_ind_val_matrices, write_main_dataset
+from ...core.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, build_ind_val_matrices, write_main_dataset
 
 
 class GTuneTranslator(GLineTranslator):
@@ -80,7 +80,7 @@ class GTuneTranslator(GLineTranslator):
             warn('Error - File has incomplete rows')
             return None
         else:
-            self.num_rows = int(self.num_rows)
+            self.num_rows =int(self.num_rows)
 
         samp_rate = parm_dict['IO_rate_[Hz]']
         ex_freq_nominal = parm_dict['BE_center_frequency_[Hz]']
@@ -98,6 +98,7 @@ class GTuneTranslator(GLineTranslator):
         parm_dict['num_bins'] = self.points_per_pixel
         parm_dict['grid_num_rows'] = self.num_rows
         parm_dict['data_type'] = 'G_mode_line'
+        parm_dict['IO_rate_[Hz]'] = samp_rate
 
         if self.num_rows != expected_rows:
             print('Note: {} of {} lines found in data file'.format(self.num_rows, expected_rows))
@@ -108,6 +109,7 @@ class GTuneTranslator(GLineTranslator):
         # First finish writing all global parameters, create the file too:
         h5_file = h5py.File(h5_path, 'w')
         global_parms = generate_dummy_main_parms()
+
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
         write_simple_attrs(h5_file, global_parms)
@@ -123,11 +125,17 @@ class GTuneTranslator(GLineTranslator):
         The auxiliary datasets will not change with each raw data file since
         only one excitation waveform is used
         """
-        h5_pos_ind, h5_pos_val = build_ind_val_matrices(Dimension('Y', 'm', np.arange(self.num_rows)),
-                                                        is_spectral=False)
-        h5_spec_inds, h5_spec_vals = build_ind_val_matrices(Dimension('Excitation', 'V',
-                                                                      np.tile(VALUES_DTYPE(be_wave), num_cols)),
-                                                            is_spectral=True)
+        pos_desc = Dimension('Y', 'm', np.arange(self.num_rows))
+        spec_desc = Dimension('Excitation', 'V', np.tile(VALUES_DTYPE(be_wave), num_cols))
+
+        h5_pos_ind, h5_pos_val = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
+
+        #h5_pos_ind, h5_pos_val = build_ind_val_matrices(Dimension('Y', 'm', list(np.arange(self.num_rows))),
+        #                                                    is_spectral=False)
+       # h5_spec_inds, h5_spec_vals = build_ind_val_matrices(Dimension('Excitation', 'V',
+         #                                                   np.tile(VALUES_DTYPE(be_wave), num_cols)),
+          #                                                  is_spectral=True)
 
         for f_index in data_paths.keys():
             chan_grp = create_indexed_group(meas_grp, 'Channel')
@@ -140,7 +148,7 @@ class GTuneTranslator(GLineTranslator):
                                          chunks=(1, self.points_per_pixel), dtype=np.float16)
 
             # Now transfer scan data in the dat file to the h5 file:
-            super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)
+            self._read_data(data_paths[f_index], h5_main)
 
         h5_file.close()
         print('G-Tune translation complete!')
