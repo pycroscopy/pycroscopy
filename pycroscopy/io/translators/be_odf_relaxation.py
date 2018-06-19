@@ -271,8 +271,7 @@ class BEodfRelaxationTranslator(Translator):
 
         generatePlotGroups(self.ds_main, self.mean_resp, folder_path, basename, self.max_resp,
                            self.min_resp, max_mem_mb=self.max_ram, spec_label=spec_label, show_plots=show_plots,
-                           save_plots=save_plots, do_histogram=do_histogram,
-                           ignore_plot_groups=ignored_plt_grps)  # We ignored in-field plot group.
+                           save_plots=save_plots, do_histogram=do_histogram)
 
         self.h5_file.close()
 
