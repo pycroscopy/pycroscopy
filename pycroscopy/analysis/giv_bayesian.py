@@ -284,7 +284,8 @@ class GIVBayesian(Process):
         self.reverse_results = parallel_compute(rolled_raw_data[:, :half_v_steps] * -1, do_bayesian_inference,
                                                 cores=self._cores,
                                                 func_args=[self.rolled_bias[:half_v_steps] * -1, self.ex_freq],
-                                                func_kwargs=self._bayes_parms, lengthy_computation=True)
+                                                func_kwargs=self._bayes_parms, lengthy_computation=True,
+                                                verbose=self.verbose)
 
         if self.verbose:
             print('Finished processing forward sections. Now working on reverse sections....')
@@ -292,7 +293,8 @@ class GIVBayesian(Process):
         self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
                                                 cores=self._cores,
                                                 func_args=[self.rolled_bias[half_v_steps:], self.ex_freq],
-                                                func_kwargs=self._bayes_parms, lengthy_computation=True)
+                                                func_kwargs=self._bayes_parms, lengthy_computation=True,
+                                                verbose=self.verbose)
         if self.verbose:
             print('Finished processing reverse loops')
 

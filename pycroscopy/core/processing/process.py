@@ -262,7 +262,8 @@ class Process(object):
         # TODO: Try to use the functools.partials to preconfigure the map function
         self._results = parallel_compute(self.data, self._map_function, cores=self._cores,
                                          lengthy_computation=False,
-                                         func_args=args, func_kwargs=kwargs)
+                                         func_args=args, func_kwargs=kwargs,
+                                         verbose=self.verbose)
 
     def compute(self, override=False, *args, **kwargs):
         """
@@ -337,7 +338,7 @@ class Process(object):
         return self.h5_results_grp
 
 
-def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=None, func_kwargs=None):
+def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=None, func_kwargs=None, verbose=False):
     """
     Computes the guess function using multiple cores
 
@@ -358,6 +359,8 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=N
         arguments to be passed to the function
     func_kwargs : dict, optional
         keyword arguments to be passed onto function
+    verbose : bool, optional. default = False
+        Whether or not to print statements that aid in debugging
 
     Returns
     -------
@@ -382,8 +385,10 @@ def parallel_compute(data, func, cores=1, lengthy_computation=False, func_args=N
         if not isinstance(func_kwargs, dict):
             raise TypeError('Keyword arguments to the mapped function should be specified via a dictionary')
     req_cores = cores
-    cores = recommend_cpu_cores(data.shape[0], requested_cores=cores,
-                                lengthy_computation=lengthy_computation)
+    cores = recommend_cpu_cores(data.shape[0],
+                                requested_cores=cores,
+                                lengthy_computation=lengthy_computation,
+                                verbose=verbose)
 
     print('Starting computing on {} cores (requested {} cores)'.format(cores, req_cores))
 

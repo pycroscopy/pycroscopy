@@ -61,7 +61,7 @@ class BESHOfitter(Fitter):
 
         if self._parallel:
             # accounting for memory copies
-            self._max_pos_per_read /= 2
+            self._max_pos_per_read = self._max_pos_per_read // 2
 
     def _create_guess_datasets(self):
         """

@@ -40,6 +40,7 @@ class Fitter(object):
             Should the parallel implementation of the fitting be used.  Default True
         verbose : bool, optional. default = False
             Whether or not to print statements that aid in debugging
+
         """
 
         if not isinstance(h5_main, PycroDataset):
@@ -350,7 +351,7 @@ class Fitter(object):
             processors = self._maxCpus
         else:
             processors = min(int(processors), self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
 
         print("Using %s to find guesses...\n" % strategy)
 
@@ -392,6 +393,7 @@ class Fitter(object):
             self._get_data_chunk()
 
         print('Completed computing guess')
+        print()
         return PycroDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
@@ -603,7 +605,7 @@ class Fitter(object):
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
 
         time_per_pix = 0
         num_pos = self.h5_main.shape[0] - self._start_pos

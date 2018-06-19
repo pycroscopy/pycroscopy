@@ -585,8 +585,6 @@ class BELoopFitter(Fitter):
         ----------
         raw_2d : 2D compound numpy array
             Raw SHO fitted data arranged as [position, data for a single FORC cycle]
-        verbose : Boolean (Optional. Default is False)
-            Whether or not to print debugging statements
 
         Returns
         -------
@@ -603,7 +601,8 @@ class BELoopFitter(Fitter):
         fit_nd, success = reshape_to_n_dims(raw_2d,
                                             h5_pos=None,
                                             h5_spec=self._sho_spec_inds[self._sho_all_but_forc_inds,
-                                                                        self._current_sho_spec_slice])
+                                                                        self._current_sho_spec_slice],
+                                            verbose=self._verbose)
         if not success:
             warn('Error - could not reshape provided raw data chunk...')
             return None

@@ -15,12 +15,16 @@ Python
 ~~~~~~
 The following tutorials go over the basics of python programming:
 
-* Python `Tutorial <https://docs.python.org/3/tutorial/>`_
+* `Official Python tutorial <https://docs.python.org/3/tutorial/>`_
+* The `Hitchhiker guide to Python <http://docs.python-guide.org/en/latest/>`_
 * Introduction to programming in `Python 3 <https://pythonprogramming.net/beginner-python-programming-tutorials/>`_
+* `O'Riley <https://greenteapress.com/wp/think-python/>`_ has a nice book on Python too.
+* A nice guide on `intermediate Python <http://book.pythontips.com/en/latest/index.html>`_
+
 
 Data Science
 ~~~~~~~~~~~~
-The following tutorials provide an overview of different concepts ranging from data wraningling to statistical and
+The following tutorials provide an overview of different concepts ranging from data wrangling to statistical and
 machine learning:
 
 * Coursera `Machine learning course by Andrew Ng <https://www.coursera.org/learn/machine-learning>`_

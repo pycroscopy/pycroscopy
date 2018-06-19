@@ -885,6 +885,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     parameter_map_stack = np.reshape(h5_loop_parameters[parameter_names[0]],
                                      [pos_dims[0], pos_dims[1], -1])
 
+    parameter_map_stack = np.moveaxis(parameter_map_stack, -1, 0)
+
     loop_spec_labs = h5_loop_parameters.spec_dim_labels
 
     kwargs.update({'cmap': get_cmap_object(cmap)})
@@ -904,6 +906,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     def update_loop_maps(parameter_name):
         parameter_map_stack = np.reshape(h5_loop_parameters[parameter_name],
                                          [pos_dims[0], pos_dims[1], -1])
+        parameter_map_stack = np.moveaxis(parameter_map_stack, -1, 0)
+
         fig.suptitle('Maps of Loop Parameter {}'.format(parameter_name))
         # Loop over all axes
         for icycle, ax_cycle in enumerate(axes[:num_cycles]):

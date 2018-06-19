@@ -1,6 +1,6 @@
 """
 ======================================================================================
-Input / Output / Computing utilities
+11. Input / Output / Computing utilities
 ======================================================================================
 
 **Suhas Somnath**
@@ -13,12 +13,18 @@ tasks.**
 
 from __future__ import print_function, division, unicode_literals
 from multiprocessing import cpu_count
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
+# Package for downloading online files:
 try:
     import pycroscopy as px
 except ImportError:
     print('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ########################################################################################################################

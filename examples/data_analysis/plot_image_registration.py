@@ -36,20 +36,25 @@ import h5py  # reading the data file
 import os  # file operations
 from scipy import interpolate, stats  # various convenience tools
 from skimage import transform  # image processing and registration
+import subprocess
+import sys
+
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 try:
     # This package is not part of anaconda and may need to be installed.
     import wget
 except ImportError:
     warn('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install('wget')
     import wget
 try:
     import pycroscopy as px # used mainly for visualization purposes here
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ##############################################################################
@@ -113,7 +118,7 @@ def normalize_image(image):
 # Downloading the example file from the pycroscopy Github project
 url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/sts_data_image_registration.h5'
 h5_path = 'temp.h5'
-_ = wget.download(url, h5_path)
+_ = wget.download(url, h5_path, bar=None)
 
 print('Working on:\n' + h5_path)
 

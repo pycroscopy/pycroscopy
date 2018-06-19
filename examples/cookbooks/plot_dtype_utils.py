@@ -1,6 +1,6 @@
 """
 ================================================================================
-Utilities for handling data types and transformations
+06. Utilities for handling data types and transformations
 ================================================================================
 
 **Suhas Somnath**
@@ -58,7 +58,7 @@ except ImportError:
     from warnings import warn
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install(pycroscopy)
     import pycroscopy as px
 
 ################################################################################
