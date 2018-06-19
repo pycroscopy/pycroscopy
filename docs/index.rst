@@ -20,17 +20,20 @@ Documentation Index
 
 .. toctree::
     about
-    package_organization
     getting_started
-    whats_new
-    data_format
-    papers_conferences
-    auto_examples/index
-    external_guides
-    contact
     install
+    external_guides
+    package_organization
+    auto_examples/index
+    data_format
+    translators
+    papers_conferences
+    contribution_guidelines
     faq
+    contact
     credits
+    whats_new
+    matlab_to_python
     api
 
 Indices and tables

@@ -20,6 +20,7 @@ from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict,
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
 from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from ...core.io.pycro_data import PycroDataset
 from ..hdf_writer import HDFwriter
 from ..virtual_data import VirtualGroup, VirtualDataset
 
@@ -30,6 +31,7 @@ class BEPSndfTranslator(Translator):
     files to .h5
 
     """
+
     def __init__(self, *args, **kwargs):
         super(BEPSndfTranslator, self).__init__(*args, **kwargs)
         self.debug = False
@@ -281,8 +283,8 @@ class BEPSndfTranslator(Translator):
             pos_slice_dict[spat_dim] = (slice(None), slice(spat_ind, spat_ind + 1))
 
         ds_pos_ind = VirtualDataset('Position_Indices',
-                                  self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                               self.ds_pixel_index, :],
+                                    self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
+                                                                          self.ds_pixel_index, :],
                                     dtype=INDICES_DTYPE)
 
         ds_pos_ind.attrs['labels'] = pos_slice_dict
@@ -307,7 +309,7 @@ class BEPSndfTranslator(Translator):
             self.pos_vals_list[:, 2] *= 1E+6  # convert to microns
 
         pos_val_mat = VALUES_DTYPE(self.pos_mat[self.ds_pixel_start_indx:self.ds_pixel_start_indx +
-                                              self.ds_pixel_index, :])
+                                                                         self.ds_pixel_index, :])
 
         for col_ind, targ_dim_name in enumerate(['X', 'Y', 'Z']):
             if targ_dim_name in self.pos_labels:
@@ -331,7 +333,7 @@ class BEPSndfTranslator(Translator):
         link_h5_objects_as_attrs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
-        generatePlotGroups(self.ds_main, self.mean_resp,
+        generatePlotGroups(PycroDataset(self.ds_main), self.mean_resp,
                            self.folder_path, self.basename,
                            self.max_resp, self.min_resp,
                            max_mem_mb=self.max_ram,

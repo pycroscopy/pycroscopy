@@ -10,23 +10,36 @@ with open(os.path.join(here, 'README.rst')) as f:
 with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
     __version__ = f.read().split("'")[1]
 
-requirements = ['numpy_groupies==0.9.7', # New build of 0.9.8.4 appears to cause build problems
-                'pyqtgraph>=0.10',
+# TODO: Move requirements to requirements.txt
+requirements = ['numpy>=1.13.0',
                 'h5py>=2.6.0',
-                'igor',
-                'matplotlib>=2.0.0',
-                'scikit-learn>=0.17.1',
-                'xlrd>=1.0.0',
-                'joblib>=0.11.0',
-                'psutil',
-                'scikit-image>=0.12.3',
                 'scipy>=0.17.1',
-                'numpy>=1.13.0',
+                'scikit-image>=0.12.3',
+                'scikit-learn>=0.17.1',
+                'matplotlib>=2.0.0',
+
+                'psutil',
+                'six',
+                'joblib>=0.11.0',
+
                 'ipywidgets>=5.2.2',
                 'ipython>=5.1.0,<6;python_version<"3.3"',  # IPython 6.0+ does not support Python 2.6, 2.7, 3.0, 3.1, or 3.2
-                'ipython>=6.0;python_version>="3.3"', # Beginning with IPython 6.0, Python 3.3 and above is required.
+                'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
+
                 'unittest2;python_version<"3.0"',
-               ]
+
+                # 'pyqt;python_version<"3.5"',
+                'pyqt5;python_version>="3.5"',
+                'pyqtgraph>=0.10',
+
+                'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
+
+                'numba',
+
+                'xlrd>=1.0.0',
+                'igor',
+                'gwyfile',
+                ]
 
 setup(
     name='pycroscopy',

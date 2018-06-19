@@ -60,6 +60,8 @@ class TestHDFUtils(unittest.TestCase):
         TestHDFUtils.__write_string_list_as_attr(h5_dset, {'labels': list(attrs.keys())})
 
     def setUp(self):
+        if os.path.exists(test_h5_file_path):
+            os.remove(test_h5_file_path)
 
         with h5py.File(test_h5_file_path) as h5_f:
 
@@ -972,10 +974,10 @@ class TestHDFUtils(unittest.TestCase):
                         source_nd[row_ind, col_ind, cycle_ind, bias_ind] = val
 
         # case 1: Pos and Spec both arranged as slow to fast:
-        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
-                                     np.repeat(np.arange(num_rows), num_cols))).T
-        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
-                                      np.repeat(np.arange(num_cycles), num_cycle_pts)))
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles)))
 
         ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_pos=source_pos_data, h5_spec=source_spec_data)
         self.assertTrue(success)
@@ -983,22 +985,22 @@ class TestHDFUtils(unittest.TestCase):
 
         # case 2: Only Pos arranged as slow to fast:
         main_pos_sorted = np.transpose(source_nd, (0, 1, 3, 2))
-        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
-                                     np.repeat(np.arange(num_rows), num_cols))).T
-        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
-                                      np.tile(np.arange(num_cycle_pts), num_cycles),))
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                      np.repeat(np.arange(num_cycles), num_cycle_pts),))
 
         ret_2d, success = hdf_utils.reshape_from_n_dims(main_pos_sorted, h5_pos=source_pos_data,
                                                         h5_spec=source_spec_data)
         self.assertTrue(success)
         self.assertTrue(np.allclose(ret_2d, expected_2d))
 
-        # case 3: only Spec both arranged as slow to fast:
+        # case 3: only Spec arranged as slow to fast:
         main_spec_sorted = np.transpose(source_nd, (1, 0, 2, 3))
-        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
-                                     np.tile(np.arange(num_cols), num_rows))).T
-        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
-                                      np.repeat(np.arange(num_cycles), num_cycle_pts)))
+        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                     np.repeat(np.arange(num_rows), num_cols))).T
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles)))
 
         ret_2d, success = hdf_utils.reshape_from_n_dims(main_spec_sorted, h5_pos=source_pos_data,
                                                         h5_spec=source_spec_data)
@@ -1007,10 +1009,10 @@ class TestHDFUtils(unittest.TestCase):
 
         # case 4: neither pos nor spec arranged as slow to fast:
         main_not_sorted = np.transpose(source_nd, (1, 0, 3, 2))
-        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
-                                     np.tile(np.arange(num_cols), num_rows))).T
-        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
-                                      np.tile(np.arange(num_cycle_pts), num_cycles),))
+        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
+                                     np.repeat(np.arange(num_rows), num_cols))).T
+        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
+                                      np.repeat(np.arange(num_cycles), num_cycle_pts),))
 
         ret_2d, success = hdf_utils.reshape_from_n_dims(main_not_sorted, h5_pos=source_pos_data,
                                                         h5_spec=source_spec_data)
@@ -1035,10 +1037,10 @@ class TestHDFUtils(unittest.TestCase):
                         expected_2d[row_ind * num_cols + col_ind, cycle_ind * num_cycle_pts + bias_ind] = val
                         source_nd[row_ind, col_ind, cycle_ind, bias_ind] = val
 
-        source_pos_data = np.vstack((np.tile(np.arange(num_cols), num_rows),
-                                     np.repeat(np.arange(num_rows), num_cols))).T
-        source_spec_data = np.vstack((np.tile(np.arange(num_cycle_pts), num_cycles),
-                                      np.repeat(np.arange(num_cycles), num_cycle_pts)))
+        source_pos_data = np.vstack((np.repeat(np.arange(num_rows), num_cols),
+                                     np.tile(np.arange(num_cols), num_rows))).T
+        source_spec_data = np.vstack((np.repeat(np.arange(num_cycles), num_cycle_pts),
+                                      np.tile(np.arange(num_cycle_pts), num_cycles)))
 
         # case 1: only pos provided:
         ret_2d, success = hdf_utils.reshape_from_n_dims(source_nd, h5_pos=source_pos_data)

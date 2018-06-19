@@ -21,6 +21,8 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 
 if sys.version_info.major == 3:
     unicode = str
+else:
+    unicode = unicode
 
 default_cmap = plt.cm.viridis
 
@@ -185,7 +187,7 @@ def cbar_for_line_plot(axis, num_steps, discrete_ticks=True, **kwargs):
     cmap = get_cmap_object(kwargs.pop('cmap', None))
     cmap = discrete_cmap(num_steps, cmap=cmap.name)
 
-    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap, **kwargs)
+    sm = make_scalar_mappable(0, num_steps - 1, cmap=cmap)
 
     if discrete_ticks:
         kwargs.update({'ticks': np.arange(num_steps)})
@@ -524,10 +526,14 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
         Whether or not to show X, Y ticks
     show_cbar : bool, optional, default = True
         Whether or not to show the colorbar
-    x_vec : array-like, 1D, optional
-        The references values that will be used for tick values on the X axis
-    y_vec : array-like, 1D, optional
-        The references values that will be used for tick values on the Y axis
+    x_vec : 1-D array-like or Number, optional
+        if an array-like is provided - these will be used for the tick values on the X axis
+        if a Number is provided, this will serve as an extent for tick values in the X axis.
+        For example x_vec=1.5 would cause the x tick labels to range from 0 to 1.5
+    y_vec : 1-D array-like or Number, optional
+        if an array-like is provided - these will be used for the tick values on the Y axis
+        if a Number is provided, this will serve as an extent for tick values in the Y axis.
+        For example y_vec=225 would cause the y tick labels to range from 0 to 225
     num_ticks : unsigned int, optional, default = 4
         Number of tick marks on the X and Y axes
     stdevs : unsigned int (Optional. Default = None)
@@ -583,24 +589,43 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
     im_handle = axis.imshow(img, **kwargs)
     assert isinstance(show_xy_ticks, bool)
-    if show_xy_ticks is True:
+
+    if show_xy_ticks is True or x_vec is not None:
 
         x_ticks = np.linspace(0, img.shape[1] - 1, num_ticks, dtype=int)
         if x_vec is not None:
-            if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
-                raise ValueError('x_vec should be array-like with shape equal to the second axis of img')
-            x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
+            if isinstance(x_vec, (int, float)):
+                if x_vec > 0.01:
+                    x_tick_labs = [str(np.round(ind * x_vec / img.shape[1], 2)) for ind in x_ticks]
+                else:
+                    x_tick_labs = ['{0:.2e}'.format(ind * x_vec / img.shape[1]) for ind in x_ticks]
+            else:
+                if not isinstance(x_vec, (np.ndarray, list, tuple, range)) or len(x_vec) != img.shape[1]:
+                    raise ValueError(
+                        'x_vec should be array-like with shape equal to the second axis of img or img_size')
+                x_tick_labs = [str(np.round(x_vec[ind], 2)) for ind in x_ticks]
         else:
             x_tick_labs = [str(ind) for ind in x_ticks]
 
         axis.set_xticks(x_ticks)
         axis.set_xticklabels(x_tick_labs)
 
+        set_tick_font_size(axis, tick_font_size)
+    else:
+        axis.set_xticks([])
+
+    if show_xy_ticks is True or y_vec is not None:
         y_ticks = np.linspace(0, img.shape[0] - 1, num_ticks, dtype=int)
         if y_vec is not None:
-            if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
-                raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
-            y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
+            if isinstance(y_vec, (int, float)):
+                if y_vec > 0.01:
+                    y_tick_labs = [str(np.round(ind * y_vec / img.shape[1], 2)) for ind in y_ticks]
+                else:
+                    y_tick_labs = ['{0:.2e}'.format(ind * y_vec / img.shape[1]) for ind in y_ticks]
+            else:
+                if not isinstance(y_vec, (np.ndarray, list, tuple, range)) or len(y_vec) != img.shape[0]:
+                    raise ValueError('y_vec should be array-like with shape equal to the first axis of img')
+                y_tick_labs = [str(np.round(y_vec[ind], 2)) for ind in y_ticks]
         else:
             y_tick_labs = [str(ind) for ind in y_ticks]
 
@@ -609,7 +634,6 @@ def plot_map(axis, img, show_xy_ticks=True, show_cbar=True, x_vec=None, y_vec=No
 
         set_tick_font_size(axis, tick_font_size)
     else:
-        axis.set_xticks([])
         axis.set_yticks([])
 
     cbar = None
@@ -859,7 +883,6 @@ def plot_complex_spectra(map_stack, x_vec=None, num_comps=4, title=None, x_label
         Number of standard deviations to consider for plotting
 
     **kwargs will be passed on either to plot_map() or pyplot.plot()
-    kwarg: 'figsize' can be used to specify size of the subplots
 
     Returns
     ---------
@@ -1143,9 +1166,9 @@ def plot_map_stack(map_stack, num_comps=9, stdevs=2, color_bar_mode=None, evenly
             igkwargs.update({key: kwargs.pop(key)})
 
     axes = ImageGrid(fig, 111, nrows_ncols=(p_rows, p_cols),
-                        cbar_mode=color_bar_mode,
-                        axes_pad=(pad_w * fig_w, pad_h * fig_h),
-                        **igkwargs)
+                     cbar_mode=color_bar_mode,
+                     axes_pad=(pad_w * fig_w, pad_h * fig_h),
+                     **igkwargs)
 
     fig.canvas.set_window_title(title)
     # These parameters have not been easy to fix:
@@ -1210,7 +1233,7 @@ def export_fig_data(fig, filename, include_images=False):
             for im in ims:
                 # Image data
                 im_lab = im.get_label()
-                im_dict[im_lab] = im.get_array().data
+                im_dict['data'] = im.get_array().data
 
                 # X-Axis
                 x_ax = ax.get_xaxis()
@@ -1218,7 +1241,7 @@ def export_fig_data(fig, filename, include_images=False):
                 if x_lab == '':
                     x_lab = 'X'
 
-                im_dict[im_lab + x_lab] = x_ax.get_data_interval()
+                im_dict[x_lab] = x_ax.get_data_interval()
 
                 # Y-Axis
                 y_ax = ax.get_yaxis()
@@ -1226,9 +1249,9 @@ def export_fig_data(fig, filename, include_images=False):
                 if y_lab == '':
                     y_lab = 'Y'
 
-                im_dict[im_lab + y_lab] = y_ax.get_data_interval()
+                im_dict[y_lab] = y_ax.get_data_interval()
 
-            ax_dict['Images'] = im_dict
+                ax_dict['Images'] = {im_lab: im_dict}
 
         lines = ax.get_lines()
         if len(lines) != 0:
@@ -1269,6 +1292,8 @@ def export_fig_data(fig, filename, include_images=False):
     for ax_lab, ax in axes_dict.items():
         data_file.write('Axis: {} \n'.format(ax_lab))
 
+        if 'Images' not in ax:
+            continue
         for im_lab, im in ax['Images'].items():
             data_file.write('Image: {} \n'.format(im_lab))
             data_file.write('\n')
@@ -1286,6 +1311,8 @@ def export_fig_data(fig, filename, include_images=False):
 
             data_file.write(spacer)
 
+        if 'Lines' not in ax:
+            continue
         for line_lab, line_dict in ax['Lines'].items():
             data_file.write('Line: {} \n'.format(line_lab))
             data_file.write('\n')

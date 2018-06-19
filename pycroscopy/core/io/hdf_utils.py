@@ -23,8 +23,9 @@ from ...__version__ import version as pycroscopy_version
 
 __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dimensionality', 'get_sort_order',
            'get_auxiliary_datasets', 'get_attributes', 'get_group_refs', 'check_if_main', 'check_and_link_ancillary',
-           'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor',
-           'create_region_reference', 'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
+           'copy_region_refs', 'get_all_main', 'get_unit_values', 'get_data_descriptor', 'check_for_matching_attrs'
+                                                                                         'create_region_reference',
+           'copy_attributes', 'reshape_to_n_dims', 'link_h5_objects_as_attrs',
            'link_h5_obj_as_alias',
            'find_results_groups', 'get_formatted_labels', 'reshape_from_n_dims', 'find_dataset', 'print_tree',
            'copy_main_attributes', 'create_empty_dataset', 'check_for_old', 'get_source_dataset',
@@ -36,6 +37,7 @@ __all__ = ['get_attr', 'get_h5_obj_refs', 'get_indices_for_region_ref', 'get_dim
 
 if sys.version_info.major == 3:
     unicode = str
+
 
 # TODO: Next version should account for two objects being in different files!
 
@@ -163,7 +165,7 @@ def get_auxiliary_datasets(h5_object, aux_dset_name=None):
         for curr_name in aux_dset_name:
             h5_ref = h5_object.attrs[curr_name]
             if isinstance(h5_ref, h5py.Reference) and isinstance(h5_file[h5_ref], h5py.Dataset) and not \
-               isinstance(h5_ref, h5py.RegionReference):
+                    isinstance(h5_ref, h5py.RegionReference):
                 data_list.append(h5_file[h5_ref])
     except KeyError:
         raise KeyError('%s is not an attribute of %s' % (str(curr_name), h5_object.name))
@@ -201,10 +203,10 @@ def get_attr(h5_object, attr_name):
         att_val = att_val.decode('utf-8')
 
     elif type(att_val) == np.ndarray:
-        if sys.version_info.major == 3: 
+        if sys.version_info.major == 3:
             if att_val.dtype.type in [np.bytes_, np.object_]:
                 att_val = np.array([str(x, 'utf-8') for x in att_val])
-            
+
     return att_val
 
 
@@ -648,7 +650,7 @@ def create_region_reference(h5_main, ref_inds):
     """
     if not isinstance(h5_main, h5py.Dataset):
         raise TypeError('h5_main should be a h5py.Dataset object')
-    if not isinstance(ref_inds, (Iterable)):
+    if not isinstance(ref_inds, Iterable):
         raise TypeError('ref_inds should be a list or tuple')
 
     h5_space = h5_main.id.get_space()
@@ -1055,7 +1057,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
         if not np.all([x in data_n_dim.shape for x in pos_dims]):
             raise ValueError('Dimension sizes in pos_dims: {} do not exist in data_n_dim shape: '
                              '{}'.format(pos_dims, data_n_dim.shape))
-        spec_dims = [col for col in list(data_n_dim.shape) if col not in pos_dims]
+        spec_dims = [col for col in list(data_n_dim.shape[len(pos_dims):])]
         if verbose:
             print('data has dimensions: {}. Provided position indices had dimensions of size: {}. Spectral dimensions '
                   'will built with dimensions: {}'.format(data_n_dim.shape, pos_dims, spec_dims))
@@ -1069,7 +1071,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
         if not np.all([x in data_n_dim.shape for x in spec_dims]):
             raise ValueError('Dimension sizes in spec_dims: {} do not exist in data_n_dim shape: '
                              '{}'.format(spec_dims, data_n_dim.shape))
-        pos_dims = [col for col in list(data_n_dim.shape) if col not in spec_dims]
+        pos_dims = [col for col in list(data_n_dim.shape[:data_n_dim.ndim-len(spec_dims)])]
         if verbose:
             print('data has dimensions: {}. Spectroscopic position indices had dimensions of size: {}. Position '
                   'dimensions will built with dimensions: {}'.format(data_n_dim.shape, spec_dims, pos_dims))
@@ -1084,6 +1086,11 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     pos_sort = get_sort_order(np.transpose(ds_pos))
     spec_sort = get_sort_order(ds_spec)
 
+    if h5_spec is None:
+        spec_sort = spec_sort[::-1]
+    if h5_pos is None:
+        pos_sort = pos_sort[::-1]
+
     if verbose:
         print('Position sort order: {}'.format(pos_sort))
         print('Spectroscopic sort order: {}'.format(spec_sort))
@@ -1092,22 +1099,22 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     Now we transpose the axes associated with the spectroscopic dimensions
     so that they are in the same order as in the index array
     '''
-    swap_axes = np.append(np.argsort(pos_sort), spec_sort + len(pos_sort))
+    swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_sort))
 
     if verbose:
         print('swap axes: {} to be applied to N dimensional data of shape {}'.format(swap_axes, data_n_dim.shape))
 
-    data_n_dim = np.transpose(data_n_dim, swap_axes)
+    data_n_dim_2 = np.transpose(data_n_dim, swap_axes)
 
     if verbose:
-        print('N dimensional data shape after axes swap: {}'.format(data_n_dim.shape))
+        print('N dimensional data shape after axes swap: {}'.format(data_n_dim_2.shape))
 
     '''
     Now we reshape the dataset based on those dimensions
     We must use the spectroscopic dimensions in reverse order
     '''
     try:
-        ds_2d = np.reshape(data_n_dim, [ds_pos.shape[0], ds_spec.shape[1]])
+        ds_2d = np.reshape(data_n_dim_2, [ds_pos.shape[0], ds_spec.shape[1]])
     except ValueError:
         raise ValueError('Could not reshape dataset to full N-dimensional form')
 
@@ -1244,7 +1251,8 @@ def create_empty_dataset(source_dset, dtype, dset_name, h5_group=None, new_attrs
                 h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
                                                       compression=source_dset.compression, chunks=source_dset.chunks)
         else:
-            raise KeyError('{} is already a {} in group: {}'.format(dset_name, type(h5_group[dset_name]), h5_group.name))
+            raise KeyError('{} is already a {} in group: {}'.format(dset_name, type(h5_group[dset_name]),
+                                                                    h5_group.name))
 
     else:
         h5_new_dset = h5_group.create_dataset(dset_name, shape=source_dset.shape, dtype=dtype,
@@ -1294,25 +1302,25 @@ def copy_attributes(source, dest, skip_refs=True):
                 warn('Skipping region reference named: {}'.format(att_name))
                 continue
             elif isinstance(att_val, h5py.RegionReference):
-            #     """
-            #     Dereference old reference, get the appropriate data
-            #     slice and create new reference.
-            #     """
-            #     try:
-            #         region = h5py.h5r.get_region(att_val, source.id)
-            #
-            #         start, end = region.get_select_bounds()
-            #         ref_slice = []
-            #         for i in range(len(start)):
-            #             if start[i] == end[i]:
-            #                 ref_slice.append(start[i])
-            #             else:
-            #                 ref_slice.append(slice(start[i], end[i]))
-            #     except:
-            #         warn('Could not copy region reference:{} to {}'.format(att_name, dest.name))
-            #         continue
-            #
-            #     dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
+                #     """
+                #     Dereference old reference, get the appropriate data
+                #     slice and create new reference.
+                #     """
+                #     try:
+                #         region = h5py.h5r.get_region(att_val, source.id)
+                #
+                #         start, end = region.get_select_bounds()
+                #         ref_slice = []
+                #         for i in range(len(start)):
+                #             if start[i] == end[i]:
+                #                 ref_slice.append(start[i])
+                #             else:
+                #                 ref_slice.append(slice(start[i], end[i]))
+                #     except:
+                #         warn('Could not copy region reference:{} to {}'.format(att_name, dest.name))
+                #         continue
+                #
+                #     dest.attrs[att_name] = dest.regionref[tuple(ref_slice)]
                 continue
             else:
                 dest.attrs[att_name] = att_val
@@ -2116,7 +2124,7 @@ def write_ind_val_dsets(h5_parent_group, dimensions, is_spectral=True, verbose=F
     for sub_name in ['Indices', 'Values']:
         if base_name + sub_name in h5_parent_group.keys():
             raise KeyError('Dataset: {} already exists in provided group: {}'.format(base_name + sub_name,
-                                                                                       h5_parent_group.name))
+                                                                                     h5_parent_group.name))
 
     unit_values = [x.values for x in dimensions]
 
@@ -2226,7 +2234,7 @@ def write_reduced_spec_dsets(h5_parent_group, h5_spec_inds, h5_spec_vals, dim_na
 
         for dset in [h5_inds, h5_vals]:
             write_region_references(dset, reg_ref_slices, verbose=False)
-            write_simple_attrs(dset, {'labels': ['Single_Step'], 'units': ['a.u.']})
+            write_simple_attrs(dset, {'labels': ['Single_Step'], 'units': ['a. u.']})
 
     return h5_inds, h5_vals
 
@@ -2417,9 +2425,6 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
     available for either/or the positions / spectroscopic, they can be specified using the keyword arguments. In this
     case, fresh datasets will not be generated.
 
-    kwargs will be passed onto the creation of the dataset. Please pass chunking, compression, dtype, and other
-    arguments this way
-
     Parameters
     ----------
     h5_parent_group : h5py.Group
@@ -2457,6 +2462,8 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
         Default prefix for Position datasets. Default = 'Position_'
     verbose : bool, Optional, default=False
         If set to true - prints debugging logs
+    kwargs will be passed onto the creation of the dataset. Please pass chunking, compression, dtype, and other
+    arguments this way
 
     Returns
     -------
@@ -2492,7 +2499,7 @@ def write_main_dataset(h5_parent_group, main_data, main_data_name, quantity, uni
             aux_prefix += '_'
         if '-' in aux_prefix:
             warn('aux_' + dim_type + ' should not contain the "-" character. Reformatted name from:{} to '
-                 '{}'.format(aux_prefix, aux_prefix.replace('-', '_')))
+                                     '{}'.format(aux_prefix, aux_prefix.replace('-', '_')))
         aux_prefix = aux_prefix.replace('-', '_')
         for dset_name in [aux_prefix + 'Indices', aux_prefix + 'Values']:
             if dset_name in h5_parent_group.keys():
@@ -2648,7 +2655,7 @@ def attempt_reg_ref_build(h5_dset, dim_names, verbose=False):
         if verbose:
             print('Most likely a spectroscopic indices / values dataset')
         for dim_index, curr_name in enumerate(dim_names):
-            labels_dict[curr_name] = (slice(dim_index, dim_index+1), slice(None))
+            labels_dict[curr_name] = (slice(dim_index, dim_index + 1), slice(None))
     elif len(dim_names) == h5_dset.shape[1]:
         if verbose:
             print('Most likely a position indices / values dataset')

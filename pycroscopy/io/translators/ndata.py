@@ -11,6 +11,7 @@ import os
 import zipfile
 from warnings import warn
 
+import h5py
 import numpy as np
 from skimage.measure import block_reduce
 from skimage.util import crop
@@ -19,10 +20,7 @@ from .df_utils.image_utils import unnest_parm_dicts
 from .df_utils.dm_utils import read_dm3
 from ...core.io.translator import Translator, generate_dummy_main_parms
 from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.hdf_utils import get_h5_obj_refs, get_group_refs, link_as_main
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
 
 class NDataTranslator(Translator):
@@ -35,7 +33,7 @@ class NDataTranslator(Translator):
 
         self.rebin = False
         self.bin_factor = (1, 1, 1, 1)
-        self.hdf = None
+        self.h5_f = None
         self.binning_func = self.__no_bin
         self.bin_func = None
         self.h5_main = None
@@ -90,13 +88,12 @@ class NDataTranslator(Translator):
 
         """
         # Open the hdf5 file and delete any contents
-        try:
-            hdf = HDFwriter(h5_path)
-            hdf.clear()
-        except:
-            raise
+        if os.path.exists(h5_path):
+            os.remove(h5_path)
 
-        self.hdf = hdf
+        h5_f = h5py.File(h5_path, 'w')
+
+        self.h5_f = h5_f
         self.crop_method = crop_method
         self.crop_ammount = crop_ammount
 
@@ -104,6 +101,7 @@ class NDataTranslator(Translator):
         Get the list of all files with the .tif extension and
         the number of files in the list
         '''
+        image_path = os.path.abspath(image_path)
         file_list = self._parse_file_path(image_path)
 
         image_parm_list = self._getimageparms(file_list)
@@ -128,78 +126,78 @@ class NDataTranslator(Translator):
 
         self._read_data(file_list, h5_channels)
 
-        self.hdf.close()
+        self.h5_f.close()
 
         return
 
-    def _create_root_image(self, image_path):
-        """
-        Create the Groups and Datasets for a single root image
-
-        Parameters
-        ----------
-        image_path : str
-            Path to the image file
-
-        Returns
-        -------
-        None
-        """
-        image, image_parms = read_dm3(image_path)
-        if image.ndim == 3:
-            image = np.sum(image, axis=0)
-
-        '''
-        Create the Measurement and Channel Groups to hold the
-        image Datasets
-        '''
-        root_grp = VirtualGroup('/')
-
-        meas_grp = VirtualGroup('Measurement_')
-
-        chan_grp = VirtualGroup('Channel_')
-        root_grp.add_children([meas_grp])
-        meas_grp.add_children([chan_grp])
-
-        '''
-        Set the Measurement Group attributes
-        '''
-        meas_grp.attrs.update(image_parms)
-        usize, vsize = image.shape
-        meas_grp.attrs['image_size_u'] = usize
-        meas_grp.attrs['image_size_v'] = vsize
-        meas_grp.attrs['translator'] = 'OneView'
-        meas_grp.attrs['num_pixels'] = image.size
-
-        ds_raw_image = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
-
-        '''
-        Build Spectroscopic and Position datasets for the image
-        '''
-        spec_desc = Dimension('Intensity', 'a.u.', [1])
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
-
-        pos_dims = [Dimension('X', 'a.u.', np.arange(image.shape[0])),
-                    Dimension('Y', 'a.u.', np.arange(image.shape[1]))]
-        ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_dims, is_spectral=False)
-
-        chan_grp.add_children([ds_raw_image, ds_spec_inds, ds_spec_vals,
-                               ds_pos_inds, ds_pos_vals])
-
-        '''
-        Write the data to file and get the handle for the image dataset
-        '''
-        image_refs = self.hdf.write(root_grp)
-
-        h5_image = get_h5_obj_refs(['Raw_Data'], image_refs)[0]
-
-        '''
-        Link references to raw
-        '''
-        aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
-        link_as_main(h5_image, *get_h5_obj_refs(aux_ds_names, image_refs))
-
-        self.root_image_list.append(h5_image)
+    # def _create_root_image(self, image_path):
+    #     """
+    #     Create the Groups and Datasets for a single root image
+    #
+    #     Parameters
+    #     ----------
+    #     image_path : str
+    #         Path to the image file
+    #
+    #     Returns
+    #     -------
+    #     None
+    #     """
+    #     image, image_parms = read_dm3(image_path)
+    #     if image.ndim == 3:
+    #         image = np.sum(image, axis=0)
+    #
+    #     '''
+    #     Create the Measurement and Channel Groups to hold the
+    #     image Datasets
+    #     '''
+    #     root_grp = VirtualGroup('/')
+    #
+    #     meas_grp = VirtualGroup('Measurement_')
+    #
+    #     chan_grp = VirtualGroup('Channel_')
+    #     root_grp.add_children([meas_grp])
+    #     meas_grp.add_children([chan_grp])
+    #
+    #     '''
+    #     Set the Measurement Group attributes
+    #     '''
+    #     meas_grp.attrs.update(image_parms)
+    #     usize, vsize = image.shape
+    #     meas_grp.attrs['image_size_u'] = usize
+    #     meas_grp.attrs['image_size_v'] = vsize
+    #     meas_grp.attrs['translator'] = 'OneView'
+    #     meas_grp.attrs['num_pixels'] = image.size
+    #
+    #     ds_raw_image = VirtualDataset('Raw_Data', np.reshape(image, (-1, 1)))
+    #
+    #     '''
+    #     Build Spectroscopic and Position datasets for the image
+    #     '''
+    #     spec_desc = Dimension('Intensity', 'a.u.', [1])
+    #     ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
+    #
+    #     pos_dims = [Dimension('X', 'a.u.', np.arange(image.shape[0])),
+    #                 Dimension('Y', 'a.u.', np.arange(image.shape[1]))]
+    #     ds_pos_inds, ds_pos_vals = build_ind_val_dsets(pos_dims, is_spectral=False)
+    #
+    #     chan_grp.add_children([ds_raw_image, ds_spec_inds, ds_spec_vals,
+    #                            ds_pos_inds, ds_pos_vals])
+    #
+    #     '''
+    #     Write the data to file and get the handle for the image dataset
+    #     '''
+    #     image_refs = self.h5_f.write(root_grp)
+    #
+    #     h5_image = get_h5_obj_refs(['Raw_Data'], image_refs)[0]
+    #
+    #     '''
+    #     Link references to raw
+    #     '''
+    #     aux_ds_names = ['Position_Indices', 'Position_Values', 'Spectroscopic_Indices', 'Spectroscopic_Values']
+    #     link_as_main(h5_image, *get_h5_obj_refs(aux_ds_names, image_refs))
+    #
+    #     self.root_image_list.append(h5_image)
 
     def _read_data(self, file_list, h5_channels):
         """
@@ -236,7 +234,7 @@ class NDataTranslator(Translator):
 
         for ifile, (this_file, this_channel) in enumerate(zip(file_list, h5_channels)):
             _, ext = os.path.splitext(this_file)
-            if ext == '.ndata1':
+            if ext in ['.ndata1', '.ndata']:
                 '''
                 Extract the data file from the zip archive and read it into an array
                 '''
@@ -271,47 +269,30 @@ class NDataTranslator(Translator):
                          'image_size_v': vsize,
                          'scan_size_x': scan_size_x,
                          'scan_size_y': scan_size_y}
-            this_channel.parent.attrs.update(new_attrs)
+
+            write_simple_attrs(this_channel.parent, new_attrs)
+
 
             # Get the Position and Spectroscopic Datasets
             spec_desc = [Dimension('U', 'pixel', np.arange(usize)), Dimension('V', 'pixel', np.arange(vsize))]
-            ds_spec_ind, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
             pos_desc = [Dimension('X', 'pixel', np.arange(scan_size_x)),
                         Dimension('Y', 'pixel', np.arange(scan_size_y))]
-            ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
 
             ds_chunking = calc_chunks([num_images, num_pixels],
                                       np.float32(0).itemsize,
                                       unit_chunks=(1, num_pixels))
 
-            # Allocate space for Main_Data and Pixel averaged Data
-            ds_main_data = VirtualDataset('Raw_Data', data=None, maxshape=(num_images, num_pixels),
-                                          chunking=ds_chunking, dtype=np.float32, compression='gzip')
-            ds_mean_ronch_data = VirtualDataset('Mean_Ronchigram',
-                                                data=np.zeros(num_pixels, dtype=np.float32),
-                                                dtype=np.float32)
-            ds_mean_spec_data = VirtualDataset('Spectroscopic_Mean',
-                                               data=np.zeros(num_images, dtype=np.float32),
-                                               dtype=np.float32)
+            # Allocate space for Main_Data and Pixel averaged DataX
+            h5_main = write_main_dataset(this_channel, (num_images, num_pixels), 'Raw_Data',
+                                         'Intensity', 'a.u.',
+                                         pos_desc, spec_desc,
+                                         chunks=ds_chunking, dtype=np.float32)
 
-            # Add datasets as children of Measurement_000 data group
-            ds_channel = VirtualGroup(this_channel.name)
-            ds_channel.add_children([ds_main_data, ds_spec_ind, ds_spec_vals, ds_pos_ind,
-                                     ds_pos_val, ds_mean_ronch_data, ds_mean_spec_data])
+            h5_ronch = this_channel.create_dataset('Mean_Ronchigram',
+                                                   data=np.zeros(num_pixels, dtype=np.float32))
 
-            h5_refs = self.hdf.write(ds_channel)
-            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-            h5_ronch = get_h5_obj_refs(['Mean_Ronchigram'], h5_refs)[0]
-            h5_mean_spec = get_h5_obj_refs(['Spectroscopic_Mean'], h5_refs)[0]
-
-            aux_ds_names = ['Position_Indices',
-                            'Position_Values',
-                            'Spectroscopic_Indices',
-                            'Spectroscopic_Values']
-
-            link_as_main(h5_main, *get_h5_obj_refs(aux_ds_names, h5_refs))
-
-            mean_ronch = np.zeros(h5_ronch.shape, dtype=np.float32)
+            h5_mean_spec = this_channel.create_dataset('Mean_Ronchigram',
+                                                       data=np.zeros(num_images, dtype=np.float32))
 
             this_data = self.binning_func(this_data, self.bin_factor, self.bin_func).reshape(h5_main.shape)
 
@@ -321,11 +302,11 @@ class NDataTranslator(Translator):
 
             h5_ronch[:] = np.mean(this_data, axis=0)
 
-            self.hdf.flush()
+            self.h5_f.flush()
 
             h5_main_list.append(h5_main)
 
-        self.hdf.flush()
+        self.h5_f.flush()
 
     def crop_ronc(self, ronc):
         """
@@ -413,7 +394,7 @@ class NDataTranslator(Translator):
         file_list : list of strings
             names of all files in directory located at path
         """
-        allowed_image_types = ['.ndata1', '.npy']
+        allowed_image_types = ['.ndata1', '.npy', '.ndata']
         if os.path.isdir(image_path):
             # Image path is to a directory
             file_list = list()
@@ -451,7 +432,7 @@ class NDataTranslator(Translator):
 
         for fpath in file_list:
             base, ext = os.path.splitext(fpath)
-            if ext == '.ndata1':
+            if ext in ['.ndata1', '.ndata']:
                 zfile = zipfile.ZipFile(fpath, 'r')
                 tmp_path = zfile.extract('metadata.json')
             elif ext == '.npy':
@@ -497,27 +478,20 @@ class NDataTranslator(Translator):
         root_parms['data_type'] = 'PtychographyData'
 
         # Create the hdf5 data Group
-        root_grp = VirtualGroup('/')
-        root_grp.attrs = root_parms
+        write_simple_attrs(self.h5_f, root_parms)
 
-        dg_channels = list()
+        h5_channels = list()
         for meas_parms in image_parms:
             # Create new measurement group for each set of parameters
-            meas_grp = VirtualGroup('Measurement_')
+            meas_grp = create_indexed_group(self.h5_f, 'Measurement')
             # Write the parameters as attributes of the group
-            for key in meas_parms.keys():
-                meas_grp.attrs[key] = meas_parms[key]
-            chan_grp = VirtualGroup('Channel_000')
+            write_simple_attrs(meas_grp, meas_parms)
 
-            meas_grp.add_children([chan_grp])
-            root_grp.add_children([meas_grp])
+            chan_grp = create_indexed_group(meas_grp, 'Channel')
 
-        # Write the groups to file
-        h5_refs = self.hdf.write(root_grp)
+            h5_channels.append(chan_grp)
 
-        h5_channels = get_group_refs('Channel_000', h5_refs)
-
-        self.hdf.flush()
+        self.h5_f.flush()
 
         return h5_channels
 

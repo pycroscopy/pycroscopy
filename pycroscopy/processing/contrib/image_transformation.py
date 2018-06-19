@@ -152,7 +152,8 @@ class FeatureExtractor(object):
                 for j in jobs:
                     results.append(j)
             except ValueError:
-                warnings.warn('ValueError something about 2d-image. Probably some of the detector input params are wrong.')
+                warnings.warn('ValueError something about 2d-image. Probably some of the detector '
+                              'input params are wrong.')
 
             # close the pool
             print('Closing down the kernels... \n')

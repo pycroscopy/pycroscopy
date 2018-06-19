@@ -26,7 +26,7 @@ class NumpyTranslator(Translator):
     """
 
     def translate(self, h5_path, data_name, raw_data, quantity, units, pos_dims, spec_dims,
-                  translator_name='NumpyTranslator', parm_dict=None):
+                  translator_name='NumpyTranslator', parm_dict=None, extra_dsets=None, **kwargs):
         """
         Writes the provided datasets and parameters to an h5 file
 
@@ -43,17 +43,22 @@ class NumpyTranslator(Translator):
         units : String / Unicode
             Name of units for the quantity stored in the dataset. Example - 'A' for amperes
         pos_dims : Dimension or array-like of Dimension objects
-            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
-            datasets
+            Sequence of Dimension objects that provides all necessary instructions for constructing the
+            indices and values datasets
             Object specifying the instructions necessary for building the Position indices and values datasets
         spec_dims : Dimension or array-like of Dimension objects
-            Sequence of Dimension objects that provides all necessary instructions for constructing the indices and values
-            datasets
+            Sequence of Dimension objects that provides all necessary instructions for constructing the
+            indices and values datasets
             Object specifying the instructions necessary for building the Spectroscopic indices and values datasets
         translator_name : String / unicode, Optional
             Name of the translator. Example - 'HitachiSEMTranslator'
         parm_dict : dictionary (Optional)
             Dictionary of parameters that will be written under the group 'Measurement_000'
+        extra_dsets : dictionary (Optional)
+            Dictionary whose values will be written into individual HDF5 datasets and whose corresponding keys provide
+            the names of the datasets. You are recommended to limit these to simple and small datasets.
+        kwargs: will be passed onto hdf_utils.write_main_dset() which will in turn will be passed onto the creation of
+            the dataset. Please pass chunking, compression, dtype, and other arguments this way
 
         Returns
         -------
@@ -78,6 +83,23 @@ class NumpyTranslator(Translator):
             # that of raw_data
             assert raw_data.shape[ind] == np.product([len(x.values) for x in dimensions])
 
+        if extra_dsets is not None:
+            if not isinstance(extra_dsets, dict):
+                raise TypeError('extra_dsets should be specified as dictionaries')
+            for key, val in extra_dsets.items():
+                if not isinstance(key, (str, unicode)):
+                    raise TypeError('keys for extra_dsets should be strings')
+                if len(key.strip()) == 0:
+                    raise ValueError('keys for extra_dsets should not be empty')
+                if np.any([key in x for x in ['Spectroscopic_Indices', 'Spectroscopic_Values', 'Position_Indices',
+                                              'Position_Values', 'Raw_Data']]):
+                    raise ValueError('keys for extra_dsets cannot match reserved names for existing datasets')
+                # Now check for data:
+                if not isinstance(val, (list, tuple, np.ndarray)):
+                    raise TypeError('values for extra_dsets should be a tuple, list, or numpy array')
+        else:
+            extra_dsets = dict()
+
         if path.exists(h5_path):
             remove(h5_path)
 
@@ -101,6 +123,9 @@ class NumpyTranslator(Translator):
             # channel group next
             chan_grp = meas_grp.create_group('Channel_000')
 
-            _ = write_main_dataset(chan_grp, raw_data, 'Raw_Data', quantity, units, pos_dims, spec_dims)
+            _ = write_main_dataset(chan_grp, raw_data, 'Raw_Data', quantity, units, pos_dims, spec_dims, **kwargs)
+
+            for key, val in extra_dsets.items():
+                chan_grp.create_dataset(key.strip(), data=val)
 
         return h5_path

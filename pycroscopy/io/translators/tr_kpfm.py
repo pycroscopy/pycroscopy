@@ -23,6 +23,7 @@ class TRKPFMTranslator(Translator):
     """
     Translates  trKPFM datasets from .mat and .dat files to .h5
     """
+
     def __init__(self, *args, **kwargs):
         super(TRKPFMTranslator, self).__init__(*args, **kwargs)
         self.raw_datasets = None
@@ -98,6 +99,7 @@ class TRKPFMTranslator(Translator):
         h5_path : string / unicode
             Absolute path of the translated h5 file
         """
+        parm_path = path.abspath(parm_path)
         parm_dict, excit_wfm = self._read_parms(parm_path)
 
         self._parse_file_path(parm_path)
@@ -208,9 +210,9 @@ class TRKPFMTranslator(Translator):
             spectrogram_matrix = np.array(results_p[:])
             b_axis = spectrogram_matrix.shape[2]
             c_axis = spectrogram_matrix.shape[1]
-            #dall = np.transpose(spectrogram_matrix, (0, 2, 1)).reshape(num_pixels * c_axis, b_axis)
+            # dall = np.transpose(spectrogram_matrix, (0, 2, 1)).reshape(num_pixels * c_axis, b_axis)
             dall = np.transpose(spectrogram_matrix, (0, 2, 1)).reshape(-1, b_axis)
-            
+
             _, ia, ic = np.unique(dall, axis=0, return_index=True, return_inverse=True)
             reprowind = np.setdiff1d(ic, ia)
 
@@ -221,18 +223,18 @@ class TRKPFMTranslator(Translator):
             h5_main = self.raw_datasets[ifile]
 
             if real_cond[ifile]:
-                print('Dall Size is: ',  dall.shape)
-                #Do some error catching. In case the last pixel is absent, then just ignore it.
+                print('Dall Size is: ', dall.shape)
+                # Do some error catching. In case the last pixel is absent, then just ignore it.
                 try:
                     h5_main[:, :] = dall.reshape(h5_main.shape) + 1j * 0
                 except ValueError:
-                    h5_main[:-1, :] = dall.reshape(h5_main.shape[0]-1, h5_main.shape[1]) + 1j * 0
+                    h5_main[:-1, :] = dall.reshape(h5_main.shape[0] - 1, h5_main.shape[1]) + 1j * 0
             else:
-                #Error catching. In case the last pixel is absent, then just ignore it.
+                # Error catching. In case the last pixel is absent, then just ignore it.
                 try:
                     h5_main[:, :] += 0 + 1j * dall.reshape(h5_main.shape)
                 except ValueError:
-                    h5_main[:-1, :] += 0 + 1j * dall.reshape(h5_main.shape[0]-1, h5_main.shape[1])
+                    h5_main[:-1, :] += 0 + 1j * dall.reshape(h5_main.shape[0] - 1, h5_main.shape[1])
             h5_main.file.flush()
 
     @staticmethod

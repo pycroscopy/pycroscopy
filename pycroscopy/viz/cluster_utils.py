@@ -1,3 +1,5 @@
+from __future__ import division, print_function, absolute_import, unicode_literals
+
 from warnings import warn
 
 import h5py
@@ -67,13 +69,13 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
                                                      y_label=h5_centroids.data_descriptor,
                                                      overlayed=h5_centroids.shape[0] < 6,
                                                      title=get_attr(h5_group,
-                                                                                 'cluster_algorithm') + ' Centroid',
+                                                                    'cluster_algorithm') + ' Centroid',
                                                      amp_units=get_attr(h5_centroids, 'units'))
     elif len(h5_centroids.spec_dim_labels) == 2:
         # stack of spectrograms
         if h5_centroids.dtype in [np.complex64, np.complex128, np.complex]:
             fig_cent, axis_cent = plot_complex_spectra(centroids_mat, subtitle_prefix='Cluster',
-                                                       title=get_attr(h5_group,'cluster_algorithm') + ' Centroid',
+                                                       title=get_attr(h5_group, 'cluster_algorithm') + ' Centroid',
                                                        x_label=h5_centroids.spec_dim_descriptors[0],
                                                        y_label=h5_centroids.spec_dim_descriptors[1],
                                                        amp_units=get_attr(h5_centroids, 'units'))
@@ -81,7 +83,7 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
             fig_cent, axis_cent = plot_map_stack(centroids_mat, color_bar_mode='each', evenly_spaced=True,
                                                  title='Cluster',
                                                  heading=get_attr(h5_group,
-                                                                               'cluster_algorithm') + ' Centroid')
+                                                                  'cluster_algorithm') + ' Centroid')
     return fig_labs, fig_cent
 
 

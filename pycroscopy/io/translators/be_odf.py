@@ -199,7 +199,8 @@ class BEodfTranslator(Translator):
             UDVS_mat = np.array([1, 0, parm_dict['BE_amplitude_[V]'], 1, 1, 1],
                                 dtype=np.float32).reshape(1, len(UDVS_labs))
 
-            old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE), np.zeros(tot_bins, dtype=INDICES_DTYPE)))
+            old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE),
+                                       np.zeros(tot_bins, dtype=INDICES_DTYPE)))
 
         # Some very basic information that can help the processing / analysis crew
         parm_dict['num_bins'] = tot_bins
@@ -279,23 +280,23 @@ class BEodfTranslator(Translator):
         write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1'})
 
         # Now the datasets!
-        h5_ex_wfm = h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
+        h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
 
         h5_udvs = h5_chan_grp.create_dataset('UDVS', data=UDVS_mat)
         write_region_references(h5_udvs, udvs_slices, add_labels_attr=True, verbose=verbose)
         write_simple_attrs(h5_udvs, {'units': UDVS_units}, verbose=verbose)
         
         # ds_udvs_labs = MicroDataset('UDVS_Labels',np.array(UDVS_labs))
-        h5_UDVS_inds = h5_chan_grp.create_dataset('UDVS_Indices', data=old_spec_inds[1])
+        h5_chan_grp.create_dataset('UDVS_Indices', data=old_spec_inds[1])
 
         # ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
-        h5_bin_steps = h5_chan_grp.create_dataset('Bin_Step', data=np.arange(bins_per_step, dtype=INDICES_DTYPE), 
-                                                  dtype=INDICES_DTYPE)
+        h5_chan_grp.create_dataset('Bin_Step', data=np.arange(bins_per_step, dtype=INDICES_DTYPE),
+                                   dtype=INDICES_DTYPE)
 
-        h5_bin_inds = h5_chan_grp.create_dataset('Bin_Indices', data=bin_inds, dtype=INDICES_DTYPE)
-        h5_bin_freq = h5_chan_grp.create_dataset('Bin_Frequencies', data=bin_freqs)
-        h5_bin_FFT = h5_chan_grp.create_dataset('Bin_FFT', data=bin_FFT)
-        h5_wfm_typ = h5_chan_grp.create_dataset('Bin_Wfm_Type', data=exec_bin_vec)
+        h5_chan_grp.create_dataset('Bin_Indices', data=bin_inds, dtype=INDICES_DTYPE)
+        h5_chan_grp.create_dataset('Bin_Frequencies', data=bin_freqs)
+        h5_chan_grp.create_dataset('Bin_FFT', data=bin_FFT)
+        h5_chan_grp.create_dataset('Bin_Wfm_Type', data=exec_bin_vec)
 
         pos_dims = [Dimension('X', 'm', np.arange(num_cols)), Dimension('Y', 'm', np.arange(num_rows))]
         h5_pos_ind, h5_pos_val = write_ind_val_dsets(h5_chan_grp, pos_dims, is_spectral=False, verbose=verbose)
@@ -308,8 +309,8 @@ class BEodfTranslator(Translator):
             write_simple_attrs(dset, spec_dim_dict)
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
-        h5_noise_floor = h5_chan_grp.create_dataset('Noise_Floor', (num_pix, num_actual_udvs_steps), dtype=nf32,
-                                                    chunks=(1, num_actual_udvs_steps))
+        h5_chan_grp.create_dataset('Noise_Floor', (num_pix, num_actual_udvs_steps), dtype=nf32,
+                                   chunks=(1, num_actual_udvs_steps))
 
         """
         New Method for chunking the Main_Data dataset.  Chunking is now done in N-by-N squares

@@ -315,7 +315,6 @@ class HDFwriter(object):
 
         return h5_new_group
 
-
     @staticmethod
     def _create_simple_dset(h5_group, microdset):
         """

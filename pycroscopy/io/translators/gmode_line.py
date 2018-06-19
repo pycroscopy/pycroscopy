@@ -9,17 +9,14 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from os import path, listdir, remove
 from warnings import warn
 
+import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
 from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from ...core.io.write_utils import VALUES_DTYPE, Dimension
+from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
 
 
 class GLineTranslator(Translator):
@@ -46,6 +43,7 @@ class GLineTranslator(Translator):
         h5_path : String / unicode
             Absolute path of the h5 file
         """
+        file_path = path.abspath(file_path)
         # Figure out the basename of the data:
         (basename, parm_paths, data_paths) = self._parse_file_path(file_path)
         
@@ -113,59 +111,49 @@ class GLineTranslator(Translator):
         self.__bytes_per_row__ = int(file_size/self.num_rows)
 
         # First finish writing all global parameters, create the file too:
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
-
-        spm_data = VirtualGroup('')
+        h5_f = h5py.File(h5_path, 'w')
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
-        spm_data.attrs = global_parms
-        spm_data.add_children([meas_grp])
-        
-        hdf = HDFwriter(h5_path)
-        # hdf.clear()
-        hdf.write(spm_data)
-        
-        # Now that the file has been created, go over each raw data file:
-        # 1. write all ancillary data. Link data. 2. Write main data sequentially
-                
-        """ We only allocate the space for the main data here.
-        This does NOT change with each file. The data written to it does.
-        The auxiliary datasets will not change with each raw data file since
-        only one excitation waveform is used"""
-        ds_main_data = VirtualDataset('Raw_Data', data=None,
-                                      maxshape=(self.num_rows, self.points_per_pixel * num_cols),
-                                      chunking=(1, self.points_per_pixel), dtype=np.float16)
-        ds_main_data.attrs['quantity'] = ['Deflection']
-        ds_main_data.attrs['units'] = ['V']
+        write_simple_attrs(h5_f, global_parms)
+
+        meas_grp = create_indexed_group(h5_f, 'Measurement')
+        write_simple_attrs(meas_grp, parm_dict)
 
         pos_desc = Dimension('Y', 'm', np.arange(self.num_rows))
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False)
         spec_desc = Dimension('Excitation', 'V', np.tile(VALUES_DTYPE(be_wave), num_cols))
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(spec_desc, is_spectral=True)
-        
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values']
-        
+
         for f_index in data_paths.keys():
-            
-            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
-            chan_grp.add_children([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
-            
-            # print('Writing following tree to file:')
-            # chan_grp.showTree()
-            h5_refs = hdf.write(chan_grp)
-            
-            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
-            
-            # Reference linking can certainly take place even before the datasets have reached their final size         
-            link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
-            
+            # Now that the file has been created, go over each raw data file:
+            # 1. write all ancillary data. Link data. 2. Write main data sequentially
+
+            """ We only allocate the space for the main data here.
+            This does NOT change with each file. The data written to it does.
+            The auxiliary datasets will not change with each raw data file since
+            only one excitation waveform is used"""
+            chan_grp = create_indexed_group(meas_grp, 'Channel')
+
+            if len(data_paths) > 1 and f_index == 0:
+                # All positions and spectra are shared between channels
+                h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
+                h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
+            elif len(data_paths) == 1:
+                h5_pos_inds, h5_pos_vals = write_ind_val_dsets(chan_grp, pos_desc, is_spectral=False)
+                h5_spec_inds, h5_spec_vals = write_ind_val_dsets(chan_grp, spec_desc, is_spectral=True)
+            else:
+                pass
+
+            h5_main = write_main_dataset(chan_grp, (self.num_rows, self.points_per_pixel * num_cols), 'Raw_Data',
+                                         'Deflection', 'V',
+                                         None, None,
+                                         h5_pos_inds=h5_pos_inds, h5_pos_vals=h5_pos_vals,
+                                         h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
+                                         chunks=(1, self.points_per_pixel), dtype=np.float16)
+
             # Now transfer scan data in the dat file to the h5 file:
             self._read_data(data_paths[f_index], h5_main)
             
-        hdf.close()
+        h5_f.close()
         print('G-Line translation complete!')
 
         return h5_path

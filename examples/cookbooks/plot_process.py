@@ -1,6 +1,6 @@
 """
 ================================================================================
-Formalizing Data Processing
+10. Formalizing Data Processing
 ================================================================================
 
 **Suhas Somnath**
@@ -99,7 +99,11 @@ import os
 
 # Warning package in case something goes wrong
 from warnings import warn
+import subprocess
+import sys
 
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", package])
 # Package for downloading online files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -107,7 +111,7 @@ try:
 except ImportError:
     warn('wget not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'wget'])
+    install('wget')
     import wget
 
 # The mathematical computation package:
@@ -125,7 +129,7 @@ try:
 except ImportError:
     warn('pycroscopy not found.  Will install with pip.')
     import pip
-    pip.main(['install', 'pycroscopy'])
+    install('pycroscopy')
     import pycroscopy as px
 
 ########################################################################################################################
@@ -149,7 +153,7 @@ except ImportError:
 # spectra. ``map_function()`` needs to take as input a single spectra and return the amplitude at the peak (a single
 # value). The ``compute()`` and ``unit_computation()`` will handle the parallelization.
 #
-# Pycroscopy already has a function called wavelet_peaks() that facilitates the seach for one or more peaks in a spectra
+# Pycroscopy already has a function called ``wavelet_peaks()`` that facilitates the search for one or more peaks in a spectra
 # located in pycroscopy.analysis.guess_methods. The exact methodology for finding the peaks is not of interest for this
 # particular example. However, this function only finds the index of one or more peaks in the spectra. We only expect
 # one peak at the center of the spectra. Therefore, we can use the ``wavelet_peaks()`` function to find the peaks and
@@ -160,8 +164,11 @@ except ImportError:
 # ------
 # A useful test function should be able to find the peak amplitude for any single spectra in the dataset. So, given the
 # index of a pixel (provided by the user), we should perform two operations:
+#
 # * read the spectra corresponding to that index from the HDF5 dataset
 # * apply the ``map_function()`` to this spectra and return the result.
+# The goal here is to load the smallest necessary portion of data from the HDF5 dataset to memory and test it against
+# the ``map_function()``
 #
 # create_results_datasets()
 # -------------------------
@@ -252,7 +259,7 @@ class PeakFinder(px.Process):
         In this case, there isn't any more additional post-processing required
         """
         # write the results to the file
-        self.h5_results[:, 0] = np.array(self._results)
+        self.h5_results[self._start_pos: self._end_pos, 0] = np.array(self._results)
 
         # Flush the results to ensure that they have indeed been written to the file
         self.h5_main.file.flush()
@@ -441,10 +448,129 @@ h5_file.close()
 os.remove(h5_path)
 
 ########################################################################################################################
+# Flow of functions
+# ==================
+#
+# By default, very few functions (``test()``, ``compute()``) are exposed to users. This means that one of these
+# functions calls a chain of the other functions in the class.
+#
+# init()
+# -------
+# Instantiating the class via something like: ``fitter = PeakFinder(h5_main)`` happens in two parts:
+#
+# 1. First the subclass (``PeakFinder``) calls the initialization function in ``Process`` to let it run some checks:
+#
+#   * Check if the provided ``h5_main`` is indeed a ``Main`` dataset
+#   * call ``set_memory_and_cores()`` to figure out how many pixels can be read into memory at any given time
+#   * Initialize some basic variables
+# 2. Next, the subclass continues any further validation / checks / initialization - this was not implemented for
+#    ``PeakFinder`` but here are some things that can be done:
+#
+#    * Find HDF5 groups which either have partial or fully computed results already for the same parameters by calling
+#      ``check_for_duplicates()``
+#
+# test()
+# -----------
+# This function only calls the ``map_function()`` by definition
+#
+# compute()
+# ----------
+# Here is how compute() works:
+#
+# * Check if you can return existing results for the requested computation and return if available by calling either:
+#
+#   * ``get_existing_datasets()`` - reads all necessary parameters and gets references to the HDF5 datasets that should
+#      contain the results
+#   * ``use_partial_computation()`` - pick the first partially computed results group that was discovered by
+#     ``check_for_duplicates()``
+# * call ``create_results_datasets()`` to create the HDF5 datasets and group objects
+# * read the first chunk of data via ``read_data_chunk()`` into ``self._data``
+# * Until the source dataset is fully read (``self._data is not None``), do:
+#
+#   * call ``unit_computation()`` on ``self._data``
+#
+#     * By default ``unit_computation()`` just maps ``map_function()`` onto ``self._data``
+#   * call ``write_results_chunk()`` to write ``self._results`` into the HDF5 datasets
+#   * read the next chunk of data into ``self._data``
+#
+# use_partial_computation()
+# --------------------------
+# Not used in ``PeakFinder`` but this function can be called to manually specify an HDF5 group containing partial
+# results
+#
+# We encourage you to read the source code for more information.
+#
 # Advanced examples
 # -----------------
 # Please see the following pycroscopy classes to learn more about the advanced functionalities such as resuming
-# computations, checking of existing results, etc.:
+# computations, checking of existing results, using unit_computation(), etc.:
 #
 # * ``pycroscopy.processing.SignalFilter``
 # * ``pycroscopy.analysis.GIVBayesian``
+#
+# Tips and tricks
+# ================
+# Here we will cover a few common use-cases that will hopefully guide you in structuring your computational problem
+#
+# Juggling dimensions
+# -------------------
+# We intentionally chose a simple example above to quickly illustrate the main components / philosophy of the Process
+# class. The above example had two position dimensions collapsed into the first axis of the dataset and a single
+# spectroscopic dimension (``Frequency``). What if the spectra were acquired as a function of other variables such as a
+# ``DC bias``? In other words, the dataset would now have N spectra per location.  In such cases, the dataset would have
+# 2 spectroscopic dimensions: ``Frequency`` and ``DC bias``. We cannot therefore simply map the ``map_function()`` to
+# the data in every pixel. This is because the ``map_function()`` expects to work over a single spectra whereas we now
+# have N spectra per pixel. Contrary to what one would assume, we do not need to throw away all the code we wrote above.
+# We only need to add code to juggle / move the dimensions around till the problem looks similar to what we had above.
+#
+# In other words, the above problem was written for a dataset of shape ``(P, S)`` where ``P`` is the number of positions
+# and ``S`` is the length of a single spectra. Now, we have data of shape ``(P, N*S)`` where ``N`` is the number of
+# spectra per position. In order to use most of the code already written above, we need to reshape the data to the shape
+# ``(P*N, S)``. Now, we can easily map the existing ``map_function()`` on this ``(P*N, S)`` dataset.
+#
+# As far as implementation is concerned, we would need to add the reshaping step to ``_read_data_chunk()`` as:
+#
+# .. code-block:: python
+#
+#     def _read_data_chunk(self):
+#         super(PeakFinder, self)._read_data_chunk()
+#         # The above line causes the base Process class to read X pixels from the dataset into self.data
+#         # All we need to do now is reshape self.data from (X, N*S) to (X*N, S):
+#         # Assuming that we know N (num_spectra) through some metadata:
+#         self.data = self.data.reshape(self.data.shape[0]* num_spectra, -1)
+#
+# Recall that ``_read_data_chunk()`` reads ``X`` pixels at a time where ``X`` is the largest number of pixels whose raw
+# data, intermediate products, and results can simultaneously be held in memory. The dataset used for the example above
+# is tractable enough that the entire data is loaded at once, meaning that ``X = P`` in this case.
+#
+# From here, on, the computation would continue as is but as expected, the results would also consequently be of shape
+# ``(P*N)``. We would have to reverse the reshape operation to get back the results in the form: ``(P, N)``. So we
+# would prepend the reverse reshape operation to ``_write_results_chunk()``:
+#
+# .. code-block:: python
+#
+#     def _write_results_chunk(self):
+#         # Recall that the results from the computation are stored in a list called self._results
+#         self._results = np.array(self._results)  # convert from list to numpy array
+#         self._results = self._results.reshape(-1, num_spectra)
+#         # Now self._results is of shape (P, N) and we can store it in the HDF5 dataset as we did above.
+#
+# Computing on chunks instead of mapping
+# --------------------------------------
+# In certain cases, the computation is a little more complex that the ``map_function()`` cannot directly be mapped to
+# the data. Alternatively, in some cases the ``map_function()`` needs to mapped multiple times or different sections of
+# the ``self.data``. For such cases, the ``_unit_computation()`` in ``Process`` provides far more flexibility to the
+# developer. Please see the ``pycroscopy.processing.SignalFilter`` and ``pycroscopy.analysis.GIVBayesian`` for examples.
+#
+# By default, ``_unit_computation()`` maps the ``map_function()`` to ``self.data`` using ``parallel_compute()`` and
+# stores the results in ``self._results``. Recall that ``self.data`` contains data for ``X`` pixels.
+# For example, ``_unit_computation()`` in ``pycroscopy.analysis.GIVBayesian`` breaks up the spectra (second axis) of
+# ``self.data`` into two halves and computes the results separately for each half. ``_unit_computation()`` for this
+# class calls ``parallel_compute()`` twice - to map the ``map_function()`` to each half of the data chunk. This is a
+# functionality that is challenging to efficiently attain without ``_unit_computation()``. Note that when the
+# ``_unit_computation()`` is overridden, the developer is responsible for the correct usage of ``parallel_compute()``,
+# especially passing arguments and keyword arguments.
+#
+# Other Notes
+# -----------
+# We are planning on exploring Dask as a framework for embarrassingly parallel computation.

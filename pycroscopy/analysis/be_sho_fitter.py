@@ -22,7 +22,7 @@ sho32 = np.dtype({'names': field_names,
 
 class BESHOfitter(Fitter):
 
-    def __init__(self, h5_main, variables=['Frequency'], **kwargs):
+    def __init__(self, h5_main, variables=None, **kwargs):
         """
         Analysis of Band excitation spectra with harmonic oscillator responses.
 
@@ -34,7 +34,11 @@ class BESHOfitter(Fitter):
         variables : list(string), Default ['Frequency']
            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
         """
+        if variables is None:
+            variables = ['Frequency']
+
         super(BESHOfitter, self).__init__(h5_main, variables, **kwargs)
+
         self.step_start_inds = None
         self.is_reshapable = True
         self.num_udvs_steps = None
@@ -57,19 +61,16 @@ class BESHOfitter(Fitter):
 
         if self._parallel:
             # accounting for memory copies
-            self._max_pos_per_read /= 2
+            self._max_pos_per_read = self._max_pos_per_read // 2
 
     def _create_guess_datasets(self):
         """
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
         """
-        # Create all the ancilliary datasets, allocate space.....
-
         h5_group = create_results_group(self.h5_main, 'SHO_Fit')
-        write_simple_attrs(h5_group, {'SHO_guess_method': "pycroscopy BESHO", 'last_pixel': 0})
+        write_simple_attrs(h5_group, {'SHO_guess_method': "pycroscopy BESHO"})
 
-        not_freq = np.array(self.h5_main.spec_dim_labels) != 'Frequency'
         h5_sho_inds, h5_sho_vals = write_reduced_spec_dsets(h5_group, self.h5_main.h5_spec_inds,
                                                             self.h5_main.h5_spec_vals, self._fit_dim_name)
 
@@ -78,6 +79,8 @@ class BESHOfitter(Fitter):
                                            h5_pos_vals=self.h5_main.h5_pos_vals, h5_spec_inds=h5_sho_inds,
                                            h5_spec_vals=h5_sho_vals, chunks=(1, self.num_udvs_steps), dtype=sho32,
                                            main_dset_attrs=self._parms_dict, verbose=self._verbose)
+
+        write_simple_attrs(self.h5_guess, {'SHO_guess_method': "pycroscopy BESHO", 'last_pixel': 0})
 
         copy_region_refs(self.h5_main, self.h5_guess)
 
@@ -104,14 +107,15 @@ class BESHOfitter(Fitter):
             self._get_frequency_vector()
 
         h5_sho_grp = self.h5_guess.parent
-        h5_sho_grp.attrs['SHO_fit_method'] = "pycroscopy BESHO"
+        write_simple_attrs(h5_sho_grp, {'SHO_fit_method': "pycroscopy BESHO"})
 
         # Create the fit dataset as an empty dataset of the same size and dtype as the guess.
         # Also automatically links in the ancillary datasets.
         self.h5_fit = PycroDataset(create_empty_dataset(self.h5_guess, dtype=sho32, dset_name='Fit'))
 
         # This is necessary comparing against new runs to avoid re-computation + resuming partial computation
-        self.h5_fit.attrs.update(self._parms_dict)
+        write_simple_attrs(self.h5_fit, self._parms_dict)
+        write_simple_attrs(self.h5_fit, {'SHO_fit_method': "pycroscopy BESHO", 'last_pixel': 0})
 
         self.h5_fit.file.flush()
 
@@ -229,10 +233,9 @@ class BESHOfitter(Fitter):
             self._max_pos_per_read = int(self._max_pos_per_read / 2)
         """
         if strategy == 'complex_gaussian':
-            freq_vec = self.freq_vec
-            options.update({'frequencies': freq_vec})
+            options.update({'frequencies': self.freq_vec})
         super(BESHOfitter, self).do_guess(processors=processors, strategy=strategy, options=options,
-                                          h5_partial_guess=h5_partial_guess, override=override, **kwargs)
+                                          h5_partial_guess=h5_partial_guess, override=override)
 
         return self.h5_guess
 

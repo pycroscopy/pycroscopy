@@ -10,19 +10,15 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 from os import path, remove
 from warnings import warn
-
+import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
 from ...core.io.translator import generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter
-from ..virtual_data import VirtualGroup, VirtualDataset
+from ...core.io.write_utils import VALUES_DTYPE, Dimension
+from ...core.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, build_ind_val_matrices, write_main_dataset
 
 
 class GTuneTranslator(GLineTranslator):
@@ -48,6 +44,7 @@ class GTuneTranslator(GLineTranslator):
             Absolute path of the h5 file
 
         """
+        file_path = path.abspath(file_path)
         # Figure out the basename of the data:
         (basename, parm_paths, data_paths) = super(GTuneTranslator, self)._parse_file_path(file_path)
 
@@ -63,9 +60,6 @@ class GTuneTranslator(GLineTranslator):
                                           'BE_wave', 'total_cols', 'total_rows'])
         be_wave = np.float32(np.squeeze(matread['BE_wave']))
         be_wave_train = np.float32(np.squeeze(matread['BE_wave_train']))
-
-        # Need to take the complex conjugate if reading from a .mat file
-        # FFT_BE_wave = np.conjugate(np.complex64(np.squeeze(matread['FFT_BE_wave'])))
 
         num_cols = int(matread['total_cols'][0][0])
         expected_rows = int(matread['total_rows'][0][0])
@@ -86,7 +80,7 @@ class GTuneTranslator(GLineTranslator):
             warn('Error - File has incomplete rows')
             return None
         else:
-            self.num_rows = int(self.num_rows)
+            self.num_rows =int(self.num_rows)
 
         samp_rate = parm_dict['IO_rate_[Hz]']
         ex_freq_nominal = parm_dict['BE_center_frequency_[Hz]']
@@ -96,15 +90,6 @@ class GTuneTranslator(GLineTranslator):
         num_periods = pixel_duration * ex_freq_nominal
         ex_freq_correct = 1 / (pixel_duration / np.floor(num_periods))
 
-        # method 2 for calculating the exact excitation frequency:
-        """
-        fft_ex_wfm = np.abs(np.fft.fftshift(np.fft.fft(be_wave)))
-        w_vec = np.linspace(-0.5 * samp_rate, 0.5 * samp_rate - 1.0*samp_rate / self.points_per_pixel,
-                            self.points_per_pixel)
-        hot_bins = np.squeeze(np.argwhere(fft_ex_wfm > 1E+3))
-        ex_freq_correct = w_vec[hot_bins[-1]]
-        """
-
         # correcting the excitation frequency - will be VERY useful during analysis and filtering
         parm_dict['BE_center_frequency_[Hz]'] = ex_freq_correct
 
@@ -113,6 +98,7 @@ class GTuneTranslator(GLineTranslator):
         parm_dict['num_bins'] = self.points_per_pixel
         parm_dict['grid_num_rows'] = self.num_rows
         parm_dict['data_type'] = 'G_mode_line'
+        parm_dict['IO_rate_[Hz]'] = samp_rate
 
         if self.num_rows != expected_rows:
             print('Note: {} of {} lines found in data file'.format(self.num_rows, expected_rows))
@@ -121,60 +107,50 @@ class GTuneTranslator(GLineTranslator):
         self.__bytes_per_row__ = int(file_size / self.num_rows)
 
         # First finish writing all global parameters, create the file too:
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
-
-        spm_data = VirtualGroup('')
+        h5_file = h5py.File(h5_path, 'w')
         global_parms = generate_dummy_main_parms()
+
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
-        spm_data.attrs = global_parms
-        spm_data.add_children([meas_grp])
+        write_simple_attrs(h5_file, global_parms)
 
-        hdf = HDFwriter(h5_path)
-        # hdf.clear()
-        hdf.write(spm_data)
+        # Next create the Measurement and Channel groups and write the appropriate parameters to them
+        meas_grp = create_indexed_group(h5_file, 'Measurement')
+        write_simple_attrs(meas_grp, parm_dict)
 
         # Now that the file has been created, go over each raw data file:
-        # 1. write all ancillary data. Link data. 2. Write main data sequentially
-
         """ 
         We only allocate the space for the main data here.
         This does NOT change with each file. The data written to it does.
         The auxiliary datasets will not change with each raw data file since
         only one excitation waveform is used
         """
-        ds_main_data = VirtualDataset('Raw_Data', data=None,
-                                      maxshape=(self.num_rows, self.points_per_pixel * num_cols),
-                                      chunking=(1, self.points_per_pixel), dtype=np.float16)
-        ds_main_data.attrs['quantity'] = ['Deflection']
-        ds_main_data.attrs['units'] = ['V']
+        pos_desc = Dimension('Y', 'm', np.arange(self.num_rows))
+        spec_desc = Dimension('Excitation', 'V', np.tile(VALUES_DTYPE(be_wave), num_cols))
 
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(Dimension('Y', 'm', np.arange(self.num_rows)), is_spectral=False)
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Excitation', 'V',
-                                                                   np.tile(VALUES_DTYPE(be_wave), num_cols)),
-                                                         is_spectral=True)
+        h5_pos_ind, h5_pos_val = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
+        h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
 
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values']
+        #h5_pos_ind, h5_pos_val = build_ind_val_matrices(Dimension('Y', 'm', list(np.arange(self.num_rows))),
+        #                                                    is_spectral=False)
+       # h5_spec_inds, h5_spec_vals = build_ind_val_matrices(Dimension('Excitation', 'V',
+         #                                                   np.tile(VALUES_DTYPE(be_wave), num_cols)),
+          #                                                  is_spectral=True)
 
         for f_index in data_paths.keys():
-            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', f_index), '/Measurement_000/')
-            chan_grp.add_children([ds_main_data, ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals])
+            chan_grp = create_indexed_group(meas_grp, 'Channel')
 
-            # print('Writing following tree to file:')
-            # chan_grp.showTree()
-            h5_refs = hdf.write(chan_grp)
-
-            h5_main = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]  # We know there is exactly one main data
-
-            # Reference linking can certainly take place even before the datasets have reached their final size         
-            link_h5_objects_as_attrs(h5_main, get_h5_obj_refs(aux_ds_names, h5_refs))
+            h5_main = write_main_dataset(chan_grp, (self.num_rows, self.points_per_pixel * num_cols), 'Raw_Data',
+                                         'Deflection', 'V',
+                                         None, None,
+                                         h5_pos_inds=h5_pos_ind, h5_pos_vals=h5_pos_val,
+                                         h5_spec_inds=h5_spec_inds, h5_spec_vals=h5_spec_vals,
+                                         chunks=(1, self.points_per_pixel), dtype=np.float16)
 
             # Now transfer scan data in the dat file to the h5 file:
-            super(GTuneTranslator, self)._read_data(data_paths[f_index], h5_main)
+            self._read_data(data_paths[f_index], h5_main)
 
-        hdf.close()
+        h5_file.close()
         print('G-Tune translation complete!')
 
         return h5_path

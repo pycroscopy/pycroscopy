@@ -6,12 +6,11 @@ Created on 11/11/16 10:08 AM
 from __future__ import division, print_function, unicode_literals, absolute_import
 import os
 import matplotlib.pyplot as plt
-from IPython.display import display
 import ipywidgets as widgets
 import numpy as np
 import sys
 
-from .plot_utils import plot_map, set_tick_font_size
+from .plot_utils import plot_map, set_tick_font_size, export_fig_data
 from ..io.write_utils import Dimension
 
 if sys.version_info.major == 3:
@@ -339,6 +338,7 @@ def simple_ndim_visualizer(data_mat, pos_dims, spec_dims, spec_xdim=None, pos_xd
 
     return fig
 
+
 def save_fig_filebox_button(fig, filename):
     """
     Create ipython widgets to allow the user to save a figure to the
@@ -368,8 +368,13 @@ def save_fig_filebox_button(fig, filename):
     save_button = widgets.Button(description='Save figure')
 
     def _save_fig(*args):
+        filename = name_box.value
         save_path = os.path.join(file_dir, filename)
-        fig.savefig(save_path, dpi='figure')
+        _, ext = os.path.splitext(filename)
+        if ext == '.txt':
+            export_fig_data(fig, save_path, True)
+        else:
+            fig.savefig(save_path, dpi='figure')
         print('Figure saved to "{}".'.format(save_path))
 
     widget_box = widgets.HBox([name_box, save_button])

@@ -16,14 +16,12 @@ import numpy as np
 import xlrd as xlreader
 
 from ....core.io.hdf_utils import get_auxiliary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
-    get_attr
+    get_attr, create_indexed_group, write_simple_attrs, write_main_dataset, Dimension
 from ....core.io.write_utils import create_spec_inds_from_vals
 from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
-from ...hdf_writer import HDFwriter
-from ...virtual_data import VirtualDataset, VirtualGroup
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -306,7 +304,7 @@ def normalizeBEresponse(spectrogram_mat, FFT_BE_wave, harmonic):
 
 
 def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], min_resp=[],
-                       max_mem_mb=1024, spec_label='None', ignore_plot_groups=[],
+                       max_mem_mb=1024, spec_label='None',
                        show_plots=True, save_plots=True, do_histogram=False,
                        debug=False):
     """
@@ -331,8 +329,6 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
         Maximum memory that can be used for generating histograms
     spec_label : String
         Parameter that is varying
-    ignore_plot_groups : (optional) List of strings
-        Names of the plot groups (UDVS columns) that should be ignored
     show_plots : (optional) Boolean
         Whether or not to show plots
     save_plots : (optional) Boolean
@@ -346,14 +342,14 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
     """
     # Too
     assert isinstance(h5_main, h5py.Dataset)
-    hdf = HDFwriter(h5_main.file)
+    h5_f = h5_main.file
 
     grp = h5_main.parent
     h5_freq = grp['Bin_Frequencies']
     UDVS = grp['UDVS']
-    spec_inds = grp['Spectroscopic_Indices']
+    spec_inds = h5_main.h5_spec_inds
     UDVS_inds = grp['UDVS_Indices']
-    spec_vals = grp['Spectroscopic_Values']
+    spec_vals = h5_main.h5_spec_vals
 
     #     std_cols = ['wave_type','Frequency','DC_Offset','wave_mod','AC_Amplitude','dc_offset','ac_amplitude']
 
@@ -402,23 +398,23 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
         num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
         pg_data = np.repeat(UDVS[ref], num_bins)
 
-        ds_mean_spec = VirtualDataset('Mean_Spectrogram', mean_spec, dtype=np.complex64)
-        ds_step_avg = VirtualDataset('Step_Averaged_Response', step_averaged_vec, dtype=np.complex64)
+        plot_grp = create_indexed_group(grp, 'Spatially_Averaged_Plot_Group')
+        write_simple_attrs(plot_grp, {'Name': col_name})
+
+        h5_mean_spec = plot_grp.create_dataset('Mean_Spectrogram',
+                                               data=mean_spec,
+                                               dtype=np.complex64)
+        h5_step_avg = plot_grp.create_dataset('Step_Averaged_Response',
+                                              data=step_averaged_vec,
+                                              dtype=np.complex64)
         # cannot assume that this is DC offset, could be AC amplitude....
-        ds_spec_parm = VirtualDataset('Spectroscopic_Parameter', np.squeeze(pg_data[step_inds]))
-        ds_spec_parm.attrs = {'name': spec_label}
-        ds_freq = VirtualDataset('Bin_Frequencies', freq_vec)
-
-        plot_grp = VirtualGroup('{:s}'.format('Spatially_Averaged_Plot_Group_'), grp.name[1:])
-        plot_grp.attrs['Name'] = col_name
-        plot_grp.add_children([ds_mean_spec, ds_step_avg, ds_spec_parm, ds_freq])
-
-        h5_plt_grp_refs = hdf.write(plot_grp, print_log=debug)
-
-        h5_mean_spec = get_h5_obj_refs(['Mean_Spectrogram'], h5_plt_grp_refs)[0]
-        h5_step_avg = get_h5_obj_refs(['Step_Averaged_Response'], h5_plt_grp_refs)[0]
-        h5_spec_parm = get_h5_obj_refs(['Spectroscopic_Parameter'], h5_plt_grp_refs)[0]
-        h5_freq_vec = get_h5_obj_refs(['Bin_Frequencies'], h5_plt_grp_refs)[0]
+        h5_spec_parm = plot_grp.create_dataset('Spectroscopic_Parameter',
+                                               data=np.squeeze(pg_data[step_inds]),
+                                               dtype=np.uint32)
+        write_simple_attrs(h5_spec_parm, {'name': spec_label})
+        h5_freq_vec = plot_grp.create_dataset('Bin_Frequencies',
+                                          data=freq_vec,
+                                          dtype=h5_freq.dtype)
 
         # Linking the datasets with the frequency and the spectroscopic variable:
         link_h5_objects_as_attrs(h5_mean_spec, [h5_spec_parm, h5_freq_vec])
@@ -437,7 +433,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
         spec_inds.attrs[ref_name] = spec_inds_ref
         spec_vals.attrs[ref_name] = spec_vals_ref
 
-        hdf.flush()
+        h5_f.flush()
 
         if do_histogram:
             """
@@ -447,49 +443,35 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
             hist_mat, hist_labels, hist_indices, hist_indices_labels = \
                 hist.buildPlotGroupHist(h5_main, step_inds, max_response=max_resp,
                                         min_response=min_resp, max_mem_mb=max_mem_mb, debug=debug)
-            ds_hist = VirtualDataset('Histograms', hist_mat, dtype=np.int32,
-                                     chunking=(1, hist_mat.shape[1]), compression='gzip')
-            hist_slice_dict = dict()
+
+            hist_grp = create_indexed_group(plot_grp, 'Histogram')
+
+            hist_spec_dims = list()
+            hist_units = ['V', '', 'V', 'V']
             for hist_ind, hist_dim in enumerate(hist_labels):
-                hist_slice_dict[hist_dim] = (slice(hist_ind, hist_ind + 1), slice(None))
-            ds_hist.attrs['labels'] = hist_slice_dict
-            ds_hist.attrs['units'] = ['V', '', 'V', 'V']
-            ds_hist_indices = VirtualDataset('Indices', hist_indices, dtype=np.uint)
-            ds_hist_values = VirtualDataset('Values', hist_indices, dtype=np.float32)
-            hist_ind_dict = dict()
-            for hist_ind_ind, hist_ind_dim in enumerate(hist_indices_labels):
-                hist_ind_dict[hist_ind_dim] = (slice(hist_ind_ind, hist_ind_ind + 1), slice(None))
-            ds_hist_indices.attrs['labels'] = hist_ind_dict
-            ds_hist_values.attrs['labels'] = hist_ind_dict
+                hist_spec_dims.append(Dimension(hist_dim,
+                                                hist_units[hist_ind],
+                                                hist_indices[hist_ind]))
 
-            hist_grp = VirtualGroup('Histogram', h5_mean_spec.parent.name[1:])
-
-            hist_grp.add_children([ds_hist, ds_hist_indices, ds_hist_values])
-
-            h5_hist_grp_refs = hdf.write(hist_grp)
-
-            h5_hist = get_h5_obj_refs(['Histograms'], h5_hist_grp_refs)[0]
-            h5_hist_inds = get_h5_obj_refs(['Indices'], h5_hist_grp_refs)[0]
-            h5_hist_vals = get_h5_obj_refs(['Values'], h5_hist_grp_refs)[0]
-
-            link_h5_objects_as_attrs(h5_hist, get_h5_obj_refs(['Indices', 'Values'], h5_hist_grp_refs))
-
-            h5_hist.attrs['Spectroscopic_Indices'] = h5_hist_inds.ref
-            h5_hist.attrs['Spectroscopic_Values'] = h5_hist_vals.ref
+            h5_hist = write_main_dataset(hist_grp, hist_mat, 'Histograms',
+                                         'Counts', 'a.u.',
+                                         None, hist_spec_dims,
+                                         h5_pos_inds=h5_main.h5_pos_inds, h5_pos_vals=h5_main.h5_pos_vals,
+                                         dtype=np.int32,
+                                         chunking=(1, hist_mat.shape[1]),
+                                         compression='gzip')
 
         else:
             """
             Write the min and max response vectors so that histograms can be generated later.
             """
-            ds_max_resp = VirtualDataset('Max_Response', max_resp)
-            ds_min_resp = VirtualDataset('Min_Response', min_resp)
-            plot_grp.add_children([ds_max_resp, ds_min_resp])
+            h5_max_resp = plot_grp.create_dataset('Max_Response',
+                                                  data=max_resp)
+            h5_min_resp = plot_grp.create_dataset('Min_Response',
+                                                  data=min_resp)
 
         if save_plots or show_plots:
             fig_title = '_'.join(grp.name[1:].split('/') + [col_name])
-            path_1d = None
-            path_2d = None
-            path_hist = None
 
             fig_1d, axes_1d = plot_1d_spectrum(step_averaged_vec, freq_vec, fig_title)
             if save_plots:
@@ -510,7 +492,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
                 plt.show()
             else:
                 plt.close('all')
-                
+
             # print('Generated spatially average data for group: %s' %(col_name))
     print('Completed generating spatially averaged plot groups')
 
@@ -1083,7 +1065,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
 
-    def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, iSpecVals, udvs_units):
+    def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, udvs_labs, iSpecVals, udvs_units):
         """
         Calculates Spectroscopic Values for BEPS data in generic mode
         
@@ -1093,7 +1075,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         inSpecVals : list holding initial guess at spectral values 
         bin_freqs : 1D numpy array of frequencies
         bin_wfm_type : numpy array containing the waveform type for each frequency index
-        parm_dict : parameter dictinary for dataset            
         udvs_labs : list of labels for the columns of the UDVS matrix
             
         Returns
@@ -1201,6 +1182,7 @@ class BEHistogram:
     Class just functions as a container so we can have shared objects
     Chris Smith -- csmith55@utk.edu
     """
+
     def __init__(self):
         self.max_mem = None
         self.max_response = None

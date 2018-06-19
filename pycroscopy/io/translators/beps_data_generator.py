@@ -378,7 +378,7 @@ class FakeBEPSGenerator(Translator):
         spec_dims = list()
         for dim_size, dim_name, dim_units, step_size, init_val in zip(spec_dims, spec_labs, spec_units, spec_steps,
                                                                       spec_start):
-            spec_dims.append(Dimension(dim_name, dim_units, np.arange(dim_size)*step_size + init_val))
+            spec_dims.append(Dimension(dim_name, dim_units, np.arange(dim_size) * step_size + init_val))
         spec_inds, spec_vals = build_ind_val_dsets(spec_dims, is_spectral=True)
 
         # Replace the dummy DC values with the correct ones
@@ -471,9 +471,9 @@ class FakeBEPSGenerator(Translator):
         sho_spec_starts = np.where(h5_spec_inds[h5_spec_inds.attrs['Frequency']].squeeze() == 0)[0]
         sho_spec_labs = get_attr(h5_spec_inds, 'labels')
         ds_sho_spec_inds, ds_sho_spec_vals = build_reduced_spec_dsets(h5_spec_inds,
-                                                              h5_spec_vals,
-                                                              keep_dim=sho_spec_labs != 'Frequency',
-                                                              step_starts=sho_spec_starts)
+                                                                      h5_spec_vals,
+                                                                      keep_dim=sho_spec_labs != 'Frequency',
+                                                                      step_starts=sho_spec_starts)
 
         sho_chunking = calc_chunks([self.n_pixels,
                                     self.n_sho_bins],
@@ -519,9 +519,9 @@ class FakeBEPSGenerator(Translator):
         loop_spec_starts = np.where(h5_sho_spec_inds[h5_sho_spec_inds.attrs['DC_Offset']].squeeze() == 0)[0]
         loop_spec_labs = get_attr(h5_sho_spec_inds, 'labels')
         ds_loop_spec_inds, ds_loop_spec_vals = build_reduced_spec_dsets(h5_sho_spec_inds,
-                                                                h5_sho_spec_vals,
-                                                                keep_dim=loop_spec_labs != 'DC_Offset',
-                                                                step_starts=loop_spec_starts)
+                                                                        h5_sho_spec_vals,
+                                                                        keep_dim=loop_spec_labs != 'DC_Offset',
+                                                                        step_starts=loop_spec_starts)
 
         # Create the loop fit and guess MicroDatasets
         loop_chunking = calc_chunks([self.n_pixels, self.n_loops],
@@ -590,17 +590,17 @@ class FakeBEPSGenerator(Translator):
         """
 
         # Setup the limits on the coefficients
-        coef_limits = [[-1.0, -0.4]]  # 0 - loop bottom edge
-        coef_limits.append([0.5, 2.0])  # 1 - loop height
-        coef_limits.append([3.0, 5.0])  # 2 - loop crossing 1
-        coef_limits.append([-5.0, -3.0])  # 3 - loop crossing 2
-        coef_limits.append([-0.001, 0.0])  # 4 - loop slope
-        coef_limits.append([self.loop_a, self.loop_b])  # 5 - loop corner sharpness 1
-        coef_limits.append([self.loop_a / 4, self.loop_b / 4])  # 6 - loop corner shaprness 2
-        coef_limits.append([self.loop_a / 4, self.loop_b / 4])  # 7 - loop corner sharpness 3
-        coef_limits.append([self.loop_a, self.loop_b])  # 8 - loop corner sharpness 4
-        coef_limits.append([275E3, 325E3])  # 9 - resonant frequency
-        coef_limits.append([100.0, 150.0])  # 10 - Q factor
+        coef_limits = [[-1.0, -0.4],  # 0 - loop bottom edge
+                       [0.5, 2.0],  # 1 - loop height
+                       [3.0, 5.0],  # 2 - loop crossing 1
+                       [-5.0, -3.0],  # 3 - loop crossing 2
+                       [-0.001, 0.0],  # 4 - loop slope
+                       [self.loop_a, self.loop_b],  # 5 - loop corner sharpness 1
+                       [self.loop_a / 4, self.loop_b / 4],  # 6 - loop corner shaprness 2
+                       [self.loop_a / 4, self.loop_b / 4],  # 7 - loop corner sharpness 3
+                       [self.loop_a, self.loop_b],  # 8 - loop corner sharpness 4
+                       [275E3, 325E3],  # 9 - resonant frequency
+                       [100.0, 150.0]]  # 10 - Q factor
 
         # build loop coef matrix
         coef_mat = np.zeros([self.n_pixels, 11])
@@ -662,7 +662,7 @@ class FakeBEPSGenerator(Translator):
 
             amp = np.abs(R_mat)
             resp = coef_OF_mat[pix_batch, 9, None] * np.ones_like(R_mat)
-            q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat)*10
+            q_val = coef_OF_mat[pix_batch, 10, None] * np.ones_like(R_mat) * 10
             phase = np.sign(R_mat) * np.pi / 2
 
             self.h5_sho_fit[pix_batch, :] = stack_real_to_compound(np.hstack([amp,
@@ -675,11 +675,11 @@ class FakeBEPSGenerator(Translator):
             self.h5_sho_guess[pix_batch, :] = stack_real_to_compound(np.hstack([amp * get_noise_vec(self.n_sho_bins,
                                                                                                     amp_noise),
                                                                                 resp * get_noise_vec(self.n_sho_bins,
-                                                                                             resp_noise),
+                                                                                                     resp_noise),
                                                                                 q_val * get_noise_vec(self.n_sho_bins,
-                                                                                              q_noise),
+                                                                                                      q_noise),
                                                                                 phase * get_noise_vec(self.n_sho_bins,
-                                                                                              phase_noise),
+                                                                                                      phase_noise),
                                                                                 np.ones_like(R_mat)]),
                                                                      sho32)
 

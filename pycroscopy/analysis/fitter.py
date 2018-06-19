@@ -14,7 +14,7 @@ from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from ..core.io.pycro_data import PycroDataset
 from ..core.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
-from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs
+from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
 from .optimize import Optimize
 
 
@@ -40,6 +40,7 @@ class Fitter(object):
             Should the parallel implementation of the fitting be used.  Default True
         verbose : bool, optional. default = False
             Whether or not to print statements that aid in debugging
+
         """
 
         if not isinstance(h5_main, PycroDataset):
@@ -71,7 +72,7 @@ class Fitter(object):
         self.fit = None
 
         self._fitter_name = None  # Reset this in the extended classes
-        self._parms_dict = None
+        self._parms_dict = dict()
 
     def _set_memory_and_cores(self):
         """
@@ -255,7 +256,15 @@ class Fitter(object):
         partial_dsets = []
 
         for dset in datasets:
-            if dset.attrs['last_pixel'] < self.h5_main.shape[0]:
+            try:
+                last_pix = get_attr(dset, 'last_pixel')
+            except KeyError:
+                last_pix = None
+                
+            # Skip datasets without last_pixel attribute
+            if last_pix is None:
+                continue
+            elif last_pix < self.h5_main.shape[0]:
                 partial_dsets.append(dset)
             else:
                 completed_dsets.append(dset)
@@ -300,6 +309,10 @@ class Fitter(object):
         # check for old:
         partial_dsets, completed_dsets = self._check_for_old_guess()
 
+        if len(completed_dsets) == 0 and len(partial_dsets) == 0:
+            print('No existing datasets found')
+            override = True
+
         if not override:
             # First try to simply return any completed computation
             if len(completed_dsets) > 0:
@@ -338,7 +351,7 @@ class Fitter(object):
             processors = self._maxCpus
         else:
             processors = min(int(processors), self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
 
         print("Using %s to find guesses...\n" % strategy)
 
@@ -380,7 +393,8 @@ class Fitter(object):
             self._get_data_chunk()
 
         print('Completed computing guess')
-        return self.h5_guess
+        print()
+        return PycroDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
@@ -415,6 +429,8 @@ class Fitter(object):
         """
         # First find all groups that match the basic condition of matching tool name
         all_groups = find_results_groups(self.h5_main, self._fitter_name)
+        if self._verbose:
+            print('Groups that matched the nomenclature: {}'.format(all_groups))
 
         # Next sort these groups into three categories:
         completed_guess = []
@@ -422,6 +438,7 @@ class Fitter(object):
         completed_fits = []
 
         for h5_group in all_groups:
+
             if 'Fit' in h5_group.keys():
                 # check group for fit attribute
 
@@ -434,14 +451,34 @@ class Fitter(object):
                     continue
 
                 # sort this dataset:
-                if h5_fit.attrs['last_pixel'] < self.h5_main.shape[0]:
+                try:
+                    last_pix = get_attr(h5_fit, 'last_pixel')
+                except KeyError:
+                    last_pix = None
+
+                # For now skip any fits that are missing 'last_pixel'
+                if last_pix is None:
+                    continue
+                elif last_pix < self.h5_main.shape[0]:
                     partial_fits.append(h5_fit.parent)
                 else:
                     completed_fits.append(h5_fit)
             else:
                 if 'Guess' in h5_group.keys():
                     h5_guess = h5_group['Guess']
-                    if h5_guess.attrs['last_pixel'] == self.h5_main.shape[0]:
+
+                    # sort this dataset:
+                    try:
+                        last_pix = get_attr(h5_guess, 'last_pixel')
+                    except KeyError:
+                        last_pix = None
+
+                    # For now skip any fits that are missing 'last_pixel'
+                    if last_pix is None:
+                        continue
+                    elif last_pix == self.h5_main.shape[0]:
+                        if self._verbose:
+                            print('{} was a completed Guess'.format(h5_guess.name))
                         completed_guess.append(h5_guess)
                     else:
                         if self._verbose:
@@ -532,12 +569,14 @@ class Fitter(object):
 
             # Next, attempt to resume automatically:
             elif len(partial_fit_groups) > 0:
-                print('Will resume fitting in {}. You can supply a dataset using the h5_partial_fit argument'.format(partial_fit_groups[-1].name))
+                print('Will resume fitting in {}. '
+                      'You can supply a dataset using the h5_partial_fit argument'.format(partial_fit_groups[-1].name))
                 _resume_fit(self, partial_fit_groups[-1])
 
             # Finally, attempt to do fresh fitting using completed Guess:
             elif len(completed_guess) > 0:
-                print('Will use {} for generating new Fit. You can supply a dataset using the h5_guess argument'.format(completed_guess[-1].name))
+                print('Will use {} for generating new Fit. '
+                      'You can supply a dataset using the h5_guess argument'.format(completed_guess[-1].name))
                 _start_fresh_fit(self, completed_guess[-1])
 
             else:
@@ -566,7 +605,7 @@ class Fitter(object):
             processors = self._maxCpus
         else:
             processors = min(processors, self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors)
+        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
 
         time_per_pix = 0
         num_pos = self.h5_main.shape[0] - self._start_pos
@@ -613,4 +652,4 @@ class Fitter(object):
 
         print('Completed computing fit. Writing to file.')
 
-        return self.h5_fit
+        return PycroDataset(self.h5_fit)

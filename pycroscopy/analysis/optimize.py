@@ -101,8 +101,8 @@ class Optimize(object):
         self.options = options
         gm = GuessMethods()
         if strategy in gm.methods:
-            func = gm.__getattribute__(strategy)#(**options)
-                # start pool of workers
+            func = gm.__getattribute__(strategy)  # (**options)
+            # start pool of workers
             if processors > 1:
                 print('Computing Jobs In parallel ... launching %i kernels...' % processors)
             else:
@@ -164,7 +164,7 @@ class Optimize(object):
 
         solver = scipy.optimize.__dict__[self.solver_type]
         values = [joblib.delayed(solver)(self.obj_func, guess,
-                                         args=[vector]+list(self.obj_func_args),
+                                         args=[vector] + list(self.obj_func_args),
                                          **solver_options) for vector, guess in zip(self.data, self.guess)]
         results = joblib.Parallel(n_jobs=processors)(values)
 

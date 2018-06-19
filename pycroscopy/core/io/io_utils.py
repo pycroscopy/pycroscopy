@@ -185,7 +185,7 @@ def format_size(size_in_bytes, decimals=2):
         String with size formatted correctly
     """
     units = ['bytes', 'kB', 'MB', 'GB', 'TB']
-    factors = 1024 ** np.arange(len(units))
+    factors = 1024 ** np.arange(len(units), dtype=np.int64)
     return format_quantity(size_in_bytes, units, factors, decimals=decimals)
 
 
@@ -212,7 +212,7 @@ def get_available_memory():
     return mem
 
 
-def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=False):
+def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=False, min_free_cores=None, verbose=False):
     """
     Decides the number of cores to use for parallel computing
 
@@ -227,6 +227,10 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
         a hit in terms of starting and using a larger number of cores, so use fewer cores instead.
         Eg- BE SHO fitting is fast (<1 sec) so set this value to False,
         Eg- Bayesian Inference is very slow (~ 10-20 sec)so set this to True
+    min_free_cores : uint (Optional, default = 1 if number of logical cores < 5 and 2 otherwise)
+        Number of CPU cores that should not be used)
+    verbose : Boolean (Optional.  Default = False)
+        Whether or not to print statements that aid in debugging
 
     Returns
     -------
@@ -234,25 +238,63 @@ def recommend_cpu_cores(num_jobs, requested_cores=None, lengthy_computation=Fals
         Number of logical cores to use for computation
     """
 
-    max_cores = max(1, cpu_count() - 2)
+    logical_cores = cpu_count()
+
+    if min_free_cores is not None:
+        if not isinstance(min_free_cores, int):
+            raise TypeError('min_free_cores should be an unsigned integer')
+        if min_free_cores < 0 or min_free_cores >= logical_cores:
+            raise ValueError('min_free_cores should be an unsigned integer less than the number of logical cores')
+        if verbose:
+            print('Number of requested free CPU cores: {} was accepted'.format(min_free_cores))
+    else:
+        if logical_cores > 4:
+            min_free_cores = 2
+        else:
+            min_free_cores = 1
+        if verbose:
+            print('Number of CPU free cores set to: {} given that the CPU has {} logical cores'
+                  '.'.format(min_free_cores, logical_cores))
+
+    max_cores = max(1, logical_cores - min_free_cores)
 
     if requested_cores is None:
         # conservative allocation
+        if verbose:
+            print('No requested_cores given.  Using estimate of {}.'.format(max_cores))
         requested_cores = max_cores
     else:
-        # Respecting the explicit request
-        requested_cores = max(min(int(abs(requested_cores)), cpu_count()), 1)
+        if not isinstance(requested_cores, int):
+            raise TypeError('requested_cores should be an unsigned integer')
+        if verbose:
+            print('{} cores requested.'.format(requested_cores))
+        if requested_cores < 0 or requested_cores > logical_cores:
+            # Respecting the explicit request
+            requested_cores = max(min(int(abs(requested_cores)), logical_cores), 1)
+            if verbose:
+                print('Clipped explicit request for CPU cores to: {}'.format(requested_cores))
+
+    if not isinstance(num_jobs, int):
+        raise TypeError('num_jobs should be an unsigned integer')
+    if num_jobs < 1:
+        raise ValueError('num_jobs should be greater than 0')
 
     jobs_per_core = max(int(num_jobs / requested_cores), 1)
     min_jobs_per_core = 20  # I don't like to hard-code things here but I don't have a better idea for now
+    if verbose:
+        print('computational jobs per core = {}. For short computations, each core must have at least {} jobs to '
+              'warrant parallel computation.'.format(jobs_per_core, min_jobs_per_core))
 
     if not lengthy_computation:
+        if verbose:
+            print('Computations are not lengthy.')
         if requested_cores > 1 and jobs_per_core < min_jobs_per_core:
             # cut down the number of cores if there are too few jobs
             jobs_per_core = 2 * min_jobs_per_core
             # intelligently set the cores now.
             requested_cores = max(1, min(requested_cores, int(num_jobs / jobs_per_core)))
-            # print('Not enough jobs per core. Reducing cores to {}'.format(recom_cores))
+            if verbose:
+                print('Not enough jobs per core. Reducing cores to {}'.format(requested_cores))
 
     return int(requested_cores)
 

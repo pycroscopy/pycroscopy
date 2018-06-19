@@ -709,9 +709,9 @@ def fit_loop(vdc_shifted, pr_shifted, guess):
         err = y - loop_fit_function(x, p)
         return err
 
-    def loop_jacobian_residuals(p, y, x):
-        Jerr = -loop_fit_jacobian(x, p)
-        return Jerr
+    # def loop_jacobian_residuals(p, y, x):
+    #     Jerr = -loop_fit_jacobian(x, p)
+    #     return Jerr
 
     # do not change these:
     lb = ([-1E3, -1E3, -1E3, -1E3, -1E-1, 1E-3, 1E-3, 1E-3, 1E-3])  # Lower Bounds

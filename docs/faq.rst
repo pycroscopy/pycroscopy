@@ -18,10 +18,22 @@ Note that one of the major strengths of pycroscopy is that it can be **science- 
 
 Our data and file format as well as programming framework can easily be extended to or adopted by other scientific domains such as neutron science, nuclear sciences, etc.
 
+We are eager to hear about the many research domains that find our data format and package useful. Please send us an email at pycroscopy@gmail.com
+
 Who uses pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~
 * `The Institute for Functional Imaging of Materials (IFIM) <http://ifim.ornl.gov>`_ at `Oak Ridge National Laboratory <www.ornl.gov>`_ uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques.
-* There are several research groups in universities and national labs including University of Washington, and Idaho National Laboratory, who are beginning to use this package for their research.
+* Synchrotron Radiation Research at Lund University
+* Nuclear Engineering and Health Physics, Idaho State University
+* Prof. David Ginger's group at Department of Chemistry, University of Washington
+* Idaho National Laboratory
+* Central Michigan University
+* Iowa State University
+* George Western University
+* Brown University
+* University of Mons
+* and many more groups in universities and national labs.
+* Please get in touch with us if you would like your group / university to be added here.
 
 How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -39,10 +51,13 @@ How is pycroscopy different from ImageJ, FIJI, ImageSXM, WSxM, or xarray?
   single version of an algorithm that can be applied to any data.
 * **Scalable**: Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. Nearly all the aforementioned
   software are applicable to laptops only. Supercomputer / cloud computing scaling in pycroscopy will arrive in the later part of 2018.
+* **Flexibility / Customizable**: Like ImageJ / FIJI, it is far easier to add features to pycroscopy when compared to  WSxM or Gwyddion
+* **User Interface**: Pycroscopy relies on Jupyter notebooks + interactive widgets instead of graphical interface used in most other alternatives.
 * **Other complimentary software**:
 
   * `GXSM <http://gxsm.sourceforge.net>`_ is another software package that focuses more on the data acquisition from instruments rather than advanced data analysis.
   * `xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy.
+* For simple data operations such as flattening, finding maximum, etc. on 2D images or spectra, ImageJ / Gwyddion / WSxM may be better alternatives to pycroscopy.
 
 Why is pycroscopy written in python and not C / Fortran / Julia?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -65,7 +80,7 @@ Not at all. One of the tenets of pycroscopy is lowering the barrier for scientis
 
 What sort of computer do I need to run pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You can use practically any laptop / desktop / virtual machine running Windows / Mac OS / Linux. Pycroscopy is not tested on 32 bit operating systems (very unlikely that your computer is a 32 bit system. Even your phone uses a 64 bit operating system).  
+You can use practically any laptop / desktop / virtual machine running Windows / Mac OS / Linux. Pycroscopy is not tested on 32 bit operating systems (very rare).
 
 Why doesn't pycroscopy use graphical user interfaces?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,39 +101,43 @@ Do I still need to use standard software for plotting figures for papers?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Not at all. Python has an excellent set of libraries for generating even complicated figures for journal papers. Pycroscopy has `several functions <https://pycroscopy.github.io/pycroscopy/auto_examples/user_tutorials/plot_utils.html#sphx-glr-auto-examples-user-tutorials-plot-utils-py>`_ that make it easier to quickly generate publication-ready figures. There are `several publications <https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy>`_ that have only used pycroscopy and matplotlib to generate figures for papers. If you are still not convinced, you can always export your data to text / csv files and use conventional softwares like `Origin Pro <https://www.originlab.com>`_.
 
-How can I cite pycroscopy?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.59.7. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
+How can I reference pycroscopy?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.60.0. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
 
 Data
 ----
 What do you mean by multidimensional data?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets:
-
-  * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
-  * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
-  * If the bias is varied over B values over C cycles at X columns and Y rows in a 2D grid of positions, the resultant dataset would have ``4 dimensions:`` ``(Rows, Columns, Cycle, Bias)``.
-* ``Multi-feature``: As a different example, let us suppose that the ``petal width``, ``length``, and ``weight`` were measured for ``F`` different kinds of flowers. This would result in a ``1 dimensional dataset`` with the kind of flower being the sole dimension. Such a dataset is **not** a 3 dimensional dataset because the ``petal width, length``, and ``weight`` are only different ``features`` for each measurement. Some quantity needs to be **measured for all combinations of** petal width, length, and weight to make this dataset 3 dimensional. Most examples observed in data mining, simple machine learning actually fall into this category
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Please refer to the nomenclature section of our `data and file formatting document <https://pycroscopy.github.io/pycroscopy/data_format.html#nomenclature>`_
 
 Why not use established file formats from other domains?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* It is true that we really don't want yet another format in our lives. We wanted to adopt a file format that is already **widely accepted in supercomputing**, **scientific research**, and can be **accessed from any programming language**. We chose **HDF5** since it suits our needs perfectly.
-* We found that existing data formats in science such as the `Nexus data format <http://www.nexusformat.org>`_, `XDMF <http://www.xdmf.org/index.php/Main_Page>`_, and `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_:
+In our documentation about the data structure and `file format <https://pycroscopy.github.io/pycroscopy/data_format.html#file-format>`_
+we discuss our requirements and our thoughts about the feasibility of established scientific formats including:
 
-  * were designed for **specific / narrow scientific domains only** and we did not want to shoehorn our data structure into those formats.
-  * Furthermore, despite being some of the more popular scientific data formats, it is not immediately straightforward to read those files on every computer using any programming language. For example - the `Anaconda <https://www.anaconda.com/what-is-anaconda/>`_ python distribution does not come with any packages for reading these file formats.
-* **HDF5 is the De facto standard**: Nexus, NetCDF, and even `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_ files are actually (now) **just custom flavors of HDF5 files** thereby unanimously validating our decision to choose HDF5 as our file format.
-* Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure. Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
-* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_ is perhaps the ultimate file format for supercomputers but we find the learning curve for average users to be unnecessarily steep, especially if they don't use supercomputers.
+* `Nexus data format <http://www.nexusformat.org>`_
+* `Nearly Raw Raster Data (NRRD) <http://teem.sourceforge.net/nrrd/format.html>`_
+* `XDMF <http://www.xdmf.org/index.php/Main_Page>`_,
+* `NetCDF <https://www.unidata.ucar.edu/software/netcdf/>`_
+* `Matlab's .mat <https://www.mathworks.com/help/matlab/import_export/mat-file-versions.html>`_
+* `Adios <https://www.olcf.ornl.gov/center-projects/adios/>`_
+
+We found that established community standards (like Nexus, XDMF, NetCDF, NRRD):
+
+* were designed for specific / narrow scientific domains only and we did not want to shoehorn our data structure into those formats.
+* it is not immediately straightforward to read those files on every computer using any programming language.
+
+Unlike Nexus, NetCDF, Matlab's .mat files, pycroscopy does not impose any strict restrictions or requirements on the HDF5 file structure.
+Instead, implementing the pycroscopy data format only increases the functionality of the very same datasets in pycroscopy.
+
+We are currently exploring collaboration / translators to and from `DREAM.3D's HDF5 data model <http://dream3d.bluequartz.net/binaries/Help/DREAM3D/nativedream3d.html>`_
 
 Can Pycroscopy read data files from instrument X?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some popular file formats and store the information in HDF5 files. You can find a list of available `translators here <https://github.com/pycroscopy/pycroscopy/tree/master/pycroscopy/io/translators>`_.
-
-I could not find a data translator for my data format. What do I do now?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Chances are that there is a (or multiple) python package out there already that reads the data from your file into python. All you will need to do is to write the data and metadata to HDF5 files by writing your own Translator. We have `examples available here <https://pycroscopy.github.io/pycroscopy/auto_examples/index.html#developer-tutorials>`_.
+Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some
+popular file formats and store the information in HDF5 files.
+You can find a list of available `translators here <./translators.html>`_.
 
 Becoming a part of the effort
 -----------------------------
@@ -134,7 +153,9 @@ Your contributions are very valuable to the imaging and scientific community at 
 
 * You can spread the word - tell anyone who you think may benefit from using pycroscopy. 
 * Tell us what you think of our documentation or share your own. 
-* Let us know what you would like to see in pycroscopy. 
+* Let us know what you would like to see in pycroscopy.
+* Put us in touch with others working on similar efforts so that we can join forces.
+* Guide us in `developing data translators <./translators.html>`_
 
 I would like to help and I am OK at programming
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,11 +170,4 @@ Send us an email at pycroscopy@gmail.com or a message on our `slack group <https
 
 Can you add my code to pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We would like to thank you and several others who have offered their code. We are more than happy to add your code to this project. Just as we strive to ensure that you get the best possible software from us, we ask that you do the same for others. We do NOT ask that your code be as efficient as possible. Instead, we have some simpler and easier requests:
-
-* Encapsulate independent sections of your code into functions that can be used individually if required.
-* Ensure that your code (functions) is well documented (`numpy format <https://github.com/numpy/numpy/blob/master/doc/HOWTO_DOCUMENT.rst.txt>`_) - expected inputs and outputs, purpose of functions
-* Ensure that your code works in python 2.7 and python 3.5 (ideally using packages that are easy to install on Windows, Mac, and Linux)
-* Provide a few examples on how one might use your code
-
-You can look at our code in our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_ to get an idea of how we organize, document, and submit our code.
+Please see our `guidelines for contributing code <./contribution_guidelines.html>`_

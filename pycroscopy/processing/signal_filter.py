@@ -252,7 +252,8 @@ class SignalFilter(Process):
 
         if self.noise_threshold is not None:
             self.noise_floors = parallel_compute(self.data, get_noise_floor, cores=self._cores,
-                                                 func_args=[self.noise_threshold])
+                                                 func_args=[self.noise_threshold],
+                                                 verbose=self.verbose)
 
         if isinstance(self.composite_filter, np.ndarray):
             # multiple fft of data with composite filter
