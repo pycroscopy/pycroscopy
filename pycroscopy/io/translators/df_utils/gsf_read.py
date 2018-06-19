@@ -43,7 +43,7 @@ def gsf_read(file_name):
     # read metadata header
     while term != b'\x00':
         line_string = gsf_file.readline().decode('UTF-8')
-        metadata[line_string.rpartition(' = ')[0]] = line_string.rpartition('=')[2]
+        metadata[line_string.rpartition(' = ')[0]] = line_string.rpartition('=')[2].replace('\n', '').strip()
         term = gsf_file.read(1)
         gsf_file.seek(-1, 1)
     
