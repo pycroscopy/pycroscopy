@@ -1,16 +1,19 @@
-===============================
-Pycroscopy Data and File Format
-===============================
+
+Data Model and File Format
+==========================
 
 **Suhas Somnath**
 
 8/8/2017
 
-In this document we aim to provide a comprehensive overview, guidelines,
-and specifications for storing scientific data using the community-driven pycroscopy format.
+In this document we aim to provide a comprehensive overview of the motivation for and specifications of the
+**Universal Spectroscopy and Imaging Data** (**USID**) Model and the file format (**h5USID**) used for storing
+spectroscopy and imaging data.
 
-**Dr. Stephen Jesse** conceived the original guidelines on structuring the data while
-**Dr. Suhas Somnath** and **Chris R. Smith** implemented the data structure into the hierarchical data format (HDF5)
+Pycroscopy uses the **USID** model and **h5USID** files.
+
+**Dr. Stephen Jesse** conceived the **USID** while **Dr. Suhas Somnath** and **Chris R. Smith** implemented **USID**
+into hierarchical data format (**HDF5**) files using python in **pyUSID**
 
 .. contents::
 
@@ -20,7 +23,7 @@ Before we start off, lets clarify some nomenclature to avoid confusion.
 
 Data model
 ~~~~~~~~~~~
-Data model refers to the way the data is arranged. This does not depend on the implementation in a particular file format
+Data model refers to the way the data is arranged. This does **not** depend on the implementation in a particular file format
 
 File format
 ~~~~~~~~~~~~
@@ -45,7 +48,7 @@ be frequency for example.
 
 Dimensionality
 ~~~~~~~~~~~~~~~
-* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets or ``tensors`` of order ``N``:
+* We consider data recorded for all combinations of 2 or more variables as ``multi-dimensional`` datasets or ``Nth order tensors``:
 
   * For example, if a single value of current is recorded as a function of driving / excitation bias or voltage having B values, the dataset is said to be ``1 dimensional`` and the dimension would be - ``Bias``.
   * If the bias is cycled C times, the data is said to be ``two dimensional`` with dimensions - ``(Bias, Cycle)``.
@@ -55,7 +58,7 @@ Dimensionality
 Why should you care?
 --------------------
 
-The quest for understanding more about samples has necessitated the
+The quest for understanding more about matter has necessitated the
 development of a multitude of instruments, each capable of numerous
 measurement modalities.
 
@@ -96,14 +99,14 @@ Other problems
    advanced algorithms to reconstruct the missing data. We have not come across any robust solutions for storing such
    **Compressed sensing / sparse sampling** data. More in the **Advanced Topics** section.
 
-Pycroscopy Data Model
----------------------------
+Universal Spectroscopy and Imaging Data (USID) Model
+------------------------------------------------------
 
 To solve the above and many more problems, we have developed an
 **instrument agnostic data model** that can be used to represent data
 from any instrument, size, dimensionality, or complexity.
 
-Information in pycroscopy files are stored in three main kinds of datasets:
+Information in **USID** are stored in three main kinds of datasets:
 
 #. ``Main`` datasets that contain the raw measurements recorded from
    the instrument as well as results from processing or analysis routines
@@ -117,8 +120,8 @@ smaller pieces but critical pieces of information such as the
 ``quantity`` and ``units`` that describe every data point in the ``main`` dataset.
 
 **We acknowledge that this data model is not trivial to understand at first glance but we are making every effort
-to make is simple to understand. If you ever find anything complicated or unclear, please `write to us <./contact.html>`_
-and we will improve our documentation.**
+to make is simple to understand. If you ever find anything complicated or unclear, please** `write to us <./contact.html>`_
+**and we will improve our documentation.**
 
 ``Main`` Datasets
 ~~~~~~~~~~~~~~~~~
@@ -128,10 +131,10 @@ thing in common:
 
 **The same measurement / operation is performed at each spatial position**
 
-The data model in pycroscopy is based on this one simple ground-truth.
+The **USID** model is based on this one simple ground-truth.
 The data always has some ``spatial dimensions`` (X, Y, Z) and some
 ``spectroscopic dimensions`` (time, frequency, intensity, wavelength,
-temperature, cycle, voltage, etc.). **In pycroscopy, the spatial
+temperature, cycle, voltage, etc.). **In USID, the spatial
 dimensions are collapsed onto a single dimension and the spectroscopic
 dimensions are flattened into the second dimension.** Thus, all data are
 stored as **two dimensional arrays**. The data would be arranged in the same manner that
@@ -202,7 +205,7 @@ atomic force microscopy, current-voltage spectroscopy, etc. In this case, the me
 at a single location meaning that this dataset has a single *arbitrary* ``position dimension``
 of size 1. At this position, data is recorded as a
 function of a single variable (``spectroscopic dimension``) such as *wavelength* or *frequency*.
-Thus, if the spectrum contained ``S`` data points, the pycroscopy representation of this
+Thus, if the spectrum contained ``S`` data points, the **USID** representation of this
 data would be a ``1 x S`` matrix. The ``quantity`` represented by this data would be
 
 Gray-scale images
@@ -214,7 +217,7 @@ at each location in a two dimensional grid. Thus, there are are two
 ``position dimensions`` - *X*, *Y*. The value at each pixel was not really acquired
 as a function of any variable so the data has one *arbitrary* ``spectroscopic dimension``.
 Thus, if the image had ``P`` rows and ``Q`` columns, it would have to be flattened and
-represented as a ``P*Q x 1`` array in the pycroscopy format. The second
+represented as a ``P*Q x 1`` array according to the **USID** model. The second
 axis has size of 1 since we only record one value (intensity) at each
 location. In theory, the flattened data could be arranged column-by-column (as in the figure above)
 and then row-by-row or vice-versa depending on how the data was (sequentially)
@@ -235,7 +238,7 @@ with ``P`` rows and ``Q`` columns, it would result in a three dimensional datase
 This example is a combination of the two examples above. The above 3D dataset has two
 ``position dimensions`` - *X* and *Y*, and has one ``spectroscopic dimension`` - *Frequency*.
 Each data point in the dataset contains the same physical ``quantity`` - *Amplitude*.
-In order to represent this 3D dataset in the 2D pycroscopy form, the two ``position dimensions``
+In order to represent this 3D dataset in the 2D **USID** form, the two ``position dimensions``
 in such data would need to be flattened along the vertical axis and the spectrum at each position
 would be laid out along the horizontal axis or the spectroscopic axis.
 Thus the original ``P x Q x S`` 3D array would be flattened to a 2D array of shape - ``P*Q x S``.
@@ -287,7 +290,7 @@ Compound Datasets:
 There are instances where multiple values are associate with a
 single position and spectroscopic value in a dataset.  In these cases,
 we use the `compound dataset functionality in HDF5 <https://support.hdfgroup.org/HDF5/Tutor/compound.html>`_
- to store all of the
+to store all of the
 values at each point.  This also allows us to access any combination of
 the values without needing to read all of them.  Pycroscopy actually uses
 compound datasets a lot more frequently than one would think. The need
@@ -302,7 +305,7 @@ and utility of compound datasets are best described with examples:
   storing the data in this manner would mean that the *red* intensity was
   collected first, followed by the *green*, and finally by the *blue*. In
   other words, **a notion of chronology is attached to both the position
-  and spectroscopic axes** according to the pycroscopy definition.
+  and spectroscopic axes** according to the **USID** definition.
   While the intensities for each color may be acquired sequentially in
   detectors, since we are not aware of the exact sequence we will assume
   that the *red*, *green*, and *blue* values are acquired simultaneously for
@@ -314,7 +317,7 @@ and utility of compound datasets are best described with examples:
   store complex numbers in the same way. The complex numbers have a *real*
   and an *imaginary* component just like color images have *red*, *blue*,
   and *green* components that describe a single pixel. Therefore, color
-  images in pycroscopy would be represented by a ``N x 1`` matrix with
+  images in the **USID** representation would be represented by a ``N x 1`` matrix with
   compound values instead of a ``N x 3`` matrix with real or integer values.
   For example, one would refer to the *red* component at a particular position as:
 
@@ -442,15 +445,19 @@ value, the ``Position Indices`` and ``Position Values`` datasets would have a sh
 
 ``Position Indices``:
 
-+-----------+-----+
-| **arb.**  | 0   |
-+-----------+-----+
++----------+
+| **arb.** |
++==========+
+| 0        |
++----------+
 
 ``Position Values``:
 
-+-----------+-----+
-| **arb.**  | 0   |
-+-----------+-----+
++----------+
+| **arb.** |
++==========+
+| 0.0      |
++----------+
 
 Gray-scale image
 ^^^^^^^^^^^^^^^^
@@ -622,7 +629,7 @@ thus proving that this data model can indeed accommodate data of any size, compl
 
 Channels
 ~~~~~~~~~
-The pycroscopy data model also allows the representation and capture of **information acquired
+The **USID** model also allows the representation and capture of **information acquired
 simultaneously from multiple sources** through ``Channels``.
 Each ``Channel`` would contain a **separate** ``main`` dataset. ``Ancillary`` datasets
 can be shared across channels if the position or spectroscopic dimensions are identical.
@@ -679,7 +686,7 @@ Candidates
   as the base container to store their data. We are currently evaluating compatibility with and feasibility of their data model.
 
 We found that `HDF5 <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_, works best for us compared to the alternatives.
-Hence, pycroscopy has officially adopted the HD5 file format.
+Hence, we have implemented the **USID** model into the HDF5 file format and such file will be referred to as **h5USID** files.
 
 We acknowledge that it is nearly impossible to find the perfect file format and HDF5 too has its fair share of drawbacks.
 One common observation among file formats is that a file format optimized for the cloud or cluster computing often does
@@ -692,11 +699,12 @@ their infancy and have not proven themselves like HDF5 has. This being said, the
 `just announced <https://www.youtube.com/watch?v=3tP3lT5y-QA>`_ a `cloud flavor <https://www.hdfgroup.org/solutions/hdf-cloud/>`_
 of HDF5 and we plan to look into this once h5py or other python packages support such capabilities.
 
-Implementation in HDF5
+h5USID - USID in HDF5
 -----------------------
 
-Here we discuss guidelines and specifications for implementing the
-pycroscopy data structure in HDF5 files.
+Here we discuss guidelines and specifications for implementing the **USID** model into HDF5 files.
+While we could impose that the file extension be changed from **.hdf5** to **.h5USID**, we choose to retain
+the **.hdf5** extension so that other software are aware of the general file type and can recognize / read them easily.
 
 Quick basics of HDF5
 ~~~~~~~~~~~~~~~~~~~~~
@@ -821,7 +829,7 @@ All groups and (at least ``Main``) datasets must be created with the following *
 Groups
 ~~~~~~~~~~
 
-HDF5 Groups in pycroscopy are used to organize categories of information (raw measurements from instruments, results from data analysis, etc.) in an intuitive manner.
+HDF5 Groups in **h5USID** are used to organize categories of information (raw measurements from instruments, results from data analysis, etc.) in an intuitive manner.
 
 Measurement data
 ^^^^^^^^^^^^^^^^
@@ -989,11 +997,11 @@ Advanced topics
 
 ``Region references``
 ~~~~~~~~~~~~~~~~~~~~~~
-These are references to sections of a ``main`` or ``ancillary`` dataset that make it easy to access data specfic to a
+These are references to sections of a ``main`` or ``ancillary`` dataset that make it easy to access data specific to a
 specific portion of the measurement, or each column or row in the ancillary datasets just by their alias (intuitive
 strings for names).
 
-We have observed that the average pycroscopy user does not tend to use region references as much as we thought they
+We have observed that the average **USID** user does not tend to use region references as much as we thought they
 might. Therefore, we do not require or enforce that region references be used
 
 Processing on multiple ``Main`` datasets
