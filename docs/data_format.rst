@@ -206,7 +206,7 @@ at a single location meaning that this dataset has a single *arbitrary* ``positi
 of size 1. At this position, data is recorded as a
 function of a single variable (``spectroscopic dimension``) such as *wavelength* or *frequency*.
 Thus, if the spectrum contained ``S`` data points, the **USID** representation of this
-data would be a ``1 x S`` matrix. The ``quantity`` represented by this data would be
+data would be a ``1 x S`` matrix. The ``quantity`` represented in this data would be **Amplitude**.
 
 Gray-scale images
 ^^^^^^^^^^^^^^^^^
