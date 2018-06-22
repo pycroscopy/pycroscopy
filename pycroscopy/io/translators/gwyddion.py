@@ -116,7 +116,6 @@ class GwyddionTranslator(Translator):
                         'Raw_Data', 'Raster_Height', gsf_meta['ZUnits'], pos_desc, spec_desc,
                             global_parms, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals,
                                 'Raster_', 'Position_')
-            
             return h5_path
 
         if file_path.endswith('gwy'):
@@ -126,15 +125,31 @@ class GwyddionTranslator(Translator):
             """
             # Read the data in from the specified file
             gwy_data = gwyfile.load(file_path)
-            
-            # Write parameters where available specifically for sample_name
-            # data_type, comments and experiment_date to file-level parms         
-            
-            # Create Position and spectroscopic datasets
-        
-            # Write file and measurement level parameters
+            for key in gwy_data.keys():
+                print(key)
+            print(gwy_data['/0/meta'].values())
+                # split_key = str.split(key[1:], '/')
+            """if key.endswith('/data'):
+                for each in gwy_data[key]:
+                    print('-------------------------')
+                    print(each)
+                    print('-------------------------')
+                    if each == 'data':
+                        print(gwy_data[key][each])"""
 
-            # Prepare the list of raw_data datasets
+            # Write parameters where available specifically for sample_name
+            # data_type, comments and experiment_date to file-level parms
+
+            # Create the measurement group and write measurement level
+            # parameters - same parms as file-level parms
+
+            # Build the ancillary position datasets
+
+            # Build the ancillary spectroscopic datasets
+
+            # Create the channel-level group
+
+            # Build the main dataset
             return file_path
         
 
