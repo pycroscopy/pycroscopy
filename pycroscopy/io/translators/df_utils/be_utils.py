@@ -22,6 +22,8 @@ from pyUSID.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
+from ...hdf_writer import HDFwriter
+from ...virtual_data import VirtualDataset, VirtualGroup
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
