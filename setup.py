@@ -35,6 +35,7 @@ requirements = ['numpy>=1.13.0',
                 'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
 
                 'numba',
+                'pyUSID',
 
                 'xlrd>=1.0.0',
                 'igor',
