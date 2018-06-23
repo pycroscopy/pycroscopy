@@ -15,7 +15,7 @@ import sys
 sys.path.append("../../../pycroscopy/")
 from pycroscopy.io.virtual_data import VirtualGroup, VirtualDataset
 from pycroscopy.io.hdf_writer import HDFwriter
-from pycroscopy.core.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
+from pyUSID.io.hdf_utils import get_attr, get_h5_obj_refs  # Until an elegant solution presents itself
 
 
 class TestHDFWriter(unittest.TestCase):
