@@ -67,7 +67,7 @@ from pycroscopy.viz import cluster_utils
 # ========
 #
 # In this example, we will work on a **Band Excitation Piezoresponse Force Microscopy (BE-PFM)** imaging dataset
-# acquired from advanced atomic force microscopes. In this dataset, a spectra was colllected for each position in a two
+# acquired from advanced atomic force microscopes. In this dataset, a spectra was collected for each position in a two
 # dimensional grid of spatial locations. Thus, this is a three dimensional dataset that has been flattened to a two
 # dimensional matrix in accordance with the pycroscopy data format.
 #
@@ -115,14 +115,15 @@ y_label = 'Amplitude (a.u.)'
 #
 # SVD is an eigenvector decomposition that is defined statistically, and therefore typically produces
 # non-physical eigenvectors. Consequently, the interpretation of eigenvectors and abundance maps from
-# SVD requires care and caution in interpretation. Nontheless, it is a good method for quickly
+# SVD requires care and caution in interpretation. Nonetheless, it is a good method for quickly
 # visualizing the major trends in the dataset since the resultant eigenvectors are sorted in descending
 # order of variance or importance. Furthermore, SVD is also very well suited for data cleaning through
 # the reconstruction of the dataset using only the first N (most significant) components.
 #
 # SVD results in three matrices:
+#
 # * V - Eigenvectors sorted by variance in descending order
-# * U - corresponding bundance maps
+# * U - corresponding abundance maps
 # * S - Variance or importance of each of these components
 #
 # Advantage of pycroscopy:
@@ -136,7 +137,7 @@ y_label = 'Amplitude (a.u.)'
 # components. So, the eigenvectors would need to be restructured to get back the complex valued eigenvectors.
 #
 # **Pycroscopy handles all these data transformations (both for the source dataset and the eigenvectors)
-# automatically.**  In general, pycroscopy handles compund / complex valued datasets everywhere possible
+# automatically.**  In general, pycroscopy handles compound / complex valued datasets everywhere possible
 #
 # Furthermore, while it is not discussed in this example, pycroscopy also writes back the results from SVD back to
 # the same source h5 file including all relevant links to the source dataset and other ancillary datasets
