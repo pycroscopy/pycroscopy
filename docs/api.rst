@@ -8,7 +8,7 @@ The package structure is simple, with 5 main modules:
    2. `processing`: Multivariate Statistics, Machine Learning, and Filtering.
    3. `analysis`: Model-dependent analysis of image information.
    4. `viz`: Visualization and interactive slicing of high-dimensional data by lightweight Qt viewers.
-   5. `core`: Core components that handle the file I/O, processing framework and visualization utilities
+   5. `simulation`: atomic force microscopy simulations, etc.
 
 .. currentmodule:: pycroscopy
 
