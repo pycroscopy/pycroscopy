@@ -10,8 +10,9 @@ Submodules
     core
 
 """
-from . import core
-from .core import *
+import pyUSID as core
+from pyUSID import *
+from pyUSID import USIDataset as PycroDataset
 
 from .io import translators
 from . import analysis
@@ -22,3 +23,4 @@ from .__version__ import version as __version__
 from .__version__ import time as __time__
 
 __all__ = core.__all__
+__all__ += ['PycroDataset']
