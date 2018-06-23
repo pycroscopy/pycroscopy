@@ -11,7 +11,10 @@ Submodules
 
 """
 import pyUSID as core
-from pyUSID import *
+from pyUSID.viz import *
+from pyUSID.processing import *
+from pyUSID.io import *
+# For legacy reasons:
 from pyUSID import USIDataset as PycroDataset
 
 from .io import translators
