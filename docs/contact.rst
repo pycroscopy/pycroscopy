@@ -5,4 +5,4 @@ Contact us
 * If you find any bugs or if you want a feature added to pycroscopy, raise an `issue <https://github.com/pycroscopy/pycroscopy/issues>`_.
   You will need a (free) Github account to do this.
 
-  * Please submit the errors you see as part of your issue along with basic details regarding your
+  * Please submit the errors you see as part of your issue along with basic details regarding your computer, operating system, etc.
