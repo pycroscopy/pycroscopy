@@ -3,7 +3,6 @@ python:
   - '3.6'
   - '2.7'
   - '3.5'
-  - '3.4'
 before_install:
   - sudo apt-get update -qq
 #  Using pip to install instead of setup.py for now to fix numba issue.
