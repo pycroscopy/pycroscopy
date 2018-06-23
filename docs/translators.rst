@@ -1,6 +1,6 @@
 Data Translators
 =================
-* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `pycroscopy formatted HDF5 files <../../pyUSID/data_format.html>`_.
+* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `Universal Spectroscopy and Imaging Data (USID) HDF5 files <../../pyUSID/data_format.html>`_.
 * You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pyUSID/auto_examples/cookbooks/plot_numpy_translator.html>`_ on our sister project's documentation.
 * Below is a list of ``Translators`` already available in pycroscopy to translate data.
 * These translators can be accessed via ``pycroscopy.io.translators`` or ``pycroscopy.translators``
@@ -16,7 +16,7 @@ Data Translators
     * Guidance in correctly extracting the metadata (parameters) and data
     * Your time. We are interested in collaborating with you to develop translators.
 * We are also interested in collaborating with instrument manufacturers to integrate pycroscopy into instrumentation or analysis software.
-* We are working on writing translators to popular open-source software / formats such as ``WSxM``, ``Gwyddion``, ``ImageJ``, and ``FiJi``.
+* We are working on writing translators to popular open-source software / formats such as ``WSxM``, ``Gwyddion``, and ``ImageJ``.
 
 Generic File Formats
 --------------------
