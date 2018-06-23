@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 05 07:55:56 2016
+
+@author: Chris Smith
+"""
 # ParseDM3File reads in a DM3 file and translates it into a dictionary
 # this module treats that dictionary as an image-file and extracts the
 # appropriate image data as numpy arrays.

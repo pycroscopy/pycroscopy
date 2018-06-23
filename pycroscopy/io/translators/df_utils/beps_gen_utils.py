@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 05 07:55:56 2016
+
+@author: Chris Smith
+"""
 import numpy as np
 import os
 
