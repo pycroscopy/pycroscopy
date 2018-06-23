@@ -7,7 +7,6 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from warnings import warn
 import numpy as np
 import sys
-import multiprocessing as mp
 import joblib
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
