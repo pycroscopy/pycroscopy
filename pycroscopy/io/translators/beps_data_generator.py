@@ -7,12 +7,12 @@ import numpy as np
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr
-from ...core.io.dtype_utils import stack_real_to_compound
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.pycro_data import PycroDataset
-from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.image import read_image
+from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr
+from pyUSID.io.dtype_utils import stack_real_to_compound
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID import USIDataset
+from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.image import read_image
 from ...analysis.utils.be_loop import loop_fit_function
 from ...analysis.utils.be_sho import SHOfunc
 from ...analysis.be_sho_fitter import sho32
@@ -558,11 +558,11 @@ class FakeBEPSGenerator(Translator):
         link_as_main(h5_loop_fit, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)
         link_as_main(h5_loop_guess, h5_pos_inds, h5_pos_vals, h5_loop_spec_inds, h5_loop_spec_vals)
 
-        self.h5_raw = PycroDataset(h5_raw)
-        self.h5_sho_guess = PycroDataset(h5_sho_guess)
-        self.h5_sho_fit = PycroDataset(h5_sho_fit)
-        self.h5_loop_guess = PycroDataset(h5_loop_guess)
-        self.h5_loop_fit = PycroDataset(h5_loop_fit)
+        self.h5_raw = USIDataset(h5_raw)
+        self.h5_sho_guess = USIDataset(h5_sho_guess)
+        self.h5_sho_fit = USIDataset(h5_sho_fit)
+        self.h5_loop_guess = USIDataset(h5_loop_guess)
+        self.h5_loop_fit = USIDataset(h5_loop_fit)
         self.h5_spec_vals = h5_spec_vals
         self.h5_spec_inds = h5_spec_inds
         self.h5_sho_spec_inds = h5_sho_spec_inds

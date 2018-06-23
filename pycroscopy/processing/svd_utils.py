@@ -12,17 +12,15 @@ import numpy as np
 from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
 
-from ..core.processing.process import Process
+from pyUSID.processing.process import Process
 from .proc_utils import get_component_slice
-from ..core.io.hdf_utils import get_h5_obj_refs, find_results_groups, get_indices_for_region_ref, \
+from pyUSID.io.hdf_utils import find_results_groups, get_indices_for_region_ref, \
     create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs, create_indexed_group
-from ..io.hdf_writer import HDFwriter
-from ..core.io.io_utils import get_available_memory, format_time
-from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
-from ..io.virtual_data import VirtualDataset, VirtualGroup
-from ..core.io.write_utils import Dimension, calc_chunks
-from ..core.io.pycro_data import PycroDataset
+from pyUSID.io.io_utils import get_available_memory, format_time
+from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
+from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID import USIDataset
 
 
 class SVD(Process):
@@ -49,7 +47,7 @@ class SVD(Process):
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         # supercharge h5_main!
-        self.h5_main = PycroDataset(self.h5_main)
+        self.h5_main = USIDataset(self.h5_main)
 
         self.__u = None
         self.__v = None

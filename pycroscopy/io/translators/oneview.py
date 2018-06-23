@@ -16,10 +16,10 @@ from skimage.util import crop
 
 from .df_utils import dm4reader
 from .df_utils.dm_utils import parse_dm4_parms, read_dm3
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
-from ...core.io.image import read_image
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
+from pyUSID.io.image import read_image
 
 
 class OneViewTranslator(Translator):

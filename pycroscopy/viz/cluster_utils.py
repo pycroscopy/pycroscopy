@@ -8,9 +8,9 @@ import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import get_attr
-from ..core.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, unicode, plot_map, \
+from pyUSID import USIDataset
+from pyUSID.io.hdf_utils import get_attr
+from pyUSID.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, unicode, plot_map, \
     discrete_cmap, plot_line_family, make_scalar_mappable, plot_curves
 
 
@@ -36,8 +36,8 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
     """
     if not isinstance(h5_group, h5py.Group):
         raise TypeError('h5_group should be a h5py.Group')
-    h5_labels = PycroDataset(h5_group['Labels'])
-    h5_centroids = PycroDataset(h5_group['Mean_Response'])
+    h5_labels = USIDataset(h5_group['Labels'])
+    h5_centroids = USIDataset(h5_group['Mean_Response'])
 
     labels_mat = np.squeeze(h5_labels.get_n_dim_form())
     if labels_mat.ndim > 3:
