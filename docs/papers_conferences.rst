@@ -4,12 +4,15 @@ Papers / Conferences
 
 Journal Papers using pycroscopy
 -------------------------------
-* Electron Microscopy
+
+Electron Microscopy
+~~~~~~~~~~~~~~~~~~~
 
  #. `Big Data Analytics for Scanning Transmission Electron Microscopy Ptychography <https://www.nature.com/articles/srep26348>`_ by *S. Jesse* et al., **Scientific Reports** (2015); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Ptychography.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Ptychography.html>`_
  #. `Feature extraction via similarity search: application to atom finding and denosing in electon and scanning probe microscopy imaging <https://ascimaging.springeropen.com/articles/10.1186/s40679-018-0052-y>`_ by *S. Somnath* et al.; **Advanced Structural and Chemical Imaging** (2018); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
 
-* Scanning Probe Microscopy 
+Scanning Probe Microscopy 
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
  #. `Rapid mapping of polarization switching through complete information acquisition <http://www.nature.com/articles/ncomms13290>`_ by *S. Somnath* et al., **Nature Communications** (2016); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/G_mode_filtering.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/SPM/AFM/G_mode_filtering.html>`_.
  #. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by *L. Li* et al., **Scientific Reports** (2017); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/STS_LDOS.ipynb>`_.
@@ -18,7 +21,7 @@ Journal Papers using pycroscopy
  #. `Ultrafast Current Imaging via Bayesian Inference <https://www.nature.com/articles/s41467-017-02455-7>`_ by *S. Somnath* et al., **Nature Communications** (2018); `Jupyter Notebook <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/gIV_sIV_Nat_Comm_2017.ipynb>`_, `complete notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/SPM/AFM/gIV_sIV_Nat_Comm_2017.html>`_.
  #. `Reconstructing phase diagrams from local measurements via Gaussian processes: mapping the temperature-composition space to confidence <https://www.nature.com/articles/s41524-018-0078-7>`_ by *D. K. Pradhan* et al., **NPJ Computational Materials** (2018)
 
-* Many more coming soon....
+**Many more coming soon....**
 
 pycroscopy at International conferences
 ---------------------------------------
