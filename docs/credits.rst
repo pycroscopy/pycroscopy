@@ -5,7 +5,7 @@ The core pycroscopy team consists of:
 * `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
 * `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
 
-Data format conceived by `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
+Universal Spectroscopy and Imaging Data (USID) model conceived by `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
 
 Substantial contributions from many developers including:
 
