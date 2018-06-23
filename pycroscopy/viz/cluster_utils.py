@@ -1,16 +1,18 @@
 from __future__ import division, print_function, absolute_import, unicode_literals
-
+import sys
 from warnings import warn
-
 import h5py
 import matplotlib as mpl
 import numpy as np
 import scipy
 from matplotlib import pyplot as plt
 
+if sys.version_info.major == 3:
+    unicode = str
+
 from pyUSID import USIDataset
 from pyUSID.io.hdf_utils import get_attr
-from pyUSID.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, unicode, plot_map, \
+from pyUSID.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, plot_map, \
     discrete_cmap, plot_line_family, make_scalar_mappable, plot_curves
 
 
