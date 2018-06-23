@@ -1,7 +1,7 @@
 Data Translators
 =================
-* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `pycroscopy formatted HDF5 files <https://pycroscopy.github.io/pycroscopy/data_format.html>`_. 
-* You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_numpy_translator.html>`_
+* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `pycroscopy formatted HDF5 files <../../pyUSID/data_format.html>`_.
+* You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pyUSID/auto_examples/cookbooks/plot_numpy_translator.html>`_ on our sister project's documentation.
 * Below is a list of ``Translators`` already available in pycroscopy to translate data.
 * These translators can be accessed via ``pycroscopy.io.translators`` or ``pycroscopy.translators``
 * We tend to add new ``Translators`` to this list frequently.
@@ -23,6 +23,7 @@ Generic File Formats
 * PNG, TIFF images - ``ImageTranslator``
 * Movie (frames of) represented by a stack of images - ``MovieTranslator``
 * numpy data in memory - ``NumpyTranslator``
+* Gwyddion - ``GwyddionTranslator`` - work in progress
 
 Scanning Transmission Electron Microscopy (STEM)
 ------------------------------------------------
