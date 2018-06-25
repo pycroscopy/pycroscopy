@@ -34,19 +34,19 @@ class GwyddionTranslator(Translator):
         if not isinstance(file_path, (str, unicode)):
             raise TypeError('file_path should be a string!')
         if not (file_path.endswith('.gsf') or file_path.endswith('.gwy')):
-            # TODO: Gwyddion is weird, it doesn't append the file extension some times. In theory, you could identify the kind of file by looking at the header (line 38 in gsf_read()). Ideally the header check should be used instead of the extension check
-            # This is fine for now
+            # TODO: Gwyddion is weird, it doesn't append the file extension some times.
+            # In theory, you could identify the kind of file by looking at the header (line 38 in gsf_read()).
+            # Ideally the header check should be used instead of the extension check
             raise ValueError('file_path must have a .gsf or .gwy extension!')
-
+        
         file_path = path.abspath(file_path)
         folder_path, base_name = path.split(file_path)
         base_name = base_name[:-4]
         h5_path = path.join(folder_path, base_name + '.h5')
-        
         if path.exists(h5_path):
             remove(h5_path)
 
-        h5_file = h5py.File(h5_path, 'w')
+        self.h5_file = h5py.File(h5_path, 'w')
 
         """
         Setup the global parameters
@@ -57,22 +57,22 @@ class GwyddionTranslator(Translator):
                     or
                     GwyddionGWY_<gwy_meta['title']>
         """
-        global_parms = generate_dummy_main_parms()
-        global_parms['translator'] = 'Gwyddion'
-        # TODO: Instead of removing ALL values in global_parms, I would recommend replacing / overwriting them as shown in the gsf_read() below
-
-        write_simple_attrs(h5_file, global_parms)
+        self.global_parms = generate_dummy_main_parms()
+        self.global_parms['translator'] = 'Gwyddion'
 
         # Create the measurement group
-        meas_grp = create_indexed_group(h5_file, 'Measurement')
+        meas_grp = create_indexed_group(self.h5_file, 'Measurement')
 
         if file_path.endswith('.gsf'):
             self._translate_gsf(file_path, meas_grp)
 
         if file_path.endswith('gwy'):
             self._translate_gwy(file_path, meas_grp)
+        
+        write_simple_attrs(self.h5_file, self.global_parms)
 
         return h5_path
+
 
     def _translate_gsf(self, file_path, meas_grp):
         """
@@ -91,16 +91,16 @@ class GwyddionTranslator(Translator):
         # Write parameters where available specifically for sample_name
         # data_type, comments and experiment_date to file-level parms
         # Using pop, move some global parameters from gsf_meta to global_parms:
-        global_parms = dict()
-        global_parms['data_type'] = 'Gwyddion_GSF'
-        global_parms['comments'] = gsf_meta.pop('comment', '')
-        global_parms['experiment_date'] = gsf_meta.pop('date', '')
+        self.global_parms['data_type'] = 'Gwyddion_GSF'
+        self.global_parms['comments'] = gsf_meta.pop('comment', '')
+        self.global_parms['experiment_date'] = gsf_meta.pop('date', '')
 
         # overwrite some parameters at the file level:
-        write_simple_attrs(meas_grp.parent, global_parms)
+        write_simple_attrs(meas_grp.parent, self.global_parms)
 
         # Build the reference values for the ancillary position datasets:
-        # TODO: Remove information from parameters once it is used meaningfully where it needs to be. Here, it is no longer necessary to save XReal anymore so we will pop (remove) it from gsf_meta
+        # TODO: Remove information from parameters once it is used meaningfully where it needs to be.
+        # Here, it is no longer necessary to save XReal anymore so we will pop (remove) it from gsf_meta
         x_offset = gsf_meta.pop('XOffset', 0)
         x_range = gsf_meta.pop('XReal', 1.0)
         # TODO: Use Numpy wherever possible instead of pure python
@@ -130,11 +130,11 @@ class GwyddionTranslator(Translator):
         two_dim_image = gsf_values
         write_main_dataset(chan_grp,
                            np.atleast_2d(np.reshape(two_dim_image,
-                                                    len(pos_desc[0].values) * len(pos_desc[1].values))).transpose(),
+                           len(pos_desc[0].values) * len(pos_desc[1].values))).transpose(),
                            'Raw_Data', gsf_meta.pop('Title', 'Unknown'), gsf_meta.pop('ZUnits', 'arb. units'),
                            pos_desc, spec_desc)
-
         # TODO: When passing optional arguments, you are HIGHLY recommended to specify the variable name such as aux_pos_prefix='Position_' instead of just 'Position_' (which is how you pass regulard arguments)
+
 
     def _translate_gwy(self, file_path, meas_grp):
         """
@@ -150,6 +150,40 @@ class GwyddionTranslator(Translator):
 
         # Read the data in from the specified file
         gwy_data = gwyfile.load(file_path)
+        for obj in gwy_data:
+            gwy_key = obj.split('/')
+            try:
+                # if the second index of the gwy_key can be cast into an int then
+                # it needs to be processed either as an image or a graph
+                
+                int(gwy_key[1])
+                
+                if gwy_key[2] == 'graph':
+                    # graph processing
+                    self.global_parms['data_type'] = 'GwyddionGWY_' + 'Graph'
+                    self._translate_graph(meas_grp, gwy_data)
+                elif obj.endswith('data'):
+                    self.global_parms['data_type'] = 'GwyddionGWY_' + 'Image'
+                    print('Entering translation')
+                    self._translate_image_stack(meas_grp, gwy_data)
+                    print('Translate executed')
+                break
+            except ValueError:
+                # if the second index of the gwy_key cannot be cast into an int
+                # then it needs to be processed wither as a spectra, volume or xyz
+                
+                if gwy_key[1] == 'sps':
+                    self.global_parms['data_type'] = 'GwyddionGWY_' + 'Spectra'
+                    self._translate_spectra(meas_grp, gwy_data)
+                elif gwy_key[1] == 'brick':
+                    self.global_parms['data_type'] = 'GwyddionGWY_' + 'Volume'
+                    self._translate_volume(meas_grp, gwy_data)
+                elif gwy_key[1] == 'xyz':
+                    self.global_parms['data_type'] = 'GwyddionGWY_' + 'XYZ'
+                    self._translate_xyz(meas_grp, gwy_data)
+
+        print("Out of loop")
+        write_simple_attrs(meas_grp.parent, self.global_parms)
 
         # TODO: Use the Bruker translator as a reference. use the three functions below as necessary to keep the code clean and easy to read.
 
@@ -162,29 +196,85 @@ class GwyddionTranslator(Translator):
 
         # Prepare the list of raw_data datasets
 
-    def _translate_image_stack(self):
+
+    def _translate_image_stack(self, meas_grp, gwy_data):
         """
-        Use this function to write data corresponding to a stack of scan images (most common)0
+        Use this function to write data corresponding to a stack of scan images (most common)
         Returns
         -------
-
         """
-        pass
+        # Need to build a set of channels to test against and a function-level variable to write to
+        channels = []
+        current_channel = ''
 
-    def _translate_3d_spectroscopy(self):
-        """
-        Use this to translate force-maps, I-V spectroscopy etc.
-        Returns
-        -------
+        # Iterate through each object in the gwy dataset
+        for obj in gwy_data:
+            gwy_key = obj.split('/')
+            # Test whether a new channel needs to be created
+            # The 'filename' structure in the gwy file should not have a channel created hence the try/except block
+            try:
+                if int(gwy_key[1]) not in channels:
+                    channels.append(int(gwy_key[1]))
+                    current_channel = create_indexed_group(meas_grp, "Channel")
+            except ValueError:
+                if obj.endswith('filename'):
+                    # print("Reached filename", obj, gwy_data[obj])
+                    # image filename processing
+                    pass
 
-        """
-        pass
+            # The data structure of the gwy file will be used to create the main dataset in the h5 file
+            if obj.endswith('data'):
+                # print('Reached data', obj, gwy_data[obj])
+                x_range = gwy_data[obj].pop('xreal', 1.0)
+                x_vals = np.linspace(0, x_range, gwy_data[obj]['xres'])
+                
+                y_range = gwy_data[obj].pop('yreal', 1.0)
+                y_vals = np.linspace(0, y_range, gwy_data[obj]['yres'])
+                
+                pos_desc = [Dimension('X', gwy_data[obj]['si_unit_xy'].get('unitstr'), x_vals),
+                    Dimension('Y', gwy_data[obj]['si_unit_xy'].pop('unitstr'), y_vals)]
 
-    def _translate_spectra(self):
+                spec_dim = gwy_data['/{}/data/title'.format(gwy_key[1])]
+                spec_desc = Dimension(spec_dim, gwy_data[obj]['si_unit_z'].get('unitstr', 'arb. units'), [0])
+                
+                two_dim_image = gwy_data[obj]['data']
+                write_main_dataset(current_channel,
+                                    np.atleast_2d(np.reshape(two_dim_image,
+                                    len(pos_desc[0].values) * len(pos_desc[1].values))).transpose(),
+                                    'Raw_Data',
+                                    spec_dim,
+                                    gwy_data[obj]['si_unit_z'].pop('unitstr'),
+                                    pos_desc, spec_desc)
+                
+                # image data processing
+            elif obj.endswith('meta'):
+                # print('Reached meta', obj)
+                # image metadata processing for the current channel
+                meta = {}            
+                write_simple_attrs(current_channel, meta, verbose=False)
+
+
+    def _translate_spectra(self, meas_grp, gwy_data):
         """
         Use this to translate simple 1D data like force curves
         Returns
         -------
 
         """
+        pass
+
+
+    def _translate_graph(self, meas_grp, gwy_data):
+        """
+        Use this to translate graphs
+        Returns
+        """
+        pass
+
+
+    def _translate_volume(self, meas_grp, gwy_data):
+        pass
+
+
+    def _translate_xyz(self, meas_grp, gwy_data):
         pass
