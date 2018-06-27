@@ -1086,6 +1086,11 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     pos_sort = get_sort_order(np.transpose(ds_pos))
     spec_sort = get_sort_order(ds_spec)
 
+    if h5_spec is None:
+        spec_sort = spec_sort[::-1]
+    if h5_pos is None:
+        pos_sort = pos_sort[::-1]
+
     if verbose:
         print('Position sort order: {}'.format(pos_sort))
         print('Spectroscopic sort order: {}'.format(spec_sort))
@@ -1094,7 +1099,7 @@ def reshape_from_n_dims(data_n_dim, h5_pos=None, h5_spec=None, verbose=False):
     Now we transpose the axes associated with the spectroscopic dimensions
     so that they are in the same order as in the index array
     '''
-    swap_axes = np.append(np.argsort(pos_sort), spec_sort[::-1] + len(pos_sort))
+    swap_axes = np.append(pos_sort[::-1], spec_sort[::-1] + len(pos_sort))
 
     if verbose:
         print('swap axes: {} to be applied to N dimensional data of shape {}'.format(swap_axes, data_n_dim.shape))

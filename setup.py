@@ -32,7 +32,9 @@ requirements = ['numpy>=1.13.0',
                 'pyqt5;python_version>="3.5"',
                 'pyqtgraph>=0.10',
 
-                'numpy_groupies==0.9.7', # New build of 0.9.8.4 appears to cause build problems
+                'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
+
+                'numba',
 
                 'xlrd>=1.0.0',
                 'igor',
@@ -55,6 +57,7 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',

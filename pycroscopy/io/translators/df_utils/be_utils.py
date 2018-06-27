@@ -454,6 +454,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
                                                 hist_indices[hist_ind]))
 
             h5_hist = write_main_dataset(hist_grp, hist_mat, 'Histograms',
+                                         'Counts', 'a.u.',
                                          None, hist_spec_dims,
                                          h5_pos_inds=h5_main.h5_pos_inds, h5_pos_vals=h5_main.h5_pos_vals,
                                          dtype=np.int32,

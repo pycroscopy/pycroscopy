@@ -63,7 +63,7 @@ class LabViewH5Patcher(Translator):
         raw_list = find_dataset(h5_file, 'Raw_Data')
         for h5_raw in raw_list:
             if 'quantity' not in h5_raw.attrs:
-                h5_raw.attrs['quantity'] = ' '
+                h5_raw.attrs['quantity'] = 'quantity'
             if 'units' not in h5_raw.attrs:
                 h5_raw.attrs['units'] = 'a.u.'
 

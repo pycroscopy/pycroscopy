@@ -6,21 +6,24 @@ Pycroscopy
 
 What?
 ------
-* pycroscopy is a `python <http://www.python.org/>`_ package for storing, processing, analyzing, and visualizing multidimensional scientific data.
+* pycroscopy is a `python <http://www.python.org/>`_ package for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
+* pycroscopy uses the **Universal Spectroscopy and Imaging Data (USID)** `model <https://pycroscopy.github.io/pyUSID/data_format.html>`_ as its foundation, which:
+
+  * facilitates the representation of any spectroscopic or imaging data regardless of its origin, modality, size, or dimensionality.
+  * enables the development of instrument- and modality- agnostic data processing and analysis algorithms.
 * pycroscopy uses a data-centric model wherein the raw data collected from the instrument, results from analysis
-  and processing routines are all written to standardized **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
-* pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
-* You can choose to perform your analysis outside pycroscopy if you prefer and use pycroscopy to standardize the data storage.
+  and processing routines are all written to USID **hierarchical data format (HDF5)** files for traceability, reproducibility, and provenance.
+* pycroscopy uses `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ which provides tools to read, write, visualize, and process **USID** stored in HDF5 files.
+  In addition, pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
+* You can choose to perform your analysis outside pycroscopy if you prefer and use pyUSID to standardize the data storage.
 * See a high-level overview of pycroscopy in this `presentation <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
 * Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
 With pycroscopy we aim to:
 
-1. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
-2. serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
-3. provide a community-driven, open standard for data formatting
-4. provide a framework for developing origin-agnostic / universal data analysis routines
+#. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
+#. serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
 
 Why?
 -----
@@ -55,25 +58,25 @@ As we see it, there are a few opportunities in scientific imaging (that surely a
 
 How?
 -----
-* pycroscopy uses an `instrument agnostic data structure <https://pycroscopy.github.io/pycroscopy/data_format.html>`_ that facilitates the storage of data, regardless
+* pycroscopy uses the `Universal Spectroscopy and Imaging Data model <https://pycroscopy.github.io/pyUSID/data_format.html>`_ that facilitates the storage of data, regardless
   of dimensionality (conventional 1D spectra and 2D images to 9D hyperspectral datasets and beyond!) or instrument of origin (AFMs, STEMs, Raman spectroscopy etc.).
 * This generalized representation of data allows us to write a single and
   generalized version of analysis and processing functions that can be applied to any kind of data.
-* The data is stored in `hierarchical
+* The data are stored in `hierarchical
   data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
   files which have numerous benefits including flexibility in storing multiple datasets of arbitrary sizes and dimensionality,
   supercomputer compatibility, storage of important metadata.
-* Once the relevant data and metadata are extracted from proprietary raw data files and written into pycroscopy formatted HDF5 files
-  via a `translation process <https://pycroscopy.github.io/pycroscopy/auto_examples/cookbooks/plot_numpy_translator.html>`_,
+* Once the relevant data and metadata are extracted from proprietary raw data files and written into USID HDF5 files
+  via a `translation process <https://pycroscopy.github.io/pyUSID/auto_examples/cookbooks/plot_numpy_translator.html>`_,
   the user gains access to the rest of the utilities present in ``pycroscopy.*``.
 * Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
   that are interactive and portable web applications containing text, images, code / scripts, and graphical results.
   Notebooks containing the complete / parts of workflow from raw data to publishable figures often become supplementary
-  material for `journal publications <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_ thereby enabling traceability, reproducibility for open science.
+  material for `journal publications <./papers_conferences.html>`_ thereby enabling traceability, reproducibility for open science.
 
 Who?
 -----
 * This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional **I**\maging of **M**\aterials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes generate (thanks to the large IFIM users community!).
 * It is now being developed and maintained by `Suhas Somnath <https://github.com/ssomnath>`_ of the **A**\dvanced **D**\ata & **W**\orkflows **G**\roup (ADWG) at the **O**\ak Ridge National Laboratory **L**\eadership **C**\omputing **F**\acility (`OLCF <https://www.olcf.ornl.gov>`_) and `Chris R. Smith <https://github.com/CompPhysChris>`_ of IFIM.
 * By sharing our methodology and code for analyzing scientific imaging data we hope that it will benefit the wider scientific community. We also hope, quite ardently, that other scientists would follow suit.
-* Please visit our `credits and acknowledgements <https://pycroscopy.github.io/pycroscopy/credits.html>`_ page for more information.
+* Please visit our `credits and acknowledgements <./credits.html>`_ page for more information.

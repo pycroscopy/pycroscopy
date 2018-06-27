@@ -25,10 +25,8 @@ Documentation Index
     external_guides
     package_organization
     auto_examples/index
-    data_format
     translators
     papers_conferences
-    contribution_guidelines
     faq
     contact
     credits

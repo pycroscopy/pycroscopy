@@ -69,8 +69,9 @@ class BEodfTranslator(Translator):
         if 'parm_txt' in path_dict.keys():
             (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
         elif 'old_mat_parms' in path_dict.keys():
-            isBEPS = True
             parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
+            if parm_dict['VS_steps_per_full_cycle']==0: isBEPS=False
+            else: isBEPS=True
         else:
             raise IOError('No parameters file found! Cannot translate this dataset!')
 
@@ -536,8 +537,8 @@ class BEodfTranslator(Translator):
         (folder_path, basename) = path.split(data_filepath)
         (super_folder, basename) = path.split(folder_path)
 
-        if basename.endswith('_d'):
-            # Old old data format where the folder ended with a _d for some reason
+        if basename.endswith('_d') or basename.endswith('_c'):
+            # Old old data format where the folder ended with a _d or _c to denote a completed spectroscopic run
             basename = basename[:-2]
         """
         A single pair of real and imaginary files are / were generated for:
@@ -870,7 +871,7 @@ class BEodfTranslator(Translator):
             FORC_amp_vec = (FORC_A_vec - FORC_B_vec) / 2
             FORC_off_vec = (FORC_A_vec + FORC_B_vec) / 2
 
-            VS_amp_mat = np.tile(vs_amp_vec, [FORC_cycles, 1])
+            VS_amp_mat = np.tile(vs_amp_vec, [int(FORC_cycles), 1])
             FORC_amp_mat = np.tile(FORC_amp_vec, [len(vs_amp_vec), 1]).transpose()
             FORC_off_mat = np.tile(FORC_off_vec, [len(vs_amp_vec), 1]).transpose()
             VS_amp_mat = VS_amp_mat * FORC_amp_mat + FORC_off_mat
