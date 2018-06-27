@@ -122,7 +122,7 @@ def build_ind_val_dsets(dimensions, is_spectral=True, verbose=False, base_name=N
     verbose : Boolean, optional
         Whether or not to print statements for debugging purposes
     base_name : str / unicode, optional
-        Prefix for the datasets. Default: 'Position_' when is_spectral is False, 'Spectroscopic_' otherwise
+        Prefix for the datasets. Default: 'Position\_' when is_spectral is False, 'Spectroscopic\_' otherwise
 
     Returns
     -------
