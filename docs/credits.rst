@@ -18,6 +18,8 @@ Substantial contributions from many developers including:
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
 * `@nmosto <https://github.com/nmosto>`_ (Nick Mostovych)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
+* `@donpatrice <https://github.com/donpatrice>`_ (Patrik Marschalik)
+* `@Liambcollins <https://github.com/Liambcollins>`_ (Liam Collins)
 * Arpitha Nagaraj for our logo
 * and many more
 
