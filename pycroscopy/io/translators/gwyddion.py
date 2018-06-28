@@ -148,6 +148,9 @@ class GwyddionTranslator(Translator):
         http://gwyddion.net/documentation/user-guide-en/gwyfile-format.html
         """
 
+        # Need to build a set of channels to test against and a function-level variable to write to
+        channels = {}
+
         # Read the data in from the specified file
         gwy_data = gwyfile.load(file_path)
         for obj in gwy_data:
@@ -161,10 +164,12 @@ class GwyddionTranslator(Translator):
                 if gwy_key[2] == 'graph':
                     # graph processing
                     self.global_parms['data_type'] = 'GwyddionGWY_' + 'Graph'
-                    self._translate_graph(meas_grp, gwy_data)
+                    channels = self._translate_graph(meas_grp, gwy_data,
+                                                        obj, channels)
                 elif obj.endswith('data'):
                     self.global_parms['data_type'] = 'GwyddionGWY_' + 'Image'
-                    self._translate_image_stack(meas_grp, gwy_data, obj)
+                    channels = self._translate_image_stack(meas_grp, gwy_data,
+                                                            obj, channels)
                 else:
                     continue
             except ValueError:
@@ -173,13 +178,16 @@ class GwyddionTranslator(Translator):
                 
                 if gwy_key[1] == 'sps':
                     self.global_parms['data_type'] = 'GwyddionGWY_' + 'Spectra'
-                    self._translate_spectra(meas_grp, gwy_data)
+                    channels = self._translate_spectra(meas_grp, gwy_data,
+                                                        obj, channels)
                 elif gwy_key[1] == 'brick':
                     self.global_parms['data_type'] = 'GwyddionGWY_' + 'Volume'
-                    self._translate_volume(meas_grp, gwy_data)
+                    channels = self._translate_volume(meas_grp, gwy_data,
+                                                        obj, channels)
                 elif gwy_key[1] == 'xyz':
                     self.global_parms['data_type'] = 'GwyddionGWY_' + 'XYZ'
-                    self._translate_xyz(meas_grp, gwy_data)
+                    channels = self._translate_xyz(meas_grp, gwy_data,
+                                                    obj, channels)
         write_simple_attrs(meas_grp.parent, self.global_parms)
 
         # TODO: Use the Bruker translator as a reference. use the three functions below as necessary to keep the code clean and easy to read.
@@ -194,27 +202,24 @@ class GwyddionTranslator(Translator):
         # Prepare the list of raw_data datasets
 
 
-    def _translate_image_stack(self, meas_grp, gwy_data, obj):
+    def _translate_image_stack(self, meas_grp, gwy_data, obj, channels):
         """
         Use this function to write data corresponding to a stack of scan images (most common)
         Returns
         -------
-        """
-        # Need to build a set of channels to test against and a function-level variable to write to
-        channels = {}
+        """        
+
         current_channel = ''
-        
+
         # Iterate through each object in the gwy dataset
         gwy_key = obj.split('/')
         # Test whether a new channel needs to be created
         # The 'filename' structure in the gwy file should not have a channel created hence the try/except block
         try:
             if int(gwy_key[1]) not in channels.keys():
-                print(obj)                
                 current_channel = create_indexed_group(meas_grp, "Channel")
                 channels[int(gwy_key[1])] = current_channel
             else:
-                print(obj)
                 current_channel = channels[int(gwy_key[1])]
         except ValueError:
             if obj.endswith('filename'):          
@@ -256,28 +261,63 @@ class GwyddionTranslator(Translator):
             meta = {}            
             write_simple_attrs(current_channel, meta, verbose=False)
 
+        return channels
 
-    def _translate_spectra(self, meas_grp, gwy_data):
+
+    def _translate_spectra(self, meas_grp, gwy_data, obj, channels):
         """
         Use this to translate simple 1D data like force curves
         Returns
         -------
 
         """
-        pass
+        current_channel = ''
+
+        gwy_key = obj.split('/')
+
+        try:
+            if int(gwy_key[2]) not in channels.keys():
+                current_channel = create_indexed_group(meas_grp, "Channel")
+                channels[int(gwy_key[2])] = current_channel
+            else:
+                current_channel = channels[int(gwy_key[2])]
+        except ValueError:
+            if obj.endswith('filename'):          
+                pass
+            else:
+                raise ValueError('There was an unexpected directory in the spectra file')
+
+        title = obj['title']
+        unitstr = obj['unitstr']
+        coords = obj['coords']
+        res = obj['data']['res']
+        real = obj['data']['real']
+        offset = obj['data']['off']
+        x_units = obj['data']['si_unit_x']['unitstr']
+        y_units = obj['data']['si_unit_y']['unitstr']
+        data = obj['data']['data']
+        indices = obj['selected']
+        x_vals = np.linspace(offset, real, res)
+        pos_desc = [Dimension('X', x_units, x_vals)]
+        spec_desc = [Dimension(title, y_units, 0)]
+        write_main_dataset(current_channel, data,
+                                'Raw_Data', title,
+                                gwy_data[obj]['si_unit_y'],
+                                pos_desc, spec_desc)
+        return channels
 
 
-    def _translate_graph(self, meas_grp, gwy_data):
+    def _translate_graph(self, meas_grp, gwy_data, obj, channels):
         """
         Use this to translate graphs
         Returns
         """
-        pass
+        return channels
 
 
-    def _translate_volume(self, meas_grp, gwy_data):
-        pass
+    def _translate_volume(self, meas_grp, gwy_data, obj, channels):
+        return channels
 
 
-    def _translate_xyz(self, meas_grp, gwy_data):
-        pass
+    def _translate_xyz(self, meas_grp, gwy_data, obj, channels):
+        return channels
