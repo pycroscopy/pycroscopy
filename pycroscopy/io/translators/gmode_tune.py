@@ -16,9 +16,9 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from ...core.io.translator import generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, write_main_dataset
+from pyUSID.io.translator import generate_dummy_main_parms
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, write_main_dataset
 
 
 class GTuneTranslator(GLineTranslator):

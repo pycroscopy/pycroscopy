@@ -22,7 +22,6 @@ The package structure is simple, with 5 main modules:
     :toctree: _autosummary/
     :template: module.rst
 
-    pycroscopy.core
     pycroscopy.analysis
     pycroscopy.io
     pycroscopy.processing

@@ -14,9 +14,9 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
 
 
 class GLineTranslator(Translator):

@@ -11,10 +11,10 @@ import multiprocessing as mp
 import time as tm
 import matplotlib.pyplot as plt
 
-from ...core.io.io_utils import recommend_cpu_cores
+from pyUSID.io.io_utils import recommend_cpu_cores
 from ...io.virtual_data import VirtualDataset, VirtualGroup
 from ...io.hdf_writer import HDFwriter
-from ...core.viz.plot_utils import cmap_jet_white_center
+from pyUSID.viz.plot_utils import cmap_jet_white_center
 
 
 def do_fit(single_parm):

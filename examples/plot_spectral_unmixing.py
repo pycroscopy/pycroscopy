@@ -54,6 +54,13 @@ def install(package):
 # Package for downloading online files:
 # finally import pycroscopy:
 try:
+    import pyUSID as usid
+except ImportError:
+    print('pyUSID not found.  Will install with pip.')
+    import pip
+    install('pyUSID')
+    import pyUSID as usid
+try:
     import pycroscopy as px
 except ImportError:
     print('pycroscopy not found.  Will install with pip.')
@@ -87,21 +94,21 @@ h5_file = h5py.File(data_file_path, mode='r+')
 
 print('Contents of data file:')
 print('----------------------')
-px.hdf_utils.print_tree(h5_file)
+usid.hdf_utils.print_tree(h5_file)
 print('----------------------')
 
 h5_meas_grp = h5_file['Measurement_000']
 
 # Extracting some basic parameters:
-num_rows = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
-num_cols = px.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
+num_rows = usid.hdf_utils.get_attr(h5_meas_grp, 'grid_num_rows')
+num_cols = usid.hdf_utils.get_attr(h5_meas_grp, 'grid_num_cols')
 
 # Getting a reference to the main dataset:
-h5_main = px.PycroDataset(h5_meas_grp['Channel_000/Raw_Data'])
-px.hdf_utils.write_simple_attrs(h5_main, {'quantity': 'Deflection', 'units': 'V'})
+h5_main = usid.USIDataset(h5_meas_grp['Channel_000/Raw_Data'])
+usid.hdf_utils.write_simple_attrs(h5_main, {'quantity': 'Deflection', 'units': 'V'})
 
 # Extracting the X axis - vector of frequencies
-h5_spec_vals = px.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[-1]
+h5_spec_vals = usid.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[-1]
 freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
 
 print('Data currently of shape:', h5_main.shape)
@@ -152,15 +159,15 @@ h5_s = h5_svd_group['S']
 # Since the two spatial dimensions (x, y) have been collapsed to one, we need to reshape the abundance maps:
 abun_maps = np.reshape(h5_u[:, :25], (num_rows, num_cols, -1))
 
-px.plot_utils.plot_map_stack(abun_maps, num_comps=9, title='SVD Abundance Maps', reverse_dims=True,
+usid.plot_utils.plot_map_stack(abun_maps, num_comps=9, title='SVD Abundance Maps', reverse_dims=True,
                              color_bar_mode='single', cmap='inferno', title_yoffset=0.95)
 
 
 # Visualize the variance / statistical importance of each component:
-px.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with number of components')
+usid.plot_utils.plot_scree(h5_s, title='Note the exponential drop of variance with number of components')
 
 # Visualize the eigenvectors:
-_ = px.plot_utils.plot_complex_spectra(h5_v[:9, :], x_label=x_label, y_label=y_label,
+_ = usid.plot_utils.plot_complex_spectra(h5_v[:9, :], x_label=x_label, y_label=y_label,
                                        title='SVD Eigenvectors', evenly_spaced=False)
 
 #####################################################################################
@@ -206,7 +213,7 @@ model = NMF(n_components=num_comps, init='random', random_state=0)
 model.fit(data_mat)
 
 fig, axis = plt.subplots(figsize=(5.5, 5))
-px.plot_utils.plot_line_family(axis, freq_vec, model.components_, label_prefix='NMF Component #')
+usid.plot_utils.plot_line_family(axis, freq_vec, model.components_, label_prefix='NMF Component #')
 axis.set_xlabel(x_label, fontsize=12)
 axis.set_ylabel(y_label, fontsize=12)
 axis.set_title('NMF Components', fontsize=14)

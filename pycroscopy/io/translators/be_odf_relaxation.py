@@ -2,7 +2,7 @@
 """
 Created on Thursday May 26 11:23:00 2016
 
-@author:  Rama Vasudevan, Suhas Somnath
+@author:  Rama Vasudevan, Suhas Somnath, Chris Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -16,9 +16,9 @@ import h5py
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
     nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import INDICES_DTYPE, Dimension
-from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import INDICES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
 
 
 class BEodfRelaxationTranslator(Translator):

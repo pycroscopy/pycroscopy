@@ -12,9 +12,9 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io import loadmat
 
-from ...core.io.translator import Translator
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
+from pyUSID.io.translator import Translator
+from pyUSID.io.write_utils import Dimension
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
 
 class ForcIVTranslator(Translator):

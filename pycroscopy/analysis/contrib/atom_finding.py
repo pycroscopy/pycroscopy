@@ -3,12 +3,10 @@
 @author: Oleg Ovchinnikov
 """
 from __future__ import division, print_function, absolute_import
-
+import numpy as np
+import h5py as h5
 
 def apply_select_channel(file_in_h5, img_num, channel_num):
-    import numpy as np
-    import h5py as h5
-
     main_h5_handle = h5.File(file_in_h5, 'r+')
     image_path = "/Frame_%04i/Channel_%02i" % (img_num, channel_num)
     image_path = "%s/Raw_Data" % image_path
@@ -350,9 +348,6 @@ def apply_invert_filter(file_in_h5, img_num, filter_num):
 
 
 def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_width, img_num, filter_num):
-    import numpy as np
-    import h5py as h5
-
     image_path = "/Frame_%04i/Filtered_Data/Stack_0000" % img_num
     for x in range(0, filter_num + 1):
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
@@ -383,9 +378,6 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
 
 
 def apply_binarization_filter(file_in_h5, img_num, filter_num):
-    import numpy as np
-    import h5py as h5
-
     main_h5_handle = h5.File(file_in_h5, 'r+')
     image_path = "/Frame_%04i/Channel_Current" % img_num
     for x in range(0, filter_num + 1):

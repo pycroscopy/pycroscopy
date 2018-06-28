@@ -15,10 +15,10 @@ import h5py
 
 from .df_utils.image_utils import no_bin
 from .df_utils.dm_utils import read_dm3
-from ...core.io.image import read_image
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import Dimension, calc_chunks
-from ...core.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
+from pyUSID.io.image import read_image
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
     write_simple_attrs, create_indexed_group
 
 

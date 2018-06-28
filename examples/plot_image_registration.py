@@ -50,12 +50,12 @@ except ImportError:
     install('wget')
     import wget
 try:
-    import pycroscopy as px # used mainly for visualization purposes here
+    import pyUSID as usid # used mainly for visualization purposes here
 except ImportError:
-    warn('pycroscopy not found.  Will install with pip.')
+    warn('pyUSID not found.  Will install with pip.')
     import pip
-    install('pycroscopy')
-    import pycroscopy as px
+    install('pyUSID')
+    import pyUSID as usid
 
 ##############################################################################
 # Defining a few handy functions that will be reused multiple times
@@ -83,7 +83,7 @@ def twin_image_plot(images, titles, cmap=plt.cm.viridis):
     """
     fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
     for axis, img, title in zip(axes.flat, images, titles):
-        px.plot_utils.plot_map(axis, img, cmap=cmap)
+        usid.plot_utils.plot_map(axis, img, cmap=cmap)
         axis.set_title(title)
     fig.tight_layout()
     return fig, axes

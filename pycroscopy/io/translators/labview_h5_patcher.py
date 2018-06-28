@@ -10,9 +10,9 @@ from warnings import warn
 import h5py
 import os
 import numpy as np
-from ...core.io.translator import Translator
-from ...core.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
-from pycroscopy.core.io.write_utils import create_spec_inds_from_vals
+from pyUSID.io.translator import Translator
+from pyUSID.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
+from pyUSID.io.write_utils import create_spec_inds_from_vals
 
 
 class LabViewH5Patcher(Translator):
