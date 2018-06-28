@@ -1,12 +1,111 @@
 What's New
 ==========
 
-`May 01 2018 2: <https://github.com/pycroscopy/pycroscopy/pull/150>`_
+`Jun 28 2018: <https://github.com/pycroscopy/pycroscopy/pull/181>`_
 ------------------------------------------------------------------------
-* Revised / updated the ``about`` page
-* Minor text formatting fixes
+Moved ``pycroscopy.core`` into separate package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
+pyUSID will be the engineering package that supports science-focused packages such as pycroscopy similar to how scipy depends on numpy.
+The current release of pycroscopy imports pyUSID and makes it available as ``pycroscopy.core`` so that existing imports do not break.
+In the next release of pycroscopy, this implicit import will be removed and the following modules would have to be imported directly from ``pyUSID``:
 
-`May 01 2018 1: <https://github.com/pycroscopy/pycroscopy/pull/149>`_
+* ``hdf_utils``
+* ``write_utils``
+* ``dtype_utils``
+* ``io_utils``
+* ``PycroDataset`` - renamed to ``USIDataset``
+* ``Translator``
+* ``ImageTranslator``
+* ``NumpyTranslator``
+* ``Process``
+* ``parallel_compute()``
+* ``plot_utils``
+* ``jupyter_utils``
+
+Thus, imports and usages of such modules as:
+
+.. code:: python
+
+  import pycroscopy as px
+  px.plot_utils.plot_map(...)
+  px.print_tree(h5_file)
+  px.PycroDataset(h5_dset)
+  # Other non-core classes:
+  px.SignalFilter(h5_main, ...)
+
+would need to be changed to:
+
+.. code:: python
+
+  # Now import pyUSID along with pycroscopy
+  import pyUSID as usid
+  import pycroscopy as px
+  # functions and classes still work the same way
+  # just use usid instead of px for anything in core.
+  usid.plot_utils.plot_map(...)
+  usid.hdf_utils.print_tree(h5_file)
+  # The only difference is the renaming of the PycroDataset to USIDataset:
+  usid.USIDataset(h5_dset)
+  # Other non-core classes:
+  px.SignalFilter(h5_main, ...)
+
+`Jun 19 2018: <https://github.com/pycroscopy/pycroscopy/pull/180>`_
+------------------------------------------------------------------------
+* Thanks to `@Liambcollins <https://github.com/Liambcollins>`_ for bug-fixes to ``GTuneTranslator``
+
+`Jun 18 2018: <https://github.com/pycroscopy/pycroscopy/pull/177>`_
+------------------------------------------------------------------------
+* Thanks to `@Liambcollins <https://github.com/Liambcollins>`_ for bug-fixes to ``GLineTranslator``
+
+`Jun 15 2018: <https://github.com/pycroscopy/pycroscopy/pull/175>`_
+------------------------------------------------------------------------
+* Thanks to `@ramav87 <https://github.com/ramav87>`_ for bug-fixes in BEPS related translators and notebooks
+
+`Jun 14 2018: <https://github.com/pycroscopy/pycroscopy/pull/173>`_
+------------------------------------------------------------------------
+* Thanks to `@ealopez <https://github.com/ealopez>`_ for adding AFM simulations
+* Thanks to `@nmosto <https://github.com/nmosto>`_ for guides for python novices
+
+`Jun 13 2018: <https://github.com/pycroscopy/pycroscopy/pull/172>`_
+------------------------------------------------------------------------
+* Thanks to `@str-eat <https://github.com/str-eat>`_ for implementing a PycroDataset to csv exporter
+
+`Jun 04 2018: <https://github.com/pycroscopy/pycroscopy/pull/166>`_
+------------------------------------------------------------------------
+* Thanks to `@donpatrice <https://github.com/donpatrice>`_ for fixing a UTF8 isue with the ``NanonisTranslator``
+
+`Jun 01 2018: <https://github.com/pycroscopy/pycroscopy/pull/162>`_
+------------------------------------------------------------------------
+* First skeleton ``GwyddionTranslator`` being worked on by `@str-eat <https://github.com/str-eat>`_
+* Added guidelines for contributing code
+
+`May 31 2018: <https://github.com/pycroscopy/pycroscopy/pull/162>`_
+------------------------------------------------------------------------
+* All ``Translators`` now use absolute paths
+* Improved examples and documentation
+
+`May 30 2018: <https://github.com/pycroscopy/pycroscopy/pull/162>`_
+------------------------------------------------------------------------
+* Thanks to `@carlodri <https://github.com/carlodri>`_ for donating his utility to read Gwyddion Simple File (gsf) reader
+* Added ``gwyfile`` to the requirements of pycroscopy
+* ``NumpyTranslator`` now accepts extra datasets and keyword arguments that will be passed on to ``hdf_utils.write_main_dataset()``
+
+`May 26 2018: <https://github.com/pycroscopy/pycroscopy/pull/158>`_
+------------------------------------------------------------------------
+* Implemented a general function for reading sections of binary files
+* First version of the ``BrukerTranslator`` for translating Bruker Icon and other AFM files
+
+`May 03 2018: <https://github.com/pycroscopy/pycroscopy/pull/153>`_
+------------------------------------------------------------------------
+* ``plot_utils.plot_map()`` now accepts the extent or the tick values
+* Fixed bug in ``hdf_utils.write_reduced_spec_dsets()`` and ``analysis.BESHOFitter``
+* General improvements to the ``analysis.Fitter`` class
+* Documentation updates
+
+`May 02 2018: <https://github.com/pycroscopy/pycroscopy/pull/151>`_
+------------------------------------------------------------------------
+* Fixed bug in ``svd_rebuild()``
+
+`May 01 2018: <https://github.com/pycroscopy/pycroscopy/pull/149>`_
 ------------------------------------------------------------------------
 * Minor corrections to documentation formatting
 * ``pycroscopy.hdf_utils.get_auxillary_datasets()`` renamed to ``pycroscopy.hdf_utils.get_auxiliary_datasets()``
