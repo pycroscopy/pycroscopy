@@ -174,22 +174,6 @@ class SVD(Process):
         # No point making this 1D dataset a main dataset
         h5_s = h5_svd_group.create_dataset('S', data=np.float32(self.__s))
 
-        '''
-        Check h5_main for plot group references.
-        Copy them into V if they exist
-        '''
-        for key in self.h5_main.attrs.keys():
-            if '_Plot_Group' not in key:
-                continue
-
-            ref_inds = get_indices_for_region_ref(self.h5_main, self.h5_main.attrs[key], return_method='corners')
-            ref_inds = ref_inds.reshape([-1, 2, 2])
-            ref_inds[:, 1, 0] = h5_v.shape[0] - 1
-
-            svd_ref = create_region_reference(h5_v, ref_inds)
-
-            h5_v.attrs[key] = svd_ref
-
 
 ###############################################################################
 
