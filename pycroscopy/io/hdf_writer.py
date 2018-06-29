@@ -13,7 +13,7 @@ from time import time, sleep
 from warnings import warn
 import h5py
 
-from pyUSID.io.hdf_utils import assign_group_index, write_simple_attrs, attempt_reg_ref_build, write_region_references
+from pyUSID.io.hdf_utils import assign_group_index, write_simple_attrs
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 
@@ -526,15 +526,3 @@ class HDFwriter(object):
             if print_log:
                 print('Finished writing all attributes of dataset')
             return
-
-        if isinstance(labels_dict, (tuple, list)):
-            # What if the labels dictionary is just a list of names? make a dictionary using the names
-            # This is the most that can be done.
-            labels_dict = attempt_reg_ref_build(h5_dset, labels_dict, verbose=print_log)
-
-        if len(labels_dict) == 0:
-            if print_log:
-                warn('No region references to write')
-            return
-        # Now, handle the region references attribute:
-        write_region_references(h5_dset, labels_dict, verbose=print_log)
