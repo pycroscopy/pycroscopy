@@ -22,7 +22,7 @@ from .be_sho_fitter import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
 from pyUSID.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
-from pyUSID.io.hdf_utils import copy_region_refs, \
+from pyUSID.io.hdf_utils import \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, \
     create_empty_dataset, create_results_group, write_reduced_spec_dsets, write_simple_attrs, write_main_dataset
 from pyUSID import USIDataset
@@ -481,10 +481,6 @@ class BELoopFitter(Fitter):
                                                   h5_pos_vals=self.h5_main.h5_pos_vals,
                                                   h5_spec_inds=h5_loop_met_spec_inds,
                                                   h5_spec_vals=h5_loop_met_spec_vals)
-
-        # Copy region reference:
-        copy_region_refs(self.h5_main, self.h5_projected_loops)
-        copy_region_refs(self.h5_main, self.h5_loop_metrics)
 
         self.h5_main.file.flush()
         self._met_spec_inds = self.h5_loop_metrics.h5_spec_inds
