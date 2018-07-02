@@ -11,6 +11,9 @@ You need to have installed:
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 from numba import jit
+#import sys
+#sys.path.append('d:\Github\pycroscopy')
+from pycroscopy.simulation.afm_calculations import amp_phase, e_diss, v_ts
 
 
 def verlet(zb, Fo1, Fo2, Fo3, Q1, Q2, Q3, k_L1, k_L2, k_L3, time, z1, z2,z3, v1,v2,v3, z1_old, z2_old, z3_old, Fts, dt,
@@ -134,6 +137,7 @@ def verlet(zb, Fo1, Fo2, Fo3, Q1, Q2, Q3, k_L1, k_L2, k_L3, time, z1, z2,z3, v1,
     tip = z1 + z2 + z3 + zb
     return tip, z1, z2, z3, v1, v2, v3, z1_old, z2_old, z3_old
 
+numba_verlet = jit()(verlet) #it is important to keep this line out of the effectively accelerate the function when called
 
 def gen_maxwell_lr(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_m2, k_m3, A1, A2, A3, zb, printstep = 1, Ge = 0.0, Q1=100, Q2=200, Q3=300, H=2.0e-19):
     """This function is designed for multifrequency simulation performed over a Generalized Maxwell (Wiechert) viscoelastic surface.
@@ -248,8 +252,6 @@ def gen_maxwell_lr(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_
     z1, z2, z3, v1, v2, v3, z1_old, z2_old, z3_old = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
     sum_Gxc = 0.0
     sum_G_pb_pc = 0.0
-
-    numba_verlet = jit()(verlet)
         
     while t < simultime:
         t = t + dt
@@ -306,3 +308,58 @@ def gen_maxwell_lr(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_
             Fts = Fts - H*R/(6.0*a**2)
            
     return np.array(t_a), np.array(tip_a), np.array(Fts_a), np.array(xb_a)
+
+
+GenMaxwell_jit = jit()(gen_maxwell_lr)  #this line should stay outside function to allow the numba compilation and simulation acceleration work properly
+
+def dynamic_spectroscopy(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_m2, k_m3, A1, A2, A3, printstep = 1, Ge = 0.0, Q1=100, Q2=200, Q3=300, H=2.0e-19, z_step = 1):
+    
+    if z_step == 1:
+        z_step = A1*0.05 #default value is 5% of the free oscillation amplitude
+    zeq = []
+    peakF = []
+    maxdepth = []
+    amp = []
+    phase = []
+    Ediss = []
+    Virial = []
+    
+    tip_a = []
+    Fts_a = []
+    xb_a = []
+    zb = A1*1.1
+    
+    while zb > 0.0:
+        t, tip, Fts, xb = GenMaxwell_jit(G, tau, R, dt, startprint, simultime, fo1, fo2, fo3, k_m1, k_m2,k_m3, A1, A2, A3, zb, printstep, Ge, Q1, Q2, Q3, H)
+        A,phi = amp_phase(t, tip, fo1)
+        Ets = e_diss(tip, Fts, dt, fo1)
+        fts_peak = Fts[np.argmax(Fts)]
+        tip_depth = xb[np.argmax(tip)] -xb[np.argmin(tip)]
+        Vts = v_ts(tip-zb, Fts, dt)
+        
+        #Attaching single values to lists
+        zeq.append(zb)
+        peakF.append(fts_peak)
+        maxdepth.append(tip_depth)
+        amp.append(A)
+        phase.append(phi)
+        Ediss.append(Ets)
+        Virial.append(Vts)
+        
+        #attaching 1D arrays to lists
+        tip_a.append(tip)
+        Fts_a.append(Fts)
+        xb_a.append(xb)
+        
+        zb -= z_step
+    return np.array(amp), np.array(phase), np.array(zeq), np.array(Ediss), np.array(Virial), np.array(peakF), np.array(maxdepth), t, np.array(tip_a), np.array(Fts_a), np.array(xb_a)
+    
+    
+
+
+
+
+
+
+
+
