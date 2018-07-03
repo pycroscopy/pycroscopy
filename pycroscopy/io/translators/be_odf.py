@@ -206,6 +206,7 @@ class BEodfTranslator(Translator):
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
         parm_dict['num_udvs_steps'] = num_actual_udvs_steps
+        parm_dict['num_steps'] = num_actual_udvs_steps
 
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
@@ -277,7 +278,8 @@ class BEodfTranslator(Translator):
         h5_chan_grp = create_indexed_group(h5_meas_group, 'Channel')
 
         # Write channel group attributes
-        write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1'})
+        write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1',
+                                         'channel_type': 'BE'})
 
         # Now the datasets!
         h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
