@@ -204,24 +204,58 @@ def derivative_cd(f_t, time_vec):
     return f_prime
 
 
-def smear(x, t, tr=0.1, st=1.0):
-    "this function smears an array providing as reference also time array, time resolution and total time"
+def sparse(x, t, tr=0.1, st=1.0):
+    """this function sparses an array adjusting the time resolution and total time
+    
+    Parameters
+    ----------
+    x : numpy.ndarray
+        function trace which has to be sparsed to have desired resolution and lenght 
+    t : numpy.ndarray
+        original time trace that will be sparsed
+    tr : float, optional
+        time resolution desired (inverse of sampling frequency)
+    st : float, optional
+        desired simulation time, this has to be lower or equal than t[len(t)-1]
+        
+    Returns
+    ------- 
+    np.array(x_sparse) : numpy.ndarray
+        function trace sparsed to coincide with the desired time resolution and lenght
+    np.array(t_sparse) : numpy.ndarray
+        new time trace with the desired time resolution and total time
+    """
     nt = len(t)
     prints = 0
     i =0
-    x_smear = []
-    t_smear = []
+    x_sparse = []
+    t_sparse = []
     while i < (nt):
         if t[i] >= prints*tr and t[i]<=(st+tr) :
-            x_smear.append(x[i])
-            t_smear.append(t[i])
+            x_sparse.append(x[i])
+            t_sparse.append(t[i])
             prints = prints + 1
-        i = i + 1
-    return np.array(x_smear), np.array(t_smear)
+        i += 1
+    return np.array(x_sparse), np.array(t_sparse)
 
 
 def log_tw(de0, maxi, nn=10):
-    "this function generates a frequency or time array in log scale"
+    """this function generates a frequency or time array weighted in logarithmic scale
+    
+    Parameters
+    ----------
+    de0 : float
+        minimum value of the function 
+    maxi : float
+        maximum value of the function
+    nn : int, optional
+        number of point per decade of logarithmic scale
+        
+    Returns
+    ------- 
+    np.array(epsilon) : numpy.ndarray
+        function trace weighted in logarithmic scale
+    """    
     epsilon = []
     w = de0
     de = de0
@@ -238,7 +272,29 @@ def log_tw(de0, maxi, nn=10):
     return np.array(epsilon)
 
 def log_scale(x, t, tr=0.1, st=1.0, nn = 10):
-    "this receives an array and write it weighting it in logarithmic scale"
+    """this function receives an array and sparses it weighting it in logarithmic scale
+    
+    warning : this function eliminates points and only takes into account certain points to have an array equally spaced in logarithmic scale
+    
+    Parameters
+    ----------
+    x : numpy.ndarray
+        function trace which has to be sparsed to have desired resolution and lenght 
+    t : numpy.ndarray
+        original time trace that will be sparsed
+    tr : float, optional
+        minimum time resolution, note that this is not constant because time array will be equally spaced in logarithmic scale
+    st : float, optional
+        desired simulation time, this has to be lower or equal than t[len(t)-1]
+    nn : int, optional
+        
+    Returns
+    ------- 
+    np.array(x_log) : numpy.ndarray
+        function trace weighted in logarithmic scale
+    np.array(t_log) : numpy. nd array
+        time traced equally spaced in logarithmic scale        
+    """    
     prints = 1
     nt = len(x)
     i =0
@@ -254,41 +310,3 @@ def log_scale(x, t, tr=0.1, st=1.0, nn = 10):
             tr = tr*10
             prints = 1
     return np.array(x_log),np.array(t_log)
-
-
-def fd_log(x, f_x, nn=20, liminf = 1, suplim = 1):
-    """this function returns time and f_time arrays equally spaced in logarithmic scale"""
-    """Input: time starting with average dt(comming from repulsive_FD function), and f_time related to that time array"""
-    if liminf ==1:
-        lim_inf = round(np.log10(x[0]),2)
-    else:
-        lim_inf = round(np.log10(liminf),2)
-    if suplim ==1:
-        sup_lim = round(np.log10(x[np.size(x)-1]),2)
-    else:
-        sup_lim = round(np.log10(suplim),2)
-    b = np.linspace(lim_inf, sup_lim, nn)
-    x_log = 10.0**b
-    fx_log = np.zeros(np.size(x_log))
-    for j in range(1, np.size(x_log)-1):
-        for i in range(np.size(x)-1):
-            if (x_log[j] - x[i])*(x_log[j] - x[i+1]) < 0.0 :  #change of sign
-                if (x_log[j] - x[i]) < (x_log[j] - x[i+1]):
-                    x_log[j] = x[i]
-                    fx_log[j] = f_x[i]
-                else:
-                    x_log[j] = x[i+1]
-                    fx_log[j] = f_x[i+1]
-    if suplim ==1 :    
-        x_log[np.size(x_log)-1] = x[np.size(x)-1]        
-        fx_log[np.size(x_log)-1] = f_x[np.size(x)-1]
-    else:
-        x_log[np.size(x_log)-1] = x[int(suplim/av_dt(x))]
-        fx_log[np.size(x_log)-1] = f_x[int(suplim/av_dt(x))]
-    if liminf == 1:
-        x_log[0] = x[0]        
-        fx_log[0] = f_x[0]
-    else:
-        x_log[0] = x[int(liminf/av_dt(x))]
-        fx_log[0] = f_x[int(liminf/av_dt(x))]
-    return x_log, fx_log
