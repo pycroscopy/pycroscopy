@@ -7,16 +7,13 @@ Created on Mon Feb 05 16:38:01 2018
 Description: this library contains non linear least square fitting routines
              for extracting material properties from AFM results and
              other useful fitting functions.
-
-You need to have installed:
-    lmfit -- > this can be easily installed if you have the anaconda distribution via conda install method: conda install -c conda-forge lmfit
 """
 
 import numpy as np
 from lmfit import minimize, Parameters
 from scipy import stats
 import sys
-sys.path.append('d:\github\pycroscopy')
+sys.path.append(r'c:\users\enrique\githubrepositories\pycroscopy')
 from pycroscopy.simulation.afm_calculations import sparse, av_dt, log_scale
 
     

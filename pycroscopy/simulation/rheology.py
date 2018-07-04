@@ -10,6 +10,7 @@ parameters.
 """
 
 import numpy as np
+from lmfit import minimize, Parameters
 import sys
 sys.path.append('d:\github\pycroscopy')
 from pycroscopy.simulation.afm_calculations import av_dt
@@ -73,7 +74,7 @@ def j_loss(omega, Jg, J, tau, phi = 0.0):
             J_biprime[i] = ( J*omega[i]*tau/(1.0 + (pow(omega[i],2)*pow(tau,2)) ) ) + phi/omega[i]
     return J_biprime
 
-def theta_v(omega, Jg, J, tau, phi = 0.0):    
+def theta_vG(omega, Jg, J, tau, phi = 0.0):    
     """this function returns an array of loss angle on radian frequency
     
     Parameters:
