@@ -3,7 +3,7 @@
 Created on Tue Jul 04 09:21:54 2017
 
 @author: Enrique Alejandro
-Description: this library contains the core algorithms for tapping mode AFM simulation.
+Description: this library contains the core algorithms for numerical simulations
 
 You need to have installed:
     numba -- > this can be easily installed if you have the anaconda distribution via pip install method: pip install numba
@@ -690,7 +690,166 @@ def sfs_genmaxwell_lr(G, tau, R, dt, simultime, y_dot, y_t_initial, k_m1, fo1, G
                 Fts = Fts - H*R/(6.0*a**2)                          
     return np.array(t_a), np.array(tip_a), np.array(Fts_a), np.array(xb_a), np.array(defl_a), np.array(zs_a)    
 
+def compliance_maxwell(G, tau , Ge = 0.0, dt = 1, simul_t = 1, lw=0):
+    """This function returns the numerical compliance of a Generalized Maxwell model.
+    
+    This numerical compliance is useful for interconversion from Gen Maxwell model to generalized Voigt model
+    
+    Parameters:
+    ---------- 
+    G :  numpy.ndarray
+        moduli of the springs in the Maxwell arms of a generalized Maxwell model (also called Wiechert model)
+    tau: numpy.ndarray
+        relaxation times of the Maxwell arms
+    Ge : float, optional
+        equilibrium modulus of the material, default value is zero 
+    dt : float, optional
+        simulation timestep
+    simul_t : float, optional
+        total simulation time
+    lw : int, optional
+        flag to return calculated compliance with logarithmic weight
+    
+    Returns:
+    ---------- 
+    np.array(t_r) : numpy.ndarray
+        array containing the time trace
+    np.array(J_r) : numpy.ndarray
+        array containing the calculated creep compliance   
+    """
+    if dt == 1:  #if timestep is not user defined it will given as a fracion of the lowest characteristic time
+        dt = tau[0]/100.0
+    if simul_t ==1: #if simulation time is not defined it will be calculated with respect to largest retardation time
+        simul_t = tau[len(tau)-1]*10.0e3
+            
+    G_a = []
+    tau_a = []
+    """
+    this for loop is to make sure tau passed does not contain values lower than time step which would make numerical 
+    integration unstable
+    """
+    for i in range(len(G)):
+        if tau[i] > dt*10.0:
+            G_a.append(G[i])
+            tau_a.append(tau[i])
+    G = np.array(G_a)
+    tau = np.array(tau_a)
+    Gg = Ge
+    for i in range(len(tau)): #this loop looks silly but if you replace it with Gg = Ge + sum(G[:]) it will conflict with numba making, simulation very slow
+        Gg = Gg + G[i]
+    eta = tau*G
+    Jg =1.0/Gg  #glassy compliance
+    N = len(tau)
+    
+    Epsilon_visco = np.zeros(N) #initial strain
+    Epsilon_visco_dot = np.zeros(N) #initial strain velocity
+        
+    t_r = []  #creating list with unknown number of elements
+    J_r = []  #creating list with unknown number of elements
+    time = 0.0
+    J_t = Jg #initial compliance
+    print_counter = 1
+    tr = dt  #printstep
+    
+    while time < simul_t: #CREEP COMPLIANCE SIMULATION, ADVANCING IN TIME
+        time = time + dt
+        sum_Gn_EpsVisco_n = 0.0   #this sum has to be resetted to zero every timestep
+        for n in range(0,N):
+            Epsilon_visco_dot[n] = G[n]*(J_t - Epsilon_visco[n])/eta[n]
+            Epsilon_visco[n] = Epsilon_visco[n] + Epsilon_visco_dot[n]*dt
+            sum_Gn_EpsVisco_n = sum_Gn_EpsVisco_n + G[n]*Epsilon_visco[n]
+        J_t = (1 + sum_Gn_EpsVisco_n)/Gg 
+        if time >= print_counter*tr and time < simul_t:
+            t_r.append(time)
+            J_r.append(J_t)
+            print_counter += 1
+        if lw != 0:  #if logarithmic weight is activated, the data will be appended weighted logarithmically
+            if print_counter == 10:
+                tr = tr*10
+                print_counter = 1
+          
+    return np.array(t_r), np.array(J_r)         
 
+def relaxation_voigt(J, tau, Jg, phi_f = 0.0, dt = 1, simul_t = 1, lw = 0):
+    """This function returns the numerical relaxation modulus of a Generalized Voigt model
+        
+    This numerical relaxation modulus is useful for interconversion from Gen Maxwell model to generalized Voigt model
+    
+    Parameters:
+    ---------- 
+    J :  numpy.ndarray
+        compliances of the springs in the Voigt units of a generalized Voigt model
+    tau: numpy.ndarray
+        relaxation times of the Maxwell arms
+    Jg : float
+        glassy compliance of the material 
+    dt : float, optional
+        simulation timestep
+    simul_t : float, optional
+        total simulation time
+    lw : int, optional
+        flag to return calculated compliance with logarithmic weight
+    
+    Returns:
+    ---------- 
+    np.array(t_r) : numpy.ndarray
+        array containing the time trace
+    np.array(G_r) : numpy.ndarray
+        array containing the calculated relaxation modulus   
+    """    
+    if dt == 1:  #if timestep is not user defined it will given as a fracion of the lowest characteristic time
+        dt = tau[0]/100.0
+    if simul_t ==1: #if simulation time is not defined it will be calculated with respect to largest retardation time
+        simul_t = tau[len(tau)-1]*10.0e3
+    
+    J_a = []
+    tau_a = []
+    """
+    this for loop is to make sure tau passed does not contain values lower than time step which would make numerical 
+    integration unstable
+    """
+    for i in range(len(J)):
+        if tau[i] > dt*10.0:
+            J_a.append(J[i])
+            tau_a.append(tau[i])
+    J = np.array(J_a)
+    tau = np.array(tau_a)
+    
+    Gg = 1.0/Jg
+    N = len(tau)
+    phi = J/tau
+    #Defining initial conditions
+    x = np.zeros(N)
+    x_dot = np.zeros(N)
+    t_r = []  #creating list with unknown number of elements
+    G_r = []  #creating list with unknown number of elements
+    time = 0.0
+    G_t = Gg #initial relaxation modulus
+    print_counter = 1
+    tr = dt #printstep
+    
+    while time < simul_t: #RELAXATION MODULUS SIMULATION, ADVANCING IN TIME
+        time = time + dt
+        k = len(tau) - 1
+        while k > -1:
+            if k == len(tau) - 1:
+                x_dot[k] = G_t*phi[k]
+            else:
+                x_dot[k] = G_t*phi[k] + x_dot[k+1]
+            k -=1
+        for i in range(len(tau)):
+            x[i] = x[i] + x_dot[i]*dt
+        G_t = Gg*(1.0-x[0])
+        if time >= print_counter*tr and time <simul_t:
+            t_r.append(time)
+            G_r.append(G_t)
+            print_counter += 1
+        if lw != 0: #if logarithmic weight is activated, the data will be appended weighted logarithmically
+            if print_counter == 10:
+                tr = tr*10
+                print_counter = 1
+    
+    return np.array(t_r), np.array(G_r) 
 
 
 
