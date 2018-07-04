@@ -4,7 +4,7 @@ Created on Sun Aug 20 21:28:05 2017
 
 @author: Enrique Alejandro
 
-Description: this library contains functions for postprocessing of results of AFM simulation
+Description: this library contains functions for postprocessing results of AFM simulations
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
@@ -202,3 +202,93 @@ def derivative_cd(f_t, time_vec):
             else:
                 f_prime[i] = (f_t[i+1]-f_t[i-1])/(time_vec[i + 1] - time_vec[i - 1])
     return f_prime
+
+
+def smear(x, t, tr=0.1, st=1.0):
+    "this function smears an array providing as reference also time array, time resolution and total time"
+    nt = len(t)
+    prints = 0
+    i =0
+    x_smear = []
+    t_smear = []
+    while i < (nt):
+        if t[i] >= prints*tr and t[i]<=(st+tr) :
+            x_smear.append(x[i])
+            t_smear.append(t[i])
+            prints = prints + 1
+        i = i + 1
+    return np.array(x_smear), np.array(t_smear)
+
+
+def log_tw(de0, maxi, nn=10):
+    "this function generates a frequency or time array in log scale"
+    epsilon = []
+    w = de0
+    de = de0
+    prints = 1
+    epsilon.append(de0)
+    while w < maxi:
+        w += de
+        if w < maxi:
+            epsilon.append(w)              
+        prints += 1 
+        if prints == nn:
+            de = de*10
+            prints = 1    
+    return np.array(epsilon)
+
+def log_scale(x, t, tr=0.1, st=1.0, nn = 10):
+    "this receives an array and write it weighting it in logarithmic scale"
+    prints = 1
+    nt = len(x)
+    i =0
+    x_log = []
+    t_log = []
+    while i <nt:
+        if t[i] >= prints*tr and t[i]<=st :
+            x_log.append(x[i])
+            t_log.append(t[i])
+            prints += 1
+        i += 1
+        if prints == nn:
+            tr = tr*10
+            prints = 1
+    return np.array(x_log),np.array(t_log)
+
+
+def fd_log(x, f_x, nn=20, liminf = 1, suplim = 1):
+    """this function returns time and f_time arrays equally spaced in logarithmic scale"""
+    """Input: time starting with average dt(comming from repulsive_FD function), and f_time related to that time array"""
+    if liminf ==1:
+        lim_inf = round(np.log10(x[0]),2)
+    else:
+        lim_inf = round(np.log10(liminf),2)
+    if suplim ==1:
+        sup_lim = round(np.log10(x[np.size(x)-1]),2)
+    else:
+        sup_lim = round(np.log10(suplim),2)
+    b = np.linspace(lim_inf, sup_lim, nn)
+    x_log = 10.0**b
+    fx_log = np.zeros(np.size(x_log))
+    for j in range(1, np.size(x_log)-1):
+        for i in range(np.size(x)-1):
+            if (x_log[j] - x[i])*(x_log[j] - x[i+1]) < 0.0 :  #change of sign
+                if (x_log[j] - x[i]) < (x_log[j] - x[i+1]):
+                    x_log[j] = x[i]
+                    fx_log[j] = f_x[i]
+                else:
+                    x_log[j] = x[i+1]
+                    fx_log[j] = f_x[i+1]
+    if suplim ==1 :    
+        x_log[np.size(x_log)-1] = x[np.size(x)-1]        
+        fx_log[np.size(x_log)-1] = f_x[np.size(x)-1]
+    else:
+        x_log[np.size(x_log)-1] = x[int(suplim/av_dt(x))]
+        fx_log[np.size(x_log)-1] = f_x[int(suplim/av_dt(x))]
+    if liminf == 1:
+        x_log[0] = x[0]        
+        fx_log[0] = f_x[0]
+    else:
+        x_log[0] = x[int(liminf/av_dt(x))]
+        fx_log[0] = f_x[int(liminf/av_dt(x))]
+    return x_log, fx_log
