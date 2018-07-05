@@ -320,7 +320,7 @@ class BELoopFitter(Fitter):
         if solver_options is None:
             solver_options = {'jac': '2-point'}
         '''
-        Set the number of processors and the ammount of RAM to use in the fit
+        Set the number of processors and the amount of RAM to use in the fit
         '''
         if processors is None:
             processors = self._maxCpus
@@ -378,7 +378,6 @@ class BELoopFitter(Fitter):
         '''
         Do the fit
         '''
-        results = list()
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
         if legit_solver and legit_obj_func:
@@ -390,12 +389,9 @@ class BELoopFitter(Fitter):
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformat_results(temp, obj_func['obj_func'])
-                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
+                results = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
 
-                results.append(temp)
-
-                self.fit = np.hstack(tuple(results))
-                self._set_results()
+                self.h5_fit[self._start_pos:self._end_pos, self._current_met_spec_slice] = results
 
                 self._start_pos = self._end_pos
                 self._get_guess_chunk()
