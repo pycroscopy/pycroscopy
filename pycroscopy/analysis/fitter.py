@@ -12,9 +12,9 @@ import h5py
 import time as tm
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
-from ..core.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
+from pyUSID import USIDataset
+from pyUSID.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
+from pyUSID.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
 from .optimize import Optimize
 
 
@@ -43,8 +43,8 @@ class Fitter(object):
 
         """
 
-        if not isinstance(h5_main, PycroDataset):
-            h5_main = PycroDataset(h5_main)
+        if not isinstance(h5_main, USIDataset):
+            h5_main = USIDataset(h5_main)
 
         # Checking if dataset has the proper dimensions for the model to run.
         if self._is_legal(h5_main, variables):
@@ -107,7 +107,7 @@ class Fitter(object):
 
         Parameters
         ----
-        h5_main : PycroDataset instance
+        h5_main : USIDataset instance
             The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
             indices and values, and position indices and values datasets.
 
@@ -317,7 +317,7 @@ class Fitter(object):
             # First try to simply return any completed computation
             if len(completed_dsets) > 0:
                 print('Returned previously computed results at ' + completed_dsets[-1].name)
-                self.h5_guess = PycroDataset(completed_dsets[-1])
+                self.h5_guess = USIDataset(completed_dsets[-1])
                 return
 
             # Next attempt to resume automatically if nothing is provided
@@ -394,7 +394,7 @@ class Fitter(object):
 
         print('Completed computing guess')
         print()
-        return PycroDataset(self.h5_guess)
+        return USIDataset(self.h5_guess)
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
@@ -564,7 +564,7 @@ class Fitter(object):
             # First try to simply return completed results
             if len(completed_fits) > 0:
                 print('Returned previously computed results at ' + completed_fits[-1].name)
-                self.h5_fit = PycroDataset(completed_fits[-1])
+                self.h5_fit = USIDataset(completed_fits[-1])
                 return
 
             # Next, attempt to resume automatically:
@@ -652,4 +652,4 @@ class Fitter(object):
 
         print('Completed computing fit. Writing to file.')
 
-        return PycroDataset(self.h5_fit)
+        return USIDataset(self.h5_fit)

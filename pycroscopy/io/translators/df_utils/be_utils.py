@@ -15,13 +15,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from ....core.io.hdf_utils import get_auxiliary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
+from pyUSID.io.hdf_utils import get_auxiliary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
     get_attr, create_indexed_group, write_simple_attrs, write_main_dataset, Dimension
-from ....core.io.write_utils import create_spec_inds_from_vals
-from ....core.io.io_utils import get_available_memory, recommend_cpu_cores
+from pyUSID.io.write_utils import create_spec_inds_from_vals
+from pyUSID.io.io_utils import get_available_memory, recommend_cpu_cores
 from ....analysis.optimize import Optimize
 from ....processing.histogram import build_histogram
 from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
+from ...hdf_writer import HDFwriter
+from ...virtual_data import VirtualDataset, VirtualGroup
 
 nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
@@ -454,6 +456,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
                                                 hist_indices[hist_ind]))
 
             h5_hist = write_main_dataset(hist_grp, hist_mat, 'Histograms',
+                                         'Counts', 'a.u.',
                                          None, hist_spec_dims,
                                          h5_pos_inds=h5_main.h5_pos_inds, h5_pos_vals=h5_main.h5_pos_vals,
                                          dtype=np.int32,

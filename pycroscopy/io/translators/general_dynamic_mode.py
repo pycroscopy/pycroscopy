@@ -14,10 +14,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 import h5py
 
 from .df_utils.gmode_utils import readGmodeParms
-from ...core.io.translator import Translator, \
+from pyUSID.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import link_h5_objects_as_attrs, create_indexed_group, \
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import link_h5_objects_as_attrs, create_indexed_group, \
     write_simple_attrs, write_main_dataset
 
 

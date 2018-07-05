@@ -82,14 +82,6 @@ We recommend periodically updating your anaconda distribution.  To fully update 
 
 If you installed pycroscopy via conda, the last command should update pycroscopy as well. 
 
-Updating via conda
-~~~~~~~~~~~~~~~~~~
-If you installed pycroscopy via `conda`, open a terminal / command window and type:
-
-.. code:: bash
-
-  conda update pycroscopy
-
 Updating via pip
 ~~~~~~~~~~~~~~~~
 
@@ -105,6 +97,14 @@ If it does not work try reinstalling the package:
 
   pip uninstall pycroscopy
   pip install pycroscopy
+
+Updating via conda
+~~~~~~~~~~~~~~~~~~
+If you installed pycroscopy via `conda`, open a terminal / command window and type:
+
+.. code:: bash
+
+  conda update pycroscopy
   
 Other software
 --------------

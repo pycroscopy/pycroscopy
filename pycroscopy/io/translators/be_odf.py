@@ -15,11 +15,13 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
-from ...core.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
-    create_indexed_group, write_simple_attrs, write_book_keeping_attrs
-
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
+from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
+    create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
+    write_reduced_spec_dsets
+from pyUSID.io.usi_data import USIDataset
+from pyUSID.io.io_utils import get_available_memory
 
 class BEodfTranslator(Translator):
     """
@@ -115,6 +117,18 @@ class BEodfTranslator(Translator):
         if real_size != imag_size:
             raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
 
+        #Check here if a second channel for current is present
+        # Look for the file containing the current data
+
+        file_names = listdir(folder_path)
+        aux_files = []
+        for fname in file_names:
+            if 'AI2' in fname:
+                if 'write' in fname:
+                    current_file = path.join(folder_path, fname)
+                    current_data_exists=True
+                aux_files.append(path.join(folder_path, fname))
+
         add_pix = False
         num_rows = int(parm_dict['grid_num_rows'])
         num_cols = int(parm_dict['grid_num_cols'])
@@ -206,6 +220,7 @@ class BEodfTranslator(Translator):
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
         parm_dict['num_udvs_steps'] = num_actual_udvs_steps
+        parm_dict['num_steps'] = num_actual_udvs_steps
 
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
@@ -277,7 +292,8 @@ class BEodfTranslator(Translator):
         h5_chan_grp = create_indexed_group(h5_meas_group, 'Channel')
 
         # Write channel group attributes
-        write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1'})
+        write_simple_attrs(h5_chan_grp, {'Channel_Input': 'IO_Analog_Input_1',
+                                         'channel_type': 'BE'})
 
         # Now the datasets!
         h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
@@ -334,9 +350,15 @@ class BEodfTranslator(Translator):
                            spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram, debug=verbose)
 
+        self.h5_raw = USIDataset(self.h5_raw)
+        #Go ahead and read the current data in the second (current) channel
+        if current_data_exists: #If a .dat file matches
+            self._read_secondary_channel(h5_meas_group, aux_files)
+
         h5_f.close()
 
         return h5_path
+
 
     def _read_data(self, UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix):
         """
@@ -537,8 +559,8 @@ class BEodfTranslator(Translator):
         (folder_path, basename) = path.split(data_filepath)
         (super_folder, basename) = path.split(folder_path)
 
-        if basename.endswith('_d'):
-            # Old old data format where the folder ended with a _d for some reason
+        if basename.endswith('_d') or basename.endswith('_c'):
+            # Old old data format where the folder ended with a _d or _c to denote a completed spectroscopic run
             basename = basename[:-2]
         """
         A single pair of real and imaginary files are / were generated for:
@@ -569,6 +591,107 @@ class BEodfTranslator(Translator):
                 path_dict[file_tag] = abs_path
 
         return basename, path_dict
+
+    def _read_secondary_channel(self, h5_meas_group, aux_file_path):
+        """
+        Reads secondary channel stored in AI .mat file
+        Currently works for in-field measurements only, but should be updated to
+        include both in and out of field measurements
+
+        Parameters
+        -----------
+        h5_meas_group : h5 group
+            Reference to the Measurement group
+        aux_file_path : String / Unicode
+            Absolute file path of the secondary channel file.
+        """
+        print('---- Reading Secondary Channel  ----------')
+        if len(aux_file_path)>1:
+            print('Detected multiple files, assuming in and out of field')
+            aux_file_paths = aux_file_path
+        else:
+            aux_file_paths = list(aux_file_path)
+
+        freq_index = self.h5_raw.spec_dim_labels.index('Frequency')
+        num_pix = self.h5_raw.shape[0]
+        spectral_len = 1
+
+        for i in range(len(self.h5_raw.spec_dim_sizes)):
+            if i == freq_index:
+                continue
+            spectral_len = spectral_len * self.h5_raw.spec_dim_sizes[i]
+
+        #num_forc_cycles = self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("FORC")]
+        #num_dc_steps =  self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("DC_Offset")]
+
+        # create a new channel
+        h5_current_channel_group = create_indexed_group(h5_meas_group, 'Channel')
+
+        # Copy attributes from the main channel
+        copy_attributes(self.h5_raw.parent, h5_current_channel_group)
+
+        # Modify attributes that are different
+        write_simple_attrs(h5_current_channel_group, {'Channel_Input': 'IO_Analog_Input_2',
+                                                      'channel_type': 'Current'}, verbose=True)
+
+        #Get the reduced dimensions
+        h5_current_spec_inds, h5_current_spec_values = write_reduced_spec_dsets(h5_current_channel_group,
+                                                        self.h5_raw.h5_spec_inds,
+                                                        self.h5_raw.h5_spec_vals, 'Frequency')
+
+
+        h5_current_main = write_main_dataset(h5_current_channel_group,  # parent HDF5 group
+                                             (num_pix, spectral_len),  # shape of Main dataset
+                                             'Raw_Data',  # Name of main dataset
+                                             'Current',  # Physical quantity contained in Main dataset
+                                             'nA',  # Units for the physical quantity
+                                             None,  # Position dimensions
+                                             None,  # Spectroscopic dimensions
+                                             h5_pos_inds=self.h5_raw.h5_pos_inds,
+                                             h5_pos_vals=self.h5_raw.h5_pos_vals,
+                                             h5_spec_inds=h5_current_spec_inds,
+                                             h5_spec_vals=h5_current_spec_values,
+                                             dtype=np.float32,  # data type / precision
+                                             main_dset_attrs={'IO_rate': 4E+6, 'Amplifier_Gain': 9})
+
+        # Now calculate the number of positions that can be stored in memory in one go.
+        b_per_position = np.float32(0).itemsize * spectral_len
+
+        max_pos_per_read = int(np.floor((get_available_memory()) / b_per_position))
+
+        # if self._verbose:
+        print('Allowed to read {} pixels per chunk'.format(max_pos_per_read))
+
+        #Open the read and write files and write them to the hdf5 file
+        for aux_file in aux_file_paths:
+            if 'write' in aux_file:
+                infield = True
+            else:
+                infield=False
+
+            cur_file = open(aux_file, "rb")
+
+            start_pix = 0
+
+            while start_pix < num_pix:
+                end_pix = min(num_pix, start_pix + max_pos_per_read)
+
+                # TODO: Fix for when it won't fit in memory.
+
+                #if max_pos_per_read * b_per_position > num_pix * b_per_position:
+                cur_data = np.frombuffer(cur_file.read(), dtype='f')
+                #else:
+                #cur_data = np.frombuffer(cur_file.read(max_pos_per_read * b_per_position), dtype='f')
+
+                cur_data = cur_data.reshape(end_pix - start_pix, spectral_len//2)
+
+                # Write to h5
+                if infield:
+                    h5_current_main[start_pix:end_pix, ::2] = cur_data
+                else:
+                    h5_current_main[start_pix:end_pix, 1::2] = cur_data
+                start_pix = end_pix
+
 
     @staticmethod
     def __read_old_mat_be_vecs(file_path):

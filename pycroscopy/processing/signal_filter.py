@@ -10,10 +10,10 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import h5py
 import numpy as np
 from collections import Iterable
-from ..core.processing.process import Process, parallel_compute
-from ..core.io.hdf_utils import create_results_group, write_main_dataset, write_simple_attrs, create_empty_dataset, \
+from pyUSID.processing.process import Process, parallel_compute
+from pyUSID.io.hdf_utils import create_results_group, write_main_dataset, write_simple_attrs, create_empty_dataset, \
     write_ind_val_dsets
-from ..core.io.write_utils import Dimension
+from pyUSID.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
 
