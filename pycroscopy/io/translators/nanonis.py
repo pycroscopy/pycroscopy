@@ -5,10 +5,10 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 import numpy as np
 import h5py
-from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, Dimension, \
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, Dimension, \
     write_ind_val_dsets
-from ...core.io.translator import Translator
-from ...core.io.write_utils import get_aux_dset_slicing
+from pyUSID.io.translator import Translator
+from pyUSID.io.write_utils import get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
 # TODO: Adopt any missing features from https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py
 

@@ -13,10 +13,10 @@ from numbers import Number
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import check_if_main, get_attr, write_main_dataset, create_results_group
-from ..core.viz.plot_utils import set_tick_font_size, plot_curves
-from ..core.io.write_utils import Dimension
+from pyUSID import USIDataset
+from pyUSID.io.hdf_utils import check_if_main, get_attr, write_main_dataset, create_results_group
+from pyUSID.viz.plot_utils import set_tick_font_size, plot_curves
+from pyUSID.io.write_utils import Dimension
 
 if sys.version_info.major == 3:
     unicode = str
@@ -254,7 +254,7 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
     """
     if not check_if_main(h5_main):
         raise TypeError('h5_main is not a Main dataset')
-    h5_main = PycroDataset(h5_main)
+    h5_main = USIDataset(h5_main)
     if pts_per_cycle % 1 != 0 or pts_per_cycle < 1:
         raise TypeError('pts_per_cycle should be a positive integer')
     if scan_step_x_m is not None:
@@ -291,4 +291,4 @@ def reshape_from_lines_to_pixels(h5_main, pts_per_cycle, scan_step_x_m=None):
 
     print('Finished reshaping G-mode line data to rows and columns')
 
-    return PycroDataset(h5_resh)
+    return USIDataset(h5_resh)

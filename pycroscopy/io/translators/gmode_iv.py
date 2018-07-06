@@ -13,9 +13,9 @@ from warnings import warn
 import h5py
 import numpy as np  # For array operations
 
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import Dimension
-from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import Dimension
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
 
 class GIVTranslator(Translator):

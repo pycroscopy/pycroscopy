@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 05 07:55:56 2016
+
+@author: Chris Smith
+"""
 from __future__ import division, print_function, absolute_import, unicode_literals
 import struct
 import array
@@ -10,8 +16,6 @@ except ImportError:
     from io import StringIO
 
     unicode = str
-except:
-    raise
 
 # mfm 2013-05-21 do we need the numpy array stuff? The python array module
 # allows us to store arrays easily and efficiently. How do we deal

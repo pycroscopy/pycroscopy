@@ -8,8 +8,8 @@ from warnings import warn
 import numpy as np
 
 from .fitter import Fitter
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import copy_region_refs, write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
+from pyUSID import USIDataset
+from pyUSID.io.hdf_utils import copy_region_refs, write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
                                 create_empty_dataset, get_auxiliary_datasets, write_main_dataset
 
 '''
@@ -111,7 +111,7 @@ class BESHOfitter(Fitter):
 
         # Create the fit dataset as an empty dataset of the same size and dtype as the guess.
         # Also automatically links in the ancillary datasets.
-        self.h5_fit = PycroDataset(create_empty_dataset(self.h5_guess, dtype=sho32, dset_name='Fit'))
+        self.h5_fit = USIDataset(create_empty_dataset(self.h5_guess, dtype=sho32, dset_name='Fit'))
 
         # This is necessary comparing against new runs to avoid re-computation + resuming partial computation
         write_simple_attrs(self.h5_fit, self._parms_dict)

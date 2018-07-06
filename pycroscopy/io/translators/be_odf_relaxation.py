@@ -2,7 +2,7 @@
 """
 Created on Thursday May 26 11:23:00 2016
 
-@author:  Rama Vasudevan, Suhas Somnath
+@author:  Rama Vasudevan, Suhas Somnath, Chris Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -16,9 +16,9 @@ import h5py
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
     nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import INDICES_DTYPE, Dimension
-from ...core.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import INDICES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
 
 
 class BEodfRelaxationTranslator(Translator):
@@ -271,8 +271,7 @@ class BEodfRelaxationTranslator(Translator):
 
         generatePlotGroups(self.ds_main, self.mean_resp, folder_path, basename, self.max_resp,
                            self.min_resp, max_mem_mb=self.max_ram, spec_label=spec_label, show_plots=show_plots,
-                           save_plots=save_plots, do_histogram=do_histogram,
-                           ignore_plot_groups=ignored_plt_grps)  # We ignored in-field plot group.
+                           save_plots=save_plots, do_histogram=do_histogram)
 
         self.h5_file.close()
 

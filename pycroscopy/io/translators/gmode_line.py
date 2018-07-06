@@ -14,9 +14,9 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import VALUES_DTYPE, Dimension
-from ...core.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
 
 
 class GLineTranslator(Translator):
@@ -137,9 +137,11 @@ class GLineTranslator(Translator):
                 # All positions and spectra are shared between channels
                 h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
                 h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
-            else:
+            elif len(data_paths) == 1:
                 h5_pos_inds, h5_pos_vals = write_ind_val_dsets(chan_grp, pos_desc, is_spectral=False)
                 h5_spec_inds, h5_spec_vals = write_ind_val_dsets(chan_grp, spec_desc, is_spectral=True)
+            else:
+                pass
 
             h5_main = write_main_dataset(chan_grp, (self.num_rows, self.points_per_pixel * num_cols), 'Raw_Data',
                                          'Deflection', 'V',
