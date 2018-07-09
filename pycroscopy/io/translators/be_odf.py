@@ -122,6 +122,7 @@ class BEodfTranslator(Translator):
 
         file_names = listdir(folder_path)
         aux_files = []
+        current_data_exists = False
         for fname in file_names:
             if 'AI2' in fname:
                 if 'write' in fname:
@@ -252,9 +253,6 @@ class BEodfTranslator(Translator):
             spec_dim_dict[entry[0] + '_parameters'] = entry[1]
 
         spec_vals_slices = dict()
-        #         if len(spec_vals_labs) == 1:
-        #             spec_vals_slices[spec_vals_labs[0]]=(slice(0,1,None),)
-        #         else:
 
         for row_ind, row_name in enumerate(spec_vals_labs):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
@@ -351,8 +349,9 @@ class BEodfTranslator(Translator):
                            do_histogram=do_histogram, debug=verbose)
 
         self.h5_raw = USIDataset(self.h5_raw)
-        #Go ahead and read the current data in the second (current) channel
-        if current_data_exists: #If a .dat file matches
+
+        # Go ahead and read the current data in the second (current) channel
+        if current_data_exists:                     #If a .dat file matches
             self._read_secondary_channel(h5_meas_group, aux_files)
 
         h5_f.close()
