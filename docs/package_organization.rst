@@ -53,10 +53,12 @@ The package structure is simple, with 5 main modules:
 
 ``pycroscopy.core``
 ~~~~~~~~~~~~~~~~~~~
-This engineering-focused sub-package is now formally part of our sister package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_.
+This engineering-focused sub-package has been moved to a new package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_.
 pyUSID supports science-focused packages such as pycroscopy similar to how scipy depends on numpy.
-In the next release of pycroscopy, this sub-package will become removed and references to this sub-package will actually
-point to pyUSID. Eventually, users will need to explicitly import pyUSID in addition to pycroscopy.
+The current release of pycroscopy imports pyUSID and makes it available as ``pycroscopy.core`` so that existing imports do not break.
+In the next release of pycroscopy, this implicit import will be removed and the modules would have to be imported directly from ``pyUSID``.
+See the `what's new <./whats_new.html>`_ under **June 28 2018**.
+
 
 Branches
 --------

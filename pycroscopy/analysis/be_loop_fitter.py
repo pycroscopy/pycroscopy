@@ -21,11 +21,11 @@ from ..processing.tree import ClusterTree
 from .be_sho_fitter import sho32
 from .fit_methods import BE_Fit_Methods
 from .optimize import Optimize
-from ..core.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
-from ..core.io.hdf_utils import copy_region_refs, \
+from pyUSID.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
+from pyUSID.io.hdf_utils import copy_region_refs, \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, \
     create_empty_dataset, create_results_group, write_reduced_spec_dsets, write_simple_attrs, write_main_dataset
-from ..core.io.pycro_data import PycroDataset
+from pyUSID import USIDataset
 
 '''
 Custom dtypes for the datasets created during fitting.
@@ -279,7 +279,7 @@ class BELoopFitter(Fitter):
         if get_loop_parameters:
             self.h5_guess_parameters = self.extract_loop_parameters(self.h5_guess)
 
-        return PycroDataset(self.h5_guess)
+        return USIDataset(self.h5_guess)
 
     def do_fit(self, processors=None, max_mem=None, solver_type='least_squares', solver_options=None,
                obj_func=None,
@@ -320,7 +320,7 @@ class BELoopFitter(Fitter):
         if solver_options is None:
             solver_options = {'jac': '2-point'}
         '''
-        Set the number of processors and the ammount of RAM to use in the fit
+        Set the number of processors and the amount of RAM to use in the fit
         '''
         if processors is None:
             processors = self._maxCpus
@@ -378,7 +378,6 @@ class BELoopFitter(Fitter):
         '''
         Do the fit
         '''
-        results = list()
         legit_solver = solver_type in scipy.optimize.__dict__.keys()
         legit_obj_func = obj_func['obj_func'] in BE_Fit_Methods().methods
         if legit_solver and legit_obj_func:
@@ -390,12 +389,9 @@ class BELoopFitter(Fitter):
                                       obj_func={'class': 'BE_Fit_Methods', 'obj_func': 'BE_LOOP', 'xvals': vdc_shifted})
                 # TODO: need a different .reformatResults to process fitting results
                 temp = self._reformat_results(temp, obj_func['obj_func'])
-                temp = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
+                results = self._reshape_results_for_h5(temp, nd_mat_shape_dc_first)
 
-                results.append(temp)
-
-                self.fit = np.hstack(tuple(results))
-                self._set_results()
+                self.h5_fit[self._start_pos:self._end_pos, self._current_met_spec_slice] = results
 
                 self._start_pos = self._end_pos
                 self._get_guess_chunk()
@@ -411,7 +407,7 @@ class BELoopFitter(Fitter):
         if get_loop_parameters:
             self.h5_fit_parameters = self.extract_loop_parameters(self.h5_fit)
 
-        return PycroDataset(self.h5_fit)
+        return USIDataset(self.h5_fit)
 
     @staticmethod
     def extract_loop_parameters(h5_loop_fit, nuc_threshold=0.03):

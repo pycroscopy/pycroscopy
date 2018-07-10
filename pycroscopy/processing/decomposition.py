@@ -11,13 +11,13 @@ import time
 import numpy as np
 import sklearn.decomposition as dec
 
-from ..core.processing.process import Process
-from ..core.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
+from pyUSID.processing.process import Process
+from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
     write_simple_attrs
-from ..core.io.write_utils import Dimension
-from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
-from ..core.io.io_utils import format_time
-from ..core.io.pycro_data import PycroDataset
+from pyUSID.io.write_utils import Dimension
+from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
+from pyUSID.io.io_utils import format_time
+from pyUSID import USIDataset
 
 
 class Decomposition(Process):
@@ -73,7 +73,7 @@ class Decomposition(Process):
          self.data_n_features, self.data_type_mult) = check_dtype(h5_main)
 
         # supercharge h5_main!
-        self.h5_main = PycroDataset(self.h5_main)
+        self.h5_main = USIDataset(self.h5_main)
         
         self.__components = None
         self.__projection = None
@@ -101,8 +101,8 @@ class Decomposition(Process):
                 self.h5_results_grp = self.duplicate_h5_groups[-1]
                 print('Returning previously computed results from: {}'.format(self.h5_results_grp.name))
                 print('set the "override" flag to True to recompute results')
-                return PycroDataset(self.h5_results_grp['Components']).get_n_dim_form(), \
-                       PycroDataset(self.h5_results_grp['Projection']).get_n_dim_form()
+                return USIDataset(self.h5_results_grp['Components']).get_n_dim_form(), \
+                       USIDataset(self.h5_results_grp['Projection']).get_n_dim_form()
 
         self.h5_results_grp = None
 

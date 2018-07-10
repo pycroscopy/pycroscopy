@@ -9,12 +9,12 @@ Created on Thu Nov 02 11:48:53 2017
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import numpy as np
-from ..core.processing.process import Process, parallel_compute
-from ..core.io.dtype_utils import stack_real_to_compound
-from ..core.io.hdf_utils import write_main_dataset, create_results_group, create_empty_dataset, write_simple_attrs, \
+from pyUSID.processing.process import Process, parallel_compute
+from pyUSID.io.dtype_utils import stack_real_to_compound
+from pyUSID.io.hdf_utils import write_main_dataset, create_results_group, create_empty_dataset, write_simple_attrs, \
     print_tree, get_attributes
-from ..core.io.write_utils import Dimension
-from ..core.io.pycro_data import PycroDataset
+from pyUSID.io.write_utils import Dimension
+from pyUSID import USIDataset
 from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
@@ -53,7 +53,7 @@ class GIVBayesian(Process):
         if self.verbose:
             print('ensuring that half steps should be odd, num_x_steps is now', self.num_x_steps)
 
-        self.h5_main = PycroDataset(self.h5_main)
+        self.h5_main = USIDataset(self.h5_main)
 
         # take these from kwargs
         bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
@@ -164,7 +164,7 @@ class GIVBayesian(Process):
             print('Created Resistance')
             print_tree(h5_group)
 
-        assert isinstance(self.h5_resistance, PycroDataset)  # only here for PyCharm
+        assert isinstance(self.h5_resistance, USIDataset)  # only here for PyCharm
         self.h5_new_spec_vals = self.h5_resistance.h5_spec_vals
 
         # The variance is identical to the resistance dataset

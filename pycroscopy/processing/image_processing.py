@@ -14,11 +14,11 @@ from scipy.optimize import leastsq
 from scipy.signal import blackman
 from sklearn.utils import gen_batches
 
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
+from pyUSID import USIDataset
+from pyUSID.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
     link_as_main, check_for_old
-from ..core.io.io_utils import get_available_memory
-from ..core.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE, calc_chunks
+from pyUSID.io.io_utils import get_available_memory
+from pyUSID.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE, calc_chunks
 from ..io.hdf_writer import HDFwriter
 from ..io.virtual_data import VirtualGroup, VirtualDataset
 from .svd_utils import get_component_slice
@@ -199,7 +199,7 @@ class ImageWindow(object):
 
         self.h5_wins = h5_wins
 
-        return PycroDataset(h5_wins)
+        return USIDataset(h5_wins)
 
     @staticmethod
     def _check_win_parameters(h5_main, win_step_x, win_step_y, win_x, win_y):

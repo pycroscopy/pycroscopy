@@ -1,7 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 05 07:55:56 2016
+
+@author: Chris Smith
+"""
 import os
 from . import nanonispy as nap
 
-
+# TODO: Consider moving this to NanonisTranslator
 def read_nanonis_file(file_path):
     """
     Function to read the nanonis data file and return the header dictionary containing the parameters

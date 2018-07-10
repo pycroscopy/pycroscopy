@@ -12,13 +12,13 @@ import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
-from ..core.processing.process import Process, parallel_compute
-from ..core.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
+from pyUSID.processing.process import Process, parallel_compute
+from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
     write_simple_attrs, link_h5_obj_as_alias, write_ind_val_dsets
-from ..core.io.pycro_data import PycroDataset
-from ..core.io.io_utils import format_time
-from ..core.io.write_utils import Dimension
-from ..core.io.dtype_utils import check_dtype, stack_real_to_target_dtype
+from pyUSID import USIDataset
+from pyUSID.io.io_utils import format_time
+from pyUSID.io.write_utils import Dimension
+from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 
 
 class Cluster(Process):
@@ -107,7 +107,7 @@ class Cluster(Process):
          self.data_n_features, self.data_type_mult) = check_dtype(h5_main)
 
         # supercharge h5_main!
-        self.h5_main = PycroDataset(self.h5_main)
+        self.h5_main = USIDataset(self.h5_main)
 
         self.__labels = None
         self.__mean_resp = None

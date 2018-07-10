@@ -15,14 +15,14 @@ from IPython.display import display
 from matplotlib import pyplot as plt
 from functools import partial
 
-from ..core.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+from pyUSID.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
     plot_complex_spectra
-from ..core.viz.jupyter_utils import save_fig_filebox_button
+from pyUSID.viz.jupyter_utils import save_fig_filebox_button
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
-from ..core.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_sort_order, get_dimensionality, \
+from pyUSID.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_sort_order, get_dimensionality, \
     get_attr, get_source_dataset
-from ..core.io.pycro_data import PycroDataset
+from pyUSID import USIDataset
 
 
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
@@ -222,7 +222,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     Parameters
     ----------
-    pc_sho_dset : PycroDataset
+    pc_sho_dset : USIDataset
         dataset to be plotted
     step_chan : string / unicode
         Name of the channel that forms the primary spectroscopic axis (eg - DC offset)
@@ -424,7 +424,7 @@ def jupyter_visualize_be_spectrograms(pc_main, cmap=None):
 
     Parameters
     ----------
-    pc_main : PycroDataset
+    pc_main : USIDataset
         Raw Band Excitation dataset
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
@@ -873,8 +873,8 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
     None
 
     """
-    if not isinstance(h5_loop_parameters, PycroDataset):
-        h5_loop_parameters = PycroDataset(h5_loop_parameters)
+    if not isinstance(h5_loop_parameters, USIDataset):
+        h5_loop_parameters = USIDataset(h5_loop_parameters)
 
     # Get the position and spectroscopic datasets
     pos_dims = h5_loop_parameters.pos_dim_sizes
@@ -1210,18 +1210,18 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     None
 
     """
-    if not isinstance(h5_loop_parameters, PycroDataset):
-        h5_loop_parameters = PycroDataset(h5_loop_parameters)
+    if not isinstance(h5_loop_parameters, USIDataset):
+        h5_loop_parameters = USIDataset(h5_loop_parameters)
 
     # Find the precursor datasets used to calculate these parameters
     h5_loop_grp = h5_loop_parameters.parent
-    h5_loop_projections = PycroDataset(h5_loop_grp['Projected_Loops'], sort_dims=False)
-    h5_loop_fit = PycroDataset(h5_loop_grp['Fit'], sort_dims=False)
-    h5_loop_guess = PycroDataset(h5_loop_grp['Guess'], sort_dims=False)
+    h5_loop_projections = USIDataset(h5_loop_grp['Projected_Loops'], sort_dims=False)
+    h5_loop_fit = USIDataset(h5_loop_grp['Fit'], sort_dims=False)
+    h5_loop_guess = USIDataset(h5_loop_grp['Guess'], sort_dims=False)
 
     h5_sho_grp = h5_loop_grp.parent
-    h5_sho_fit = PycroDataset(h5_sho_grp['Fit'], sort_dims=False)
-    h5_sho_guess = PycroDataset(h5_sho_grp['Guess'], sort_dims=False)
+    h5_sho_fit = USIDataset(h5_sho_grp['Fit'], sort_dims=False)
+    h5_sho_guess = USIDataset(h5_sho_grp['Guess'], sort_dims=False)
 
     h5_main = get_source_dataset(h5_sho_grp)
     # h5_main.toggle_sorting()

@@ -24,7 +24,6 @@ from .gmode_iv import GIVTranslator
 from .gmode_line import GLineTranslator
 from .gmode_tune import GTuneTranslator
 from .igor_ibw import IgorIBWTranslator
-from pycroscopy.core.io.image import ImageTranslator
 from .ndata import NDataTranslator
 from .tr_kpfm import TRKPFMTranslator
 from .oneview import OneViewTranslator
@@ -39,5 +38,5 @@ from .nanonis import NanonisTranslator
 __all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
-           'OneViewTranslator', 'ImageTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
+           'OneViewTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
            'LabViewH5Patcher', 'TRKPFMTranslator', 'BrukerAFMTranslator']

@@ -48,12 +48,12 @@ except ImportError:
     install('wget')
     import wget
 try:
-    import pycroscopy as px
+    import pyUSID as usid
 except ImportError:
-    print('pycroscopy not found.  Will install with pip.')
+    print('pyUSID not found.  Will install with pip.')
     import pip
-    install('pycroscopy')
-    import pycroscopy as px
+    install('pyUSID')
+    import pyUSID as usid
 
 ####################################################################################
 # We will be using an image available on our GitHub project page by default. You are encouraged
@@ -114,7 +114,7 @@ u_mat, v_mat = np.meshgrid(u_axis_vec, v_axis_vec)  # matrices of u-positions an
 ####################################################################################
 # A plot of the data is shown below (STEM image of STO).
 fig, axis = plt.subplots(figsize=(5, 5))
-_ = px.plot_utils.plot_map(axis, image_raw, cmap=plt.cm.inferno, clim=[0, 6],
+_ = usid.plot_utils.plot_map(axis, image_raw, cmap=plt.cm.inferno, clim=[0, 6],
                            x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
 axis.set_title('original image of STO captured via STEM')
 
@@ -128,7 +128,7 @@ fft_image_raw = npf.fft2(image_raw)
 # This is because the output for the ‘fft2’ function flips the frequency axes so 
 # that low frequencies are at the ends, and the highest frequency is in the middle. 
 fig, axis = plt.subplots(figsize=(5, 5))
-_ = px.plot_utils.plot_map(axis, np.abs(fft_image_raw), cmap=plt.cm.OrRd, clim=[0, 3E+3])
+_ = usid.plot_utils.plot_map(axis, np.abs(fft_image_raw), cmap=plt.cm.OrRd, clim=[0, 3E+3])
 axis.set_title('FFT2 of image')
 
 ####################################################################################
@@ -147,7 +147,7 @@ def crop_center(image, cent_size=128):
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, img, title in zip(axes, [fft_abs_image_raw, crop_center(fft_abs_image_raw)], ['FFT after fftshift-ing',
                                                                                         'Zoomed view around origin']):
-    _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.OrRd, clim=[0, 1E+4])
+    _ = usid.plot_utils.plot_map(axis, img, cmap=plt.cm.OrRd, clim=[0, 1E+4])
     axis.set_title(title)
 fig.tight_layout()
 
@@ -164,7 +164,7 @@ filter_width = .15  # inverse width of gaussian, units same as real space axes
 gauss_filter = np.e**(-(r*filter_width)**2)
 
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
-_ = px.plot_utils.plot_map(axes[0], gauss_filter, cmap=plt.cm.OrRd)
+_ = usid.plot_utils.plot_map(axes[0], gauss_filter, cmap=plt.cm.OrRd)
 axes[0].set_title('Gaussian filter')
 axes[1].plot(gauss_filter[gauss_filter.shape[0]//2])
 axes[1].set_title('Cross section of filter')
@@ -190,7 +190,7 @@ image_filtered = np.real(image_filtered)
 
 fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, img, title in zip(axes, [image_raw, image_filtered], ['original', 'filtered']):
-    _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
+    _ = usid.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
                                x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
@@ -203,7 +203,7 @@ image_w_background = image_raw + background_distortion
 
 fig, axes = plt.subplots(figsize=(10, 5), ncols=2)
 for axis, img, title in zip(axes, [background_distortion, image_w_background], ['background', 'image with background']):
-    _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
+    _ = usid.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
                                x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
@@ -217,7 +217,7 @@ filter_width = 2  # inverse width of gaussian, units same as real space axes
 inverse_gauss_filter = 1-np.e**(-(r*filter_width)**2)
 
 fig, axis = plt.subplots()
-_ = px.plot_utils.plot_map(axis, inverse_gauss_filter, cmap=plt.cm.OrRd)
+_ = usid.plot_utils.plot_map(axis, inverse_gauss_filter, cmap=plt.cm.OrRd)
 axis.set_title('background filter')
 
 ####################################################################################
@@ -241,7 +241,7 @@ fig, axes = plt.subplots(ncols=2, figsize=(10, 5))
 for axis, img, title in zip(axes, [image_corrected, filtered_background],
                             ['image with background subtracted', 
                              'background component that was removed']):
-    _ = px.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
+    _ = usid.plot_utils.plot_map(axis, img, cmap=plt.cm.inferno,
                                x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()

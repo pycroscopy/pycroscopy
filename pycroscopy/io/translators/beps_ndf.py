@@ -17,10 +17,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from ...core.io.translator import Translator, generate_dummy_main_parms
-from ...core.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
-from ...core.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ...core.io.pycro_data import PycroDataset
+from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
+from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from pyUSID.io.usi_data import USIDataset
 from ..hdf_writer import HDFwriter
 from ..virtual_data import VirtualGroup, VirtualDataset
 
@@ -333,7 +333,7 @@ class BEPSndfTranslator(Translator):
         link_h5_objects_as_attrs(self.ds_main, get_h5_obj_refs(aux_ds_names, h5_refs))
 
         # While we have all the references and mean data, write the plot groups as well:
-        generatePlotGroups(PycroDataset(self.ds_main), self.mean_resp,
+        generatePlotGroups(USIDataset(self.ds_main), self.mean_resp,
                            self.folder_path, self.basename,
                            self.max_resp, self.min_resp,
                            max_mem_mb=self.max_ram,
