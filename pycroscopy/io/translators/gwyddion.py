@@ -208,7 +208,6 @@ class GwyddionTranslator(Translator):
         Returns
         -------
         """        
-
         current_channel = ''
 
         # Iterate through each object in the gwy dataset
