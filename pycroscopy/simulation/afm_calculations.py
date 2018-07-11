@@ -4,7 +4,7 @@ Created on Sun Aug 20 21:28:05 2017
 
 @author: Enrique Alejandro
 
-Description: this library contains functions for postprocessing of results of AFM simulation
+Description: this library contains functions for postprocessing results of AFM simulations
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
@@ -202,3 +202,111 @@ def derivative_cd(f_t, time_vec):
             else:
                 f_prime[i] = (f_t[i+1]-f_t[i-1])/(time_vec[i + 1] - time_vec[i - 1])
     return f_prime
+
+
+def sparse(x, t, tr=0.1, st=1.0):
+    """this function sparses an array adjusting the time resolution and total time
+    
+    Parameters
+    ----------
+    x : numpy.ndarray
+        function trace which has to be sparsed to have desired resolution and lenght 
+    t : numpy.ndarray
+        original time trace that will be sparsed
+    tr : float, optional
+        time resolution desired (inverse of sampling frequency)
+    st : float, optional
+        desired simulation time, this has to be lower or equal than t[len(t)-1]
+        
+    Returns
+    ------- 
+    np.array(x_sparse) : numpy.ndarray
+        function trace sparsed to coincide with the desired time resolution and lenght
+    np.array(t_sparse) : numpy.ndarray
+        new time trace with the desired time resolution and total time
+    """
+    nt = len(t)
+    prints = 0
+    i =0
+    x_sparse = []
+    t_sparse = []
+    while i < (nt):
+        if t[i] >= prints*tr and t[i]<=(st+tr) :
+            x_sparse.append(x[i])
+            t_sparse.append(t[i])
+            prints = prints + 1
+        i += 1
+    return np.array(x_sparse), np.array(t_sparse)
+
+
+def log_tw(de0, maxi, nn=10):
+    """this function generates a frequency or time array weighted in logarithmic scale
+    
+    Parameters
+    ----------
+    de0 : float
+        minimum value of the function 
+    maxi : float
+        maximum value of the function
+    nn : int, optional
+        number of point per decade of logarithmic scale
+        
+    Returns
+    ------- 
+    np.array(epsilon) : numpy.ndarray
+        function trace weighted in logarithmic scale
+    """    
+    epsilon = []
+    w = de0
+    de = de0
+    prints = 1
+    epsilon.append(de0)
+    while w < maxi:
+        w += de
+        if w < maxi:
+            epsilon.append(w)              
+        prints += 1 
+        if prints == nn:
+            de = de*10
+            prints = 1    
+    return np.array(epsilon)
+
+def log_scale(x, t, tr=0.1, st=1.0, nn = 10):
+    """this function receives an array and sparses it weighting it in logarithmic scale
+    
+    warning : this function eliminates points and only takes into account certain points to have an array equally spaced in logarithmic scale
+    
+    Parameters
+    ----------
+    x : numpy.ndarray
+        function trace which has to be sparsed to have desired resolution and lenght 
+    t : numpy.ndarray
+        original time trace that will be sparsed
+    tr : float, optional
+        minimum time resolution, note that this is not constant because time array will be equally spaced in logarithmic scale
+    st : float, optional
+        desired simulation time, this has to be lower or equal than t[len(t)-1]
+    nn : int, optional
+        
+    Returns
+    ------- 
+    np.array(x_log) : numpy.ndarray
+        function trace weighted in logarithmic scale
+    np.array(t_log) : numpy. nd array
+        time traced equally spaced in logarithmic scale        
+    """    
+    prints = 1
+    nt = len(x)
+    i =0
+    x_log = []
+    t_log = []
+    while i <nt:
+        if t[i] >= prints*tr and t[i]<=st :
+            x_log.append(x[i])
+            t_log.append(t[i])
+            prints += 1
+        i += 1
+        if prints == nn:
+            tr = tr*10
+            prints = 1
+    return np.array(x_log),np.array(t_log)
