@@ -185,7 +185,7 @@ class GIVBayesian(Process):
             print_tree(h5_group)
             print('Done!')
 
-        self.hdf.flush()
+        self.h5_main.file.flush()
 
     def _get_existing_datasets(self):
         """
@@ -258,7 +258,7 @@ class GIVBayesian(Process):
         # Leaving in this provision that will allow restarting of processes
         self.h5_results_grp.attrs['last_pixel'] = self._end_pos
 
-        self.hdf.flush()
+        self.h5_main.file.flush()
 
         print('Finished processing up to pixel ' + str(self._end_pos) + ' of ' + str(self.h5_main.shape[0]))
 
