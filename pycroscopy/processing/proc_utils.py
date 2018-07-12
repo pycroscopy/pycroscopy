@@ -67,7 +67,7 @@ def get_component_slice(components, total_components=None):
         comp_slice = components
         num_comps = abs(comp_slice.stop - comp_slice.start)
     else:
-        raise TypeError('Unsupported component type supplied to clean_and_build.  '
+        raise TypeError('Unsupported component type supplied to get_component_slice.  '
                         'Allowed types are integer, numpy array, list, tuple, and slice.')
 
     return comp_slice, num_comps
