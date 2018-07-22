@@ -2,7 +2,7 @@
 """
 Created on Wed Dec 07 16:04:34 2016
 
-@author: Suhas Somnath, Chris R. Smith, Tommaso Costanzo
+@author: Tommaso Costanzo, Suhas Somnath, Chris R. Smith
 """
 import numpy as np
 import h5py
@@ -30,7 +30,8 @@ class ARhdf5(Translator):
     Translate Asylum Research HDF5 file into pyUSID.
 
     The ARhdf5 file should be generated with the converter provided
-    by Asylum Research called ARDFtoHDF5. Contact David Aue to get a
+    by Asylum Research called ARDFtoHDF5. Contact David Aue <David.Aue@oxinst.com>
+    or Tommaso Costanzo <tommaso.costanzo01@gmail.com> to get a
     copy of the converter. NOTE: the AR converter works only under
     windows.
     '''
@@ -95,7 +96,10 @@ class ARhdf5(Translator):
         self.map_size['X'] = ARh5_file['ForceMap']['Segments'].shape[0]
         self.map_size['Y'] = ARh5_file['ForceMap']['Segments'].shape[1]
         self.channels_name = list(ARh5_file['ForceMap'].attrs['Channels'])
-        self.points_per_sec = np.float(self.note_value('ARDoIVPointsPerSec'))
+        try:
+            self.points_per_sec = np.float(self.note_value('ARDoIVPointsPerSec'))
+        except NameError:
+            self.points_per_sec = np.float(self.note_value('NumPtsPerSec'))
         if self.debug:
             print('Map size [X, Y]: ', self.map_size)
             print('Channels names: ', self.channels_name)
@@ -106,7 +110,7 @@ class ARhdf5(Translator):
         short_ext = np.amin(np.array(self.segments[:, :, extension_idx]))
         longest_ext = np.amax(np.array(self.segments[:, :, extension_idx]))
         difference = longest_ext - short_ext #this is a difference between integers
-        tot_length = (np.amax(self.segments[:,:,-1]) - difference) + 1 # +1 otherwise \
+        tot_length = (np.amax(self.segments) - difference) + 1 # +1 otherwise \
           # array(tot_length) will be of 1 position shorter
         points_trimmed = np.array(self.segments[:, :, extension_idx]) - short_ext
         if self.debug:
@@ -206,14 +210,17 @@ class ARhdf5(Translator):
                                                            h5_spec_vals=first_image_dset['Spectroscopic_Values'],
                                                            )
 
-        
         # Create the new segments that will be stored as attribute
         new_segments = {}
         for seg, name in enumerate(self.segments_name):
             new_segments.update({name:self.segments[0,0,seg] - short_ext})
-        usid.hdf_utils.write_simple_attrs(h5_meas_group, {'Segments':new_segments})
-        usid.hdf_utils.write_simple_attrs(h5_meas_group, {'Notes':self.notes})
-        usid.hdf_utils.write_simple_attrs(h5_meas_group, {'Points_trimmed':points_trimmed})
+        usid.hdf_utils.write_simple_attrs(h5_meas_group, {'Segments':new_segments,
+                                                          'Points_trimmed':points_trimmed,
+                                                          'Notes':self.notes})
+        usid.hdf_utils.write_simple_attrs(h5_file,
+                                          {'translator':'ARhdf5',
+                                           'instrument':'Asylum Research '+self.note_value('MicroscopeModel'),
+                                           'AR sftware version':self.note_value('Version')})
 
         if self.debug:
             print(usid.hdf_utils.print_tree(h5_file))
@@ -259,8 +266,7 @@ class ARhdf5(Translator):
                 print('WARNING! Multiple value matched! \n Only the first is returned')
                 return match.groups()[0]
         else:
-            print('Note entry with name "{}" not found'.format(name))
-            return ""
+            raise NameError('Note entry with name "{}" not found'.format(name))
 
     def get_def_unit(self, chan_name):
         """
