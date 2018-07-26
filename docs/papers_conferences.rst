@@ -5,7 +5,7 @@ Papers / Conferences
 Journal Papers using pycroscopy
 -------------------------------
 
-.. note:: Downloading notebooks
+.. note::
    Notebooks for the papers below are made available through NBViewer. We have been made aware that the **Download** button may not work for certain browsers like Chrome and Safari.
    *We are working on simplifying the download of the notebooks.*
 
@@ -50,10 +50,10 @@ Scanning Probe Microscopy 
 
 **Many more coming soon....**
 
-.. note:: Adding your paper here
+.. note::
    Please `get in touch <./contact.html>`_ with us if you would like to add papers that used pycroscopy / pyUSID
 
-.. note:: Citing pycroscopy
+.. note::
    If you used pycroscopy for your research, we would appreciate it if you could `reference pycroscopy <https://pycroscopy.github.io/pycroscopy/faq.html#how-can-i-reference-pycroscopy>`_.
 
 Workshops on pycroscopy
