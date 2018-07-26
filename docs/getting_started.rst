@@ -1,9 +1,8 @@
 Getting Started
 ---------------
 * Follow `these instructions <./install.html>`_ to install pycroscopy
-* See how we use pycroscopy for our scientific research in these `jupyter notebooks <http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/tree/master/jupyter_notebooks/>`_.
+* See the many `journal publications <./papers_conferences.html>`_ made possible by pycroscopy and try out the jupyter notebooks that were used for the paper
 * Also see `examples <./auto_examples/index.html>`_ to see other scientific applications of pycroscopy
-* See `journal publications <./papers_conferences.html>`_ that used pycroscopy.
 * Python novices are highly recommended to go through **Nick Mostovych's** `guides and pitfalls for python novices <https://pycroscopy.github.io/pyUSID/getting_started.html#guide-for-python-novices>`_
 * We have also compiled a list of `handy tutorials <./external_guides.html>`_ on basic / prerequisite topics such as programming in python, data analytics, machine learning, etc.
 * See `tutorials <https://pycroscopy.github.io/pyUSID/auto_examples/index.html>`_ to get started on using and writing your own pyUSID functions that power pycroscopy
