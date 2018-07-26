@@ -2,6 +2,8 @@
 Examples & Tutorials
 ====================
 
+Please visit `this page <../papers_conferences.html>`_ to see the many papers that used pycroscopy for their research
+
 Tutorials on fundamental data tools
 -----------------------------------
 
