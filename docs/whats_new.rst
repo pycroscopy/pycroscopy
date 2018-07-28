@@ -5,7 +5,8 @@ What's New
 ------------------------------------------------------------------------
 Moved ``pycroscopy.core`` into separate package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
 pyUSID will be the engineering package that supports science-focused packages such as pycroscopy similar to how scipy depends on numpy.
-The current release of pycroscopy imports pyUSID and makes it available as ``pycroscopy.core`` so that existing imports do not break.
+All references to pycroscopy.core within the pycroscopy package are now referencing pyusid instead.
+The current release of pycroscopy imports pyUSID and makes it available as ``pycroscopy.core`` so that existing imports in user-code do not break.
 In the next release of pycroscopy, this implicit import will be removed and the following modules would have to be imported directly from ``pyUSID``:
 
 * ``hdf_utils``
@@ -27,10 +28,10 @@ Thus, imports and usages of such modules as:
 
   import pycroscopy as px
   px.plot_utils.plot_map(...)
-  px.print_tree(h5_file)
+  px.hdf_utils.print_tree(h5_file)
   px.PycroDataset(h5_dset)
   # Other non-core classes:
-  px.SignalFilter(h5_main, ...)
+  px.processing.SignalFilter(h5_main, ...)
 
 would need to be changed to:
 
@@ -40,13 +41,13 @@ would need to be changed to:
   import pyUSID as usid
   import pycroscopy as px
   # functions and classes still work the same way
-  # just use usid instead of px for anything in core.
+  # just use usid instead of px for anything that was in core (see list above).
   usid.plot_utils.plot_map(...)
   usid.hdf_utils.print_tree(h5_file)
   # The only difference is the renaming of the PycroDataset to USIDataset:
   usid.USIDataset(h5_dset)
-  # Other non-core classes:
-  px.SignalFilter(h5_main, ...)
+  # Other classes and functions outside .core are addressed just as before:
+  px.processing.SignalFilter(h5_main, ...)
 
 `Jun 19 2018: <https://github.com/pycroscopy/pycroscopy/pull/180>`_
 ------------------------------------------------------------------------

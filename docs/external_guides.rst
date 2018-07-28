@@ -1,6 +1,10 @@
 Tutorials on Basics
 ====================
 
+**Suhas Somnath and Chris Smith**
+
+Python, packages, editors, ...
+------------------------------
 Our sister project, **PyUSID**, has a `list of excellent tutorials <../../pyUSID/external_guides.html>`_ on most common topics
 such as on reading, using / running and writing code. Tutorials the ones relevant to pycroscopy are listed below.
 

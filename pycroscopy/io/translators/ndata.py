@@ -291,7 +291,7 @@ class NDataTranslator(Translator):
             h5_ronch = this_channel.create_dataset('Mean_Ronchigram',
                                                    data=np.zeros(num_pixels, dtype=np.float32))
 
-            h5_mean_spec = this_channel.create_dataset('Mean_Ronchigram',
+            h5_mean_spec = this_channel.create_dataset('Mean_Spectrogram',
                                                        data=np.zeros(num_images, dtype=np.float32))
 
             this_data = self.binning_func(this_data, self.bin_factor, self.bin_func).reshape(h5_main.shape)
