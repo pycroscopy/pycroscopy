@@ -4,6 +4,12 @@ Pycroscopy
 
 **Scientific analysis of nanoscale materials imaging data**
 
+.. note::
+   We are conducting a workshop on the fundamental tools that power pycroscopy (`pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_)
+   on `Aug 13 <https://cnmsusermeeting.ornl.gov/files/2018/03/Pycroscopy_WT_081318.pdf>`_.
+   Please see `this page <https://github.com/pycroscopy/pyUSID_Tutorial/blob/master/CNMS_UM_Workshop_schedule.md>`_ for more information on joining remotely
+
+
 What?
 ------
 * pycroscopy is a `python <http://www.python.org/>`_ package for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
