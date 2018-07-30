@@ -73,7 +73,7 @@ How?
   files which have numerous benefits including flexibility in storing multiple datasets of arbitrary sizes and dimensionality,
   supercomputer compatibility, storage of important metadata.
 * Once the relevant data and metadata are extracted from proprietary raw data files and written into USID HDF5 files
-  via a `translation process <https://pycroscopy.github.io/pyUSID/auto_examples/cookbooks/plot_numpy_translator.html>`_,
+  via a `translation process <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_numpy_translator.html>`_,
   the user gains access to the rest of the utilities present in ``pycroscopy.*``.
 * Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
   that are interactive and portable web applications containing text, images, code / scripts, and graphical results.
