@@ -66,7 +66,7 @@ Workshops on pycroscopy
 pycroscopy at International conferences
 ---------------------------------------
 * May 16-18 2018 - Poster at `ORNL Software Expo <https://software.ornl.gov/expo/program>`_
-* May 18 2018 - **Invited** `talk <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_presentation.pdf>`_ at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
+* May 18 2018 - **Invited** `talk <https://github.com/pycroscopy/pycroscopy/blob/master/docs/USID_pyUSID_pycroscopy.pdf>`_ at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
 * Feb 28 2018 - Webinar on `Jupyter for Supporting a Materials Imaging User Facility (and beyond) <https://www.exascaleproject.org/event/jupyter/>`_. see this `Youtube video <https://www.youtube.com/watch?v=aKah_O5OZdE&t=31m53s>`_
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; `poster 1641 <http://www2.avs.org/symposium2017/Papers/Paper_SP-TuP1.html>`_
