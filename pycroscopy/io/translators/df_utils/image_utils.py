@@ -32,7 +32,7 @@ def unnest_parm_dicts(image_parms, prefix=''):
         if isinstance(val, dict):
             new_parms.update(unnest_parm_dicts(val, name))
         elif isinstance(val, list):
-            if len(val)==0:
+            if len(val) == 0:
                 continue
             elif isinstance(val[0], dict):
                 for thing in val:

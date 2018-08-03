@@ -19,7 +19,7 @@ from .df_utils.dm_utils import parse_dm4_parms, read_dm3
 from pyUSID.io.translator import Translator, generate_dummy_main_parms
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
-from pyUSID.io.image import read_image
+from pycroscopy.io.translators.image import read_image
 
 
 class OneViewTranslator(Translator):
