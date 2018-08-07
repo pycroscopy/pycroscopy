@@ -63,6 +63,16 @@ How is pycroscopy different from ImageJ, ImageSXM, WSxM, Gwyddion, or xarray?
   * `xarray <https://github.com/pydata/xarray>`_ has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy.
 * For simple data operations such as flattening, finding maximum, etc. on 2D images or spectra, ImageJ / Gwyddion / WSxM may be better alternatives to pycroscopy.
 
+What's the difference between pyUSID and pycroscopy?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+pyUSID is the **science-agnostic** package that mainly contains the file handling tools upon which pycroscopy is built.
+Pycroscopy contains scientific and data analysis functions, instrument-specific data translators, etc.
+Pycroscopy depends on pyUSID just as the scipy family of packages depend on numpy.
+
+When should I use pyUSID and pycroscopy?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+See the entry under `June 28th 2018 <./whats_new.html>`_
+
 Using pycroscopy
 ----------------
 
