@@ -184,10 +184,10 @@ class OneViewTranslator(Translator):
         Set the Measurement Group attributes
         '''
         usize, vsize = image.shape
-        image_parms.attrs['image_size_u'] = usize
-        image_parms.attrs['image_size_v'] = vsize
-        image_parms.attrs['translator'] = 'OneView'
-        image_parms.attrs['num_pixels'] = image.size
+        image_parms['image_size_u'] = usize
+        image_parms['image_size_v'] = vsize
+        image_parms['translator'] = 'OneView'
+        image_parms['num_pixels'] = image.size
         write_simple_attrs(meas_grp, image_parms)
 
         '''
