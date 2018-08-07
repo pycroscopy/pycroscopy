@@ -9,7 +9,7 @@ import numpy as np
 
 from .fitter import Fitter
 from pyUSID import USIDataset
-from pyUSID.io.hdf_utils import copy_region_refs, write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
+from pyUSID.io.hdf_utils import write_simple_attrs, create_results_group, write_reduced_spec_dsets, \
                                 create_empty_dataset, get_auxiliary_datasets, write_main_dataset
 
 '''
@@ -81,8 +81,6 @@ class BESHOfitter(Fitter):
                                            main_dset_attrs=self._parms_dict, verbose=self._verbose)
 
         write_simple_attrs(self.h5_guess, {'SHO_guess_method': "pycroscopy BESHO", 'last_pixel': 0})
-
-        copy_region_refs(self.h5_main, self.h5_guess)
 
     def _create_fit_datasets(self):
         """
