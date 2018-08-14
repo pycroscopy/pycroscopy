@@ -21,10 +21,12 @@ Electron Microscopy
 
     * `Jupyter notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/Notebooks/EM/STEM/4D_STEM.ipynb>`_
     * `Completed notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/HTML/EM/STEM/4D_STEM.html>`_
+    * `Raw, intermediate, and final data <https://www.osti.gov/dataexplorer/biblio/1463599>`_
  #. `Feature extraction via similarity search: application to atom finding and denoising in electron and scanning probe microscopy imaging <https://ascimaging.springeropen.com/articles/10.1186/s40679-018-0052-y>`_ by *S. Somnath* et al.; **Advanced Structural and Chemical Imaging** (2018);
 
     * `Jupyter notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/Notebooks/EM/STEM/Image_Cleaning_Atom_Finding.ipynb>`_
     * `Completed notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/HTML/EM/STEM/Image_Cleaning_Atom_Finding.html>`_
+    * `Raw, intermediate, and final data <https://www.osti.gov/dataexplorer/biblio/1463696>`_
 
 Scanning Probe Microscopy 
 ~~~~~~~~~~~~~~~~~~~~~~~~~
