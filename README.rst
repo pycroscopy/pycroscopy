@@ -2,6 +2,10 @@
 pycroscopy
 ==========
 
+.. image:: http://pepy.tech/badge/pycroscopy
+    :target: http://pepy.tech/project/pycroscopy
+    :alt: Downloads
+
 .. image:: https://img.shields.io/travis/pycroscopy/pycroscopy/master.svg
     :target: https://travis-ci.org/pycroscopy/pycroscopy
     :alt: TravisCI
