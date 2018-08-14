@@ -53,14 +53,14 @@ Scanning Probe Microscopy 
 **Many more coming soon....**
 
 .. note::
-   Please `get in touch <./contact.html>`_ with us if you would like to add papers that used pycroscopy / pyUSID
+   Please `get in touch <./contact.html>`_ with us if you would like to add your papers that used pycroscopy / pyUSID
 
 .. note::
    If you used pycroscopy for your research, we would appreciate it if you could `reference pycroscopy <https://pycroscopy.github.io/pycroscopy/faq.html#how-can-i-reference-pycroscopy>`_.
 
 Workshops on pycroscopy
 -----------------------
-* Aug 13-15 2018 - Full day workshop on `Imaging and Spectral Data Analysis in Python <https://cnmsusermeeting.ornl.gov/files/2018/03/Pycroscopy_WT_081318.pdf>`_ at the 2018 CNMS User Meeting, Oak Ridge National Laboratory.
+* Aug 13 2018 - Full day `workshop <https://github.com/pycroscopy/pyUSID_Tutorial/blob/master/CNMS_UM_Workshop_schedule.md>`_ on `Imaging and Spectral Data Analysis in Python <https://cnmsusermeeting.ornl.gov/files/2018/03/Pycroscopy_WT_081318.pdf>`_ at the 2018 CNMS User Meeting, Oak Ridge National Laboratory.
 * Aug 5th 2018 - `Tutorial <https://www.microscopy.org/MandM/2018/program/short_courses.cfm>`_ at Microscopy and Microanalysis Conference 2018.
 * Nov 27 2017 - `Tutorial on Machine Learning for Image and Hyperspectral Data <https://mrsfall.zerista.com/event/member/434841>`_
 * Aug 9 2017 @ 8:30 - 10:00 AM - Microscopy and Microanalysis conference; X40 - Tutorial session on `Large Scale Data Acquisition and Analysis for Materials Imaging and Spectroscopy <http://microscopy.org/MandM/2017/program/tutorials.cfm>`_ by S. Jesse and S. V. Kalinin
