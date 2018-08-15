@@ -1,25 +1,33 @@
 Credits
 -------
-The core pycroscopy team consists of:
 
+Maintainers
+~~~~~~~~~~~
+* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
+* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
+
+Founders
+~~~~~~~~
 * `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
 * `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
+* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
 
-Universal Spectroscopy and Imaging Data (USID) model conceived by `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
-
-Substantial contributions from many developers including:
-
+Contributors
+~~~~~~~~~~~~
+* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
+* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
 * `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
 * `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
+* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
+* `@Liambcollins <https://github.com/Liambcollins>`_ (Liam Collins)
 * `@str-eat <https://github.com/str-eat>`_ (Daniel Streater)
 * `@ealopez <https://github.com/ealopez>`_ (Enrique Alejandro Lopez-Guerra)
 * `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
-* `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
 * `@nmosto <https://github.com/nmosto>`_ (Nick Mostovych)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * `@donpatrice <https://github.com/donpatrice>`_ (Patrik Marschalik)
-* `@Liambcollins <https://github.com/Liambcollins>`_ (Liam Collins)
+
 * Arpitha Nagaraj for our logo
 * and many more
 
@@ -27,8 +35,8 @@ Acknowledgements
 ----------------
 * Funding agencies:
   
-  * Oak Ridge National Laboratory - Laboratory Director's Research and Development fund
-  * U.S. Department of Energy, Office of Science
+  * 2015 - 2016 - Oak Ridge National Laboratory - Laboratory Director's Research and Development fund
+  * 2015 - present - U.S. Department of Energy, Office of Science
 
 * People who have advised us:
 
