@@ -123,7 +123,8 @@ class GLineTranslator(Translator):
         pos_desc = Dimension('Y', 'm', np.arange(self.num_rows))
         spec_desc = Dimension('Excitation', 'V', np.tile(VALUES_DTYPE(be_wave), num_cols))
 
-        for f_index in data_paths.keys():
+        first_dat = True
+        for key in data_paths.keys():
             # Now that the file has been created, go over each raw data file:
             # 1. write all ancillary data. Link data. 2. Write main data sequentially
 
@@ -133,13 +134,16 @@ class GLineTranslator(Translator):
             only one excitation waveform is used"""
             chan_grp = create_indexed_group(meas_grp, 'Channel')
 
-            if len(data_paths) > 1 and f_index == 0:
-                # All positions and spectra are shared between channels
-                h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
-                h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
-            elif len(data_paths) == 1:
-                h5_pos_inds, h5_pos_vals = write_ind_val_dsets(chan_grp, pos_desc, is_spectral=False)
-                h5_spec_inds, h5_spec_vals = write_ind_val_dsets(chan_grp, spec_desc, is_spectral=True)
+            if first_dat:
+                if len(data_paths) > 1:
+                    # All positions and spectra are shared between channels
+                    h5_pos_inds, h5_pos_vals = write_ind_val_dsets(meas_grp, pos_desc, is_spectral=False)
+                    h5_spec_inds, h5_spec_vals = write_ind_val_dsets(meas_grp, spec_desc, is_spectral=True)
+                elif len(data_paths) == 1:
+                    h5_pos_inds, h5_pos_vals = write_ind_val_dsets(chan_grp, pos_desc, is_spectral=False)
+                    h5_spec_inds, h5_spec_vals = write_ind_val_dsets(chan_grp, spec_desc, is_spectral=True)
+
+                first_dat = False
             else:
                 pass
 
@@ -151,7 +155,7 @@ class GLineTranslator(Translator):
                                          chunks=(1, self.points_per_pixel), dtype=np.float16)
 
             # Now transfer scan data in the dat file to the h5 file:
-            self._read_data(data_paths[f_index], h5_main)
+            self._read_data(data_paths[key], h5_main)
             
         h5_f.close()
         print('G-Line translation complete!')
