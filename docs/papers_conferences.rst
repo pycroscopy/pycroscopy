@@ -35,6 +35,10 @@ Scanning Probe Microscopy 
 
     * `Jupyter notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/Notebooks/SPM/AFM/G_mode_filtering.ipynb>`_
     * `Completed notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/HTML/SPM/AFM/G_mode_filtering.html>`_
+    * `Raw, intermediate, and final data <https://www.osti.gov/dataexplorer/biblio/1464457>`_
+ #. `Full information acquisition in piezoresponse force microscopy <https://aip.scitation.org/doi/abs/10.1063/1.4938482>`_
+
+    * `Raw data <https://www.osti.gov/dataexplorer/biblio/1464456>`_
  #. `Improving superconductivity in BaFe2As2-based crystals by cobalt clustering and electronic uniformity <http://www.nature.com/articles/s41598-017-00984-1>`_ by *L. Li* et al., **Scientific Reports** (2017)
 
     * `Jupyter notebook <http://nbviewer.jupyter.org/github/pycroscopy/papers/blob/master/Notebooks/SPM/STM/STS_LDOS.ipynb>`_
