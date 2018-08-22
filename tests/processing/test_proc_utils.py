@@ -142,3 +142,6 @@ class TestProcUtils(unittest.TestCase):
         self.assertTrue(comp_slice == slice_comps)
         self.assertTrue(num_comps == np.arange(slice_comps.stop+1)[slice_comps].size)
 
+
+if __name__ == '__main__':
+    unittest.main()
