@@ -68,12 +68,15 @@ class TestBaseFitterClass(unittest.TestCase):
         Test that everything was set-up properly during init
         """
         self.assertEqual(self.fitter.h5_main, self.h5_main)
-        self.assertTrue(self.fitter._parallel)
         self.assertFalse(self.fitter._verbose)
         self.assertEqual(self.fitter._start_pos, 0)
         self.assertEqual(self.fitter._end_pos, self.h5_main.shape[0])
 
         self.assertIsNotNone(self.fitter._maxCpus)
+        if self.fitter._maxCpus > 1:
+            self.assertTrue(self.fitter._parallel)
+        else:
+            self.assertFalse(self.fitter._parallel)
         self.assertIsNotNone(self.fitter._maxMemoryMB)
         self.assertIsNotNone(self.fitter._maxDataChunk)
         self.assertIsNotNone(self.fitter._max_pos_per_read)
