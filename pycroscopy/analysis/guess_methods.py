@@ -23,7 +23,7 @@ class GuessMethods(object):
     """
 
     def __init__(self):
-        self.methods = ['wavelet_peaks', 'relative_maximum', 'gaussian_processes', 'complex_gaussian']
+        self.methods = ['wavelet_peaks', 'absolute_maximum', 'complex_gaussian']
 
     @staticmethod
     def wavelet_peaks(vector, *args, **kwargs):
