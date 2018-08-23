@@ -80,7 +80,7 @@ class NanonisTranslator(Translator):
             self._read_data(self.data_path)
 
         if data_channels is None:
-            print('No channels specified.  All channels in file will be used.')
+            print('No channels specified. All channels in file will be used.')
             data_channels = self.parm_dict['channel_parms'].keys()
 
         if verbose:
@@ -185,16 +185,13 @@ class NanonisTranslator(Translator):
         data_dict = dict()
 
         # Create dictionary with measurement parameters
-        meas_parms = dict()
-        meas_parms['Acquisition time'] = header_dict['acq_time']
-        meas_parms['bias'] = header_dict['bias']
-        scan_dir = header_dict['scan_dir']
-        meas_parms['Scan direction'] = scan_dir
+        meas_parms = {key: value for key, value in header_dict.items()
+                      if value is not None}
+        info_dict = meas_parms.pop('data_info')
         parm_dict['meas_parms'] = meas_parms
 
         # Create dictionary with channel parameters
         channel_parms = dict()
-        info_dict = header_dict['data_info']
         channel_names = info_dict['Name']
         single_channel_parms = {name: dict() for name in channel_names}
         for field_name, field_value, in info_dict.items():
@@ -205,6 +202,7 @@ class NanonisTranslator(Translator):
                 value['Direction'] = ['forward', 'backward']
             else:
                 direction = [value['Direction']]
+        scan_dir = meas_parms['scan_dir']
         for name, parms in single_channel_parms.items():
             for direction in parms['Direction']:
                 key = ' '.join((name, direction))
@@ -257,9 +255,11 @@ class NanonisTranslator(Translator):
         data_dict = dict()
 
         # Create dictionary with measurement parameters
-        meas_parms = dict()
-        for key, parm_grid in zip(header_dict['fixed_parameters']
-                                  + header_dict['experimental_parameters'],
+        meas_parms = {key: value for key, value in header_dict.items()
+                      if value is not None}
+        channels = meas_parms.pop('channels')
+        for key, parm_grid in zip(meas_parms.pop('fixed_parameters')
+                                  + meas_parms.pop('experimental_parameters'),
                                   signal_dict['params'].T):
             # Collapse the parm_grid along one axis if it's constant
             # along said axis
@@ -281,7 +281,7 @@ class NanonisTranslator(Translator):
         # Create dictionary with channel parameters and
         # save channel data before renaming keys
         data_channel_parms = dict()
-        for chan_name in header_dict['channels']:
+        for chan_name in channels:
             splitted_chan_name = chan_name.split(maxsplit=2)
             if len(splitted_chan_name) == 2:
                 direction = 'forward'
