@@ -139,6 +139,7 @@ class GIVBayesian(Process):
             print('Now creating the datasets')
 
         h5_group = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = h5_group
         write_simple_attrs(h5_group, {'algorithm_author': 'Kody J. Law', 'last_pixel': 0})
         write_simple_attrs(h5_group, self.parms_dict)
 
