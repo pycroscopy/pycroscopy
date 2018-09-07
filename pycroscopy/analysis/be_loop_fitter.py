@@ -755,7 +755,7 @@ class BELoopFitter(Fitter):
             if dim == self._fit_dim_name:
                 fit_dim_slice.append(slice(None))
                 fit_dim_slice[0] = idim
-            elif dim in ['FORC', 'FORC_repeat']:
+            elif dim in ['FORC', 'FORC_repeat', 'FORC_Cycle']:
                 continue
             else:
                 fit_dim_slice.append(slice(0, 1))
