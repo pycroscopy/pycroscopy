@@ -25,9 +25,20 @@ from pyUSID import USIDataset
 
 class SVD(Process):
 
-    def __init__(self, h5_main, num_components=None):
+    def __init__(self, h5_main, num_components=None, **kwargs):
+        """
+        Perform the SVD decomposition on the selected dataset and write the results to h5 file.
 
-        super(SVD, self).__init__(h5_main)
+        Parameters
+        ----------
+        h5_main : USIDataset
+            Dataset to be decomposed.
+        num_components : int, optional
+            Number of components to decompose h5_main into.  Default None.
+        kwargs
+            Arguments to be sent to Process
+        """
+        super(SVD, self).__init__(h5_main, **kwargs)
         self.process_name = 'SVD'
 
         '''
@@ -42,7 +53,12 @@ class SVD(Process):
             num_components = min(n_samples, n_features)
         else:
             num_components = min(n_samples, n_features, num_components)
+
         self.num_components = num_components
+
+        # Check that we can actually compute the SVD with the selected number of components
+        self._check_available_mem()
+
         self.parms_dict = {'num_components': num_components}
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
@@ -190,6 +206,41 @@ class SVD(Process):
 
             h5_v.attrs[key] = svd_ref
 
+    def _check_available_mem(self):
+        """
+        Check that there is enough memory to perform the SVD decomposition.
+
+        Returns
+        -------
+        sufficient_mem : bool
+            True is enough memory found, False otherwise.
+
+        """
+        if self.verbose:
+            print('Checking memory availability.')
+        n_samples, n_features = self.h5_main.shape
+        s_mem_per_comp = np.float32(0).itemsize
+        u_mem_per_comp = np.float32(0).itemsize * n_samples
+        v_mem_per_comp = self.h5_main.dtype.itemsize * n_features
+
+        mem_per_comp = s_mem_per_comp + u_mem_per_comp + v_mem_per_comp
+
+        free_mem = 0.75 * self._max_mem_mb - self.h5_main.size
+
+        if free_mem <= 0:
+            raise MemoryError('Cannot load main dataset into memory.')
+
+        if self.verbose:
+            print('Memory available for SVD is {}.'.format(free_mem))
+            print('Memory needed per component is {}.'.format(mem_per_comp))
+
+        cant_svd = (free_mem - self.num_components * mem_per_comp) <= 0
+
+        if cant_svd:
+            max_comps = np.floor(free_mem / mem_per_comp, dtype=int)
+            error_message = 'Not enough free memory for performing SVD with requested number of parameters.\n' + \
+                            'Maximum possible parameters is {}.'.format(max_comps)
+            raise MemoryError(error_message)
 
 ###############################################################################
 
