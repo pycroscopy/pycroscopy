@@ -149,7 +149,7 @@ y_label = 'Amplitude (a.u.)'
 # Furthermore, while it is not discussed in this example, pycroscopy also writes back the results from SVD back to
 # the same source h5 file including all relevant links to the source dataset and other ancillary datasets
 
-decomposer = px.processing.svd_utils.SVD(h5_main, num_components=100, verbose=True)
+decomposer = px.processing.svd_utils.SVD(h5_main, num_components=100)
 h5_svd_group = decomposer.compute()
 
 h5_u = h5_svd_group['U']
