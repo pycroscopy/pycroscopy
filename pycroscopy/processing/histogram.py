@@ -8,7 +8,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
 
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
+if sys.version_info.major == 3 and sys.version_info.minor >= 6:
     disable_histogram = True
 else:
     disable_histogram = False
