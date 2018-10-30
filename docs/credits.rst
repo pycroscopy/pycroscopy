@@ -17,6 +17,7 @@ Contributors
 * `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath)
 * `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
 * `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait)
+* `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse)
 * `@ianton86 <https://github.com/ianton86>`_ (Anton Ievlev)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 * `@Liambcollins <https://github.com/Liambcollins>`_ (Liam Collins)
@@ -27,9 +28,8 @@ Contributors
 * `@nmosto <https://github.com/nmosto>`_ (Nick Mostovych)
 * `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * `@donpatrice <https://github.com/donpatrice>`_ (Patrik Marschalik)
-
 * Arpitha Nagaraj for our logo
-* and many more
+* and `many more <https://github.com/pycroscopy/pycroscopy/graphs/contributors>`_
 
 Acknowledgements
 ----------------
