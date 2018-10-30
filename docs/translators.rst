@@ -1,6 +1,6 @@
 Data Translators
 =================
-* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `Universal Spectroscopy and Imaging Data (USID) HDF5 files <../../pyUSID/data_format.html>`_.
+* Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `Universal Spectroscopy and Imaging Data (USID) HDF5 files <../../USID/index.html>`_.
 * You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_numpy_translator.html>`_ on our sister project's documentation.
 * Below is a list of ``Translators`` already available in pycroscopy to translate data.
 * These translators can be accessed via ``pycroscopy.io.translators`` or ``pycroscopy.translators``
