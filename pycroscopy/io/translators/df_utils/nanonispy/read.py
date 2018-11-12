@@ -56,11 +56,12 @@ class NanonisFile(object):
             'sxm', or 'dat'.
         """
 
-        if self.fname[-3:] == '3ds':
+        _, fname_ext = os.path.splitext(self.fname)
+        if fname_ext == '.3ds':
             return 'grid'
-        elif self.fname[-3:] == 'sxm':
+        elif self.fname[-3:] == '.sxm':
             return 'scan'
-        elif self.fname[-3:] == 'dat':
+        elif self.fname[-3:] == '.dat':
             return 'spec'
         else:
             raise UnhandledFileError(
@@ -760,5 +761,6 @@ def _is_valid_file(fname, ext):
     """
     Detect if invalid file is being initialized by class.
     """
-    if fname[-3:] != ext:
+    _, fname_ext = os.path.splitext(fname)
+    if fname_ext[1:] != ext:
         raise UnhandledFileError('{} is not a {} file'.format(fname, ext))

@@ -13,7 +13,7 @@ from igor import binarywave as bw
 
 from pyUSID.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension, clean_string_att
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
@@ -65,7 +65,7 @@ class IgorIBWTranslator(Translator):
         # Get the data to figure out if this is an image or a force curve
         images = ibw_wave.get('wData')
 
-        if images.shape[2] != len(chan_labels):
+        if images.shape[-1] != len(chan_labels):
             chan_labels = chan_labels[1:]  # for layer 0 null set errors in older AR software
 
         if images.ndim == 3:  # Image stack
@@ -98,11 +98,11 @@ class IgorIBWTranslator(Translator):
             # Find the channel that corresponds to either Z sensor or Raw:
             try:
                 chan_ind = chan_labels.index('ZSnsr')
-                spec_data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
+                spec_data = VALUES_DTYPE(images[chan_ind]).squeeze()
             except ValueError:
                 try:
                     chan_ind = chan_labels.index('Raw')
-                    spec_data = np.atleast_2d(VALUES_DTYPE(images[chan_ind]))
+                    spec_data = VALUES_DTYPE(images[chan_ind]).squeeze()
                 except ValueError:
                     # We don't expect to come here. If we do, spectroscopic values remains as is
                     spec_data = np.arange(images.shape[2])
@@ -127,6 +127,9 @@ class IgorIBWTranslator(Translator):
 
         # Prepare the list of raw_data datasets
         for chan_data, chan_name, chan_unit in zip(images, chan_labels, chan_units):
+            if verbose:
+                print('channel', chan_name)
+                print('unit', chan_unit)
             chan_grp = create_indexed_group(meas_grp, 'Channel')
 
             write_main_dataset(chan_grp, np.atleast_2d(chan_data), 'Raw_Data',
@@ -229,6 +232,8 @@ class IgorIBWTranslator(Translator):
                 chan = chan.decode(codec)
             if chan.lower().rfind('trace') > 0:
                 labels[chan_ind] = chan[:chan.lower().rfind('trace') + 5]
+            else:
+                labels[chan_ind] = chan
             # Figure out (default) units
             if chan.startswith('Phase'):
                 default_units.append('deg')
