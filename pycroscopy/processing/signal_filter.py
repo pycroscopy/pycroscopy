@@ -17,6 +17,14 @@ from pyUSID.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
 
+try:
+    from mpi4py import MPI
+    if MPI.COMM_WORLD.Get_size() == 1:
+        # mpi4py available but NOT called via mpirun or mpiexec => single node
+        MPI = None
+except ImportError:
+    # mpi4py not even present! Single node by default:
+    MPI = None
 # TODO: correct implementation of num_pix
 
 
