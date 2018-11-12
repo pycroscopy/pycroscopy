@@ -259,6 +259,8 @@ class BELoopFitter(Fitter):
                 projected_loops_2d2 = self._reshape_projected_loops_for_h5(projected_loops_2d.T,
                                                                            order_dc_offset_reverse,
                                                                            nd_mat_shape_dc_first)
+            else:
+                projected_loops_2d2 = projected_loops_2d
 
             metrics_2d = self._reshape_results_for_h5(loop_metrics_1d, nd_mat_shape_dc_first)
             guessed_loops_2 = self._reshape_results_for_h5(guessed_loops, nd_mat_shape_dc_first)
@@ -538,7 +540,10 @@ class BELoopFitter(Fitter):
                 all_spec_dims.remove(forc_repeat_pos)
 
         # calculate number of loops:
-        loop_dims = get_dimensionality(self._sho_spec_inds, all_spec_dims)
+        if len(all_spec_dims) == 0:
+            loop_dims = 1
+        else:
+            loop_dims = get_dimensionality(self._sho_spec_inds, all_spec_dims)
         loops_per_forc = np.product(loop_dims)
 
         # Step 2: Calculate the largest number of FORCS and positions that can be read given memory limits:
@@ -694,7 +699,7 @@ class BELoopFitter(Fitter):
             print('Loop metrics of shape:', raw_results.shape)
         # Step 9: Reshape back to same shape as fit_Nd2:
         if not self._met_all_but_forc_inds:
-            spec_inds = None
+            spec_inds = np.array([[1]])
             loop_metrics_nd = np.reshape(raw_results, [-1, 1])
         else:
             spec_inds = self._met_spec_inds[self._met_all_but_forc_inds, self._current_met_spec_slice]
