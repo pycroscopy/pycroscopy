@@ -16,14 +16,6 @@ from pyUSID.io.hdf_utils import write_main_dataset, create_results_group, create
 from pyUSID.io.write_utils import Dimension
 from pyUSID import USIDataset
 from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
-try:
-    from mpi4py import MPI
-    if MPI.COMM_WORLD.Get_size() == 1:
-        # mpi4py available but NOT called via mpirun or mpiexec => single node
-        MPI = None
-except ImportError:
-    # mpi4py not even present! Single node by default:
-    MPI = None
 
 cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
                       'formats': [np.float32, np.float32]})
@@ -302,7 +294,7 @@ class GIVBayesian(Process):
                                                 verbose=self.verbose)
 
         if self.verbose:
-            print('Rank {} finished processing forward sections. Now working on reverse sections....'.format(self.mpi_rank))
+            print('Rank {} finished processing forward sections. Now working on reverse sections'.format(self.mpi_rank))
 
         self.forward_results = parallel_compute(rolled_raw_data[:, half_v_steps:], do_bayesian_inference,
                                                 cores=self._cores,
