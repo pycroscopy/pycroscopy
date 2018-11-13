@@ -208,7 +208,7 @@ class Decomposition(Process):
         h5_decomp_group = create_results_group(self.h5_main, self.process_name)
         write_simple_attrs(h5_decomp_group, self.parms_dict)
         write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
-                                             'n_samples': self.h5_main.shape[0], 'last_pixel': self.h5_main.shape[0]})
+                                             'n_samples': self.h5_main.shape[0]})
 
         decomp_desc = Dimension('Endmember', 'a. u.', self.__components.shape[0])
 
@@ -226,4 +226,12 @@ class Decomposition(Process):
 
         # return the h5 group object
         self.h5_results_grp = h5_decomp_group
+
+        # Marking completion:
+        self._status_dset_name = 'completed_positions'
+        self._h5_status_dset = h5_decomp_group.create_dataset(self._status_dset_name,
+                                                              data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
+        # keeping legacy option:
+        h5_decomp_group.attrs['last_pixel'] = self.h5_main.shape[0]
+
         return self.h5_results_grp

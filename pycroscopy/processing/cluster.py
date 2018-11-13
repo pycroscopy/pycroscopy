@@ -264,7 +264,6 @@ class Cluster(Process):
         h5_cluster_group = create_results_group(self.h5_main, self.process_name)
 
         write_simple_attrs(h5_cluster_group, self.parms_dict)
-        h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
         h5_labels = write_main_dataset(h5_cluster_group, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
                                        'Cluster ID', 'a. u.', None, Dimension('Cluster', 'ID', 1),
@@ -304,6 +303,13 @@ class Cluster(Process):
                                           Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
                                           h5_spec_inds=h5_inds, aux_pos_prefix='Mean_Resp_Pos_',
                                           h5_spec_vals=h5_vals)
+
+        # Marking completion:
+        self._status_dset_name = 'completed_positions'
+        self._h5_status_dset = h5_cluster_group.create_dataset(self._status_dset_name,
+                                                               data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
+        # keeping legacy option:
+        h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
         return h5_cluster_group
 
