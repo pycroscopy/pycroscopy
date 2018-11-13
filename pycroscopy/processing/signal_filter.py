@@ -17,14 +17,6 @@ from pyUSID.io.write_utils import Dimension
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
 from .gmode_utils import test_filter
 
-try:
-    from mpi4py import MPI
-    if MPI.COMM_WORLD.Get_size() == 1:
-        # mpi4py available but NOT called via mpirun or mpiexec => single node
-        MPI = None
-except ImportError:
-    # mpi4py not even present! Single node by default:
-    MPI = None
 # TODO: correct implementation of num_pix
 
 
@@ -164,7 +156,7 @@ class SignalFilter(Process):
             h5_comp_filt = self.h5_results_grp.create_dataset('Composite_Filter',
                                                               data=np.float32(self.composite_filter))
 
-            if self.verbose and self.mpi_rank==0:
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Finished creating the Composite_Filter dataset'.format(self.mpi_rank))
 
         # First create the position datsets if the new indices are smaller...
@@ -185,14 +177,14 @@ class SignalFilter(Process):
             h5_pos_inds_new, h5_pos_vals_new = write_ind_val_dsets(self.h5_results_grp,
                                                                    Dimension('pixel', 'a.u.', self.num_effective_pix),
                                                                    is_spectral=False, verbose=self.verbose and self.mpi_rank==0)
-            if self.verbose and self.mpi_rank==0:
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Created the new position ancillary dataset'.format(self.mpi_rank))
 
         else:
             h5_pos_inds_new = self.h5_main.h5_pos_inds
             h5_pos_vals_new = self.h5_main.h5_pos_vals
 
-            if self.verbose and self.mpi_rank==0:
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Reusing source datasets position datasets'.format(self.mpi_rank))
 
         if self.noise_threshold is not None:
@@ -200,15 +192,15 @@ class SignalFilter(Process):
                                                       'Noise', 'a.u.', None, Dimension('arb', '', [1]),
                                                       dtype=np.float32, aux_spec_prefix='Noise_Spec_',
                                                       h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
-                                                      verbose=self.verbose and self.mpi_rank==0)
-            if self.verbose and self.mpi_rank==0:
+                                                      verbose=self.verbose and self.mpi_rank == 0)
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Finished creating the Noise_Floors dataset'.format(self.mpi_rank))
 
         if self.write_filtered:
             # Filtered data is identical to Main_Data in every way - just a duplicate
             self.h5_filtered = create_empty_dataset(self.h5_main, self.h5_main.dtype, 'Filtered_Data',
                                                     h5_group=self.h5_results_grp)
-            if self.verbose and self.mpi_rank==0:
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Finished creating the Filtered dataset'.format(self.mpi_rank))
 
         self.hot_inds = None
@@ -220,8 +212,8 @@ class SignalFilter(Process):
             self.h5_condensed = write_main_dataset(self.h5_results_grp, (self.num_effective_pix, len(self.hot_inds)),
                                                    'Condensed_Data', 'Complex', 'a. u.', None, condensed_spec,
                                                    h5_pos_inds=h5_pos_inds_new, h5_pos_vals=h5_pos_vals_new,
-                                                   dtype=np.complex, verbose=self.verbose and self.mpi_rank==0)
-            if self.verbose and self.mpi_rank==0:
+                                                   dtype=np.complex, verbose=self.verbose and self.mpi_rank == 0)
+            if self.verbose and self.mpi_rank == 0:
                 print('Rank {} - Finished creating the Condensed dataset'.format(self.mpi_rank))
 
         if self.mpi_size > 1:
