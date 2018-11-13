@@ -17,7 +17,7 @@ from sklearn.neighbors import KNeighborsClassifier
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-from pyUSID.io.io_utils import recommend_cpu_cores
+from pyUSID.processing.comp_utils import recommend_cpu_cores
 from pyUSID.io.dtype_utils import stack_real_to_compound
 from ...io.virtual_data import VirtualDataset, VirtualGroup
 from ...io.hdf_writer import HDFwriter

@@ -12,7 +12,8 @@ import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
 from .proc_utils import get_component_slice
-from pyUSID.processing.process import Process, parallel_compute
+from pyUSID.processing.process import Process
+from pyUSID.processing.comp_utils import parallel_compute
 from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
     write_simple_attrs, link_h5_obj_as_alias, write_ind_val_dsets
 from pyUSID import USIDataset
