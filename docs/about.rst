@@ -4,6 +4,11 @@ Pycroscopy
 
 **Scientific analysis of nanoscale materials imaging data**
 
+.. note::
+   **We are hiring!**
+   We are looking for full-time python software developers who can support the scientists' needs at the Center for Nanophase Materials Science (CNMS) in addition to taking pycroscopy forward.
+   More details available `here <https://drive.google.com/file/d/1HKa8hwu4kNpc_MHRhjxQ1GhAVDAcM9Ml/view?usp=sharing>`_
+
 What?
 ------
 * pycroscopy is a `python <http://www.python.org/>`_ package for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
