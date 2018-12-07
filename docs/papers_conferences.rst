@@ -73,8 +73,8 @@ pycroscopy at International conferences
 ---------------------------------------
 2018
 ~~~~
-* Nov 25-30 2018 - poster at MRS Fall meeting at Boston
-* Oct 25 2018 @ 6 PM - 8 PM - poster - NS-ThP19 - Room Hall B -  at `American Vacuum Society 2018 meeting <http://www.avssymposium.org/Schedule/SessionSchedule.aspx?sessionCode=NS-ThP>`_
+* Nov 27 2018 - `poster at MRS Fall meeting at Boston <https://mrsfall2018.zerista.com/event/member/533555>`_
+* Oct 25 2018 poster - NS-ThP19 - `American Vacuum Society 2018 meeting <http://www.avssymposium.org/Schedule/SessionSchedule.aspx?sessionCode=NS-ThP>`_
 * May 16-18 2018 - Poster at `ORNL Software Expo <https://software.ornl.gov/expo/program>`_
 * May 18 2018 - **Invited** `talk <https://github.com/pycroscopy/pycroscopy/blob/master/docs/USID_pyUSID_pycroscopy.pdf>`_ at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
 * Feb 28 2018 - Webinar on `Jupyter for Supporting a Materials Imaging User Facility (and beyond) <https://www.exascaleproject.org/event/jupyter/>`_. see this `Youtube video <https://www.youtube.com/watch?v=aKah_O5OZdE&t=31m53s>`_
