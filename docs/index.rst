@@ -20,17 +20,17 @@ Documentation Index
 
 .. toctree::
     about
+    papers_conferences
     getting_started
     install
     external_guides
     package_organization
     auto_examples/index
     translators
-    papers_conferences
     faq
     contact
-    credits
     whats_new
+    credits
     api
 
 Indices and tables
