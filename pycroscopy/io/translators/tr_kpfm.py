@@ -141,7 +141,7 @@ class TRKPFMTranslator(Translator):
         num_time_steps = (spectrogram_size-5) //excit_wfm.size
 
         #Let's repeat the excitation so that we get the full vector of same size as the spectrogram
-        #TODO: Need to check this with Liam
+        #TODO: Check if this is the norm for this type of dataset
 
         full_spect_val = np.copy(excit_wfm).repeat(num_time_steps)
 
@@ -149,43 +149,6 @@ class TRKPFMTranslator(Translator):
         pos_dims = [Dimension('Cols', 'nm', parm_dict['grid_num_cols']),
                     Dimension('Rows', 'um', parm_dict['grid_num_rows'])]
 
-
-        #ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Bias', 'V', excit_wfm), is_spectral=True,
-        #                                                 verbose=False)
-
-
-
-        #ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
-
-        #pos_desc = [Dimension('X', 'a.u.', np.arange(parm_dict['grid_num_cols'])),
-        #            Dimension('Y', 'a.u.', np.arange(parm_dict['grid_num_rows']))]
-
-        #ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
-
-        #ds_raw_data = VirtualDataset('Raw_Data', data=[],
-        #                             maxshape=(ds_pos_ind.shape[0], spectrogram_size - 5),
-        #                             dtype=np.complex64, chunking=(1, spectrogram_size - 5), compression='gzip')
-
-
-
-        #ds_raw_data.attrs['quantity'] = ['Complex']
-
-        #aux_ds_names = ['Position_Indices', 'Position_Values',
-        #                'Spectroscopic_Indices', 'Spectroscopic_Values']
-
-
-
-        # technically should change the date, etc.
-        #spm_data = VirtualGroup('')
-
-        #spm_data.attrs = global_parms
-        #meas_grp = VirtualGroup('Measurement_000')
-        #meas_grp.attrs = parm_dict
-        #spm_data.add_children([meas_grp])
-
-        #hdf = HDFwriter(self.h5_path)
-        # spm_data.showTree()
-        #hdf.write(spm_data, print_log=False)
 
         self.raw_datasets = list()
 
