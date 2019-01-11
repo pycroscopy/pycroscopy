@@ -5,10 +5,13 @@ from pyUSID.io import write_utils
 from pyUSID import USIDataset
 
 class PiFMTranslator(Translator):
-    """Writes images, spectrograms, point spectra and associated ancillary data sets to h5 file."""
-    def __init__(self, path=None, *args, **kwargs):
+    """
+    Class that writes images, spectrograms, point spectra and associated ancillary data sets to h5 file in pyUSID data
+    structure.
+    """
+    def __init__(self, path=None):
         self.path = path
-        super(HyperspectralTranslator, self).__init__(*args, **kwargs)
+#        super(HyperspectralTranslator, self).__init__(*args, **kwargs)
 
     def get_path(self):
         """writes full path, directory, and file name as attributes to class"""
@@ -22,7 +25,6 @@ class PiFMTranslator(Translator):
         self.basename = basename
 
     #these dictionary parameters will be written to hdf5 file under measurement attributes
-    ## make into function
     def read_anfatec_params(self):
         """reads the scan parameters and writes them to a dictionary"""
         params_dictionary = {}
@@ -36,6 +38,7 @@ class PiFMTranslator(Translator):
                     #in ANFATEC parameter files, all attributes are written before file references.
                     if sline[0].startswith('FileDesc'):
                         params = False
+            f.close()
         self.params_dictionary = params_dictionary
         self.x_len, self.y_len = int(params_dictionary['xPixel']), int(params_dictionary['yPixel'])
 
@@ -45,7 +48,7 @@ class PiFMTranslator(Translator):
         spectrogram_desc = {}
         img_desc = {}
         spectrum_desc = {}
-        with open(path,'r', encoding="ISO-8859-1") as f:
+        with open(self.path,'r', encoding="ISO-8859-1") as f:
             ## can be made more concise...by incorporating conditons with loop control
             lines = f.readlines()
             for index, line in enumerate(lines):
@@ -77,6 +80,7 @@ class PiFMTranslator(Translator):
                         file_desc.append(line_desc[1])
                     #file name, position x, position y
                     spectrum_desc[file_desc[0]] = file_desc[1:]
+            f.close()
         self.img_desc = img_desc
         self.spectrogram_desc = spectrogram_desc
         self.spectrum_desc = spectrum_desc
@@ -285,6 +289,9 @@ class PiFMTranslator(Translator):
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 
     def translate(self):
+        """
+        :return: h5 file.
+        """
         self.get_path()
         self.read_anfatec_params()
         self.read_file_desc()
@@ -296,3 +303,4 @@ class PiFMTranslator(Translator):
         self.write_spectrograms()
         self.write_images()
         self.write_spectra()
+        return self.h5_f
