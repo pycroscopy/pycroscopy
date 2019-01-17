@@ -22,7 +22,8 @@ class IgorIBWTranslator(Translator):
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
 
-    def translate(self, file_path, verbose=False, append_path='', parm_encoding='utf-8'):
+    def translate(self, file_path, verbose=False, append_path='', 
+                  grp_name='', parm_encoding='utf-8'):
         """
         Translates the provided file to .h5
 
@@ -34,6 +35,8 @@ class IgorIBWTranslator(Translator):
             Whether or not to show  print statements for debugging
         append_path : string (Optional)
             h5_file to add these data to
+        grp_name : string (Optional)
+            Change from default "Measurement" name to something specific
         parm_encoding : str, optional
             Codec to be used to decode the bytestrings into Python strings if needed.
             Default 'utf-8'
@@ -55,6 +58,8 @@ class IgorIBWTranslator(Translator):
             h5_file = h5py.File(h5_path, 'w')
         else:
             h5_path = append_path
+            if not path.exists(append_path):
+                raise Exception('Improper file')
             h5_file = h5py.File(h5_path, 'r+')
         
 
@@ -118,7 +123,10 @@ class IgorIBWTranslator(Translator):
             spec_desc = Dimension('Z', 'm', spec_data)
 
         # Create measurement group
-        meas_grp = create_indexed_group(h5_file, 'Measurement')
+        if not grp_name:
+            meas_grp = create_indexed_group(h5_file, 'Measurement')
+        else:
+            meas_grp = create_indexed_group(h5_file, grp_name)
 
         # Write file and measurement level parameters
         global_parms = generate_dummy_main_parms()

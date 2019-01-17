@@ -12,7 +12,7 @@ class PiFMTranslator(Translator):
     structure.
     """
 
-    def translate(self, path, append_path=''):
+    def translate(self, path, append_path='', grp_name=''):
         """
         Parameters
         ----------
@@ -38,7 +38,7 @@ class PiFMTranslator(Translator):
         self.read_imgs()
         self.read_spectra()
         self.make_pos_vals_inds_dims()
-        self.create_hdf5_file(append_path)
+        self.create_hdf5_file(append_path, grp_name)
         self.write_spectrograms()
         self.write_images()
         self.write_spectra()
@@ -184,7 +184,7 @@ class PiFMTranslator(Translator):
                     usid.write_utils.Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
         self.pos_ind, self.pos_val, self.pos_dims = pos_ind, pos_val, pos_dims
 
-    def create_hdf5_file(self, append_path=''):
+    def create_hdf5_file(self, append_path='', grp_name=''):
         if not append_path:
             h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
             if os.path.exists(h5_path):
@@ -196,7 +196,11 @@ class PiFMTranslator(Translator):
         else:
             self.h5_f = h5py.File(append_path, mode='r+')
 
-        self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+        if not grp_name:
+            self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+        else:
+            self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)
+        
         usid.hdf_utils.write_simple_attrs(self.h5_meas_grp, self.params_dictionary)
 
         return
