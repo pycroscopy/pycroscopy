@@ -22,7 +22,7 @@ class IgorIBWTranslator(Translator):
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
 
-    def translate(self, file_path, verbose=False, parm_encoding='utf-8'):
+    def translate(self, file_path, verbose=False, append_path='', parm_encoding='utf-8'):
         """
         Translates the provided file to .h5
 
@@ -32,6 +32,8 @@ class IgorIBWTranslator(Translator):
             Absolute path of the .ibw file
         verbose : Boolean (Optional)
             Whether or not to show  print statements for debugging
+        append_path : string (Optional)
+            h5_file to add these data to
         parm_encoding : str, optional
             Codec to be used to decode the bytestrings into Python strings if needed.
             Default 'utf-8'
@@ -45,11 +47,16 @@ class IgorIBWTranslator(Translator):
         # Prepare the .h5 file:
         folder_path, base_name = path.split(file_path)
         base_name = base_name[:-4]
-        h5_path = path.join(folder_path, base_name + '.h5')
-        if path.exists(h5_path):
-            remove(h5_path)
-
-        h5_file = h5py.File(h5_path, 'w')
+        
+        if not append_path:
+            h5_path = path.join(folder_path, base_name + '.h5')
+            if path.exists(h5_path):
+                remove(h5_path)
+            h5_file = h5py.File(h5_path, 'w')
+        else:
+            h5_path = append_path
+            h5_file = h5py.File(h5_path, 'r+')
+        
 
         # Load the ibw file first
         ibw_obj = bw.load(file_path)
