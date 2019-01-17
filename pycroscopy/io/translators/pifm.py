@@ -3,6 +3,8 @@ import numpy as np
 from pyUSID.io.translator import Translator
 from pyUSID.io import write_utils
 from pyUSID import USIDataset
+import pyUSID as usid
+import h5py
 
 class PiFMTranslator(Translator):
     """

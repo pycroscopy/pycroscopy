@@ -36,9 +36,11 @@ from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
 from .nanonis import NanonisTranslator
 from .image import ImageTranslator
+from .pifm import PiFMTranslator
 
 __all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 'PtychographyTranslator',
            'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
            'OneViewTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
-           'LabViewH5Patcher', 'TRKPFMTranslator', 'BrukerAFMTranslator', 'ImageTranslator']
+           'LabViewH5Patcher', 'TRKPFMTranslator', 'BrukerAFMTranslator', 'ImageTranslator',
+           'PiFMTranslator', 'NanonisTranslator']
