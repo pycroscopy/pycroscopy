@@ -28,6 +28,7 @@ from .igor_ibw import IgorIBWTranslator
 from .ndata import NDataTranslator
 from .tr_kpfm import TRKPFMTranslator
 from .oneview import OneViewTranslator
+from .ImageStack import PtychographyTranslator
 from .ImageStack import ImageStackTranslator
 from .sporc import SporcTranslator
 from .time_series import MovieTranslator
@@ -40,5 +41,5 @@ from .image import ImageTranslator
 __all__ = ['BEodfTranslator', 'BEPSndfTranslator', 'BEodfRelaxationTranslator',
            'GIVTranslator', 'GLineTranslator', 'GTuneTranslator', 'GDMTranslator', 
            'ImageStack', 'SporcTranslator', 'MovieTranslator', 'IgorIBWTranslator',
-           'OneViewTranslator', 'NDataTranslator', 'FakeBEPSGenerator',
+           'OneViewTranslator', 'NDataTranslator', 'FakeBEPSGenerator', 'PtychographyTranslator',
            'LabViewH5Patcher', 'TRKPFMTranslator', 'BrukerAFMTranslator', 'ImageTranslator']

@@ -8,7 +8,7 @@ Edited on Nov 26, 2018
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import os
-
+from warnings import warn
 import numpy as np
 from skimage.data import imread
 from skimage.measure import block_reduce
@@ -354,4 +354,11 @@ class ImageStackTranslator(Translator):
         self.h5_file.flush()
         
         return h5_main, h5_mean_spec, h5_ronch
+
+
+class PtychographyTranslator(ImageStackTranslator):
+
+    def __init__(self, *args, **kwargs):
+        warn('PtychographyTranslator is deprecated. Please use ImageStackTranslator instead', DeprecationWarning)
+        super(PtychographyTranslator, self).__init__(args, kwargs)
 
