@@ -1,13 +1,14 @@
 """
 Created on Feb 9, 2016
-
 @author: Chris Smith
+Edited on Nov 26, 2018
+@editor: Karl Schliep
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import os
-
+from warnings import warn
 import numpy as np
 from skimage.data import imread
 from skimage.measure import block_reduce
@@ -22,12 +23,12 @@ from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_datase
     write_simple_attrs, create_indexed_group
 
 
-class PtychographyTranslator(Translator):
+class ImageStackTranslator(Translator):
     """
-    Translate Pytchography data from a set of images to an HDF5 file
+    Translate Image data from a set of images to an HDF5 file
     """
     def __init__(self, *args, **kwargs):
-        super(PtychographyTranslator, self).__init__(*args, **kwargs)
+        super(ImageStackTranslator, self).__init__(*args, **kwargs)
 
         self.rebin = False
         self.bin_factor = 1
@@ -39,7 +40,7 @@ class PtychographyTranslator(Translator):
     def translate(self, h5_path, image_path, bin_factor=None, bin_func=np.mean, start_image=0, scan_size_x=None,
                   scan_size_y=None, image_type='.tif'):
         """
-        Basic method that adds Ptychography data to existing hdf5 thisfile
+        Basic method that adds ImageStacks data to existing hdf5 thisfile
         You must have already done the basic translation with BEodfTranslator
         
         Parameters
@@ -84,14 +85,12 @@ class PtychographyTranslator(Translator):
         h5_file = h5py.File(h5_path, 'w')
 
         self.h5_file = h5_file
-
+        
         # Get the list of all files with the .tif extension and the number of files in the list
         if image_type == '.dm3':
-            file_list = [image_path]
-            # image_path, _ = os.path.split(image_path)
-            images, image_parms = read_dm3(image_path)
-            usize = image_parms['SuperScan_Height']
-            vsize = image_parms['SuperScan_Width']
+            file_list = self._parse_file_path(image_path, image_type)
+            images, image_parms = read_dm3(file_list[start_image])
+            usize, vsize = image_parms['Acquisition-Device-Active-Size-(pixels)'] # Specific for the Gatan Orius SC200B may work with others also
             data_type = images.dtype
         else:
             file_list = self._parse_file_path(image_path, image_type)
@@ -127,11 +126,11 @@ class PtychographyTranslator(Translator):
         h5_main, h5_mean_spec, h5_ronch = self._setupH5(usize, vsize, np.float32, scan_size_x, scan_size_y)
 
         self._read_data(file_list[start_image:start_image+num_files],
-                        h5_main, h5_mean_spec, h5_ronch, image_path)
+                        h5_main, h5_mean_spec, h5_ronch, image_path, image_type)
 
         return h5_main
 
-    def _read_data(self, file_list, h5_main, h5_mean_spec, h5_ronch, image_path):
+    def _read_data(self, file_list, h5_main, h5_mean_spec, h5_ronch, image_path, image_type):
         """
         Iterates over the images in `file_list`, reading each image and downsampling if
         reqeusted, and writes the flattened image to file.  Also builds the Mean_Ronchigram
@@ -158,23 +157,37 @@ class PtychographyTranslator(Translator):
         mean_ronch = np.zeros(h5_ronch.shape, dtype=np.float32)
 
         num_files = len(file_list)
+        if image_type == '.dm3':
+            for ifile, thisfile in enumerate(file_list):
+        
+                image, _ = read_dm3(thisfile)
+                image = self.binning_func(image, self.bin_factor, self.bin_func)
+                image = image.flatten()
+                h5_main[ifile, :] = image
 
-        for ifile, thisfile in enumerate(file_list):
+                h5_mean_spec[ifile] = np.mean(image)
 
-            selected = (ifile + 1) % round(num_files / 16) == 0
-            if selected:
-                print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
+                mean_ronch += image
 
-            image, _ = read_image(os.path.join(image_path, thisfile), as_grey=True)
-            image = self.binning_func(image, self.bin_factor, self.bin_func)
-            image = image.flatten()
-            h5_main[ifile, :] = image
+                self.h5_file.flush()
+        
+        else:
+            for ifile, thisfile in enumerate(file_list):
 
-            h5_mean_spec[ifile] = np.mean(image)
+     #           selected = (ifile + 1) % round(num_files / 16) == 0
+     #           if selected:
+     #               print('Processing file...{}% - reading: {}'.format(round(100 * ifile / num_files), thisfile))
 
-            mean_ronch += image
+                image, _ = read_image(os.path.join(image_path, thisfile), as_gray=True)
+                image = self.binning_func(image, self.bin_factor, self.bin_func)
+                image = image.flatten()
+                h5_main[ifile, :] = image
 
-            self.h5_file.flush()
+                h5_mean_spec[ifile] = np.mean(image)
+
+                mean_ronch += image
+
+                self.h5_file.flush()
 
         h5_ronch[:] = mean_ronch / num_files
         self.h5_file.flush()
@@ -301,13 +314,13 @@ class PtychographyTranslator(Translator):
         num_files = scan_size_x*scan_size_y
 
         root_parms = generate_dummy_main_parms()
-        root_parms['data_type'] = 'PtychographyData'
+        root_parms['data_type'] = 'ImageStackData'
 
         main_parms = {'num_images': num_files,
                       'image_size_u': usize,
                       'image_size_v': vsize,
                       'num_pixels': num_pixels,
-                      'translator': 'Ptychography',
+                      'translator': 'ImageStack',
                       'scan_size_x': scan_size_x,
                       'scan_size_y': scan_size_y}
 
@@ -331,14 +344,21 @@ class PtychographyTranslator(Translator):
                                      'Intensity', 'a.u.',
                                      pos_desc, spec_desc,
                                      chunks=ds_chunking, dtype=data_type)
-        h5_ronch = meas_grp.create_dataset('Mean_Ronchigram',
+        h5_ronch = meas_grp.create_dataset('Stack_Mean',
                                            data=np.zeros(num_pixels, dtype=np.float32),
                                            dtype=np.float32)
-        h5_mean_spec = meas_grp.create_dataset('Spectroscopic_Mean',
+        h5_mean_spec = meas_grp.create_dataset('Image_Means',
                                                data=np.zeros(num_files, dtype=np.float32),
                                                dtype=np.float32)
 
         self.h5_file.flush()
         
         return h5_main, h5_mean_spec, h5_ronch
+
+
+class PtychographyTranslator(ImageStackTranslator):
+
+    def __init__(self, *args, **kwargs):
+        warn('PtychographyTranslator is deprecated. Please use ImageStackTranslator instead', DeprecationWarning)
+        super(PtychographyTranslator, self).__init__(args, kwargs)
 
