@@ -13,7 +13,7 @@ from igor import binarywave as bw
 
 from pyUSID.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from pyUSID.io.write_utils import VALUES_DTYPE, Dimension, clean_string_att
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
@@ -23,7 +23,7 @@ class IgorIBWTranslator(Translator):
     """
 
     def translate(self, file_path, verbose=False, append_path='', 
-                  grp_name='', parm_encoding='utf-8'):
+                  grp_name='Measurement', parm_encoding='utf-8'):
         """
         Translates the provided file to .h5
 
@@ -34,7 +34,7 @@ class IgorIBWTranslator(Translator):
         verbose : Boolean (Optional)
             Whether or not to show  print statements for debugging
         append_path : string (Optional)
-            h5_file to add these data to
+            h5_file to add these data to, must be a path to the h5_file on disk
         grp_name : string (Optional)
             Change from default "Measurement" name to something specific
         parm_encoding : str, optional
@@ -123,10 +123,7 @@ class IgorIBWTranslator(Translator):
             spec_desc = Dimension('Z', 'm', spec_data)
 
         # Create measurement group
-        if not grp_name:
-            meas_grp = create_indexed_group(h5_file, 'Measurement')
-        else:
-            meas_grp = create_indexed_group(h5_file, grp_name)
+        meas_grp = create_indexed_group(h5_file, grp_name)
 
         # Write file and measurement level parameters
         global_parms = generate_dummy_main_parms()

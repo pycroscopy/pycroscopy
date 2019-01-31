@@ -188,10 +188,10 @@ class PiFMTranslator(Translator):
         if not append_path:
             h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
             if os.path.exists(h5_path):
-                self.h5_f = h5py.File(h5_path, mode='w')
+                raise FileExistsError
             #if file already exists. (maybe there is a better way to check for this)
             else:
-                self.h5_f = h5py.File(h5_path, mode='r+')
+                self.h5_f = h5py.File(h5_path, mode='w')
 
         else:
             self.h5_f = h5py.File(append_path, mode='r+')
