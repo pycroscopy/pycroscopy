@@ -12,7 +12,7 @@ class PiFMTranslator(Translator):
     structure.
     """
 
-    def translate(self, path, append_path='', grp_name=''):
+    def translate(self, path, append_path='', grp_name='Measurement'):
         """
         Parameters
         ----------
@@ -21,7 +21,7 @@ class PiFMTranslator(Translator):
         verbose : Boolean (Optional)
             Whether or not to show  print statements for debugging
         append_path : string (Optional)
-            h5_file to add these data to
+            h5_file to add these data to, must be a path to the h5_file on disk
         parm_encoding : str, optional
             Codec to be used to decode the bytestrings into Python strings if needed.
             Default 'utf-8'
@@ -184,7 +184,7 @@ class PiFMTranslator(Translator):
                     usid.write_utils.Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
         self.pos_ind, self.pos_val, self.pos_dims = pos_ind, pos_val, pos_dims
 
-    def create_hdf5_file(self, append_path='', grp_name=''):
+    def create_hdf5_file(self, append_path='', grp_name='Measurement'):
         if not append_path:
             h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
             if os.path.exists(h5_path):
@@ -196,10 +196,7 @@ class PiFMTranslator(Translator):
         else:
             self.h5_f = h5py.File(append_path, mode='r+')
 
-        if not grp_name:
-            self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
-        else:
-            self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)
+        self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)
         
         usid.hdf_utils.write_simple_attrs(self.h5_meas_grp, self.params_dictionary)
 
