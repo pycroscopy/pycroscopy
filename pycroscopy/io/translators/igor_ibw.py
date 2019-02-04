@@ -13,7 +13,7 @@ from igor import binarywave as bw
 
 from pyUSID.io.translator import Translator, \
     generate_dummy_main_parms  # Because this class extends the abstract Translator class
-from pyUSID.io.write_utils import VALUES_DTYPE, Dimension, clean_string_att
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
 
@@ -22,7 +22,8 @@ class IgorIBWTranslator(Translator):
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
 
-    def translate(self, file_path, verbose=False, parm_encoding='utf-8'):
+    def translate(self, file_path, verbose=False, append_path='', 
+                  grp_name='Measurement', parm_encoding='utf-8'):
         """
         Translates the provided file to .h5
 
@@ -32,6 +33,10 @@ class IgorIBWTranslator(Translator):
             Absolute path of the .ibw file
         verbose : Boolean (Optional)
             Whether or not to show  print statements for debugging
+        append_path : string (Optional)
+            h5_file to add these data to, must be a path to the h5_file on disk
+        grp_name : string (Optional)
+            Change from default "Measurement" name to something specific
         parm_encoding : str, optional
             Codec to be used to decode the bytestrings into Python strings if needed.
             Default 'utf-8'
@@ -45,11 +50,18 @@ class IgorIBWTranslator(Translator):
         # Prepare the .h5 file:
         folder_path, base_name = path.split(file_path)
         base_name = base_name[:-4]
-        h5_path = path.join(folder_path, base_name + '.h5')
-        if path.exists(h5_path):
-            remove(h5_path)
-
-        h5_file = h5py.File(h5_path, 'w')
+        
+        if not append_path:
+            h5_path = path.join(folder_path, base_name + '.h5')
+            if path.exists(h5_path):
+                remove(h5_path)
+            h5_file = h5py.File(h5_path, 'w')
+        else:
+            h5_path = append_path
+            if not path.exists(append_path):
+                raise Exception('File does not exist. Check pathname.')
+            h5_file = h5py.File(h5_path, 'r+')
+        
 
         # Load the ibw file first
         ibw_obj = bw.load(file_path)
@@ -111,7 +123,7 @@ class IgorIBWTranslator(Translator):
             spec_desc = Dimension('Z', 'm', spec_data)
 
         # Create measurement group
-        meas_grp = create_indexed_group(h5_file, 'Measurement')
+        meas_grp = create_indexed_group(h5_file, grp_name)
 
         # Write file and measurement level parameters
         global_parms = generate_dummy_main_parms()
