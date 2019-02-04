@@ -194,6 +194,8 @@ class PiFMTranslator(Translator):
                 self.h5_f = h5py.File(h5_path, mode='w')
 
         else:
+            if not os.path.exists(append_path):
+                raise Exception('File does not exist. Check pathname.')
             self.h5_f = h5py.File(append_path, mode='r+')
 
         self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)

@@ -59,7 +59,7 @@ class IgorIBWTranslator(Translator):
         else:
             h5_path = append_path
             if not path.exists(append_path):
-                raise Exception('Improper file')
+                raise Exception('File does not exist. Check pathname.')
             h5_file = h5py.File(h5_path, 'r+')
         
 
