@@ -42,7 +42,9 @@ Atomic Force Microscopy (AFM)
 Common formats
 ~~~~~~~~~~~~~~~
 * Asylum Research - Igor IBWs for images and force curves - ``IgorIBWTranslator``
+* Asylum Research - ``ARhdf5``
 * Bruker / Veeco / Digital Instruments - images, force curves, force maps - ``BrukerAFMTranslator``
+* Molecular Vista - Photoinduced Force Microscope - ``PiFMTranslator``
 * Nanonis Controllers - ``NanonisTranslator``
 
 IFIM specific
