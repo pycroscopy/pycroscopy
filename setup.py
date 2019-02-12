@@ -14,7 +14,9 @@ with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
 requirements = ['numpy>=1.13.0',
                 'h5py>=2.6.0',
                 'scipy>=0.17.1',
-                'scikit-image>=0.12.3',
+                'scikit-image>=0.12.3;python_version<"3.4"',
+                'scikit-image<0.14.2;python_version=="3.4"',  # Dask removed python 3.4 support that causes 2019 and newer skimage to fail
+                'scikit-image>=0.12.3;python_version>="3.5"',
                 'scikit-learn>=0.17.1',
                 'matplotlib>=2.0.0',
 
