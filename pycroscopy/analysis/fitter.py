@@ -13,7 +13,8 @@ import time as tm
 from .guess_methods import GuessMethods
 from .fit_methods import Fit_Methods
 from pyUSID import USIDataset
-from pyUSID.io.io_utils import get_available_memory, recommend_cpu_cores, format_time
+from pyUSID.processing.comp_utils import get_available_memory, recommend_cpu_cores
+from pyUSID.io.io_utils import format_time
 from pyUSID.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
 from .optimize import Optimize
 

@@ -11,7 +11,7 @@ import multiprocessing as mp
 import time as tm
 import matplotlib.pyplot as plt
 
-from pyUSID.io.io_utils import recommend_cpu_cores
+from pyUSID.processing.comp_utils import recommend_cpu_cores
 from ...io.virtual_data import VirtualDataset, VirtualGroup
 from ...io.hdf_writer import HDFwriter
 from pyUSID.viz.plot_utils import cmap_jet_white_center

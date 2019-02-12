@@ -17,7 +17,8 @@ from .proc_utils import get_component_slice
 from pyUSID.io.hdf_utils import find_results_groups, get_indices_for_region_ref, \
     create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs, create_indexed_group
-from pyUSID.io.io_utils import get_available_memory, format_time
+from pyUSID.processing.comp_utils import get_available_memory
+from pyUSID.io.io_utils import format_time
 from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID import USIDataset
@@ -176,7 +177,7 @@ class SVD(Process):
         self.h5_results_grp = h5_svd_group
 
         write_simple_attrs(h5_svd_group, self.parms_dict)
-        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0]})
+        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized'})
 
         h5_u = write_main_dataset(h5_svd_group, np.float32(self.__u), 'U', 'Abundance', 'a.u.', None, comp_dim,
                                   h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
@@ -205,6 +206,13 @@ class SVD(Process):
             svd_ref = create_region_reference(h5_v, ref_inds)
 
             h5_v.attrs[key] = svd_ref
+
+        # Marking completion:
+        self._status_dset_name = 'completed_positions'
+        self._h5_status_dset = h5_svd_group.create_dataset(self._status_dset_name,
+                                                           data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
+        # keeping legacy option:
+        h5_svd_group.attrs['last_pixel'] = self.h5_main.shape[0]
 
     def _check_available_mem(self):
         """
