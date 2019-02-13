@@ -10,7 +10,7 @@ Getting Started
     * pyUSID also has a `tutorial  <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_numpy_translator.html>`_ to get you started on importing your other data to pycroscopy.
 * Details regarding the definition and guidelines for the Universal Spectroscopy and Imaging Data `(USID) <../../USID/index.html>`_ model and implementation in HDF5 are also available in pyUSID's documentation.
 * Please see our document on the `organization of pycroscopy <./package_organization.html>`_ to find out more on what is where and why.
-* If you are interested in contributing your code to pycroscopy, please look at our `guidelines <https://pycroscopy.github.io/pyUSID/contribution_guidelines.html>`_
+* If you are interested in contributing your code to pycroscopy, please look at our `guidelines <./contribution_guidelines.html>`_
 * If you need detailed documentation on all our classes, functions, etc., please visit our `API <./api.html>`_
 * Have questions? See our `FAQ <./faq.html>`_ to see if we have already answered them.
 * Need help or need to get in touch with us? See our `contact <./contact.html>`_ information.

@@ -28,6 +28,7 @@ Documentation Index
     auto_examples/index
     translators
     faq
+    contribution_guidelines
     contact
     whats_new
     credits
