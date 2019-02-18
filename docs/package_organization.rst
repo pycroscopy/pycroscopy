@@ -51,15 +51,6 @@ The package structure is simple, with 5 main modules:
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 * AFM simulation and many more to come.
 
-``pycroscopy.core``
-~~~~~~~~~~~~~~~~~~~
-This engineering-focused sub-package has been moved to a new package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_.
-pyUSID supports science-focused packages such as pycroscopy similar to how scipy depends on numpy.
-The current release of pycroscopy imports pyUSID and makes it available as ``pycroscopy.core`` so that existing imports do not break.
-In the next release of pycroscopy, this implicit import will be removed and the modules would have to be imported directly from ``pyUSID``.
-See the `what's new <./whats_new.html>`_ under **June 28 2018**.
-
-
 Branches
 --------
 * ``master`` : Stable code based off which the pip installer works. Recommended for most people.
