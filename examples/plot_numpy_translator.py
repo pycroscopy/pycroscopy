@@ -140,7 +140,7 @@ data_file_path = 'STS.asc'
 
 with open(data_file_path, 'r') as file_handle:
     for lin_ind in range(10):
-        print(file_handle.readline())
+        print(file_handle.readline().replace('\n', ''))
 
 ####################################################################################
 # Step 2. Read the contents of the file
@@ -162,7 +162,7 @@ with open(data_file_path, 'r') as file_handle:
 
 ####################################################################################
 # Step 3. Read the parameters
-# ==============================
+# ===========================
 # The parameters in these files are present in the first few lines of the file
 
 # Preparing an empty dictionary to store the metadata / parameters as key-value pairs
@@ -212,7 +212,7 @@ spectra_length = int(parm_dict['z-points'])
 
 ####################################################################################
 # Step 3.b Read the data
-# ========================
+# ======================
 # We have observed that the data in these ``.asc`` files are consistently present after the first ``403`` lines of
 # parameters. Using this knowledge, we need to populate a data array using data that is currently present as text lines
 # in memory (from step 2).
@@ -325,12 +325,7 @@ h5_path = tran.translate(h5_path, sci_data_type, raw_data_2d,  quantity, units,
 #
 # Verifying the newly written H5 file:
 # ====================================
-# Let us perform some simple and quick verification to show that the data has indeed been translated correctly.
-# Given that this is a static document and cannot render interactive widgets, we will provide a static visualization
-# of the dataset. The interested reader is encouraged to try out the following line for interactive visualization
-# of the dataset instead of the static plots below:
-#
-# ``h5_main.visualize()``
+# Let us perform some simple and quick verification to show that the data has indeed been translated correctly:
 
 with h5py.File(h5_path, mode='r') as h5_file:
     # See if a tree has been created within the hdf5 file:
@@ -339,21 +334,13 @@ with h5py.File(h5_path, mode='r') as h5_file:
     h5_main = usid.hdf_utils.get_all_main(h5_file)[-1]
     print(h5_main)
     print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    # Try out h5_main.visualize() instead of the lines below
-    usid.plot_utils.use_nice_plot_params()
-    fig, axes = plt.subplots(ncols=2, figsize=(11, 5))
-    spat_map = np.reshape(h5_main[:, 100], (100, 100))
-    usid.plot_utils.plot_map(axes[0], spat_map, origin='lower')
-    axes[0].set_title('Spatial map')
-    axes[0].set_xlabel('X')
-    axes[0].set_ylabel('Y')
-    axes[1].plot(np.linspace(-1.0, 1.0, h5_main.shape[1]),
-                 h5_main[250])
-    axes[1].set_title('IV curve at a single pixel')
-    axes[1].set_xlabel('Tip bias [V]')
-    axes[1].set_ylabel('Current [nA]')
-
-    fig.tight_layout()
+    fig, axis = h5_main.visualize({'Bias': 100})
+    axis.set_title('Spatial map at Bias = %3.2f V' %
+                   h5_main.get_spec_values('Bias')[100])
+    fig, axis = h5_main.visualize({'X': 30, 'Y': 50})
+    axis.set_title('IV curve at X = %2.1f nm and Y = %2.1f nm' %
+                   (h5_main.get_pos_values('X')[30],
+                    h5_main.get_pos_values('Y')[50]))
 
 
 ####################################################################################
