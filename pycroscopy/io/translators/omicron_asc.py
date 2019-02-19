@@ -73,7 +73,8 @@ class AscTranslator(NumpyTranslator):
                                                      parm_dict['Main-y_pixels']))]
         spec_dims = Dimension('Bias', 'V', volt_vec)
 
-        h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Current', 'nA', pos_dims,
+        h5_path = super(AscTranslator, self).translate(h5_path, 'STS', raw_data_2d, 'Tunnelling current',
+                                                       parm_dict['Main-value_unit'], pos_dims,
                                                        spec_dims, translator_name='ASC', parm_dict=parm_dict)
 
         return h5_path
@@ -145,7 +146,7 @@ class AscTranslator(NumpyTranslator):
                             zip(range(1, 1 + len(type_list)), type_list)]
 
                 # Some cleaning:
-                raw_vals[0] = raw_vals[0].replace('-', '_')  # We use '-' as a level separator
+                raw_vals[0] = raw_vals[0].replace('-', '_').strip()  # We use '-' as a level separator
                 raw_vals[1] = raw_vals[1].replace('--', '').strip()
 
                 # often, units are on the values side, see if these can be transitioned over to the key:
@@ -204,7 +205,7 @@ class AscTranslator(NumpyTranslator):
                     test = int(test)
             except ValueError:
                 pass
-            temp_dict[temp[0].strip()] = test
+            temp_dict[temp[0].strip().replace('-', '_')] = test
 
         main_dict = {'Main': temp_dict.copy()}
 
