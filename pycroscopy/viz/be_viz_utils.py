@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Utilities for static and interactive visualization of Band Excitation Scanning Probe Microscopy datasets
+
 Created on Thu Jan 05 13:29:12 2017
 
 @author: Chris R. Smith, Suhas Somnath

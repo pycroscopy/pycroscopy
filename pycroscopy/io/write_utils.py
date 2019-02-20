@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Deprecated and legacy functions that supported writing USID HDF5 datasets especially for scientific modalities with
+very high number of spectroscopic dimensions
+
 Created on Tue Nov  3 21:14:25 2015
 
 @author: Chris Smith

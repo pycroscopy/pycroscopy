@@ -1,4 +1,6 @@
 """
+Utilities for building 2D histograms of spectroscopic data
+
 Created on Mar 1, 2016
 
 @author: Chris Smith -- cmsith55@utk.edu

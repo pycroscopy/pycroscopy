@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Deprecated and legacy :class:`~pycroscopy.io.hdf_writer.HDFwriter` that was being used to write USID HDF5 files
+
 Created on Wed Oct 21 12:29:33 2015
 
 @author: Numan Laanait, Suhas Somnath, Chris Smith
@@ -24,7 +26,7 @@ if sys.version_info.major == 3:
 class HDFwriter(object):
     def __init__(self, file_handle, force_new=False):
         """
-        Main class that simplifies writing to pycroscopy hdf5 files.
+        Main class that simplifies writing to USID hdf5 files.
 
         Parameters
         ----------
@@ -36,7 +38,8 @@ class HDFwriter(object):
             it does.  Ignored if the file_handle is a h5py.File object
         """
         warn('HDFWriter is available only for legacy purposes and will be REMOVED in a future release.\n'
-             'Please consider using a combination of functions in hdf_utils such as write_main_dataset() instead',
+             'Please consider using a combination of functions in :module:`pyUSID.io.hdf_utils` such as '
+             ':meth:`pyUSID.io.hdf_utils.write_main_dataset` instead',
              DeprecationWarning)
 
         if type(file_handle) in [str, unicode]:

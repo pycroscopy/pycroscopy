@@ -1,5 +1,8 @@
 """
+Abstract and science-agnostic :class:`~pycroscopy.analysis.fitter.Fitter` class for fitting data to physical models
+
 Created on 7/17/16 10:08 AM
+
 @author: Numan Laanait, Suhas Somnath, Chris Smith
 """
 
@@ -20,8 +23,10 @@ from .optimize import Optimize
 
 
 class Fitter(object):
+    # TODO: This should extend the pyUSID.Process class instead of being independent
     """
-    Encapsulates the typical routines performed during model-dependent analysis of data.
+    An abstarct, science-agnostic class similar to :class:`pyUSID.processing.Process` that facilitates the fitting of
+    data to physical models. It encapsulates the typical routines performed during model-dependent analysis of data.
     This abstract class should be extended to cover different types of imaging modalities.
     """
 

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Utilities for FFT filtering of General-mode spectral imaging datasets
+
 Created on Thu May 05 13:29:12 2016
 
 @author: Suhas Somnath

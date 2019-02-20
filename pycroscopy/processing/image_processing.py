@@ -1,4 +1,8 @@
 """
+Image denoising algorithm based on multivariate statistical analysis approaches as reported in the journal paper:
+"Feature extraction via similarity search: application to atom finding and denoising in electron and scanning probe
+microscopy imaging"
+
 Created on Jun 16, 2016
 
 @author: Chris Smith -- csmith55@utk.edu

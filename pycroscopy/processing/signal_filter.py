@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+A class for FFT filtering General-mode spectroscopic imaging data as reported in:
+[Rapid mapping of polarization switching through complete information acquisition](http://www.nature.com/articles/ncomms13290)
+
 Created on Tue Nov 07 11:48:53 2017
 
 @author: Suhas Somnath

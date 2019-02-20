@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+A collection of 1D and 2D FFT based utilities for image and spectral processing based on the :module:`numpy.fft` module
+
 Created on Tue Oct 20 17:42:41 2015
 
 @author: Suhas Somnath

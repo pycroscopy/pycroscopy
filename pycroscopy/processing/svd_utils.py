@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+USID utilities for performing randomized singular value decomposition and reconstructing results
+
 Created on Mon Mar 28 09:45:08 2016
 
 @author: Suhas Somnath, Chris Smith
@@ -25,6 +27,12 @@ from pyUSID import USIDataset
 
 
 class SVD(Process):
+    """
+    This class provides a file-wrapper around the :meth:`sklearn.utils.extmath.randomized_svd` function.
+    In other words, it extracts and then reformats the data present in the provided :class:`pyUSID.USIDataset` object,
+    performs the randomized SVD operation and writes the results back to the USID HDF5 file after
+    formatting the results in an USID compliant manner.
+    """
 
     def __init__(self, h5_main, num_components=None, **kwargs):
         """
@@ -32,8 +40,8 @@ class SVD(Process):
 
         Parameters
         ----------
-        h5_main : USIDataset
-            Dataset to be decomposed.
+        h5_main : :class:`pyUSID.USIDataset` object
+            USID Main HDF5 dataset that will be decomposed
         num_components : int, optional
             Number of components to decompose h5_main into.  Default None.
         kwargs
@@ -83,11 +91,11 @@ class SVD(Process):
 
         Returns
         -------
-        U : numpy.ndarray
+        U : :class:`numpy.ndarray`
             Abundance matrix
-        S : numpy.ndarray
+        S : :class:`numpy.ndarray`
             variance vector
-        V : numpy.ndarray
+        V : :class:`numpy.ndarray`
             eigenvector matrix
         """
         '''
@@ -141,8 +149,8 @@ class SVD(Process):
 
         Returns
         -------
-         h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
+         h5_results_grp : :class:`h5py.Group`  object
+            HDF5 Group containing all the results
         """
         if self.__u is None and self.__v is None and self.__s is None:
             self.test(override=override)

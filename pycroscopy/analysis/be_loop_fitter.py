@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+:class:`~pycroscopy.analysis.be_loop_fitter.BELoopFitter` that fits Simple Harmonic Oscillator model data to a
+parametric model to describe hysteretic switching in ferroelectric materials
+
 Created on Thu Aug 25 11:48:53 2016
 
 @author: Suhas Somnath, Chris R. Smith, Rama K. Vasudevan
@@ -43,7 +46,8 @@ loop_fit32 = np.dtype({'names': field_names,
 
 class BELoopFitter(Fitter):
     """
-    Analysis of Band excitation loops using functional fits
+    A class that fits Simple Harmonic Oscillator model data to a 9-parameter model to describe hysteretic switching in
+    ferroelectric materials
     
     Parameters
     ----------

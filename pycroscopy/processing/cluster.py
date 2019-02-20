@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-The :class:`pycroscopy.processing.Cluster` along with functions that facilitate the clustering of datasets and their interpretation.
+The :class:`pycroscopy.processing.Cluster` along with functions that facilitate the clustering of datasets and their
+interpretation.
 
 Created on Tue Jan 05 07:55:56 2016
 
@@ -34,12 +35,13 @@ class Cluster(Process):
 
     def __init__(self, h5_main, estimator, num_comps=None):
         """
-        Constructs the Cluster object
+        Constructs the Cluster object. Call the :meth:`~pycroscopy.processing.Cluster.test()` and
+        :meth:`~pycroscopy.processing.Cluster.compute()` methods to run the clustering
 
         Parameters
         ----------
         h5_main : :class:`pyUSID.USIDataset` object
-            Main dataset with ancillary spectroscopic, position indices and values datasets
+            USID Main HDF5 dataset
         estimator : :class:`sklearn.cluster` estimator
             configured clustering algorithm to be applied to the data
         num_comps : int (unsigned), optional. Default = None / all
@@ -121,7 +123,8 @@ class Cluster(Process):
     def test(self, rearrange_clusters=True, override=False):
         """
         Clusters the hdf5 dataset and calculates mean response for each cluster. This function does NOT write results to
-        the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
+        the hdf5 file. Call :meth:`~pycroscopy.processing.Cluster.compute()` to  write to the file.
+        Handles complex, compound datasets such that the
         mean response vector for each cluster matrix is of the same data-type as the input matrix.
 
         Parameters

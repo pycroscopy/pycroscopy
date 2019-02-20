@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+utilities that facilitate the propagation of hierarchical information (for example endmembers from clustering)
+
 Created on Wed Aug 31 17:03:29 2016
 
 @author: Suhas Somnath

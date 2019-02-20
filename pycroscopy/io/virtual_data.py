@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+Deprecated and legacy :class:`~pycroscopy.io.virtual_data.VirtualDataset` and
+:class:`~pycroscopy.io.virtual_data.VirtualGroup` classes that was being used to write USID HDF5 files
+
 Created on Wed Dec 16 10:42:03 2015
 
 @author: Suhas Somnath, Numan Laanait
@@ -72,7 +75,8 @@ class VirtualGroup(VirtualData):
         """
 
         warn('VirtualGroup is available only for legacy purposes and will be REMOVED in a future release.\n'
-             'Please consider using a combination of functions in hdf_utils such as create_results_group() instead',
+             'Please consider using a combination of functions in :module:`pyUSID.io.hdf_utils` such as '
+             ':meth:`pyUSID.io.hdf_utils.create_results_group` instead',
              DeprecationWarning)
 
         super(VirtualGroup, self).__init__(name, parent, attrs=attrs)

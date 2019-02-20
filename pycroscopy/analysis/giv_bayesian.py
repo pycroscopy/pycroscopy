@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+:class:`~pycroscopy.analysis.giv_bayesian.GIVBayesian` - A class that performs Bayesian inference to decouple spurious
+hysteresis from current-voltage spectroscopy signals in General mode I-V data
+
 Created on Thu Nov 02 11:48:53 2017
 
 @author: Suhas Somnath
@@ -24,6 +27,10 @@ cap_dtype = np.dtype({'names': ['Forward', 'Reverse'],
 
 
 class GIVBayesian(Process):
+    """
+    A class that performs Bayesian inference to decouple spurious hysteresis signals from current-voltage spectroscopy
+    signals in General mode I-V data
+    """
 
     def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=110, **kwargs):
         """

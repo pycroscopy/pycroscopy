@@ -1,4 +1,7 @@
 """
+:class:`~pycroscopy.analysis.be_sho_fitter.BESHOfitter` that fits Band Excitation Scanning Probe Microscopy data to a
+Simple Harmonic Oscillator model
+
 Created on 7/17/16 10:08 AM
 @author: Suhas Somnath, Chris R. Smith, Numan Laanait
 """
@@ -21,6 +24,10 @@ sho32 = np.dtype({'names': field_names,
 
 
 class BESHOfitter(Fitter):
+    """
+    A class that handles the functional fitting of spectra obtained from Band Excitation Scanning Probe
+    Microscopy to a Simple Harmonic Oscillator model
+    """
 
     def __init__(self, h5_main, variables=None, **kwargs):
         """

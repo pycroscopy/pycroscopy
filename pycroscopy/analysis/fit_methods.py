@@ -1,4 +1,6 @@
 """
+functions that facilitate functional fitting of spectroscopic and imaging data
+
 Created on 12/15/16 3:44 PM
 @author: Numan Laanait -- nlaanait@gmail.com
 """
