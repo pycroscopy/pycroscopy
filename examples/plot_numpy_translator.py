@@ -334,13 +334,19 @@ with h5py.File(h5_path, mode='r') as h5_file:
     h5_main = usid.hdf_utils.get_all_main(h5_file)[-1]
     print(h5_main)
     print('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
-    fig, axis = h5_main.visualize({'Bias': 100})
-    axis.set_title('Spatial map at Bias = %3.2f V' %
-                   h5_main.get_spec_values('Bias')[100])
-    fig, axis = h5_main.visualize({'X': 30, 'Y': 50})
-    axis.set_title('IV curve at X = %2.1f nm and Y = %2.1f nm' %
-                   (h5_main.get_pos_values('X')[30],
-                    h5_main.get_pos_values('Y')[50]))
+    fig, axes = plt.subplots(ncols=2, figsize=(11, 5))
+    spat_map = np.reshape(h5_main[:, 100], (100, 100))
+    usid.plot_utils.plot_map(axes[0], spat_map, origin='lower')
+    axes[0].set_title('Spatial map')
+    axes[0].set_xlabel('X')
+    axes[0].set_ylabel('Y')
+    axes[1].plot(np.linspace(-1.0, 1.0, h5_main.shape[1]),
+                 h5_main[250])
+    axes[1].set_title('IV curve at a single pixel')
+    axes[1].set_xlabel('Tip bias [V]')
+    axes[1].set_ylabel('Current [nA]')
+
+    fig.tight_layout()
 
 
 ####################################################################################
