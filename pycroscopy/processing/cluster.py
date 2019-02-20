@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+The :class:`pycroscopy.processing.Cluster` along with functions that facilitate the clustering of datasets and their interpretation.
+
 Created on Tue Jan 05 07:55:56 2016
 
 @author: Suhas Somnath, Chris Smith
@@ -24,20 +26,24 @@ from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 
 class Cluster(Process):
     """
-    Pycroscopy wrapper around the sklearn.cluster classes.
+    This class provides a file-wrapper around :class:`sklearn.cluster` objects. In other words, it extracts and then
+    reformats the data present in the provided :class:`pyUSID.USIDataset` object, performs the clustering operation
+    using the provided :class:`sklearn.cluster` object, and writes the results back to the USID HDF5 file after
+    formatting the results in an USID compliant manner.
     """
 
-    def __init__(self, h5_main, estimator, num_comps=None, **kwargs):
+    def __init__(self, h5_main, estimator, num_comps=None):
         """
         Constructs the Cluster object
+
         Parameters
         ----------
-        h5_main : HDF5 dataset object
+        h5_main : :class:`pyUSID.USIDataset` object
             Main dataset with ancillary spectroscopic, position indices and values datasets
-        estimator : sklearn.cluster estimator
+        estimator : :class:`sklearn.cluster` estimator
             configured clustering algorithm to be applied to the data
-        num_comps : (optional) unsigned int
-            Number of features / spectroscopic indices to be used to cluster the data. Default = all
+        num_comps : int (unsigned), optional. Default = None / all
+            Number of features / spectroscopic indices to be used to cluster the data
         args and kwargs : arguments to be passed to the estimator
         """
 
@@ -54,7 +60,7 @@ class Cluster(Process):
             raise TypeError('Cannot work with {} just yet'.format(self.method_name))
 
         # Done with decomposition-related checks, now call super init
-        super(Cluster, self).__init__(h5_main, **kwargs)
+        super(Cluster, self).__init__(h5_main)
 
         # Store the decomposition object
         self.estimator = estimator
@@ -128,10 +134,10 @@ class Cluster(Process):
 
         Returns
         -------
-        labels : 1D unsigned int array
-            Array of cluster labels as obtained from the fit
-        mean_response : 2D numpy array
-            Array of the mean response for each cluster arranged as [cluster number, response]
+        labels : :class:`numpy.ndarray`
+            1D unsigned integer array containing the cluster labels as obtained from the fit
+        mean_response : :class:`numpy.ndarray`
+            2D array containing the mean response for each cluster arranged as [cluster number, response]
         """
         if not override:
             if isinstance(self.duplicate_h5_groups, list) and len(self.duplicate_h5_groups) > 0:
@@ -186,11 +192,11 @@ class Cluster(Process):
 
     def compute(self, rearrange_clusters=True, override=False):
         """
-        Clusters the hdf5 dataset and calculates mean response for each cluster (by calling test() if it has
-        not already been called), and writes the labels and mean response back to the h5 file.
+        Clusters the hdf5 dataset and calculates mean response for each cluster (does not recompute if already computed
+        via :meth:`~pycroscopy.processing.Cluster.test()`) and writes the labels and mean response back to the h5 file.
 
-        Consider calling test_on_subset() to check results before writing to file. Results are deleted from memory
-        upon writing to the HDF5 file
+        Consider calling :meth:`~pycroscopy.processing.Cluster.test()` to check results before writing to file.
+        Results are deleted from memory upon writing to the HDF5 file
 
         Parameters
         ----------
@@ -201,7 +207,7 @@ class Cluster(Process):
 
         Returns
         --------
-        h5_group : HDF5 Group reference
+        h5_group : :class:`h5py.Group` reference
             Reference to the group that contains the clustering results
         """
         if self.__labels is None and self.__mean_resp is None:
@@ -321,19 +327,19 @@ def reorder_clusters(labels, mean_response, transform_function=None):
 
     Parameters
     ----------
-    labels : 1D unsigned int numpy array
-        Labels for the clusters
-    mean_response : 2D numpy array
-        Mean response of each cluster arranged as [cluster , features]
+    labels : :class:`numpy.ndarray`
+        1D unsigned integer array containing labels for the clusters
+    mean_response : :class:`numpy.ndarray`
+        2D array containing mean response of each cluster arranged as [cluster , features]
     transform_function : callable, optional
         Function that will convert the mean_response into real values
 
     Returns
     -------
-    new_labels : 1D unsigned int numpy array
-        Labels for the clusters arranged by distances
-    new_mean_response : 2D numpy array
-        Mean response of each cluster arranged as [cluster , features]
+    new_labels : :class:`numpy.ndarray`
+        1D unsigned integer array containing labels for the clusters arranged by distances
+    new_mean_response : :class:`numpy.ndarray`
+        2D array containing corresponding mean response of each cluster arranged as [cluster , features]
     """
 
     num_clusters = mean_response.shape[0]
