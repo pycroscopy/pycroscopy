@@ -6,9 +6,6 @@ Submodules
 
 .. autosummary::
     :toctree: _autosummary
-
-    core
-
 """
 from .io import translators
 from .io.translators import ImageTranslator  # Use pycroscopy version of ImageTranslator rather than pyUSID's
