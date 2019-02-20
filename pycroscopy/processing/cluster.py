@@ -44,7 +44,6 @@ class Cluster(Process):
             configured clustering algorithm to be applied to the data
         num_comps : int (unsigned), optional. Default = None / all
             Number of features / spectroscopic indices to be used to cluster the data
-        args and kwargs : arguments to be passed to the estimator
         """
 
         allowed_methods = [cls.AgglomerativeClustering,
