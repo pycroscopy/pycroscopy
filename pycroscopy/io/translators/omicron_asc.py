@@ -18,24 +18,21 @@ class AscTranslator(NumpyTranslator):
     Translates Scanning Tunnelling Spectroscopy (STS) data in .asc files obtained from Omicron STMs.
     """
 
-    def translate(self, file_path, max_v=1):
+    def translate(self, file_path):
         """
         Translates the provided .asc file to .h5
 
         Parameters
         ----------
-        file_path : string / unicode
+        file_path : str
             Absolute path of the source .ASC STS file from Omicron STMs
-        max_v : float
 
 
         Returns
         -------
-        h5_path : string / unicode
+        h5_path : str
             Absolute path of the translated file
         """
-
-        max_v = abs(max_v)
 
         file_path = path.abspath(file_path)
         folder_path, file_name = path.split(file_path)
@@ -85,7 +82,7 @@ class AscTranslator(NumpyTranslator):
 
         Parameters
         ----------
-        string_lines : list of strings
+        string_lines : :class:`list` of str
             Lines containing the data in string format, separated by tabs
         num_pos : unsigned int
             Number of pixels
