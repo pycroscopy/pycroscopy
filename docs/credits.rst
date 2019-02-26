@@ -3,7 +3,6 @@ Credits
 
 Maintainers
 ~~~~~~~~~~~
-* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith)
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
 
 Founders
