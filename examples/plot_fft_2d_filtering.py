@@ -31,13 +31,17 @@ In this example we will load an image, Fourier transform it, apply a smoothing f
 from __future__ import division, unicode_literals, print_function
 import matplotlib.pyplot as plt
 import numpy as np
+import h5py
 import numpy.fft as npf
 import os
 import subprocess
 import sys
 
+
 def install(package):
     subprocess.call([sys.executable, "-m", "pip", "install", package])
+
+
 # for downloading files:
 try:
     # This package is not part of anaconda and may need to be installed.
@@ -58,26 +62,47 @@ except ImportError:
 ####################################################################################
 # We will be using an image available on our GitHub project page by default. You are encouraged
 # to download this document as a Jupyter Notebook (button at the bottom of the page) and use your own image instead.
-# When using your own image, you can skip this cell and provide the path to your data using the variable -
-# data_file_path
+# When using your own image, you can skip this cell and provide the path to your data as 2D numpy array using the
+# variable - ``image_raw``
 #
 # Coming back to our example, lets start by downloading the file from GitHub:
-data_file_path = 'temp_STEM_STO.txt'
+h5_path = 'temp.h5'
 # download the data file from Github:
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STEM_STO_2_20.txt'
-_ = wget.download(url, data_file_path, bar=None)
+url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/STEM_STO_2_20.h5'
+_ = wget.download(url, h5_path, bar=None)
 
 ####################################################################################
-# The image is stored as a tab delimited text file. One can load its contents to memory by using the following command:
+# The image is formatting according to the Universal Spectroscopic and Imaing Data (USID) model and is stored in a
+# Hierarchical Data Format (HDF5) file. To learn more about this standardized file format for imaging and spectroscopic
+# data, please visit `here <https://pycroscopy.github.io/USID/about.html>`_.
+# However, data formatting will not be the focus of this example.
+#
+# Here, we will load the data out of this standardized format and into numpy using a few simple commands found in our
+# sister software package - ``pyUSID``:
 
-image_raw = np.loadtxt(data_file_path, dtype='str', delimiter='\t')
+h5_f = h5py.File(h5_path, mode='r')
+print('Contents of this h5 file:')
+print('-------------------------')
+usid.hdf_utils.print_tree(h5_f)
+print('-------------------------')
+print('Some important properties of this data:')
+for key, val in usid.hdf_utils.get_attributes(h5_f['/Measurement_000']).items():
+    print('{} : {}'.format(key, val))
 
-# delete the temporarily downloaded file:
-os.remove(data_file_path)
+####################################################################################
+# Access the dataset containing the 2D image of interest, print out its properties and
+h5_main = usid.hdf_utils.get_all_main(h5_f)[-1]
+print(h5_main)
 
-# convert the file from a string array to a numpy array of floating point numbers
-image_raw = np.array(image_raw)
-image_raw = image_raw[0:, 0:-1].astype(np.float)
+####################################################################################
+# Visualize this dataset using a quick command:
+# Notice that the X and Y axis have scientific information encoded, as does the color bar
+fig, axis = h5_main.visualize(cmap=plt.cm.inferno)
+axis.set_title('original image of STO captured via STEM', fontsize=20)
+
+####################################################################################
+# get the contents as Numpy array using a single command:
+image_raw = h5_main.get_n_dim_form().squeeze()
 
 ####################################################################################
 # Prior to transforming, it is sometimes convenient to set the image mean to zero, 
@@ -88,11 +113,32 @@ image_raw = image_raw - np.mean(image_raw)  # subtract out the mean of the image
 ####################################################################################
 # An important aspect of performing Fourier transforms is keeping track of units 
 # between transformations and also being aware of conventions used with regard to
-# the locations of the image centers and extents when transformed. Below is code 
+# the locations of the image centers and extents when transformed.
+#
+# We start by extracting the vectors that define the X and Y axis. Unlike conventional text files
+# or popular image formats, which do not capture this information, the USID model captures all this
+# scientifically important metadata. Let us visualize this information before extracting it:
+
+fig, axes = plt.subplots(ncols=2, figsize=(6, 3))
+for axis, dim_name, y_label in zip(axes, h5_main.pos_dim_labels, h5_main.pos_dim_descriptors):
+    axis.plot(h5_main.get_pos_values(dim_name))
+    axis.set_title('Position Dimension - ' + dim_name)
+    axis.set_ylabel(y_label)
+    axis.set_xlabel('Index')
+fig.tight_layout()
+
+####################################################################################
+# Now let us access the same axis vectors:
+x_axis_vec = h5_main.get_pos_values('X')
+y_axis_vec = h5_main.get_pos_values('X')
+
+
+# ####################################################################################
+# Below is code
 # that builds the axes in the space domain of the original image. 
 x_pixels, y_pixels = np.shape(image_raw)  # [pixels]
-x_edge_length = 5.0  # [nm]
-y_edge_length = 5.0  # [nm]
+x_edge_length = np.round(x_axis_vec[-1], 1)  # 5.0 [nm]
+y_edge_length = np.round(y_axis_vec[-1], 1)  # 5.0 [nm]
 x_sampling = x_pixels / x_edge_length  # [pixels/nm]
 y_sampling = y_pixels / y_edge_length  # [pixels/nm]
 x_axis_vec = np.linspace(-x_edge_length / 2, x_edge_length / 2, x_pixels)  # vector of locations along x-axis
@@ -110,13 +156,6 @@ v_max = y_sampling / 2
 u_axis_vec = np.linspace(-u_max / 2, u_max / 2, x_pixels)
 v_axis_vec = np.linspace(-v_max / 2, v_max / 2, y_pixels)
 u_mat, v_mat = np.meshgrid(u_axis_vec, v_axis_vec)  # matrices of u-positions and v-positions
-
-####################################################################################
-# A plot of the data is shown below (STEM image of STO).
-fig, axis = plt.subplots(figsize=(5, 5))
-_ = usid.plot_utils.plot_map(axis, image_raw, cmap=plt.cm.inferno, clim=[0, 6],
-                           x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
-axis.set_title('original image of STO captured via STEM')
 
 ####################################################################################
 # The Fourier transform can be determined with one line of code:
@@ -245,3 +284,8 @@ for axis, img, title in zip(axes, [image_corrected, filtered_background],
                                x_vec=x_axis_vec, y_vec=y_axis_vec, num_ticks=5)
     axis.set_title(title)
 fig.tight_layout()
+
+####################################################################################
+# delete the temporarily downloaded file:
+h5_f.close()
+os.remove(h5_path)
