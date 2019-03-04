@@ -105,6 +105,28 @@ def normalize_image(image):
     """
     return (image - np.amin(image)) / (np.amax(image) - np.amin(image))
 
+
+def plot_markers(axis, coordinates, colors):
+    """
+    plots markers on an image with different colors
+
+    Parameters
+    ----------
+    axis : matplotlib.pyplot.axes
+        Axis to plot in
+    coordinates : Iterable
+        Tuple containing the X and Y coordinate of the point
+    colors : str
+        String name of the color of the point
+
+    Returns
+    -------
+
+    """
+    for clr, point in zip(colors, coordinates):
+        axis.scatter(point[0], point[1], color=clr, s=40)
+
+
 ##############################################################################
 # Load the data from the hdf5 file
 # --------------------------------
@@ -120,12 +142,56 @@ url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/sts_d
 h5_path = 'temp.h5'
 _ = wget.download(url, h5_path, bar=None)
 
-print('Working on:\n' + h5_path)
+##############################################################################
+# Now let us look at the contents of this file:
+h5_file = h5py.File(h5_path, mode='r')
+usid.hdf_utils.print_tree(h5_file)
 
-with h5py.File(h5_path, mode='r') as h5_f:
-    sts_spectral_data = h5_f['sts_spectra'][()]  # STS spectral data set
-    high_res_topo = h5_f['stm_topography'][()]  # STM image
-    sts_z_contr = h5_f['sts_z_contrast'][()]  # STS Z contrast image
+##############################################################################
+# Clearly, this data file has several datasets, many of them are supporting information for central or main datasets.
+#
+# The data are formatting according to the Universal Spectroscopic and Imaing Data (USID) model and is stored in a
+# Hierarchical Data Format (HDF5) file. To learn more about this standardized file format for imaging and spectroscopic
+# data, please visit `here <https://pycroscopy.github.io/USID/about.html>`_.
+# However, data formatting will not be the focus of this example.
+#
+# Let us take a look at the main datasets of interest below. What we observe is that we have three such datasets:
+usid.hdf_utils.print_tree(h5_file, main_dsets_only=True)
+
+##############################################################################
+# Access and Visualize
+# --------------------
+# Let us look at one of these `USID` `Main` datasets - the Topography.
+# Our sister-package - pyUSID has a class called the ``USIDataset`` that makes it easy to operate on large,
+# multi-dimensional scientific datasets.
+# Just printing out the USIDataset shows rich scientific information embedded within this object.
+# We can also use USIDataset's `visualize()` method to quickly visualize the dataset
+
+h5_topo = usid.USIDataset(h5_file['/Measurement_000/Channel_000/STM_Topography'])
+print(h5_topo)
+h5_topo.visualize()
+
+##############################################################################
+# We can do the same for the other datasets too - Z Contrast in this case:
+h5_zcont = usid.USIDataset(h5_file['/Measurement_001/Channel_001/STS_Z_Contrast'])
+print(h5_zcont)
+_ = h5_zcont.visualize()
+
+##############################################################################
+# Here is the full 3D STS data. Note that this static web page does not allow interactive visualization of this 3D
+# dataset. We encourage you to download this document as a jupyter notebook and run it in order to visualize this
+# dataset.
+
+h5_sts = usid.USIDataset(h5_file['/Measurement_001/Channel_000/STS'])
+print(h5_sts)
+_ = h5_sts.visualize()
+
+##############################################################################
+# Extract data as numpy arrays
+# ----------------------------
+high_res_topo = np.rot90(h5_topo.get_n_dim_form().squeeze())
+sts_z_contr = np.rot90(h5_zcont.get_n_dim_form().squeeze())
+h5_file.close()
 
 ##############################################################################
 # Normalize images
@@ -133,13 +199,6 @@ with h5py.File(h5_path, mode='r') as h5_f:
 
 high_res_topo = normalize_image(high_res_topo)
 sts_z_contr = normalize_image(sts_z_contr)
-
-##############################################################################
-# Shapes of datasets
-# ------------------
-print('STS Spectra shape:', sts_spectral_data.shape)
-print('STM Topography shape:', high_res_topo.shape)
-print('STS Z contrast shape:', sts_z_contr.shape)
 
 ##############################################################################
 # visualization
@@ -240,11 +299,6 @@ fig, axes = twin_image_plot([high_res_topo, z_upscaled],
                             ['Downscaled Topography to Z contrast size',
                              'Z contrast upscaled to topography size'],
                             cmap='gray')
-
-# Defining a quick function that plots markers on an image with different colors
-def plot_markers(axis, coordinates, colors):
-    for clr, point in zip(colors, coordinates):
-        axis.scatter(point[0], point[1], color=clr, s=40)
 
 # Now add the markers
 pointer_colors = ['b','y', 'g', 'r']

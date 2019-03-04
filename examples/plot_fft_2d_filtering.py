@@ -133,7 +133,7 @@ x_axis_vec = h5_main.get_pos_values('X')
 y_axis_vec = h5_main.get_pos_values('X')
 
 
-# ####################################################################################
+#####################################################################################
 # Below is code
 # that builds the axes in the space domain of the original image. 
 x_pixels, y_pixels = np.shape(image_raw)  # [pixels]
