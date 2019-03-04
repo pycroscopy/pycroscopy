@@ -165,7 +165,7 @@ usid.hdf_utils.print_tree(h5_file, main_dsets_only=True)
 # Our sister-package - pyUSID has a class called the ``USIDataset`` that makes it easy to operate on large,
 # multi-dimensional scientific datasets.
 # Just printing out the USIDataset shows rich scientific information embedded within this object.
-# We can also use USIDataset's `visualize()` method to quickly visualize the dataset
+# We can also use USIDataset's ``visualize()`` method to quickly visualize the dataset
 
 h5_topo = usid.USIDataset(h5_file['/Measurement_000/Channel_000/STM_Topography'])
 print(h5_topo)
@@ -189,8 +189,10 @@ _ = h5_sts.visualize()
 ##############################################################################
 # Extract data as numpy arrays
 # ----------------------------
-high_res_topo = np.rot90(h5_topo.get_n_dim_form().squeeze())
-sts_z_contr = np.rot90(h5_zcont.get_n_dim_form().squeeze())
+# Regardless of the shape of the original scientific dataset, the ``USIDataset`` can also return the N-dimensional
+# form of the dataset via its ``get_n_dim_form()`` function:
+high_res_topo = h5_topo.get_n_dim_form().squeeze()
+sts_z_contr = h5_zcont.get_n_dim_form().squeeze()
 h5_file.close()
 
 ##############################################################################
@@ -282,14 +284,14 @@ fixed = high_res_topo
 moving = z_upscaled
 
 # Define the points that are common:
-src = [(536, 482),
-       (100, 785),
-       (745, 294),
-       (604, 918)]
+src = [(520, 522),
+       (290, 750),
+       (780, 94),
+       (864, 508)]
 dst = [(561, 527),
-       (193, 800),
-       (749, 332),
-       (678, 946)]
+       (325, 740),
+       (799, 190),
+       (882, 576)]
 
 ##############################################################################
 # Let's visualize the pointers on the two images
@@ -355,7 +357,7 @@ for tform_type, axis in zip(trans_names, axes.flat):  # looping through transfor
 
     # visualize the transformation
     axis.set_title(tform_type + ' - Pearson corr: ' + str(np.round(corr, 3)))
-    axis.imshow(raw_corrected_Z)
+    axis.imshow(raw_corrected_Z, origin='lower')
 
 fig.suptitle('Different transforms applied to the images', y=1.03)
 fig.tight_layout()
