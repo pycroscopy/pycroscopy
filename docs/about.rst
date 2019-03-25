@@ -12,7 +12,7 @@ Pycroscopy
 What?
 ------
 * pycroscopy is a `python <http://www.python.org/>`_ package for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
-* pycroscopy uses the **Universal Spectroscopy and Imaging Data (USID)** `model <../../USID/index.html>`_ as its foundation, which:
+* pycroscopy uses the **Universal Spectroscopy and Imaging Data (USID)** `model <../../USID/about.html>`_ as its foundation, which:
 
   * facilitates the representation of any spectroscopic or imaging data regardless of its origin, modality, size, or dimensionality.
   * enables the development of instrument- and modality- agnostic data processing and analysis algorithms.
@@ -21,6 +21,7 @@ What?
 * pycroscopy uses `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ which provides tools to read, write, visualize, and process **USID** stored in HDF5 files.
   In addition, pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
 * You can choose to perform your analysis outside pycroscopy if you prefer and use pyUSID to standardize the data storage.
+* For more information, please consider reading our `Arxiv <https://arxiv.org/abs/1903.09515>`_ **paper**.
 * See a high-level overview of pycroscopy in this `presentation <https://github.com/pycroscopy/pycroscopy/blob/master/docs/USID_pyUSID_pycroscopy.pdf>`_
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
 * Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
