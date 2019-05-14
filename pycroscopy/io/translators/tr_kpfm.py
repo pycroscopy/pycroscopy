@@ -140,12 +140,17 @@ class TRKPFMTranslator(Translator):
 
         num_time_steps = (spectrogram_size-5) //excit_wfm.size
 
-        #Let's repeat the excitation so that we get the full vector of same size as the spectrogram
-        #TODO: Check if this is the norm for this type of dataset
+        #There should be three spectroscopic axes
+        #In order of fastest to slowest varying, we have
+        #time, voltage, field
 
-        full_spect_val = np.copy(excit_wfm).repeat(num_time_steps)
+        time_vec = np.linspace(0, parm_dict['IO_time'], num_time_steps)
 
-        spec_dims = Dimension('Bias', 'V', full_spect_val)
+        field_vec = np.array([0,1])
+
+        spec_dims = [Dimension ('Time', 's', time_vec), Dimension('Bias', 'V', excit_wfm),
+                     Dimension('Field', 'Binary', field_vec)]
+
         pos_dims = [Dimension('Cols', 'nm', parm_dict['grid_num_cols']),
                     Dimension('Rows', 'um', parm_dict['grid_num_rows'])]
 
