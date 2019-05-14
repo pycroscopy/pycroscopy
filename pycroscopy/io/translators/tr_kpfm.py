@@ -145,6 +145,9 @@ class TRKPFMTranslator(Translator):
         #time, voltage, field
 
         time_vec = np.linspace(0, parm_dict['IO_time'], num_time_steps)
+        print('Num time steps: {}'.format(num_time_steps))
+        print('DC Vec size: {}'.format(excit_wfm.shape))
+        print('Spectrogram size: {}'.format(spectrogram_size))
 
         field_vec = np.array([0,1])
 
