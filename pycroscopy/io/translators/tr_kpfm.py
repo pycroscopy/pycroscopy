@@ -138,7 +138,7 @@ class TRKPFMTranslator(Translator):
         #The excit_wfm only has the DC values without any information on cycles, time, etc.
         #What we really need is to add the time component. For every DC step there are some time steps.
 
-        num_time_steps = (spectrogram_size-5) //excit_wfm.size
+        num_time_steps = (spectrogram_size-5) //excit_wfm.size //2 #Need to divide by 2 because it considers on and off field
 
         #There should be three spectroscopic axes
         #In order of fastest to slowest varying, we have
