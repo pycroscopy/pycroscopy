@@ -23,6 +23,7 @@ from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_r
 from pyUSID.io.usi_data import USIDataset
 from pyUSID.processing.comp_utils import get_available_memory
 
+
 class BEodfTranslator(Translator):
     """
     Translates either the Band Excitation (BE) scan or Band Excitation 
@@ -36,6 +37,36 @@ class BEodfTranslator(Translator):
         self.FFT_BE_wave = None
         self.signal_type = None
         self.expt_type = None
+
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = path.abspath(file_path)
+
+        # Check if the data is in the new or old format:
+        data_dir, _ = path.split(file_path)
+        _, base_name = path.split(data_dir)
+        if base_name == 'newdataformat':
+            # Though this translator could also read the files but the NDF Translator is more robust...
+            return False
+
+        _, path_dict = BEodfTranslator._parse_file_path(file_path)
+        if any([x in path_dict.keys() for x in ['parm_txt', 'old_mat_parms',
+                                                'read_real', 'write_real']]):
+            return True
+        else:
+            return False
 
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False, verbose=False):
         """
@@ -538,7 +569,8 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')
 
-    def _parse_file_path(self, data_filepath):
+    @staticmethod
+    def _parse_file_path(data_filepath):
         """
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary
