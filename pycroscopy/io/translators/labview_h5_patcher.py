@@ -31,6 +31,37 @@ class LabViewH5Patcher(Translator):
     def _read_data(self):
         pass
 
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = os.path.abspath(file_path)
+        extension = os.path.splitext(file_path)[1][1:]
+        if extension not in ['h5', 'hdf5']:
+            return False
+        try:
+            h5_f = h5py.File(file_path, 'r+')
+        except:
+            return False
+
+        # TODO: Make this check as lot stronger. Currently brittle
+        if 'DAQ_software_version_name' not in h5_f.attrs.keys():
+            return False
+
+        if len(find_dataset(h5_f, 'Raw_Data')) < 1:
+            return False
+        return True
+
     def translate(self, h5_path, force_patch=False, **kwargs):
         """
         Add the needed references and attributes to the h5 file that are not created by the
