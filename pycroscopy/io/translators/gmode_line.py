@@ -29,6 +29,27 @@ class GLineTranslator(Translator):
         self.num_rows = 1
         self.__bytes_per_row__ = 1
 
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = path.abspath(file_path)
+        _, parm_paths, data_paths = GLineTranslator._parse_file_path(file_path)
+        if len(parm_paths) == 0 or len(data_paths) == 0:
+            return False
+        else:
+            return True
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file

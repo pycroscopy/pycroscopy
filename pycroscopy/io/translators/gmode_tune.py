@@ -29,6 +29,10 @@ class GTuneTranslator(GLineTranslator):
     def __init__(self, *args, **kwargs):
         super(GLineTranslator, self).__init__(*args, **kwargs)
 
+    @staticmethod
+    def is_valid_file(file_path):
+        raise NotImplementedError('This class has not yet implemented the is_valid_file() function')
+
     def translate(self, file_path):
         """
         The main function that translates the provided file into a .h5 file
