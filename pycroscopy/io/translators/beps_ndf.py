@@ -55,6 +55,33 @@ class BEPSndfTranslator(Translator):
         self.pos_units = None
         self.hdf = None
 
+    def is_valid_file(self, file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = path.abspath(file_path)
+
+        # Check if the data is in the new or old format:
+        data_dir, _ = path.split(file_path)
+        _, base_name = path.split(data_dir)
+        if base_name != 'newdataformat':
+            return False
+        parm_filepath, udvs_filepath, parms_mat_path = self._parse_file_path(file_path)
+
+        isBEPS, _ = parmsToDict(parm_filepath)
+        if not isBEPS:
+            return False
+        return True
+
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
         """
         The main function that translates the provided file into a .h5 file
