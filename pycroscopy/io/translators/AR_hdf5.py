@@ -17,6 +17,11 @@ from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_
 if sys.version_info.major == 3:
     unicode = str
 
+# Translator Information
+# ----------------------
+translator_name = 'ARHDF5'
+description = 'Asylum Research HDF5 file typically used for storing spatial maps of force-distance curves'
+
 
 class ARhdf5(Translator):
     '''
@@ -48,6 +53,35 @@ class ARhdf5(Translator):
         self.map_size = {'X':0, 'Y':0}
         self.channels_name = []
         self.points_per_sec = None
+
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = os.path.abspath(file_path)
+        extension = os.path.splitext(file_path)[1][1:]
+        if extension not in ['hdf5', 'h5']:
+            return False
+        try:
+            h5_f = h5py.File(file_path, 'r')
+        except:
+            return False
+        if 'ForceMap' not in h5_f.keys():
+            return False
+        if not isinstance(h5_f['ForceMap'], h5py.Group):
+            return False
+        # We could keep going but this may be sufficient for now.
+        return True
         
     def translate(self, data_filepath, out_filename, verbose=False, debug=False):
         '''
