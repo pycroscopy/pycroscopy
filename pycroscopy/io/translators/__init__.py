@@ -25,7 +25,7 @@ from .time_series import MovieTranslator
 from .bruker_afm import BrukerAFMTranslator
 from .beps_data_generator import FakeBEPSGenerator
 from .labview_h5_patcher import LabViewH5Patcher
-from .nanonis import NanonisTranslator
+from .nanonis import NanonisTranslator, NanonisTranslatorCorrect
 from .image import ImageTranslator
 from .pifm import PiFMTranslator
 from .gwyddion import GwyddionTranslator
@@ -44,7 +44,7 @@ gmode_translators = [GDMTranslator, GIVTranslator, GLineTranslator, GTuneTransla
 
 afm_translators = [IgorIBWTranslator, PiFMTranslator, BrukerAFMTranslator, GwyddionTranslator]
 
-stm_translators = [NanonisTranslator, AscTranslator]
+stm_translators = [NanonisTranslatorCorrect, AscTranslator]
 
 stem_translators = [NDataTranslator, OneViewTranslator]
 

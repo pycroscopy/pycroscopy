@@ -4,41 +4,34 @@ from __future__ import (division, print_function, absolute_import,
                         unicode_literals)
 
 import os
+from warnings import warn
 import numpy as np
 import h5py
 from pyUSID.io.hdf_utils import (create_indexed_group, write_main_dataset,
                                  write_simple_attrs, Dimension,
                                  write_ind_val_dsets)
 from pyUSID.io.translator import Translator
-from pyUSID.io.write_utils import get_aux_dset_slicing
 from .df_utils.nanonis_utils import read_nanonis_file
 # TODO: Adopt any missing features from https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py
 
 
-class NanonisTranslator(Translator):
+class NanonisTranslatorCorrect(Translator):
     """
     Translator for Nanonis data files.
 
     This translator provides method to translate Nanonis data files
     (3ds, sxm, and dat) into Pycroscopy compatible HDF5 files.
 
-    Parameters
-    ----------
-    filepath : str
-       Path to the input data file.
     """
-    def __init__(self, filepath, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(Translator, self).__init__(*args, **kwargs)
 
-        filepath = os.path.abspath(filepath)
-        folder, basename = self._parse_file_path(filepath)
-
-        self.data_path = filepath
-        self.folder = folder
-        self.basename = basename
+        self.data_path = None
+        self.folder = None
+        self.basename = None
         self.parm_dict = None
         self.data_dict = None
-        self.h5_path = os.path.join(folder, basename + '.h5')
+        self.h5_path = None
 
     def get_channels(self):
         """
@@ -58,12 +51,14 @@ class NanonisTranslator(Translator):
 
         return
 
-    def translate(self, data_channels=None, verbose=False):
+    def translate(self, filepath, data_channels=None, verbose=False):
         """
         Translate the data into a Pycroscopy compatible HDF5 file.
 
         Parameters
         ----------
+        filepath : str
+            Path to the input data file.
         data_channels : (optional) list of str
             Names of channels that will be read and stored in the file.
             If not given, all channels in the file will be used.
@@ -76,6 +71,14 @@ class NanonisTranslator(Translator):
             Filepath to the output HDF5 file.
 
         """
+        filepath = os.path.abspath(filepath)
+        folder, basename = self._parse_file_path(filepath)
+
+        self.data_path = filepath
+        self.folder = folder
+        self.basename = basename
+        self.h5_path = os.path.join(folder, basename + '.h5')
+
         if self.parm_dict is None or self.data_dict is None:
             self._read_data(self.data_path)
 
@@ -369,3 +372,47 @@ class NanonisTranslator(Translator):
         (basename, _) = os.path.splitext(basename)
 
         return folder_path, basename
+
+
+class NanonisTranslator(NanonisTranslatorCorrect):
+
+    def __init__(self, filepath, *args, **kwargs):
+        """
+        Instantiates the translator class
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the input data file.
+        args
+        kwargs
+        """
+        super(NanonisTranslator, self).__init__(*args, **kwargs)
+        warn(
+            'In the future, you will need to pass the file path to the "translate()" function instead of here',
+            FutureWarning)
+        self.data_path = filepath
+
+    def translate(self, data_channels=None, verbose=False):
+        """
+        Translate the data into a Pycroscopy compatible HDF5 file.
+
+        Parameters
+        ----------
+        filepath : str
+            Path to the input data file.
+        data_channels : (optional) list of str
+            Names of channels that will be read and stored in the file.
+            If not given, all channels in the file will be used.
+        verbose : (optional) Boolean
+            Whether or not to print statements
+
+        Returns
+        -------
+        h5_path : str
+            Filepath to the output HDF5 file.
+
+        """
+        return super(NanonisTranslator, self).translate(self.data_path,
+                                                        data_channels=data_channels,
+                                                        verbose=verbose)
