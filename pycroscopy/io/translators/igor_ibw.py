@@ -22,6 +22,28 @@ class IgorIBWTranslator(Translator):
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
 
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        bool : Whether or not this translator can read this file
+        """
+        file_path = path.abspath(file_path)
+        extension = path.splitext(file_path)[1][1:]
+        if extension == 'ibw':
+            # This should be sufficient I think.
+            return True
+        else:
+            return False
+
     def translate(self, file_path, verbose=False, append_path='', 
                   grp_name='Measurement', parm_encoding='utf-8'):
         """
