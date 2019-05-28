@@ -62,6 +62,9 @@ class BEodfTranslator(Translator):
             return False
 
         _, path_dict = BEodfTranslator._parse_file_path(file_path)
+        if any([x.find('bigtime_0') > 0 and x.endswith('.dat') for x in path_dict.values()]):
+            # This is a G-mode Line experiment:
+            return False
         if any([x in path_dict.keys() for x in ['parm_txt', 'old_mat_parms',
                                                 'read_real', 'write_real']]):
             return True
