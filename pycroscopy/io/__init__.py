@@ -13,7 +13,7 @@ Submodules
 """
 from . import translators
 from .translators import *
-from .ingestor import load
+from .ingestor import ingest
 from .hdf_writer import HDFwriter
 from .virtual_data import VirtualDataset, VirtualGroup, VirtualData
 

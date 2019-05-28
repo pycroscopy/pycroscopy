@@ -12,7 +12,23 @@ from warnings import warn
 from .translators import all_translators
 
 
-def load(file_path, *args, verbose=False, **kwargs):
+def ingest(file_path, *args, verbose=False, **kwargs):
+    """
+    Translates raw data file(s) in proprietary file formats into a h5USID file
+
+    Parameters
+    ----------
+    file_path : str
+        Path to raw data file(s)
+    args : Arguments that will be passed on to the translator
+    verbose : bool, Optional. Default = False
+        Whether or not to print print statements for debugging
+    kwargs
+
+    Returns
+    -------
+
+    """
     valid_translators = []
 
     for trans_class in all_translators:
