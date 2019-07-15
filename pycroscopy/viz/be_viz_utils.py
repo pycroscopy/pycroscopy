@@ -1709,3 +1709,272 @@ def plot_histograms(p_hist, p_hbins, title, figure_path=None):
         plt.savefig(figure_path, format='png')
 
     return fig
+
+
+def show(img, cmap = 'plasma', colorbar = True):
+    """Displays image with colorbar."""
+    imgstd = img.std()
+    imgmean = img.mean()
+    ll = imgmean - (2*imgstd)
+    ul = imgmean + (2*imgstd)
+    # for i in range(img.shape[0]):
+    #     for j in range(img.shape[1]):
+    #         if np.logical_or((img[i, j] < ll), (img[i, j] > ul)):
+    #             img[i, j] = imgmean
+    # img = np.array(img)
+    fig = plt.imshow(img, cmap=cmap)
+    plt.clim(ll,ul)
+    fig.axes.get_xaxis().set_visible(False)
+    fig.axes.get_yaxis().set_visible(False)
+    if colorbar == True:
+        plt.colorbar()
+    return
+
+
+def SHOfunc(parms, w_vec):
+    """
+    Generates the SHO response over the given frequency band
+    Parameters
+    -----------
+    parms : list or tuple
+        SHO parae=(A,w0,Q,phi)
+    w_vec : 1D numpy array
+        Vector of frequency values
+    """
+    return parms[0] * np.exp(1j * parms[3]) * parms[1] ** 2 / \
+           (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
+
+def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensitivity=1, phase_offset=0,
+              starts_with="write", fit_method='Exponential'):
+    """
+    :param berelaxfit: dataset from berelaxfit fit process class
+    :param bias_ind: bias step within relaxation measurement, integer
+    :param t_time: time step within relaxation measurement, integer
+    :param x_col:  display relaxation spectrum at this x index
+    :param h_row: display relaxation spectrum at this y index
+    :param sensitivity: tip sensitivity for converting signal to pm
+    :param phase_offset: phase offset for measurement
+    :param starts_with: 'write' or 'read' step
+    :param fit_method: can be 'Exponential' 'Double_Exp' or 'Logistic'
+    :return: along with widgets will produce an interactive graphic to explore data; see jupyter notebook for example
+    shows raw PFM data along with fit, bias as function of time, SHO fitted phase + amplitude,
+    Raw phase + amplitude, and fitted time constant and amplitude.
+    """
+    # experimental parameters needed for visualization
+    fit_method = fit_method
+    raw_data = usid.USIDataset(berelaxfit.parent.parent.parent['Raw_Data'])
+    no_freq = raw_data.spec_dim_sizes[0]
+    # freq_vals = raw_data.get_spec_values('Frequency')
+    #seems there is a bug in the acquisition software; should not
+    #need to specify no_freq below when printing raw data,
+    #the size of the frequency dimension is 49, but when calling
+    #the freqeuncy values, a list of len 17k is provided
+    freq_vals = raw_data.h5_spec_vals[0,:no_freq]
+    raw_data_pos_sizes = raw_data.pos_dim_sizes
+    x_length = raw_data_pos_sizes[0]
+    y_length = raw_data_pos_sizes[1]
+    raw_phase = np.angle(raw_data[:, :])
+    raw_amp = abs(raw_data[:, :])
+    sho_fit = usid.USIDataset(berelaxfit.parent.parent['Fit'])
+    sho_phase = sho_fit['Phase [rad]'].reshape(x_length, y_length, -1)
+    sho_amplitude = sho_fit['Amplitude [V]'].reshape(x_length, y_length, -1)
+    sho_frequency = sho_fit['Frequency [Hz]'].reshape(x_length, y_length, -1)
+    sho_quality_factor = sho_fit['Quality Factor'].reshape(x_length, y_length, -1)
+    mixed_signal = sho_fit['Amplitude [V]']*sensitivity* np.cos(sho_fit['Phase [rad]']+phase_offset)
+    mixed_signal_reshape = mixed_signal.reshape(x_length, y_length, -1)
+    no_read_steps = berelaxfit.parent.parent.parent.parent.attrs['VS_num_meas_per_read_step']
+    no_write_steps = berelaxfit.parent.parent.parent.parent.attrs['VS_num_meas_per_write_step']
+    time_elapsed_per_step = berelaxfit.parent.parent.parent.parent.attrs['BE_pulse_duration_[s]']
+    tot_time_elapsed_read = (no_read_steps) * time_elapsed_per_step
+    time_axis = np.arange(0, tot_time_elapsed_read, step=time_elapsed_per_step)
+    all_dc_offset_values = sho_fit.h5_spec_vals[1, np.argwhere(sho_fit.h5_spec_inds[0] == 0)]
+    # no of rs spectra is the number of times pulse repeats. 0 = start of new pulse
+    no_rs_spectra = int(len(np.argwhere(sho_fit.h5_spec_inds[0, :] == 0))/2)
+    total_time_steps = no_read_steps + no_write_steps
+    dc_offset_nonzero = np.nonzero(all_dc_offset_values)[0]
+    dc_offset_expand = sho_fit.h5_spec_vals[1, :]
+    all_inds_split = np.array_split(np.arange(0, len(dc_offset_expand), step=1), no_rs_spectra)
+    read_inds_split = []
+    if starts_with == 'write':
+        for i in range(no_rs_spectra):
+            read_inds_split.append(all_inds_split[i][no_write_steps:])
+            #write_dc_offset_values = [sho_fit.h5_spec_vals[1, np.argwhere(sho_fit.h5_spec_vals[0] == 0)]]
+            write_dc_offset_values = all_dc_offset_values[::2]
+        if type(write_dc_offset_values) == np.float32:
+            write_dc_offset_values = [write_dc_offset_values]
+
+    if starts_with == 'read':
+        for i in range(no_rs_spectra):
+            read_inds_split.append(all_inds_split[i][:-int(no_write_steps)])
+            write_dc_offset_values = sho_fit.h5_spec_vals[1, np.argwhere(sho_fit.h5_spec_vals[0] == no_read_steps)]
+        if type(write_dc_offset_values) == np.float32:
+            write_dc_offset_values = [write_dc_offset_values]
+    raw_phase_reshape = raw_phase.reshape((x_length, y_length, total_time_steps, no_freq))
+    raw_amp_reshape = raw_amp.reshape((x_length,y_length, total_time_steps, no_freq))
+
+    if fit_method == 'Exponential':
+        amp_fit_reshape = berelaxfit['Amplitude [pm]'].reshape(x_length, y_length, -1)
+        tau_fit_reshape = berelaxfit['Time_Constant [s]'].reshape(x_length, y_length, -1)
+        offset_fit_reshape = berelaxfit['Offset [pm]'].reshape(x_length, y_length, -1)
+
+    if fit_method == 'Double_Exp':
+        amp1_fit_reshape = berelaxfit['Amplitude [pm]'].reshape(x_length, y_length, -1)
+        tau1_fit_reshape = berelaxfit['Time_Constant [s]'].reshape(x_length, y_length, -1)
+        amp2_fit_reshape = berelaxfit['Amplitude 2 [pm]'].reshape(x_length, y_length, -1)
+        tau2_fit_reshape = berelaxfit['Time_Constant 2 [s]'].reshape(x_length, y_length, -1)
+        offset_fit_reshape = berelaxfit['Offset [pm]'].reshape(x_length, y_length, -1)
+
+    if fit_method == 'Logistic':
+        A_reshape = berelaxfit['A'].reshape(x_length, y_length, -1)
+        K_reshape = berelaxfit['K'].reshape(x_length, y_length, -1)
+        B_reshape = berelaxfit['B'].reshape(x_length, y_length, -1)
+        v_reshape = berelaxfit['v'].reshape(x_length, y_length, -1)
+        Q_reshape = berelaxfit['Q'].reshape(x_length, y_length, -1)
+        C_reshape = berelaxfit['C'].reshape(x_length, y_length, -1)
+
+    #first plot shared plotting calls
+    font = {'family': 'DejaVu Sans',
+            'weight': 'bold',
+            'size': 18}
+    plt.rc('font', **font)
+    plt.figure(1, figsize=(18, 12))
+
+    plt.subplot(421)
+    # if time index IN values of bias key
+    if t_time in read_inds_split[bias_ind]:
+        print('Time slice {} is in specified RS spectrum.'.format(t_time), 'Time was unchanged')
+        plt.plot(time_axis,
+                 mixed_signal_reshape[x_col, h_row, read_inds_split[bias_ind]],
+                 'ro')
+    # if time index NOT IN values of bias key
+    if t_time not in read_inds_split[bias_ind]:
+        print('time slice {} was not in specified RS spectrum'.format(t_time))
+        t_time = read_inds_split[bias_ind][0]
+        print('changed time slice to {}'.format(t_time))
+        plt.plot(time_axis,
+                 mixed_signal_reshape[x_col, h_row, read_inds_split[bias_ind]],
+                 'ro')
+    plt.title('Response at ({},{}) after {} V'.format(x_col, h_row, write_dc_offset_values[bias_ind]))
+    plt.xlabel('Time Elapsed (s)')
+    plt.ylabel('Response (pm)')
+
+    # regardless of fit, parameter extraction and sho curve calc should be same
+    params = (sho_amplitude[x_col, h_row, t_time], sho_frequency[x_col, h_row, t_time],
+              sho_quality_factor[x_col, h_row, t_time], sho_phase[x_col, h_row, t_time])
+    sho_curve = np.array(SHOfunc(params, freq_vals))
+
+    if fit_method == 'Exponential':
+        from ..analysis.fit_methods import exp
+        a = amp_fit_reshape[x_col, h_row, bias_ind]
+        t = tau_fit_reshape[x_col, h_row, bias_ind]
+        c = offset_fit_reshape[x_col, h_row, bias_ind]
+        plt.plot(time_axis, exp(time_axis, a, t, c))
+
+        plt.subplot(427)
+        plt.title('Fitted Time Constant ({} V)'.format(write_dc_offset_values[bias_ind]))
+        tau_fit = tau_fit_reshape[:, :, bias_ind]
+        tau_fitstd = tau_fit.std()
+        tau_fitmean = tau_fit.mean()
+        ll = tau_fitmean - (2 * tau_fitstd)
+        ul = tau_fitmean + (2 * tau_fitstd)
+        for i in range(tau_fit.shape[0]):
+            for j in range(tau_fit.shape[1]):
+                if np.logical_or((tau_fit[i, j] < ll), (tau_fit[i, j] > ul)):
+                    tau_fit[i, j] = np.nan
+        tau_fit = np.array(tau_fit)
+        show(tau_fit)
+
+        plt.subplot(428)
+        plt.title('SHO Phase at time step {}'.format(t_time))
+        show(sho_fit['Phase [rad]'].reshape(x_length, y_length, -1)[:, :, t_time])
+        plt.axvline(x=x_col, color='k')
+        plt.axhline(y=h_row, color='k')
+
+    if fit_method == 'Double_Exp':
+        from ..analysis.fit_methods import double_exp
+        amp1 = amp1_fit_reshape[x_col, h_row, bias_ind]
+        tau1 = tau1_fit_reshape[x_col, h_row, bias_ind]
+        amp2 = amp2_fit_reshape[x_col, h_row, bias_ind]
+        tau2 = tau2_fit_reshape[x_col, h_row, bias_ind]
+        c = offset_fit_reshape[x_col, h_row, bias_ind]
+        plt.plot(time_axis, double_exp(time_axis, amp1, tau1, amp2, tau2, c))
+
+        plt.subplot(427)
+        plt.title('A Fitted Time Constant ({} V)'.format(write_dc_offset_values[bias_ind]))
+        tau2_fit = tau2_fit_reshape[:, :, bias_ind]
+        tau2_fitstd = tau2_fit.std()
+        tau2_fitmean = tau2_fit.mean()
+        ll = tau2_fitmean - (2 * tau2_fitstd)
+        ul = tau2_fitmean + (2 * tau2_fitstd)
+        for i in range(tau2_fit.shape[0]):
+            for j in range(tau2_fit.shape[1]):
+                if np.logical_or((tau2_fit[i, j] < ll), (tau2_fit[i, j] > ul)):
+                    tau2_fit[i, j] = np.nan
+        tau2_fit = np.array(tau2_fit)
+        show(tau2_fit)
+
+        plt.subplot(428)
+        plt.title('Amplitude at ({} V)'.format(write_dc_offset_values[bias_ind]))
+        amp1_fit = amp1_fit_reshape[:, :, bias_ind]
+        amp1_fitstd = amp1_fit.std()
+        amp1_fitmean = amp1_fit.mean()
+        ll = amp1_fitmean - (2 * amp1_fitstd)
+        ul = amp1_fitmean + (2 * amp1_fitstd)
+        for i in range(amp1_fit.shape[0]):
+            for j in range(amp1_fit.shape[1]):
+                if np.logical_or((amp1_fit[i, j] < ll), (amp1_fit[i, j] > ul)):
+                    amp1_fit[i, j] = np.nan
+        amp1_fit = np.array(amp1_fit)
+        show(amp1_fit)
+        # show(amp1_fit_reshape[:, :, bias_ind])
+        plt.axvline(x=x_col, color='k')
+        plt.axhline(y=h_row, color='k')
+
+    if fit_method == 'Logistic':
+        from ..analysis.fit_methods import sigmoid
+        A = A_reshape[x_col, h_row, bias_ind]
+        K = K_reshape[x_col, h_row, bias_ind]
+        B = B_reshape[x_col, h_row, bias_ind]
+        v = v_reshape[x_col, h_row, bias_ind]
+        Q = Q_reshape[x_col, h_row, bias_ind]
+        C = C_reshape[x_col, h_row, bias_ind]
+        plt.plot(time_axis, sigmoid(time_axis, A, K, B, v, Q, C))
+
+    plt.subplot(422)
+    plt.title('Time Steps & Bias for Response Curve')
+    plt.plot(dc_offset_expand, 'o')
+    plt.axvspan(xmin=read_inds_split[bias_ind].min(), xmax=read_inds_split[bias_ind].max() + 1, alpha=0.1)
+    plt.xlabel('Time Step (a.u.)')
+    plt.ylabel('Bias (V)')
+
+    plt.subplot(423)
+    plt.title('SHO Fitted Phase ({} V)'.format(
+        write_dc_offset_values[bias_ind]))  # after applying {} V'.format(write_dc_offset_values[bias_ind]))
+    plt.plot(time_axis, sho_fit['Phase [rad]'].reshape(x_length, y_length, -1)[x_col, h_row,
+                                                                               read_inds_split[bias_ind]], 'ro')
+    plt.xlabel('Time Elapsed (s)')
+
+    plt.subplot(424)
+    plt.title('Raw Phase')
+    plt.title('Raw Phase at time step{}'.format(t_time))
+    plt.plot(freq_vals, raw_phase_reshape[x_col, h_row, t_time, :], 'ro')
+    plt.plot(freq_vals, np.angle(sho_curve), 'g-')
+    plt.xlabel('Frequency')
+
+    if fit_method == 'Exponential' or 'Double_Exp':
+        plt.subplot(425)
+        plt.title('SHO Fitted AMPLITUDE ({} V)'.format(
+            write_dc_offset_values[bias_ind]))  # after applying {} V'.format(write_dc_offset_values[bias_ind]))
+        plt.plot(time_axis, sho_fit['Amplitude [V]'].reshape(x_length, y_length, -1)[x_col, h_row,
+                                                                                     read_inds_split[bias_ind]], 'go')
+        plt.axvline(x=t_time * time_elapsed_per_step, color='orange')
+        plt.xlabel('Time Elapsed (s)')
+
+        plt.subplot(426)
+        plt.title('Raw Amp at time step {}'.format(t_time))
+        plt.plot(freq_vals, raw_amp_reshape[x_col, h_row, t_time, :], 'go')
+        plt.plot(freq_vals, np.abs(sho_curve), 'b-')
+        plt.xlabel('Frequency')
+
+    plt.tight_layout()
+    plt.show()
