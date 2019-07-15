@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 """
+A USID wrapper around :module:`sklearn.decomposition` to facilitate the reading, writing, reformatting of USID data
+for decomposition algorithms
+
 Created on Tue Jan 05 07:55:56 2016
 
 @author: Suhas Somnath, Chris Smith
@@ -22,19 +25,22 @@ from pyUSID import USIDataset
 
 class Decomposition(Process):
     """
-    Pycroscopy wrapper around the sklearn.decomposition classes
+    This class provides a file-wrapper around :module:`sklearn.decomposition` objects. In other words, it extracts and then
+    reformats the data present in the provided :class:`pyUSID.USIDataset` object, performs the decomposition operation
+    using the provided :class:`sklearn.decomposition` object, and writes the results back to the USID HDF5 file after
+    formatting the results in an USID compliant manner.
     """
 
     def __init__(self, h5_main, estimator):
         """
-        Uses the provided (preconfigured) Decomposition object to 
-        decompose the provided dataset
+        Constructs the Decomposition object. Call the :meth:`~pycroscopy.processing.Decomposition.test()` and
+        :meth:`~pycroscopy.processing.Decomposition.compute()` methods to run the decomposition
         
         Parameters
         ------------
-        h5_main : HDF5 dataset object
-            Main dataset with ancillary spectroscopic, position indices and values datasets
-        estimator : sklearn.cluster estimator object
+        h5_main : :class:`pyUSID.USIDataset` object
+            USID Main HDF5 dataset with embedded ancillary spectroscopic, position indices and values datasets
+        estimator : :module:`sklearn.decomposition` object
             configured decomposition object to apply to the data
         """
         
@@ -81,7 +87,8 @@ class Decomposition(Process):
     def test(self, override=False):
         """
         Decomposes the hdf5 dataset to calculate the components and projection. This function does NOT write results to
-        the hdf5 file. Call compute() to  write to the file. Handles complex, compound datasets such that the
+        the hdf5 file. Call :meth:`~pycroscopy.processing.Decomposition.compute()` to  write to the file. Handles
+        complex, compound datasets such that the
         components are of the same data-type as the input matrix.
 
         Parameters
@@ -91,9 +98,9 @@ class Decomposition(Process):
 
         Returns
         -------
-        components : numpy array
+        components : :class:`numpy.ndarray`
             Components
-        projections : numpy array
+        projections : :class:`numpy.ndarray`
             Projections
         """
         if not override:
@@ -140,8 +147,11 @@ class Decomposition(Process):
 
     def compute(self, override=False):
         """
-        Decomposes the hdf5 dataset to calculate the components and projection (by calling test() if it hasn't already
-        been called), and writes the results back to the hdf5 file
+        Decomposes the hdf5 dataset and calculates mean response for each cluster (does not recompute if already computed
+        via :meth:`~pycroscopy.processing.Decomposition.test()`) and writes the labels and mean response back to the h5 file.
+
+        Consider calling :meth:`~pycroscopy.processing.Decomposition.test()` to check results before writing to file.
+        Results are deleted from memory upon writing to the HDF5 file
 
         Parameters
         ----------
@@ -150,7 +160,7 @@ class Decomposition(Process):
 
         Returns
         -------
-        h5_group : HDF5 Group reference
+        h5_group : :class:`h5py.Group` reference
             Reference to the group that contains the decomposition results
         """
         if self.__components is None and self.__projection is None:
@@ -208,7 +218,7 @@ class Decomposition(Process):
         h5_decomp_group = create_results_group(self.h5_main, self.process_name)
         write_simple_attrs(h5_decomp_group, self.parms_dict)
         write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
-                                             'n_samples': self.h5_main.shape[0], 'last_pixel': self.h5_main.shape[0]})
+                                             'n_samples': self.h5_main.shape[0]})
 
         decomp_desc = Dimension('Endmember', 'a. u.', self.__components.shape[0])
 
@@ -226,4 +236,12 @@ class Decomposition(Process):
 
         # return the h5 group object
         self.h5_results_grp = h5_decomp_group
+
+        # Marking completion:
+        self._status_dset_name = 'completed_positions'
+        self._h5_status_dset = h5_decomp_group.create_dataset(self._status_dset_name,
+                                                              data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
+        # keeping legacy option:
+        h5_decomp_group.attrs['last_pixel'] = self.h5_main.shape[0]
+
         return self.h5_results_grp

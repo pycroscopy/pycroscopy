@@ -3,19 +3,54 @@ import numpy as np
 from pyUSID.io.translator import Translator
 from pyUSID.io import write_utils
 from pyUSID import USIDataset
+import pyUSID as usid
+import h5py
 
 class PiFMTranslator(Translator):
     """
     Class that writes images, spectrograms, point spectra and associated ancillary data sets to h5 file in pyUSID data
     structure.
     """
-    def __init__(self, path=None):
-        self.path = path
-#        super(HyperspectralTranslator, self).__init__(*args, **kwargs)
 
-    def get_path(self):
+    def translate(self, path, append_path='', grp_name='Measurement'):
+        """
+        Parameters
+        ----------
+        file_path : String / unicode
+            Absolute path of the .ibw file
+        verbose : Boolean (Optional)
+            Whether or not to show  print statements for debugging
+        append_path : string (Optional)
+            h5_file to add these data to, must be a path to the h5_file on disk
+        parm_encoding : str, optional
+            Codec to be used to decode the bytestrings into Python strings if needed.
+            Default 'utf-8'
+
+        Returns
+        -------
+        h5_path : String / unicode
+            Absolute path of the .h5 file
+        """
+        self.get_path(path)
+        self.read_anfatec_params()
+        self.read_file_desc()
+        self.read_spectrograms()
+        self.read_imgs()
+        self.read_spectra()
+        self.make_pos_vals_inds_dims()
+        self.create_hdf5_file(append_path, grp_name)
+        self.write_spectrograms()
+        self.write_images()
+        self.write_spectra()
+        
+        return self.h5_f
+
+
+    def get_path(self, path):
         """writes full path, directory, and file name as attributes to class"""
         # get paths/get params dictionary, img/spectrogram/spectrum descriptions
+        
+        self.path = path
         full_path = os.path.realpath(self.path)
         directory = os.path.dirname(full_path)
         # file name
@@ -149,16 +184,26 @@ class PiFMTranslator(Translator):
                     usid.write_utils.Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
         self.pos_ind, self.pos_val, self.pos_dims = pos_ind, pos_val, pos_dims
 
-    def create_hdf5_file(self):
-        h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
-        try:
-            self.h5_f = h5py.File(h5_path, mode='w')
-        #if file already exists. (maybe there is a better way to check for this)
-        except OSError:
-            self.h5_f = h5py.File(h5_path, mode='r+')
-        self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+    def create_hdf5_file(self, append_path='', grp_name='Measurement'):
+        if not append_path:
+            h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
+            if os.path.exists(h5_path):
+                raise FileExistsError
+            #if file already exists. (maybe there is a better way to check for this)
+            else:
+                self.h5_f = h5py.File(h5_path, mode='w')
+
+        else:
+            if not os.path.exists(append_path):
+                raise Exception('File does not exist. Check pathname.')
+            self.h5_f = h5py.File(append_path, mode='r+')
+
+        self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)
+        
         usid.hdf_utils.write_simple_attrs(self.h5_meas_grp, self.params_dictionary)
 
+        return
+    
     def write_spectrograms(self):
         if bool(self.spectrogram_desc):
             for spectrogram_f, descriptors in self.spectrogram_desc.items():
@@ -288,19 +333,3 @@ class PiFMTranslator(Translator):
                                                                             'YLoc': descriptors[1]})
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 
-    def translate(self):
-        """
-        :return: h5 file.
-        """
-        self.get_path()
-        self.read_anfatec_params()
-        self.read_file_desc()
-        self.read_spectrograms()
-        self.read_imgs()
-        self.read_spectra()
-        self.make_pos_vals_inds_dims()
-        self.create_hdf5_file()
-        self.write_spectrograms()
-        self.write_images()
-        self.write_spectra()
-        return self.h5_f

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+USID utilities for performing randomized singular value decomposition and reconstructing results
+
 Created on Mon Mar 28 09:45:08 2016
 
 @author: Suhas Somnath, Chris Smith
@@ -17,17 +19,35 @@ from .proc_utils import get_component_slice
 from pyUSID.io.hdf_utils import find_results_groups, get_indices_for_region_ref, \
     create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs, create_indexed_group
-from pyUSID.io.io_utils import get_available_memory, format_time
+from pyUSID.processing.comp_utils import get_available_memory
+from pyUSID.io.io_utils import format_time
 from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID import USIDataset
 
 
 class SVD(Process):
+    """
+    This class provides a file-wrapper around the :meth:`sklearn.utils.extmath.randomized_svd` function.
+    In other words, it extracts and then reformats the data present in the provided :class:`pyUSID.USIDataset` object,
+    performs the randomized SVD operation and writes the results back to the USID HDF5 file after
+    formatting the results in an USID compliant manner.
+    """
 
-    def __init__(self, h5_main, num_components=None):
+    def __init__(self, h5_main, num_components=None, **kwargs):
+        """
+        Perform the SVD decomposition on the selected dataset and write the results to h5 file.
 
-        super(SVD, self).__init__(h5_main)
+        Parameters
+        ----------
+        h5_main : :class:`pyUSID.USIDataset` object
+            USID Main HDF5 dataset that will be decomposed
+        num_components : int, optional
+            Number of components to decompose h5_main into.  Default None.
+        kwargs
+            Arguments to be sent to Process
+        """
+        super(SVD, self).__init__(h5_main, **kwargs)
         self.process_name = 'SVD'
 
         '''
@@ -42,7 +62,12 @@ class SVD(Process):
             num_components = min(n_samples, n_features)
         else:
             num_components = min(n_samples, n_features, num_components)
+
         self.num_components = num_components
+
+        # Check that we can actually compute the SVD with the selected number of components
+        self._check_available_mem()
+
         self.parms_dict = {'num_components': num_components}
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
@@ -66,11 +91,11 @@ class SVD(Process):
 
         Returns
         -------
-        U : numpy.ndarray
+        U : :class:`numpy.ndarray`
             Abundance matrix
-        S : numpy.ndarray
+        S : :class:`numpy.ndarray`
             variance vector
-        V : numpy.ndarray
+        V : :class:`numpy.ndarray`
             eigenvector matrix
         """
         '''
@@ -124,8 +149,8 @@ class SVD(Process):
 
         Returns
         -------
-         h5_results_grp : h5py.Datagroup object
-            Datagroup containing all the results
+         h5_results_grp : :class:`h5py.Group`  object
+            HDF5 Group containing all the results
         """
         if self.__u is None and self.__v is None and self.__s is None:
             self.test(override=override)
@@ -160,7 +185,7 @@ class SVD(Process):
         self.h5_results_grp = h5_svd_group
 
         write_simple_attrs(h5_svd_group, self.parms_dict)
-        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized', 'last_pixel': self.h5_main.shape[0]})
+        write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized'})
 
         h5_u = write_main_dataset(h5_svd_group, np.float32(self.__u), 'U', 'Abundance', 'a.u.', None, comp_dim,
                                   h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
@@ -190,6 +215,51 @@ class SVD(Process):
 
             h5_v.attrs[key] = svd_ref
 
+        # Marking completion:
+        self._status_dset_name = 'completed_positions'
+        self._h5_status_dset = h5_svd_group.create_dataset(self._status_dset_name,
+                                                           data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
+        # keeping legacy option:
+        h5_svd_group.attrs['last_pixel'] = self.h5_main.shape[0]
+
+    def _check_available_mem(self):
+        """
+        Check that there is enough memory to perform the SVD decomposition.
+
+        Returns
+        -------
+        sufficient_mem : bool
+            True is enough memory found, False otherwise.
+
+        """
+        if self.verbose:
+            print('Checking memory availability.')
+        n_samples, n_features = self.h5_main.shape
+        s_mem_per_comp = np.float32(0).itemsize
+        u_mem_per_comp = np.float32(0).itemsize * n_samples
+        v_mem_per_comp = self.h5_main.dtype.itemsize * n_features
+
+        mem_per_comp = s_mem_per_comp + u_mem_per_comp + v_mem_per_comp
+        avail_mem = 0.75 * self._max_mem_mb * 1024 ** 2
+        free_mem = avail_mem - self.h5_main.__sizeof__()
+
+        if free_mem <= 0:
+            error_message = 'Cannot load main dataset into memory.\n' + \
+                            'Available memory is {}.  Dataset needs {}.'.format(avail_mem,
+                                                                                self.h5_main.__sizeof__())
+            raise MemoryError()
+
+        if self.verbose:
+            print('Memory available for SVD is {}.'.format(free_mem))
+            print('Memory needed per component is {}.'.format(mem_per_comp))
+
+        cant_svd = (free_mem - self.num_components * mem_per_comp) <= 0
+
+        if cant_svd:
+            max_comps = np.floor(free_mem / mem_per_comp, dtype=int)
+            error_message = 'Not enough free memory for performing SVD with requested number of parameters.\n' + \
+                            'Maximum possible parameters is {}.'.format(max_comps)
+            raise MemoryError(error_message)
 
 ###############################################################################
 

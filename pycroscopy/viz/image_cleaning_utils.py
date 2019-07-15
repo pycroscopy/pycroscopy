@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Utilities for visualizing results of imaging cleaning algorithms applied to data
+
+Created on Thu Jan 05 13:29:12 2017
+
+@author: Chris R. Smith
+"""
 import numpy as np
 import scipy
 from matplotlib import pyplot as plt

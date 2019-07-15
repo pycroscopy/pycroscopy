@@ -1,5 +1,5 @@
 """
-Pycroscopy's processing module
+Physics-independent processing of data including machine learning, image processing, and signal filtering.
 
 Submodules
 ----------

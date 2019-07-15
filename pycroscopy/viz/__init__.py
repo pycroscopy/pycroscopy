@@ -1,5 +1,5 @@
 """
-Pycroscopy's visualization module
+Plotting functions and interactive jupyter widgets for scientific applications
 
 Submodules
 ----------

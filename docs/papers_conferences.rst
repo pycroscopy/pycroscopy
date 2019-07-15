@@ -71,11 +71,19 @@ Workshops on pycroscopy
 
 pycroscopy at International conferences
 ---------------------------------------
+2018
+~~~~
+* Nov 27 2018 - `poster at MRS Fall meeting at Boston <https://mrsfall2018.zerista.com/event/member/533555>`_
+* Oct 25 2018 poster - NS-ThP19 - `American Vacuum Society 2018 meeting <https://avs.org/AVS/files/81/81247cc8-682a-48a4-b006-a74bf82dfab9.pdf>`_
 * May 16-18 2018 - Poster at `ORNL Software Expo <https://software.ornl.gov/expo/program>`_
 * May 18 2018 - **Invited** `talk <https://github.com/pycroscopy/pycroscopy/blob/master/docs/USID_pyUSID_pycroscopy.pdf>`_ at `ImageXD <http://www.imagexd.org/programs/imagexd2018/>`_
 * Feb 28 2018 - Webinar on `Jupyter for Supporting a Materials Imaging User Facility (and beyond) <https://www.exascaleproject.org/event/jupyter/>`_. see this `Youtube video <https://www.youtube.com/watch?v=aKah_O5OZdE&t=31m53s>`_
+2017
+~~~~
 * Nov 29 2017 @ 8-10 PM - `Poster <https://mrsfall.zerista.com/event/member/432978>`_ at the Materials Research Society Fall 2017 Meeting
 * Oct 31 2017 @ 6:30 PM - American Vacuum Society conference;  Session: SP-TuP1; `poster 1641 <http://www2.avs.org/symposium2017/Papers/Paper_SP-TuP1.html>`_
 * Aug 8 2017 @ 10:45 AM - Microscopy and Microanalysis conference - `poster <https://www.cambridge.org/core/services/aop-cambridge-core/content/view/C6F6D85EF7367C058B66B4B709AD61ED/S1431927617001805a.pdf/pycroscopy_an_open_source_approach_to_microscopy_and_microanalysis_in_the_age_of_big_data_and_open_science.pdf>`_.
 * Apr 2017 - Lecture on `atom finding <https://physics.appstate.edu/events/aberration-corrected-stem-teaching-machines-and-atomic-forge>`_
+2016
+~~~~
 * Dec 2016 - Poster + `abstract <https://mrsspring.zerista.com/poster/member/85350>`_ at the 2017 Spring Materials Research Society (MRS) conference

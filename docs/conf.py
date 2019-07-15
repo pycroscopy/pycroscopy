@@ -397,6 +397,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
                        'matplotlib': ('https://matplotlib.org/', None),
                        'sklearn': ('http://scikit-learn.org/stable', None),
                        'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
+                       'cv2': ('http://docs.opencv.org/2.4/', None),
+                       'h5py': ('http://docs.h5py.org/en/latest/', None),
+                       'pyUSID': ('https://pycroscopy.github.io/pyUSID/api.html', None),
                        }
 
 #

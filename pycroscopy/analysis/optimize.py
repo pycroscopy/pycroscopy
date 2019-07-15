@@ -1,4 +1,6 @@
 """
+A class and set of utilities that facilitate parallel functional fitting using :module:`scipy.optimize`
+
 Created on 12/15/16 10:08 AM
 @author: Numan Laanait
 """

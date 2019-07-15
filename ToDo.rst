@@ -3,11 +3,11 @@
 Goals
 -------
 
-Immediate
-~~~~~~~~~
+Translators
+~~~~~~~~~~~
 * Swap out remaining usages of ``VirtualData`` + ``HDFWriter`` to ``hdf_utils`` (especially outside ``io.translators``)
-* Test all existing translators and to make sure they still work.
-* Move ``requirements`` to requirements.txt
+
+  * Test all existing translators and to make sure they still work.
 * Gateway translators for SPM:
 
   * ``Gwyddion``:
@@ -39,55 +39,63 @@ Immediate
 
       * This package does `NOT <https://pypi.org/search/?q=anasyspythontools>`_ have a `pypi installer <https://github.com/AnasysInstruments/anasys-python-tools/issues/2>`_
       * This package does not look like it is finished.
-
-* Move ``.core`` out of pycroscopy
-
-  * pycroscopy should import core and alias it for now
-* Embed presentation into "About"
-* Start writing the journal paper!
 * Write plugins to export to pycroscopy HDF5 for ``ImageJ``, and possibly ``Gwyddion``. There are HDF5 plugins already available for ImageJ.
 
-Short-term - by Jul 1 2018
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Ease of use
+~~~~~~~~~~~
+* Extend USIDataset for scientific data types such as an ``PFMDataset`` and add domain specific capabilities.
 
+  * Example - a BEDataset could have functions like ``guess()`` and ``fit()`` that
+    automatically instantiate a ``Fitter`` object and run the guess and fit
+  * Operations such as ``dask_array = bedataset.in_field`` - view of the HDF5 dataset
+  * Perhaps this BEDataset could have properties that link it with children like ``BESHODataset`` which
+    in turn can have properties such as ``loop_parameters`` which happen to be a ``BELoopDataset`` object
+  * Each of these objects will have the capability to tweak the ``visualize()`` function in a manner that makes most sense.
+
+Scalability
+~~~~~~~~~~~
+* Make ``Fitter`` extend ``pyUSID.Process`` in order to enable scalable fitting
+
+  * This will automatically allow BESHOFitter and BELoopFitter to scale on HPCs
+* Chris - ``Image Processing`` must be a subclass of ``Process`` and implement resuming of computation and
+  checking for old (both already handled quite well in ``Process`` itself) - here only because it is used and
+  requested frequently + should not be difficult to restructure.
+
+Outreach
+~~~~~~~~
 * Look into making notebooks for workshops available through `mybinder <https://mybinder.org>`_
-* development of community standards for AFM, STM, STEM, etc.
-* Chris - ``Image Processing`` must be a subclass of ``Process`` and implement resuming of computation and checking for old (both already handled quite well in Process itself) - here only because it is used and requested frequently + should not be difficult to restructure.
 * Clear and obvious examples showing what pycroscopy actually does for people
 
-  * Image cleaning - Chris
-  * Signal Filtering - Suhas
+  * Image cleaning
+  * Signal Filtering
   * Two more examples
 * Upload clean exports of paper notebooks + add notebooks for new papers + add new papers (Sabine + Liam)
+* Explore Azure Notebooks for live tutorials
+
+Software engineering
+~~~~~~~~~~~~~~~~~~~~
+* Move ``requirements`` to requirements.txt
+* Profile code to see where things are slow
 * Update change-log with version numbers / releases instead of pull numbers
 * unit tests for basic data science (``Cluster``, ``SVD``, ``Decomposition``)
-* Add requirements.txt
 * Examples within docs for popular functions
 * Revisit and address as many pending TODOs as possible
-
-Medium-term - by Aug 1 2018
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* Technical poster for pycroscopy
-* Explore Azure Notebooks for live tutorials
-* Notebooks need to be updated to require pycroscopy version
 * Itk for visualization - https://github.com/InsightSoftwareConsortium/itk-jupyter-widgets
-* Use / integrate hyperspy with pycroscopy if it adds enough functionality
+* Look into ``Tasmanian`` (mainly modeling) - Miroslav Stoyanov
 
-Long-term
+Misc
 ~~~~~~~~~~
 * A sister package with the base labview subvis that enable writing pycroscopy compatible hdf5 files. The actual acquisition can be ignored.
 * Consider developing a generic curve fitting class a la `hyperspy <http://nbviewer.jupyter.org/github/hyperspy/hyperspy-demos/blob/master/Fitting_tutorial.ipynb>`_
 * Chris - Demystify analyis / optimize. Use parallel_compute instead of optimize and guess_methods and fit_methods
-* Consistency in the naming of and placement of attributes (chan or meas group) in all translators - Some put attributes in the measurement level, some in the channel level! hyperspy appears to create datagroups solely for the purpose of organizing metadata in a tree structure!
-* Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets. This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
-* Profile code to see where things are slow
+* Consistency in the naming of and placement of attributes (chan or meas group) in all translators -
+  Some put attributes in the measurement level, some in the channel level! hyperspy appears to create
+  groups solely for the purpose of organizing metadata in a tree structure!
+* Batch fitting - need to consider notebooks for batch processing of BELINE and other BE datasets.
+  This needs some thought, but a basic visualizer that allows selection of a file from a list and plotting of the essential graphs is needed.
 
-Back-burner
-~~~~~~~~~~~~
-* Look into ``Tasmanian`` (mainly modeling) - Miroslav Stoyanov
-
-Reogranization
----------------
+Reorganization
+~~~~~~~~~~~~~~
 
 1.  Reorganize code - This is perhaps the last opportunity for major restructuring and renaming.
 

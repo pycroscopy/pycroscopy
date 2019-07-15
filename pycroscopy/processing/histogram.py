@@ -1,4 +1,6 @@
 """
+Utilities for building 2D histograms of spectroscopic data
+
 Created on Mar 1, 2016
 
 @author: Chris Smith -- cmsith55@utk.edu
@@ -8,7 +10,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np
 import sys
 
-if sys.version_info.major == 3 and sys.version_info.minor == 6:
+if sys.version_info.major == 3 and sys.version_info.minor >= 6:
     disable_histogram = True
 else:
     disable_histogram = False

@@ -1,4 +1,8 @@
 """
+Image denoising algorithm based on multivariate statistical analysis approaches as reported in the journal paper:
+"Feature extraction via similarity search: application to atom finding and denoising in electron and scanning probe
+microscopy imaging"
+
 Created on Jun 16, 2016
 
 @author: Chris Smith -- csmith55@utk.edu
@@ -17,7 +21,7 @@ from sklearn.utils import gen_batches
 from pyUSID import USIDataset
 from pyUSID.io.hdf_utils import get_h5_obj_refs, copy_attributes, link_h5_objects_as_attrs, find_results_groups, \
     link_as_main, check_for_old
-from pyUSID.io.io_utils import get_available_memory
+from pyUSID.processing.comp_utils import get_available_memory
 from pyUSID.io.write_utils import make_indices_matrix, get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE, calc_chunks
 from ..io.hdf_writer import HDFwriter
 from ..io.virtual_data import VirtualGroup, VirtualDataset

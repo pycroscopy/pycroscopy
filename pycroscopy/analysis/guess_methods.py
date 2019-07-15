@@ -1,4 +1,6 @@
 """
+functions that provide good initial values for functional fitting of spectroscopic and imaging data
+
 Created on 10/5/16 3:44 PM
 @author: Numan Laanait -- nlaanait@gmail.com
 """

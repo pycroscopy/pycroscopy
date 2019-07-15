@@ -1,5 +1,5 @@
 """
-Pycroscopy's I/O module
+Translators to extract data from custom & proprietary microscope formats and write them to HDF5 files.
 
 Submodules
 ----------

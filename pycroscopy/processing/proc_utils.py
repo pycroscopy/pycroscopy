@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 """
+Utilities that help in processing subsets of datasets
+
 Created on Tue Jan 05 07:55:56 2016
 
 @author: Chris Smith, Suhas Somnath

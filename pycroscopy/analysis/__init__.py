@@ -1,5 +1,5 @@
 """
-Pycroscopy's analysis submodule
+Physical or chemical model-based analysis of data
 
 Submodules
 ----------

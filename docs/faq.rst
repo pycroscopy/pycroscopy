@@ -85,7 +85,9 @@ Traditional graphical interfaces are rather time consuming to develop. Instead, 
 
 What do I do when something is broken?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Often, others may have encountered the same problem and may have brought up a similar issue. Try searching on google and trying out some suggested solutions. If this does not work, raise an ``issue`` `here <https://github.com/pycroscopy/pycroscopy/issues>`_ and one of us will work with you to resolve the problem.
+Often, others may have encountered the same problem and may have brought up a similar issue. Try searching on google and trying out some suggested solutions.
+If this does not work, get in touch with us on our `Google group <https://groups.google.com/forum/#!forum/pycroscopy>`_.
+If something is indeed broken, please raise an ``issue`` `here <https://github.com/pycroscopy/pycroscopy/issues>`_ and one of us will work with you to resolve the problem.
 
 Do I still need to use standard software for plotting figures for papers?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -93,7 +95,8 @@ Not at all. Python has an excellent set of libraries for generating even complic
 
 How can I reference pycroscopy?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Somnath, Suhas, Chris R. Smith, Nouamane Laanait, and Stephen Jesse. Pycroscopy. Computer software. Vers. 0.60.0. Oak Ridge National Laboratory, 01 June 2016. Web. <https://pycroscopy.github.io/pycroscopy/about.html>.
+Please reference our `Arxiv <https://arxiv.org/abs/1903.09515>`_ paper for now.
+This manuscript was submitted to Advanced Structural and Chemical Imaging recently and is currently being peer-reviewed.
 
 Can Pycroscopy read data files from instrument X?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

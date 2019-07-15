@@ -10,13 +10,12 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from os import path, remove, listdir  # File Path formatting
 
 import numpy as np  # For array operations
+import h5py
 from scipy.io import loadmat
 from pyUSID.io.translator import Translator, generate_dummy_main_parms
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
-from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-from ..virtual_data import VirtualGroup, VirtualDataset
-from ..write_utils import build_ind_val_dsets
+from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, \
+    write_simple_attrs, write_main_dataset, create_indexed_group
 
 
 class TRKPFMTranslator(Translator):
@@ -67,7 +66,7 @@ class TRKPFMTranslator(Translator):
         data_lengths = []
 
         while cont_cond:
-            print(count, f.tell())
+            #print(count, f.tell())
             count += 1
 
             data_length = np.fromfile(f, dtype=np.float32, count=1)
@@ -108,6 +107,7 @@ class TRKPFMTranslator(Translator):
 
         f = open(self.file_list[0], 'rb')
         spectrogram_size, count_vals = self._parse_spectrogram_size(f)
+        print("Excitation waveform shape: ", excit_wfm.shape)
         print("spectrogram size:", spectrogram_size)
         num_pixels = parm_dict['grid_num_rows'] * parm_dict['grid_num_cols']
         print('Number of pixels: ', num_pixels)
@@ -115,65 +115,84 @@ class TRKPFMTranslator(Translator):
         if (num_pixels + 1) != count_vals:
             print("Data size does not match number of pixels expected. Cannot continue")
 
+        #Find how many channels we have to make
+        num_ai_chans = num_dat_files // 2  # Division by 2 due to real/imaginary
+
         # Now start creating datasets and populating:
+        #Start with getting an h5 file
+        h5_file = h5py.File(self.h5_path)
 
-        ds_spec_inds, ds_spec_vals = build_ind_val_dsets(Dimension('Bias', 'V', excit_wfm), is_spectral=True,
-                                                         verbose=False)
+        #First create a measurement group
+        h5_meas_group = create_indexed_group(h5_file, 'Measurement')
 
-        ds_spec_vals.data = np.atleast_2d(excit_wfm)  # The data generated above varies linearly. Override.
-
-        pos_desc = [Dimension('X', 'a.u.', np.arange(parm_dict['grid_num_cols'])),
-                    Dimension('Y', 'a.u.', np.arange(parm_dict['grid_num_rows']))]
-
-        ds_pos_ind, ds_pos_val = build_ind_val_dsets(pos_desc, is_spectral=False, verbose=False)
-
-        ds_raw_data = VirtualDataset('Raw_Data', data=[],
-                                     maxshape=(ds_pos_ind.shape[0], spectrogram_size - 5),
-                                     dtype=np.complex64, chunking=(1, spectrogram_size - 5), compression='gzip')
-        ds_raw_data.attrs['quantity'] = ['Complex']
-
-        aux_ds_names = ['Position_Indices', 'Position_Values',
-                        'Spectroscopic_Indices', 'Spectroscopic_Values']
-
-        num_ai_chans = np.int(num_dat_files / 2)  # Division by 2 due to real/imaginary
-
-        # technically should change the date, etc.
-        spm_data = VirtualGroup('')
+        #Set up some parameters that will be written as attributes to this Measurement group
         global_parms = generate_dummy_main_parms()
         global_parms['data_type'] = 'trKPFM'
         global_parms['translator'] = 'trKPFM'
-        spm_data.attrs = global_parms
-        meas_grp = VirtualGroup('Measurement_000')
-        meas_grp.attrs = parm_dict
-        spm_data.add_children([meas_grp])
+        write_simple_attrs(h5_meas_group, global_parms)
+        write_simple_attrs(h5_meas_group, parm_dict)
 
-        hdf = HDFwriter(self.h5_path)
-        # spm_data.showTree()
-        hdf.write(spm_data, print_log=False)
+        #Now start building the position and spectroscopic dimension containers
+        #There's only one spectroscpoic dimension and two position dimensions
+
+        #The excit_wfm only has the DC values without any information on cycles, time, etc.
+        #What we really need is to add the time component. For every DC step there are some time steps.
+
+        num_time_steps = (spectrogram_size-5) //excit_wfm.size //2 #Need to divide by 2 because it considers on and off field
+
+        #There should be three spectroscopic axes
+        #In order of fastest to slowest varying, we have
+        #time, voltage, field
+
+        time_vec = np.linspace(0, parm_dict['IO_time'], num_time_steps)
+        print('Num time steps: {}'.format(num_time_steps))
+        print('DC Vec size: {}'.format(excit_wfm.shape))
+        print('Spectrogram size: {}'.format(spectrogram_size))
+
+        field_vec = np.array([0,1])
+
+        spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
+                     Dimension('Bias', 'V', excit_wfm)]
+
+        pos_dims = [Dimension('Cols', 'nm', parm_dict['grid_num_cols']),
+                    Dimension('Rows', 'um', parm_dict['grid_num_rows'])]
+
 
         self.raw_datasets = list()
 
         for chan_index in range(num_ai_chans):
-            chan_grp = VirtualGroup('{:s}{:03d}'.format('Channel_', chan_index), '/Measurement_000/')
+            chan_grp = create_indexed_group(h5_meas_group,'Channel')
 
             if chan_index == 0:
-
-                chan_grp.attrs = {'Harmonic': 1}
+                write_simple_attrs(chan_grp,{'Harmonic': 1})
             else:
-                chan_grp.attrs = {'Harmonic': 2}
+                write_simple_attrs(chan_grp,{'Harmonic': 2})
 
-            chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
-                                   ds_raw_data])
-            h5_refs = hdf.write(chan_grp, print_log=False)
-            h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
-            link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
+            h5_raw = write_main_dataset(chan_grp,  # parent HDF5 group
+                                        (num_pixels, spectrogram_size - 5),
+                                        # shape of Main dataset
+                                        'Raw_Data',  # Name of main dataset
+                                        'Deflection',  # Physical quantity contained in Main dataset
+                                        'V',  # Units for the physical quantity
+                                        pos_dims,  # Position dimensions
+                                        spec_dims,  # Spectroscopic dimensions
+                                        dtype=np.complex64,  # data type / precision
+                                        compression='gzip',
+                                        chunks=(1, spectrogram_size - 5),
+                                        main_dset_attrs={'quantity': 'Complex'})
+
+            #h5_refs = hdf.write(chan_grp, print_log=False)
+            #h5_raw = get_h5_obj_refs(['Raw_Data'], h5_refs)[0]
+            #link_h5_objects_as_attrs(h5_raw, get_h5_obj_refs(aux_ds_names, h5_refs))
             self.raw_datasets.append(h5_raw)
             self.raw_datasets.append(h5_raw)
 
         # Now that the N channels have been made, populate them with the actual data....
         self._read_data(parm_dict, parm_path, spectrogram_size)
 
-        hdf.close()
+        h5_file.file.close()
+
+        #hdf.close()
         return self.h5_path
 
     def _read_data(self, parm_dict, parm_path, data_length):

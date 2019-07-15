@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Utilities for visualizing results of clustering applied to imaging or spectroscopic datasets
+
+Created on Thu Jan 05 13:29:12 2017
+
+@author: Chris R. Smith, Suhas Somnath
+"""
 from __future__ import division, print_function, absolute_import, unicode_literals
 import sys
 from warnings import warn

@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 """
+Utilities for performing Bayesian Inference on Current-Voltage spectroscopy data obtained from scanning probe
+microscopes and visualizing results as described in
+[Ultrafast Current Imaging via Bayesian Inference ](https://www.nature.com/articles/s41467-017-02455-7)
+
 Created on Thu Jan 12 15:31:55 2017
 
 @author: Suhas Somnath, Kody Law, Rama K. Vasudevan
