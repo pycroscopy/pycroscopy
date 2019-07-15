@@ -109,3 +109,27 @@ class forc_iv_fit_methods(Fit_Methods):
     Any fitting methods specific to FORC_IV should go here.
     """
     pass
+
+def exp(x, a, k, c):
+    return (a * np.exp(-(x/k))) + c
+
+def fit_exp_curve(x, y):
+    popt, _ = curve_fit(exp, x, y, maxfev=25000)
+    return popt
+
+def double_exp(x, a, k, a2, k2, c):
+    return (a * np.exp(-k*x)) + (a2 * np.exp(-k2*x) + c )
+
+def fit_double_exp(x, y):
+    """
+    fit spectrum to double exp using differential evolution
+    """
+    time_ax = x
+    spectrum = y
+    def cost_func_double_exp(params):
+        a = params[0]; k = params[1]; a2 = params[2]; k2 = params[3]; c = params[4]
+        double_exp_model = double_exp(time_ax, a, k, a2, k2, c)
+        return np.sum((spectrum - double_exp_model)**2)
+    popt = differential_evolution(cost_func_double_exp,
+                                  bounds=([-100,100],[-100, 100],[-200,200],[-100,100],[-200,200])).x
+    return popt
