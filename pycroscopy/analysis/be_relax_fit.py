@@ -1,7 +1,7 @@
 import numpy as np
 import pyUSID as usid
 from scipy.optimize import curve_fit
-from .fit_methods import exp, fit_exp_curve, double_exp, fit_double_exp, sigmoid, fit_sigmoid
+from .fit_methods import exp, fit_exp_curve, fit_double_exp, fit_str_exp, fit_sigmoid
 
 class BERelaxFit(usid.Process):
     def __init__(self, h5_main, variables=None, fit_method='Exponential', sens=1, phase_off=0,
@@ -10,7 +10,7 @@ class BERelaxFit(usid.Process):
         :param h5_main: h5py.Dataset object from pycroscopy.analysis.BESHOfitter
         :param variables: list(string), Default ['Frequency']
         Lists of attributes that h5_main should possess so that it may be analyzed by Model.
-        :param fit_method: fit_method for berelaxfit fit, can be 'Exponential', 'Double_Exp', or 'Logistic'
+        :param fit_method: fit_method for berelaxfit fit, can be 'Exponential', 'Double_Exp', 'Str_Exp' or 'Logistic'
         :param sens: tip sensitivity in pm/V
         :param phase_off: to apply to phase data.
         :param starts_with: 1 if begins with write; 0 if begins with read.
@@ -126,6 +126,8 @@ class BERelaxFit(usid.Process):
             self.process_name = 'Exp_Fit'
         if self.fit_method == 'Double_Exp':
             self.process_name = 'Double_Exp'
+        if self.fit_method == 'Str_Exp':
+            self.process_name = 'Str_Exp'
         if self.fit_method == 'Logistic':
             self.process_name = 'Logistic_Fit'
         # 1. make HDF5 group to hold results
@@ -147,36 +149,33 @@ class BERelaxFit(usid.Process):
             results_dset_name = 'Exponential_Fit'
             results_quantity = 'None'
             results_units = 'pm'
-            berelaxfit32 = np.dtype({'names': field_names,
-                                'formats': [np.float32 for name in field_names]})
-            self.h5_results = usid.hdf_utils.write_main_dataset(self.h5_results_grp, results_shape, results_dset_name,
-                                                                results_quantity, results_units, pos_dims, spec_dims,
-                                                                dtype=berelaxfit32, h5_pos_inds=self.h5_main.h5_pos_inds,
-                                                                h5_pos_vals=self.h5_main.h5_pos_vals)
+
         if self.fit_method == 'Double_Exp':
             field_names = ['Amplitude [pm]', 'Time_Constant [s]',
                            'Amplitude 2 [pm]', 'Time_Constant 2 [s]', 'Offset [pm]']
             results_dset_name = 'Double_Exp_Fit'
             results_quantity = 'None'
             results_units = 'pm'
-            berelaxfit32 = np.dtype({'names': field_names,
-                                'formats': [np.float32 for name in field_names]})
-            self.h5_results = usid.hdf_utils.write_main_dataset(self.h5_results_grp, results_shape, results_dset_name,
-                                                                results_quantity, results_units, pos_dims, spec_dims,
-                                                                dtype=berelaxfit32, h5_pos_inds=self.h5_main.h5_pos_inds,
-                                                                h5_pos_vals=self.h5_main.h5_pos_vals)
+
+        if self.fit_method == 'Str_Exp':
+            field_names = ['Amplitude [pm]', 'Beta', 'Offset [pm]']
+            results_dset_name = 'Str_Exp_Fit'
+            results_quantity = 'None'
+            results_units = 'pm'
+
 
         if self.fit_method == 'Logistic':
             field_names = ['A', 'K', 'B', 'v', 'Q', 'C']
             results_dset_name = 'Logistic_Fit'
             results_quantity = 'None'
             results_units = 'pm'
-            berelaxfit32 = np.dtype({'names': field_names,
-                                'formats': [np.float32 for name in field_names]})
-            self.h5_results = usid.hdf_utils.write_main_dataset(self.h5_results_grp, results_shape, results_dset_name,
-                                                                results_quantity, results_units, pos_dims, spec_dims,
-                                                                dtype=berelaxfit32, h5_pos_inds=self.h5_main.h5_pos_inds,
-                                                                h5_pos_vals=self.h5_main.h5_pos_vals)
+
+        berelaxfit32 = np.dtype({'names': field_names,
+                            'formats': [np.float32 for name in field_names]})
+        self.h5_results = usid.hdf_utils.write_main_dataset(self.h5_results_grp, results_shape, results_dset_name,
+                                                            results_quantity, results_units, pos_dims, spec_dims,
+                                                            dtype=berelaxfit32, h5_pos_inds=self.h5_main.h5_pos_inds,
+                                                            h5_pos_vals=self.h5_main.h5_pos_vals)
         self.h5_main.file.flush()
 
     def _map_function(self, spectra, *args, **kwargs):
@@ -189,6 +188,8 @@ class BERelaxFit(usid.Process):
             popt, _ = curve_fit(exp, x, y, maxfev=2500, p0 = [a_init, tau_init, c_init])
         if self.fit_method == 'Double_Exp':
             popt = fit_double_exp(x,y)
+        if self.fit_method == 'Str_Exp':
+            popt = fit_str_exp(x,y)
         if self.fit_method == 'Logistic':
             popt = fit_sigmoid(x,y)
         return popt
@@ -199,6 +200,8 @@ class BERelaxFit(usid.Process):
         if self.fit_method == 'Double_Exp':
             field_names = ['Amplitude [pm]', 'Time_Constant 1 [s]',
                            'Amplitude 2 [pm]', 'Time_Constant 2 [s]', 'Offset [pm]']
+        if self.fit_method == 'Str_Exp':
+            field_names = ['Amplitude [pm]', 'Beta', 'Offset [pm]']
         if self.fit_method == 'Logistic':
             field_names = ['A', 'K', 'B', 'v', 'Q', 'C']
         berelaxfit32 = np.dtype({'names': field_names,

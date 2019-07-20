@@ -26,7 +26,6 @@ from pyUSID.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_s
     get_attr, get_source_dataset
 from pyUSID import USIDataset
 
-
 def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
@@ -1762,7 +1761,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
     """
     # experimental parameters needed for visualization
     fit_method = fit_method
-    raw_data = usid.USIDataset(berelaxfit.parent.parent.parent['Raw_Data'])
+    raw_data = USIDataset(berelaxfit.parent.parent.parent['Raw_Data'])
     no_freq = raw_data.spec_dim_sizes[0]
     # freq_vals = raw_data.get_spec_values('Frequency')
     #seems there is a bug in the acquisition software; should not
@@ -1775,7 +1774,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
     y_length = raw_data_pos_sizes[1]
     raw_phase = np.angle(raw_data[:, :])
     raw_amp = abs(raw_data[:, :])
-    sho_fit = usid.USIDataset(berelaxfit.parent.parent['Fit'])
+    sho_fit = USIDataset(berelaxfit.parent.parent['Fit'])
     sho_phase = sho_fit['Phase [rad]'].reshape(x_length, y_length, -1)
     sho_amplitude = sho_fit['Amplitude [V]'].reshape(x_length, y_length, -1)
     sho_frequency = sho_fit['Frequency [Hz]'].reshape(x_length, y_length, -1)
@@ -1822,6 +1821,11 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         tau1_fit_reshape = berelaxfit['Time_Constant [s]'].reshape(x_length, y_length, -1)
         amp2_fit_reshape = berelaxfit['Amplitude 2 [pm]'].reshape(x_length, y_length, -1)
         tau2_fit_reshape = berelaxfit['Time_Constant 2 [s]'].reshape(x_length, y_length, -1)
+        offset_fit_reshape = berelaxfit['Offset [pm]'].reshape(x_length, y_length, -1)
+
+    if fit_method == 'Str_Exp':
+        amp_fit_reshape = berelaxfit['Amplitude [pm]'].reshape(x_length, y_length, -1)
+        beta_fit_reshape = berelaxfit['Beta'].reshape(x_length, y_length, -1)
         offset_fit_reshape = berelaxfit['Offset [pm]'].reshape(x_length, y_length, -1)
 
     if fit_method == 'Logistic':
@@ -1930,6 +1934,43 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axvline(x=x_col, color='k')
         plt.axhline(y=h_row, color='k')
 
+    if fit_method == 'Str_Exp':
+        from ..analysis.fit_methods import str_exp
+        amp = amp_fit_reshape[x_col, h_row, bias_ind]
+        beta = beta_fit_reshape[x_col, h_row, bias_ind]
+        offset = offset_fit_reshape[x_col, h_row, bias_ind]
+        plt.plot(time_axis, str_exp(time_axis, amp, beta, offset))
+
+        plt.subplot(427)
+        plt.title('Beta ({} V)'.format(write_dc_offset_values[bias_ind]))
+        beta_fit = beta_fit_reshape[:, :, bias_ind]
+        beta_fitstd = beta_fit.std()
+        beta_fitmean = beta_fit.mean()
+        ll = beta_fitmean - (2 * beta_fitstd)
+        ul = beta_fitmean + (2 * beta_fitstd)
+        for i in range(beta_fit.shape[0]):
+            for j in range(beta_fit.shape[1]):
+                if np.logical_or((beta_fit[i, j] < ll), (beta_fit[i, j] > ul)):
+                    beta_fit[i, j] = np.nan
+        beta_fit = np.array(beta_fit)
+        show(beta_fit)
+
+        plt.subplot(428)
+        plt.title('Amplitude at ({} V)'.format(write_dc_offset_values[bias_ind]))
+        amp_fit = amp_fit_reshape[:, :, bias_ind]
+        amp_fitstd = amp_fit.std()
+        amp_fitmean = amp_fit.mean()
+        ll = amp_fitmean - (2 * amp_fitstd)
+        ul = amp_fitmean + (2 * amp_fitstd)
+        for i in range(amp_fit.shape[0]):
+            for j in range(amp_fit.shape[1]):
+                if np.logical_or((amp_fit[i, j] < ll), (amp_fit[i, j] > ul)):
+                    amp_fit[i, j] = np.nan
+        amp_fit = np.array(amp_fit)
+        show(amp_fit)
+        plt.axvline(x=x_col, color='k')
+        plt.axhline(y=h_row, color='k')
+
     if fit_method == 'Logistic':
         from ..analysis.fit_methods import sigmoid
         A = A_reshape[x_col, h_row, bias_ind]
@@ -1961,7 +2002,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
     plt.plot(freq_vals, np.angle(sho_curve), 'g-')
     plt.xlabel('Frequency')
 
-    if fit_method == 'Exponential' or 'Double_Exp':
+    if fit_method == 'Exponential' or 'Double_Exp' or 'Str_Exp':
         plt.subplot(425)
         plt.title('SHO Fitted AMPLITUDE ({} V)'.format(
             write_dc_offset_values[bias_ind]))  # after applying {} V'.format(write_dc_offset_values[bias_ind]))
