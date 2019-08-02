@@ -12,7 +12,7 @@ from os import path, remove, listdir  # File Path formatting
 import numpy as np  # For array operations
 import h5py
 from scipy.io import loadmat
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, \
     write_simple_attrs, write_main_dataset, create_indexed_group
@@ -126,7 +126,7 @@ class TRKPFMTranslator(Translator):
         h5_meas_group = create_indexed_group(h5_file, 'Measurement')
 
         #Set up some parameters that will be written as attributes to this Measurement group
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['data_type'] = 'trKPFM'
         global_parms['translator'] = 'trKPFM'
         write_simple_attrs(h5_meas_group, global_parms)

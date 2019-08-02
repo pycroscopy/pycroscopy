@@ -16,7 +16,7 @@ from skimage.util import crop
 
 from .df_utils import dm4reader
 from .df_utils.dm_utils import parse_dm4_parms, read_dm3
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
 from pycroscopy.io.translators.image import read_image
@@ -414,7 +414,7 @@ class OneViewTranslator(Translator):
         num_pixels = usize * vsize
         num_files = scan_size_x * scan_size_y
 
-        root_parms = generate_dummy_main_parms()
+        root_parms = dict()
         root_parms['data_type'] = 'PtychographyData'
 
         main_parms = {'num_images': num_files,

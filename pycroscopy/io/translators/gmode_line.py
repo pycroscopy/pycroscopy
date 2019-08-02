@@ -14,7 +14,7 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import parmsToDict
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
 
@@ -133,7 +133,7 @@ class GLineTranslator(Translator):
 
         # First finish writing all global parameters, create the file too:
         h5_f = h5py.File(h5_path, 'w')
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'
         write_simple_attrs(h5_f, global_parms)

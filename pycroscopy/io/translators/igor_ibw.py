@@ -11,8 +11,7 @@ import numpy as np  # For array operations
 import h5py
 from igor import binarywave as bw
 
-from pyUSID.io.translator import Translator, \
-    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from pyUSID.io.translator import Translator # Because this class extends the abstract Translator class
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
@@ -34,7 +33,7 @@ class IgorIBWTranslator(Translator):
 
         Returns
         -------
-        bool : Whether or not this translator can read this file
+        bool : Whether or   not this translator can read this file
         """
         file_path = path.abspath(file_path)
         extension = path.splitext(file_path)[1][1:]
@@ -148,7 +147,7 @@ class IgorIBWTranslator(Translator):
         meas_grp = create_indexed_group(h5_file, grp_name)
 
         # Write file and measurement level parameters
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['data_type'] = 'IgorIBW_' + type_suffix
         global_parms['translator'] = 'IgorIBW'
         write_simple_attrs(h5_file, global_parms)

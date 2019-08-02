@@ -17,7 +17,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from pyUSID.io.usi_data import USIDataset
@@ -181,7 +181,7 @@ class BEPSndfTranslator(Translator):
         #         self.pos_mat = np.int32(self.pos_mat)
 
         # Helping Eric out a bit. Remove this section at a later time:
-        main_parms = generate_dummy_main_parms()
+        main_parms = dict()
         # main_parms['grid_size_x'] = self.parm_dict['grid_num_cols']
         # main_parms['grid_size_y'] = self.parm_dict['grid_num_rows']
         main_parms['grid_size_x'] = self.parm_dict['grid_num_rows']

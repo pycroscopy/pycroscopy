@@ -9,7 +9,7 @@ from skimage.measure import block_reduce
 # Pycroscopy imports
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr
 from pyUSID.io.dtype_utils import stack_real_to_compound
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID import USIDataset
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.image import read_image
@@ -412,7 +412,7 @@ class FakeBEPSGenerator(Translator):
         '''
         # Set up the basic group structure
         root_grp = VirtualGroup('')
-        root_parms = generate_dummy_main_parms()
+        root_parms = dict()
         root_parms['translator'] = 'FAKEBEPS'
         root_parms['data_type'] = data_gen_parms['data_type']
         root_grp.attrs = root_parms

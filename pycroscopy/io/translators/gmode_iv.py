@@ -13,7 +13,7 @@ from warnings import warn
 import h5py
 import numpy as np  # For array operations
 
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
@@ -59,7 +59,7 @@ class GIVTranslator(Translator):
         with h5py.File(h5_path) as h5_f:
 
             h5_meas_grp = create_indexed_group(h5_f, 'Measurement')
-            global_parms = generate_dummy_main_parms()
+            global_parms = dict()
             global_parms.update({'data_type': 'gIV', 'translator': 'gIV'})
             write_simple_attrs(h5_meas_grp, global_parms)
 
