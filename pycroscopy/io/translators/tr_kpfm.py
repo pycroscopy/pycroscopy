@@ -6,16 +6,19 @@ Created on Thursday July 27 2017
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-
+import sys
 from os import path, remove, listdir  # File Path formatting
-
+import re
 import numpy as np  # For array operations
 import h5py
 from scipy.io import loadmat
 from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, \
-    write_simple_attrs, write_main_dataset, create_indexed_group
+from pyUSID.io.hdf_utils import write_simple_attrs, write_main_dataset, \
+    create_indexed_group
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class TRKPFMTranslator(Translator):
@@ -26,6 +29,76 @@ class TRKPFMTranslator(Translator):
     def __init__(self, *args, **kwargs):
         super(TRKPFMTranslator, self).__init__(*args, **kwargs)
         self.raw_datasets = None
+
+    @staticmethod
+    def is_valid_file(folder_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        folder_path : str
+            Path to folder or any data / parameter file within the folder
+
+        Returns
+        -------
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
+        """
+
+        def get_chan_ind(line):
+            match_obj = re.match(r'(.*)_ch(..).dat', line, re.M | re.I)
+            type_list = [str, int]
+            if match_obj:
+                return \
+                    [type_caster(match_obj.group(ind)) for ind, type_caster in
+                     zip(range(1, 1 + len(type_list)), type_list)][-1]
+            else:
+                return None
+
+        def get_file_paths(folder_path=None):
+            file_list = listdir(path=folder_path)
+            parm_path = None
+            data_paths = list()
+            for item in file_list:
+                assert isinstance(item, (str, unicode))
+                if item.endswith('parm.mat'):
+                    parm_path = item
+                if isinstance(get_chan_ind(item), int):
+                    data_paths.append(item)
+            if parm_path is not None and len(data_paths) > 0:
+                return path.abspath(parm_path)
+            return None
+
+        if not isinstance(folder_path, (str, unicode)):
+            return None
+
+        if path.isfile(folder_path):
+            folder_path, _ = path.split(folder_path)
+
+        root_items = listdir(path=folder_path)
+
+        # MacOS fix:
+        try:
+            root_items.remove('.DS_Store')
+        except ValueError:
+            pass
+
+        if len(root_items) == 0:
+            return None
+        elif len(root_items) == 1:
+            # In this case go one level deeper.
+            folder_path = root_items[0]
+            if not path.isdir(folder_path):
+                return None
+            # print('Going one level deeper')
+            # seeing only the experiment folder.
+
+        # (Possibly) seeing the contents of the experiment folder at this point
+        # print('Now at level of files')
+        return get_file_paths(folder_path=folder_path)
 
     def _parse_file_path(self, input_path):
         folder_path, base_name = path.split(input_path)
