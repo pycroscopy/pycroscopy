@@ -7,7 +7,12 @@
 # data streamed in from a fundamentally new data acquisition method
 # incepted by Liam and involving Kelvin probe microscopy.
 
+def process_pixel():
+	# TODO
+	return
 
+def BayesianInference():
+	
 
 
 
