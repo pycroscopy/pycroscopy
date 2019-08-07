@@ -196,7 +196,7 @@ def BayesianInference(R_H, wd, n0, p):
 	rrmse = np.linalg.norm(y-CC*m_phi)/np.linalg.norm(y)
 	print(time.time() - startTime)
 
-
+	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
 
 
 
