@@ -89,8 +89,8 @@ class BEodfTranslator(Translator):
             # This is a G-mode Line experiment:
             return None
         if any([x in path_dict.keys() for x in ['parm_txt', 'old_mat_parms',
-                                                'read_real', 'write_real']]):
-            return file_path
+                                                'read_real', 'read_imag']]):
+            return path_dict['parm_txt']
         else:
             return None
 
