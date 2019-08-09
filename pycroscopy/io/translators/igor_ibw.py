@@ -6,6 +6,7 @@ Created on Wed Dec 07 16:04:34 2016
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import sys
 from os import path, remove  # File Path formatting
 import numpy as np  # For array operations
 import h5py
@@ -14,6 +15,9 @@ from igor import binarywave as bw
 from pyUSID.io.translator import Translator # Because this class extends the abstract Translator class
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class IgorIBWTranslator(Translator):
@@ -33,15 +37,22 @@ class IgorIBWTranslator(Translator):
 
         Returns
         -------
-        bool : Whether or   not this translator can read this file
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
         """
+        if not isinstance(file_path, (str, unicode)):
+            raise TypeError('file_path should be a string object')
+        if not path.isfile(file_path):
+            return None
         file_path = path.abspath(file_path)
         extension = path.splitext(file_path)[1][1:]
         if extension == 'ibw':
             # This should be sufficient I think.
-            return True
+            return file_path
         else:
-            return False
+            return None
 
     def translate(self, file_path, verbose=False, append_path='', 
                   grp_name='Measurement', parm_encoding='utf-8'):
