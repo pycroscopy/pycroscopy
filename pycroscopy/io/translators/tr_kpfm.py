@@ -2,7 +2,7 @@
 """
 Created on Thursday July 27 2017
 
-@author: Rama Vasudevan, Chris R. Smith
+@author: Rama Vasudevan, Suhas Somnath, Chris R. Smith
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
@@ -31,13 +31,13 @@ class TRKPFMTranslator(Translator):
         self.raw_datasets = None
 
     @staticmethod
-    def is_valid_file(folder_path):
+    def is_valid_file(data_path):
         """
         Checks whether the provided file can be read by this translator
 
         Parameters
         ----------
-        folder_path : str
+        data_path : str
             Path to folder or any data / parameter file within the folder
 
         Returns
@@ -58,47 +58,28 @@ class TRKPFMTranslator(Translator):
             else:
                 return None
 
-        def get_file_paths(folder_path=None):
-            file_list = listdir(path=folder_path)
-            parm_path = None
-            data_paths = list()
-            for item in file_list:
-                assert isinstance(item, (str, unicode))
-                if item.endswith('parm.mat'):
-                    parm_path = item
-                if isinstance(get_chan_ind(item), int):
-                    data_paths.append(item)
-            if parm_path is not None and len(data_paths) > 0:
-                return path.abspath(parm_path)
-            return None
+        if path.isfile(data_path):
+            # Assume that the file is amongst all other data files
+            folder_path, _ = path.split(data_path)
+        else:
+            folder_path = data_path
 
-        if not isinstance(folder_path, (str, unicode)):
-            return None
+        #  Now looking at the folder with  all necessary files:
+        file_list = listdir(path=folder_path)
+        parm_path = None
+        raw_data_paths = list()
+        for item in file_list:
+            if item.endswith('parm.mat'):
+                parm_path = item
+            elif isinstance(get_chan_ind(item), int):
+                raw_data_paths.append(item)
 
-        if path.isfile(folder_path):
-            folder_path, _ = path.split(folder_path)
+        # Both the parameter and data files MUST be found:
+        if parm_path is not None and len(raw_data_paths) > 0:
+            # Returning the path to the parameter file since this is what the translate() expects:
+            return path.abspath(parm_path)
 
-        root_items = listdir(path=folder_path)
-
-        # MacOS fix:
-        try:
-            root_items.remove('.DS_Store')
-        except ValueError:
-            pass
-
-        if len(root_items) == 0:
-            return None
-        elif len(root_items) == 1:
-            # In this case go one level deeper.
-            folder_path = root_items[0]
-            if not path.isdir(folder_path):
-                return None
-            # print('Going one level deeper')
-            # seeing only the experiment folder.
-
-        # (Possibly) seeing the contents of the experiment folder at this point
-        # print('Now at level of files')
-        return get_file_paths(folder_path=folder_path)
+        return None
 
     def _parse_file_path(self, input_path):
         folder_path, base_name = path.split(input_path)
