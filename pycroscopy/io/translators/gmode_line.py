@@ -5,10 +5,9 @@ Created on Sat Nov 07 15:21:46 2015
 @author: Suhas Somnath
 """
 from __future__ import division, print_function, absolute_import, unicode_literals
-
+import sys
 from os import path, listdir, remove
 from warnings import warn
-
 import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
@@ -17,6 +16,9 @@ from .df_utils.be_utils import parmsToDict
 from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class GLineTranslator(Translator):
@@ -30,25 +32,38 @@ class GLineTranslator(Translator):
         self.__bytes_per_row__ = 1
 
     @staticmethod
-    def is_valid_file(file_path):
+    def is_valid_file(data_path):
         """
         Checks whether the provided file can be read by this translator
 
         Parameters
         ----------
-        file_path : str
+        data_path : str
             Path to raw data file
 
         Returns
         -------
-        bool : Whether or not this translator can read this file
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
         """
-        file_path = path.abspath(file_path)
-        _, parm_paths, data_paths = GLineTranslator._parse_file_path(file_path)
-        if len(parm_paths) == 0 or len(data_paths) == 0:
-            return False
+
+        data_path = path.abspath(data_path)
+
+        if path.isfile(data_path):
+            # Assume that the file is amongst all other data files
+            folder_path, _ = path.split(data_path)
         else:
-            return True
+            folder_path = data_path
+
+        data_path = path.join(folder_path, listdir(path=folder_path)[0])
+        basename, parm_paths, data_paths = GLineTranslator._parse_file_path(data_path)
+
+        if len(parm_paths) == 2 and len(data_paths) > 0:
+            return parm_paths['parm_txt']
+
+        return None
 
     def translate(self, file_path):
         """
@@ -207,24 +222,26 @@ class GLineTranslator(Translator):
             value : absolute file path of the data file
         """
         # Return (basename, parameter text path)
-        (folder_path, basename) = path.split(data_filepath)
-        (upper_folder, basename) = path.split(folder_path)
-        
+        folder_path, _ = path.split(data_filepath)
+        _, basename = path.split(folder_path)
+
         # There may be one or two bigdata files. May need both paths
         parm_paths = dict()
         data_paths = dict()
         targ_str = 'bigtime_0'
-        for filenames in listdir(folder_path):
-            ind = filenames.find(targ_str)
-            if ind > 0 and filenames.endswith('.dat'):
-                data_paths[int(filenames[ind+len(targ_str)])] = path.join(folder_path, filenames)
-        
-            if filenames.endswith('.txt') and filenames.find('parm') > 0:
-                parm_paths['parm_txt'] = path.join(folder_path, filenames)
-                
-            if filenames.endswith('_all.mat'):
-                parm_paths['parm_mat'] = path.join(folder_path, filenames)
-                
+        for file_name in listdir(folder_path):
+
+            if file_name.endswith('.txt') and file_name.find('parm') > 0:
+                parm_paths['parm_txt'] = path.join(folder_path, file_name)
+
+            elif file_name.endswith('_all.mat'):
+                parm_paths['parm_mat'] = path.join(folder_path, file_name)
+
+            elif file_name.endswith('.dat'):
+                ind = file_name.find(targ_str)
+                if ind > 0:
+                    data_paths[int(file_name[ind + len(targ_str)])] = path.join(folder_path, file_name)
+
         return basename, parm_paths, data_paths
 
     def _read_data(self, filepath, h5_dset):
