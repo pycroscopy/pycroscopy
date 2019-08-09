@@ -41,11 +41,15 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
     str
         Absolute path to the h5USID file that resulted from the translation
     """
+    if not isinstance(file_path, (str, unicode)):
+        raise TypeError('file_path must be a string object')
     if isinstance(force_translator, (str, unicode)):
         trans_class = getattr(translators, force_translator)
-        valid_translators = trans_class()
+        # Assumes that file_path  is what the is_valid_file() would have returned
+        valid_translators = [trans_class(), file_path]
     else:
-        valid_translators = []
+        # Could have used an OrderedDict as well.
+        valid_translators = list()
 
         for trans_class in translators.all_translators:
             trans_obj = trans_class()
@@ -54,20 +58,20 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
             func = getattr(trans_obj, "is_valid_file", None)
             if callable(func):
                 try:
-                    test = func(file_path)
+                    ret_path = func(file_path)
                     if verbose:
                         print(
                             '{} has implemented the is_valid_file() function'.format(
                                 trans_class.__name__))
                 except NotImplementedError:
                     continue
-                if test:
+                if isinstance(ret_path, (str, unicode)):
                     if verbose:
                         print(
                             '\tThis translator is able to read the provided file(s)')
-                    valid_translators.append(trans_obj)
+                    valid_translators.append([trans_obj, ret_path])
         if len(valid_translators) > 1:
-            trans_names = '\n'.join([str(obj.__class__.__name__) for obj in valid_translators])
+            trans_names = '\n'.join([str(obj.__class__.__name__) for [obj, _] in valid_translators])
             mesg = 'The provided file can be read using the following Translators:\n' + trans_names
 
             if unique_translator:
@@ -76,7 +80,7 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
                 raise ValueError(mesg)
             else:
                 mesg += '\n\n{} will be used to translate the provided file(s)' \
-                     '.'.format(valid_translators[-1].__class__.__name__)
+                     '.'.format(valid_translators[-1][0].__class__.__name__)
                 warn(mesg)
         elif len(valid_translators) == 0:
             raise NotImplementedError(
@@ -87,5 +91,5 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
 
     # Finally translate the file:
     if verbose:
-        print('{} will be used for the translation'.format(valid_translators.__class__.__name__))
-    return valid_translators.translate(file_path, *args, **kwargs)
+        print('{} will be used for the translation'.format(valid_translators[0].__class__.__name__))
+    return valid_translators[0].translate(valid_translators[1], *args, **kwargs)
