@@ -91,5 +91,5 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
 
     # Finally translate the file:
     if verbose:
-        print('{} will be used for the translation'.format(valid_translators[0].__class__.__name__))
+        print('{} will be provided to {} for translation'.format(valid_translators[1], valid_translators[0].__class__.__name__))
     return valid_translators[0].translate(valid_translators[1], *args, **kwargs)
