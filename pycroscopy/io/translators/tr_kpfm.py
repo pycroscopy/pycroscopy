@@ -66,18 +66,18 @@ class TRKPFMTranslator(Translator):
 
         #  Now looking at the folder with  all necessary files:
         file_list = listdir(path=folder_path)
-        parm_path = None
+        parm_file_name = None
         raw_data_paths = list()
         for item in file_list:
             if item.endswith('parm.mat'):
-                parm_path = item
+                parm_file_name = item
             elif isinstance(get_chan_ind(item), int):
                 raw_data_paths.append(item)
 
         # Both the parameter and data files MUST be found:
-        if parm_path is not None and len(raw_data_paths) > 0:
+        if parm_file_name is not None and len(raw_data_paths) > 0:
             # Returning the path to the parameter file since this is what the translate() expects:
-            return path.abspath(parm_path)
+            return path.join(folder_path, parm_file_name)
 
         return None
 
