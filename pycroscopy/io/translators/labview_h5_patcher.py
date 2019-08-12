@@ -89,15 +89,16 @@ class LabViewH5Patcher(Translator):
 
         Returns
         -------
-        h5_file : h5py.File
-            patched hdf5 file
+        h5_file : str
+            path to the patched dataset
 
         """
         # Open the file and check if a patch is needed
         h5_file = h5py.File(os.path.abspath(h5_path), 'r+')
         if h5_file.attrs.get('translator') is not None and not force_patch:
             print('File is already Pycroscopy ready.')
-            return h5_file
+            h5_file.close()
+            return h5_path
 
         '''
         Get the list of all Raw_Data Datasets
@@ -122,7 +123,8 @@ class LabViewH5Patcher(Translator):
                             "CODE: " \
                             "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
                 warn(warn_str)
-                return h5_file
+                h5_file.close()
+                return h5_path
 
             except:
                 raise
@@ -224,4 +226,6 @@ class LabViewH5Patcher(Translator):
 
         h5_file.attrs['translator'] = 'V3patcher'.encode('utf-8')
 
-        return h5_file
+        h5_file.close()
+
+        return h5_path
