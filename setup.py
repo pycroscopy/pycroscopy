@@ -28,10 +28,6 @@ requirements = ['numpy>=1.13.0',
 
                 'unittest2;python_version<"3.0"',
 
-                # 'pyqt;python_version<"3.5"',
-                'pyqt5;python_version>="3.5"',
-                'pyqtgraph>=0.10',
-
                 'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
 
                 'numba',
@@ -84,6 +80,9 @@ setup(
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='pytest',
+    extras_require={
+        'legacy_guis':  ['pyqt5;python_version>="3.5"',
+                         'pyqtgraph>=0.10']},
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,
