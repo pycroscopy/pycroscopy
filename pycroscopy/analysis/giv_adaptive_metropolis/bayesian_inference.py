@@ -12,6 +12,30 @@ Created on Tue July 02, 2019
 from __future__ import division, print_function, absolute_import, unicode_literals
 import h5py
 import numpy as np
+
+# Helper function for importing packages
+import os
+import subprocess
+import sys
+def install(package):
+    subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])
+
+try:
+    import pyUSID as usid
+except ImportError:
+    print("pyUSID not found. Will install with pip.")
+    import pip
+    install("pyUSID")
+    import pyUSID as usid
+
+try:
+    import pycroscopy as px
+except ImportError:
+    print("pycroscopy not found. Will install with pip.")
+    import pip
+    install("pycroscopy")
+    import pycroscopy as px
+
 from pyUSID.processing.process import Process
 # Set up parallel compute later to run through supercomputer or cluster
 from pyUSID.processing.comp_utils import parallel_compute
@@ -22,8 +46,6 @@ from pyUSID.io.write_utils import Dimension
 import time
 import math
 import scipy.linalg as spla 
-import pycroscopy as px 
-import pyUSID as usid
 
 from bayesian_utils import get_shift_and_split_indices, process_pixel, get_shifted_response, get_unshifted_response, get_M_dx_x, publicGetGraph
 
@@ -34,42 +56,47 @@ class AdaptiveBayesianInference(Process):
 		Bayesian inference is done on h5py dataset object that has already been filtered
 		and reshaped.
 		----------
-		h5_main : h5py.Dataset object
-			Dataset to process
-		kwargs : (Optional) dictionary
+		h5_main 	: h5py.Dataset object
+			Dataset to process. Must be a USID main dataset. Contains filtered measured current.
+		f 			: (Optional) number
+			Excitation frequency (Hz)
+		V0			: (Optional) number
+			Excitation amplitude (V). If left empty, the maximum value of the excitation wave is used.
+		Ns 			: (Optional) integer
+			Number of iterations of the adaptive metropolis to conduct. Must be sufficiently large to converge.
+		M 			: (Optional) number
+			Target number of points to use in the piecewise linear basis (actual number may be slightly off i.e. +- 1)
+		parse_mod	: (Optional) integer
+			Determines the number of datapoints we use to fit the model. If it's 1, then we use all available datapoints.
+			If it's n > 1, we use every nth datapoint from the h5_main dataaset. 
+		kwargs		: (Optional) dictionary
 			Please see Process class for additional inputs
 		"""
 		super(AdaptiveBayesianInference, self).__init__(h5_main, **kwargs)
 
-		#now make sure all parameters were inputted correctly
-		# Ex. if frequency_filters is None and noise_threshold is None:
-		#    raise ValueError('Need to specify at least some noise thresholding / frequency filter')
+		# Name the process
+		self.process_name = 'Adaptive_Bayesian'
+
+		# Then set some variables...
+
 		# This determines how to parse down the data (i.e. used_data = actual_data[::parse_mod]).
-		# If parse_mod == 1, then we use the entire dataset. We may be able to input this as an
-		# argument, but for now this is just to improve maintainability.
 		self.parse_mod = parse_mod
-		if self.verbose: print("parsed data")
-		# Now do some setting of the variables
-		# Ex. self.frequency_filters = frequency_filters
-		#breakpoint()
+
+		# Grab the excitation waveform and take its derivative dv/dt
 		ex_wave = self.h5_main.h5_spec_vals[()]
 		dt = 1.0/(f*ex_wave.size)
 		self.dvdt = np.diff(ex_wave)/dt
 		self.dvdt = np.append(self.dvdt, self.dvdt[0][-1])
+		# Parse out what values we want given parse_mod
 		self.dvdt = self.dvdt[::self.parse_mod][np.newaxis].T
 		self.full_V = ex_wave[0][::self.parse_mod]
-		if self.verbose: print("V set up")
-		# Name the process
-		# Ex. self.process_name = 'FFT_Filtering'
-		self.process_name = 'Adaptive_Bayesian'
+		if self.verbose: print("Excitation wave form and derivative acquired.")
 
-		# Honestly no idea what this line does
 		# This line checks to make sure this data has not already been processed
 		self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
+		
 		self.data = None
-		# Add other datasets needs
-		# Ex. self.filtered_data = None
 
 		# A couple constants and vectors we will be using
 		self.full_V, self.shift_index, self.split_index = get_shift_and_split_indices(self.full_V)
