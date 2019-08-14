@@ -18,12 +18,65 @@ def process_pixel():
 	return
 
 
+def get_default_parameters():
+	'''
+	Returns default parameter dictionary for an NC-AFM setup
+	'''
+
+	p = {}
+
+	# detection and excitation system parameters
+	p['SYS.dzds'] = 81e-15 	# Detection system noise 
+							# amplitude spectral density d_ds^z in m/sqHz
+	             
+	p['SYS.INVOLS'] = 52.5e-9	# Sensitivity of detection system in m/V
+
+	# Cantilever parameters
+	p['CL.f0'] = 58e3 		# resonance frequency in Hz
+	p['CL.Q'] = 115 		# quality factor (unitless)
+	p['CL.k'] = 2.8 		# cantilever stiffness in N/m
+	p['CL.A'] = 1 			# amplitude (zero-peak) in m
+	p['CL.T'] = 273.15+23.8 # CL temperature in K
+	p['CL.f1'] = 350e3 		# 2nd Eig resonance frequency in Hz
+	p['CL.Q1'] = 350 		# 2nd Eig quality factor (unitless)
+	p['CL.A1'] = 0.0000 	# 2nd Eig amplitude (zero-peak) in m
+
+	# Tip geometry
+	p['Tip.c_angle'] = 32*np.pi/180 	# Cone angle of probe
+	p['TS.Rtip'] = 20e-9 				# Radius of probe apex (m)
+	p['TS.Rheight'] = 22e-6 			# Height of probe (i.e. distance from tip apex to cantilever) (m)
+	p['TS.eps_z'] = 8.85e-12 			# permitivity
+
+
+	# tip-sample interaction
+	p['TS.alpha'] = -12.3e9 # alpha_ts in Hz/m
+	p['TS.beta'] = 12.3e9 	# beta_ts in Hz/m
+
+	# Data Simulation Parameters
+	p['Sim.Tmax'] = 4.096e-3*2 	# simulation time (s)
+	p['Sim.IOrate'] = 4e6 		# Sampling rate (Hz)
+	p['Sim.Vfreq'] = 56e3 		# AC voltage Drive Frequency (Hz)
+	p['Sim.VAmp'] = 3 			# AC voltage Drive Amplitude (p2p)
+	p['Sim.VCPD'] = -1			# AC voltage Drive Amplitude (p2p)
+	p['Sim.VDC'] = 0
+	p['Sim.Phasshift'] = 0.2 	## Some noise
+	p['Sim.NAmp'] = 1e-6 		## Some noise
+	p['Sim.snr'] = 12
+
+	# Bayesian Parameters
+	p['Bayes.fac'] = 128 	# factor to reduce length of timeseries
+	p['Bayes.Npoly'] = 2
+	p['Bayes.aa'] = 2 		##hyperparameters
+
+	return p
+
+
 def B_phin(phi, w, tt, n):
 	'''
-	phi
-	w
-	tt is a numpy vector (hopefully)
-	n
+	phi is a number
+	w is a number
+	tt is a numpy column vector
+	n is probably a number
 	'''
 	N = tt.size
 	Bn = np.zeros((2*N, n+1))
@@ -36,7 +89,18 @@ def B_phin(phi, w, tt, n):
 
 def mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	'''
-	y is a numpy vector hopefully
+	pp is a row vector
+	w is a constant
+	tt is a column vector
+	AA is a square matrix
+	a1 and a2 are unclear
+	y is a numpy column vector
+	n is a number?
+	M is a number?
+	h is a number
+	m0 is a column vector
+	sigi is probably a number
+	aa is something
 	'''
 	phi = pp[2]
 	sig = pp[0]
@@ -47,18 +111,18 @@ def mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	GAI = 1/gam/gam*np.eye(N)
 
 	B = B_phin(phi, w, tt, n)
-	BB = AA*B*h # matrices? may be problematic
+	BB = np.matmul(AA, B)*h
 	CC1 = np.concatenate((a1, a2, BB), axis=1)
 	CC = CC1[::2, :]
 
 	# matrix multiplication? may be problematic
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + CC.T * GAI * CC, np.eye(M))
-	m_phi = Sig*(CC.T * GAI * y + P0*m0)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M))
+	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
 
 	if (-math.pi <= phi) && (phi <= 0):
 		# matrix multiplication? may be problematic
 		out = np.sum(np.log(gam**2*np.ones((N, 1)))) + np.sum(np.log(np.linalg.eig(Sig)[0])) + /
-			  y.T * GAI * y - (Sig * CC.T * GAI * y).T * (CC.T * GAI * y) + 0*sig**2/200 # what is the point of this 0*...
+			  np.matmul(np.matmul(y.T, GAI), y) - np.matmul(np.matmul(np.matmul(Sig, CC.T), np.matmul(GAI, y)).T, np.matmul(np.matmul(CC.T, GAI), y)) + 0*sig**2/200 # what is the point of this 0*...
 	else:
 		out = np.inf
 
@@ -67,9 +131,9 @@ def mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 
 def BayesianInference(R_H, wd, n0, p):
 	'''
-	R_H is a numpy vector
-	wd
-	n0
+	R_H is a numpy row vector
+	wd is a number
+	n0 is a number
 	p is a dictionary
 	'''
 	fac = p["Bayes.fac"]
@@ -89,7 +153,7 @@ def BayesianInference(R_H, wd, n0, p):
 	A = np.zeros((2, 2*N))
 	AA = np.zeros((2*N, 2*N))
 	h = T/N
-	tt = np.arange(T, h).T # inclusive of T-h, may get messed up
+	tt = np.arange(T, h)[np.newaxis].T # inclusive of T-h, may get messed up
 
 	startTime = time.time()
 	for i in range(N):
@@ -128,17 +192,17 @@ def BayesianInference(R_H, wd, n0, p):
 
 	startTime = time.time()
 
-	B = B_phin(phi, w, tt, n) # TODO
-	BB = AA*B*h # Are these matrices? may be problematic
+	B = B_phin(phi, w, tt, n)
+	BB = np.matmul(AA, B)*h
 	CC1 = np.concatenate((a1, a2, BB), axis=1)
 	CC = CC1(::2, :)
 
 	# This may need matrix multiplication.
 	# Use np.linalg.lstsq for Matlab's left divide
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + CC.T * GAI * CC, np.eye(M))
-	m_phi = Sig*(CC.T * GAI * y + P0 * m0)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M))
+	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
 
-	rrmse = np.linalg.norm(y-CC*m_phi)/np.linalg.norm(y)
+	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
 
 	forward_time = time.time() - startTime
 
@@ -181,8 +245,8 @@ def BayesianInference(R_H, wd, n0, p):
 	phi = pp1[2]
 	sig = pp1[0]
 	gam = pp1[1]
-	B = B_phin(phi, w, tt, n) # TODO
-	BB = AA*B*h # matrices? may be problematic
+	B = B_phin(phi, w, tt, n)
+	BB = np.matmul(AA, B)*h 
 	CC1 = np.concatenate((a1, a2, BB), axis=1)
 	CC = CC1[::2, :]
 	P0 = np.diag(np.concatenate((np.array([1/sigi/sigi, 1/sigi/sigi]), 1/sig/sig*(np.arange(1, n+2)**aa))))
@@ -191,9 +255,9 @@ def BayesianInference(R_H, wd, n0, p):
 	GAI = 1/gam/gam*np.eye(N)
 
 	# matrix multiplication? may be problematic
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + CC.T * GAI * CC, np.eye(M))
-	m_phi = Sig*(CC.T * GAI * y + P0*m0)
-	rrmse = np.linalg.norm(y-CC*m_phi)/np.linalg.norm(y)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M))
+	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
+	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
 	print(time.time() - startTime)
 
 	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
