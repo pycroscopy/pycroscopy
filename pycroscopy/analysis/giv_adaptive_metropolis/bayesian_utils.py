@@ -1,20 +1,20 @@
 """
 Utilities to help Adaptive Bayesian Inference computations and tests on 
-USID Datasets and visualize results
+USID Datasets and visualize results.
+Used in conjunction with bayesian_inference.
+
 Created on Tue Jul 02 2019
+
 @author: Alvin Tan, Emily Costa
 """
+
+from __future__ import division, print_function, absolute_import, unicode_literals
 import os
 import time
 import math
 import numpy as np
 import scipy.linalg as spla
 from matplotlib import pyplot as plt
-
-# Libraries for USID database use
-import h5py
-import pycroscopy as px 
-import pyUSID as usid 
 
 # Library to speed up adaptive metropolis
 from numba import jit 
@@ -58,7 +58,7 @@ def get_unshifted_response(full_i_meas, shift_index):
 def get_M_dx_x(V0=6, M=25):
     dx = 2*V0/(M-2)
     x = np.arange(-V0, V0+dx, dx)[np.newaxis].T
-    M = x.size # M may not be the desired value but it will be very close
+    M = x.size # M may not be the desired value but it will be very close (+/- 1)
     return M, dx, x
 
 
@@ -91,20 +91,6 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
     forward_results = _run_bayesian_inference(Vfor, Ifor, M, dx, x, f, V0, Ns, dvdtFor, verbose=verbose)
     reverse_results = _run_bayesian_inference(Vrev, Irev, M, dx, x, f, V0, Ns, dvdtRev, verbose=verbose)
 
-    '''
-    # If we want a graph, we graph our data and return the figure
-    #if(graph):
-        
-        R, R_sig, capacitance, i_recon, i_corrected = forward_results
-        forward_graph = _get_simple_graph(x, R, R_sig, Vfor, Ifor, i_recon, i_corrected)
-
-        R, R_sig, capacitance, i_recon, i_corrected = reverse_results
-        reverse_graph = _get_simple_graph(x, R, R_sig, Vrev, Irev, i_recon, i_corrected)
-
-        return forward_graph, reverse_graph
-        
-
-    else:'''
     # Concatenate the forward and reverse results together and return in a tuple
     # for easier parallel processing
     # Note, results are (R, R_sig, capacitance, i_recon, i_corrected)
@@ -117,12 +103,15 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
     i_recon = get_unshifted_response(i_recon, shift_index)
     i_corrected = get_unshifted_response(i_corrected, shift_index)
 
+    # If we want a graph (as requested by test() in bayesian_inference), we return a plot of the
+    # forward and reverse resistances and the corrected current
     if(graph):
         # calls publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, V, i_meas, i_recon, i_corrected)
         full_V = get_unshifted_response(full_V, shift_index)
         full_i_meas = get_unshifted_response(full_i_meas, shift_index)
         x = np.concatenate((x, x))
         return publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, full_V, full_i_meas, i_recon, i_corrected)
+    # Otherwise, we return a tuple of the resulting values.
     else:
         return R, R_sig, capacitance, i_recon, i_corrected
 
@@ -140,11 +129,7 @@ def _logpo_R1(pp, A, V, dV, y, gam, P0, mm, Rmax, Rmin, Cmax, Cmin):
         return np.inf
     if pp[-2] > Cmax or pp[-2] < Cmin:
         return np.inf
-    '''
-    out = np.linalg.norm(V*np.exp(np.matmul(-A[:, :-1], pp[:-2])) + \
-                         pp[-2][0] * (dV + pp[-1][0]*V) - y)**2/2/gam/gam + \
-          np.matmul(np.matmul((pp[:-2]-mm[:-2]).T, P0), pp[:-2]-mm[:-2])/2
-    '''
+
     return _logpo_R1_fast(pp, A, V, dV, y, gam, P0, mm)
 
 
@@ -157,32 +142,41 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
 
     Parameters
     ----------
-    V:          numpy.ndtype row vector of dimension 1xN
-                the excitation waveform; assumed to be a forward or reverse sweep
-    i_meas:     numpy.ndtype row vector of dimension 1xN
-                the measured current resulting from the excitation waveform
-    f:          int
-                the frequency of the excitation waveform (Hz)
-    V0:         int
-                the amplitude of the excitation waveform (V)
-    Ns:         int
-                the number of iterations we want the adaptive metropolis to run
-    verbose:    boolean
-                prints debugging messages if True
+    V       : numpy.ndtype row vector of dimension 1xN
+        the excitation waveform; assumed to be a forward or reverse sweep
+    i_meas  : numpy.ndtype row vector of dimension 1xN
+        the measured current resulting from the excitation waveform
+    M       : int
+        the number of points used to estimate the piecewise linear function of resistance
+    dx      : number
+        the constant stepsize between each voltage value in x
+    x       : vector
+        the M voltage values at which resistance is inferred (from -6 to 6 V)
+    f       : int
+        the frequency of the excitation waveform (Hz)
+    V0      : int
+        the amplitude of the excitation waveform (V)
+    Ns      : int
+        the number of iterations we want the adaptive metropolis to run
+    dvdt    : vector
+        the derivative of the excitation waveform over time
+    verbose : boolean
+        prints debugging messages if True
 
     Returns
     -------
-    R:              numpy.ndtype column vector
-                    the estimated resistances
-    R_sig:          numpy.ndtype column vector
-                    the standard deviations of R resistances 
-    capacitance:    float
-                    the capacitance of the setup
-    i_recon:        numpy.ndtype column vector
-                    the reconstructed current
-    i_corrected:    numpy.ndtype column vector
-                    the measured current corrected for capacitance
+    R           : numpy.ndtype column vector
+        the estimated resistances
+    R_sig       : numpy.ndtype column vector
+        the standard deviations of R resistances 
+    capacitance : float
+        the capacitance of the setup
+    i_recon     : numpy.ndtype column vector
+        the reconstructed current
+    i_corrected : numpy.ndtype column vector
+        the measured current corrected for capacitance
     '''
+
     # Grab the start time so we can see how long this takes
     if(verbose):
         start_time = time.time()
@@ -204,9 +198,6 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     dV = np.diff(V)/dt
     dV = np.append(dV, dV[dV.size-1])
     N = V.size
-    #dx = 2*V0/(M-2)
-    #x = np.arange(-V0, V0+dx, dx)[np.newaxis].T
-    #M = x.size # M may not be the desired value but it will be very close
 
     # Change V and dV into column vectors for computations
     # Note: V has to be a row vector for np.diff(V) and
@@ -260,8 +251,8 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     r = 1.1
     beta = 1
     nacc = 0
-    #P = np.zeros((M+2, Ns))
-    # Only store a million samples to save space
+
+    # Only store up to a million samples to save space
     num_samples = min(Ns, int(1e6))
     P = np.zeros((M+2, num_samples))
 
@@ -283,9 +274,8 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     mm = np.append(mr, r_extra)[np.newaxis].T
     ppp = mm.astype(np.float64)
 
-    # for some reason, this may throw a np.linalg.LinAlgError: Singular Matrix
-    # when trying to process the 0th pixel. After exiting this try catch block,
-    # the concatinations in process pixel fails.
+    # For some reason, this may throw a np.linalg.LinAlgError: Singular Matrix
+    # when trying to process a few of the pixels (e.g. pixel 0). Just return 0's if this happens.
     try:
         P0 = np.linalg.inv(C0)
     except np.linalg.LinAlgError:
@@ -307,6 +297,10 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     Cmin = 0
     S3 = 0
     logpold = _logpo_R1(ppp, A, V, dV, i_meas, gam, P0, mm, Rmax, Rmin, Cmax, Cmin)
+
+    # The Cholesky step can be a little annoying, and sometimes fails every time, so we count
+    # how often it fails and stop the code if it just isn't working out.
+    numCholFailures = 0
 
     while i < Ns:
         pppp = ppp + beta*np.matmul(S, np.random.randn(M+2, 1)).astype(np.float64) # using pp also makes gdb bug out
@@ -358,7 +352,7 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
             S1 = (j+1-Mint)/(j+1)*S1 + np.sum(P[:, iMintStart:iMintEnd], axis=1)[np.newaxis].T/(j+1)
             # Update Sigma based on Mint batch
             S2 = (j+1-Mint)/(j+1)*S2 + np.matmul(P[:, iMintStart:iMintEnd], P[:, iMintStart:iMintEnd].T)/(j+1)
-            #print("P's shape is {}".format(P.shape))
+
             # Approximate L such that L*L' = Sigma, where the second term is a
             # decaying regularization
             # for some reason this may throw a np.linalg.LinAlgError: Matrix is not positive definite
@@ -366,12 +360,23 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
             try:
                 #S = np.linalg.cholesky(S2 - np.matmul(S1, S1.T) + (1e-3)*np.eye(M+2)/(j+1))
                 S = np.linalg.cholesky(S3/(j+1))
+
+                # If the Cholesky is successful, reset numCholFailures to zero
+                numCholFailures = 0
             except np.linalg.LinAlgError:
-                print("Initial Cholesky failed on iteration {}. Retrying with larger regularization.".format(i+1))
-                try:
-                    S = np.linalg.cholesky(S2 - np.matmul(S1, S1.T) + (1e-2)*np.eye(M+2)/(j+1))
-                except np.linalg.LinAlgError:
-                    print("Cholesky failed again. Stopping inference and returning all zeros.")
+                # If we have failed less than 15 times in a row, keep trying
+                if numCholFailures < 15:
+                    if verbose: print("Initial Cholesky failed on iteration {}. Retrying with larger regularization.".format(i+1))
+                    numCholFailures += 1
+                    try:
+                        S = np.linalg.cholesky(S2 - np.matmul(S1, S1.T) + (1e-2)*np.eye(M+2)/(j+1))
+                    # If the Cholesky fails with larger regularization, we give up on this pixel.
+                    except np.linalg.LinAlgError:
+                        print("Cholesky failed again. Stopping inference and returning all zeros.")
+                        return np.zeros(x.shape), np.zeros(x.shape), 0, np.zeros(i_meas.shape), np.zeros(i_meas.shape)
+                # Otherwise, we have wonky data, so we give up on this pixel.
+                else:
+                    print("Initial Cholesky failed 15 times in a row. This should not happen. Stopping inference and returning all zeros.")
                     return np.zeros(x.shape), np.zeros(x.shape), 0, np.zeros(i_meas.shape), np.zeros(i_meas.shape)
 
             if verbose and ((i+1)%1e5 == 0):
@@ -380,11 +385,9 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
         i += 1
         j += 1
 
-    if verbose:
-        print("Finished Adaptive Metropolis!\nAdaptive Metropolis took {}.\nTotal time taken so far is {}.".format(time.time() - met_start_time, time.time() - start_time))
+    if verbose: print("Finished Adaptive Metropolis!\nAdaptive Metropolis took {}.\nTotal time taken so far is {}.".format(time.time() - met_start_time, time.time() - start_time))
 
-    # m is a column vector, and the last element is the capacitance exponentiated
-    #capacitance = math.log(m[-1][0])
+    # Read out inferred capacitive and resistive values of the circuit.
     capacitance = pppp[-2][0]
     r_extra = pppp[-1][0]
 
@@ -406,44 +409,48 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     point_i_extra = r_extra * 2 * capacitance * V
     i_corrected = i_meas - point_i_cap - point_i_extra
 
-    #breakpoint()
-
     return R, R_sig, capacitance, i_recon, i_corrected
 
 
-def _get_simple_graph(x, R, R_sig, V, i_meas, i_recon, i_corrected):
-    # Clean up R and R_sig for unsuccessfully predicted resistances
-    for i in range(R_sig.size):
-        if np.isnan(R_sig[i]) or R_sig[i] > 100:
-            R_sig[i] = np.nan
-            R[i] = np.nan
-
-    #breakpoint()
-
-    # Create the figure to be returned
-    result = plt.figure()
-
-    # Plot the resistance estimation on the left subplot
-    plt.subplot(121)
-    plt.plot(x, R, "gx-", label="ER")
-    plt.plot(x, R+R_sig, "rx:", label="ER+\u03C3_R")
-    plt.plot(x, R-R_sig, "rx:", label="ER-\u03C3_R")
-    plt.legend()
-
-    # Plot the current data on the right subplot
-    plt.subplot(122)
-    plt.plot(V, i_meas, "ro", mfc="none", label="i_meas")
-    plt.plot(V, i_recon, "gx-", label="i_recon")
-    plt.plot(V, i_corrected, "bo", label="i_corrected")
-    plt.legend()
-
-    return result
-
-
 def publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, V, i_meas, i_recon, i_corrected):
-    #return _get_simple_graph(x, R, R_sig, V, i_meas, i_recon, i_corrected)
+    """
+    Takes in a lot of parameters, returns a graph with the forward and reverse resistances and the corrected current.
+
+    Parameters
+    ----------
+    Ns              : integer
+        Number of iterations that the adaptive metropolis was run for on this pixel.
+    pix_ind         : integer
+        The index of the pixel (corresponding to the h5_main dataset) that these results are for.
+    shift_index     : integer
+        The number of elements needed to shift the current and excitation waves by to get forward and reverse sweeps.
+    split_index     : integer
+        The index that delineates the forward and reverse sweeps after shifting.
+    x               : vector
+        The voltage values at which resistance is inferred (from -6 to 6 V)
+    R               : numpy.ndtype column vector
+        the estimated resistances
+    R_sig           : numpy.ndtype column vector
+        the standard deviations of R resistances 
+    V               : numpy.ndtype row vector of dimension 1xN
+        the excitation waveform; assumed to be a forward or reverse sweep
+    i_meas          : numpy.ndtype row vector of dimension 1xN
+        the measured current resulting from the excitation waveform
+    i_recon         : numpy.ndtype column vector
+        the reconstructed current
+    i_corrected     : numpy.ndtype column vector
+        the measured current corrected for capacitance
+
+    Returns
+    -------
+    result  : pyplot.figure
+        A graph of the forward and reverse inferred resistances and the corrected current.
+    """
+
     rLenHalf = R_sig.size//2
 
+    # The excitation wave is given as a sine wave. We shift it and the current values
+    # to get forward and reverse sweeps.
     shiftV = get_shifted_response(V, shift_index)
     i_corrected = get_shifted_response(i_corrected, shift_index)
 
@@ -452,8 +459,6 @@ def publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, V, i_meas
         if np.isnan(R_sig[i]) or R_sig[i] > 100:
             R_sig[i] = np.nan
             R[i] = np.nan
-
-    #breakpoint()
 
     # Create the figure to be returned
     result = plt.figure()
