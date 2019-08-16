@@ -7,6 +7,7 @@
 # data streamed in from a fundamentally new data acquisition method
 # incepted by Liam and involving Kelvin probe microscopy.
 
+from matplotlib import pyplot as plt
 import scipy.optimize as spo
 import scipy.linalg as spla
 import numpy as np
@@ -117,6 +118,7 @@ def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 
 	B = _B_phin(phi, w, tt, n)
 	BB = np.matmul(AA, B)*h
+	#BB = AA * B * h
 	CC1 = np.concatenate((a1.reshape((a1.size, 1), order='F'),
 						  a2.reshape((a2.size, 1), order='F'), BB), axis=1)
 	CC = CC1[::2, :]
@@ -289,7 +291,7 @@ def BayesianInference(R_H, wd, n0, p):
 	GAI = 1/gam/gam*np.eye(N)
 
 	# matrix multiplication? may be problematic
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), recond=None)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M))#, recond=None)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
 	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
 	print(time.time() - startTime)
@@ -297,9 +299,92 @@ def BayesianInference(R_H, wd, n0, p):
 	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
 
 
+def plotGraphs(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC):
+	t_max = p["Sim.Tmax"]
+	fac = p["Bayes.fac"]
+	wr1 = p["CL.f0"]
+	Vac = p["Sim.VAmp"]
+	phi = p["Sim.Phasshift"]
+	n0 = 1000
+	N1 = int(R_H.size/fac)
+	OmV = wd*(1e-3)		# Drive frequency (kHz)
+	Om0 = wr1*(1e-3)	# Resonance frequency (kHz)
+	w = OmV/Om0			# Frequency normalized
 
+	T = t_max*wr1*2*np.pi/fac	# Total time per section considered
+	Tsec = p["Sim.Tmax"]/fac
 
+	h = T/N1 	# Sampling rate
+	tt = np.arange(T, step=h)[np.newaxis].T
 
+	h1 = Tsec/N1 	# Total time
+	tt1 = np.arange(Tsec, step=h1)[np.newaxis].T
+
+	w_ang = wd*2*np.pi 
+
+	R = Rforce - np.mean(Rforce)
+	R_seg = R[n0+1:n0+N1+1]*(1e9)
+
+	# Plot V_B vs F(V_B)
+	VBvsFBV = plt.figure()
+	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]), label="V_B")
+	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) + \
+			 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
+	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) - \
+			 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
+	plt.plot(Vac*np.sin(w_ang*tt1 + phi), R_seg, 'k')
+	plt.xlabel("V_B")
+	plt.ylabel("RHS F")
+	plt.title("V_B vs F(V_B)")
+	plt.legend()
+	VBvsFBV.show()
+
+	# Skip the 3D plot for now...
+
+	# Plot residual f_rec - R
+	res1 = plt.figure()
+	plt.plot(tt1, R_seg, "r.")
+	plt.plot(tt1 + (phi/w_ang), np.matmul(B[1::2, :], m_phi[2:M+1]), "k.")
+	plt.xlabel("t")
+	plt.ylabel("residual")
+	res1.show()
+
+	res2 = plt.figure()
+	plt.plot(tt1, y)
+	plt.plot(tt1, np.matmul(CC, m_phi))
+	plt.xlabel("t")
+	plt.ylabel("residual")
+	res2.show()
+
+	# Plot residual z_rec - y
+	res3 = plt.figure()
+	plt.plot(tt1, y-np.matmul(CC, m_phi))
+	plt.xlabel("t")
+	plt.ylabel("residual")
+	res3.show()
+
+	# Do some more stuff ig
+	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
+	x1 = Vac * np.sin(w_ang*tt1 + phi)
+	y1 = np.matmul(B[1::2, :], m_phi[2:M+1])
+
+	print("x1 is {} with shape {}".format(x1, x1.shape))
+	#breakpoint()
+	p1 = np.polyfit(x1.T[0], y1, 2)
+	yfit = np.polyval(p1, x1)
+	yresid = y1 - yfit
+	SSresid = sum(yresid**2)
+	SStotal = (y1.size - 1)*np.var(y1)
+	rsq = 1 - SSresid/SStotal
+
+	# another plot
+	fitBoi = plt.figure()
+	plt.plot(x1, y1, "o", label="Recovered Force")
+	plt.plot(x1, yfit, "-", label="Polynomial Fit")
+	plt.legend()
+	fitBoi.show()
+
+	return VBvsFBV, res1, res2, res3, fitBoi
 
 
 
