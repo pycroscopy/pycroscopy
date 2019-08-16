@@ -13,9 +13,12 @@ import scipy.linalg as spla
 import numpy as np
 import time
 
-def process_pixel():
-	# TODO
-	return
+def process_pixel(R_H, wd, n0, p, graph=False, verbose=False):
+	# Run Bayesian inference on the data
+	y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = BayesianInference(R_H, wd, n0, p)
+
+	# Then process the results into data we want to store
+	return processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=graph, verbose=verbose)
 
 
 def get_default_parameters():
@@ -299,7 +302,7 @@ def BayesianInference(R_H, wd, n0, p):
 	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
 
 
-def plotGraphs(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC):
+def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, verbose=False):
 	t_max = p["Sim.Tmax"]
 	fac = p["Bayes.fac"]
 	wr1 = p["CL.f0"]
@@ -325,43 +328,44 @@ def plotGraphs(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC):
 	R = Rforce - np.mean(Rforce)
 	R_seg = R[n0+1:n0+N1+1]*(1e9)
 
-	# Plot V_B vs F(V_B)
-	VBvsFBV = plt.figure()
-	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]), label="V_B")
-	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) + \
-			 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
-	plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) - \
-			 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
-	plt.plot(Vac*np.sin(w_ang*tt1 + phi), R_seg, 'k')
-	plt.xlabel("V_B")
-	plt.ylabel("RHS F")
-	plt.title("V_B vs F(V_B)")
-	plt.legend()
-	VBvsFBV.show()
+	if graph:
+		# Plot V_B vs F(V_B)
+		VBvsFBV = plt.figure()
+		plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]), label="V_B")
+		plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) + \
+				 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
+		plt.plot(Vac*np.sin(w_ang*tt1 + phi), np.matmul(B[1::2, :], m_phi[2:M+1]) - \
+				 np.sqrt(np.diag(np.matmul(np.matmul(B[1::2, :], Sig[2:M+1, 2:M+1]), B[1::2, :].T))), "r--")
+		plt.plot(Vac*np.sin(w_ang*tt1 + phi), R_seg, 'k')
+		plt.xlabel("V_B")
+		plt.ylabel("RHS F")
+		plt.title("V_B vs F(V_B)")
+		plt.legend()
+		if verbose: VBvsFBV.show()
 
-	# Skip the 3D plot for now...
+		# Skip the 3D plot for now...
 
-	# Plot residual f_rec - R
-	res1 = plt.figure()
-	plt.plot(tt1, R_seg, "r.")
-	plt.plot(tt1 + (phi/w_ang), np.matmul(B[1::2, :], m_phi[2:M+1]), "k.")
-	plt.xlabel("t")
-	plt.ylabel("residual")
-	res1.show()
+		# Plot residual f_rec - R
+		res1 = plt.figure()
+		plt.plot(tt1, R_seg, "r.")
+		plt.plot(tt1 + (phi/w_ang), np.matmul(B[1::2, :], m_phi[2:M+1]), "k.")
+		plt.xlabel("t")
+		plt.ylabel("residual")
+		if verbose: res1.show()
 
-	res2 = plt.figure()
-	plt.plot(tt1, y)
-	plt.plot(tt1, np.matmul(CC, m_phi))
-	plt.xlabel("t")
-	plt.ylabel("residual")
-	res2.show()
+		res2 = plt.figure()
+		plt.plot(tt1, y)
+		plt.plot(tt1, np.matmul(CC, m_phi))
+		plt.xlabel("t")
+		plt.ylabel("residual")
+		if verbose: res2.show()
 
-	# Plot residual z_rec - y
-	res3 = plt.figure()
-	plt.plot(tt1, y-np.matmul(CC, m_phi))
-	plt.xlabel("t")
-	plt.ylabel("residual")
-	res3.show()
+		# Plot residual z_rec - y
+		res3 = plt.figure()
+		plt.plot(tt1, y-np.matmul(CC, m_phi))
+		plt.xlabel("t")
+		plt.ylabel("residual")
+		if verbose: res3.show()
 
 	# Do some more stuff ig
 	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
@@ -377,16 +381,19 @@ def plotGraphs(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC):
 	SStotal = (y1.size - 1)*np.var(y1)
 	rsq = 1 - SSresid/SStotal
 
-	# another plot
-	fitBoi = plt.figure()
-	plt.plot(x1, y1, "o", label="Recovered Force")
-	plt.plot(x1, yfit, "-", label="Polynomial Fit")
-	plt.legend()
-	fitBoi.show()
+	if graph:
+		# another plot
+		fitBoi = plt.figure()
+		plt.plot(x1, y1, "o", label="Recovered Force")
+		plt.plot(x1, yfit, "-", label="Polynomial Fit")
+		plt.legend()
+		fitBoi.show()
 
-	return VBvsFBV, res1, res2, res3, fitBoi
+		# If we want graphs, we return five graphs
+		return VBvsFBV, res1, res2, res3, fitBoi
 
-
+	# Otherwise, we return some values that are stored in vectors in the Matlab code
+	return phi, p["Sim.snr"], rrmse, np.matmul(B[1::2, :], m_phi[2:M+1]), R_seg, y - np.matmul(CC, m_phi), p1, S, rsq
 
 
 
