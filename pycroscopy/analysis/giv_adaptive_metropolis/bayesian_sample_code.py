@@ -38,8 +38,11 @@ from pyUSID.io.write_utils import Dimension
 h5_path = r"C:/Users/Administrator/Dropbox/GIv Bayesian June 2019/pzt_nanocap_6_split_bayesian_compensation_R_correction (Alvin Tan's conflicted copy 2019-06-25).h5"
 
 ## Determine what parameters we want to run with.
+# Note: By inspection it was found that M=100 and Ns=7e7 is sufficient for a reasonable resistance inference.
+#       However, further testing showed that the convergence rate differs across machines, so a conservative
+#       Ns=1e8 is used in this case.
 M = 100
-Ns = int(7e7)
+Ns = int(1e8)
 
 ## Open the file
 with h5py.File(h5_path, mode='r+') as h5_f:
@@ -59,12 +62,19 @@ with h5py.File(h5_path, mode='r+') as h5_f:
     abi = AdaptiveBayesianInference(h5_resh, f=f, V0=V0, Ns=Ns, M=M)
     pix_ind, bayesFigure = abi.test()
     # Save the resulting figure for later inspection
-    bayesFigure.savefig("testPlotOnPixel{}".format(pix_ind))
+    bayesFigure.savefig("testPlotOnPixel{}.png".format(pix_ind))
 
     # We can also run test() on a particular pixel
     pix_ind = 2338
     pix_ind, bayesFigure = abi.test(pix_ind=pix_ind)
-    bayesFigure.savefig("testPlotOnPixel{}".format(pix_ind))
+    bayesFigure.savefig("testPlotOnPixel{}.png".format(pix_ind))
+
+    # We can also run test() and save traces that we can inspect for parameter optimization
+    pix_ind=64550
+    pix_ind, figBois = abi.test(pix_ind=pix_ind, traces=True)
+    bayesFigure, traceFigure = figBois
+    bayesFigure.savefig("testPlotOnPixel{}.png".format(pix_ind))
+    traceFigure.savefig("tracePlotOnPixel{}.png".format(pix_ind))
 
 
     ##### Running compute() #####

@@ -64,8 +64,9 @@ def get_M_dx_x(V0=6, M=25):
 
 # Takes in a single period of a shifted excitation wave as full_V and the corresponding
 # current response as full_i_meas. Returns either the estimated resistances and 
-# reconstructed currents or a pyplot figure.
-def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0, Ns, dvdt, pix_ind=0, graph=False, verbose=False):
+# reconstructed currents or a pyplot figure. There is also the option to plot traces as well,
+# for use in parameter optimizations.
+def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0, Ns, dvdt, pix_ind=0, traces=False, graph=False, verbose=False):
     # If verbose, check if full_V and full_i_meas exist and are actually 1D
     if verbose:
         if full_V is None:
@@ -103,6 +104,11 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
     i_recon = get_unshifted_response(i_recon, shift_index)
     i_corrected = get_unshifted_response(i_corrected, shift_index)
 
+    # If we are tracking traces, then concatenate the traces for R and R_sig
+    if(traces):
+        R_traces = np.concatenate((forward_results[5], reverse_results[5]), axis=1)
+        R_sig_traces = np.concatenate((forward_results[6], reverse_results[6]), axis=1)
+
     # If we want a graph (as requested by test() in bayesian_inference), we return a plot of the
     # forward and reverse resistances and the corrected current
     if(graph):
@@ -110,10 +116,18 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
         full_V = get_unshifted_response(full_V, shift_index)
         full_i_meas = get_unshifted_response(full_i_meas, shift_index)
         x = np.concatenate((x, x))
-        return publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, full_V, full_i_meas, i_recon, i_corrected)
+        resGraph = publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, full_V, full_i_meas, i_recon, i_corrected)
+
+        # If we want traces, graph traces as well and return two figures
+        if(traces):
+            traceGraph = plotTraces(Ns, x, R_traces, R_sig_traces)
+            return resGraph, traceGraph
     # Otherwise, we return a tuple of the resulting values.
     else:
-        return R, R_sig, capacitance, i_recon, i_corrected
+        if(traces):
+            return R, R_sig, capacitance, i_recon, i_corrected, R_traces, R_sig_traces
+        else:
+            return R, R_sig, capacitance, i_recon, i_corrected
 
 # Helper function because Numba crashes when it isn't supposed to
 @jit(nopython=True)
@@ -133,7 +147,7 @@ def _logpo_R1(pp, A, V, dV, y, gam, P0, mm, Rmax, Rmin, Cmax, Cmin):
     return _logpo_R1_fast(pp, A, V, dV, y, gam, P0, mm)
 
 
-def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False):
+def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, traces=False, verbose=False):
     '''
     Takes in raw filtered data, parses it down and into forward and reverse sweeps,
     and runs an adaptive metropolis alglrithm on the data. Then calculates the
@@ -160,6 +174,8 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
         the number of iterations we want the adaptive metropolis to run
     dvdt    : vector
         the derivative of the excitation waveform over time
+    traces  : boolean
+        records 10 evenly spaced traces if True to track progression of algorithm over iterations
     verbose : boolean
         prints debugging messages if True
 
@@ -175,6 +191,10 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
         the reconstructed current
     i_corrected : numpy.ndtype column vector
         the measured current corrected for capacitance
+    R_traces    : numpy matrix
+        has 10 rows where each row holds the mean resistance values for tracing purposes
+    R_sig_traces: numpy matrix
+        has 10 rows where each row holds standard deviation values for tracing purposes
     '''
 
     # Grab the start time so we can see how long this takes
@@ -283,6 +303,12 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
         # return zero versions of R, R_sig, capacitance, i_recon, i_corrected
         return np.zeros(x.shape), np.zeros(x.shape), 0, np.zeros(i_meas.shape), np.zeros(i_meas.shape)
     
+    # If we are storing traces, instantiate arrays to store trace data
+    if traces:
+        numTraces = 10
+        traceInc = Ns//numTraces
+        R_traces = np.zeros((numTraces, x.size))
+        R_sig_traces = np.zeros((numTraces, x.size))
 
     # Now we are ready to start the active metropolis
     if verbose:
@@ -382,6 +408,16 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
             if verbose and ((i+1)%1e5 == 0):
                 print("i = {}".format(i+1))
 
+        # Save our traces
+        if traces and ((i+1) % traceInc == 0):
+            # Mean and variance of resistance
+            meanr = np.matmul(np.exp(P[:M,:]), np.ones((num_samples, 1))) / num_samples
+            mom2r = np.matmul(np.exp(P[:M,:]), np.exp(P[:M,:]).T) / num_samples
+            varr = mom2r - np.matmul(meanr, meanr.T)
+
+            R_traces[i//traceInc] = meanr.T.astype(np.float)
+            R_sig_traces[i//traceInc] = np.sqrt(np.diag(varr[:M, :M])).astype(np.float)
+
         i += 1
         j += 1
 
@@ -409,7 +445,10 @@ def _run_bayesian_inference(V, i_meas, M, dx, x, f, V0, Ns, dvdt, verbose=False)
     point_i_extra = r_extra * 2 * capacitance * V
     i_corrected = i_meas - point_i_cap - point_i_extra
 
-    return R, R_sig, capacitance, i_recon, i_corrected
+    if traces:
+        return R, R_sig, capacitance, i_recon, i_corrected, R_traces, R_sig_traces
+    else:
+        return R, R_sig, capacitance, i_recon, i_corrected
 
 
 def publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, V, i_meas, i_recon, i_corrected):
@@ -490,5 +529,76 @@ def publicGetGraph(Ns, pix_ind, shift_index, split_index, x, R, R_sig, V, i_meas
     plt.plot(shiftV[split_index:], i_corrected[split_index:], "yx", label="reverse i_corrected")
     plt.legend()
 
+    result.set_size_inches(30, 10)
+
     return result
 
+
+def plotTraces(Ns, x, R_traces, R_sig_traces):
+    """
+    Takes in some data matrices, returns a graph with the forward and reverse resistances and rainbow traces across iterations.
+
+    Parameters
+    ----------
+    Ns          : integer
+        Number of iterations that the adaptive metropolis was run for on this pixel.
+    x           : vector
+        The voltage values at which resistance is inferred (from -6 to 6 V)
+    R_traces    : numpy matrix
+        has 10 rows where each row holds the mean resistance values for that trace
+    R_sig_traces: numpy matrix
+        has 10 rows where each row holds standard deviation values for that trace
+
+    Returns
+    -------
+    traceBoi    : pyplot.figure
+        A graph of the forward and reverse inferred resistances and the traces across iterations of the adaptive metropolis
+    """
+
+    rLenHalf = x.size//2
+    numTraces = R_sig_traces.shape[0]
+    increment = Ns//numTraces
+
+    # Clean up R and R_sig for unsuccessfully predicted resistances
+    for i in range(numTraces):
+        for j in range(rLenHalf*2):
+            if np.isnan(R_sig_traces[i][j]) or R_sig_traces[i][j] > 100 or np.isnan(R_traces[i][j]) or R_traces[i][j] > 100:
+                R_sig_traces[i][j] = np.nan
+                R_traces[i][j] = np.nan
+
+    traceBoi = plt.figure()
+    colors = ["purple", "blueviolet", "b", "cadetblue", "g", "greenyellow", "gold", "darkorange", "orangered", "maroon"]
+
+    plt.subplot(121)
+    plt.title("Forward resistance traces")
+    # Plot all the forward traces
+    for i in range(numTraces-1):
+        plt.plot(x[:rLenHalf], R_traces[i][:rLenHalf], color=colors[i%len(colors)], alpha=(i+2)/numTraces, linewidth=0.5, label="{} iterations".format(increment*(i+1)))
+        # Originally considered plotting error ranges for each trace, but that turned out to be too messy. Here is code for that if future people
+        # want to try it again, though.
+        #plt.plot(x[:rLenHalf], R_traces[i][:rLenHalf]+R_sig_traces[i][:rLenHalf], "b:", alpha=(i+2)/numTraces, linewidth=0.5)
+        #plt.plot(x[:rLenHalf], R_traces[i][:rLenHalf]-R_sig_traces[i][:rLenHalf], "b:", alpha=(i+2)/numTraces, linewidth=0.5)
+    # Plot final forward result
+    plt.plot(x[:rLenHalf], R_traces[-1][:rLenHalf], "rx-", color=colors[-1], alpha=0.6, label="{} iterations".format(Ns))
+    plt.plot(x[:rLenHalf], R_traces[-1][:rLenHalf]+R_sig_traces[-1][:rLenHalf], "r:", color=colors[-1], alpha=0.6)
+    plt.plot(x[:rLenHalf], R_traces[-1][:rLenHalf]-R_sig_traces[-1][:rLenHalf], "r:", color=colors[-1], alpha=0.6)
+    plt.legend()
+
+    plt.subplot(122)
+    plt.title("Reverse resistance traces")
+    # Plot all the reverse traces traces
+    for i in range(numTraces-1):
+        plt.plot(x[rLenHalf:], R_traces[i][rLenHalf:], color=colors[i%len(colors)], alpha=(i+2)/numTraces, linewidth=0.5, label="{} iterations".format(increment*(i+1)))
+        # Again, here.
+        #plt.plot(x[rLenHalf:], R_traces[i][rLenHalf:]+R_sig_traces[i][rLenHalf:], "b:", alpha=(i+2)/numTraces, linewidth=0.5)
+        #plt.plot(x[rLenHalf:], R_traces[i][rLenHalf:]-R_sig_traces[i][rLenHalf:], "b:", alpha=(i+2)/numTraces, linewidth=0.5)
+    # Plot final reverse result
+    plt.plot(x[rLenHalf:], R_traces[-1][rLenHalf:], "rx-", color=colors[-1], alpha=0.6, label="{} iterations".format(Ns))
+    plt.plot(x[rLenHalf:], R_traces[-1][rLenHalf:]+R_sig_traces[-1][rLenHalf:], "r:", color=colors[-1], alpha=0.6)
+    plt.plot(x[rLenHalf:], R_traces[-1][rLenHalf:]-R_sig_traces[-1][rLenHalf:], "r:", color=colors[-1], alpha=0.6)
+    plt.legend()
+
+    # Make it very big to better see the traces.
+    traceBoi.set_size_inches(50, 20)
+
+    return traceBoi

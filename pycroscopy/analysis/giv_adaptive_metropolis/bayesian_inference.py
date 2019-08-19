@@ -51,7 +51,7 @@ from bayesian_utils import get_shift_and_split_indices, process_pixel, get_shift
 
 
 class AdaptiveBayesianInference(Process):
-	def __init__(self, h5_main, f=200, V0=None, Ns=int(7e7), M=101, parse_mod=1, **kwargs):
+	def __init__(self, h5_main, f=200, V0=None, Ns=int(1e8), M=101, parse_mod=1, **kwargs):
 		"""
 		Bayesian inference is done on h5py dataset object that has already been filtered
 			and reshaped.
@@ -157,7 +157,7 @@ class AdaptiveBayesianInference(Process):
 		# Yay we are done with setup!
 		if self.verbose: print("Finished initialization of AdaptiveBayesianInference class.")
 
-	def test(self, pix_ind=None):
+	def test(self, pix_ind=None, traces=False):
 		"""
 		Tests the Bayesian inference on a single pixel (randomly chosen unless manually specified) worth of data.
 		Returns the resulting figure that has the forward and reverse resistances and the corrected current.
@@ -167,6 +167,8 @@ class AdaptiveBayesianInference(Process):
 		pix_ind	: (Optional) integer
 			Index of the pixel whose data will be used to test Bayesian inference. If not provided,
 				a random pixel will be selected.
+		traces	: (Optional) boolean
+			Returns both a final figure and a figure of traces if True
 
 		Returns
 		-------
@@ -188,23 +190,29 @@ class AdaptiveBayesianInference(Process):
 		full_i_meas = get_shifted_response(self.h5_main[pix_ind, ::self.parse_mod], self.shift_index)
 
 		# Process the pixel and return the resulting figure.
-		return pix_ind, process_pixel(full_i_meas, self.full_V, self.split_index, self.M, self.dx, self.x, self.shift_index, self.f, self.V0, self.Ns, self.dvdt, pix_ind=pix_ind, graph=True, verbose=True)
+		return pix_ind, process_pixel(full_i_meas, self.full_V, self.split_index, self.M, self.dx, self.x, self.shift_index, self.f, self.V0, self.Ns, self.dvdt, pix_ind=pix_ind, traces=traces, graph=True, verbose=True)
 
-	def plotPixel(self, pix_ind):
+	def plotPixel(self, pix_ind, h5_results_grp=None):
 		"""
 		Reads the resulting data of one of the pixels, plots out the forward and reverse resistances
 			and the corrected current, and returns the plot.
 
 		Parameters
 		----------
-		pix_ind	: integer
+		pix_ind			: integer
 			Index of the pixel whose data we want to plot.
+		h5_results_grp 	: H5 group
+			Group that contains the data from the computations. Used when inspecting the generated results
+			if substantial time has passed after its initial generation (i.e. when self.h5_results_grp is None).
 
 		Returns
 		-------
 		figure	: pyplot.figure
 			Plot of the inferred resistances and corrected current that can be saved or displayed.
 		"""
+
+		if h5_results_grp is not None:
+			self.h5_results_grp = h5_results_grp
 
 		# Need x, R, R_sig, V, i_meas, i_recon, i_corrected to graph against .h5_spec_vals[()]
 		# Get these values from the results dataset that we presumably already created.
