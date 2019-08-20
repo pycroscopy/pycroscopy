@@ -89,8 +89,8 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
     dvdtRev = dvdt[split_index:]
 
     # Run the adaptive metropolis on both halves and save the results
-    forward_results = _run_bayesian_inference(Vfor, Ifor, M, dx, x, f, V0, Ns, dvdtFor, verbose=verbose)
-    reverse_results = _run_bayesian_inference(Vrev, Irev, M, dx, x, f, V0, Ns, dvdtRev, verbose=verbose)
+    forward_results = _run_bayesian_inference(Vfor, Ifor, M, dx, x, f, V0, Ns, dvdtFor, traces=traces, verbose=verbose)
+    reverse_results = _run_bayesian_inference(Vrev, Irev, M, dx, x, f, V0, Ns, dvdtRev, traces=traces, verbose=verbose)
 
     # Concatenate the forward and reverse results together and return in a tuple
     # for easier parallel processing
@@ -122,6 +122,8 @@ def process_pixel(full_i_meas, full_V, split_index, M, dx, x, shift_index, f, V0
         if(traces):
             traceGraph = plotTraces(Ns, x, R_traces, R_sig_traces)
             return resGraph, traceGraph
+        else:
+            return resGraph
     # Otherwise, we return a tuple of the resulting values.
     else:
         if(traces):

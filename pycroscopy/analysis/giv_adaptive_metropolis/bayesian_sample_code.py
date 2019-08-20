@@ -120,5 +120,6 @@ h5_bayes_group = abi.compute()
 
 # close the subset file
 sub_f.close()
-os.remove(sub_f_path)
+# delete the subset file if you want
+#os.remove(sub_f_path)
 
