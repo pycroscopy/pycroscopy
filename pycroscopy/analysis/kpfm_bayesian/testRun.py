@@ -7,7 +7,7 @@
 # on said input to confirm that our processes are functional.
 
 import numpy as np
-from kpfm_bayesian_utils import get_default_parameters, BayesianInference, plotGraphs
+from kpfm_bayesian_utils import get_default_parameters, BayesianInference, processResults
 
 R_H = np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/R_H-1.csv', delimiter=',')
 wd = int(np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/wd-1.csv', delimiter=','))
@@ -25,9 +25,12 @@ y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = 
 Rforce = np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/Rforce-1.csv', delimiter=',')
 
 # Graphing our stuff
-graphBois = plotGraphs(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC)
+graphBois = processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=True, verbose=False)
 
-breakpoint() # Pause to inspect the graphs...
+# Save the images
+graphBois[0].savefig("3Dplot.png")
+graphBois[1].savefig("OtherPlots.png")
+
 
 
 
