@@ -7,7 +7,8 @@
 # on said input to confirm that our processes are functional.
 
 import numpy as np
-from kpfm_bayesian_utils import get_default_parameters, BayesianInference, processResults
+from matplotlib import pyplot as plt
+from kpfm_bayesian_utils import get_default_parameters, BayesianInference, processResults, process_pixel
 
 R_H = np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/R_H-1.csv', delimiter=',')
 wd = int(np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/wd-1.csv', delimiter=','))
@@ -15,7 +16,7 @@ n0 = int(np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation 
 p = get_default_parameters()
 
 #breakpoint() # To confirm inputs have been successfully imported
-
+'''
 y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = BayesianInference(R_H, wd, n0, p);
 
 #breakpoint() # To confirm outputs are successfully calculated
@@ -30,11 +31,29 @@ graphBois = processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=Tr
 # Save the images
 graphBois[0].savefig("3Dplot.png")
 graphBois[1].savefig("OtherPlots.png")
+'''
+
+
+Rforce = np.genfromtxt('C:/Users/Administrator/Dropbox/polynomial approximation paper/Analysis Codes/Paper Codes/InputsAndOutputs2/Rforce-1.csv', delimiter=',')
 
 
 
+'''
+Rgraphs = plt.figure()
+plt.plot(R_H, label="R_H")
+plt.plot((Rforce-np.mean(Rforce))*(1e9), label="R_seg")
+plt.legend()
+plt.show()
+'''
 
 
+#graphBois = process_pixel(R_H, p, graph=True, verbose=True)
+#graphBois[0].savefig("3Dplot3.png")
+#graphBois[1].savefig("OtherPlots3.png")
+
+results = process_pixel(R_H, wd, p, Rforce=Rforce, graph=True, verbose=True)
+
+breakpoint()
 
 
 

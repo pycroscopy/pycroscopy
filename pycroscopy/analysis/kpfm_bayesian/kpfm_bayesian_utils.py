@@ -13,11 +13,17 @@ import scipy.linalg as spla
 import numpy as np
 import time
 
-def process_pixel(R_H, wd, n0, p, graph=False, verbose=False):
+
+# Not entirely sure what Rforce is. From what I understand, it's the original clean signal that we are trying
+# to reconstruct by processing R_H, but that may be incorrect. In that case, we might not actually want it as
+# an input for this function haha.
+def process_pixel(R_H, wd, p, Rforce=None, graph=False, verbose=False):
 	# Run Bayesian inference on the data
-	y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = BayesianInference(R_H, wd, n0, p)
+	if verbose: print("Starting Bayesian inference...")
+	y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = BayesianInference(R_H, wd, p, verbose=verbose)
 
 	# Then process the results into data we want to store
+	if verbose: print("Finished Bayesian inference. Starting processing of results...")
 	return processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=graph, verbose=verbose)
 
 
@@ -127,7 +133,7 @@ def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	CC = CC1[::2, :]
 
 	# matrix multiplication? may be problematic
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=-1)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=None)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
 
 	if (-np.pi <= phi) and (phi <= 0):
@@ -145,11 +151,10 @@ def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	return out
 
 
-def BayesianInference(R_H, wd, n0, p):
+def BayesianInference(R_H, wd, p, verbose=False):
 	'''
 	R_H is a numpy row vector
 	wd is a number
-	n0 is a number
 	p is a dictionary
 	'''
 	fac = p["Bayes.fac"]
@@ -174,7 +179,8 @@ def BayesianInference(R_H, wd, n0, p):
 	h = T/N
 	tt = np.arange(T, step=h)[np.newaxis].T # inclusive of T-h, may get messed up
 
-	startTime = time.time()
+	if verbose: startTime = time.time()
+
 	for i in range(N):
 		A[:, 2*i:2*(i+1)] = spla.expm(L*h*(i+1)) # may want to change this to L*h*(i+1)
 
@@ -190,7 +196,9 @@ def BayesianInference(R_H, wd, n0, p):
 	a1 = A[:, ::2]
 	a2 = A[:, 1::2]
 
-	prelim_time = time.time() - startTime
+	if verbose:
+		prelim_time = time.time() - startTime
+		print("Preliminary time is {} seconds".format(prelim_time))
 
 	# Hyperparameters
 	n = p["Bayes.Npoly"]
@@ -212,7 +220,7 @@ def BayesianInference(R_H, wd, n0, p):
 						 np.zeros((n+1, 1))),
 						axis=0)
 
-	startTime = time.time()
+	if verbose: startTime = time.time()
 
 	B = _B_phin(phi, w, tt, n)
 	BB = np.matmul(AA, B)*h
@@ -230,7 +238,9 @@ def BayesianInference(R_H, wd, n0, p):
 
 	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
 
-	forward_time = time.time() - startTime
+	if verbose:
+		forward_time = time.time() - startTime
+		print("Forward time is {} seconds".format(forward_time))
 
 	# Optimize hyperparameters
 	sd = 1
@@ -241,7 +251,7 @@ def BayesianInference(R_H, wd, n0, p):
 	pp0[2] = -np.pi*np.random.rand()
 
 	# Blackbox optimization over Phi(theta; y)
-	startTime = time.time()
+	if verbose: startTime = time.time()
 
 	#breakpoint()
 	#pp1, fval, exitflag = fminsearch(@(pp)_mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0) # TODO
@@ -253,7 +263,9 @@ def BayesianInference(R_H, wd, n0, p):
 
 	#breakpoint() # The mmlenn function may prove problematic... also on line 248
 
-	optim_time_mle = time.time() - startTime
+	if verbose:
+		optim_time_mle = time.time() - startTime
+		print("First optimization time is {} seconds".format(optim_time_mle))
 
 	fvalg = optResult.fun
 	pp1g = optResult.x
@@ -262,14 +274,16 @@ def BayesianInference(R_H, wd, n0, p):
 		pp0[:2] = np.random.randn(1, 2)**2
 		pp0[2] = -np.pi*np.random.rand()
 
-		startTime = time.time()
+		if verbose: startTime = time.time()
 		#options = optimset("MaxIter", 1e12, "TolFun", 1e-18, "TolX", 1e-18) # TODO
 		#pp1, fval, exitflag = fminsearch(@(pp)_mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0, options) # TODO
 		#pp1, fval, numIter = spo.fmin(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0,
 		#					 maxiter=int(1e12), ftol=1e-18, xtol=1e-18)
 		optResult = spo.minimize(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0,
 								 options={"maxiter":int(1e12)}, tol=1e-18)
-		optim_time_mle = time.time() - startTime
+		if verbose:
+			optim_time_mle = time.time() - startTime
+			print("Next optimization time is {} seconds".format(optim_time_mle))
 		#print("pp1 is {}".format(optResult.x))
 		#print("fval is {}".format(optResult.fun))
 		if optResult.fun < fvalg:
@@ -278,7 +292,7 @@ def BayesianInference(R_H, wd, n0, p):
 
 	pp1 = pp1g
 
-	startTime = time.time()
+	if verbose: startTime = time.time()
 
 	phi = pp1[2]
 	sig = pp1[0]
@@ -294,10 +308,10 @@ def BayesianInference(R_H, wd, n0, p):
 	GAI = 1/gam/gam*np.eye(N)
 
 	# matrix multiplication? may be problematic
-	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=-1)#, rcond=None)
+	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=None)#, rcond=-1)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
-	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
-	#print(time.time() - startTime)
+	#rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
+	if verbose: print("Post Bayesian data processing took {} seconds".format(time.time() - startTime))
 
 	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
 
@@ -325,8 +339,11 @@ def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, ver
 
 	w_ang = wd*2*np.pi 
 
-	R = Rforce - np.mean(Rforce)
-	R_seg = R[n0+1:n0+N1+1]*(1e9)
+	if Rforce is not None:
+		R = Rforce - np.mean(Rforce)
+		R_seg = R[n0+1:n0+N1+1]*(1e9)
+	else:
+		R_seg = np.full(N1, np.nan)
 
 	if graph:
 		# Let's try the 3D plot...
@@ -416,7 +433,8 @@ def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, ver
 		return threeDboi, bigFig
 
 	# Otherwise, we return some values that are stored in vectors in the Matlab code
-	return phi, p["Sim.snr"], rrmse, np.matmul(B[1::2, :], m_phi[2:M+1]), R_seg, y - np.matmul(CC, m_phi), p1, S, rsq
+	# and needed for spectroscopic auxilliary datasets.
+	return rrmse, np.matmul(B[1::2, :], m_phi[2:M+1]), R_seg, y - np.matmul(CC, m_phi), p1, float(rsq)
 
 
 
