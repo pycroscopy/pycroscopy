@@ -43,7 +43,7 @@ from kpfm_bayesian_utils import get_default_parameters, process_pixel
 
 
 class KPFMBayesianInference(Process):
-	def __init__(self, h5_main, p=None **kwargs):
+	def __init__(self, h5_main, p=None, **kwargs):
 		'''
 		Description of functions, inputs, and outputs
 		'''
@@ -102,7 +102,7 @@ class KPFMBayesianInference(Process):
 		if self.verbose: print("Finished initialization of KPFMBayesianInference class")
 
 
-	def test(self, pix_ind=None, verbose=False):
+	def test(self, pix_ind=None, graph=True, verbose=False):
 		'''
 		Description
 		'''
@@ -111,7 +111,9 @@ class KPFMBayesianInference(Process):
 		if pix_ind is None:
 			pix_ind = np.random.randint(self.h5_main.shape[0])
 
-		return process_pixel(self.h5_main[pix_ind, :], self.wd, self.p, graph=True, verbose=verbose)
+		if verbose: print("Running test on pixel number {}".format(pix_ind))
+
+		return pix_ind, process_pixel(self.h5_main[pix_ind, :], self.wd, self.p, graph=graph, verbose=verbose)
 
 	def _create_results_datasets(self):
 		'''
@@ -142,13 +144,16 @@ class KPFMBayesianInference(Process):
 		h5_spec_vals_V_B[()] = V_B_spect
 
 		# Note that RRMSE and RSQ are both constants, so do not have a spectroscopic aspect to them. This one is for those.
-		h5_spec_inds_const, h5_spec_vals_const = write_ind_val_dsets(self.h5_results_grp, Dimension("None", "", 1), is_spectral=True, base_name="Spectroscopic_Const")
+		h5_spec_inds_const, h5_spec_vals_const = write_ind_val_dsets(self.h5_results_grp, Dimension("None", "None", 1), is_spectral=True, base_name="Spectroscopic_Const")
+
+		#breakpoint()
+		#input("Pause here to inspect constructed datasets...")
 
 		## Initialize our datasets
 
 		# Note that RRMSE doesn't really have a spectroscopic aspect, so that's just nothing useful.
 		self.h5_rrmse = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], 1), "RRMSE", "Stat",
-										   "", None, None, dtype=np.float64, 
+										   "None", None, None, dtype=np.float64, 
 										   h5_pos_inds=self.h5_main.h5_pos_inds,
 										   h5_pos_vals=self.h5_main.h5_pos_vals,
 										   h5_spec_inds=h5_spec_inds_const,
@@ -163,25 +168,25 @@ class KPFMBayesianInference(Process):
 
 		# Honestly not too sure what R_seg is, but it seems to be from simulated data, so this dataset will be full of Nan
 		# when processing actual data, so we probably don't want to keep this haha.
-		self.h5_R_seg = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], 1), "R_seg", "Voltage",
+		self.h5_R_seg = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], plotLength), "R_seg", "Voltage",
 										   "V", None, None, dtype=np.float64, 
 										   h5_pos_inds=self.h5_main.h5_pos_inds,
 										   h5_pos_vals=self.h5_main.h5_pos_vals,
 										   h5_spec_inds=h5_spec_inds_res,
 										   h5_spec_vals=h5_spec_vals_res)
 		
-		self.h5_residual = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], 1), "Residual", "Residual",
-											  "", None, None, dtype=np.float64, 
+		self.h5_residual = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], plotLength), "Residual", "Residual",
+											  "None", None, None, dtype=np.float64, 
 											  h5_pos_inds=self.h5_main.h5_pos_inds,
 											  h5_pos_vals=self.h5_main.h5_pos_vals,
 											  h5_spec_inds=h5_spec_inds_res,
 											  h5_spec_vals=h5_spec_vals_res)
 		
-		self.h5_polynomialFit = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], 1), "Polynomial_Coefficients", "Coefficients",
-												   "", None, Dimension("Power", "", 3), dtype=np.float64, 
+		self.h5_polynomialFit = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], 3), "Polynomial_Coefficients", "Coefficients",
+												   "None", None, Dimension("Power", "None", 3), dtype=np.float64, 
 												   h5_pos_inds=self.h5_main.h5_pos_inds,
 												   h5_pos_vals=self.h5_main.h5_pos_vals,
-												   aux_spec_prefix="Poly_Spec")
+												   aux_spec_prefix="Spectroscopic_Poly")
 		
 		# The RSQ dataset has the same metadata and structure as the RRMSE dataset
 		self.h5_rsq = create_empty_dataset(self.h5_rrmse, np.float64, "RSQ")
@@ -211,13 +216,16 @@ class KPFMBayesianInference(Process):
 		if pos_in_batch is None:
 			pos_in_batch = self._get_pixels_in_current_batch()
 
+		#breakpoint()
+		#input("Pause to inspect attempts at broadcasting...")
+
 		# Write data into results datasets
-		self.h5_rrmse[pos_in_batch, :] = self.rrmse
+		self.h5_rrmse[pos_in_batch, :] = self.rrmse[np.newaxis].T # Since self.rrmse is a row vector
 		self.h5_V_B[pos_in_batch, :] = self.V_B
 		self.h5_R_seg[pos_in_batch, :] = self.R_seg
 		self.h5_residual[pos_in_batch, :] = self.residual
 		self.h5_polynomialFit[pos_in_batch, :] = self.polynomialFit
-		self.h5_rsq[pos_in_batch, :] = self.rsq
+		self.h5_rsq[pos_in_batch, :] = self.rsq[np.newaxis].T # since self.rsq is a row vector
 		if self.verbose: print("Results written back to file.")
 
 	def _unit_computation(self, pos_in_batch=None, *args, **kwargs):
