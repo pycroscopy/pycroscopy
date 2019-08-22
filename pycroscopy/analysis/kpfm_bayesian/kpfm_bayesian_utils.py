@@ -3,9 +3,12 @@
 # written by Alvin Tan on 08/06/2019
 # in collaboration with Rama Vasudevan, Liam Collins, and Kody Law
 
-# This program provides the Pycroscopy framework to process messy, noisy
-# data streamed in from a fundamentally new data acquisition method
-# incepted by Liam and involving Kelvin probe microscopy.
+# This program provides the Pycroscopy framework to process messy, noisy data streamed in from a fundamentally
+# new data acquisition method incepted by Liam and involving Kelvin probe microscopy.
+
+# Disclaimer: This code is written with little information on what the various variables are, so some massaging may
+# be necessary.
+
 
 from matplotlib import pyplot as plt
 import scipy.optimize as spo
@@ -16,22 +19,21 @@ import time
 
 # Not entirely sure what Rforce is. From what I understand, it's the original clean signal that we are trying
 # to reconstruct by processing R_H, but that may be incorrect. In that case, we might not actually want it as
-# an input for this function haha.
+# an input for this function.
 def process_pixel(R_H, wd, p, Rforce=None, graph=False, verbose=False):
 	# Run Bayesian inference on the data
 	if verbose: print("Starting Bayesian inference...")
-	y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = BayesianInference(R_H, wd, p, verbose=verbose)
+	y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig = _BayesianInference(R_H, wd, p, verbose=verbose)
 
 	# Then process the results into data we want to store
 	if verbose: print("Finished Bayesian inference. Starting processing of results...")
-	return processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=graph, verbose=verbose)
+	return _processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=graph, verbose=verbose)
 
 
+# Returns the default parameter dictionary for an NC-AFM setup.
+# This instantiation is from the simulation code (RunSimulations_SNRnoiseLooping.m) but most of the values are
+# from the physical properties of the measurement setup.
 def get_default_parameters():
-	'''
-	Returns default parameter dictionary for an NC-AFM setup
-	'''
-
 	p = {}
 
 	# detection and excitation system parameters
@@ -56,7 +58,6 @@ def get_default_parameters():
 	p['TS.Rheight'] = 22e-6 			# Height of probe (i.e. distance from tip apex to cantilever) (m)
 	p['TS.eps_z'] = 8.85e-12 			# permitivity
 
-
 	# tip-sample interaction
 	p['TS.alpha'] = -12.3e9 # alpha_ts in Hz/m
 	p['TS.beta'] = 12.3e9 	# beta_ts in Hz/m
@@ -80,6 +81,7 @@ def get_default_parameters():
 	return p
 
 
+# You probably have a better idea of what this does than I do.
 def _B_phin(phi, w, tt, n):
 	'''
 	phi is a number
@@ -90,14 +92,14 @@ def _B_phin(phi, w, tt, n):
 	N = tt.size
 	Bn = np.zeros((2*N, n+1))
 
-	#breakpoint()
-
 	for i in range(n+1):
 		Bn[1:2*N+1:2, i] = np.squeeze(np.sin(w*tt + phi)**i)
 
 	return Bn
 
 
+# Same with this one.
+# This seems to be used as a cost function, though, and is minimized during the Bayesian inference algorithm.
 def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	'''
 	pp is a row vector
@@ -113,9 +115,6 @@ def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 	sigi is probably a number
 	aa is something
 	'''
-	#breakpoint()
-
-	#print("pp is {}".format(pp))
 
 	phi = pp[2]
 	sig = pp[0]
@@ -127,31 +126,25 @@ def _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa):
 
 	B = _B_phin(phi, w, tt, n)
 	BB = np.matmul(AA, B)*h
-	#BB = AA * B * h
 	CC1 = np.concatenate((a1.reshape((a1.size, 1), order='F'),
 						  a2.reshape((a2.size, 1), order='F'), BB), axis=1)
 	CC = CC1[::2, :]
 
-	# matrix multiplication? may be problematic
 	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=None)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
 
 	if (-np.pi <= phi) and (phi <= 0):
-		# matrix multiplication? may be problematic
 		out = np.sum(np.log(gam**2*np.ones((N, 1)))) + np.sum(np.log(np.linalg.eig(Sig)[0])) + \
 			  np.matmul(np.matmul(y.T, GAI), y) - np.matmul(np.matmul(np.matmul(Sig, CC.T), np.matmul(GAI, y)).T, np.matmul(np.matmul(CC.T, GAI), y)) + 0*sig**2/200 # what is the point of this 0*...
 		out = float(out)
 	else:
 		out = np.inf
 
-	#breakpoint()
-
-	#print("out is {}".format(out))
-
 	return out
 
 
-def BayesianInference(R_H, wd, p, verbose=False):
+# This runs the actual Bayesian inference, which is a lot of statistics.
+def _BayesianInference(R_H, wd, p, verbose=False):
 	'''
 	R_H is a numpy row vector
 	wd is a number
@@ -171,18 +164,16 @@ def BayesianInference(R_H, wd, p, verbose=False):
 
 	R_H = R_H - np.mean(R_H)
 
-	#breakpoint()
-
-	y = (1e9)*R_H[:N][np.newaxis].T # may get messed up
+	y = (1e9)*R_H[:N][np.newaxis].T
 	A = np.zeros((2, 2*N))
 	AA = np.zeros((2*N, 2*N))
 	h = T/N
-	tt = np.arange(T, step=h)[np.newaxis].T # inclusive of T-h, may get messed up
+	tt = np.arange(T, step=h)[np.newaxis].T
 
 	if verbose: startTime = time.time()
 
 	for i in range(N):
-		A[:, 2*i:2*(i+1)] = spla.expm(L*h*(i+1)) # may want to change this to L*h*(i+1)
+		A[:, 2*i:2*(i+1)] = spla.expm(L*h*(i+1))
 
 	a1 = np.fliplr(A[:, ::2])
 	a2 = np.fliplr(A[:, 1::2])
@@ -213,8 +204,6 @@ def BayesianInference(R_H, wd, p, verbose=False):
 	C0 = np.linalg.inv(P0)
 	GAI = 1/gam/gam*np.eye(N)
 
-	#breakpoint()
-
 	m0 = np.concatenate((np.array([y[0] - (y[1]-y[0])]),
 						 np.array([(y[1] - y[0])/h]),
 						 np.zeros((n+1, 1))),
@@ -225,13 +214,10 @@ def BayesianInference(R_H, wd, p, verbose=False):
 	B = _B_phin(phi, w, tt, n)
 	BB = np.matmul(AA, B)*h
 
-	#breakpoint()
-
 	CC1 = np.concatenate((a1.reshape((a1.size, 1), order='F'),
 						  a2.reshape((a2.size, 1), order='F'), BB), axis=1)
 	CC = CC1[::2, :]
 
-	# This may need matrix multiplication.
 	# Use np.linalg.lstsq for Matlab's left divide
 	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=None)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
@@ -252,17 +238,7 @@ def BayesianInference(R_H, wd, p, verbose=False):
 
 	# Blackbox optimization over Phi(theta; y)
 	if verbose: startTime = time.time()
-
-	#breakpoint()
-	#pp1, fval, exitflag = fminsearch(@(pp)_mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0) # TODO
-	#pp1, fval, numIter = spo.fmin(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0)
-
-	#print("about to execute first call to _mmlenn. pp is pp0 = {}".format(pp0))
 	optResult = spo.minimize(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0)
-	#print("finished first call to _mmlenn")
-
-	#breakpoint() # The mmlenn function may prove problematic... also on line 248
-
 	if verbose:
 		optim_time_mle = time.time() - startTime
 		print("First optimization time is {} seconds".format(optim_time_mle))
@@ -275,17 +251,12 @@ def BayesianInference(R_H, wd, p, verbose=False):
 		pp0[2] = -np.pi*np.random.rand()
 
 		if verbose: startTime = time.time()
-		#options = optimset("MaxIter", 1e12, "TolFun", 1e-18, "TolX", 1e-18) # TODO
-		#pp1, fval, exitflag = fminsearch(@(pp)_mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0, options) # TODO
-		#pp1, fval, numIter = spo.fmin(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0,
-		#					 maxiter=int(1e12), ftol=1e-18, xtol=1e-18)
 		optResult = spo.minimize(lambda pp: _mmlenn(pp, w, tt, AA, a1, a2, y, n, M, h, m0, sigi, aa), pp0,
 								 options={"maxiter":int(1e12)}, tol=1e-18)
 		if verbose:
 			optim_time_mle = time.time() - startTime
 			print("Next optimization time is {} seconds".format(optim_time_mle))
-		#print("pp1 is {}".format(optResult.x))
-		#print("fval is {}".format(optResult.fun))
+
 		if optResult.fun < fvalg:
 			pp1g = optResult.x
 			fvalg = optResult.fun
@@ -307,16 +278,18 @@ def BayesianInference(R_H, wd, p, verbose=False):
 	C0 = np.linalg.inv(P0)
 	GAI = 1/gam/gam*np.eye(N)
 
-	# matrix multiplication? may be problematic
 	Sig, resid, rank, s = np.linalg.lstsq(P0 + np.matmul(np.matmul(CC.T, GAI), CC), np.eye(M), rcond=None)#, rcond=-1)
 	m_phi = np.matmul(Sig, np.matmul(np.matmul(CC.T, GAI), y) + np.matmul(P0, m0))
-	#rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
+
 	if verbose: print("Post Bayesian data processing took {} seconds".format(time.time() - startTime))
 
+	# Not all of these values seem important. I recommend revising these (and the computations done above) to clean it up a bit
 	return y, tt, pp1, sig, gam, AA, B, BB, CC, C0, P0, CC1, GAI, M, m0, phi, m_phi, Sig
 
 
-def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, verbose=False):
+# This takes in the results from _BayesianInference and either returns a couple graphs or the return values we "want to save" in
+# result datasets. This will have to be changed when the values deemed important are made more clear.
+def _processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, verbose=False):
 	t_max = p["Sim.Tmax"]
 	fac = p["Bayes.fac"]
 	wr1 = p["CL.f0"]
@@ -339,12 +312,14 @@ def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, ver
 
 	w_ang = wd*2*np.pi 
 
+	# Rforce is generated by simulated data, I believe, so Rforce will be None with any actual data.
 	if Rforce is not None:
 		R = Rforce - np.mean(Rforce)
 		R_seg = R[n0+1:n0+N1+1]*(1e9)
 	else:
 		R_seg = np.full(N1, np.nan)
 
+	# We will want graphs when running test()
 	if graph:
 		# Let's try the 3D plot...
 		from mpl_toolkits import mplot3d
@@ -407,7 +382,7 @@ def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, ver
 		plt.ylabel("residual")
 		plt.title("Residual z_rec - y")
 
-	# Do some more stuff ig
+	# Do some more data maths
 	rrmse = np.linalg.norm(y - np.matmul(CC, m_phi))/np.linalg.norm(y)
 	x1 = Vac * np.sin(w_ang*tt1 + phi)
 	y1 = np.matmul(B[1::2, :], m_phi[2:M+1])
@@ -429,11 +404,10 @@ def processResults(p, R_H, wd, Rforce, M, Sig, B, m_phi, y, CC, graph=False, ver
 		bigFig.set_size_inches(50, 6)
 		if verbose: bigFig.show()
 
-		# If we want graphs, we return five graphs
+		# If we want graphs, we return two graphs: one 3D graph and one with 5 subplots.
 		return threeDboi, bigFig
 
-	# Otherwise, we return some values that are stored in vectors in the Matlab code
-	# and needed for spectroscopic auxilliary datasets.
+	# Otherwise, we return some values that are important enough to be stored in results datasets.
 	return rrmse, np.matmul(B[1::2, :], m_phi[2:M+1]), R_seg, y - np.matmul(CC, m_phi), p1, float(rsq)
 
 
