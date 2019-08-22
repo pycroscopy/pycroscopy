@@ -227,7 +227,6 @@ class AdaptiveBayesianInference(Process):
 		# Plot and return the plot of all these values.
 		return publicGetGraph(self.Ns, pix_ind, self.shift_index, self.split_index, x, R, R_sig, V, i_meas, i_recon, i_corrected)
 
-
 	def _create_results_datasets(self):
 		"""
 		Creates all the datasets necessary for holding the parameters and resulting inference data.
@@ -294,7 +293,7 @@ class AdaptiveBayesianInference(Process):
 		
 		self.h5_R = self.h5_results_grp["Resistance"]
 		self.h5_R_sig = self.h5_results_grp["R_sig"]
-		self.h5_capacitance = self.h5_results_grp["Capacitance"] * 1000 # convert from nF to pF
+		self.h5_capacitance = self.h5_results_grp["Capacitance"]
 		self.h5_i_recon = self.h5_results_grp["Reconstructed_Current"]
 		self.h5_i_corrected = self.h5_results_grp["Corrected_Current"]
 
