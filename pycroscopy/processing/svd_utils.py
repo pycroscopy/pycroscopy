@@ -240,14 +240,15 @@ class SVD(Process):
         v_mem_per_comp = self.h5_main.dtype.itemsize * n_features
 
         mem_per_comp = s_mem_per_comp + u_mem_per_comp + v_mem_per_comp
-        avail_mem = 0.75 * self._max_mem_mb * 1024 ** 2
+        max_mem = get_available_memory()
+        avail_mem = 0.75 * max_mem
         free_mem = avail_mem - self.h5_main.__sizeof__()
 
         if free_mem <= 0:
             error_message = 'Cannot load main dataset into memory.\n' + \
                             'Available memory is {}.  Dataset needs {}.'.format(avail_mem,
                                                                                 self.h5_main.__sizeof__())
-            raise MemoryError()
+            raise MemoryError(error_message)
 
         if self.verbose:
             print('Memory available for SVD is {}.'.format(free_mem))
