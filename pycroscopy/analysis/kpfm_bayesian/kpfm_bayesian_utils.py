@@ -17,9 +17,10 @@ import numpy as np
 import time
 
 
-# Not entirely sure what Rforce is. From what I understand, it's the original clean signal that we are trying
-# to reconstruct by processing R_H, but that may be incorrect. In that case, we might not actually want it as
-# an input for this function.
+# This is called by test() and compute() in kpfm_bayesian and is used to run _BayesianInference and _processResults cleanly.
+# Note: Not entirely sure what Rforce is. From what I understand, it's the original clean signal that we are trying
+#   to reconstruct by processing R_H, but that may be incorrect. In that case, we might not actually want it as
+#   an input for this function.
 def process_pixel(R_H, wd, p, Rforce=None, graph=False, verbose=False):
 	# Run Bayesian inference on the data
 	if verbose: print("Starting Bayesian inference...")
