@@ -1,0 +1,22 @@
+### Runs the adaptive metropolis on CADES Birthright with 4 nodes that have 32 processors each.
+
+#!/bin/bash
+
+#PBS -N parallelTiming
+#PBS -A birthright
+#PBS -W group_list=cades-birthright
+#PBS -k n
+#PBS -l nodes=4:ppn=32,qos=burst,walltime=02:00:00:00
+#PBS -M 29t@ornl.gov
+#PBS -m a
+#PBS -W x=nmatchpolicy:exactnode
+
+module purge
+module load PE-gnu
+module load python
+module load hdf5-parallel
+module list
+cd $PBS_O_WORKDIR
+pwd
+
+mpiexec -n 128 python bayesian_mpi_sample_code.py

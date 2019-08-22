@@ -12,13 +12,12 @@ import subprocess
 import sys
 import io
 import h5py
-#from mpi4py import MPI
 import time
 import random
 from shutil import copyfile
 import numpy as np
 
-# Helper for importing packages
+# Helper for importing packages that are not installed
 def install(package):
     subprocess.call([sys.executable, "-m", "pip", "install", "--user", package])
 

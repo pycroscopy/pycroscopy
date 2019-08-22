@@ -13,7 +13,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import h5py
 import numpy as np
 
-# Helper function for importing packages
+# Helper function for importing packages that are not installed
 import os
 import subprocess
 import sys
