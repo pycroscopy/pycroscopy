@@ -43,7 +43,8 @@ from bayesian_inference import AdaptiveBayesianInference
 from pyUSID.io.hdf_utils import write_main_dataset, write_ind_val_dsets
 from pyUSID.io.write_utils import Dimension
 
-# Set path name to the desired dataset
+# Set path name to the desired dataset. In this code, I use a file that only holds a subset of the
+# full dataset, as created by code similar to that in bayesian_sample_code.py.
 h5_path = r"currentMeasurements.h5"
 
 # Select parameters we want to run with
@@ -52,7 +53,8 @@ Ns = int(1e8)
 
 # Open the file with mpi4py functionality
 with h5py.File(h5_path, mode='r+', driver='mpio', comm=MPI.COMM_WORLD) as h5_f:
-    # Create a new Process class
+    # Create a new Process class. Note that here we use default values for f and V0 and whatnot.
+    # See bayesian_sample_code.py for an example of how to parse those values from the actual dataset.
     abi = AdaptiveBayesianInference(h5_f["subsetBoi/Measured Current"], M=M, Ns=Ns)
 
     # Print out some cool MPI things
