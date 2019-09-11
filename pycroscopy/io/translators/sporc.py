@@ -13,8 +13,7 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from pyUSID.io.translator import Translator, \
-    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from pyUSID.io.translator import Translator  # Because this class extends the abstract Translator class
 from pyUSID.io.write_utils import Dimension, INDICES_DTYPE, VALUES_DTYPE
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from ..write_utils import build_ind_val_dsets
@@ -93,7 +92,7 @@ class SporcTranslator(Translator):
         chan_grp.add_children([ds_pos_ind, ds_pos_val, ds_spec_inds, ds_spec_vals,
                                ds_excit_wfm, ds_raw_data])
 
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         # assuming that the experiment was completed:        

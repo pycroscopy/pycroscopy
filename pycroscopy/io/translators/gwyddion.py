@@ -11,7 +11,7 @@ import sys
 import numpy as np
 import h5py
 
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 
@@ -57,7 +57,7 @@ class GwyddionTranslator(Translator):
                     or
                     GwyddionGWY_<gwy_meta['title']>
         """
-        self.global_parms = generate_dummy_main_parms()
+        self.global_parms = dict()
         self.global_parms['translator'] = 'Gwyddion'
 
         # Create the measurement group

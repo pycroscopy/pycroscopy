@@ -6,21 +6,53 @@ Created on Wed Dec 07 16:04:34 2016
 """
 
 from __future__ import division, print_function, absolute_import, unicode_literals
+import sys
 from os import path, remove  # File Path formatting
 import numpy as np  # For array operations
 import h5py
 from igor import binarywave as bw
 
-from pyUSID.io.translator import Translator, \
-    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from pyUSID.io.translator import Translator # Because this class extends the abstract Translator class
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class IgorIBWTranslator(Translator):
     """
     Translates Igor Binary Wave (.ibw) files containing images or force curves to .h5
     """
+
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
+        """
+        if not isinstance(file_path, (str, unicode)):
+            raise TypeError('file_path should be a string object')
+        if not path.isfile(file_path):
+            return None
+        file_path = path.abspath(file_path)
+        extension = path.splitext(file_path)[1][1:]
+        if extension == 'ibw':
+            # This should be sufficient I think.
+            return file_path
+        else:
+            return None
 
     def translate(self, file_path, verbose=False, append_path='', 
                   grp_name='Measurement', parm_encoding='utf-8'):
@@ -126,7 +158,7 @@ class IgorIBWTranslator(Translator):
         meas_grp = create_indexed_group(h5_file, grp_name)
 
         # Write file and measurement level parameters
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['data_type'] = 'IgorIBW_' + type_suffix
         global_parms['translator'] = 'IgorIBW'
         write_simple_attrs(h5_file, global_parms)

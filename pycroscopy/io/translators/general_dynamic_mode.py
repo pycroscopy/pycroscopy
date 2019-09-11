@@ -14,8 +14,7 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 import h5py
 
 from .df_utils.gmode_utils import readGmodeParms
-from pyUSID.io.translator import Translator, \
-    generate_dummy_main_parms  # Because this class extends the abstract Translator class
+from pyUSID.io.translator import Translator  # Because this class extends the abstract Translator class
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import link_h5_objects_as_attrs, create_indexed_group, \
     write_simple_attrs, write_main_dataset
@@ -83,7 +82,7 @@ class GDMTranslator(Translator):
 
         num_pix = num_rows * num_cols
 
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         # assuming that the experiment was completed:

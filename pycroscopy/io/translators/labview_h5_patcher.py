@@ -7,12 +7,16 @@ Created on Tue Nov  3 15:24:12 2015
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
+import sys
 import h5py
 import os
 import numpy as np
 from pyUSID.io.translator import Translator
 from pyUSID.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
 from pyUSID.io.write_utils import create_spec_inds_from_vals
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class LabViewH5Patcher(Translator):
@@ -31,6 +35,45 @@ class LabViewH5Patcher(Translator):
     def _read_data(self):
         pass
 
+    @staticmethod
+    def is_valid_file(file_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        file_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
+        """
+        if not isinstance(file_path, (str, unicode)):
+            raise TypeError('file_path should be a string object')
+        if not os.path.isfile(file_path):
+            return None
+
+        file_path = os.path.abspath(file_path)
+        extension = os.path.splitext(file_path)[1][1:]
+        if extension not in ['h5', 'hdf5']:
+            return None
+        try:
+            h5_f = h5py.File(file_path, 'r+')
+        except:
+            return None
+
+        # TODO: Make this check as lot stronger. Currently brittle
+        if 'DAQ_software_version_name' not in h5_f.attrs.keys():
+            return None
+
+        if len(find_dataset(h5_f, 'Raw_Data')) < 1:
+            return None
+        return file_path
+
     def translate(self, h5_path, force_patch=False, **kwargs):
         """
         Add the needed references and attributes to the h5 file that are not created by the
@@ -46,15 +89,16 @@ class LabViewH5Patcher(Translator):
 
         Returns
         -------
-        h5_file : h5py.File
-            patched hdf5 file
+        h5_file : str
+            path to the patched dataset
 
         """
         # Open the file and check if a patch is needed
         h5_file = h5py.File(os.path.abspath(h5_path), 'r+')
         if h5_file.attrs.get('translator') is not None and not force_patch:
             print('File is already Pycroscopy ready.')
-            return h5_file
+            h5_file.close()
+            return h5_path
 
         '''
         Get the list of all Raw_Data Datasets
@@ -79,7 +123,8 @@ class LabViewH5Patcher(Translator):
                             "CODE: " \
                             "hdf.file['{}'].attrs['channel_type'] = 'BE'".format(h5_chan.name)
                 warn(warn_str)
-                return h5_file
+                h5_file.close()
+                return h5_path
 
             except:
                 raise
@@ -181,4 +226,6 @@ class LabViewH5Patcher(Translator):
 
         h5_file.attrs['translator'] = 'V3patcher'.encode('utf-8')
 
-        return h5_file
+        h5_file.close()
+
+        return h5_path
