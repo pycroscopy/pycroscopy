@@ -112,8 +112,8 @@ class TRKPFMTranslator(Translator):
         num_pixels = parm_dict['grid_num_rows'] * parm_dict['grid_num_cols']
         print('Number of pixels: ', num_pixels)
         print('Count Values: ', count_vals)
-        if (num_pixels + 1) != count_vals:
-            print("Data size does not match number of pixels expected. Cannot continue")
+        #if (num_pixels + 1) != count_vals:
+        #    print("Data size does not match number of pixels expected. Cannot continue")
 
         #Find how many channels we have to make
         num_ai_chans = num_dat_files // 2  # Division by 2 due to real/imaginary
