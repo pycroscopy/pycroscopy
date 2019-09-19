@@ -95,6 +95,7 @@ class TRKPFMTranslator(Translator):
         for file in listdir(folder_path):
             if '.dat' in file:
                 self.file_list.append(path.join(folder_path, file))
+        self.file_list = sorted(self.file_list)
 
     @staticmethod
     def _parse_spectrogram_size(file_handle):
