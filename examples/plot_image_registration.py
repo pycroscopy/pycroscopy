@@ -352,8 +352,8 @@ for tform_type, axis in zip(trans_names, axes.flat):  # looping through transfor
     raw_corrected_Z = transform.warp(moving, inverse_map=tform.inverse, output_shape=np.shape(moving))
 
     # one way to do correlations
-    corr = stats.pearsonr(np.reshape(fixed, [1024 * 1024, 1]),
-                          np.reshape(raw_corrected_Z, [1024 * 1024, 1]))[0][0]
+    corr = stats.pearsonr(np.reshape(fixed, [1024 * 1024, 1]).ravel(),
+                          np.reshape(raw_corrected_Z, [1024 * 1024, 1]).ravel())
 
     # visualize the transformation
     axis.set_title(tform_type + ' - Pearson corr: ' + str(np.round(corr, 3)))
