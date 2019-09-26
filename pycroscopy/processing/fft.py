@@ -12,6 +12,7 @@ from __future__ import division, print_function, absolute_import
 import numpy as np  # for all array, data operations
 import matplotlib.pyplot as plt  # for all plots
 from scipy.special import erf
+from scipy import signal as sps
 from collections import Iterable
 from warnings import warn
 
@@ -494,3 +495,68 @@ class HarmonicPassFilter(FrequencyFilter):
     #         end
     #     end
     #     F_AI_vec = removeNoiseFreqs(F_AI_vec,sampRate,freqs,freqWidths);
+
+class BandPassFilter(FrequencyFilter):
+    def __init__(self, signal_length, samp_rate, f_center, f_width,
+                 fir=False, fir_taps=1999):
+        """
+        Builds a bandpass filter
+
+        Parameters
+        ----------
+        signal_length : unsigned int
+            Points in the FFT. Assuming Signal in frequency space (ie - after FFT shifting)
+        samp_rate : unsigned integer
+            Sampling rate
+        f_center : unsigned integer
+            Center frequency for filter
+        f_width : unsigned integer
+            Frequency width of the pass band
+        fir : bool, optional
+            True uses a finite impulse response (FIR) response instead of a standard boxcar. FIR is causal
+        fir_taps : int
+            Number of taps (length of filter) for finite impulse response filter
+
+        Returns
+        -------
+        bpf : 1D numpy array describing the bandpass filter
+
+        """
+
+        if f_center >= 0.5 * samp_rate:
+            raise ValueError('Filter cutoff exceeds Nyquist rate')
+
+        self.f_center = f_center
+        self.f_width = f_width
+
+        super(BandPassFilter, self).__init__(signal_length, samp_rate)
+
+        cent = int(round(0.5 * signal_length))
+        ind = int(round(signal_length * (f_center / samp_rate)))
+        sz = int(round(cent * f_width / samp_rate))
+
+        bpf = np.zeros(signal_length, dtype=np.float32)
+
+        # Finite Impulse Response or Boxcar
+        if not fir:
+
+            bpf[cent - ind - sz:cent - ind + sz + 1] = 1
+            bpf[cent + ind - sz:cent + ind + sz + 1] = 1
+
+        else:
+
+            freq_low = (f_center - f_width) / (0.5 * samp_rate)
+            freq_high = (f_center + f_width) / (0.5 * samp_rate)
+            band = [freq_low, freq_high]
+            taps = sps.firwin(int(fir_taps), band, pass_zero=False, window='blackman')
+
+            bpf = np.abs(np.fft.fftshift(np.fft.fft(taps, n=signal_length)))
+
+        self.value = bpf
+
+    def get_parms(self):
+        basic_parms = super(BandPassFilter, self).get_parms()
+        prefix = 'band_pass_'
+        this_parms = {prefix + 'start_freq': self.f_center, prefix + 'band_width': self.f_width}
+        this_parms.update(basic_parms)
+        return this_parms
