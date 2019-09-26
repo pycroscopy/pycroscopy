@@ -16,7 +16,8 @@ if sys.version_info.major == 3:
     unicode = str
 
 
-def ingest(file_path, *args, force_translator=None, unique_translator=True, verbose=False, **kwargs):
+def ingest(file_path, force_translator=None, unique_translator=True,
+           verbose=False, **kwargs):
     """
     Translates raw data file(s) in proprietary file formats into a h5USID file
 
@@ -24,13 +25,14 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
     ----------
     file_path : str
         Path to raw data file(s)
-    args : Arguments that will be passed on to the translator
     unique_translator : bool, Optional. Default - True
-        If True and multiple translators claim to be able to translate a given file, a ValueError will be raised
+        If True and multiple translators claim to be able to translate a given
+        file, a ValueError will be raised
         If False, the last valid translator found will be used
     force_translator : str, Optional. Default - Ignored
         Name of the Translator class to instantiate.
-        Use this if multiple translators claim to be able to translate a given file and the desired translator
+        Use this if multiple translators claim to be able to translate a given
+        file and the desired translator
         is not chosen automatically
     verbose : bool, Optional. Default = False
         Whether or not to print print statements for debugging
@@ -45,7 +47,7 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
         raise TypeError('file_path must be a string object')
     if isinstance(force_translator, (str, unicode)):
         trans_class = getattr(translators, force_translator)
-        # Assumes that file_path  is what the is_valid_file() would have returned
+        # Assumes that is_valid_file() would have returned file_path
         valid_translators = [trans_class(), file_path]
     else:
         # Could have used an OrderedDict as well.
@@ -92,4 +94,4 @@ def ingest(file_path, *args, force_translator=None, unique_translator=True, verb
     # Finally translate the file:
     if verbose:
         print('{} will be provided to {} for translation'.format(valid_translators[1], valid_translators[0].__class__.__name__))
-    return valid_translators[0].translate(valid_translators[1], *args, **kwargs)
+    return valid_translators[0].translate(valid_translators[1], **kwargs)
