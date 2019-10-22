@@ -337,6 +337,7 @@ class PiFMTranslator(Translator):
                                                               np.array([float(descriptors[1])]))]
                 #write data to a channel in the measurement group
                 spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'Spectrum_')
+                print(descriptors)
                 h5_raw = usid.hdf_utils.write_main_dataset(spec_i_ch,  # parent HDF5 group
                                                            (1, len(self.spectra_spec_vals[spec_f])),  # shape of Main dataset
                                                            'Raw_Spectrum',
@@ -348,8 +349,8 @@ class PiFMTranslator(Translator):
                                                            pos_dims=spec_i_pos_dims, spec_dims=spec_i_spec_dims,
                                                            # Spectroscopic dimensions
                                                            dtype=np.float32,  # data type / precision
-                                                           main_dset_attrs={'XLoc': descriptors[0],
-                                                                            'YLoc': descriptors[1]})
+                                                           main_dset_attrs={'XLoc': descriptors[1],
+                                                                            'YLoc': descriptors[2]})
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 
     def write_ps_spectra(self):
