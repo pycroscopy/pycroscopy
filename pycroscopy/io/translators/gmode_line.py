@@ -51,7 +51,15 @@ class GLineTranslator(Translator):
 
         data_path = path.abspath(data_path)
 
+        orig_path = None
         if path.isfile(data_path):
+            ext = data_path.split('.')[-1]
+            if ext.lower() not in ['jpg', 'png', 'jpeg', 'tiff', 'mat', 'txt',
+                                   'dat', 'xls', 'xlsx']:
+                return None
+
+            # we only care about the folder names at this point...
+            orig_path = data_path
             # Assume that the file is amongst all other data files
             folder_path, _ = path.split(data_path)
         else:
@@ -59,6 +67,12 @@ class GLineTranslator(Translator):
 
         data_path = path.join(folder_path, listdir(path=folder_path)[0])
         basename, parm_paths, data_paths = GLineTranslator._parse_file_path(data_path)
+
+        # The provided file must either p
+        if orig_path is not None:
+            if not any([orig_path in sel_dict.values() for sel_dict in
+                        [parm_paths, data_paths]]):
+                return None
 
         if len(parm_paths) == 2 and len(data_paths) > 0:
             return parm_paths['parm_txt']

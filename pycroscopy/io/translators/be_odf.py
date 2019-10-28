@@ -67,6 +67,10 @@ class BEodfTranslator(Translator):
         data_path = path.abspath(data_path)
 
         if path.isfile(data_path):
+            ext = data_path.split('.')[-1]
+            if ext.lower() not in ['jpg', 'png', 'jpeg', 'tiff', 'mat', 'txt',
+                                   'dat', 'xls', 'xlsx']:
+                return None
             # we only care about the folder names at this point...
             data_path, _ = path.split(data_path)
 
@@ -88,9 +92,23 @@ class BEodfTranslator(Translator):
         if any([x.find('bigtime_0') > 0 and x.endswith('.dat') for x in path_dict.values()]):
             # This is a G-mode Line experiment:
             return None
-        if any([x in path_dict.keys() for x in ['parm_txt', 'old_mat_parms',
-                                                'read_real', 'read_imag']]):
-            return path_dict['parm_txt']
+        if any([x.find('bigtime_0') > 0 and x.endswith('.dat') for x in
+                path_dict.values()]):
+            # This is a G-mode Line experiment:
+            return None
+
+        parm_found = any([piece in path_dict.keys() for piece in
+                          ['parm_txt', 'old_mat_parms']])
+        real_found = any([piece in path_dict.keys() for piece in
+                          ['read_real', 'write_real']])
+        imag_found = any([piece in path_dict.keys() for piece in
+                          ['read_imag', 'write_imag']])
+
+        if parm_found and real_found and imag_found:
+            if 'parm_txt' in path_dict.keys():
+                return path_dict['parm_txt']
+            else:
+                return path_dict['old_mat_parms']
         else:
             return None
 
