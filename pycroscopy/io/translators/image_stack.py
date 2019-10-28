@@ -10,7 +10,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 from warnings import warn
 import numpy as np
-from skimage.data import imread
+from PIL import Image
 from skimage.measure import block_reduce
 import h5py
 
@@ -258,13 +258,13 @@ class ImageStackTranslator(Translator):
         return new_file_list
 
     @staticmethod
-    def _getimagesize(image):
+    def _getimagesize(image_path):
         """
         Returns the x and y size of the image in pixels
         
         Parameters
         ------------
-        image : string / unicode
+        image_path : string / unicode
             absolute path to the image file
         
         Returns
@@ -276,7 +276,8 @@ class ImageStackTranslator(Translator):
         dtype : data type
             Datatype of the image
         """
-        tmp = imread(image)
+        img_obj = Image.open(image_path)
+        tmp = np.asarray(img_obj)
         size = tmp.shape
         
         return size, tmp.dtype

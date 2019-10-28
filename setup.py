@@ -20,6 +20,7 @@ requirements = ['numpy>=1.13.0',
 
                 'psutil',
                 'six',
+                'pillow',
                 'joblib>=0.11.0',
 
                 'ipywidgets>=5.2.2',
