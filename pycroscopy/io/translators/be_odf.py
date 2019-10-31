@@ -38,6 +38,7 @@ class BEodfTranslator(Translator):
         super(BEodfTranslator, self).__init__(*args, **kwargs)
         self.h5_raw = None
         self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
+        self._cores = kwargs.pop('cores', None)
         self.FFT_BE_wave = None
         self.signal_type = None
         self.expt_type = None
@@ -523,7 +524,7 @@ class BEodfTranslator(Translator):
 
         rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
                                                  num_spectra=self.num_rand_spectra)
-        take_conjugate = requires_conjugate(rand_spectra)
+        take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
 
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
         self.max_resp = np.zeros(shape=(self.h5_raw.shape[0]), dtype=np.float32)
@@ -596,7 +597,7 @@ class BEodfTranslator(Translator):
         step_size = self.h5_raw.shape[1] / udvs_steps
         rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
                                                  num_spectra=self.num_rand_spectra)
-        take_conjugate = requires_conjugate(rand_spectra)
+        take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
         raw_vec = parser.read_all_data()
         if take_conjugate:
             print('Taking conjugate to ensure positive Quality factors')
