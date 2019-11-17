@@ -215,7 +215,17 @@ class BERelaxFit(usid.Process):
                                                             h5_pos_vals=self.h5_main.h5_pos_vals)
         self.h5_main.file.flush()
 
-
+    def _get_existing_datasets(self):
+        """
+        Extracts references to the existing datasets with results (if any)
+        """
+        if self.fit_method == 'Exponential':
+            self.
+        self.h5_new_spec_vals = self.h5_results_grp['Spectroscopic_Values']
+        self.h5_cap = self.h5_results_grp['Capacitance']
+        self.h5_variance = self.h5_results_grp['R_variance']
+        self.h5_resistance = self.h5_results_grp['Resistance']
+        self.h5_i_corrected = self.h5_results_grp['Corrected_Current']
 
     def _write_results_chunk(self):
         """

@@ -124,7 +124,10 @@ def double_exp(x, a, k, a2, k2, c):
 
 def fit_double_exp(x, y):
     """
-    fit spectrum to double exp using differential evolution
+    Fit spectrum,y, to double exp using differential evolution
+    :param x: values for x-axis
+    :param y: values for y-axis
+    :return: best fit parameters for a double exp. 
     """
     time_ax = x
     spectrum = y
