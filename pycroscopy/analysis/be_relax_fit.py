@@ -7,13 +7,17 @@ class BERelaxFit(usid.Process):
     def __init__(self, h5_main, variables=None, fit_method='Exponential', sens=1, phase_off=0,
                  starts_with='write', **kwargs):
         """
+        This instantiation reads and calculates parameters in the data file necessary for reading, writing, analyzing,
+        and visualizing the data. It writes these parameters to attributes to be referenced.
+
         :param h5_main: h5py.Dataset object from pycroscopy.analysis.BESHOfitter
         :param variables: list(string), Default ['Frequency']
         Lists of attributes that h5_main should possess so that it may be analyzed by Model.
         :param fit_method: fit_method for berelaxfit fit, can be 'Exponential', 'Double_Exp', 'Str_Exp' or 'Logistic'
-        :param sens: tip sensitivity in pm/V
-        :param phase_off: to apply to phase data.
-        :param starts_with: 1 if begins with write; 0 if begins with read.
+        :param sens: tip sensitivity in pm/V. Default: 1, the data are not scaled
+        :param phase_off: to apply to phase data. Default: 0, the data are not offset.
+        :param starts_with: 'write' or 'read' , depending on whether the first step is a read or write step. Default:
+        'write'
 
         **Currently, the BE software does not consistently encode whether spectra start with a read or write step
         """
@@ -69,7 +73,37 @@ class BERelaxFit(usid.Process):
         self.no_read_offset = len(self.all_dc_offset_values) - self.no_rs_spectra
         self.write_inds_split = np.split(np.setxor1d(self.all_inds_split, self.read_inds_split),
                                                        self.no_rs_spectra)
+
+    def _map_function(self, spectra, *args, **kwargs):
+        """
+
+        Function that manipulates the data in a single pixel. This is used by self.test.
+        :param spectra: relaxation spectrum to fit
+        :return: array containing optimal fit values for the parameters
+        """
+        x = np.arange(0, self.time_elapsed_per_spectrum, step=self.time_elapsed_per_step)
+        y = spectra
+        if self.fit_method == 'Exponential':
+            scalar = 1000
+            popt_init = fit_exp_curve(x * scalar, y)
+            a_init = popt_init[0];
+            tau_init = popt_init[1] / scalar;
+            c_init = popt_init[2]
+            popt, _ = curve_fit(exp, x, y, maxfev=2500, p0=[a_init, tau_init, c_init])
+        if self.fit_method == 'Double_Exp':
+            popt = fit_double_exp(x, y)
+        if self.fit_method == 'Str_Exp':
+            popt = fit_str_exp(x, y)
+        if self.fit_method == 'Logistic':
+            popt = fit_sigmoid(x, y)
+        return popt
+
     def test(self, pixel_ind):
+        """
+        This function manipulates the data within one pixel as defined by _map_function.
+        :param pixel_ind: pixel index of the data we wish to test
+        :return: array from fit of data to self.fit_method
+        """
         amplitude_to_reshape = self.h5_main['Amplitude [V]'][pixel_ind, :]
         phase_to_reshape = self.h5_main['Phase [rad]'][pixel_ind, :]
         mixed_signal = []
@@ -81,8 +115,7 @@ class BERelaxFit(usid.Process):
 
     def _read_data_chunk(self):
         """
-        Reads and loads relaxation spectroscopy data files from V3 beta 2 acquisition software into self.data
-        :return: h5py.Dataset object
+        Reads and loads relaxation spectroscopy data files from V3 beta 2 acquisition software on Cypher into self.data
         """
         super(BERelaxFit, self)._read_data_chunk()
         if self._start_pos < self.h5_main.shape[0]:
@@ -122,6 +155,10 @@ class BERelaxFit(usid.Process):
             self.data = None
 
     def _create_results_datasets(self):
+        """
+        Creates hdf5 datasets for to-be computed results, writes parameters to the datasets, and
+        links ancillary datasets.
+        """
         if self.fit_method == 'Exponential':
             self.process_name = 'Exp_Fit'
         if self.fit_method == 'Double_Exp':
@@ -178,23 +215,12 @@ class BERelaxFit(usid.Process):
                                                             h5_pos_vals=self.h5_main.h5_pos_vals)
         self.h5_main.file.flush()
 
-    def _map_function(self, spectra, *args, **kwargs):
-        x = np.arange(0, self.time_elapsed_per_spectrum, step=self.time_elapsed_per_step)
-        y = spectra
-        if self.fit_method == 'Exponential':
-            scalar = 1000
-            popt_init = fit_exp_curve(x*scalar, y)
-            a_init = popt_init[0]; tau_init = popt_init[1]/scalar; c_init = popt_init[2]
-            popt, _ = curve_fit(exp, x, y, maxfev=2500, p0 = [a_init, tau_init, c_init])
-        if self.fit_method == 'Double_Exp':
-            popt = fit_double_exp(x,y)
-        if self.fit_method == 'Str_Exp':
-            popt = fit_str_exp(x,y)
-        if self.fit_method == 'Logistic':
-            popt = fit_sigmoid(x,y)
-        return popt
+
 
     def _write_results_chunk(self):
+        """
+        Writes computed results into appropriate datasets.
+        """
         if self.fit_method == 'Exponential':
             field_names = ['Amplitude [pm]', 'Time_Constant [s]', 'Offset [pm]']
         if self.fit_method == 'Double_Exp':
