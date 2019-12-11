@@ -35,15 +35,19 @@ from .fitter import Fitter
 '''
 Custom dtypes for the datasets created during fitting.
 '''
-loop_metrics32 = np.dtype({'names': ['Area', 'Centroid x', 'Centroid y', 'Rotation Angle [rad]', 'Offset'],
-                           'formats': [np.float32, np.float32, np.float32, np.float32, np.float32]})
+loop_metrics32 = np.dtype({'names': ['Area', 'Centroid x', 'Centroid y',
+                                     'Rotation Angle [rad]', 'Offset'],
+                           'formats': [np.float32, np.float32, np.float32,
+                                       np.float32, np.float32]})
 
 crit32 = np.dtype({'names': ['AIC_loop', 'BIC_loop', 'AIC_line', 'BIC_line'],
-                   'formats': [np.float32, np.float32, np.float32, np.float32]})
+                   'formats': [np.float32, np.float32, np.float32,
+                               np.float32]})
 
-field_names = ['a_0', 'a_1', 'a_2', 'a_3', 'a_4', 'b_0', 'b_1', 'b_2', 'b_3', 'R2 Criterion']
-loop_fit32 = np.dtype({'names': field_names,
-                       'formats': [np.float32 for name in field_names]})
+__field_names = ['a_0', 'a_1', 'a_2', 'a_3', 'a_4', 'b_0', 'b_1', 'b_2', 'b_3',
+                 'R2 Criterion']
+loop_fit32 = np.dtype({'names': __field_names,
+                       'formats': [np.float32 for name in __field_names]})
 
 
 class BELoopFitter(Fitter):
