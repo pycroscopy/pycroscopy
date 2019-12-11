@@ -790,7 +790,7 @@ class BELoopFitter(Fitter):
         Results of the computation are captured in self._results
         """
 
-        obj_func = BE_LOOP
+        obj_func = _be_loop_err
         opt_func = least_squares
         solver_options = {'jac': 'cs'}
 
@@ -854,7 +854,7 @@ class BELoopFitter(Fitter):
 
         # 1 - r_squared = _sho_error(guess, data_vec, freq_vector)
 
-        obj_func = BE_LOOP
+        obj_func = _be_loop_err
         solver_options = {'jac': 'cs', 'max_nfev': 2}
 
         resp_2d_list, dc_vec_list = self.data
@@ -1106,7 +1106,7 @@ class BELoopFitter(Fitter):
         self._h5_fit.file.flush()
 
 
-def BE_LOOP(coef_vec, data_vec, dc_vec, *args):
+def _be_loop_err(coef_vec, data_vec, dc_vec, *args):
     """
 
     Parameters
