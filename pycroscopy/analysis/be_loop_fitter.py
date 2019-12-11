@@ -639,141 +639,7 @@ class BELoopFitter(Fitter):
 
         return results
 
-    @staticmethod
-    def _guess_loops(vdc_vec, projected_loops_2d):
-        """
-        Provides loop parameter guesses for a given set of loops
 
-        Parameters
-        ----------
-        vdc_vec : 1D numpy float numpy array
-            DC voltage offsets for the loops
-        projected_loops_2d : 2D numpy float array
-            Projected loops arranged as [instance or position x dc voltage steps]
-
-        Returns
-        -------
-        guess_parms : 1D compound numpy array
-            Loop parameter guesses for the provided projected loops
-
-        """
-
-        def _loop_fit_tree(tree, guess_mat, fit_results, vdc_shifted,
-                           shift_ind):
-            """
-            Recursive function that fits a tree object describing the cluster results
-
-            Parameters
-            ----------
-            tree : ClusterTree object
-                Tree describing the clustering results
-            guess_mat : 1D numpy float array
-                Loop parameters that serve as guesses for the loops in the tree
-            fit_results : 1D numpy float array
-                Loop parameters that serve as fits for the loops in the tree
-            vdc_shifted : 1D numpy float array
-                DC voltages shifted be 1/4 cycle
-            shift_ind : unsigned int
-                Number of units to shift loops by
-
-            Returns
-            -------
-            guess_mat : 1D numpy float array
-                Loop parameters that serve as guesses for the loops in the tree
-            fit_results : 1D numpy float array
-                Loop parameters that serve as fits for the loops in the tree
-
-            """
-            # print('Now fitting cluster #{}'.format(tree.name))
-            # I already have a guess. Now fit myself
-            curr_fit_results = fit_loop(vdc_shifted,
-                                        np.roll(tree.value, shift_ind),
-                                        guess_mat[tree.name])
-            # keep all the fit results
-            fit_results[tree.name] = curr_fit_results
-            for child in tree.children:
-                # Use my fit as a guess for the lower layers:
-                guess_mat[child.name] = curr_fit_results[0].x
-                # Fit this child:
-                guess_mat, fit_mat = _loop_fit_tree(child, guess_mat,
-                                                    fit_results, vdc_shifted,
-                                                    shift_ind)
-            return guess_mat, fit_results
-
-        num_clusters = max(2, int(projected_loops_2d.shape[
-                                      0] ** 0.5))  # change this to 0.6 if necessary
-        estimators = KMeans(num_clusters)
-        results = estimators.fit(projected_loops_2d)
-        centroids = results.cluster_centers_
-        labels = results.labels_
-
-        # Get the distance between cluster means
-        distance_mat = pdist(centroids)
-        # get hierarchical pairings of clusters
-        linkage_pairing = linkage(distance_mat, 'weighted')
-        # Normalize the pairwise distance with the maximum distance
-        linkage_pairing[:, 2] = linkage_pairing[:, 2] / max(
-            linkage_pairing[:, 2])
-
-        # Now use the tree class:
-        cluster_tree = ClusterTree(linkage_pairing[:, :2], labels,
-                                   distances=linkage_pairing[:, 2],
-                                   centroids=centroids)
-        num_nodes = len(cluster_tree.nodes)
-
-        # prepare the guess and fit matrices
-        loop_guess_mat = np.zeros(shape=(num_nodes, 9), dtype=np.float32)
-        # loop_fit_mat = np.zeros(shape=loop_guess_mat.shape, dtype=loop_guess_mat.dtype)
-        loop_fit_results = list(
-            np.arange(num_nodes, dtype=np.uint16))  # temporary placeholder
-
-        shift_ind, vdc_shifted = BELoopFitter.shift_vdc(vdc_vec)
-
-        # guess the top (or last) node
-        loop_guess_mat[-1] = generate_guess(vdc_vec, cluster_tree.tree.value)
-
-        # Now guess the rest of the tree
-        loop_guess_mat, loop_fit_results = _loop_fit_tree(cluster_tree.tree,
-                                                          loop_guess_mat,
-                                                          loop_fit_results,
-                                                          vdc_shifted,
-                                                          shift_ind)
-
-        # Prepare guesses for each pixel using the fit of the cluster it belongs to:
-        guess_parms = np.zeros(shape=projected_loops_2d.shape[0],
-                               dtype=loop_fit32)
-        for clust_id in range(num_clusters):
-            pix_inds = np.where(labels == clust_id)[0]
-            temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
-            # convert to the appropriate dtype as well:
-            r2 = 1 - np.sum(np.abs(loop_fit_results[clust_id][0].fun ** 2))
-            guess_parms[pix_inds] = stack_real_to_compound(
-                np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
-
-        return guess_parms
-
-    @staticmethod
-    def shift_vdc(vdc_vec):
-        """
-        Rolls the Vdc vector by a quarter cycle
-
-        Parameters
-        ----------
-        vdc_vec : 1D numpy array
-            DC offset vector
-
-        Returns
-        -------
-        shift_ind : int
-            Number of indices by which the vector was rolled
-        vdc_shifted : 1D numpy array
-            Vdc vector rolled by a quarter cycle
-
-        """
-        shift_ind = int(
-            -1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
-        vdc_shifted = np.roll(vdc_vec, shift_ind)
-        return shift_ind, vdc_shifted
 
     def _unit_compute_guess(self):
         """
@@ -831,7 +697,7 @@ class BELoopFitter(Fitter):
         for proj_loops_this_forc, curr_vdc in zip(proj_forc, dc_vec_list):
             # this works on batches and not individual loops
             # Cannot be done in parallel
-            this_guesses = self._guess_loops(curr_vdc, proj_loops_this_forc)
+            this_guesses = _guess_loops(curr_vdc, proj_loops_this_forc)
             all_guesses.append(this_guesses)
 
         self._results = proj_loops, loop_mets, np.array(all_guesses)
@@ -949,7 +815,7 @@ class BELoopFitter(Fitter):
             '''
             Shift the loops and vdc vector
             '''
-            shift_ind, vdc_shifted = self.shift_vdc(dc_vec)
+            shift_ind, vdc_shifted = shift_vdc(dc_vec)
             loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=1)
 
             if self.verbose and self.mpi_rank == 0:
@@ -1014,7 +880,7 @@ class BELoopFitter(Fitter):
                 '''
                 Shift the loops and vdc vector
                 '''
-                shift_ind, vdc_shifted = self.shift_vdc(dc_vec)
+                shift_ind, vdc_shifted = shift_vdc(dc_vec)
                 loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=1)
 
                 if self.verbose:
@@ -1038,7 +904,7 @@ class BELoopFitter(Fitter):
                 '''
                 Shift the loops and vdc vector
                 '''
-                shift_ind, vdc_shifted = self.shift_vdc(dc_vec)
+                shift_ind, vdc_shifted = shift_vdc(dc_vec)
                 loops_2d_shifted = np.roll(loops_2d, shift_ind, axis=1)
 
                 if self.verbose:
@@ -1271,3 +1137,139 @@ def BE_LOOP(coef_vec, data_vec, dc_vec, *args):
     r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
 
     return 1 - r_squared
+
+
+def _guess_loops(vdc_vec, projected_loops_2d):
+    """
+    Provides loop parameter guesses for a given set of loops
+
+    Parameters
+    ----------
+    vdc_vec : 1D numpy float numpy array
+        DC voltage offsets for the loops
+    projected_loops_2d : 2D numpy float array
+        Projected loops arranged as [instance or position x dc voltage steps]
+
+    Returns
+    -------
+    guess_parms : 1D compound numpy array
+        Loop parameter guesses for the provided projected loops
+
+    """
+
+    def _loop_fit_tree(tree, guess_mat, fit_results, vdc_shifted,
+                       shift_ind):
+        """
+        Recursive function that fits a tree object describing the cluster results
+
+        Parameters
+        ----------
+        tree : ClusterTree object
+            Tree describing the clustering results
+        guess_mat : 1D numpy float array
+            Loop parameters that serve as guesses for the loops in the tree
+        fit_results : 1D numpy float array
+            Loop parameters that serve as fits for the loops in the tree
+        vdc_shifted : 1D numpy float array
+            DC voltages shifted be 1/4 cycle
+        shift_ind : unsigned int
+            Number of units to shift loops by
+
+        Returns
+        -------
+        guess_mat : 1D numpy float array
+            Loop parameters that serve as guesses for the loops in the tree
+        fit_results : 1D numpy float array
+            Loop parameters that serve as fits for the loops in the tree
+
+        """
+        # print('Now fitting cluster #{}'.format(tree.name))
+        # I already have a guess. Now fit myself
+        curr_fit_results = fit_loop(vdc_shifted,
+                                    np.roll(tree.value, shift_ind),
+                                    guess_mat[tree.name])
+        # keep all the fit results
+        fit_results[tree.name] = curr_fit_results
+        for child in tree.children:
+            # Use my fit as a guess for the lower layers:
+            guess_mat[child.name] = curr_fit_results[0].x
+            # Fit this child:
+            guess_mat, fit_mat = _loop_fit_tree(child, guess_mat,
+                                                fit_results, vdc_shifted,
+                                                shift_ind)
+        return guess_mat, fit_results
+
+    num_clusters = max(2, int(projected_loops_2d.shape[
+                                  0] ** 0.5))  # change this to 0.6 if necessary
+    estimators = KMeans(num_clusters)
+    results = estimators.fit(projected_loops_2d)
+    centroids = results.cluster_centers_
+    labels = results.labels_
+
+    # Get the distance between cluster means
+    distance_mat = pdist(centroids)
+    # get hierarchical pairings of clusters
+    linkage_pairing = linkage(distance_mat, 'weighted')
+    # Normalize the pairwise distance with the maximum distance
+    linkage_pairing[:, 2] = linkage_pairing[:, 2] / max(
+        linkage_pairing[:, 2])
+
+    # Now use the tree class:
+    cluster_tree = ClusterTree(linkage_pairing[:, :2], labels,
+                               distances=linkage_pairing[:, 2],
+                               centroids=centroids)
+    num_nodes = len(cluster_tree.nodes)
+
+    # prepare the guess and fit matrices
+    loop_guess_mat = np.zeros(shape=(num_nodes, 9), dtype=np.float32)
+    # loop_fit_mat = np.zeros(shape=loop_guess_mat.shape, dtype=loop_guess_mat.dtype)
+    loop_fit_results = list(
+        np.arange(num_nodes, dtype=np.uint16))  # temporary placeholder
+
+    shift_ind, vdc_shifted = shift_vdc(vdc_vec)
+
+    # guess the top (or last) node
+    loop_guess_mat[-1] = generate_guess(vdc_vec, cluster_tree.tree.value)
+
+    # Now guess the rest of the tree
+    loop_guess_mat, loop_fit_results = _loop_fit_tree(cluster_tree.tree,
+                                                      loop_guess_mat,
+                                                      loop_fit_results,
+                                                      vdc_shifted,
+                                                      shift_ind)
+
+    # Prepare guesses for each pixel using the fit of the cluster it belongs to:
+    guess_parms = np.zeros(shape=projected_loops_2d.shape[0],
+                           dtype=loop_fit32)
+    for clust_id in range(num_clusters):
+        pix_inds = np.where(labels == clust_id)[0]
+        temp = np.atleast_2d(loop_fit_results[clust_id][0].x)
+        # convert to the appropriate dtype as well:
+        r2 = 1 - np.sum(np.abs(loop_fit_results[clust_id][0].fun ** 2))
+        guess_parms[pix_inds] = stack_real_to_compound(
+            np.hstack([temp, np.atleast_2d(r2)]), loop_fit32)
+
+    return guess_parms
+
+
+def shift_vdc(vdc_vec):
+    """
+    Rolls the Vdc vector by a quarter cycle
+
+    Parameters
+    ----------
+    vdc_vec : 1D numpy array
+        DC offset vector
+
+    Returns
+    -------
+    shift_ind : int
+        Number of indices by which the vector was rolled
+    vdc_shifted : 1D numpy array
+        Vdc vector rolled by a quarter cycle
+
+    """
+    shift_ind = int(
+        -1 * len(vdc_vec) / 4)  # should NOT be hardcoded like this!
+    vdc_shifted = np.roll(vdc_vec, shift_ind)
+    return shift_ind, vdc_shifted
