@@ -697,7 +697,7 @@ class BELoopFitter(Fitter):
         for proj_loops_this_forc, curr_vdc in zip(proj_forc, dc_vec_list):
             # this works on batches and not individual loops
             # Cannot be done in parallel
-            this_guesses = _guess_loops(curr_vdc, proj_loops_this_forc)
+            this_guesses = guess_loops_hierarchically(curr_vdc, proj_loops_this_forc)
             all_guesses.append(this_guesses)
 
         self._results = proj_loops, loop_mets, np.array(all_guesses)
@@ -1139,7 +1139,7 @@ def BE_LOOP(coef_vec, data_vec, dc_vec, *args):
     return 1 - r_squared
 
 
-def _guess_loops(vdc_vec, projected_loops_2d):
+def guess_loops_hierarchically(vdc_vec, projected_loops_2d):
     """
     Provides loop parameter guesses for a given set of loops
 
