@@ -986,7 +986,7 @@ class BELoopFitter(Fitter):
         did not work.
         """
 
-        # 1 - r_squared = sho_error(guess, data_vec, freq_vector)
+        # 1 - r_squared = _sho_error(guess, data_vec, freq_vector)
 
         obj_func = BE_LOOP
         solver_options = {'jac': 'cs', 'max_nfev': 2}

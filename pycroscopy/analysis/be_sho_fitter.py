@@ -26,10 +26,10 @@ from .fitter import Fitter
 '''
 Custom dtype for the datasets created during fitting.
 '''
-field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor',
+_field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor',
                'Phase [rad]', 'R2 Criterion']
-sho32 = np.dtype({'names': field_names,
-                  'formats': [np.float32 for name in field_names]})
+sho32 = np.dtype({'names': _field_names,
+                  'formats': [np.float32 for name in _field_names]})
 
 
 class SHOGuessFunc(Enum):
@@ -74,7 +74,7 @@ class BESHOfitter(Fitter):
         self._get_frequency_vector()
 
         # This is almost always True but think of this more as a sanity check.
-        self.is_reshapable = is_reshapable(self.h5_main, self.step_start_inds)
+        self.is_reshapable = _is_reshapable(self.h5_main, self.step_start_inds)
 
         # accounting for memory copies
         self._max_raw_pos_per_read = self._max_pos_per_read
@@ -171,7 +171,7 @@ class BESHOfitter(Fitter):
             if self.verbose and self.mpi_rank == 0:
                 print('Got raw data of shape {} from super'
                       '.'.format(self.data.shape))
-            self.data = reshape_to_one_step(self.data, self.num_udvs_steps)
+            self.data = _reshape_to_one_step(self.data, self.num_udvs_steps)
             if self.verbose and self.mpi_rank == 0:
                 print('Reshaped raw data to shape {}'.format(self.data.shape))
 
@@ -190,7 +190,7 @@ class BESHOfitter(Fitter):
         # The Fitter class should take care of all the basic reading
         super(BESHOfitter, self)._read_guess_chunk()
 
-        self._guess = reshape_to_one_step(self._guess, self.num_udvs_steps)
+        self._guess = _reshape_to_one_step(self._guess, self.num_udvs_steps)
         # bear in mind that this self._guess is a compound dataset. Convert to float32
         # don't keep the R^2.
         self._guess = np.hstack([self._guess[name] for name in self._guess.dtype.names if name != 'R2 Criterion'])
@@ -210,13 +210,13 @@ class BESHOfitter(Fitter):
             self._guess = np.transpose(np.atleast_2d(self._guess))
             if self.verbose and self.mpi_rank == 0:
                 print('Prepared guess of shape {} before reshaping'.format(self._guess.shape))
-            self._guess = reshape_to_n_steps(self._guess, self.num_udvs_steps)
+            self._guess = _reshape_to_n_steps(self._guess, self.num_udvs_steps)
             if self.verbose and self.mpi_rank == 0:
                 print('Reshaped guess to shape {}'.format(self._guess.shape))
         else:
             self._fit = self._results
             self._fit = np.transpose(np.atleast_2d(self._fit))
-            self._fit = reshape_to_n_steps(self._fit, self.num_udvs_steps)
+            self._fit = _reshape_to_n_steps(self._fit, self.num_udvs_steps)
 
         # ask super to take care of the rest, which is a standardized operation
         super(BESHOfitter, self)._write_results_chunk()
@@ -295,7 +295,7 @@ class BESHOfitter(Fitter):
         Punts unit computation on a chunk of data to Process
 
         """
-        super(BESHOfitter, self)._unit_compute_fit(sho_error,
+        super(BESHOfitter, self)._unit_compute_fit(_sho_error,
                                                    obj_func_args=[self.freq_vec],
                                                    solver_options={'jac': 'cs'})
 
@@ -378,7 +378,7 @@ class BESHOfitter(Fitter):
         return sho_vec
 
 
-def reshape_to_one_step(raw_mat, num_steps):
+def _reshape_to_one_step(raw_mat, num_steps):
     """
     Reshapes provided data from (pos, step * bin) to (pos * step, bin).
     This is useful when unraveling data for parallel processing.
@@ -403,7 +403,7 @@ def reshape_to_one_step(raw_mat, num_steps):
     return two_d
 
 
-def reshape_to_n_steps(raw_mat, num_steps):
+def _reshape_to_n_steps(raw_mat, num_steps):
     """
     Reshapes provided data from (positions * step, bin) to (positions, step * bin).
     Use this to restructure data back to its original form after parallel computing
@@ -428,7 +428,7 @@ def reshape_to_n_steps(raw_mat, num_steps):
     return two_d
 
 
-def is_reshapable(h5_main, step_start_inds=None):
+def _is_reshapable(h5_main, step_start_inds=None):
     """
     A BE dataset is said to be reshape-able if the number of bins per steps is constant. Even if the dataset contains
     multiple excitation waveforms (harmonics), We know that the measurement is always at the resonance peak, so the
@@ -456,7 +456,7 @@ def is_reshapable(h5_main, step_start_inds=None):
     return len(step_types) == 1
 
 
-def r_square(data_vec, func, *args, **kwargs):
+def _r_square(data_vec, func, *args, **kwargs):
     """
     R-square for estimation of the fitting quality
     Typical result is in the range (0,1), where 1 is the best fitting
@@ -532,12 +532,12 @@ def complex_gaussian(resp_vec, w_vec, num_points=5):
 
     # Calculate the error and append it.
     guess = np.hstack(
-        [guess, np.array(r_square(resp_vec, SHOfunc, guess, w_vec))])
+        [guess, np.array(_r_square(resp_vec, SHOfunc, guess, w_vec))])
 
     return guess
 
 
-def sho_error(guess, data_vec, freq_vector):
+def _sho_error(guess, data_vec, freq_vector):
     """
     Generates the single Harmonic Oscillator response over the given vector
 
