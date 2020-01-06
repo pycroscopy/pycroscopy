@@ -51,7 +51,8 @@ class GIVBayesian(Process):
         kwargs : dict
             Other parameters specific to the Process class and nuanced bayesian_inference parameters
         """
-        super(GIVBayesian, self).__init__(h5_main, **kwargs)
+        super(GIVBayesian, self).__init__(h5_main, 'Bayesian_Inference',
+                                          **kwargs)
         self.gain = gain
         self.ex_freq = ex_freq
         self.r_extra = r_extra
@@ -69,7 +70,6 @@ class GIVBayesian(Process):
         self.parms_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
         self.parms_dict.update(bayesian_parms)
 
-        self.process_name = 'Bayesian_Inference'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         # Should not be extracting excitation this way!
@@ -117,7 +117,8 @@ class GIVBayesian(Process):
         return bayesian_inference_on_period(self.h5_main[pix_ind], self.single_ao, self.parms_dict['freq'],
                                             show_plots=show_plots, **other_params)
 
-    def _set_memory_and_cores(self, cores=None, mem=None):
+    def _set_memory_and_cores(self, cores=None, man_mem_limit=None,
+                              mem_multiplier=1.0):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -131,7 +132,9 @@ class GIVBayesian(Process):
             Default - 1024
             The amount a memory in Mb to use in the computation
         """
-        super(GIVBayesian, self)._set_memory_and_cores(cores=cores, man_mem_limit=mem)
+        super(GIVBayesian, self)._set_memory_and_cores(cores=cores,
+                                                       mem_multiplier=mem_multiplier,
+                                                       man_mem_limit=man_mem_limit)
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
         # In the case of simplified Bayesian inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance
