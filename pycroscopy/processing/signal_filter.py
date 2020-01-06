@@ -53,7 +53,7 @@ class SignalFilter(Process):
             Please see Process class for additional inputs
         """
 
-        super(SignalFilter, self).__init__(h5_main, **kwargs)
+        super(SignalFilter, self).__init__(h5_main, 'FFT_Filtering', **kwargs)
 
         if frequency_filters is None and noise_threshold is None:
             raise ValueError('Need to specify at least some noise thresholding / frequency filter')
@@ -108,7 +108,6 @@ class SignalFilter(Process):
             self.parms_dict['noise_threshold'] = self.noise_threshold
         self.parms_dict['num_pix'] = self.num_effective_pix
 
-        self.process_name = 'FFT_Filtering'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         self.data = None
