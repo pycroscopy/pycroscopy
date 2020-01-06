@@ -149,9 +149,17 @@ class GIVTranslator(Translator):
             parm_dict['IO_amplifier_gain'] = np.uint32(h5_f['amp_gain'][0][0])
 
             parm_dict['excitation_frequency_[Hz]'] = np.float32(h5_f['frequency'][0][0])
-            parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
-            parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+            #parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
+            #parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+
             excit_wfm = np.float32(np.squeeze(h5_f['excit_wfm'].value))
+            #in case these keys are not present (in some versions they are not)
+            try:
+                parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
+                parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+            except KeyError:
+                parm_dict['excitation_offset_[V]'] = excit_wfm[0, 0] #need a better way to handle this.
+                parm_dict['excitation_amplitude_[V]'] = np.max(excit_wfm[0, :]) #risky for non sine waves
 
             # Make sure to truncate the data to the point when the
             pts_per_cycle = int(np.round(1.0*parm_dict['IO_samp_rate_[Hz]']/parm_dict['excitation_frequency_[Hz]']))
