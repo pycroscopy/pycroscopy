@@ -158,8 +158,8 @@ class GIVTranslator(Translator):
                 parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
                 parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
             except KeyError:
-                parm_dict['excitation_offset_[V]'] = excit_wfm[0, 0] #need a better way to handle this.
-                parm_dict['excitation_amplitude_[V]'] = np.max(excit_wfm[0, :]) #risky for non sine waves
+                parm_dict['excitation_offset_[V]'] = excit_wfm[0] #need a better way to handle this.
+                parm_dict['excitation_amplitude_[V]'] = np.max(excit_wfm[:]) #risky for non sine waves
 
             # Make sure to truncate the data to the point when the
             pts_per_cycle = int(np.round(1.0*parm_dict['IO_samp_rate_[Hz]']/parm_dict['excitation_frequency_[Hz]']))
