@@ -131,7 +131,7 @@ class GIVBayesian(Process):
             Default - 1024
             The amount a memory in Mb to use in the computation
         """
-        super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
+        super(GIVBayesian, self)._set_memory_and_cores(cores=cores, man_mem_limit=mem)
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
         # In the case of simplified Bayesian inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance
