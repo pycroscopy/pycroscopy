@@ -51,7 +51,7 @@ class GIVBayesian(Process):
         kwargs : dict
             Other parameters specific to the Process class and nuanced bayesian_inference parameters
         """
-        super(GIVBayesian, self).__init__(h5_main, 'Bayesian_Inference',
+        super(GIVBayesian, self).__init__(h5_main,
                                           **kwargs)
         self.gain = gain
         self.ex_freq = ex_freq
@@ -63,7 +63,7 @@ class GIVBayesian(Process):
             print('ensuring that half steps should be odd, num_x_steps is now', self.num_x_steps)
 
         self.h5_main = USIDataset(self.h5_main)
-
+        self.process_name = 'GIVBayesian'
         # take these from kwargs
         bayesian_parms = {'gam': 0.03, 'e': 10.0, 'sigma': 10.0, 'sigmaC': 1.0, 'num_samples': 2E3}
 
