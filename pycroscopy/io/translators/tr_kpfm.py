@@ -155,7 +155,7 @@ class TRKPFMTranslator(Translator):
         """
         parm_path = path.abspath(parm_path)
         parm_dict, excit_wfm = self._read_parms(parm_path)
-
+        excit_wfm = excit_wfm[1::2]
         self._parse_file_path(parm_path)
 
         num_dat_files = len(self.file_list)
@@ -206,8 +206,8 @@ class TRKPFMTranslator(Translator):
 
         field_vec = np.array([0,1])
 
-        spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
-                     Dimension('Bias', 'V', excit_wfm)]
+        spec_dims = [Dimension('Bias', 'V', excit_wfm),Dimension('Field', 'Binary', field_vec),
+                     Dimension ('Time', 's', time_vec)]
 
         pos_dims = [Dimension('Cols', 'nm', parm_dict['grid_num_cols']),
                     Dimension('Rows', 'um', parm_dict['grid_num_rows'])]
