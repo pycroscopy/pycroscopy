@@ -209,8 +209,8 @@ class TRKPFMTranslator(Translator):
         spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
                      Dimension('Bias', 'V', excit_wfm)]
 
-        pos_dims = [Dimension('Cols', 'nm', np.arrange(parm_dict['grid_num_rows']),
-                    Dimension('Rows', 'um', np.arrange(parm_dict['grid_num_cols'])]
+        pos_dims = [Dimension('Cols', 'nm', np.arrange(parm_dict['grid_num_rows'])),
+                    Dimension('Rows', 'um', np.arrange(parm_dict['grid_num_cols']))]
 
 
         self.raw_datasets = list()
