@@ -77,7 +77,7 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
                                                      title=get_attr(h5_group,
                                                                     'cluster_algorithm') + ' Centroid',
                                                      amp_units=get_attr(h5_centroids, 'units'))
-    elif len(h5_centroids.spec_dim_labels) == 2:
+    elif len(h5_centroids.spec_dim_labels) > 1:
         # stack of spectrograms
         if h5_centroids.dtype in [np.complex64, np.complex128, np.complex]:
             fig_cent, axis_cent = plot_complex_spectra(centroids_mat, subtitle_prefix='Cluster',
