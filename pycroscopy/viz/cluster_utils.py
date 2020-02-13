@@ -60,6 +60,10 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
         axis_labs.set_title(get_attr(h5_group, 'cluster_algorithm') + ' Labels')
     elif labels_mat.ndim == 2:
         fig_labs, axis_labs = plot_cluster_labels(labels_mat, num_clusters=h5_centroids.shape[0],
+                                                  x_label=h5_labels.pos_dim_descriptors[0],
+                                                  y_label=h5_labels.pos_dim_descriptors[1],
+                                                  x_vec=h5_labels.get_pos_values(h5_labels.pos_dim_labels[0]),
+                                                  y_vec=h5_labels.get_pos_values(h5_labels.pos_dim_labels[1]),
                                                   title=get_attr(h5_group, 'cluster_algorithm') + ' Labels')
 
     # TODO: probably not a great idea to load the entire dataset to memory
@@ -77,7 +81,7 @@ def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):
                                                      title=get_attr(h5_group,
                                                                     'cluster_algorithm') + ' Centroid',
                                                      amp_units=get_attr(h5_centroids, 'units'))
-    elif len(h5_centroids.spec_dim_labels) > 1:
+    elif len(h5_centroids.spec_dim_labels) == 2:
         # stack of spectrograms
         if h5_centroids.dtype in [np.complex64, np.complex128, np.complex]:
             fig_cent, axis_cent = plot_complex_spectra(centroids_mat, subtitle_prefix='Cluster',
