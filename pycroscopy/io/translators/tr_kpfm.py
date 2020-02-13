@@ -206,8 +206,8 @@ class TRKPFMTranslator(Translator):
 
         field_vec = np.array([0,1])
 
-        spec_dims = [Dimension('Bias', 'V', excit_wfm),Dimension('Field', 'Binary', field_vec),
-                     Dimension ('Time', 's', time_vec)]
+        spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
+                     Dimension('Bias', 'V', excit_wfm)]
 
         pos_dims = [Dimension('Cols', 'nm', parm_dict['grid_num_cols']),
                     Dimension('Rows', 'um', parm_dict['grid_num_rows'])]
