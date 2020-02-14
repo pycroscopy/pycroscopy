@@ -205,12 +205,12 @@ class TRKPFMTranslator(Translator):
         print('Spectrogram size: {}'.format(spectrogram_size))
 
         field_vec = np.array([0,1])
-        #print testg
+
         spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
                      Dimension('Bias', 'V', excit_wfm)]
 
-        pos_dims = [Dimension('Cols', 'm', np.arange(parm_dict['grid_num_cols'])),
-                    Dimension('Rows', 'm', np.arange(parm_dict['grid_num_rows']))]
+        pos_dims = [Dimension('Cols', 'm', int(parm_dict['grid_num_cols'])),
+                    Dimension('Rows', 'm', int(parm_dict['grid_num_nums']))]
 
 
         self.raw_datasets = list()
