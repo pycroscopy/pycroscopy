@@ -205,7 +205,7 @@ class TRKPFMTranslator(Translator):
         print('Spectrogram size: {}'.format(spectrogram_size))
 
         field_vec = np.array([0,1])
-        #print test
+        #print testg
         spec_dims = [Dimension ('Time', 's', time_vec),Dimension('Field', 'Binary', field_vec),
                      Dimension('Bias', 'V', excit_wfm)]
 
