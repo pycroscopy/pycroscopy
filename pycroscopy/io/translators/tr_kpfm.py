@@ -210,7 +210,7 @@ class TRKPFMTranslator(Translator):
                      Dimension('Bias', 'V', excit_wfm)]
 
         pos_dims = [Dimension('Cols', 'm', int(parm_dict['grid_num_cols'])),
-                    Dimension('Rows', 'm', int(parm_dict['grid_num_rows']))]
+                    Dimension('Rows', 'm', int(parm_dict['grid_num_nums']))]
 
 
         self.raw_datasets = list()
