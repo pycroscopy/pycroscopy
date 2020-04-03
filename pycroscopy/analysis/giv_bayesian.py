@@ -32,7 +32,8 @@ class GIVBayesian(Process):
     signals in General mode I-V data
     """
 
-    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=110, **kwargs):
+    def __init__(self, h5_main, ex_freq, gain, num_x_steps=250, r_extra=110,
+                 **kwargs):
         """
         Applies Bayesian Inference to General Mode IV (G-IV) data to extract the true current
 
@@ -48,6 +49,11 @@ class GIVBayesian(Process):
             Number of steps for the inferred results. Note: this may be end up being slightly different from specified.
         r_extra : float (Optional, default = 110 [Ohms])
             Extra resistance in the RC circuit that will provide correct current and resistance values
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         kwargs : dict
             Other parameters specific to the Process class and nuanced bayesian_inference parameters
         """
@@ -152,7 +158,9 @@ class GIVBayesian(Process):
         if self.verbose and self.mpi_rank == 0:
             print('Now creating the datasets')
 
-        self.h5_results_grp = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = create_results_group(self.h5_main,
+                                                   self.process_name,
+                                                   h5_parent_group=self._h5_target_group)
 
         write_simple_attrs(self.h5_results_grp, {'algorithm_author': 'Kody J. Law', 'last_pixel': 0})
         write_simple_attrs(self.h5_results_grp, self.parms_dict)

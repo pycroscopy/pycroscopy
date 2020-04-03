@@ -33,6 +33,11 @@ class Fitter(Process):
             Main datasets whose one or dimensions will be reduced
         variables : str or list, optional
             List of spectroscopic dimension names that will be reduced
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         kwargs : dict
             Keyword arguments that will be passed on to
             pyUSID.processing.process.Process

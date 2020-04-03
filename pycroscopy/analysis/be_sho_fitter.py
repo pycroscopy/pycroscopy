@@ -51,6 +51,11 @@ class BESHOfitter(Fitter):
         ----------
         h5_main : pyUSID.io.USIDataset
             Main dataset containing band excitation measurement
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         kwargs : dict, optional
             Keyword arguments such as "verbose" and "cores" that will be
             passed onto :class:`~pyUSID.processing.process.Process`
@@ -103,7 +108,8 @@ class BESHOfitter(Fitter):
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
         """
-        self.h5_results_grp = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
+                                                   h5_parent_group=self._h5_target_group)
         write_simple_attrs(self.h5_results_grp, self.parms_dict)
 
         h5_sho_inds, h5_sho_vals = write_reduced_anc_dsets(self.h5_results_grp, self.h5_main.h5_spec_inds,

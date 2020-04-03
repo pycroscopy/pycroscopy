@@ -56,18 +56,6 @@ class BELoopFitter(Fitter):
     model to describe hysteretic switching in
     ferroelectric materials
 
-    Parameters
-    ----------
-    h5_main : h5py.Dataset
-        The dataset over which the analysis will be performed. This dataset
-        should be linked to the spectroscopic indices and values, and position
-        indices and values datasets.
-
-
-    Returns
-    -------
-    None
-
     Notes
     -----
     Quantitative mapping of switching behavior in piezoresponse force microscopy, Stephen Jesse, Ho Nyung Lee,
@@ -76,6 +64,21 @@ class BELoopFitter(Fitter):
     """
 
     def __init__(self, h5_main, **kwargs):
+        """
+
+        Parameters
+        ----------
+        h5_main : h5py.Dataset
+            The dataset over which the analysis will be performed. This dataset
+            should be linked to the spectroscopic indices and values, and position
+            indices and values datasets.
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
+        kwargs : passed onto pyUSID.Process
+        """
 
         super(BELoopFitter, self).__init__(h5_main, variables=None, **kwargs)
 
@@ -210,7 +213,9 @@ class BELoopFitter(Fitter):
 
         # Make the results group
         self.h5_results_grp = create_results_group(self.h5_main,
-                                                   self.process_name)
+                                                   self.process_name,
+                                                   h5_parent_group=self._h5_target_group)
+
         write_simple_attrs(self.h5_results_grp, self.parms_dict)
 
         # Write datasets

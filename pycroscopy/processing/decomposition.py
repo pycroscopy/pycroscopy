@@ -31,7 +31,7 @@ class Decomposition(Process):
     formatting the results in an USID compliant manner.
     """
 
-    def __init__(self, h5_main, estimator):
+    def __init__(self, h5_main, estimator, **kwargs):
         """
         Constructs the Decomposition object. Call the :meth:`~pycroscopy.processing.Decomposition.test()` and
         :meth:`~pycroscopy.processing.Decomposition.compute()` methods to run the decomposition
@@ -42,6 +42,11 @@ class Decomposition(Process):
             USID Main HDF5 dataset with embedded ancillary spectroscopic, position indices and values datasets
         estimator : :module:`sklearn.decomposition` object
             configured decomposition object to apply to the data
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         """
         
         allowed_methods = [dec.factor_analysis.FactorAnalysis,
@@ -63,7 +68,7 @@ class Decomposition(Process):
             raise NotImplementedError('Cannot work with {} yet'.format(self.method_name))
             
         # Done with decomposition-related checks, now call super init
-        super(Decomposition, self).__init__(h5_main)
+        super(Decomposition, self).__init__(h5_main, **kwargs)
         
         # set up parameters
         self.parms_dict = {'decomposition_algorithm':self.method_name}
@@ -215,7 +220,8 @@ class Decomposition(Process):
             Reference to the group that contains the decomposition results
         """
 
-        h5_decomp_group = create_results_group(self.h5_main, self.process_name)
+        h5_decomp_group = create_results_group(self.h5_main, self.process_name,
+                                               h5_parent_group=self._h5_target_group)
         write_simple_attrs(h5_decomp_group, self.parms_dict)
         write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
                                              'n_samples': self.h5_main.shape[0]})
