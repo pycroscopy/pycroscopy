@@ -27,7 +27,7 @@ from .fitter import Fitter
 Custom dtype for the datasets created during fitting.
 '''
 _field_names = ['Amplitude [V]', 'Frequency [Hz]', 'Quality Factor',
-               'Phase [rad]', 'R2 Criterion']
+                'Phase [rad]', 'R2 Criterion']
 sho32 = np.dtype({'names': _field_names,
                   'formats': [np.float32 for name in _field_names]})
 
@@ -63,7 +63,6 @@ class BESHOfitter(Fitter):
         super(BESHOfitter, self).__init__(h5_main, "SHO_Fit",
                                           variables=['Frequency'], **kwargs)
 
-        self.process_name = "SHO_Fit"
         self.parms_dict = None
 
         self._fit_dim_name = 'Frequency'
@@ -111,6 +110,13 @@ class BESHOfitter(Fitter):
         self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
                                                    h5_parent_group=self._h5_target_group)
         write_simple_attrs(self.h5_results_grp, self.parms_dict)
+
+        # If writing to a new HDF5 file:
+        # Add back the data_type attribute - still being used in the visualizer
+        if self.h5_results_grp.file != self.h5_main.file:
+            write_simple_attrs(self.h5_results_grp.file,
+                               {'data_type': get_attr(self.h5_main.file,
+                                                      'data_type')})
 
         h5_sho_inds, h5_sho_vals = write_reduced_anc_dsets(self.h5_results_grp, self.h5_main.h5_spec_inds,
                                                             self.h5_main.h5_spec_vals, self._fit_dim_name)

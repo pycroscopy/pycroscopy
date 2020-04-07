@@ -83,7 +83,6 @@ class BELoopFitter(Fitter):
         super(BELoopFitter, self).__init__(h5_main, "Loop_Fit",
                                            variables=None, **kwargs)
 
-        self.process_name = "Loop_Fit"
         self.parms_dict = None
 
         self._check_validity(h5_main)
@@ -218,6 +217,13 @@ class BELoopFitter(Fitter):
                                                    h5_parent_group=self._h5_target_group)
 
         write_simple_attrs(self.h5_results_grp, self.parms_dict)
+
+        # If writing to a new HDF5 file:
+        # Add back the data_type attribute - still being used in the visualizer
+        if self.h5_results_grp.file != self.h5_main.file:
+            write_simple_attrs(self.h5_results_grp.file,
+                               {'data_type': get_attr(self.h5_main.file,
+                                                      'data_type')})
 
         # Write datasets
         self.h5_projected_loops = create_empty_dataset(self.h5_main,
