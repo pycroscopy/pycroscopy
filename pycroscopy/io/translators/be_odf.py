@@ -337,7 +337,7 @@ class BEodfTranslator(Translator):
             remove(h5_path)
 
         # First create the file
-        h5_f = h5py.File(h5_path)
+        h5_f = h5py.File(h5_path, mode='w')
 
         # Then write root level attributes
         global_parms = dict()
