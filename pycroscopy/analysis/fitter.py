@@ -63,8 +63,6 @@ class Fitter(Process):
         self.__set_up_called = False
 
         # Variables from Process:
-        self.process_name = None
-        self.h5_results_grp = None
         self.compute = self.set_up_guess
         self._unit_computation = super(Fitter, self)._unit_computation
         self._create_results_datasets = self._create_guess_datasets
