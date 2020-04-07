@@ -221,6 +221,7 @@ class Decomposition(Process):
 
         h5_decomp_group = create_results_group(self.h5_main, self.process_name,
                                                h5_parent_group=self._h5_target_group)
+        self._write_source_dset_provenance()
         write_simple_attrs(h5_decomp_group, self.parms_dict)
         write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
                                              'n_samples': self.h5_main.shape[0]})

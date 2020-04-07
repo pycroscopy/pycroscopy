@@ -276,6 +276,7 @@ class Cluster(Process):
 
         h5_cluster_group = create_results_group(self.h5_main, self.process_name,
                                                 h5_parent_group=self._h5_target_group)
+        self._write_source_dset_provenance()
 
         write_simple_attrs(h5_cluster_group, self.parms_dict)
 
