@@ -15,7 +15,7 @@ import numpy as np
 from functools import partial
 from pyUSID.io.hdf_utils import copy_region_refs, write_simple_attrs, \
     create_results_group, write_reduced_anc_dsets, create_empty_dataset, \
-    write_main_dataset
+    write_main_dataset, get_attr
 from pyUSID.io.usi_data import USIDataset
 
 from scipy.signal import find_peaks_cwt
@@ -60,8 +60,8 @@ class BESHOfitter(Fitter):
             Keyword arguments such as "verbose" and "cores" that will be
             passed onto :class:`~pyUSID.processing.process.Process`
         """
-        super(BESHOfitter, self).__init__(h5_main, variables=['Frequency'],
-                                          **kwargs)
+        super(BESHOfitter, self).__init__(h5_main, "SHO_Fit",
+                                          variables=['Frequency'], **kwargs)
 
         self.process_name = "SHO_Fit"
         self.parms_dict = None

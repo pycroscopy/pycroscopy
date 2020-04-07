@@ -23,7 +23,7 @@ from pyUSID.io.usi_data import USIDataset
 
 class Fitter(Process):
 
-    def __init__(self, h5_main, variables=None, **kwargs):
+    def __init__(self, h5_main, proc_name, variables=None, **kwargs):
         """
         Creates a new instance of the abstract Fitter class
 
@@ -31,6 +31,8 @@ class Fitter(Process):
         ----------
         h5_main : h5py.Dataset or pyUSID.io.USIDataset object
             Main datasets whose one or dimensions will be reduced
+        proc_name : str or unicode
+            Name of the child process
         variables : str or list, optional
             List of spectroscopic dimension names that will be reduced
         h5_target_group : h5py.Group, optional. Default = None
@@ -43,7 +45,7 @@ class Fitter(Process):
             pyUSID.processing.process.Process
         """
 
-        super(Fitter, self).__init__(h5_main, **kwargs)
+        super(Fitter, self).__init__(h5_main, proc_name, **kwargs)
 
         # Validate other arguments / kwargs here:
         if variables is not None:

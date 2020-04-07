@@ -80,7 +80,8 @@ class BELoopFitter(Fitter):
         kwargs : passed onto pyUSID.Process
         """
 
-        super(BELoopFitter, self).__init__(h5_main, variables=None, **kwargs)
+        super(BELoopFitter, self).__init__(h5_main, "Loop_Fit",
+                                           variables=None, **kwargs)
 
         self.process_name = "Loop_Fit"
         self.parms_dict = None
