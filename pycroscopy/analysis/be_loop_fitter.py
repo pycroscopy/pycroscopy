@@ -730,6 +730,28 @@ class BELoopFitter(Fitter):
         self.compute = self.do_fit
         self._write_results_chunk = self._write_fit_chunk
 
+    def _get_existing_datasets(self):
+        """
+        The purpose of this function is to allow processes to resume from partly computed results
+        Start with self.h5_results_grp
+        """
+        super(BELoopFitter, self)._get_existing_datasets()
+        self.h5_projected_loops = self.h5_results_grp['Projected_Loops']
+        self.h5_loop_metrics = self.h5_results_grp['Loop_Metrics']
+        try:
+            _ = self.h5_results_grp['Guess_Loop_Parameters']
+        except KeyError:
+            _ = self.extract_loop_parameters(self._h5_guess)
+        try:
+            # This has already been done by super
+            _ = self.h5_results_grp['Fit']
+            try:
+                _ = self.h5_results_grp['Fit_Loop_Parameters']
+            except KeyError:
+                _ = self.extract_loop_parameters(self._h5_fit)
+        except KeyError:
+            pass
+
     def do_fit(self, override=False,):
         """
         Computes the Fit
