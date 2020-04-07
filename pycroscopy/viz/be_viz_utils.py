@@ -217,7 +217,7 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     return fig, axes
 
 
-def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None):
+def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None, verbose=False):
     """
     Jupyer notebook ONLY function. Sets up an interactive visualizer for viewing SHO fitted BEPS data.
     Currently, this is limited to DC and AC spectroscopy datasets.
@@ -235,17 +235,19 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         Label for the response (y) axis.
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
+    verbose : bool, optional
+        Whether or not to print logs for debugging. Default = False
     """
     cmap = get_cmap_object(cmap)
 
     h5_sho_spec_inds = pc_sho_dset.h5_spec_inds
     h5_sho_spec_vals = pc_sho_dset.h5_spec_vals
-    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
+    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds, verbose=verbose)
     sho_spec_dims = pc_sho_dset.spec_dim_sizes
     sho_spec_labels = pc_sho_dset.spec_dim_labels
 
     h5_pos_inds = pc_sho_dset.h5_pos_inds
-    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds, verbose=verbose)
     pos_dims = pc_sho_dset.pos_dim_sizes
     pos_labels = pc_sho_dset.pos_dim_labels
 
@@ -275,7 +277,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     sho_dset_collapsed = np.reshape(guess_nd_data, final_guess_shape).squeeze()
 
     # Get the bias matrix:
-    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
+    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds, verbose=verbose)
     bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
                             new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
     if bias_mat.ndim == 1:
@@ -304,17 +306,21 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     not_step_chan = sho_spec_labels.copy()
     not_step_chan.remove(step_chan)
     spatial_dict = {step_chan: [step_ind]}
-    resp_dict = {pos_labels[-1]: [row_ind],
-                 pos_labels[-2]: [col_ind]}
+    resp_dict = {pos_labels[-1]: row_ind,
+                 pos_labels[-2]: col_ind}
     for key in pos_labels[:-2]:
-        spatial_dict[key] = [0]
-        resp_dict[key] = [0]
+        spatial_dict[key] = 0
+        resp_dict[key] = 0
     if not_step_chan is not None:
         for key in not_step_chan:
-            spatial_dict[key] = [0]
+            spatial_dict[key] = 0
 
-    spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
-    resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape))
+    if verbose:
+        print('Starting slicing dictionary for spatial plot: {}'.format(spatial_dict))
+        print('Starting slicing dictionary for spectroscopic plot: {}'.format(resp_dict))
+
+    spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False, verbose=verbose)[0][sho_quantity].squeeze()
+    resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False, verbose=verbose)[0].reshape(bias_mat.shape))
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
@@ -326,7 +332,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True, cmap=cmap)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel(pos_labels[-1])
@@ -352,8 +358,10 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     def update_sho_plots(sho_quantity, step_ind):
         bias_slider.set_xdata((step_ind, step_ind))
-        spatial_dict[step_chan] = [step_ind]
-        spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
+        spatial_dict[step_chan] = step_ind
+        if verbose:
+            print('Updating spatial dict as: {}'.format(spatial_dict))
+        spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False, verbose=verbose)[0][sho_quantity].squeeze()
         map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
         ax_map.set_title(map_title)
         img_map.set_data(spatial_map.T)
@@ -362,7 +370,9 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
     def update_resp_plot(resp_dict):
-        resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape)).T
+        if verbose:
+            print('Updating spectroscopic dict as: {}'.format(resp_dict))
+        resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False, verbose=verbose)[0].reshape(bias_mat.shape)).T
         for line_handle, data in zip(line_handles, resp_vec):
             line_handle.set_ydata(data)
 
@@ -376,8 +386,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         xdata = int(round(event.xdata))
         ydata = int(round(event.ydata))
 
-        resp_dict[pos_labels[-1]] = [xdata]
-        resp_dict[pos_labels[-2]] = [ydata]
+        resp_dict[pos_labels[-1]] = xdata
+        resp_dict[pos_labels[-2]] = ydata
 
         crosshair.set_xdata(xdata)
         crosshair.set_ydata(ydata)
@@ -388,8 +398,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     def pos_slider_update(slider):
         for key in pos_labels[:-2]:
-            spatial_dict[key] = [pos_sliders[key].value]
-            resp_dict[key] = [pos_sliders[key].value]
+            spatial_dict[key] = pos_sliders[key].value
+            resp_dict[key] = pos_sliders[key].value
         step = bias_step_picker.value
         sho_quantity = sho_quantity_picker.value
 
