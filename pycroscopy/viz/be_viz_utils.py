@@ -1320,10 +1320,10 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
         slice_dict = dict()
         for pos_dim, dim_ind in zip(pos_labs, selected_loop_pos):
-            slice_dict[pos_dim] = [dim_ind]
+            slice_dict[pos_dim] = dim_ind
 
         for spec_dim, dim_ind in zip(loop_spec_labs, selected_loop_ndims):
-            slice_dict[spec_dim] = [dim_ind]
+            slice_dict[spec_dim] = dim_ind
 
         loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, as_scalar=False)
         loop_proj_vec2 = np.roll(loop_proj_vec.squeeze(), shift_ind)
