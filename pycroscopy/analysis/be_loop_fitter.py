@@ -86,7 +86,7 @@ class BELoopFitter(Fitter):
 
         self.parms_dict = None
 
-        # self._check_validity(h5_main)
+        self._check_validity(h5_main)
 
         # Instead of the variables kwarg to the Fitter. Do check here:
         if 'DC_Offset' in self.h5_main.spec_dim_labels:
@@ -106,6 +106,12 @@ class BELoopFitter(Fitter):
 
         # accounting for memory copies
         self._max_raw_pos_per_read = self._max_pos_per_read
+
+        # Declaring attributes here for PEP8 cleanliness
+        self.h5_projected_loops = None
+        self.h5_loop_metrics = None
+        self._met_spec_inds = None
+        self._write_results_chunk = None
 
     @staticmethod
     def _check_validity(h5_main):
@@ -364,18 +370,19 @@ class BELoopFitter(Fitter):
             dim_names_s2f = self._dim_labels_s2f.copy()
             if self._num_forcs > 0:
                 dim_names_s2f.remove(
-                    self._forc_dim_name)  # because it was never there in the first place.
+                    self._forc_dim_name)
+                # because it was never there in the first place.
             if self.verbose and self.mpi_rank == 0:
                 print('Reordered to S2F: {}, {}'.format(this_forc_nd_s2f.shape,
-                                                    dim_names_s2f))
+                                                        dim_names_s2f))
 
             rest_dc_order = list(range(len(dim_names_s2f)))
             _dc_ind = dim_names_s2f.index(self._fit_dim_name)
             rest_dc_order.remove(_dc_ind)
             rest_dc_order = rest_dc_order + [_dc_ind]
             if self.verbose and self.mpi_rank == 0:
-                print('Transpose for reordering to rest, DC: {}'.format(
-                rest_dc_order))
+                print('Transpose for reordering to rest, DC: {}'
+                      ''.format(rest_dc_order))
 
             rest_dc_nd = this_forc_nd_s2f.transpose(rest_dc_order)
             rest_dc_names = list(np.array(dim_names_s2f)[rest_dc_order])
@@ -391,7 +398,8 @@ class BELoopFitter(Fitter):
                                             np.prod(rest_dc_nd.shape[-1]))
 
             if self.verbose and self.mpi_rank == 0:
-                print('Shape after flattening to 2D: {}'.format(dc_rest_2d.shape))
+                print('Shape after flattening to 2D: {}'
+                      ''.format(dc_rest_2d.shape))
 
             forc_mats.append(dc_rest_2d)
 
@@ -619,8 +627,6 @@ class BELoopFitter(Fitter):
 
         return results
 
-
-
     def _unit_compute_guess(self):
         """
         Performs loop projection followed by clustering-based guess for
@@ -640,7 +646,9 @@ class BELoopFitter(Fitter):
                                                     len(dc_vec_list)))
             print('First dataset of shape: {}'.format(resp_2d_list[0].shape))
 
-        results = self.__compute_batches(resp_2d_list, dc_vec_list, self._project_loop, self._cores, verbose=self.verbose)
+        results = self.__compute_batches(resp_2d_list, dc_vec_list,
+                                         self._project_loop, self._cores,
+                                         verbose=self.verbose)
 
         # Step 1: unzip the two components in results into separate arrays
         if self.verbose and self.mpi_rank == 0:
@@ -677,7 +685,8 @@ class BELoopFitter(Fitter):
         for proj_loops_this_forc, curr_vdc in zip(proj_forc, dc_vec_list):
             # this works on batches and not individual loops
             # Cannot be done in parallel
-            this_guesses = guess_loops_hierarchically(curr_vdc, proj_loops_this_forc)
+            this_guesses = guess_loops_hierarchically(curr_vdc,
+                                                      proj_loops_this_forc)
             all_guesses.append(this_guesses)
 
         self._results = proj_loops, loop_mets, np.array(all_guesses)
@@ -773,6 +782,11 @@ class BELoopFitter(Fitter):
         and fit work in such a unique manner. At the same time, this complexity
         needs to be invisible to the end-user
         """
+        try:
+            _ = self.h5_projected_loops
+        except AttributeError:
+            self.h5_projected_loops = self.h5_results_grp['Projected_Loops']
+
         h5_main_orig = self.h5_main
         # raw data is actually projected loops not raw SHO data
         self.h5_main = self.h5_projected_loops
