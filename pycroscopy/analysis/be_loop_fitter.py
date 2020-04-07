@@ -103,43 +103,6 @@ class BELoopFitter(Fitter):
         else:
             self._forc_dim_name = 'FORC_Cycle'
 
-        # TODO: Need to catch KeyError s that would be thrown when attempting to access attributes
-        file_data_type = get_attr(h5_main.file, 'data_type')
-        meas_grp_name = h5_main.name.split('/')
-        h5_meas_grp = h5_main.file[meas_grp_name[1]]
-        meas_data_type = get_attr(h5_meas_grp, 'data_type')
-
-        if h5_main.dtype != sho32:
-            raise TypeError('Provided dataset is not a SHO results dataset.')
-
-        # This check is clunky but should account for case differences.
-        # If Python2 support is dropped, simplify with# single check using case
-        if not (
-                meas_data_type.lower != file_data_type.lower or meas_data_type.upper != file_data_type.upper):
-            message = 'Mismatch between file and Measurement group data types for the chosen dataset.\n'
-            message += 'File data type is {}.  The data type for Measurement group {} is {}'.format(
-                file_data_type,
-                h5_meas_grp.name,
-                meas_data_type)
-            raise ValueError(message)
-
-        if file_data_type == 'BEPSData':
-            if get_attr(h5_meas_grp, 'VS_mode') not in ['DC modulation mode',
-                                                        'current mode']:
-                raise ValueError(
-                    'Provided dataset has a mode: "' + get_attr(h5_meas_grp,
-                                                                'VS_mode') + '" is not a '
-                                                                             '"DC modulation" or "current mode" BEPS dataset')
-            elif get_attr(h5_meas_grp, 'VS_cycle_fraction') != 'full':
-                raise ValueError('Provided dataset does not have full cycles')
-
-        elif file_data_type == 'cKPFMData':
-            if get_attr(h5_meas_grp, 'VS_mode') != 'cKPFM':
-                raise ValueError(
-                    'Provided dataset has an unsupported VS_mode: "' + get_attr(
-                        h5_meas_grp, 'VS_mode') + '"')
-
-        # #####################################################################
         # accounting for memory copies
         self._max_raw_pos_per_read = self._max_pos_per_read
 
