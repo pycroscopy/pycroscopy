@@ -20,14 +20,15 @@ from sklearn.cluster import KMeans
 from scipy.optimize import least_squares
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from pyUSID.io.dtype_utils import stack_real_to_compound
+from pyUSID.io.dtype_utils import stack_real_to_compound, \
+    flatten_compound_to_real
 from pyUSID.io.hdf_utils import get_unit_values, get_sort_order, \
     reshape_to_n_dims, get_attr, create_empty_dataset, create_results_group, \
     write_reduced_anc_dsets, write_simple_attrs, write_main_dataset
 from pyUSID.processing.comp_utils import get_MPI, recommend_cpu_cores
 from pyUSID.io.usi_data import USIDataset
 from .utils.be_loop import projectLoop, fit_loop, generate_guess, \
-    loop_fit_function
+    loop_fit_function, calc_switching_coef_vec, switching32
 from ..processing.tree import ClusterTree
 from .be_sho_fitter import sho32
 from .fitter import Fitter
@@ -85,7 +86,7 @@ class BELoopFitter(Fitter):
 
         self.parms_dict = None
 
-        self._check_validity(h5_main)
+        # self._check_validity(h5_main)
 
         # Instead of the variables kwarg to the Fitter. Do check here:
         if 'DC_Offset' in self.h5_main.spec_dim_labels:
@@ -760,6 +761,9 @@ class BELoopFitter(Fitter):
         # Reset h5_main so that this swap is invisible to the user
         self.h5_main = h5_main_orig
 
+        # Extract material properties from loop coefficients
+        _ = self.extract_loop_parameters(temp)
+
         return temp
 
     def _unit_compute_fit(self):
@@ -824,6 +828,40 @@ class BELoopFitter(Fitter):
         else:
             if self.verbose:
                 print('Rank {}: Serial compute time: {} sec'.format(self.mpi_rank, t1 - t0))
+
+    @staticmethod
+    def extract_loop_parameters(h5_loop_fit, nuc_threshold=0.03):
+        """
+        Method to extract a set of physical loop parameters from a dataset of fit parameters
+        Parameters
+        ----------
+        h5_loop_fit : h5py.Dataset
+            Dataset of loop fit parameters
+        nuc_threshold : float
+            Nucleation threshold to use in calculation physical parameters
+        Returns
+        -------
+        h5_loop_parm : h5py.Dataset
+            Dataset of physical parameters
+        """
+        dset_name = h5_loop_fit.name.split('/')[-1] + '_Loop_Parameters'
+        h5_loop_parameters = create_empty_dataset(h5_loop_fit,
+                                                  dtype=switching32,
+                                                  dset_name=dset_name,
+                                                  new_attrs={
+                                                      'nuc_threshold': nuc_threshold})
+
+        loop_coef_vec = flatten_compound_to_real(
+            np.reshape(h5_loop_fit, [-1, 1]))
+        switching_coef_vec = calc_switching_coef_vec(loop_coef_vec,
+                                                     nuc_threshold)
+
+        h5_loop_parameters[:, :] = switching_coef_vec.reshape(
+            h5_loop_fit.shape)
+
+        h5_loop_fit.file.flush()
+
+        return h5_loop_parameters
 
     def _unit_compute_fit_jl_broken(self):
         """
