@@ -66,7 +66,7 @@ class Cluster(Process):
             raise TypeError('Cannot work with {} just yet'.format(self.method_name))
 
         # Done with decomposition-related checks, now call super init
-        super(Cluster, self).__init__(h5_main, **kwargs)
+        super(Cluster, self).__init__(h5_main, 'Cluster', **kwargs)
 
         # Store the decomposition object
         self.estimator = estimator
@@ -111,7 +111,6 @@ class Cluster(Process):
         self.parms_dict.update({'n_jobs': self._cores})
 
         # check for existing datagroups with same results
-        self.process_name = 'Cluster'
         # Partial groups don't make any sense for statistical learning algorithms....
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 

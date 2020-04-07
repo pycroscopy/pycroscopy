@@ -57,7 +57,8 @@ class GIVBayesian(Process):
         kwargs : dict
             Other parameters specific to the Process class and nuanced bayesian_inference parameters
         """
-        super(GIVBayesian, self).__init__(h5_main, **kwargs)
+        super(GIVBayesian, self).__init__(h5_main, 'Bayesian_Inference',
+                                          **kwargs)
         self.gain = gain
         self.ex_freq = ex_freq
         self.r_extra = r_extra
@@ -75,7 +76,6 @@ class GIVBayesian(Process):
         self.parms_dict = {'freq': self.ex_freq, 'num_x_steps': self.num_x_steps, 'r_extra': self.r_extra}
         self.parms_dict.update(bayesian_parms)
 
-        self.process_name = 'Bayesian_Inference'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         # Should not be extracting excitation this way!

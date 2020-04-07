@@ -52,8 +52,7 @@ class SVD(Process):
         kwargs
             Arguments to be sent to Process
         """
-        super(SVD, self).__init__(h5_main, **kwargs)
-        self.process_name = 'SVD'
+        super(SVD, self).__init__(h5_main, 'SVD', **kwargs)
 
         '''
         Calculate the size of the main data in memory and compare to max_mem

@@ -68,14 +68,13 @@ class Decomposition(Process):
             raise NotImplementedError('Cannot work with {} yet'.format(self.method_name))
             
         # Done with decomposition-related checks, now call super init
-        super(Decomposition, self).__init__(h5_main, **kwargs)
+        super(Decomposition, self).__init__(h5_main, 'Decomposition', **kwargs)
         
         # set up parameters
         self.parms_dict = {'decomposition_algorithm':self.method_name}
         self.parms_dict.update(self.estimator.get_params())
         
-        # check for existing datagroups with same results 
-        self.process_name = 'Decomposition'
+        # check for existing datagroups with same results
         # Partial groups don't make any sense for statistical learning algorithms....
         self.duplicate_h5_groups, self.h5_partial_groups = self._check_for_duplicates()
 
