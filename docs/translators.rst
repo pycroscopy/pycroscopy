@@ -28,7 +28,7 @@ Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect t
  import pyUSID as usid
  import pycroscopy as px
 
- #path to file you with to translate 
+ #path to file you wish to translate 
  file_path = r'/my_folder/a10.ibw'
 
  #Do the translation
