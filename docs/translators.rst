@@ -32,7 +32,7 @@ Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect t
  file_path = r'/my_folder/a10.ibw'
 
  #Do the translation
- translator = px.io.translators.IgorIBWTranslator() #Insantiating IgorIBW translator. 
+ translator = px.io.translators.IgorIBWTranslator() #Instantiating IgorIBW translator. 
  #Note: Change translator depending on your input file format
  
  h5_path = translator.translate(file_path) #translates, and then returns path of translated file
