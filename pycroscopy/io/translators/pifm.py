@@ -138,10 +138,17 @@ class PiFMTranslator(Translator):
         spectrograms = {}
         spectrogram_spec_vals = {}
         for file_name, descriptors in self.spectrogram_desc.items():
-            #load and save spectroscopic values
+            # load and save spectroscopic values
             spec_vals_i = np.loadtxt(os.path.join(self.directory, file_name.strip('.int') + 'Wavelengths.txt'))
-            spectrogram_spec_vals[file_name] = spec_vals_i
-            #load and save spectrograms
+            # if true, data is acquired with polarizer, with an attenuation data column
+            if np.array(spec_vals_i).ndim == 2:
+                spectrogram_spec_vals[file_name] = spec_vals_i[:, 0]
+                attenuation = {}
+                attenuation[file_name] = spec_vals_i[:, 1]
+                self.attenuation = attenuation
+            else:
+                spectrogram_spec_vals[file_name] = spec_vals_i
+            # load and save spectrograms
             spectrogram_i = np.fromfile(os.path.join(self.directory, file_name), dtype='i4')
             spectrograms[file_name] = np.zeros((self.x_len, self.y_len, len(spec_vals_i)))
             for y, line in enumerate(np.split(spectrogram_i, self.y_len)):
