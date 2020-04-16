@@ -5,9 +5,8 @@ Pycroscopy
 **Scientific analysis of nanoscale materials imaging data**
 
 .. note::
-   **We are hiring!**
-   We are looking for full-time python software developers who can support the scientists' needs at the Center for Nanophase Materials Science (CNMS) in addition to taking pycroscopy forward.
-   More details available `here <https://drive.google.com/file/d/1HKa8hwu4kNpc_MHRhjxQ1GhAVDAcM9Ml/view?usp=sharing>`_
+   **Weekly hackathons**
+   We are running weekly hackathons for pycroscopy and pyUSID to encourage community engagement, increase development, issue bug fixes and generally improve the packages. Hackathons are run every Friday 3-5PM USA Eastern time. The requirements for participation are: knowledge of python, git, pyUSID, and we expect that you will be comfortable in understanding the structure of the packages (and have gone through the documentation). If you would like to contribute, please let us know. Email vasudevanrk *at* ornl.gov
 
 What?
 ------

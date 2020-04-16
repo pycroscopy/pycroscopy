@@ -212,7 +212,7 @@ def parmsToDict(filepath, parms_to_remove=[]):
 ###############################################################################
 
 
-def requires_conjugate(chosen_spectra, default_q=10):
+def requires_conjugate(chosen_spectra, default_q=10, cores=None):
     """
     Determines whether or not the conjugate of the data needs to be taken based on the quality factor
 
@@ -222,6 +222,9 @@ def requires_conjugate(chosen_spectra, default_q=10):
         N random spectra arranged as [instance, frequency]
     default_q : unsigned int, Optional
         Default value of Q factor that the SHO guess function results in for poor guesses
+    cores : uint, Optional
+        Number of CPU cores to use for the SHO guess.
+        Default = None - ask pyUSID.processing.comp_utils.recommend_cpu_cores for automatic assignment
 
     Returns
     -------
@@ -232,7 +235,7 @@ def requires_conjugate(chosen_spectra, default_q=10):
     opt = Optimize(data=chosen_spectra)
 
     fitguess_results = opt.computeGuess(strategy='complex_gaussian',
-                                        processors=recommend_cpu_cores(chosen_spectra.shape[0]),
+                                        processors=recommend_cpu_cores(chosen_spectra.shape[0], requested_cores=cores),
                                         options={'frequencies': np.arange(chosen_spectra.shape[1])})
 
     q_results = np.array(fitguess_results)[:, 2]

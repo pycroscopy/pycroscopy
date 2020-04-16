@@ -16,7 +16,6 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from pyUSID.io.translator import generate_dummy_main_parms
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
 from pyUSID.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, write_main_dataset
 
@@ -28,6 +27,10 @@ class GTuneTranslator(GLineTranslator):
 
     def __init__(self, *args, **kwargs):
         super(GLineTranslator, self).__init__(*args, **kwargs)
+
+    @staticmethod
+    def is_valid_file(file_path):
+        raise NotImplementedError('This class has not yet implemented the is_valid_file() function')
 
     def translate(self, file_path):
         """
@@ -108,7 +111,7 @@ class GTuneTranslator(GLineTranslator):
 
         # First finish writing all global parameters, create the file too:
         h5_file = h5py.File(h5_path, 'w')
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
 
         global_parms['data_type'] = 'G_mode_line'
         global_parms['translator'] = 'G_mode_line'

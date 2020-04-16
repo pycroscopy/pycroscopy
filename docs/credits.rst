@@ -4,6 +4,7 @@ Credits
 Maintainers
 ~~~~~~~~~~~
 * `@ramav87 <https://github.com/ramav87>`_ (Rama K. Vasudevan)
+* `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 
 Founders
 ~~~~~~~~
@@ -25,7 +26,6 @@ Contributors
 * `@carlodri <https://github.com/carlodri>`_ (Carlo Dri)
 * `@ondrejdyck <https://github.com/ondrejdyck>`_ (Ondrej Dyck)
 * `@nmosto <https://github.com/nmosto>`_ (Nick Mostovych)
-* `@rajgiriUW <https://github.com/rajgiriUW>`_ (Raj Giridharagopal)
 * `@donpatrice <https://github.com/donpatrice>`_ (Patrik Marschalik)
 * Arpitha Nagaraj for our logo
 * and `many more <https://github.com/pycroscopy/pycroscopy/graphs/contributors>`_

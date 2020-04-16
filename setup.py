@@ -20,6 +20,7 @@ requirements = ['numpy>=1.13.0',
 
                 'psutil',
                 'six',
+                'pillow',
                 'joblib>=0.11.0',
 
                 'ipywidgets>=5.2.2',
@@ -27,10 +28,6 @@ requirements = ['numpy>=1.13.0',
                 'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
 
                 'unittest2;python_version<"3.0"',
-
-                # 'pyqt;python_version<"3.5"',
-                'pyqt5;python_version>="3.5"',
-                'pyqtgraph>=0.10',
 
                 'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
 
@@ -84,6 +81,9 @@ setup(
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='pytest',
+    extras_require={
+        'legacy_guis':  ['pyqt5;python_version>="3.5"',
+                         'pyqtgraph>=0.10']},
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,

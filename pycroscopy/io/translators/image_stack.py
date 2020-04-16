@@ -10,14 +10,14 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 from warnings import warn
 import numpy as np
-from skimage.data import imread
+from PIL import Image
 from skimage.measure import block_reduce
 import h5py
 
 from .df_utils.image_utils import no_bin
 from .df_utils.dm_utils import read_dm3
 from pyUSID.io.image import read_image
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
     write_simple_attrs, create_indexed_group
@@ -258,13 +258,13 @@ class ImageStackTranslator(Translator):
         return new_file_list
 
     @staticmethod
-    def _getimagesize(image):
+    def _getimagesize(image_path):
         """
         Returns the x and y size of the image in pixels
         
         Parameters
         ------------
-        image : string / unicode
+        image_path : string / unicode
             absolute path to the image file
         
         Returns
@@ -276,7 +276,8 @@ class ImageStackTranslator(Translator):
         dtype : data type
             Datatype of the image
         """
-        tmp = imread(image)
+        img_obj = Image.open(image_path)
+        tmp = np.asarray(img_obj)
         size = tmp.shape
         
         return size, tmp.dtype
@@ -313,7 +314,7 @@ class ImageStackTranslator(Translator):
         num_pixels = usize*vsize
         num_files = scan_size_x*scan_size_y
 
-        root_parms = generate_dummy_main_parms()
+        root_parms = dict()
         root_parms['data_type'] = 'ImageStackData'
 
         main_parms = {'num_images': num_files,

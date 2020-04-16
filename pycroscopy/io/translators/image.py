@@ -7,7 +7,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 import os
 import h5py
 import numpy as np
-from skimage.io import imread
+from PIL import Image
 from skimage.measure import block_reduce
 
 from pyUSID.io.image import ImageTranslator
@@ -122,4 +122,9 @@ def read_image(image_path, *args, **kwargs):
     else:
         # Set the as_grey argument to True is not already provided.
         kwargs['as_grey'] = (kwargs.pop('as_grey', True))
-        return imread(image_path, *args, **kwargs), dict()
+
+        img_obj = Image.open(image_path)
+        if kwargs['as_grey']:
+            img_obj = img_obj.convert(mode="L", **kwargs)
+
+        return np.asarray(img_obj), dict()

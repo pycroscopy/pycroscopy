@@ -14,7 +14,7 @@ import h5py
 
 from .df_utils.dm_utils import read_dm3
 from pyUSID.io.image import read_image
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
     write_simple_attrs, create_indexed_group
@@ -333,7 +333,7 @@ class MovieTranslator(Translator):
         """
         num_pixels = usize * vsize
 
-        root_parms = generate_dummy_main_parms()
+        root_parms = dict()
         root_parms['data_type'] = 'PtychographyData'
 
         main_parms['num_images'] = num_images

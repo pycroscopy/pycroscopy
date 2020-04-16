@@ -42,6 +42,7 @@ class PiFMTranslator(Translator):
         self.write_spectrograms()
         self.write_images()
         self.write_spectra()
+        self.write_ps_spectra()
         
         return self.h5_f
 
@@ -83,6 +84,7 @@ class PiFMTranslator(Translator):
         spectrogram_desc = {}
         img_desc = {}
         spectrum_desc = {}
+        pspectrum_desc = {}
         with open(self.path,'r', encoding="ISO-8859-1") as f:
             ## can be made more concise...by incorporating conditons with loop control
             lines = f.readlines()
@@ -108,17 +110,28 @@ class PiFMTranslator(Translator):
                     #filename wavelengths, phys units wavelengths.
                     spectrogram_desc[file_desc[0]] = file_desc[1:]
                 if sline[0].startswith('AFMSpectrumDescBegin'):
-                    no_descriptors = 3
+
                     file_desc = []
-                    for i in range(no_descriptors):
-                        line_desc = [val.strip() for val in lines[index+i+1].split(':')]
-                        file_desc.append(line_desc[1])
-                    #file name, position x, position y
-                    spectrum_desc[file_desc[0]] = file_desc[1:]
+                    line_desc = [val.strip() for val in lines[index+1].split(':')][1]
+                    if 'powerspectrum' in line_desc:
+                        no_descriptors = 2
+                        for i in range(no_descriptors):
+                            line_desc = [val.strip() for val in lines[index+i+1].split(':')]
+                            file_desc.append(line_desc[1])
+                        #file name, position x, position y
+                        pspectrum_desc[file_desc[0]] = file_desc[1:]
+                    else:
+                        no_descriptors = 7
+                        for i in range(no_descriptors):
+                            line_desc = [val.strip() for val in lines[index+i+1].split(':')]
+                            file_desc.append(line_desc[1])
+                        #file name, position x, position y
+                        spectrum_desc[file_desc[0]] = file_desc[1:]
             f.close()
         self.img_desc = img_desc
         self.spectrogram_desc = spectrogram_desc
         self.spectrum_desc = spectrum_desc
+        self.pspectrum_desc = pspectrum_desc
 
     def read_spectrograms(self):
         """reads spectrograms, associated spectral values, and saves them in two dictionaries"""
@@ -154,6 +167,12 @@ class PiFMTranslator(Translator):
         spectra_spec_vals = {}
         spectra_x_y_dim_name = {}
         for file_name, descriptors in self.spectrum_desc.items():
+            spectrum_f = np.loadtxt(os.path.join(self.directory, file_name), skiprows=1)
+            spectra_spec_vals[file_name] = spectrum_f[:, 0]
+            spectra[file_name] = spectrum_f[:,1]
+            with open(os.path.join(self.directory, file_name)) as f:
+                spectra_x_y_dim_name[file_name]  = f.readline().strip('\n').split('\t')
+        for file_name, descriptors in self.pspectrum_desc.items():
             spectrum_f = np.loadtxt(os.path.join(self.directory, file_name), skiprows=1)
             spectra_spec_vals[file_name] = spectrum_f[:, 0]
             spectra[file_name] = spectrum_f[:,1]
@@ -302,7 +321,7 @@ class PiFMTranslator(Translator):
 
     def write_spectra(self):
         if bool(self.spectrum_desc):
-            for spec_f, descriptors in self.spectrogram_desc.items():
+            for spec_f, descriptors in self.spectrum_desc.items():
                 #create new measurement group for ea spectrum
                 self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
                 x_name = self.spectra_x_y_dim_name[spec_f][0].split(' ')[0]
@@ -312,12 +331,12 @@ class PiFMTranslator(Translator):
                 spec_i_spec_dims = usid.write_utils.Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
                 spec_i_pos_dims = [usid.write_utils.Dimension('X',
                                                               self.params_dictionary['XPhysUnit'].replace('\xb5','u'),
-                                                              float(descriptors[0])),
+                                                              np.array([float(descriptors[1])])),
                                    usid.write_utils.Dimension('Y',
                                                               self.params_dictionary['YPhysUnit'].replace('\xb5','u'),
-                                                              float(descriptors[1]))]
+                                                              np.array([float(descriptors[1])]))]
                 #write data to a channel in the measurement group
-                spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'Channel_')
+                spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'Spectrum_')
                 h5_raw = usid.hdf_utils.write_main_dataset(spec_i_ch,  # parent HDF5 group
                                                            (1, len(self.spectra_spec_vals[spec_f])),  # shape of Main dataset
                                                            'Raw_Spectrum',
@@ -331,5 +350,42 @@ class PiFMTranslator(Translator):
                                                            dtype=np.float32,  # data type / precision
                                                            main_dset_attrs={'XLoc': descriptors[0],
                                                                             'YLoc': descriptors[1]})
+                h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
+
+    def write_ps_spectra(self):
+        if bool(self.pspectrum_desc):
+            for spec_f, descriptors in self.pspectrum_desc.items():
+
+                # create new measurement group for ea spectrum
+                self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+                x_name = self.spectra_x_y_dim_name[spec_f][0].split(' ')[0]
+                x_unit = self.spectra_x_y_dim_name[spec_f][0].split(' ')[1]
+                y_name = self.spectra_x_y_dim_name[spec_f][1].split(' ')[0]
+                y_unit = self.spectra_x_y_dim_name[spec_f][1].split(' ')[1]
+                spec_i_spec_dims = usid.write_utils.Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
+                spec_i_pos_dims = [usid.write_utils.Dimension('X',
+                                                              self.params_dictionary['XPhysUnit'].replace(
+                                                                  '\xb5', 'u'),
+                                                              np.array([0])),
+                                   usid.write_utils.Dimension('Y',
+                                                              self.params_dictionary['YPhysUnit'].replace(
+                                                                  '\xb5', 'u'),
+                                                              np.array([0]))]
+                # write data to a channel in the measurement group
+                spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'PowerSpectrum_')
+                h5_raw = usid.hdf_utils.write_main_dataset(spec_i_ch,  # parent HDF5 group
+                                                           (1, len(self.spectra_spec_vals[spec_f])),
+                                                           # shape of Main dataset
+                                                           'Raw_Spectrum',
+                                                           # Name of main dataset
+                                                           y_name,
+                                                           # Physical quantity contained in Main dataset
+                                                           y_unit,  # Units for the physical quantity
+                                                           # Position dimensions
+                                                           pos_dims=spec_i_pos_dims, spec_dims=spec_i_spec_dims,
+                                                           # Spectroscopic dimensions
+                                                           dtype=np.float32,  # data type / precision
+                                                           main_dset_attrs={'XLoc': 0,
+                                                                            'YLoc': 0})
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 

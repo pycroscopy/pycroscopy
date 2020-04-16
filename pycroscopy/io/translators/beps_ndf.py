@@ -8,6 +8,7 @@ Created on Tue Nov  3 15:07:16 2015
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 
+import sys
 from os import path, listdir, remove
 from warnings import warn
 
@@ -17,12 +18,15 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     normalizeBEresponse, createSpecVals, nf32
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
 from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
 from pyUSID.io.usi_data import USIDataset
 from ..hdf_writer import HDFwriter
 from ..virtual_data import VirtualGroup, VirtualDataset
+
+if sys.version_info.major == 3:
+    unicode = str
 
 
 class BEPSndfTranslator(Translator):
@@ -54,6 +58,51 @@ class BEPSndfTranslator(Translator):
         self.pos_mat = None
         self.pos_units = None
         self.hdf = None
+
+    def is_valid_file(self, data_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        data_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
+        """
+        if not isinstance(data_path, (str, unicode)):
+            raise TypeError('data_path must be a string')
+
+        data_path = path.abspath(data_path)
+
+        if path.isfile(data_path):
+            # we only care about the folder names at this point...
+            data_path, _ = path.split(data_path)
+
+        ndf = 'newdataformat'
+
+        _, folder_name = path.split(data_path)
+        if folder_name == ndf:
+            ndf_folder = data_path
+        else:
+            # perhaps we are looking at the folder above?
+            if ndf not in listdir(path=data_path):
+                return None
+            ndf_folder = path.join(data_path, ndf)
+            # take any file within the new data format folder I guess...
+        file_path = path.join(ndf_folder, listdir(path=ndf_folder)[0])
+
+        parm_filepath, udvs_filepath, parms_mat_path = self._parse_file_path(file_path)
+        is_beps, _ = parmsToDict(parm_filepath)
+
+        if not is_beps:
+            return None
+        return parm_filepath
 
     def translate(self, data_filepath, show_plots=True, save_plots=True, do_histogram=False, debug=False):
         """
@@ -154,7 +203,7 @@ class BEPSndfTranslator(Translator):
         #         self.pos_mat = np.int32(self.pos_mat)
 
         # Helping Eric out a bit. Remove this section at a later time:
-        main_parms = generate_dummy_main_parms()
+        main_parms = dict()
         # main_parms['grid_size_x'] = self.parm_dict['grid_num_cols']
         # main_parms['grid_size_y'] = self.parm_dict['grid_num_rows']
         main_parms['grid_size_x'] = self.parm_dict['grid_num_rows']

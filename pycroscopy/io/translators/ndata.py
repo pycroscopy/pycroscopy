@@ -18,7 +18,7 @@ from skimage.util import crop
 
 from .df_utils.image_utils import unnest_parm_dicts
 from .df_utils.dm_utils import read_dm3
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
@@ -474,7 +474,7 @@ class NDataTranslator(Translator):
             HDF5 Dateset that the mean over all Spectroscopic steps will be
             written into
         """
-        root_parms = generate_dummy_main_parms()
+        root_parms = dict()
         root_parms['data_type'] = 'PtychographyData'
 
         # Create the hdf5 data Group

@@ -138,7 +138,7 @@ def plot_markers(axis, coordinates, colors):
 # spectroscopic data set itself
 
 # Downloading the example file from the pycroscopy Github project
-url = 'https://raw.githubusercontent.com/pycroscopy/pycroscopy/master/data/sts_data_image_registration.h5'
+url = 'https://github.com/pycroscopy/pycroscopy/raw/master/data/sts_data_image_registration.h5'
 h5_path = 'temp.h5'
 _ = wget.download(url, h5_path, bar=None)
 
@@ -352,8 +352,8 @@ for tform_type, axis in zip(trans_names, axes.flat):  # looping through transfor
     raw_corrected_Z = transform.warp(moving, inverse_map=tform.inverse, output_shape=np.shape(moving))
 
     # one way to do correlations
-    corr = stats.pearsonr(np.reshape(fixed, [1024 * 1024, 1]),
-                          np.reshape(raw_corrected_Z, [1024 * 1024, 1]))[0][0]
+    corr = stats.pearsonr(np.reshape(fixed, [1024 * 1024, 1]).ravel(),
+                          np.reshape(raw_corrected_Z, [1024 * 1024, 1]).ravel())[0]
 
     # visualize the transformation
     axis.set_title(tform_type + ' - Pearson corr: ' + str(np.round(corr, 3)))

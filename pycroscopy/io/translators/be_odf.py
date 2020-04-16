@@ -8,6 +8,7 @@ Created on Tue Nov  3 15:24:12 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 from os import path, listdir, remove
+import sys
 from warnings import warn
 import h5py
 import numpy as np
@@ -15,13 +16,17 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, nf32
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
     create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
     write_reduced_spec_dsets
 from pyUSID.io.usi_data import USIDataset
 from pyUSID.processing.comp_utils import get_available_memory
+
+if sys.version_info.major == 3:
+    unicode = str
+
 
 class BEodfTranslator(Translator):
     """
@@ -33,9 +38,80 @@ class BEodfTranslator(Translator):
         super(BEodfTranslator, self).__init__(*args, **kwargs)
         self.h5_raw = None
         self.num_rand_spectra = kwargs.pop('num_rand_spectra', 1000)
+        self._cores = kwargs.pop('cores', None)
         self.FFT_BE_wave = None
         self.signal_type = None
         self.expt_type = None
+
+    @staticmethod
+    def is_valid_file(data_path):
+        """
+        Checks whether the provided file can be read by this translator
+
+        Parameters
+        ----------
+        data_path : str
+            Path to raw data file
+
+        Returns
+        -------
+        obj : str
+            Path to file that will be accepted by the translate() function if
+            this translator is indeed capable of translating the provided file.
+            Otherwise, None will be returned
+        """
+        if not isinstance(data_path, (str, unicode)):
+            raise TypeError('data_path must be a string')
+
+        ndf = 'newdataformat'
+
+        data_path = path.abspath(data_path)
+
+        if path.isfile(data_path):
+            ext = data_path.split('.')[-1]
+            if ext.lower() not in ['jpg', 'png', 'jpeg', 'tiff', 'mat', 'txt',
+                                   'dat', 'xls', 'xlsx']:
+                return None
+            # we only care about the folder names at this point...
+            data_path, _ = path.split(data_path)
+
+        # Check if the data is in the new or old format:
+        # Check one level up:
+        _, dir_name = path.split(data_path)
+        if dir_name == ndf:
+            # Though this translator could also read the files but the NDF Translator is more robust...
+            return None
+        # Check one level down:
+        if ndf in listdir(data_path):
+            # Though this translator could also read the files but the NDF Translator is more robust...
+            return None
+
+        file_path = path.join(data_path, listdir(path=data_path)[0])
+
+        _, path_dict = BEodfTranslator._parse_file_path(file_path)
+
+        if any([x.find('bigtime_0') > 0 and x.endswith('.dat') for x in path_dict.values()]):
+            # This is a G-mode Line experiment:
+            return None
+        if any([x.find('bigtime_0') > 0 and x.endswith('.dat') for x in
+                path_dict.values()]):
+            # This is a G-mode Line experiment:
+            return None
+
+        parm_found = any([piece in path_dict.keys() for piece in
+                          ['parm_txt', 'old_mat_parms']])
+        real_found = any([piece in path_dict.keys() for piece in
+                          ['read_real', 'write_real']])
+        imag_found = any([piece in path_dict.keys() for piece in
+                          ['read_imag', 'write_imag']])
+
+        if parm_found and real_found and imag_found:
+            if 'parm_txt' in path_dict.keys():
+                return path_dict['parm_txt']
+            else:
+                return path_dict['old_mat_parms']
+        else:
+            return None
 
     def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False, verbose=False):
         """
@@ -264,7 +340,7 @@ class BEodfTranslator(Translator):
         h5_f = h5py.File(h5_path)
 
         # Then write root level attributes
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['grid_size_x'] = parm_dict['grid_num_cols']
         global_parms['grid_size_y'] = parm_dict['grid_num_rows']
         try:
@@ -448,7 +524,7 @@ class BEodfTranslator(Translator):
 
         rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
                                                  num_spectra=self.num_rand_spectra)
-        take_conjugate = requires_conjugate(rand_spectra)
+        take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
 
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
         self.max_resp = np.zeros(shape=(self.h5_raw.shape[0]), dtype=np.float32)
@@ -521,7 +597,7 @@ class BEodfTranslator(Translator):
         step_size = self.h5_raw.shape[1] / udvs_steps
         rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
                                                  num_spectra=self.num_rand_spectra)
-        take_conjugate = requires_conjugate(rand_spectra)
+        take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
         raw_vec = parser.read_all_data()
         if take_conjugate:
             print('Taking conjugate to ensure positive Quality factors')
@@ -538,7 +614,8 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')
 
-    def _parse_file_path(self, data_filepath):
+    @staticmethod
+    def _parse_file_path(data_filepath):
         """
         Returns the basename and a dictionary containing the absolute file paths for the
         real and imaginary data files, text and mat parameter files in a dictionary

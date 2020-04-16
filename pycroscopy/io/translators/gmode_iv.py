@@ -13,7 +13,7 @@ from warnings import warn
 import h5py
 import numpy as np  # For array operations
 
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs
 
@@ -59,7 +59,7 @@ class GIVTranslator(Translator):
         with h5py.File(h5_path) as h5_f:
 
             h5_meas_grp = create_indexed_group(h5_f, 'Measurement')
-            global_parms = generate_dummy_main_parms()
+            global_parms = dict()
             global_parms.update({'data_type': 'gIV', 'translator': 'gIV'})
             write_simple_attrs(h5_meas_grp, global_parms)
 
@@ -149,9 +149,17 @@ class GIVTranslator(Translator):
             parm_dict['IO_amplifier_gain'] = np.uint32(h5_f['amp_gain'][0][0])
 
             parm_dict['excitation_frequency_[Hz]'] = np.float32(h5_f['frequency'][0][0])
-            parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
-            parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+            #parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
+            #parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+
             excit_wfm = np.float32(np.squeeze(h5_f['excit_wfm'].value))
+            #in case these keys are not present (in some versions they are not)
+            try:
+                parm_dict['excitation_amplitude_[V]'] = np.float32(h5_f['amplitude'][0][0])
+                parm_dict['excitation_offset_[V]'] = np.float32(h5_f['offset'][0][0])
+            except KeyError:
+                parm_dict['excitation_offset_[V]'] = excit_wfm[0] #need a better way to handle this.
+                parm_dict['excitation_amplitude_[V]'] = np.max(excit_wfm[:]) #risky for non sine waves
 
             # Make sure to truncate the data to the point when the
             pts_per_cycle = int(np.round(1.0*parm_dict['IO_samp_rate_[Hz]']/parm_dict['excitation_frequency_[Hz]']))

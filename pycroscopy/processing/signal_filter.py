@@ -26,7 +26,7 @@ from .gmode_utils import test_filter
 
 class SignalFilter(Process):
     def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True,
-                 write_condensed=False, num_pix=1, phase_rad=0,  **kwargs):
+                 write_condensed=False, num_pix=1, phase_rad=0, **kwargs):
         """
         Filters the entire h5 dataset with the given filtering parameters.
         Parameters
@@ -53,7 +53,7 @@ class SignalFilter(Process):
             Please see Process class for additional inputs
         """
 
-        super(SignalFilter, self).__init__(h5_main, **kwargs)
+        super(SignalFilter, self).__init__(h5_main, 'FFT_Filtering', **kwargs)
 
         if frequency_filters is None and noise_threshold is None:
             raise ValueError('Need to specify at least some noise thresholding / frequency filter')
@@ -108,7 +108,6 @@ class SignalFilter(Process):
             self.parms_dict['noise_threshold'] = self.noise_threshold
         self.parms_dict['num_pix'] = self.num_effective_pix
 
-        self.process_name = 'FFT_Filtering'
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
         self.data = None
@@ -142,6 +141,7 @@ class SignalFilter(Process):
         return test_filter(self.h5_main[pix_ind], frequency_filters=self.frequency_filters, excit_wfm=excit_wfm,
                            noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True,
                            **kwargs)
+
 
     def _create_results_datasets(self):
         """
@@ -223,6 +223,7 @@ class SignalFilter(Process):
         if self.mpi_size > 1:
             self.mpi_comm.Barrier()
         self.h5_main.file.flush()
+
 
     def _get_existing_datasets(self):
         """

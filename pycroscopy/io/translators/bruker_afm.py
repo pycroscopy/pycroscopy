@@ -11,7 +11,7 @@ from collections import OrderedDict
 import numpy as np
 import h5py
 
-from pyUSID.io.translator import Translator, generate_dummy_main_parms
+from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
 from .df_utils.base_utils import read_binary_data
@@ -66,7 +66,7 @@ class BrukerAFMTranslator(Translator):
             else:
                 data_type = 1
 
-        global_parms = generate_dummy_main_parms()
+        global_parms = dict()
         global_parms['data_type'] = 'Bruker_AFM_' + type_suffixes[data_type]
         global_parms['translator'] = 'Bruker_AFM'
         write_simple_attrs(h5_file, global_parms)
