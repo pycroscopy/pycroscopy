@@ -28,11 +28,14 @@ Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect t
  import pyUSID as usid
  import pycroscopy as px
 
+ #path to file you with to translate 
  file_path = r'/my_folder/a10.ibw'
 
  #Do the translation
- translator = px.io.translators.IgorIBWTranslator()
- h5_path = translator.translate(file_path) #returns path of translated file
+ translator = px.io.translators.IgorIBWTranslator() #Insantiating IgorIBW translator. 
+ #Note: Change translator depending on your input file format
+ 
+ h5_path = translator.translate(file_path) #translates, and then returns path of translated file
 
  #Open the translated file
  h5_f = h5py.File(h5_path, 'r+')
@@ -45,9 +48,6 @@ Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect t
 
  #Print out the list of main datasets
  print(main_dsets)
-
-
-
 
 Generic File Formats
 --------------------
@@ -78,7 +78,7 @@ Common formats
 * Molecular Vista - Photoinduced Force Microscope - ``PiFMTranslator``
 * Nanonis Controllers - ``NanonisTranslator``
 
-IFIM specific
+CNMS specific
 ~~~~~~~~~~~~~~
 * Band Excitation (BE):
 
