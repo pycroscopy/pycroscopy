@@ -27,7 +27,7 @@ from .optimize import Optimize
 from pyUSID.io.dtype_utils import flatten_compound_to_real, stack_real_to_compound
 from pyUSID.io.hdf_utils import copy_region_refs, \
     get_sort_order, get_dimensionality, reshape_to_n_dims, reshape_from_n_dims, get_attr, \
-    create_empty_dataset, create_results_group, write_reduced_spec_dsets, write_simple_attrs, write_main_dataset
+    create_empty_dataset, create_results_group, write_reduced_anc_dsets, write_simple_attrs, write_main_dataset
 from pyUSID import USIDataset
 
 '''
@@ -473,7 +473,7 @@ class BELoopFitter(Fitter):
         self.h5_projected_loops = create_empty_dataset(self.h5_main, np.float32, 'Projected_Loops',
                                                        h5_group=self._h5_group)
 
-        h5_loop_met_spec_inds, h5_loop_met_spec_vals = write_reduced_spec_dsets(self._h5_group, self._sho_spec_inds,
+        h5_loop_met_spec_inds, h5_loop_met_spec_vals = write_reduced_anc_dsets(self._h5_group, self._sho_spec_inds,
                                                                                 self._sho_spec_vals, self._fit_dim_name,
                                                                                 basename='Loop_Metrics')
 

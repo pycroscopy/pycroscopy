@@ -20,7 +20,7 @@ from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
     create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
-    write_reduced_spec_dsets
+    write_reduced_anc_dsets
 from pyUSID.io.usi_data import USIDataset
 from pyUSID.processing.comp_utils import get_available_memory
 
@@ -711,7 +711,7 @@ class BEodfTranslator(Translator):
                                                       'channel_type': 'Current'}, verbose=True)
 
         #Get the reduced dimensions
-        h5_current_spec_inds, h5_current_spec_values = write_reduced_spec_dsets(h5_current_channel_group,
+        h5_current_spec_inds, h5_current_spec_values = write_reduced_anc_dsets(h5_current_channel_group,
                                                         self.h5_raw.h5_spec_inds,
                                                         self.h5_raw.h5_spec_vals, 'Frequency')
 
