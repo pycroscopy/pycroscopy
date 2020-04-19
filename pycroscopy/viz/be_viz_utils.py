@@ -15,7 +15,6 @@ import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
-from functools import partial
 
 from pyUSID.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
     plot_complex_spectra
@@ -27,7 +26,8 @@ from pyUSID.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_s
 from pyUSID import USIDataset
 
 
-def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
+def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None,
+                          expt_type=None, meas_type=None, field_mode=None):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
@@ -42,16 +42,40 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         Whether or not to display the plots on the screen
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
+    expt_type : str, Optional
+        Type of data. This is an attribute written to the HDF5 file at the
+        root level by either the translator or the acquisition software.
+        Accepted values are: 'BEPSData', 'BELineData', 'BERelaxData',
+        'cKPFMData'
+        Default - this function will attempt to extract this metadata from the
+        HDF5 file
+    meas_type: str, Optional
+        Type of measurement. Accepted values are:
+         'AC modulation mode with time reversal' or 'DC modulation mode'
+         This is an attribute embedded under the "Measurement" group with the
+         following key: 'VS_mode'. Default - this function will attempt to
+         extract this metadata from the HDF5 file
+    field_mode : str, Optional
+        Mode in which measurements were made. Accepted values are:
+        'in and out-of-field',
+        This is an attribute at the "Measurement" group under the following key:
+        'VS_measure_in_field_loops'. Default - this function will attempt to
+        extract this metadata from the HDF5 file
 
     Returns
     -------
     None
     """
+    # TODO: This function needs to be cleaned up and modularized, not perform as many hard checks for attributes; rather accept attributes as kwargs; return the figure object instead of writing to file, etc.
     cmap = get_cmap_object(cmap)
 
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
-        plt_title = grp_name + '_' + win_title + '_Loops'
+        if isinstance(grp_name, str):
+            grp_name = grp_name + '_'
+        else:
+            grp_name = ''
+        plt_title = grp_name + win_title + '_Loops'
         fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, num_plots=25, x_label=spec_var_title,
                               y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
@@ -70,21 +94,30 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     h5_file = h5_main.file
 
-    expt_type = get_attr(h5_file, 'data_type')
-    if expt_type not in ['BEPSData', 'BELineData']:
+    if not isinstance(expt_type, str):
+        expt_type = get_attr(h5_file, 'data_type')
+
+    if expt_type not in ['BEPSData', 'BELineData', 'BERelaxData', 'cKPFMData']:
         warn('Unsupported data format')
         return
-    isBEPS = expt_type == 'BEPSData'
+
+    isBEPS = expt_type != 'BELineData'
 
     (folder_path, basename) = os.path.split(h5_file.filename)
     basename, _ = os.path.splitext(basename)
 
+    # This is OK
     sho_grp = h5_main.parent
 
+    # TODO: This makes too many assumptions about the file structure
     chan_grp = h5_file['/'.join(sho_grp.name[1:].split('/')[:2])]
+    meas_grp = chan_grp.parent
 
-    grp_name = '_'.join(chan_grp.name[1:].split('/'))
-    grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
+    # TODO: This makes too many assumptions about the file structure
+    grp_name = None
+    if meas_type is None and field_mode is None:
+        grp_name = '_'.join(chan_grp.name[1:].split('/'))
+        grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
 
     try:
         h5_pos = h5_main.h5_pos_inds
@@ -110,7 +143,10 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     fig_list = list()
     if isBEPS:
-        meas_type = chan_grp.parent.attrs['VS_mode']
+
+        if not isinstance(meas_type, str):
+            meas_type = meas_grp.attrs['VS_mode']
+
         # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
         if meas_type == 'load user defined VS Wave from file':
             warn('Not handling custom experiments for now')
@@ -131,7 +167,11 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
-            if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
+
+            if not isinstance(field_mode, str):
+                field_mode = meas_grp.attrs['VS_measure_in_field_loops']
+
+            if field_mode == 'in and out-of-field':
 
                 dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
 
@@ -163,6 +203,10 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
         fig_list.append(fig_ms)
         if save_plots:
+            if grp_name is None:
+                grp_name = ''
+            else:
+                grp_name = grp_name + '_'
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
             fig_ms.savefig(plt_path, format='png', dpi=300)
 
