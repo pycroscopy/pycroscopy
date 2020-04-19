@@ -64,7 +64,8 @@ class BELoopFitter(Fitter):
 
     """
 
-    def __init__(self, h5_main, **kwargs):
+    def __init__(self, h5_main, be_data_type, vs_mode, vs_cycle_frac,
+                 **kwargs):
         """
 
         Parameters
@@ -73,6 +74,21 @@ class BELoopFitter(Fitter):
             The dataset over which the analysis will be performed. This dataset
             should be linked to the spectroscopic indices and values, and position
             indices and values datasets.
+        data_type : str
+            Type of data. This is an attribute written to the HDF5 file at the
+            root level by either the translator or the acquisition software.
+            Accepted values are: 'BEPSData' and 'cKPFMData'
+            Default - this function will attempt to extract this metadata from the
+            HDF5 file
+        vs_mode: str
+            Type of measurement. Accepted values are:
+             'AC modulation mode with time reversal' or 'DC modulation mode'
+             This is an attribute embedded under the "Measurement" group with the
+             following key: 'VS_mode'. Default - this function will attempt to
+             extract this metadata from the HDF5 file
+        vs_cycle_frac : str
+            Fraction of the bi-polar triangle waveform for voltage spectroscopy
+            used in this experiment
         h5_target_group : h5py.Group, optional. Default = None
             Location where to look for existing results and to place newly
             computed results. Use this kwarg if the results need to be written
@@ -86,7 +102,7 @@ class BELoopFitter(Fitter):
 
         self.parms_dict = None
 
-        self._check_validity(h5_main)
+        self._check_validity(h5_main, be_data_type, vs_mode, vs_cycle_frac)
 
         # Instead of the variables kwarg to the Fitter. Do check here:
         if 'DC_Offset' in self.h5_main.spec_dim_labels:
@@ -114,7 +130,7 @@ class BELoopFitter(Fitter):
         self._write_results_chunk = None
 
     @staticmethod
-    def _check_validity(h5_main):
+    def _check_validity(h5_main, data_type, vs_mode, vs_cycle_frac):
         """
         Checks whether or not the provided object can be analyzed by this class
 
@@ -124,42 +140,37 @@ class BELoopFitter(Fitter):
             The dataset containing the SHO Fit (not necessarily the dataset
             directly resulting from SHO fit)
             over which the loop projection, guess, and fit will be performed.
+        data_type : str
+            Type of data. This is an attribute written to the HDF5 file at the
+            root level by either the translator or the acquisition software.
+            Accepted values are: 'BEPSData' and 'cKPFMData'
+            Default - this function will attempt to extract this metadata from the
+            HDF5 file
+        vs_mode: str
+            Type of measurement. Accepted values are:
+             'AC modulation mode with time reversal' or 'DC modulation mode'
+             This is an attribute embedded under the "Measurement" group with the
+             following key: 'VS_mode'. Default - this function will attempt to
+             extract this metadata from the HDF5 file
+        vs_cycle_frac : str
+            Fraction of the bi-polar triangle waveform for voltage spectroscopy
+            used in this experiment
         """
-        # TODO: Need to catch KeyError s that would be thrown when attempting to access attributes
-        file_data_type = get_attr(h5_main.file, 'data_type')
-        meas_grp_name = h5_main.name.split('/')
-        h5_meas_grp = h5_main.file[meas_grp_name[1]]
-        meas_data_type = get_attr(h5_meas_grp, 'data_type')
-
         if h5_main.dtype != sho32:
             raise TypeError('Provided dataset is not a SHO results dataset.')
 
-        # This check is clunky but should account for case differences.
-        # If Python2 support is dropped, simplify with single check using case
-        if not (meas_data_type.lower != file_data_type.lower or
-                meas_data_type.upper != file_data_type.upper):
-            message = 'Mismatch between file and Measurement group data ' \
-                      'types for the chosen dataset.\n'
-            message += 'File data type is {}.  The data type for Measurement' \
-                       ' group {} is {}'.format(file_data_type,
-                                                h5_meas_grp.name,
-                                                meas_data_type)
-            raise ValueError(message)
-
-        if file_data_type == 'BEPSData':
-            if get_attr(h5_meas_grp, 'VS_mode') not in ['DC modulation mode',
-                                                        'current mode']:
-                raise ValueError('Provided dataset has a mode: "' +
-                                 get_attr(h5_meas_grp, 'VS_mode') +
+        if data_type == 'BEPSData':
+            if vs_mode not in ['DC modulation mode', 'current mode']:
+                raise ValueError('Provided dataset has a mode: "' + vs_mode +
                                  '" is not a "DC modulation" or "current mode"'
                                  ' BEPS dataset')
-            elif get_attr(h5_meas_grp, 'VS_cycle_fraction') != 'full':
+            elif vs_cycle_frac != 'full':
                 raise ValueError('Provided dataset does not have full cycles')
 
-        elif file_data_type == 'cKPFMData':
-            if get_attr(h5_meas_grp, 'VS_mode') != 'cKPFM':
+        elif data_type == 'cKPFMData':
+            if vs_mode != 'cKPFM':
                 raise ValueError('Provided dataset has an unsupported VS_mode:'
-                                 ' "' + get_attr(h5_meas_grp, 'VS_mode') + '"')
+                                 ' "' + vs_mode + '"')
 
     def _create_projection_datasets(self):
         """
