@@ -799,13 +799,12 @@ class BELoopFitter(Fitter):
         and fit work in such a unique manner. At the same time, this complexity
         needs to be invisible to the end-user
         """
-        try:
-            _ = self.h5_projected_loops
-        except AttributeError:
-            self.h5_projected_loops = USIDataset(self.h5_results_grp['Projected_Loops'])
+        # Manually setting this variable because this is not set if resuming
+        # an older computation
+        self.h5_projected_loops = USIDataset(self.h5_results_grp['Projected_Loops'])
 
         # raw data is actually projected loops not raw SHO data
-        self.h5_main = USIDataset(self.h5_projected_loops)
+        self.h5_main = self.h5_projected_loops
 
         # TODO: h5_main swap is not resilient against failure of do_fit()
         temp = super(BELoopFitter, self).do_fit(override=override)
