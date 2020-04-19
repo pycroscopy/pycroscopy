@@ -100,6 +100,10 @@ class BELoopFitter(Fitter):
         super(BELoopFitter, self).__init__(h5_main, "Loop_Fit",
                                            variables=None, **kwargs)
 
+        # This will be reset h5_main to this value before guess / fit
+        # Some simple way to guard against failure
+        self.__h5_main_orig = USIDataset(h5_main)
+
         self.parms_dict = None
 
         self._check_validity(h5_main, be_data_type, vs_mode, vs_cycle_frac)
@@ -713,6 +717,7 @@ class BELoopFitter(Fitter):
         h5_partial_guess: h5py.Dataset or pyUSID.io.USIDataset, optional
             HDF5 dataset containing partial Guess. Not implemented
         """
+        self.h5_main = self.__h5_main_orig
         self.parms_dict = {'projection_method': 'pycroscopy BE loop model',
                            'guess_method': "pycroscopy Cluster Tree"}
 
@@ -738,6 +743,7 @@ class BELoopFitter(Fitter):
         h5_guess: h5py.Dataset or pyUSID.io.USIDataset, optional
             HDF5 dataset containing completed Guess. Not implemented
         """
+        self.h5_main = self.__h5_main_orig
         self.parms_dict = {'fit_method': 'pycroscopy functional'}
 
         # ask super to take care of the rest, which is a standardized operation
@@ -796,17 +802,16 @@ class BELoopFitter(Fitter):
         try:
             _ = self.h5_projected_loops
         except AttributeError:
-            self.h5_projected_loops = self.h5_results_grp['Projected_Loops']
+            self.h5_projected_loops = USIDataset(self.h5_results_grp['Projected_Loops'])
 
-        h5_main_orig = self.h5_main
         # raw data is actually projected loops not raw SHO data
-        self.h5_main = self.h5_projected_loops
+        self.h5_main = USIDataset(self.h5_projected_loops)
 
-        # TODO: h5_main swap is not resilient against failure of do_fit
+        # TODO: h5_main swap is not resilient against failure of do_fit()
         temp = super(BELoopFitter, self).do_fit(override=override)
 
         # Reset h5_main so that this swap is invisible to the user
-        self.h5_main = h5_main_orig
+        self.h5_main = self.__h5_main_orig
 
         # Extract material properties from loop coefficients
         _ = self.extract_loop_parameters(temp)
