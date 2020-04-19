@@ -1237,8 +1237,12 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     return fig
 
 
-def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
-                                 selected_loop_pos=[0, 0], selected_step=0, tick_font_size=14, cmap='viridis',
+def plot_loop_sho_raw_comparison(h5_loop_parameters, h5_sho_grp, h5_raw_dset,
+                                 selected_loop_parm=None,
+                                 selected_loop_cycle=0,
+                                 selected_loop_pos=[0, 0],
+                                 selected_step=0, tick_font_size=14,
+                                 cmap='viridis',
                                  step_chan='DC_Offset'):
     """
 
@@ -1246,6 +1250,12 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ----------
     h5_loop_parameters : h5py.Dataset
         Dataset containing the loop parameters
+    h5_sho_grp : h5py.Group
+        Group containing the SHO fitting results, based on which the loop fit
+        was performed
+    h5_raw_dset : h5py.Dataset
+        Dataset containing the raw BE measurement, that was used to get
+        h5_sho_grp
     selected_loop_parm : str
         The initial loop parameter to be plotted
     selected_loop_cycle : int
@@ -1275,11 +1285,10 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     h5_loop_fit = USIDataset(h5_loop_grp['Fit'], sort_dims=False)
     h5_loop_guess = USIDataset(h5_loop_grp['Guess'], sort_dims=False)
 
-    h5_sho_grp = h5_loop_grp.parent
     h5_sho_fit = USIDataset(h5_sho_grp['Fit'], sort_dims=False)
     h5_sho_guess = USIDataset(h5_sho_grp['Guess'], sort_dims=False)
 
-    h5_main = get_source_dataset(h5_sho_grp)
+    h5_main = h5_raw_dset
     # h5_main.toggle_sorting()
 
     # Now get the needed ancillary datasets for each main dataset
