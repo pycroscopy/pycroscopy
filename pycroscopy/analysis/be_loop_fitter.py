@@ -175,6 +175,10 @@ class BELoopFitter(Fitter):
             if vs_mode != 'cKPFM':
                 raise ValueError('Provided dataset has an unsupported VS_mode:'
                                  ' "' + vs_mode + '"')
+        else:
+            raise NotImplementedError('Loop fitting not supported for Band '
+                                      'Excitation experiment type: {}'
+                                      ''.format(data_type))
 
     def _create_projection_datasets(self):
         """
