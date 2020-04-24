@@ -1,7 +1,47 @@
 import numpy as np
 import pyUSID as usid
 from scipy.optimize import curve_fit
-from .fit_methods import exp, fit_exp_curve, fit_double_exp, fit_str_exp, fit_sigmoid
+
+def exp(x, a, k, c):
+    return (a * np.exp(-(x/k))) + c
+
+def fit_exp_curve(x, y):
+    popt, _ = curve_fit(exp, x, y, maxfev=25000)
+    return popt
+
+def double_exp(x, a, k, a2, k2, c):
+    return (a * np.exp(-k*x)) + (a2 * np.exp(-k2*x) + c )
+
+def fit_double_exp(x, y):
+    """
+    Fit spectrum,y, to double exp using differential evolution
+    :param x: values for x-axis
+    :param y: values for y-axis
+    :return: best fit parameters for a double exp.
+    """
+    time_ax = x
+    spectrum = y
+    def cost_func_double_exp(params):
+        a = params[0]; k = params[1]; a2 = params[2]; k2 = params[3]; c = params[4]
+        double_exp_model = double_exp(time_ax, a, k, a2, k2, c)
+        return np.sum((spectrum - double_exp_model)**2)
+    popt = differential_evolution(cost_func_double_exp,
+                                  bounds=([-100,100],[-100, 100],[-200,200],[-100,100],[-200,200])).x
+    return popt
+
+def str_exp(x, a, k, c):
+    return a * np.exp(x ** k) + c
+
+def fit_str_exp(x,y):
+    popt, _ = curve_fit(str_exp, x, y, maxfev=25000, bounds=([-np.inf,0,-np.inf], [np.inf,1,np.inf]))
+    return popt
+
+def sigmoid(x, A, K, B, v, Q, C):
+    return A + (K-A)/(C+Q*np.exp(-B*x)**(1/v))
+
+def fit_sigmoid(x, y):
+    popt, pcov = curve_fit(sigmoid, x, y, maxfev=2500)
+    return popt
 
 class BERelaxFit(usid.Process):
     def __init__(self, h5_main, variables=None, fit_method='Exponential', sens=1, phase_off=0,
@@ -237,7 +277,7 @@ class BERelaxFit(usid.Process):
             self.h5_v = self.h5_results_grp['v']
             self.h5_Q = self.h5_results['Q']
             self.h5_C = self.h5_results['C']
-            
+
     def _write_results_chunk(self):
         """
         Writes computed results into appropriate datasets.
