@@ -31,6 +31,8 @@ from .optimize import Optimize
 from . import fit_methods
 from .fit_methods import *
 from .giv_bayesian import GIVBayesian
+from .be_relax_fit import BERelaxFit
 
-__all__ = ['GuessMethods', 'Fitter', 'BESHOfitter', 'BELoopFitter', 'utils', 'Optimize', 'fit_methods', 'GIVBayesian']
+__all__ = ['GuessMethods', 'Fitter', 'BESHOfitter', 'BELoopFitter', 'utils', 'Optimize', 'fit_methods', 'GIVBayesian',
+           'BERelaxFit']
 __all__ += utils.__all__

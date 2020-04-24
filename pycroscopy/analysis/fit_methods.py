@@ -7,6 +7,7 @@ Created on 12/15/16 3:44 PM
 
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
+from scipy.optimize import curve_fit, differential_evolution
 from .utils.be_loop import loop_fit_function
 
 
@@ -109,3 +110,45 @@ class forc_iv_fit_methods(Fit_Methods):
     Any fitting methods specific to FORC_IV should go here.
     """
     pass
+
+
+def exp(x, a, k, c):
+    return (a * np.exp(-(x/k))) + c
+
+def fit_exp_curve(x, y):
+    popt, _ = curve_fit(exp, x, y, maxfev=25000)
+    return popt
+
+def double_exp(x, a, k, a2, k2, c):
+    return (a * np.exp(-k*x)) + (a2 * np.exp(-k2*x) + c )
+
+def fit_double_exp(x, y):
+    """
+    Fit spectrum,y, to double exp using differential evolution
+    :param x: values for x-axis
+    :param y: values for y-axis
+    :return: best fit parameters for a double exp. 
+    """
+    time_ax = x
+    spectrum = y
+    def cost_func_double_exp(params):
+        a = params[0]; k = params[1]; a2 = params[2]; k2 = params[3]; c = params[4]
+        double_exp_model = double_exp(time_ax, a, k, a2, k2, c)
+        return np.sum((spectrum - double_exp_model)**2)
+    popt = differential_evolution(cost_func_double_exp,
+                                  bounds=([-100,100],[-100, 100],[-200,200],[-100,100],[-200,200])).x
+    return popt
+
+def str_exp(x, a, k, c):
+    return a * np.exp(x ** k) + c
+
+def fit_str_exp(x,y):
+    popt, _ = curve_fit(str_exp, x, y, maxfev=25000, bounds=([-np.inf,0,-np.inf], [np.inf,1,np.inf]))
+    return popt
+
+def sigmoid(x, A, K, B, v, Q, C):
+    return A + (K-A)/(C+Q*np.exp(-B*x)**(1/v))
+
+def fit_sigmoid(x, y):
+    popt, pcov = curve_fit(sigmoid, x, y, maxfev=2500)
+    return popt
