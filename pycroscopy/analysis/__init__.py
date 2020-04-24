@@ -26,6 +26,8 @@ from .be_loop_fitter import BELoopFitter
 from . import fitter
 from .fitter import Fitter
 from .giv_bayesian import GIVBayesian
+from .be_relax_fit import BERelaxFit
 
-__all__ = ['Fitter', 'BESHOfitter', 'BELoopFitter', 'utils',  'GIVBayesian']
+__all__ = ['Fitter', 'BESHOfitter', 'BELoopFitter', 'utils', 'GIVBayesian',
+           'BERelaxFit']
 __all__ += utils.__all__

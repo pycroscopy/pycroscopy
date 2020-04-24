@@ -234,11 +234,18 @@ class BESHOfitter(Fitter):
         super(BESHOfitter, self)._write_results_chunk()
 
     def set_up_guess(self, guess_func=SHOGuessFunc.complex_gaussian,
-                     *func_args, h5_partial_guess=None, **func_kwargs):
+                     h5_partial_guess=None, *func_args, **func_kwargs):
         """
         Need this because during the set up, we won't know which strategy is being used.
         Should Guess be its own Process class in that case? If so, it would end up having
         its own group etc.
+
+        Parameters
+        -----
+        guess_func : SHOGuessFunc, optional
+            Which guess method to use. Default is complex gaussian
+        h5_partial_guess : h5py.Dataset, optional
+            Partial guess results dataset to continue computing on
         """
         self.parms_dict = {'guess-method': "pycroscopy BESHO"}
 
