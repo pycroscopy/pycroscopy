@@ -15,7 +15,6 @@ import ipywidgets as widgets
 import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
-from functools import partial
 
 from pyUSID.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
     plot_complex_spectra
@@ -26,7 +25,9 @@ from pyUSID.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_s
     get_attr, get_source_dataset
 from pyUSID import USIDataset
 
-def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
+
+def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None,
+                          expt_type=None, meas_type=None, field_mode=None):
     """
     Plots some loops, amplitude, phase maps for BE-Line and BEPS datasets.\n
     Note: The file MUST contain SHO fit gusses at the very least
@@ -41,16 +42,40 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         Whether or not to display the plots on the screen
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
+    expt_type : str, Optional
+        Type of data. This is an attribute written to the HDF5 file at the
+        root level by either the translator or the acquisition software.
+        Accepted values are: 'BEPSData', 'BELineData', 'BERelaxData',
+        'cKPFMData'
+        Default - this function will attempt to extract this metadata from the
+        HDF5 file
+    meas_type: str, Optional
+        Type of measurement. Accepted values are:
+         'AC modulation mode with time reversal' or 'DC modulation mode'
+         This is an attribute embedded under the "Measurement" group with the
+         following key: 'VS_mode'. Default - this function will attempt to
+         extract this metadata from the HDF5 file
+    field_mode : str, Optional
+        Mode in which measurements were made. Accepted values are:
+        'in and out-of-field',
+        This is an attribute at the "Measurement" group under the following key:
+        'VS_measure_in_field_loops'. Default - this function will attempt to
+        extract this metadata from the HDF5 file
 
     Returns
     -------
     None
     """
+    # TODO: This function needs to be cleaned up and modularized, not perform as many hard checks for attributes; rather accept attributes as kwargs; return the figure object instead of writing to file, etc.
     cmap = get_cmap_object(cmap)
 
     def __plot_loops_maps(ac_vec, resp_mat, grp_name, win_title, spec_var_title, meas_var_title, save_plots,
                           folder_path, basename, num_rows, num_cols):
-        plt_title = grp_name + '_' + win_title + '_Loops'
+        if isinstance(grp_name, str):
+            grp_name = grp_name + '_'
+        else:
+            grp_name = ''
+        plt_title = grp_name + win_title + '_Loops'
         fig, ax = plot_curves(ac_vec, resp_mat, evenly_spaced=True, num_plots=25, x_label=spec_var_title,
                               y_label=meas_var_title, subtitle_prefix='Position', title=plt_title)
         if save_plots:
@@ -69,21 +94,30 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     h5_file = h5_main.file
 
-    expt_type = get_attr(h5_file, 'data_type')
-    if expt_type not in ['BEPSData', 'BELineData']:
+    if not isinstance(expt_type, str):
+        expt_type = get_attr(h5_file, 'data_type')
+
+    if expt_type not in ['BEPSData', 'BELineData', 'BERelaxData', 'cKPFMData']:
         warn('Unsupported data format')
         return
-    isBEPS = expt_type == 'BEPSData'
+
+    isBEPS = expt_type != 'BELineData'
 
     (folder_path, basename) = os.path.split(h5_file.filename)
     basename, _ = os.path.splitext(basename)
 
+    # This is OK
     sho_grp = h5_main.parent
 
+    # TODO: This makes too many assumptions about the file structure
     chan_grp = h5_file['/'.join(sho_grp.name[1:].split('/')[:2])]
+    meas_grp = chan_grp.parent
 
-    grp_name = '_'.join(chan_grp.name[1:].split('/'))
-    grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
+    # TODO: This makes too many assumptions about the file structure
+    grp_name = None
+    if meas_type is None and field_mode is None:
+        grp_name = '_'.join(chan_grp.name[1:].split('/'))
+        grp_name = '_'.join([grp_name, sho_grp.name.split('/')[-1].split('-')[0], h5_main.name.split('/')[-1]])
 
     try:
         h5_pos = h5_main.h5_pos_inds
@@ -109,7 +143,10 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
     fig_list = list()
     if isBEPS:
-        meas_type = chan_grp.parent.attrs['VS_mode']
+
+        if not isinstance(meas_type, str):
+            meas_type = meas_grp.attrs['VS_mode']
+
         # basically 3 kinds for now - DC/current, AC, UDVS - lets ignore this
         if meas_type == 'load user defined VS Wave from file':
             warn('Not handling custom experiments for now')
@@ -130,7 +167,11 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
         else:
             # plot loops at a few locations
             dc_vec = np.squeeze(h5_spec_vals[h5_spec_vals.attrs['DC_Offset']])
-            if chan_grp.parent.attrs['VS_measure_in_field_loops'] == 'in and out-of-field':
+
+            if not isinstance(field_mode, str):
+                field_mode = meas_grp.attrs['VS_measure_in_field_loops']
+
+            if field_mode == 'in and out-of-field':
 
                 dc_vec = np.squeeze(dc_vec[slice(0, None, 2)])
 
@@ -162,6 +203,10 @@ def visualize_sho_results(h5_main, save_plots=True, show_plots=True, cmap=None):
 
         fig_list.append(fig_ms)
         if save_plots:
+            if grp_name is None:
+                grp_name = ''
+            else:
+                grp_name = grp_name + '_'
             plt_path = os.path.join(folder_path, basename + '_' + grp_name + 'Maps.png')
             fig_ms.savefig(plt_path, format='png', dpi=300)
 
@@ -216,7 +261,7 @@ def plot_loop_guess_fit(vdc, ds_proj_loops, ds_guess, ds_fit, title=''):
     return fig, axes
 
 
-def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None):
+def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_label='Response', cmap=None, verbose=False):
     """
     Jupyer notebook ONLY function. Sets up an interactive visualizer for viewing SHO fitted BEPS data.
     Currently, this is limited to DC and AC spectroscopy datasets.
@@ -234,17 +279,19 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         Label for the response (y) axis.
     cmap : String, or matplotlib.colors.LinearSegmentedColormap object (Optional)
         Requested color map
+    verbose : bool, optional
+        Whether or not to print logs for debugging. Default = False
     """
     cmap = get_cmap_object(cmap)
 
     h5_sho_spec_inds = pc_sho_dset.h5_spec_inds
     h5_sho_spec_vals = pc_sho_dset.h5_spec_vals
-    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds)
+    spec_nd, _ = reshape_to_n_dims(h5_sho_spec_inds, h5_spec=h5_sho_spec_inds, verbose=verbose)
     sho_spec_dims = pc_sho_dset.spec_dim_sizes
     sho_spec_labels = pc_sho_dset.spec_dim_labels
 
     h5_pos_inds = pc_sho_dset.h5_pos_inds
-    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds)
+    pos_nd, _ = reshape_to_n_dims(h5_pos_inds, h5_pos=h5_pos_inds, verbose=verbose)
     pos_dims = pc_sho_dset.pos_dim_sizes
     pos_labels = pc_sho_dset.pos_dim_labels
 
@@ -274,7 +321,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     sho_dset_collapsed = np.reshape(guess_nd_data, final_guess_shape).squeeze()
 
     # Get the bias matrix:
-    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds)
+    bias_mat, _ = reshape_to_n_dims(h5_sho_spec_vals, h5_spec=h5_sho_spec_inds, verbose=verbose)
     bias_mat = np.transpose(bias_mat[spec_step_dim_ind],
                             new_spec_order).reshape(sho_dset_collapsed.shape[len(pos_dims):])
     if bias_mat.ndim == 1:
@@ -303,17 +350,21 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     not_step_chan = sho_spec_labels.copy()
     not_step_chan.remove(step_chan)
     spatial_dict = {step_chan: [step_ind]}
-    resp_dict = {pos_labels[-1]: [row_ind],
-                 pos_labels[-2]: [col_ind]}
+    resp_dict = {pos_labels[-1]: row_ind,
+                 pos_labels[-2]: col_ind}
     for key in pos_labels[:-2]:
-        spatial_dict[key] = [0]
-        resp_dict[key] = [0]
+        spatial_dict[key] = 0
+        resp_dict[key] = 0
     if not_step_chan is not None:
         for key in not_step_chan:
-            spatial_dict[key] = [0]
+            spatial_dict[key] = 0
 
-    spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
-    resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape))
+    if verbose:
+        print('Starting slicing dictionary for spatial plot: {}'.format(spatial_dict))
+        print('Starting slicing dictionary for spectroscopic plot: {}'.format(resp_dict))
+
+    spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False, verbose=verbose)[0][sho_quantity].squeeze()
+    resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False, verbose=verbose)[0].reshape(bias_mat.shape))
 
     fig = plt.figure(figsize=(12, 8))
     ax_bias = plt.subplot2grid((3, 2), (0, 0), colspan=1, rowspan=1)
@@ -325,7 +376,7 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
     ax_bias.set_ylabel(step_chan.replace('_', ' ') + ' (V)')
     bias_slider = ax_bias.axvline(x=step_ind, color='r')
 
-    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True)
+    img_map, img_cmap = plot_map(ax_map, spatial_map.T, show_xy_ticks=True, cmap=cmap)
 
     map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
     ax_map.set_xlabel(pos_labels[-1])
@@ -351,8 +402,10 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     def update_sho_plots(sho_quantity, step_ind):
         bias_slider.set_xdata((step_ind, step_ind))
-        spatial_dict[step_chan] = [step_ind]
-        spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False)[0][sho_quantity].squeeze()
+        spatial_dict[step_chan] = step_ind
+        if verbose:
+            print('Updating spatial dict as: {}'.format(spatial_dict))
+        spatial_map = pc_sho_dset.slice(spatial_dict, as_scalar=False, verbose=verbose)[0][sho_quantity].squeeze()
         map_title = '{} - {}={}'.format(sho_quantity, step_chan, bias_mat[step_ind][0])
         ax_map.set_title(map_title)
         img_map.set_data(spatial_map.T)
@@ -361,7 +414,9 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         img_map.set_clim(vmin=spat_mean - 3 * spat_std, vmax=spat_mean + 3 * spat_std)
 
     def update_resp_plot(resp_dict):
-        resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False)[0].reshape(bias_mat.shape)).T
+        if verbose:
+            print('Updating spectroscopic dict as: {}'.format(resp_dict))
+        resp_vec = resp_func(pc_sho_dset.slice(resp_dict, as_scalar=False, verbose=verbose)[0].reshape(bias_mat.shape)).T
         for line_handle, data in zip(line_handles, resp_vec):
             line_handle.set_ydata(data)
 
@@ -375,8 +430,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
         xdata = int(round(event.xdata))
         ydata = int(round(event.ydata))
 
-        resp_dict[pos_labels[-1]] = [xdata]
-        resp_dict[pos_labels[-2]] = [ydata]
+        resp_dict[pos_labels[-1]] = xdata
+        resp_dict[pos_labels[-2]] = ydata
 
         crosshair.set_xdata(xdata)
         crosshair.set_ydata(ydata)
@@ -387,8 +442,8 @@ def jupyter_visualize_beps_sho(pc_sho_dset, step_chan, resp_func=None, resp_labe
 
     def pos_slider_update(slider):
         for key in pos_labels[:-2]:
-            spatial_dict[key] = [pos_sliders[key].value]
-            resp_dict[key] = [pos_sliders[key].value]
+            spatial_dict[key] = pos_sliders[key].value
+            resp_dict[key] = pos_sliders[key].value
         step = bias_step_picker.value
         sho_quantity = sho_quantity_picker.value
 
@@ -1182,8 +1237,12 @@ def jupyter_visualize_loop_sho_raw_comparison(h5_loop_parameters, cmap=None):
     return fig
 
 
-def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, selected_loop_cycle=0,
-                                 selected_loop_pos=[0, 0], selected_step=0, tick_font_size=14, cmap='viridis',
+def plot_loop_sho_raw_comparison(h5_loop_parameters, h5_sho_grp, h5_raw_dset,
+                                 selected_loop_parm=None,
+                                 selected_loop_cycle=0,
+                                 selected_loop_pos=[0, 0],
+                                 selected_step=0, tick_font_size=14,
+                                 cmap='viridis',
                                  step_chan='DC_Offset'):
     """
 
@@ -1191,6 +1250,12 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     ----------
     h5_loop_parameters : h5py.Dataset
         Dataset containing the loop parameters
+    h5_sho_grp : h5py.Group
+        Group containing the SHO fitting results, based on which the loop fit
+        was performed
+    h5_raw_dset : h5py.Dataset
+        Dataset containing the raw BE measurement, that was used to get
+        h5_sho_grp
     selected_loop_parm : str
         The initial loop parameter to be plotted
     selected_loop_cycle : int
@@ -1220,11 +1285,10 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
     h5_loop_fit = USIDataset(h5_loop_grp['Fit'], sort_dims=False)
     h5_loop_guess = USIDataset(h5_loop_grp['Guess'], sort_dims=False)
 
-    h5_sho_grp = h5_loop_grp.parent
     h5_sho_fit = USIDataset(h5_sho_grp['Fit'], sort_dims=False)
     h5_sho_guess = USIDataset(h5_sho_grp['Guess'], sort_dims=False)
 
-    h5_main = get_source_dataset(h5_sho_grp)
+    h5_main = h5_raw_dset
     # h5_main.toggle_sorting()
 
     # Now get the needed ancillary datasets for each main dataset
@@ -1309,10 +1373,10 @@ def plot_loop_sho_raw_comparison(h5_loop_parameters, selected_loop_parm=None, se
 
         slice_dict = dict()
         for pos_dim, dim_ind in zip(pos_labs, selected_loop_pos):
-            slice_dict[pos_dim] = [dim_ind]
+            slice_dict[pos_dim] = dim_ind
 
         for spec_dim, dim_ind in zip(loop_spec_labs, selected_loop_ndims):
-            slice_dict[spec_dim] = [dim_ind]
+            slice_dict[spec_dim] = dim_ind
 
         loop_proj_vec, _ = h5_loop_projections.slice(slice_dict, as_scalar=False)
         loop_proj_vec2 = np.roll(loop_proj_vec.squeeze(), shift_ind)
@@ -1868,7 +1932,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
     sho_curve = np.array(SHOfunc(params, freq_vals))
 
     if fit_method == 'Exponential':
-        from ..analysis.fit_methods import exp
+        from ..analysis.be_relax_fit import exp
         a = amp_fit_reshape[x_col, h_row, bias_ind]
         t = tau_fit_reshape[x_col, h_row, bias_ind]
         c = offset_fit_reshape[x_col, h_row, bias_ind]
@@ -1895,7 +1959,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Double_Exp':
-        from ..analysis.fit_methods import double_exp
+        from ..analysis.be_relax_fit import double_exp
         amp1 = amp1_fit_reshape[x_col, h_row, bias_ind]
         tau1 = tau1_fit_reshape[x_col, h_row, bias_ind]
         amp2 = amp2_fit_reshape[x_col, h_row, bias_ind]
@@ -1935,7 +1999,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Str_Exp':
-        from ..analysis.fit_methods import str_exp
+        from ..analysis.be_relax_fit import str_exp
         amp = amp_fit_reshape[x_col, h_row, bias_ind]
         beta = beta_fit_reshape[x_col, h_row, bias_ind]
         offset = offset_fit_reshape[x_col, h_row, bias_ind]
@@ -1972,7 +2036,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Logistic':
-        from ..analysis.fit_methods import sigmoid
+        from ..analysis.be_relax_fit import sigmoid
         A = A_reshape[x_col, h_row, bias_ind]
         K = K_reshape[x_col, h_row, bias_ind]
         B = B_reshape[x_col, h_row, bias_ind]

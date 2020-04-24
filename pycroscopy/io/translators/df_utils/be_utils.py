@@ -15,13 +15,17 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xlrd as xlreader
 
-from pyUSID.io.hdf_utils import get_auxiliary_datasets, find_dataset, get_h5_obj_refs, link_h5_objects_as_attrs, \
-    get_attr, create_indexed_group, write_simple_attrs, write_main_dataset, Dimension
-from pyUSID.io.write_utils import create_spec_inds_from_vals
-from pyUSID.processing.comp_utils import get_available_memory, recommend_cpu_cores
-from ....analysis.optimize import Optimize
+from pyUSID.io.hdf_utils import get_auxiliary_datasets, find_dataset, \
+    link_h5_objects_as_attrs, get_attr, create_indexed_group, \
+    write_simple_attrs, write_main_dataset
+
+from pyUSID.io.write_utils import create_spec_inds_from_vals, Dimension
+from pyUSID.processing.comp_utils import get_available_memory, parallel_compute
+
 from ....processing.histogram import build_histogram
-from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, plot_histograms
+from ....analysis.utils.be_sho import SHOestimateGuess
+from ....viz.be_viz_utils import plot_1d_spectrum, plot_2d_spectrogram, \
+    plot_histograms
 from ...hdf_writer import HDFwriter
 from ...virtual_data import VirtualDataset, VirtualGroup
 
@@ -232,13 +236,11 @@ def requires_conjugate(chosen_spectra, default_q=10, cores=None):
         Whether or not to take the conjugate of the data
     """
     # Do the SHO Guess for each of these
-    opt = Optimize(data=chosen_spectra)
+    sho_guess = parallel_compute(chosen_spectra, SHOestimateGuess, cores=cores,
+                                 func_args=[np.arange(chosen_spectra.shape[1]),
+                                            5])
 
-    fitguess_results = opt.computeGuess(strategy='complex_gaussian',
-                                        processors=recommend_cpu_cores(chosen_spectra.shape[0], requested_cores=cores),
-                                        options={'frequencies': np.arange(chosen_spectra.shape[1])})
-
-    q_results = np.array(fitguess_results)[:, 2]
+    q_results = np.array(sho_guess)[:, 2]
     good_q = q_results[np.where(q_results != default_q)]
 
     if np.mean(good_q) < 0:

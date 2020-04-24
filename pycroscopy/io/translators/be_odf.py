@@ -337,7 +337,7 @@ class BEodfTranslator(Translator):
             remove(h5_path)
 
         # First create the file
-        h5_f = h5py.File(h5_path)
+        h5_f = h5py.File(h5_path, mode='w')
 
         # Then write root level attributes
         global_parms = dict()
@@ -713,7 +713,7 @@ class BEodfTranslator(Translator):
         #Get the reduced dimensions
         h5_current_spec_inds, h5_current_spec_values = write_reduced_anc_dsets(h5_current_channel_group,
                                                         self.h5_raw.h5_spec_inds,
-                                                        self.h5_raw.h5_spec_vals, 'Frequency')
+                                                        self.h5_raw.h5_spec_vals, 'Frequency', is_spec=True)
 
 
         h5_current_main = write_main_dataset(h5_current_channel_group,  # parent HDF5 group

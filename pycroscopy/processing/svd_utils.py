@@ -44,11 +44,15 @@ class SVD(Process):
             USID Main HDF5 dataset that will be decomposed
         num_components : int, optional
             Number of components to decompose h5_main into.  Default None.
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         kwargs
             Arguments to be sent to Process
         """
-        super(SVD, self).__init__(h5_main, **kwargs)
-        self.process_name = 'SVD'
+        super(SVD, self).__init__(h5_main, 'SVD', **kwargs)
 
         '''
         Calculate the size of the main data in memory and compare to max_mem
@@ -181,7 +185,9 @@ class SVD(Process):
         """
         comp_dim = Dimension('Principal Component', 'a. u.', len(self.__s))
 
-        h5_svd_group = create_results_group(self.h5_main, self.process_name)
+        h5_svd_group = create_results_group(self.h5_main, self.process_name,
+                                            h5_parent_group=self._h5_target_group)
+        self._write_source_dset_provenance()
         self.h5_results_grp = h5_svd_group
 
         write_simple_attrs(h5_svd_group, self.parms_dict)
