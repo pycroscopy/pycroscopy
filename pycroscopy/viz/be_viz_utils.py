@@ -1932,7 +1932,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
     sho_curve = np.array(SHOfunc(params, freq_vals))
 
     if fit_method == 'Exponential':
-        from ..analysis.fit_methods import exp
+        from ..analysis.be_relax_fit import exp
         a = amp_fit_reshape[x_col, h_row, bias_ind]
         t = tau_fit_reshape[x_col, h_row, bias_ind]
         c = offset_fit_reshape[x_col, h_row, bias_ind]
@@ -1959,7 +1959,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Double_Exp':
-        from ..analysis.fit_methods import double_exp
+        from ..analysis.be_relax_fit import double_exp
         amp1 = amp1_fit_reshape[x_col, h_row, bias_ind]
         tau1 = tau1_fit_reshape[x_col, h_row, bias_ind]
         amp2 = amp2_fit_reshape[x_col, h_row, bias_ind]
@@ -1999,7 +1999,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Str_Exp':
-        from ..analysis.fit_methods import str_exp
+        from ..analysis.be_relax_fit import str_exp
         amp = amp_fit_reshape[x_col, h_row, bias_ind]
         beta = beta_fit_reshape[x_col, h_row, bias_ind]
         offset = offset_fit_reshape[x_col, h_row, bias_ind]
@@ -2036,7 +2036,7 @@ def viz_berelaxfit(berelaxfit, bias_ind =0, t_time=0 , x_col=0, h_row=0, sensiti
         plt.axhline(y=h_row, color='k')
 
     if fit_method == 'Logistic':
-        from ..analysis.fit_methods import sigmoid
+        from ..analysis.be_relax_fit import sigmoid
         A = A_reshape[x_col, h_row, bias_ind]
         K = K_reshape[x_col, h_row, bias_ind]
         B = B_reshape[x_col, h_row, bias_ind]
