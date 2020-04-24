@@ -18,6 +18,37 @@ Data Translators
 * We are also interested in collaborating with instrument manufacturers to integrate pycroscopy into instrumentation or analysis software.
 * We are working on writing translators to popular open-source software / formats such as ``WSxM``, ``Gwyddion``, and ``ImageJ``.
 
+Quick example
+--------------------
+Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect the contents. Only the translator changes for different file formats, all other steps should remain the same.
+
+.. code:: bash
+
+ import h5py
+ import pyUSID as usid
+ import pycroscopy as px
+
+ #path to file you wish to translate 
+ file_path = r'/my_folder/a10.ibw'
+
+ #Do the translation
+ translator = px.io.translators.IgorIBWTranslator() #Instantiating IgorIBW translator. 
+ #Note: Change translator depending on your input file format
+ 
+ h5_path = translator.translate(file_path) #translates, and then returns path of translated file
+
+ #Open the translated file
+ h5_f = h5py.File(h5_path, 'r+')
+
+ #Inspect the h5 file
+ usid.hdf_utils.print_tree(h5_f)
+
+ #Get all the main datasets
+ main_dsets = usid.hdf_utils.get_all_main(h5_f)
+
+ #Print out the list of main datasets
+ print(main_dsets)
+
 Generic File Formats
 --------------------
 * PNG, TIFF images - ``ImageTranslator``
@@ -47,7 +78,7 @@ Common formats
 * Molecular Vista - Photoinduced Force Microscope - ``PiFMTranslator``
 * Nanonis Controllers - ``NanonisTranslator``
 
-IFIM specific
+CNMS specific
 ~~~~~~~~~~~~~~
 * Band Excitation (BE):
 

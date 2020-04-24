@@ -123,7 +123,8 @@ class GIVBayesian(Process):
         return bayesian_inference_on_period(self.h5_main[pix_ind], self.single_ao, self.parms_dict['freq'],
                                             show_plots=show_plots, **other_params)
 
-    def _set_memory_and_cores(self, cores=None, mem=None):
+    def _set_memory_and_cores(self, cores=None, man_mem_limit=None,
+                              mem_multiplier=1.0):
         """
         Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
         number of cores to be used by analysis methods.
@@ -137,7 +138,9 @@ class GIVBayesian(Process):
             Default - 1024
             The amount a memory in Mb to use in the computation
         """
-        super(GIVBayesian, self)._set_memory_and_cores(cores=cores, mem=mem)
+        super(GIVBayesian, self)._set_memory_and_cores(cores=cores,
+                                                       mem_multiplier=mem_multiplier,
+                                                       man_mem_limit=man_mem_limit)
         # Remember that the default number of pixels corresponds to only the raw data that can be held in memory
         # In the case of simplified Bayesian inference, four (roughly) equally sized datasets need to be held in memory:
         # raw, compensated current, resistance, variance

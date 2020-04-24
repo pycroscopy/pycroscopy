@@ -259,13 +259,13 @@ class ImageWindow(object):
         '''
             Step size must be less than 1/4th the image size
             '''
-        win_step_x = min(x_pix / 4, win_step_x)
-        win_step_y = min(y_pix / 4, win_step_y)
+        #win_step_x = min(x_pix / 4, win_step_x)
+        #win_step_y = min(y_pix / 4, win_step_y)
         '''
             Prevent windows from being less that twice the step size and more than half the image size
             '''
-        win_x = max(2 * win_step_x, min(x_pix, win_x))
-        win_y = max(2 * win_step_y, min(y_pix, win_y))
+        #win_x = max(2 * win_step_x, min(x_pix, win_x))
+        #win_y = max(2 * win_step_y, min(y_pix, win_y))
         print('Optimal window size determined to be {wx}x{wy} pixels.'.format(wx=win_x, wy=win_y))
 
         return image, win_step_x, win_step_y, win_x, win_y

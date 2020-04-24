@@ -26,7 +26,7 @@ from .gmode_utils import test_filter
 
 class SignalFilter(Process):
     def __init__(self, h5_main, frequency_filters=None, noise_threshold=None, write_filtered=True,
-                 write_condensed=False, num_pix=1, phase_rad=0,  **kwargs):
+                 write_condensed=False, num_pix=1, phase_rad=0, **kwargs):
         """
         Filters the entire h5 dataset with the given filtering parameters.
         Parameters
@@ -147,6 +147,7 @@ class SignalFilter(Process):
                            noise_threshold=self.noise_threshold, plot_title='Pos #' + str(pix_ind), show_plots=True,
                            **kwargs)
 
+
     def _create_results_datasets(self):
         """
         Creates all the datasets necessary for holding all parameters + data.
@@ -228,6 +229,7 @@ class SignalFilter(Process):
         if self.mpi_size > 1:
             self.mpi_comm.Barrier()
         self.h5_main.file.flush()
+
 
     def _get_existing_datasets(self):
         """
