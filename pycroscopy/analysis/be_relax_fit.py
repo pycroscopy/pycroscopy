@@ -219,14 +219,25 @@ class BERelaxFit(usid.Process):
         """
         Extracts references to the existing datasets with results (if any)
         """
-        if self.fit_method == 'Exponential':
-            self.
-        self.h5_new_spec_vals = self.h5_results_grp['Spectroscopic_Values']
-        self.h5_cap = self.h5_results_grp['Capacitance']
-        self.h5_variance = self.h5_results_grp['R_variance']
-        self.h5_resistance = self.h5_results_grp['Resistance']
-        self.h5_i_corrected = self.h5_results_grp['Corrected_Current']
-
+        if self.fit_method == 'Exponential' or 'Double_Exp':
+            self.h5_amplitude = self. h5_results_grp['Amplitude [pm]']
+            self.h5_time_const = self.h5_results_grp['Time_Constant [s]']
+            self.h5_offset = self.h5_results_grp['Offset [pm']
+        if self.fit_method == 'Double_Exp':
+            self.h5_amplitude2 = self. h5_results_grp['Amplitude 2 [pm]']
+            self.h5_time_const2 = self.h5_results_grp['Time_Constant 2 [pm]']
+        if self.fit_method == 'Str_Exp':
+            self.h5_amplitude = self.h5_results_grp['Amplitude [pm]']
+            self.h5_beta = self.h5_results_grp['Beta']
+            self.h5_offset = self.h5_results_grp['Offest [pm]']
+        if self.fit_method == 'Logistic':
+            self.h5_A = self.h5_results_grp['Amplitude [pm]']
+            self.h5_K = self.h5_results_grp['A']
+            self.h5_B = self.h5_results_grp['K']
+            self.h5_v = self.h5_results_grp['v']
+            self.h5_Q = self.h5_results['Q']
+            self.h5_C = self.h5_results['C']
+            
     def _write_results_chunk(self):
         """
         Writes computed results into appropriate datasets.
