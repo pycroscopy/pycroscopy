@@ -1,661 +1,396 @@
+# -*- coding: utf-8 -*-
 """
-Abstract and science-agnostic :class:`~pycroscopy.analysis.fitter.Fitter` class for fitting data to physical models
+:class:`~pycroscopy.analysis.fitter.Fitter` - Abstract class that provides the
+framework for building application-specific children classes
 
-Created on 7/17/16 10:08 AM
+Created on Thu Aug 15 11:48:53 2019
 
-@author: Numan Laanait, Suhas Somnath, Chris Smith
+@author: Suhas Somnath
 """
-
-from __future__ import division, print_function, absolute_import, unicode_literals
-
+from __future__ import division, print_function, absolute_import, \
+    unicode_literals
 import numpy as np
-import psutil
-import scipy
-import h5py
-import time as tm
-from .guess_methods import GuessMethods
-from .fit_methods import Fit_Methods
-from pyUSID import USIDataset
-from pyUSID.processing.comp_utils import get_available_memory, recommend_cpu_cores
-from pyUSID.io.io_utils import format_time
-from pyUSID.io.hdf_utils import check_for_old, find_results_groups, check_for_matching_attrs, get_attr
-from .optimize import Optimize
+from warnings import warn
+import joblib
+from scipy.optimize import least_squares
+
+from pyUSID.processing.comp_utils import recommend_cpu_cores
+from pyUSID.processing.process import Process
+from pyUSID.io.usi_data import USIDataset
+
+# TODO: All reading, holding operations should use Dask arrays
 
 
-class Fitter(object):
-    # TODO: This should extend the pyUSID.Process class instead of being independent
-    """
-    An abstarct, science-agnostic class similar to :class:`pyUSID.processing.Process` that facilitates the fitting of
-    data to physical models. It encapsulates the typical routines performed during model-dependent analysis of data.
-    This abstract class should be extended to cover different types of imaging modalities.
-    """
+class Fitter(Process):
 
-    def __init__(self, h5_main, variables=['Frequency'], parallel=True, verbose=False):
+    def __init__(self, h5_main, proc_name, variables=None, **kwargs):
         """
-        For now, we assume that the guess dataset has not been generated for this dataset but we will relax this
-        requirement after testing the basic components.
+        Creates a new instance of the abstract Fitter class
 
         Parameters
         ----------
-        h5_main : h5py.Dataset instance
-            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-            indices and values, and position indices and values datasets.
-        variables : list(string), Default ['Frequency']
-            Lists of attributes that h5_main should possess so that it may be analyzed by Model.
-        parallel : bool, optional
-            Should the parallel implementation of the fitting be used.  Default True
-        verbose : bool, optional. default = False
-            Whether or not to print statements that aid in debugging
-
+        h5_main : h5py.Dataset or pyUSID.io.USIDataset object
+            Main datasets whose one or dimensions will be reduced
+        proc_name : str or unicode
+            Name of the child process
+        variables : str or list, optional
+            List of spectroscopic dimension names that will be reduced
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
+        kwargs : dict
+            Keyword arguments that will be passed on to
+            pyUSID.processing.process.Process
         """
 
-        if not isinstance(h5_main, USIDataset):
-            h5_main = USIDataset(h5_main)
+        super(Fitter, self).__init__(h5_main, proc_name, **kwargs)
 
-        # Checking if dataset has the proper dimensions for the model to run.
-        if self._is_legal(h5_main, variables):
-            self.h5_main = h5_main
+        # Validate other arguments / kwargs here:
+        if variables is not None:
+            if not np.all(np.isin(variables, self.h5_main.spec_dim_labels)):
+                raise ValueError('Provided dataset does not appear to have the'
+                                 ' spectroscopic dimension(s): "{}" that need '
+                                 'to be fitted'.format(variables))
 
+        # Variables specific to Fitter
+        self._guess = None
+        self._fit = None
+        self._is_guess = True
+        self._h5_guess = None
+        self._h5_fit = None
+        self.__set_up_called = False
+
+        # Variables from Process:
+        self.compute = self.set_up_guess
+        self._unit_computation = super(Fitter, self)._unit_computation
+        self._create_results_datasets = self._create_guess_datasets
+        self._map_function = None
+
+    def _read_guess_chunk(self):
+        """
+        Returns a chunk of guess dataset corresponding to the same pixels of
+        the main dataset.
+        """
+        curr_pixels = self._get_pixels_in_current_batch()
+        self._guess = self._h5_guess[curr_pixels, :]
+
+        if self.verbose and self.mpi_rank == 0:
+            print('Guess of shape: {}'.format(self._guess.shape))
+
+    def _write_results_chunk(self):
+        """
+        Writes the guess or fit results into appropriate HDF5 datasets.
+        """
+        if self._is_guess:
+            targ_dset = self._h5_guess
+            source_dset = self._guess
         else:
-            raise ValueError('Provided dataset is not a "Main" dataset with necessary ancillary datasets')
+            targ_dset = self._h5_fit
+            source_dset = self._fit
 
-        # Checking if parallel processing will be used
-        self._parallel = parallel
-        self._verbose = verbose
+        curr_pixels = self._get_pixels_in_current_batch()
 
-        # Determining the max size of the data that can be put into memory
-        self._set_memory_and_cores()
-
-        self._start_pos = 0
-        self._end_pos = self.h5_main.shape[0]
-        self.h5_guess = None
-        self.h5_fit = None
-        self.h5_results_grp = None
-
-        # TODO: do NOT expose a lot of innards. Turn it into private with _var_name
-        self.data = None
-        self.guess = None
-        self.fit = None
-
-        self._fitter_name = None  # Reset this in the extended classes
-        self._parms_dict = dict()
-
-    def _set_memory_and_cores(self):
-        """
-        Checks hardware limitations such as memory, # cpus and sets the recommended datachunk sizes and the
-        number of cores to be used by analysis methods.
-        """
-
-        if self._parallel:
-            self._maxCpus = max(1, psutil.cpu_count() - 2)
-        else:
-            self._maxCpus = 1
-
-        if self._maxCpus == 1:
-            self._parallel = False
-
-        self._maxMemoryMB = get_available_memory() / 1024 ** 2  # in Mb
-
-        self._maxDataChunk = int(self._maxMemoryMB / self._maxCpus)
-
-        # Now calculate the number of positions that can be stored in memory in one go.
-        mb_per_position = self.h5_main.dtype.itemsize * self.h5_main.shape[1] / 1024.0 ** 2
-
-        # TODO: The size of the chunk should be determined by BOTH the computation time and memory restrictions
-        self._max_pos_per_read = int(np.floor(self._maxDataChunk / mb_per_position))
-        if self._verbose:
-            print('Allowed to read {} pixels per chunk'.format(self._max_pos_per_read))
-
-    def _is_legal(self, h5_main, variables):
-        """
-        Checks whether or not the provided object can be analyzed by this Model class.
-        Classes that extend this class will do additional checks to ensure that the supplied dataset is legal.
-
-        Parameters
-        ----
-        h5_main : USIDataset instance
-            The dataset over which the analysis will be performed. This dataset should be linked to the spectroscopic
-            indices and values, and position indices and values datasets.
-
-        variables : list(string)
-            The dimensions needed to be present in the attributes of h5_main to analyze the data with Model.
-
-        Returns
-        -------
-        legal : Boolean
-            Whether or not this dataset satisfies the necessary conditions for analysis
-
-        """
-        return np.all(np.isin(variables, h5_main.spec_dim_labels))
-
-    def _get_data_chunk(self):
-        """
-        Reads the next chunk of data for the guess or the fit into memory
-        """
-        if self._start_pos < self.h5_main.shape[0]:
-            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.data = self.h5_main[self._start_pos:self._end_pos, :]
-            if self._verbose:
-                print('\nReading pixels {} to {} of {}'.format(self._start_pos, self._end_pos, self.h5_main.shape[0]))
-
-        else:
-            if self._verbose:
-                print('Finished reading all data!')
-            self.data = None
-
-    def _get_guess_chunk(self):
-        """
-        Returns a chunk of guess dataset corresponding to the main dataset.
-        Should be called BEFORE _get_data_chunk since it relies upon current values of
-        `self._start_pos`, `self._end_pos`
-
-        Parameters
-        -----
-        None
-
-        Returns
-        --------
-
-        """
-        if self.data is None:
-            self._end_pos = int(min(self.h5_main.shape[0], self._start_pos + self._max_pos_per_read))
-            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
-        else:
-            self.guess = self.h5_guess[self._start_pos:self._end_pos, :]
-
-        if self._verbose:
-            print('Guess of shape: {}'.format(self.guess.shape))
-
-    def _set_results(self, is_guess=False):
-        """
-        Writes the provided guess or fit results into appropriate datasets.
-        Given that the guess and fit datasets are relatively small, we should be able to hold them in memory just fine
-
-        Parameters
-        ---------
-        is_guess : bool, optional
-            Default - False
-            Flag that differentiates the guess from the fit
-        """
-        statement = 'guess'
-
-        if is_guess:
-            targ_dset = self.h5_guess
-            source_dset = self.guess
-        else:
-            statement = 'fit'
-            targ_dset = self.h5_fit
-            source_dset = self.fit
-
-        if self._verbose:
-            print('Writing data to positions: {} to {}'.format(self._start_pos, self._end_pos))
-        targ_dset[self._start_pos: self._end_pos, :] = source_dset
-
-        # This flag will let us resume the computation if it is aborted
-        targ_dset.attrs['last_pixel'] = self._end_pos
-
-        # Now update the start position
-        self._start_pos = self._end_pos
-
-        # flush the file
-        self.h5_main.file.flush()
-        if self._verbose:
-            print('Finished writing ' + statement + ' results (chunk) to file!')
+        if self.verbose and self.mpi_rank == 0:
+            print('Writing data of shape: {} and dtype: {} to position range: '
+                  '{} in HDF5 dataset:{}'.format(source_dset.shape,
+                                                 source_dset.dtype,
+                                              [curr_pixels[0],curr_pixels[-1]],
+                                                 targ_dset))
+        targ_dset[curr_pixels, :] = source_dset
 
     def _create_guess_datasets(self):
         """
-        Model specific call that will write the h5 group, guess dataset, corresponding spectroscopic datasets and also
-        link the guess dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
-        within this function.
-
-        The guess dataset will NOT be populated here but will be populated by the __setData function
-        The fit dataset should NOT be populated here unless the user calls the optimize function.
-
-        Parameters
-        --------
-        None
-
-        Returns
-        -------
-        None
-
+        Model specific call that will create the h5 group, empty guess dataset,
+        corresponding spectroscopic datasets and also link the guess dataset
+        to the spectroscopic datasets.
         """
-        self.guess = None  # replace with actual h5 dataset
-        raise NotImplementedError('Please override the _create_guess_datasets specific to your model')
+        raise NotImplementedError('Please override the _create_guess_datasets '
+                                  'specific to your model')
 
     def _create_fit_datasets(self):
         """
-        Model specific call that will write the h5 group, fit dataset, corresponding spectroscopic datasets and also
-        link the fit dataset to the spectroscopic datasets. It is recommended that the ancillary datasets be populated
-        within this function.
-
-        The fit dataset will NOT be populated here but will be populated by the __setData function
-        The guess dataset should NOT be populated here unless the user calls the optimize function.
-
-        Parameters
-        --------
-        None
-
-        Returns
-        -------
-        None
-
+        Model specific call that will create the (empty) fit dataset, and
+        link the fit dataset to the spectroscopic datasets.
         """
-        self.fit = None  # replace with actual h5 dataset
-        raise NotImplementedError('Please override the _create_fit_datasets specific to your model')
+        raise NotImplementedError('Please override the _create_fit_datasets '
+                                  'specific to your model')
 
-    def _check_for_old_guess(self):
+    def _get_existing_datasets(self):
         """
-        Returns a list of datasets where the same parameters have already been used to compute Guesses for this dataset
+        Gets existing Guess, Fit, status datasets, from the HDF5 group.
 
-        Returns
-        -------
-        list
-            List of datasets with results from do_guess on this dataset
+        All other domain-specific datasets should be loaded in the classes that
+        extend this class
         """
-        groups = check_for_old(self.h5_main, self._fitter_name, new_parms=self._parms_dict, target_dset='Guess',
-                               verbose=self._verbose)
-        datasets = [grp['Guess'] for grp in groups]
+        self._h5_guess = USIDataset(self.h5_results_grp['Guess'])
 
-        # Now sort these datasets into partial and complete:
-        completed_dsets = []
-        partial_dsets = []
+        try:
+            self._h5_status_dset = self.h5_results_grp[self._status_dset_name]
+        except KeyError:
+            warn('status dataset not created yet')
+            self._h5_status_dset = None
 
-        for dset in datasets:
-            try:
-                last_pix = get_attr(dset, 'last_pixel')
-            except KeyError:
-                last_pix = None
-                
-            # Skip datasets without last_pixel attribute
-            if last_pix is None:
-                continue
-            elif last_pix < self.h5_main.shape[0]:
-                partial_dsets.append(dset)
-            else:
-                completed_dsets.append(dset)
+        try:
+            self._h5_fit = self.h5_results_grp['Fit']
+            self._h5_fit = USIDataset(self._h5_fit)
+        except KeyError:
+            self._h5_fit = None
+            if not self._is_guess:
+                self._create_fit_datasets()
 
-        return partial_dsets, completed_dsets
-
-    def do_guess(self, processors=None, strategy=None, options=dict(), h5_partial_guess=None, override=False):
+    def do_guess(self, *args, override=False, **kwargs):
         """
+        Computes the Guess
+
         Parameters
         ----------
-        strategy: string (optional)
-            Default is 'Wavelet_Peaks'.
-            Can be one of ['wavelet_peaks', 'relative_maximum', 'gaussian_processes'].
-            For updated list, run GuessMethods.methods
-        processors : int (optional)
-            Number of cores to use for computing. Default = all available - 2 cores
-        options: dict
-            Default, options for wavelet_peaks {"peaks_widths": np.array([10,200]), "peak_step":20}.
-            Dictionary of options passed to strategy. For more info see GuessMethods documentation.
-        h5_partial_guess : h5py.group. optional, default = None
-            Datagroup containing (partially computed) guess results. do_guess will resume computation if provided.
-        override : bool, optional. default = False
-            By default, will simply return duplicate results to avoid recomputing or resume computation on a
-            group with partial results. Set to True to force fresh computation.
+        args : list, optional
+            List of arguments
+        override : bool, optional
+            If True, computes a fresh guess even if existing Guess was found
+            Else, returns existing Guess dataset. Default = False
+        kwargs : dict, optional
+            Keyword arguments
 
         Returns
         -------
-        h5_guess : h5py.Dataset
-            Dataset containing guesses that can be passed on to do_fit()
+        USIDataset
+            HDF5 dataset with the Guesses computed
         """
-        gm = GuessMethods()
-        if strategy not in gm.methods:
-            raise KeyError('Error: %s is not implemented in pycroscopy.analysis.GuessMethods to find guesses' %
-                           strategy)
+        if not self.__set_up_called:
+            raise ValueError('Please call set_up_guess() before calling '
+                             'do_guess()')
+        self.h5_results_grp = super(Fitter, self).compute(override=override)
+        # to be on the safe side, expect setup again
+        self.__set_up_called = False
+        return USIDataset(self.h5_results_grp['Guess'])
 
-        # ################## CHECK FOR DUPLICATES AND RESUME PARTIAL #######################################
+    def do_fit(self, *args, override=False, **kwargs):
+        """
+        Computes the Fit
 
-        # Prepare the parms dict that will be used for comparison:
-        self._parms_dict = options.copy()
-        self._parms_dict.update({'strategy': strategy})
+        Parameters
+        ----------
+        args : list, optional
+            List of arguments
+        override : bool, optional
+            If True, computes a fresh guess even if existing Fit was found
+            Else, returns existing Fit dataset. Default = False
+        kwargs : dict, optional
+            Keyword arguments
 
-        # check for old:
-        partial_dsets, completed_dsets = self._check_for_old_guess()
-
-        if len(completed_dsets) == 0 and len(partial_dsets) == 0:
-            print('No existing datasets found')
-            override = True
-
-        if not override:
-            # First try to simply return any completed computation
-            if len(completed_dsets) > 0:
-                print('Returned previously computed results at ' + completed_dsets[-1].name)
-                self.h5_guess = USIDataset(completed_dsets[-1])
-                return
-
-            # Next attempt to resume automatically if nothing is provided
-            if len(partial_dsets) > 0:
-                # attempt to use whatever the user provided (if legal)
-                target_partial_dset = partial_dsets[-1]
-                if h5_partial_guess is not None:
-                    if not isinstance(h5_partial_guess, h5py.Dataset):
-                        raise ValueError('Provided parameter is not an h5py.Dataset object')
-                    if h5_partial_guess not in partial_dsets:
-                        raise ValueError('Provided dataset for partial Guesses is not compatible')
-                    if self._verbose:
-                        print('Provided partial Guess dataset was acceptable')
-                    target_partial_dset = h5_partial_guess
-
-                # Finally resume from this dataset
-                print('Resuming computation in group: ' + target_partial_dset.name)
-                self.h5_guess = target_partial_dset
-                self._start_pos = target_partial_dset.attrs['last_pixel']
-
-        # No completed / partials available or forced via override:
-        if self.h5_guess is None:
-            if self._verbose:
-                print('Starting a fresh computation!')
-            self._start_pos = 0
-            self._create_guess_datasets()
-
-        # ################## BEGIN THE ACTUAL COMPUTING #######################################
-
-        if processors is None:
-            processors = self._maxCpus
-        else:
-            processors = min(int(processors), self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
-
-        print("Using %s to find guesses...\n" % strategy)
-
-        time_per_pix = 0
-        num_pos = self.h5_main.shape[0] - self._start_pos
-        orig_start_pos = self._start_pos
-
-        print('You can abort this computation at any time and resume at a later time!\n'
-              '\tIf you are operating in a python console, press Ctrl+C or Cmd+C to abort\n'
-              '\tIf you are in a Jupyter notebook, click on "Kernel">>"Interrupt"\n')
-
-        self._get_data_chunk()
-        while self.data is not None:
-
-            t_start = tm.time()
-
-            opt = Optimize(data=self.data, parallel=self._parallel)
-            temp = opt.computeGuess(processors=processors, strategy=strategy, options=options)
-
-            # reorder to get one numpy array out
-            temp = self._reformat_results(temp, strategy)
-            self.guess = np.hstack(tuple(temp))
-
-            # Write to file
-            self._set_results(is_guess=True)
-
-            # basic timing logs
-            tot_time = np.round(tm.time() - t_start, decimals=2)  # in seconds
-            if self._verbose:
-                print('Done parallel computing in {} or {} per pixel'.format(format_time(tot_time),
-                                                                             format_time(tot_time / self.data.shape[0])))
-            if self._start_pos == orig_start_pos:
-                time_per_pix = tot_time / self._end_pos  # in seconds
-            else:
-                time_remaining = (num_pos - self._end_pos) * time_per_pix  # in seconds
-                print('Time remaining: ' + format_time(time_remaining))
-
-            # get next batch of data
-            self._get_data_chunk()
-
-        print('Completed computing guess')
-        print()
-        return USIDataset(self.h5_guess)
+        Returns
+        -------
+        USIDataset
+            HDF5 dataset with the Fit computed
+        """
+        if not self.__set_up_called:
+            raise ValueError('Please call set_up_guess() before calling '
+                             'do_guess()')
+        """
+        Either delete or reset 'last_pixel' attribute to 0
+        This value will be used for filling in the status dataset.
+        """
+        self.h5_results_grp.attrs['last_pixel'] = 0
+        self.h5_results_grp = super(Fitter, self).compute(override=override)
+        # to be on the safe side, expect setup again
+        self.__set_up_called = False
+        return USIDataset(self.h5_results_grp['Fit'])
 
     def _reformat_results(self, results, strategy='wavelet_peaks'):
         """
-        Model specific restructuring / reformatting of the parallel compute results
+        Model specific restructuring / reformatting of the parallel compute
+        results
 
         Parameters
         ----------
-        results : array-like
+        results : list or array-like
             Results to be formatted for writing
         strategy : str
-            The strategy used in the fit.  Determines how the results will be reformatted.
-            Default 'wavelet_peaks'
+            The strategy used in the fit.  Determines how the results will be
+            reformatted, if multiple strategies for guess / fit are available
 
         Returns
         -------
         results : numpy.ndarray
-            Formatted array that is ready to be writen to the HDF5 file 
+            Formatted array that is ready to be writen to the HDF5 file
 
         """
         return np.array(results)
 
-    def _check_for_old_fit(self):
+    def set_up_guess(self, h5_partial_guess=None):
         """
-        Returns three lists of h5py.Dataset objects where the group contained:
-            1. Completed guess only
-            2. Partial Fit
-            3. Completed Fit
-
-        Returns
-        -------
-
-        """
-        # First find all groups that match the basic condition of matching tool name
-        all_groups = find_results_groups(self.h5_main, self._fitter_name)
-        if self._verbose:
-            print('Groups that matched the nomenclature: {}'.format(all_groups))
-
-        # Next sort these groups into three categories:
-        completed_guess = []
-        partial_fits = []
-        completed_fits = []
-
-        for h5_group in all_groups:
-
-            if 'Fit' in h5_group.keys():
-                # check group for fit attribute
-
-                h5_fit = h5_group['Fit']
-
-                # check Fit dataset against parms_dict
-                if not check_for_matching_attrs(h5_fit, new_parms=self._parms_dict, verbose=self._verbose):
-                    if self._verbose:
-                        print('{} did not match the given parameters'.format(h5_fit.name))
-                    continue
-
-                # sort this dataset:
-                try:
-                    last_pix = get_attr(h5_fit, 'last_pixel')
-                except KeyError:
-                    last_pix = None
-
-                # For now skip any fits that are missing 'last_pixel'
-                if last_pix is None:
-                    continue
-                elif last_pix < self.h5_main.shape[0]:
-                    partial_fits.append(h5_fit.parent)
-                else:
-                    completed_fits.append(h5_fit)
-            else:
-                if 'Guess' in h5_group.keys():
-                    h5_guess = h5_group['Guess']
-
-                    # sort this dataset:
-                    try:
-                        last_pix = get_attr(h5_guess, 'last_pixel')
-                    except KeyError:
-                        last_pix = None
-
-                    # For now skip any fits that are missing 'last_pixel'
-                    if last_pix is None:
-                        continue
-                    elif last_pix == self.h5_main.shape[0]:
-                        if self._verbose:
-                            print('{} was a completed Guess'.format(h5_guess.name))
-                        completed_guess.append(h5_guess)
-                    else:
-                        if self._verbose:
-                            print('{} did not not have completed Guesses'.format(h5_guess.name))
-                else:
-                    if self._verbose:
-                        print('{} did not even have Guess. Categorizing as defective Group'.format(h5_group.name))
-
-        return completed_guess, partial_fits, completed_fits
-
-    def do_fit(self, processors=None, solver_type='least_squares', solver_options=None, obj_func=None,
-               h5_partial_fit=None, h5_guess=None, override=False):
-        """
-        Generates the fit for the given dataset and writes back to file
+        Performs necessary book-keeping before do_guess can be called
 
         Parameters
         ----------
-        processors : int
-            Number of cpu cores the user wishes to run on.  The minimum of this and self._maxCpus is used.
-        solver_type : str
-            The name of the solver in scipy.optimize to use for the fit
-        solver_options : dict
-            Dictionary of parameters to pass to the solver specified by `solver_type`
-        obj_func : dict
-            Dictionary defining the class and method containing the function to be fit as well as any 
-            additional function parameters.
-        h5_partial_fit : h5py.group. optional, default = None
-            Datagroup containing (partially computed) fit results. do_fit will resume computation if provided.
-        h5_guess : h5py.group. optional, default = None
-            Datagroup containing guess results. do_fit will use this if provided.
-        override : bool, optional. default = False
-            By default, will simply return duplicate results to avoid recomputing or resume computation on a
-            group with partial results. Set to True to force fresh computation.
-
-        Returns
-        -------
-        h5_results : h5py.Dataset object
-            Dataset with the fit parameters
+        h5_partial_guess: h5py.Dataset or pyUSID.io.USIDataset, optional
+            HDF5 dataset containing partial Guess. Not implemented
         """
+        # TODO: h5_partial_guess needs to be utilized
+        if h5_partial_guess is not None:
+            raise NotImplementedError('Provided h5_partial_guess cannot be '
+                                      'used yet. Ask developer to implement')
 
-        # ################## PREPARE THE SOLVER #######################################
+        # Set up the parms dict so everything necessary for checking previous
+        # guess / fit is ready
+        self._is_guess = True
+        self._status_dset_name = 'completed_guess_positions'
+        ret_vals = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = ret_vals
 
-        legit_solver = solver_type in scipy.optimize.__dict__.keys()
+        if self.verbose and self.mpi_rank == 0:
+            print('Groups with Guess in:\nCompleted: {}\nPartial:{}'.format(
+                self.duplicate_h5_groups, self.partial_h5_groups))
 
-        if not legit_solver:
-            raise KeyError('Error: Objective Functions "%s" is not implemented in pycroscopy.analysis.Fit_Methods' %
-                           obj_func['obj_func'])
+        self._unit_computation = super(Fitter, self)._unit_computation
+        self._create_results_datasets = self._create_guess_datasets
+        self.compute = self.do_guess
+        self.__set_up_called = True
 
-        obj_func_name = obj_func['obj_func']
-        legit_obj_func = obj_func_name in Fit_Methods().methods
+    def set_up_fit(self, h5_partial_fit=None, h5_guess=None):
+        """
+        Performs necessary book-keeping before do_fit can be called
 
-        if not legit_obj_func:
-            raise KeyError('Error: Solver "%s" does not exist!. For additional info see scipy.optimize\n' % solver_type)
+        Parameters
+        ----------
+        h5_partial_fit: h5py.Dataset or pyUSID.io.USIDataset, optional
+            HDF5 dataset containing partial Fit. Not implemented
+        h5_guess: h5py.Dataset or pyUSID.io.USIDataset, optional
+            HDF5 dataset containing completed Guess. Not implemented
+        """
+        # TODO: h5_partial_guess needs to be utilized
+        if h5_partial_fit is not None or h5_guess is not None:
+            raise NotImplementedError('Provided h5_partial_fit cannot be '
+                                      'used yet. Ask developer to implement')
+        self._is_guess = False
 
-        # ################## CHECK FOR DUPLICATES AND RESUME PARTIAL #######################################
+        self._map_function = None
+        self._unit_computation = None
+        self._create_results_datasets = self._create_fit_datasets
 
-        def _get_group_to_resume(legal_groups, provided_partial_fit):
-            for h5_group in legal_groups:
-                if h5_group['Fit'] == provided_partial_fit:
-                    return h5_group
-            return None
+        # Case 1: Fit already complete or partially complete.
+        # This is similar to a partial process. Leave as is
+        self._status_dset_name = 'completed_fit_positions'
+        ret_vals = self._check_for_duplicates()
+        self.duplicate_h5_groups, self.partial_h5_groups = ret_vals
+        if self.verbose and self.mpi_rank == 0:
+            print('Checking on partial / completed fit datasets')
+            print(
+                'Completed results groups:\n{}\nPartial results groups:\n'
+                '{}'.format(self.duplicate_h5_groups, self.partial_h5_groups))
 
-        def _resume_fit(fitter, h5_group):
-            fitter.h5_guess = h5_group['Guess']
-            fitter.h5_fit = h5_group['Fit']
-            fitter._start_pos = fitter.h5_fit.attrs['last_pixel']
+        # Case 2: Fit neither partial / completed. Search for guess.
+        # Most popular scenario:
+        if len(self.duplicate_h5_groups) == 0 and len(
+                self.partial_h5_groups) == 0:
+            if self.verbose and self.mpi_rank == 0:
+                print('No fit datasets found. Looking for Guess datasets')
+            # Change status dataset name back to guess to check for status
+            # on guesses:
+            self._status_dset_name = 'completed_guess_positions'
+            # Note that check_for_duplicates() will be against fit's parm_dict.
+            # So make a backup of that
+            fit_parms = self.parms_dict.copy()
+            # Set parms_dict to an empty dict so that we can accept any Guess
+            # dataset:
+            self.parms_dict = dict()
+            ret_vals = self._check_for_duplicates()
+            guess_complete_h5_grps, guess_partial_h5_grps = ret_vals
+            if self.verbose and self.mpi_rank == 0:
+                print(
+                    'Guess datasets search resulted in:\nCompleted: {}\n'
+                    'Partial:{}'.format(guess_complete_h5_grps,
+                                        guess_partial_h5_grps))
+            # Now put back the original parms_dict:
+            self.parms_dict.update(fit_parms)
 
-        def _start_fresh_fit(fitter, h5_guess_legal):
-            fitter.h5_guess = h5_guess_legal
-            fitter._create_fit_datasets()
-            fitter._start_pos = 0
+            # Case 2.1: At least guess is completed:
+            if len(guess_complete_h5_grps) > 0:
+                # Just set the last group as the current results group
+                self.h5_results_grp = guess_complete_h5_grps[-1]
+                if self.verbose and self.mpi_rank == 0:
+                    print('Guess found! Using Guess in:\n{}'.format(
+                        self.h5_results_grp))
+                # It will grab the older status default unless we set the
+                # status dataset back to fit
+                self._status_dset_name = 'completed_fit_positions'
+                # Get handles to the guess dataset. Nothing else will be found
+                self._get_existing_datasets()
 
-        # Prepare the parms dict that will be used for comparison:
-        self._parms_dict = solver_options.copy()
-        self._parms_dict.update({'solver_type': solver_type})
-        self._parms_dict.update(obj_func)
-
-        completed_guess, partial_fit_groups, completed_fits = self._check_for_old_fit()
-
-        override = override or (h5_partial_fit is not None or h5_guess is not None)
-
-        if not override:
-            # First try to simply return completed results
-            if len(completed_fits) > 0:
-                print('Returned previously computed results at ' + completed_fits[-1].name)
-                self.h5_fit = USIDataset(completed_fits[-1])
+            elif len(guess_complete_h5_grps) == 0 and len(
+                    guess_partial_h5_grps) > 0:
+                FileNotFoundError(
+                    'Guess not yet completed. Please complete guess first')
+                return
+            else:
+                FileNotFoundError(
+                    'No Guess found. Please complete guess first')
                 return
 
-            # Next, attempt to resume automatically:
-            elif len(partial_fit_groups) > 0:
-                print('Will resume fitting in {}. '
-                      'You can supply a dataset using the h5_partial_fit argument'.format(partial_fit_groups[-1].name))
-                _resume_fit(self, partial_fit_groups[-1])
+        # We want compute to call our own manual unit computation function:
+        self._unit_computation = self._unit_compute_fit
+        self.compute = self.do_fit
+        self.__set_up_called = True
 
-            # Finally, attempt to do fresh fitting using completed Guess:
-            elif len(completed_guess) > 0:
-                print('Will use {} for generating new Fit. '
-                      'You can supply a dataset using the h5_guess argument'.format(completed_guess[-1].name))
-                _start_fresh_fit(self, completed_guess[-1])
+    def _unit_compute_fit(self, obj_func, obj_func_args=[],
+                          solver_options={'jac': 'cs'}):
+        """
+        Performs least-squares fitting on self.data using self.guess for
+        initial conditions.
 
-            else:
-                raise ValueError('Could not find a compatible Guess to use for Fit. Call do_guess() before do_fit()')
+        Results of the computation are captured in self._results
 
+        Parameters
+        ----------
+        obj_func : callable
+            Objective function to minimize on
+        obj_func_args : list
+            Arguments required by obj_func following the guess parameters
+            (which should be the first argument)
+        solver_options : dict, optional
+            Keyword arguments passed onto scipy.optimize.least_squares
+        """
+
+        # At this point data has been read in. Read in the guess as well:
+        self._read_guess_chunk()
+
+        if self.verbose and self.mpi_rank == 0:
+            print('_unit_compute_fit got:\nobj_func: {}\nobj_func_args: {}\n'
+                  'solver_options: {}'.format(obj_func, obj_func_args,
+                                              solver_options))
+
+        # TODO: Generalize this bit. Use Parallel compute instead!
+
+        if self.mpi_size > 1:
+            if self.verbose:
+                print('Rank {}: About to start serial computation'
+                      '.'.format(self.mpi_rank))
+
+            self._results = list()
+            for pulse_resp, pulse_guess in zip(self.data, self._guess):
+                curr_results = least_squares(obj_func, pulse_guess,
+                                             args=[pulse_resp] + obj_func_args,
+                                             **solver_options)
+                self._results.append(curr_results)
         else:
-            if h5_partial_fit is not None:
-                h5_group = _get_group_to_resume(partial_fit_groups, h5_partial_fit)
-                if h5_group is None:
-                    raise ValueError('Provided dataset with partial Fit was not found to be compatible')
-                _resume_fit(self, h5_group)
+            cores = recommend_cpu_cores(self.data.shape[0],
+                                        verbose=self.verbose)
+            if self.verbose:
+                print('Starting parallel fitting with {} cores'.format(cores))
 
-            elif h5_guess is not None:
-                if h5_guess not in completed_guess:
-                    raise ValueError('Provided dataset with completed Guess was not found to be compatible')
-                _start_fresh_fit(self, h5_guess)
+            values = [joblib.delayed(least_squares)(obj_func, pulse_guess,
+                                                    args=[pulse_resp] + obj_func_args,
+                                                    **solver_options) for
+                      pulse_resp, pulse_guess in zip(self.data, self._guess)]
+            self._results = joblib.Parallel(n_jobs=cores)(values)
 
-            else:
-                raise ValueError('Please provide a completed guess or partially completed Fit to resume')
+        if self.verbose and self.mpi_rank == 0:
+            print(
+                'Finished computing fits on {} objects. Results of length: {}'
+                '.'.format(self.data.shape[0], len(self._results)))
 
-        # ################## BEGIN THE ACTUAL FITTING #######################################
-
-        print("Using solver %s and objective function %s to fit your data\n" % (solver_type, obj_func['obj_func']))
-
-        if processors is None:
-            processors = self._maxCpus
-        else:
-            processors = min(processors, self._maxCpus)
-        processors = recommend_cpu_cores(self._max_pos_per_read, processors, verbose=self._verbose)
-
-        time_per_pix = 0
-        num_pos = self.h5_main.shape[0] - self._start_pos
-        orig_start_pos = self._start_pos
-
-        print('You can abort this computation at any time and resume at a later time!\n'
-              '\tIf you are operating in a python console, press Ctrl+C or Cmd+C to abort\n'
-              '\tIf you are in a Jupyter notebook, click on "Kernel">>"Interrupt"\n')
-
-        self._get_guess_chunk()
-        self._get_data_chunk()
-
-        while self.data is not None:
-
-            t_start = tm.time()
-
-            opt = Optimize(data=self.data, guess=self.guess, parallel=self._parallel)
-            temp = opt.computeFit(processors=processors, solver_type=solver_type, solver_options=solver_options,
-                                  obj_func=obj_func.copy())
-
-            # TODO: need a different .reformatResults to process fitting results
-            # reorder to get one numpy array out
-            temp = self._reformat_results(temp, obj_func_name)
-            self.fit = np.hstack(tuple(temp))
-
-            # Write to file
-            self._set_results(is_guess=False)
-
-            # basic timing logs
-            tot_time = np.round(tm.time() - t_start, decimals=2)  # in seconds
-            if self._verbose:
-                print('Done parallel computing in {} or {} per pixel'.format(format_time(tot_time),
-                                                                             format_time(
-                                                                                 tot_time / self.data.shape[0])))
-            if self._start_pos == orig_start_pos:
-                time_per_pix = tot_time / self._end_pos  # in seconds
-            else:
-                time_remaining = (num_pos - self._end_pos) * time_per_pix  # in seconds
-                print('Time remaining: ' + format_time(time_remaining))
-
-            # get next batch of data
-            self._get_guess_chunk()
-            self._get_data_chunk()
-
-        print('Completed computing fit. Writing to file.')
-
-        return USIDataset(self.h5_fit)
+        # What least_squares returns is an object that needs to be extracted
+        # to get the coefficients. This is handled by the write function

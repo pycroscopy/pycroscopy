@@ -33,7 +33,7 @@ class Cluster(Process):
     formatting the results in an USID compliant manner.
     """
 
-    def __init__(self, h5_main, estimator, num_comps=None):
+    def __init__(self, h5_main, estimator, num_comps=None, **kwargs):
         """
         Constructs the Cluster object. Call the :meth:`~pycroscopy.processing.Cluster.test()` and
         :meth:`~pycroscopy.processing.Cluster.compute()` methods to run the clustering
@@ -46,6 +46,11 @@ class Cluster(Process):
             configured clustering algorithm to be applied to the data
         num_comps : int (unsigned), optional. Default = None / all
             Number of features / spectroscopic indices to be used to cluster the data
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         """
 
         allowed_methods = [cls.AgglomerativeClustering,
@@ -61,7 +66,7 @@ class Cluster(Process):
             raise TypeError('Cannot work with {} just yet'.format(self.method_name))
 
         # Done with decomposition-related checks, now call super init
-        super(Cluster, self).__init__(h5_main)
+        super(Cluster, self).__init__(h5_main, 'Cluster', **kwargs)
 
         # Store the decomposition object
         self.estimator = estimator
@@ -106,7 +111,6 @@ class Cluster(Process):
         self.parms_dict.update({'n_jobs': self._cores})
 
         # check for existing datagroups with same results
-        self.process_name = 'Cluster'
         # Partial groups don't make any sense for statistical learning algorithms....
         self.duplicate_h5_groups, self.partial_h5_groups = self._check_for_duplicates()
 
@@ -270,7 +274,9 @@ class Cluster(Process):
         print('Writing clustering results to file.')
         num_clusters = self.__mean_resp.shape[0]
 
-        h5_cluster_group = create_results_group(self.h5_main, self.process_name)
+        h5_cluster_group = create_results_group(self.h5_main, self.process_name,
+                                                h5_parent_group=self._h5_target_group)
+        self._write_source_dset_provenance()
 
         write_simple_attrs(h5_cluster_group, self.parms_dict)
 

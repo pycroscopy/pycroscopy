@@ -49,6 +49,11 @@ class SignalFilter(Process):
         phase_rad : (Optional). float
             Degrees by which the output is rotated with respect to the input to compensate for phase lag.
             This feature has NOT yet been implemented.
+        h5_target_group : h5py.Group, optional. Default = None
+            Location where to look for existing results and to place newly
+            computed results. Use this kwarg if the results need to be written
+            to a different HDF5 file. By default, this value is set to the
+            parent group containing `h5_main`
         kwargs : (Optional). dictionary
             Please see Process class for additional inputs
         """
@@ -148,7 +153,8 @@ class SignalFilter(Process):
         Creates all the datasets necessary for holding all parameters + data.
         """
 
-        self.h5_results_grp = create_results_group(self.h5_main, self.process_name)
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
+                                                   h5_parent_group=self._h5_target_group)
 
         self.parms_dict.update({'last_pixel': 0, 'algorithm': 'pycroscopy_SignalFilter'})
 
