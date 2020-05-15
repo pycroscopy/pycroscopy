@@ -187,8 +187,9 @@ class SVD(Process):
 
         h5_svd_group = create_results_group(self.h5_main, self.process_name,
                                             h5_parent_group=self._h5_target_group)
-        self._write_source_dset_provenance()
         self.h5_results_grp = h5_svd_group
+        self._write_source_dset_provenance()
+        
 
         write_simple_attrs(h5_svd_group, self.parms_dict)
         write_simple_attrs(h5_svd_group, {'svd_method': 'sklearn-randomized'})
