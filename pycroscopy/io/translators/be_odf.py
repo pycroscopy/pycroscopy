@@ -603,7 +603,18 @@ class BEodfTranslator(Translator):
             print('Taking conjugate to ensure positive Quality factors')
             raw_vec = np.conjugate(raw_vec)
 
-        raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
+        if raw_vec.shape != np.prod(self.h5_raw.shape):
+            percentage_padded = 100 * (np.prod(self.h5_raw.shape) - raw_vec.shape) / np.prod(self.h5_raw.shape)
+            print('Warning! Raw data length {} is not matching placeholder length {}. '
+                  'Padding zeros for {}% of the data!'.format(raw_vec.shape, np.prod(self.h5_raw.shape), percentage_padded))
+
+            padded_raw_vec = np.zeros(np.prod(self.h5_raw.shape), dtype = np.complex64)
+
+            padded_raw_vec[:raw_vec.shape[0]] = raw_vec
+            raw_mat = padded_raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
+        else:
+            raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
+
 
         # Write to the h5 dataset:
         self.mean_resp = np.mean(raw_mat, axis=0)
@@ -836,8 +847,13 @@ class BEodfTranslator(Translator):
             parm_dict['grid_num_cols'] = position_vec[1]
 
         BE_parm_vec_1 = matread['BE_parm_vec_1']
+        try:
+            BE_parm_vec_2 = matread['BE_parm_vec_2']
+        except KeyError:
+            BE_parm_vec_2 = 'None'
+
         # Not required for translation but necessary to have
-        if BE_parm_vec_1[0] == 3:
+        if BE_parm_vec_1[0] == 3 or BE_parm_vec_2[0]==3:
             parm_dict['BE_phase_content'] = 'chirp-sinc hybrid'
         else:
             parm_dict['BE_phase_content'] = 'Unknown'
@@ -908,11 +924,12 @@ class BEodfTranslator(Translator):
             parm_dict['FORC_V_high2_[V]'] = VS_start_V
             parm_dict['FORC_V_low1_[V]'] = VS_start_V - VS_start_loop_amp
             parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
-        elif VS_parms[0] == 2:
+        elif VS_parms[0] == 2 or VS_parms[0] == 3:
             # AC mode 
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
             parm_dict['VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
+            print('---We have AC Modulation mode file here---')
         else:
             parm_dict['VS_mode'] = 'Custom'
 
@@ -1016,6 +1033,7 @@ class BEodfTranslator(Translator):
         VS_amp = parm_dict['VS_amplitude_[V]']
         VS_offset = parm_dict['VS_offset_[V]']
         # VS_read_voltage = parm_dict['VS_read_voltage_[V]']
+
         VS_steps = parm_dict['VS_steps_per_full_cycle']
         VS_cycles = parm_dict['VS_number_of_cycles']
         VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
@@ -1060,7 +1078,7 @@ class BEodfTranslator(Translator):
             vs_amp_vec = np.roll(vs_amp_vec,
                                  int(np.floor(VS_steps / VS_fraction * VS_shift)))  # apply phase shift to VS wave
             vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction / 2))]  # cut VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, VS_cycles * 2)  # repeat VS waveform
+            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles) * 2)  # repeat VS waveform
 
         if FORC_cycles > 1:
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))
