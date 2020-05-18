@@ -933,6 +933,27 @@ class BEodfTranslator(Translator):
         else:
             parm_dict['VS_mode'] = 'Custom'
 
+        parent, _ = path.split(file_path)
+        parent, expt_name = path.split(parent)
+        if expt_name.endswith('_c'):
+            expt_name = expt_name[:-2]
+        ind = expt_name.rfind('_0')
+
+        suffix = 0
+        if ind > 0:
+            try:
+                suffix = int(expt_name[ind+1:])
+            except ValueError:
+                # print('Could not convert "' + suffix + '" to integer')
+                pass
+            expt_name = expt_name[:ind]
+
+        parm_dict['File_file_path'] = parent
+        parm_dict['File_file_name'] = expt_name
+        parm_dict['File_file_suffix'] = suffix
+
+        # Cannot capture date and time reliably - leaving this...
+
         return parm_dict
 
     @staticmethod
