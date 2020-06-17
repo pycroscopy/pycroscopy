@@ -146,13 +146,21 @@ class BEodfTranslator(Translator):
         udvs_denom = 2
 
         if 'parm_txt' in path_dict.keys():
+            if verbose:
+                print('\treading parameters from text file')
             (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
         elif 'old_mat_parms' in path_dict.keys():
+            if verbose:
+                print('\treading parameters from old mat file')
             parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
-            if parm_dict['VS_steps_per_full_cycle']==0: isBEPS=False
-            else: isBEPS=True
+            if parm_dict['VS_steps_per_full_cycle'] == 0:
+                isBEPS=False
+            else:
+                isBEPS=True
         else:
             raise IOError('No parameters file found! Cannot translate this dataset!')
+        if verbose:
+            print('\tisBEPS = {}'.format(isBEPS))
 
         ignored_plt_grps = []
         if isBEPS:
@@ -184,6 +192,9 @@ class BEodfTranslator(Translator):
             parm_dict['data_type'] = 'BELineData'
 
         # Check file sizes:
+        if verbose:
+            print('\tChecking sizes of real and imaginary data files')
+
         if 'read_real' in path_dict.keys():
             real_size = path.getsize(path_dict['read_real'])
             imag_size = path.getsize(path_dict['read_imag'])
@@ -194,9 +205,11 @@ class BEodfTranslator(Translator):
         if real_size != imag_size:
             raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
 
-        #Check here if a second channel for current is present
+        # Check here if a second channel for current is present
         # Look for the file containing the current data
 
+        if verbose:
+            print('\tLooking for secondary channels')
         file_names = listdir(folder_path)
         aux_files = []
         current_data_exists = False
@@ -215,23 +228,35 @@ class BEodfTranslator(Translator):
         # Check for case where only a single pixel is missing.
         check_bins = real_size / ((num_pix - 1) * 4)
 
+        if verbose:
+            print('\tChecking bins: Total: {}, actual: {}'.format(tot_bins,
+                                                                  check_bins))
+
         if tot_bins % 1 and check_bins % 1:
-            raise ValueError('Aborting! Some parameter appears to have changed in-between')
+            raise ValueError('Aborting! Some parameter appears to have '
+                             'changed in-between')
         elif not tot_bins % 1:
             # Everything's ok
             pass
         elif not check_bins % 1:
             tot_bins = check_bins
-            warn('Warning:  A pixel seems to be missing from the data.  File will be padded with zeros.')
+            warn('Warning:  A pixel seems to be missing from the data. '
+                 'File will be padded with zeros.')
             add_pix = True
 
         tot_bins = int(tot_bins) * tot_bins_multiplier
 
         if 'parm_mat' in path_dict.keys():
-            (bin_inds, bin_freqs, bin_FFT, ex_wfm) = self.__read_parms_mat(path_dict['parm_mat'], isBEPS)
+            if verbose:
+                print('\treading BE arrays from parameters text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm = self.__read_parms_mat(path_dict['parm_mat'], isBEPS)
         elif 'old_mat_parms' in path_dict.keys():
-            (bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec) = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'])
+            if verbose:
+                print('\treading BE arrays from old mat text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'])
         else:
+            if verbose:
+                print('\tGenerating dummy BE arrays')
             band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
             st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
             en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
@@ -251,9 +276,13 @@ class BEodfTranslator(Translator):
         self.FFT_BE_wave = bin_FFT
 
         if isBEPS:
+            if verbose:
+                print('\tBuilding UDVS table')
             (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
 
             #             Remove the unused plot group columns before proceeding:
+            if verbose:
+                print('\tTrimming UDVS table')
             (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
             old_spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
