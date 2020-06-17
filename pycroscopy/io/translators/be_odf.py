@@ -278,12 +278,12 @@ class BEodfTranslator(Translator):
         if isBEPS:
             if verbose:
                 print('\tBuilding UDVS table')
-            (UDVS_labs, UDVS_units, UDVS_mat) = self.__build_udvs_table(parm_dict)
+            UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict)
 
             #             Remove the unused plot group columns before proceeding:
             if verbose:
                 print('\tTrimming UDVS table')
-            (UDVS_mat, UDVS_labs, UDVS_units) = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
+            UDVS_mat, UDVS_labs, UDVS_units = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
             old_spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
 
@@ -849,13 +849,13 @@ class BEodfTranslator(Translator):
         """
         Formats parameters found in the old parameters .mat file into a dictionary
         as though the dataset had a parms.txt describing it
-        
-        Parameters 
+
+        Parameters
         --------------------
         file_path : Unicode / String
             absolute filepath of the .mat file containing the parameters
-            
-        Returns 
+
+        Returns
         --------------------
         parm_dict : dictionary
             Parameters describing experiment
@@ -871,9 +871,11 @@ class BEodfTranslator(Translator):
         parm_dict['grid_num_rows'] = position_vec[2]
         parm_dict['grid_num_cols'] = position_vec[3]
 
-        if position_vec[0] != position_vec[1] or position_vec[2] != position_vec[3]:
+        if position_vec[0] != position_vec[1] or position_vec[2] != \
+                position_vec[3]:
             warn('WARNING: Incomplete dataset. Translation not guaranteed!')
-            parm_dict['grid_num_rows'] = position_vec[0]  # set to number of present cols and rows
+            parm_dict['grid_num_rows'] = position_vec[
+                0]  # set to number of present cols and rows
             parm_dict['grid_num_cols'] = position_vec[1]
 
         BE_parm_vec_1 = matread['BE_parm_vec_1']
@@ -883,14 +885,15 @@ class BEodfTranslator(Translator):
             BE_parm_vec_2 = 'None'
 
         # Not required for translation but necessary to have
-        if BE_parm_vec_1[0] == 3 or BE_parm_vec_2[0]==3:
+        if BE_parm_vec_1[0] == 3 or BE_parm_vec_2[0] == 3:
             parm_dict['BE_phase_content'] = 'chirp-sinc hybrid'
         else:
             parm_dict['BE_phase_content'] = 'Unknown'
         parm_dict['BE_center_frequency_[Hz]'] = BE_parm_vec_1[1]
         parm_dict['BE_band_width_[Hz]'] = BE_parm_vec_1[2]
         parm_dict['BE_amplitude_[V]'] = BE_parm_vec_1[3]
-        parm_dict['BE_band_edge_smoothing_[s]'] = BE_parm_vec_1[4]  # 150 most likely
+        parm_dict['BE_band_edge_smoothing_[s]'] = BE_parm_vec_1[
+            4]  # 150 most likely
         parm_dict['BE_phase_variation'] = BE_parm_vec_1[5]  # 0.01 most likely
         parm_dict['BE_window_adjustment'] = BE_parm_vec_1[6]
         parm_dict['BE_points_per_step'] = 2 ** int(BE_parm_vec_1[7])
@@ -928,39 +931,70 @@ class BEodfTranslator(Translator):
 
         parm_dict['VS_set_pulse_amplitude_[V]'] = VS_parms[9]  # 0 <- SS_set_pulse_amp
         parm_dict['VS_read_voltage_[V]'] = VS_parms[3]
-        parm_dict['VS_steps_per_full_cycle'] = VS_parms[7]
+        parm_dict['VS_steps_per_full_cycle'] = int(VS_parms[7])
         parm_dict['VS_cycle_fraction'] = 'full'
         parm_dict['VS_cycle_phase_shift'] = 0
-        parm_dict['VS_number_of_cycles'] = VS_parms[2]
+        parm_dict['VS_number_of_cycles'] = int(VS_parms[2])
         parm_dict['FORC_num_of_FORC_cycles'] = 1
-        parm_dict['FORC_V_high1_[V]'] = 0
-        parm_dict['FORC_V_high2_[V]'] = 0
-        parm_dict['FORC_V_low1_[V]'] = 0
-        parm_dict['FORC_V_low2_[V]'] = 0
+        parm_dict['FORC_V_high1_[V]'] = 1
+        parm_dict['FORC_V_high2_[V]'] = 10
+        parm_dict['FORC_V_low1_[V]'] = -1
+        parm_dict['FORC_V_low2_[V]'] = -10
 
-        if VS_parms[0] == 0:
+        if VS_parms[0] == 0 or VS_parms[0] == 9:
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 0.5 * (
-                max(dc_amp_vec_full) - min(dc_amp_vec_full))  # SS_max_offset_amplitude
-            parm_dict['VS_offset_[V]'] = max(dc_amp_vec_full) + min(dc_amp_vec_full)
-        elif VS_parms[0] == 1:
+            if VS_parms[0] == 9:
+                parm_dict['VS_mode'] = 'current mode'
+            parm_dict['VS_amplitude_[V]'] = 0.5 * (max(dc_amp_vec_full) -
+                                                   np.min(dc_amp_vec_full))
+            # SS_max_offset_amplitude
+            parm_dict['VS_offset_[V]'] = np.max(dc_amp_vec_full) + np.min(
+                dc_amp_vec_full)
+
+        elif VS_parms[0] == 1 or VS_parms[0] == 6 or VS_parms[0] == 7:
             # FORC
+            # Could not tell difference between mode = 1 or 6
+            # mode 7 = multiple FORC cycles
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict['VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
+            parm_dict[
+                'VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = 0
-            parm_dict['VS_number_of_cycles'] = 1
-            parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2]
-            parm_dict['FORC_V_high1_[V]'] = VS_start_V
-            parm_dict['FORC_V_high2_[V]'] = VS_start_V
-            parm_dict['FORC_V_low1_[V]'] = VS_start_V - VS_start_loop_amp
-            parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
+            if VS_parms[0] == 7:
+                parm_dict['VS_number_of_cycles'] = 2
+                parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2] // 2
+            else:
+                parm_dict['VS_number_of_cycles'] = 1
+                parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2]
+            if True:
+                # Grabbing hi lo values directly from the vec
+                left = dc_amp_vec_full[:parm_dict['VS_steps_per_full_cycle']]
+                right = dc_amp_vec_full[
+                        -1 * parm_dict['VS_steps_per_full_cycle']:]
+                parm_dict['FORC_V_high1_[V]'] = np.max(left)
+                parm_dict['FORC_V_high2_[V]'] = np.max(right)
+                parm_dict['FORC_V_low1_[V]'] = np.min(left)
+                parm_dict['FORC_V_low2_[V]'] = np.min(right)
+            else:
+                # Not getting correct values with prescribed method
+                parm_dict['FORC_V_high1_[V]'] = VS_start_V
+                parm_dict['FORC_V_high2_[V]'] = VS_start_V
+                parm_dict['FORC_V_low1_[V]'] = VS_start_V - VS_start_loop_amp
+                parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
+
         elif VS_parms[0] == 2 or VS_parms[0] == 3:
-            # AC mode 
+            # AC mode
+            if VS_parms[0] == 3:
+                # These numbers seemed to match with the v_dc vector
+                parm_dict['VS_number_of_cycles'] = int(VS_parms[2]) * 2
+                parm_dict['VS_steps_per_full_cycle'] = int(VS_parms[7] // 2)
+
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
-            parm_dict['VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
-            print('---We have AC Modulation mode file here---')
+            parm_dict[
+                'VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
+            # print('---We have AC Modulation mode file here---')
         else:
+            # Did not see any examples of this...
             parm_dict['VS_mode'] = 'Custom'
 
         parent, _ = path.split(file_path)
@@ -972,7 +1006,7 @@ class BEodfTranslator(Translator):
         suffix = 0
         if ind > 0:
             try:
-                suffix = int(expt_name[ind+1:])
+                suffix = int(expt_name[ind + 1:])
             except ValueError:
                 # print('Could not convert "' + suffix + '" to integer')
                 pass
@@ -1093,17 +1127,20 @@ class BEodfTranslator(Translator):
         if BE_signal_type is 4:
             self.harmonic = 1
         BE_amp = parm_dict['BE_amplitude_[V]']
+        try:
+            VS_amp = parm_dict['VS_amplitude_[V]']
+            VS_offset = parm_dict['VS_offset_[V]']
+            # VS_read_voltage = parm_dict['VS_read_voltage_[V]']
 
-        VS_amp = parm_dict['VS_amplitude_[V]']
-        VS_offset = parm_dict['VS_offset_[V]']
-        # VS_read_voltage = parm_dict['VS_read_voltage_[V]']
-
-        VS_steps = parm_dict['VS_steps_per_full_cycle']
-        VS_cycles = parm_dict['VS_number_of_cycles']
-        VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
-                                    ['full', '1/2', '1/4', '3/4'],
-                                    [1., 0.5, 0.25, 0.75])
-        VS_shift = parm_dict['VS_cycle_phase_shift']
+            VS_steps = parm_dict['VS_steps_per_full_cycle']
+            VS_cycles = parm_dict['VS_number_of_cycles']
+            VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
+                                        ['full', '1/2', '1/4', '3/4'],
+                                        [1., 0.5, 0.25, 0.75])
+            VS_shift = parm_dict['VS_cycle_phase_shift']
+        except KeyError as exp:
+            print()
+            raise KeyError(exp)
         if VS_shift is not 0:
             VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
