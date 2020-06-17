@@ -421,3 +421,90 @@ def rebuild_svd(h5_main, components=None, cores=None, max_RAM_mb=1024):
     print('Done writing reconstructed data to file.')
 
     return h5_rebuilt
+
+def plot_svd(h5_main, savefig=False, num_plots = 16, **kwargs):
+    '''
+    Replots the SVD showing the skree, abundance maps, and eigenvectors.
+    If h5_main is a Dataset, it will default to the most recent SVD group from that
+    Dataset.
+    If h5_main is the results group, then it will plot the values for that group.
+    
+    Parameters
+    ----------   
+    h5_main : USIDataset or h5py Dataset or h5py Group
+    
+    savefig : bool, optional
+        Saves the figures to disk with some default names
+    
+    num_plots : int
+        Default number of eigenvectors and abundance plots to show
+    
+    kwargs : dict, optional
+        keyword arguments for svd filtering
+        
+    Returns
+    -------
+    None
+    '''
+    
+    if isinstance(h5_main, h5py.Group):
+
+        _U = usid.hdf_utils.find_dataset(h5_main, 'U')[-1]
+        _V = usid.hdf_utils.find_dataset(h5_main, 'V')[-1]
+        units = 'arbitrary (a.u.)'
+        h5_spec_vals = np.arange(_V.shape[1])
+        h5_svd_group = _U.parent
+
+    else:
+
+        h5_svd_group = usid.hdf_utils.find_results_groups(h5_main, 'SVD')[-1]
+        units = h5_main.attrs['quantity']
+        h5_spec_vals = h5_main.get_spec_values('Time')
+    
+    h5_U = h5_svd_group['U']
+    h5_V = h5_svd_group['V']
+    h5_S = h5_svd_group['S']
+    
+    _U = usid.USIDataset(h5_U)
+    [num_rows, num_cols] = _U.pos_dim_sizes
+    
+    abun_maps = np.reshape(h5_U[:,:16], (num_rows, num_cols,-1))
+    eigen_vecs = h5_V[:16, :]
+    
+    skree_sum = np.zeros(h5_S.shape)
+    for i in range(h5_S.shape[0]):
+        skree_sum[i] = np.sum(h5_S[:i])/np.sum(h5_S)
+
+    plt.figure()
+    plt.plot(skree_sum, 'bo')
+    plt.title('Cumulative Variance')
+    plt.xlabel('Total Components')
+    plt.ylabel('Total variance ratio (a.u.)')
+    
+    if savefig:
+        plt.savefig('Cumulative_variance_plot.png')
+    
+    fig_skree, axes = usid.viz.plot_utils.plot_scree(h5_S, title='Scree plot')
+    fig_skree.tight_layout()
+
+    if savefig:
+        plt.savefig('Scree_plot.png')
+    
+    fig_abun, axes = usid.viz.plot_utils.plot_map_stack(abun_maps, num_comps=num_plots, title='SVD Abundance Maps',
+                                                  color_bar_mode='single', cmap='inferno', reverse_dims=True, 
+                                                  fig_mult=(3.5,3.5), facecolor='white', **kwargs)
+    fig_abun.tight_layout()
+    if savefig:
+        plt.savefig('Abundance_maps.png')
+    
+
+    fig_eigvec, axes = usid.viz.plot_utils.plot_curves(h5_spec_vals*1e3, eigen_vecs, use_rainbow_plots=False, 
+                                                 x_label='Time (ms)', y_label=units, 
+                                                 num_plots=num_plots, subtitle_prefix='Component', 
+                                                 title='SVD Eigenvectors', evenly_spaced=False, 
+                                                 **kwargs)
+    fig_eigvec.tight_layout()
+    if savefig:
+        plt.savefig('Eigenvectors.png')
+    
+    return 
