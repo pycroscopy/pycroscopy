@@ -9,6 +9,7 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 from os import path, listdir, remove
 import sys
+import datetime
 from warnings import warn
 import h5py
 import numpy as np
@@ -952,7 +953,20 @@ class BEodfTranslator(Translator):
         parm_dict['File_file_name'] = expt_name
         parm_dict['File_file_suffix'] = suffix
 
-        # Cannot capture date and time reliably - leaving this...
+        header = matread['__header__'].decode("utf-8")
+        targ_str = 'Created on: '
+        try:
+            ind = header.index(targ_str)
+            header = header[ind + len(targ_str):]
+            # header = 'Wed Jan 04 13:11:21 2012'
+            dt_obj = datetime.datetime.strptime(header,
+                                                '%c')
+            # '%a %b %d %H:%M:%S %Y')
+            # parms.txt contains string formatted as: 09-Apr-2015 HH:MM:SS
+            parm_dict['File_date_and_time'] = dt_obj.strftime(
+                '%d-%b-%Y %H:%M:%S')
+        except ValueError:
+            pass
 
         return parm_dict
 
