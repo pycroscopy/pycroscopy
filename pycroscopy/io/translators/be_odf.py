@@ -844,6 +844,55 @@ class BEodfTranslator(Translator):
         bin_FFT = np.conjugate(FFT_full[bin_inds])
         return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
+    def __infer_frac_phase(slopes):
+        """
+        Infers the VS cycle fraction and phase when parameters were
+        stored in old mat files
+
+        Parameters
+        --------------------
+        slopes : list / tuple
+            Array of mean slopes of each fraction of a SINGLE cycle
+
+        Returns
+        --------------------
+        tuple:
+            fraction : float
+                Fraction of VS cycle
+            phase : float
+                Phase offset for VS cycle
+        """
+        if all([_ > 0 for _ in slopes]):
+            return 0.25, 0
+        elif all([_ < 0 for _ in slopes]):
+            return 0.25, 0.75
+        elif all([_ > 0 for _ in slopes[:2]]) and all(
+                [_ < 0 for _ in slopes[2:]]):
+            return 0.5, 0
+        elif all([_ < 0 for _ in slopes[:2]]) and all(
+                [_ > 0 for _ in slopes[2:]]):
+            return 0.5, 0.5
+        elif all([_ > 0 for _ in slopes[:1]]) and all(
+                [_ < 0 for _ in slopes[1:]]):
+            return 0.75, 0
+        elif all([_ > 0 for _ in slopes[:3]]) and all(
+                [_ < 0 for _ in slopes[3:]]):
+            return 0.75, 0.25
+        elif all([_ < 0 for _ in slopes[:1]]) and all(
+                [_ > 0 for _ in slopes[1:]]):
+            return 0.75, 0.5
+        elif all([_ < 0 for _ in slopes[:3]]) and all(
+                [_ > 0 for _ in slopes[3:]]):
+            return 0.75, 0.75
+        elif slopes[0] > 0 and slopes[1] < 0 and slopes[2] < 0 and slopes[
+            3] > 0:
+            return 1, 0
+        elif slopes[0] < 0 and slopes[1] > 0 and slopes[2] > 0 and slopes[
+            3] < 0:
+            return 1, 0.5
+        else:
+            return 0, 0
+
     @staticmethod
     def __get_parms_from_old_mat(file_path):
         """
@@ -932,8 +981,11 @@ class BEodfTranslator(Translator):
         parm_dict['VS_set_pulse_amplitude_[V]'] = VS_parms[9]  # 0 <- SS_set_pulse_amp
         parm_dict['VS_read_voltage_[V]'] = VS_parms[3]
         parm_dict['VS_steps_per_full_cycle'] = int(VS_parms[7])
+
+        # These two will be assigned after the initial round of parsing
         parm_dict['VS_cycle_fraction'] = 'full'
         parm_dict['VS_cycle_phase_shift'] = 0
+
         parm_dict['VS_number_of_cycles'] = int(VS_parms[2])
         parm_dict['FORC_num_of_FORC_cycles'] = 1
         parm_dict['FORC_V_high1_[V]'] = 1
@@ -945,9 +997,7 @@ class BEodfTranslator(Translator):
             parm_dict['VS_mode'] = 'DC modulation mode'
             if VS_parms[0] == 9:
                 parm_dict['VS_mode'] = 'current mode'
-            parm_dict['VS_amplitude_[V]'] = 0.5 * (max(dc_amp_vec_full) -
-                                                   np.min(dc_amp_vec_full))
-            # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 0.5 * (max(dc_amp_vec_full) - np.min(dc_amp_vec_full))  # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = np.max(dc_amp_vec_full) + np.min(
                 dc_amp_vec_full)
 
@@ -996,6 +1046,20 @@ class BEodfTranslator(Translator):
         else:
             # Did not see any examples of this...
             parm_dict['VS_mode'] = 'Custom'
+
+        # Assigning the phase and fraction for bi-polar triangular waveforms
+        if VS_parms[0] not in [2, 3]:
+            slopes = []
+            for ind in range(4):
+                subsection = dc_amp_vec_full[ind * parm_dict['VS_steps_per_full_cycle'] // 4: (ind + 1) * parm_dict['VS_steps_per_full_cycle'] // 4]
+                slopes.append(np.mean(np.diff(subsection)))
+            frac, phas = __infer_frac_phase(slopes)
+
+            for str_val, num_val in zip(['full', '1/2', '1/4', '3/4'],
+                                        [1., 0.5, 0.25, 0.75]):
+                if frac == num_val:
+                    parm_dict['VS_cycle_fraction'] = str_val
+            parm_dict['VS_cycle_phase_shift'] = phas
 
         parent, _ = path.split(file_path)
         parent, expt_name = path.split(parent)
