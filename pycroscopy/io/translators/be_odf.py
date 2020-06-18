@@ -844,6 +844,7 @@ class BEodfTranslator(Translator):
         bin_FFT = np.conjugate(FFT_full[bin_inds])
         return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
+    @staticmethod
     def __infer_frac_phase(slopes):
         """
         Infers the VS cycle fraction and phase when parameters were
