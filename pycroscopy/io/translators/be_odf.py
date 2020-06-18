@@ -1054,7 +1054,7 @@ class BEodfTranslator(Translator):
             for ind in range(4):
                 subsection = dc_amp_vec_full[ind * parm_dict['VS_steps_per_full_cycle'] // 4: (ind + 1) * parm_dict['VS_steps_per_full_cycle'] // 4]
                 slopes.append(np.mean(np.diff(subsection)))
-            frac, phas = __infer_frac_phase(slopes)
+            frac, phas = BEodfTranslator.__infer_frac_phase(slopes)
 
             for str_val, num_val in zip(['full', '1/2', '1/4', '3/4'],
                                         [1., 0.5, 0.25, 0.75]):
