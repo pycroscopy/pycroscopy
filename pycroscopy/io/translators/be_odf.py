@@ -1258,6 +1258,8 @@ class BEodfTranslator(Translator):
             print()
             raise KeyError(exp)
         if VS_shift is not 0:
+            if verbose:
+                print('\tVS_shift = {}'.format(VS_shift))
             VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
                                        ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
