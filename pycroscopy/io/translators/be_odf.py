@@ -223,6 +223,8 @@ class BEodfTranslator(Translator):
         add_pix = False
         num_rows = int(parm_dict['grid_num_rows'])
         num_cols = int(parm_dict['grid_num_cols'])
+        if verbose:
+            print('\tRows: {}, Cols: {}'.format(num_rows, num_cols))
         num_pix = num_rows * num_cols
         tot_bins = real_size / (num_pix * 4)
         # Check for case where only a single pixel is missing.
