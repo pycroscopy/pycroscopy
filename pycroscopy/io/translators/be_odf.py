@@ -228,7 +228,10 @@ class BEodfTranslator(Translator):
         num_pix = num_rows * num_cols
         tot_bins = real_size / (num_pix * 4)
         # Check for case where only a single pixel is missing.
-        check_bins = real_size / ((num_pix - 1) * 4)
+        if num_pix == 1:
+            check_bins = real_size / (num_pix * 4)
+        else:
+            check_bins = real_size / ((num_pix - 1) * 4)
 
         if verbose:
             print('\tChecking bins: Total: {}, actual: {}'.format(tot_bins,
