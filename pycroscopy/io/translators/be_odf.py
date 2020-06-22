@@ -114,7 +114,8 @@ class BEodfTranslator(Translator):
         else:
             return None
 
-    def translate(self, file_path, show_plots=True, save_plots=True, do_histogram=False, verbose=False):
+    def translate(self, file_path, show_plots=True, save_plots=True,
+                  do_histogram=False, verbose=False):
         """
         Translates .dat data file(s) to a single .h5 file
         
@@ -152,7 +153,7 @@ class BEodfTranslator(Translator):
         elif 'old_mat_parms' in path_dict.keys():
             if verbose:
                 print('\treading parameters from old mat file')
-            parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'])
+            parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'], verbose=verbose)
             if parm_dict['VS_steps_per_full_cycle'] == 0:
                 isBEPS=False
             else:
@@ -367,6 +368,10 @@ class BEodfTranslator(Translator):
                                                                                                      parm_dict,
                                                                                                      UDVS_labs,
                                                                                                      UDVS_units)
+
+        if verbose:
+            print('\t\tspec_vals_labs_names: {}'.format(spec_vals_labs_names))
+
         # Not sure what is happening here but this should work.
         spec_dim_dict = dict()
         for entry in spec_vals_labs_names:
@@ -972,7 +977,7 @@ class BEodfTranslator(Translator):
             return 0, 0
 
     @staticmethod
-    def __get_parms_from_old_mat(file_path):
+    def __get_parms_from_old_mat(file_path, verbose=False):
         """
         Formats parameters found in the old parameters .mat file into a dictionary
         as though the dataset had a parms.txt describing it
@@ -981,6 +986,8 @@ class BEodfTranslator(Translator):
         --------------------
         file_path : Unicode / String
             absolute filepath of the .mat file containing the parameters
+        verbose : bool, optional, default = False
+            Whether or not to print statemetns for debugging purposes
 
         Returns
         --------------------
@@ -1009,7 +1016,11 @@ class BEodfTranslator(Translator):
         try:
             BE_parm_vec_2 = matread['BE_parm_vec_2']
         except KeyError:
-            BE_parm_vec_2 = 'None'
+            BE_parm_vec_2 = None
+
+        if verbose:
+            print('\t\tBE_parm_vec_1: {}'.format(BE_parm_vec_1))
+            print('\t\tBE_parm_vec_2: {}'.format(BE_parm_vec_2))
 
         # Not required for translation but necessary to have
         if BE_parm_vec_1[0] == 3 or BE_parm_vec_2[0] == 3:
@@ -1031,6 +1042,8 @@ class BEodfTranslator(Translator):
             parm_dict['BE_bins_per_read'] = len(matread['bin_w'])
 
         assembly_parm_vec = matread['assembly_parm_vec']
+        if verbose:
+            print('\t\tassembly_parm_vec: {}'.format(assembly_parm_vec))
 
         if assembly_parm_vec[2] == 0:
             parm_dict['VS_measure_in_field_loops'] = 'out-of-field'
@@ -1050,6 +1063,10 @@ class BEodfTranslator(Translator):
 
         VS_parms = matread['SS_parm_vec']
         dc_amp_vec_full = matread['dc_amp_vec_full']
+
+        if verbose:
+            print('\t\tVS_parms: {}'.format(VS_parms))
+            print('\t\tdc_amp_vec_full: {}'.format(dc_amp_vec_full))
 
         VS_start_V = VS_parms[4]
         VS_start_loop_amp = VS_parms[5]
@@ -1072,15 +1089,20 @@ class BEodfTranslator(Translator):
         parm_dict['FORC_V_low2_[V]'] = -10
 
         if VS_parms[0] == 0 or VS_parms[0] == 9:
+            if verbose:
+                print('\t\tDC modulation or current mode based on VS parms[0]')
             parm_dict['VS_mode'] = 'DC modulation mode'
             if VS_parms[0] == 9:
+                if verbose:
+                    print('\t\tcurrent mode based on VS parms[0]')
                 parm_dict['VS_mode'] = 'current mode'
             parm_dict['VS_amplitude_[V]'] = 0.5 * (max(dc_amp_vec_full) - np.min(dc_amp_vec_full))  # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = np.max(dc_amp_vec_full) + np.min(
                 dc_amp_vec_full)
 
         elif VS_parms[0] == 1 or VS_parms[0] == 6 or VS_parms[0] == 7:
-            # FORC
+            if verbose:
+                print('\t\tFORC, based on VS parms[0]')
             # Could not tell difference between mode = 1 or 6
             # mode 7 = multiple FORC cycles
             parm_dict['VS_mode'] = 'DC modulation mode'
@@ -1088,12 +1110,18 @@ class BEodfTranslator(Translator):
                 'VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = 0
             if VS_parms[0] == 7:
+                if verbose:
+                    print('\t\t\tFORC with 2 cycles')
                 parm_dict['VS_number_of_cycles'] = 2
                 parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2] // 2
             else:
+                if verbose:
+                    print('\t\t\tFORC with 1 cycle')
                 parm_dict['VS_number_of_cycles'] = 1
                 parm_dict['FORC_num_of_FORC_cycles'] = VS_parms[2]
             if True:
+                if verbose:
+                    print('\t\t\tMeasuring FORC high and low vals from DC vec')
                 # Grabbing hi lo values directly from the vec
                 left = dc_amp_vec_full[:parm_dict['VS_steps_per_full_cycle']]
                 right = dc_amp_vec_full[
@@ -1103,6 +1131,8 @@ class BEodfTranslator(Translator):
                 parm_dict['FORC_V_low1_[V]'] = np.min(left)
                 parm_dict['FORC_V_low2_[V]'] = np.min(right)
             else:
+                if verbose:
+                    print('\t\t\tGrabbing FORC high and low vals from parms')
                 # Not getting correct values with prescribed method
                 parm_dict['FORC_V_high1_[V]'] = VS_start_V
                 parm_dict['FORC_V_high2_[V]'] = VS_start_V
@@ -1110,7 +1140,8 @@ class BEodfTranslator(Translator):
                 parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
 
         elif VS_parms[0] == 2 or VS_parms[0] == 3:
-            # AC mode
+            if verbose:
+                print('\t\tAC Spectroscopy with time reversal, based on VS parms')
             if VS_parms[0] == 3:
                 # These numbers seemed to match with the v_dc vector
                 parm_dict['VS_number_of_cycles'] = int(VS_parms[2]) * 2
@@ -1120,29 +1151,42 @@ class BEodfTranslator(Translator):
             parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
             parm_dict[
                 'VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
-            # print('---We have AC Modulation mode file here---')
         else:
             # Did not see any examples of this...
             parm_dict['VS_mode'] = 'Custom'
 
         # Assigning the phase and fraction for bi-polar triangular waveforms
         if VS_parms[0] not in [2, 3]:
+            if verbose:
+                print('\t\tEstimating phase and fraction based on slopes of first cycle')
             slopes = []
             for ind in range(4):
                 subsection = dc_amp_vec_full[ind * parm_dict['VS_steps_per_full_cycle'] // 4: (ind + 1) * parm_dict['VS_steps_per_full_cycle'] // 4]
                 slopes.append(np.mean(np.diff(subsection)))
+            if verbose:
+                print('\t\t\tslopes for quarters: {}'.format(slopes))
             frac, phas = BEodfTranslator.__infer_frac_phase(slopes)
+            if verbose:
+                print('\t\t\tCycle fraction: {}, Phase: {}'.format(frac, phas))
 
             for str_val, num_val in zip(['full', '1/2', '1/4', '3/4'],
                                         [1., 0.5, 0.25, 0.75]):
                 if frac == num_val:
                     parm_dict['VS_cycle_fraction'] = str_val
+                    break
 
             for str_val, num_val in zip(['1/4', '1/2', '3/4'],
                                         [0.25, 0.5, 0.75]):
                 if phas == num_val:
                     parm_dict['VS_cycle_phase_shift'] = str_val
+                    break
+            if verbose:
+                print('\t\t\tCycle fraction: {}, Phase: {}'
+                      ''.format(parm_dict['VS_cycle_fraction'],
+                                parm_dict['VS_cycle_phase_shift']))
 
+        if verbose:
+            print('\t\tEstimating File params from path: {}'.format(file_path))
         parent, _ = path.split(file_path)
         parent, expt_name = path.split(parent)
         if expt_name.endswith('_c'):
@@ -1163,6 +1207,9 @@ class BEodfTranslator(Translator):
         parm_dict['File_file_suffix'] = suffix
 
         header = matread['__header__'].decode("utf-8")
+        if verbose:
+            print('\t\tEstimating experiment date and time from .mat file '
+                  'header: {} '.format(header))
         targ_str = 'Created on: '
         try:
             ind = header.index(targ_str)
