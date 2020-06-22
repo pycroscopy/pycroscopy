@@ -21,7 +21,7 @@ from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
     create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
-    write_reduced_anc_dsets
+    write_reduced_anc_dsets, get_unit_values
 from pyUSID.io.usi_data import USIDataset
 from pyUSID.processing.comp_utils import get_available_memory
 
@@ -370,7 +370,12 @@ class BEodfTranslator(Translator):
                                                                                                      UDVS_units)
 
         if verbose:
-            print('\t\tspec_vals_labs_names: {}'.format(spec_vals_labs_names))
+            print('\t\tspec_vals_labs: {}'.format(spec_vals_labs))
+            unit_vals = get_unit_values(spec_inds, spec_vals, all_dim_names=spec_vals_labs, is_spec=True, verbose=verbose)
+            print('\tUnit spectroscopic values')
+            for key, val in unit_vals.items():
+                print('\t\t{} : length: {}, values:\n\t\t\t{}'.format(key, len(val), val))
+
 
         # Not sure what is happening here but this should work.
         spec_dim_dict = dict()
