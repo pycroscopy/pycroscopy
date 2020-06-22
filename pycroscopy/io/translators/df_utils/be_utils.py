@@ -33,6 +33,58 @@ nf32 = np.dtype({'names': ['super_band', 'inter_bin_band', 'sub_band'],
                  'formats': [np.float32, np.float32, np.float32]})
 
 
+def generate_bipolar_triangular_waveform(cycle_pts, cycle_frac=1, phase=0,
+                                         amplitude=1, cycles=1, offset=0):
+    """
+    Generates a bi-polar triangular waveform based on basic parameters
+
+    Parameters
+    ----------
+    cycle_pts : int
+        Number of parameters in a single cycle
+    cycle_frac : float, optional. Default = 1
+        Fraction of the cycle - ranges as (0, 1]
+    phase : float, optional. Default = 0
+        Phase offset for the waveform. Ranges as [0, 1)
+    amplitude : float, optional. Default = 1
+        Maximum amplitude for the waveform
+    offset : float, optional. Default = 0
+        DC offset for the waveform
+    cycles : int, optional. Default = 1
+        Number of repetitions or cycles
+
+    Returns
+    -------
+    dc_vec
+    """
+    # Scale the number of points in the cycle by the (inverse of) the fraction
+    actual_cycle_pts = int(cycle_pts // cycle_frac)
+
+    # Build the default bi-polar triangular waveform
+    dc_vec = np.hstack(
+        (np.linspace(0, 1, actual_cycle_pts // 4, endpoint=False),
+         np.linspace(1, 0, actual_cycle_pts // 4, endpoint=False),
+         np.linspace(0, -1, actual_cycle_pts // 4, endpoint=False),
+         np.linspace(-1, 0, actual_cycle_pts // 4, endpoint=False)))
+
+    # Apply phase offset via a roll:
+    dc_vec = np.roll(dc_vec, int(phase * actual_cycle_pts))
+
+    # Next truncate by the fraction
+    dc_vec = dc_vec[:cycle_pts]
+
+    # Next, scale by the amplitude:
+    dc_vec = amplitude * dc_vec
+
+    # Next offset:
+    dc_vec += offset
+
+    # Finally, tile by the number of cycles
+    dc_vec = np.tile(dc_vec, int(cycles))
+
+    return dc_vec
+
+
 def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 
