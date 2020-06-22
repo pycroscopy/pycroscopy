@@ -1192,7 +1192,7 @@ class BEodfTranslator(Translator):
 
         return BE_bin_ind, BE_bin_w, BE_bin_FFT, ex_wfm
 
-    def __build_udvs_table(self, parm_dict):
+    def __build_udvs_table(self, parm_dict, verbose=True):
         """
         Generates the UDVS table using the parameters
         
@@ -1282,6 +1282,9 @@ class BEodfTranslator(Translator):
             VS_amp_vec_4 = VS_amp_vec_1[1:-1] - 1
             vs_amp_vec = VS_amp * (np.hstack((VS_amp_vec_1, VS_amp_vec_2, VS_amp_vec_3, VS_amp_vec_4)))
             # apply phase shift to VS wave
+            if verbose:
+                print('\t\tVS_steps: {}, VS_fraction: {}, VS_shift: {}'
+                      ''.format(VS_steps, VS_fraction, VS_shift))
             vs_amp_vec = np.roll(vs_amp_vec, int(np.floor(VS_steps / VS_fraction * VS_shift)))
             # cut VS waveform
             vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction))]
