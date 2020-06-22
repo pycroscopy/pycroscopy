@@ -16,7 +16,7 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
-    createSpecVals, requires_conjugate, nf32
+    createSpecVals, requires_conjugate, generate_bipolar_triangular_waveform, nf32
 from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
@@ -287,7 +287,6 @@ class BEodfTranslator(Translator):
             UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict, verbose=verbose)
 
             if verbose:
-                print('\tUDVS labels: {}, matrix:\n{}'.format(UDVS_labs, UDVS_mat))
                 print('\tTrimming UDVS table to remove unused plot group columns')
 
             UDVS_mat, UDVS_labs, UDVS_units = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
@@ -1364,21 +1363,12 @@ class BEodfTranslator(Translator):
         # % build vector of voltage spectroscopy values
 
         if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:  # DC voltage spectroscopy or current mode
-            VS_amp_vec_1 = np.arange(0, 1 + 1 / (VS_steps / 4), 1 / (VS_steps / 4))
-            VS_amp_vec_2 = np.flipud(VS_amp_vec_1[:-1])
-            VS_amp_vec_3 = -VS_amp_vec_1[1:]
-            VS_amp_vec_4 = VS_amp_vec_1[1:-1] - 1
-            vs_amp_vec = VS_amp * (np.hstack((VS_amp_vec_1, VS_amp_vec_2, VS_amp_vec_3, VS_amp_vec_4)))
-            # apply phase shift to VS wave
-            if verbose:
-                print('\t\tVS_steps: {}, VS_fraction: {}, VS_shift: {}'
-                      ''.format(VS_steps, VS_fraction, VS_shift))
-            vs_amp_vec = np.roll(vs_amp_vec, int(np.floor(VS_steps / VS_fraction * VS_shift)))
-            # cut VS waveform
-            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction))]
-            # repeat VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles))
-            vs_amp_vec = vs_amp_vec + VS_offset
+            vs_amp_vec = generate_bipolar_triangular_waveform(VS_steps,
+                                                              cycle_frac=VS_fraction,
+                                                              phase=VS_shift,
+                                                              amplitude=VS_amp,
+                                                              cycles=VS_cycles,
+                                                              offset=VS_offset)
 
         elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
             vs_amp_vec = VS_amp * np.arange(1 / (VS_steps / 2 / VS_fraction), 1 + 1 / (VS_steps / 2 / VS_fraction),
