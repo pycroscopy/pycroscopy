@@ -1111,7 +1111,11 @@ class BEodfTranslator(Translator):
                                         [1., 0.5, 0.25, 0.75]):
                 if frac == num_val:
                     parm_dict['VS_cycle_fraction'] = str_val
-            parm_dict['VS_cycle_phase_shift'] = phas
+
+            for str_val, num_val in zip(['1/4', '1/2', '3/4'],
+                                        [0.25, 0.5, 0.75]):
+                if phas == num_val:
+                    parm_dict['VS_cycle_phase_shift'] = str_val
 
         parent, _ = path.split(file_path)
         parent, expt_name = path.split(parent)
