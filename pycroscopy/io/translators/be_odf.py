@@ -939,7 +939,10 @@ class BEodfTranslator(Translator):
             FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
         except ValueError:
             FFT_full = BE_wave
-        bin_FFT = np.conjugate(FFT_full[bin_inds])
+        try:
+            bin_FFT = np.conjugate(FFT_full[bin_inds])
+        except IndexError:
+            bin_FFT = FFT_full
         return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
     @staticmethod
