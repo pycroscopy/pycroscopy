@@ -283,7 +283,7 @@ class BEodfTranslator(Translator):
         if isBEPS:
             if verbose:
                 print('\tBuilding UDVS table for BEPS')
-            UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict)
+            UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict, verbose=verbose)
 
             if verbose:
                 print('\tTrimming UDVS table to remove unused plot group columns')
@@ -408,8 +408,32 @@ class BEodfTranslator(Translator):
         h5_meas_group = create_indexed_group(h5_f, 'Measurement')
 
         # Write attributes at the measurement group level
+        keys = list(parm_dict.keys())
+        keys.sort()
+        """
+        for key in keys:
+            print('{} : {}'.format(key, main_dsets[0].parent.parent.attrs[key]))
+        """
+        nest_parm_dict = dict()
+        for key in ['FORC', 'VS', 'grid', 'BE', 'IO', 'File', 'Misc']:
+            nest_parm_dict[key] = dict()
+        for key in keys:
+            parts = key.split('_')
+            parent = 'Misc'
+            rem_key = key
+            if len(parts) > 1:
+                if parts[0] in nest_parm_dict.keys():
+                    parent = parts[0]
+                    rem_key = '_'.join(parts[1:])
+            nest_parm_dict[parent].update(
+                {rem_key: parm_dict[key]})
+
         if verbose:
             print('\twriting attributes to Measurement group')
+            keys = list(parm_dict.keys())
+            keys.sort()
+            for key in keys:
+                print('\t\t{} : {}'.format(key, parm_dict[key]))
         write_simple_attrs(h5_meas_group, parm_dict)
 
         # Create the Channel group
@@ -444,9 +468,11 @@ class BEodfTranslator(Translator):
         pos_dims = [Dimension('X', 'm', np.arange(num_cols)),
                     Dimension('Y', 'm', np.arange(num_rows))]
         h5_pos_ind, h5_pos_val = write_ind_val_dsets(h5_chan_grp, pos_dims, is_spectral=False, verbose=verbose)
+        if verbose:
+            print('\tPosition datasets of shape: {}'.format(h5_pos_ind.shape))
 
         if verbose:
-            print('\tWriting Spectroscopic datasets')
+            print('\tWriting Spectroscopic datasets of shape: {}'.format(spec_inds.shape))
         h5_spec_inds = h5_chan_grp.create_dataset('Spectroscopic_Indices', data=spec_inds, dtype=INDICES_DTYPE)        
         h5_spec_vals = h5_chan_grp.create_dataset('Spectroscopic_Values', data=np.array(spec_vals), dtype=VALUES_DTYPE)
         for dset in [h5_spec_inds, h5_spec_vals]:
@@ -472,7 +498,7 @@ class BEodfTranslator(Translator):
                                   unit_chunks=(1, bins_per_step))
         if verbose:
             print('\tHDF5 dataset will have chunks of size: {}'.format(BEPS_chunks))
-            print('\tCreating empty main dataset')
+            print('\tCreating empty main dataset of shape: ({}, {})'.format(num_pix, tot_bins))
         self.h5_raw = write_main_dataset(h5_chan_grp, (num_pix, tot_bins), 'Raw_Data', 'Piezoresponse', 'V', None, None,
                                          dtype=np.complex64, chunks=BEPS_chunks, compression='gzip',
                                          h5_pos_inds=h5_pos_ind, h5_pos_vals=h5_pos_val, h5_spec_inds=h5_spec_inds,
@@ -1196,7 +1222,7 @@ class BEodfTranslator(Translator):
 
         return BE_bin_ind, BE_bin_w, BE_bin_FFT, ex_wfm
 
-    def __build_udvs_table(self, parm_dict, verbose=True):
+    def __build_udvs_table(self, parm_dict, verbose=False):
         """
         Generates the UDVS table using the parameters
         
