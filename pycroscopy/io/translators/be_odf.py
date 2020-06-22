@@ -1371,12 +1371,18 @@ class BEodfTranslator(Translator):
                                                               offset=VS_offset)
 
         elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
-            vs_amp_vec = VS_amp * np.arange(1 / (VS_steps / 2 / VS_fraction), 1 + 1 / (VS_steps / 2 / VS_fraction),
-                                            1 / (VS_steps / 2 / VS_fraction))
-            vs_amp_vec = np.roll(vs_amp_vec,
-                                 int(np.floor(VS_steps / VS_fraction * VS_shift)))  # apply phase shift to VS wave
-            vs_amp_vec = vs_amp_vec[:int(np.floor(VS_steps * VS_fraction / 2))]  # cut VS waveform
-            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles) * 2)  # repeat VS waveform
+            # Temporarily scale up the number of points in a cycle
+            actual_cycle_pts = int(VS_steps // VS_fraction)
+            vs_amp_vec = np.linspace(VS_amp / actual_cycle_pts, VS_amp,
+                                     num=actual_cycle_pts, endpoint=True)
+            # Apply phase offset via a roll:
+            vs_amp_vec = np.roll(vs_amp_vec, int(VS_shift * actual_cycle_pts))
+            # Next truncate by the fraction
+            vs_amp_vec = vs_amp_vec[:VS_steps]
+            # Next offset:
+            vs_amp_vec += VS_offset
+            # Finally, tile by the number of cycles
+            vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles))
 
         if FORC_cycles > 1:
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))
@@ -1390,7 +1396,7 @@ class BEodfTranslator(Translator):
             FORC_amp_mat = np.tile(FORC_amp_vec, [len(vs_amp_vec), 1]).transpose()
             FORC_off_mat = np.tile(FORC_off_vec, [len(vs_amp_vec), 1]).transpose()
             VS_amp_mat = VS_amp_mat * FORC_amp_mat + FORC_off_mat
-            vs_amp_vec = VS_amp_mat.reshape(int(FORC_cycles * VS_cycles * VS_fraction * VS_steps))
+            vs_amp_vec = VS_amp_mat.reshape(int(FORC_cycles * VS_cycles * VS_steps))
 
         # Build UDVS table:
         if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:  # DC voltage spectroscopy or current mode
