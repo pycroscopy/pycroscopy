@@ -388,7 +388,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
             continue
         # 4. Access that column of the data through region reference
         steps = np.where(np.isfinite(UDVS[ref]))[0]
-        step_inds = np.array([np.where(UDVS_inds.value == step)[0] for step in steps]).flatten()
+        step_inds = np.array([np.where(UDVS_inds[()] == step)[0] for step in steps]).flatten()
         """selected_UDVS_steps = UDVS[ref]
         selected_UDVS_steps = selected_UDVS_steps[np.isfinite(selected_UDVS_steps)]"""
 
@@ -400,7 +400,7 @@ def generatePlotGroups(h5_main, mean_resp, folder_path, basename, max_resp=[], m
         We are assuming that there is only one excitation waveform per plot group
         """
         freq_slice = np.unique(freq_inds[step_inds])
-        freq_vec = h5_freq.value[freq_slice]
+        freq_vec = h5_freq[()][freq_slice]
 
         num_bins = len(freq_slice)  # int(len(freq_inds)/len(UDVS[ref]))
         pg_data = np.repeat(UDVS[ref], num_bins)
