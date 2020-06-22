@@ -277,19 +277,21 @@ class BEodfTranslator(Translator):
 
         if isBEPS:
             if verbose:
-                print('\tBuilding UDVS table')
+                print('\tBuilding UDVS table for BEPS')
             UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict)
 
-            #             Remove the unused plot group columns before proceeding:
             if verbose:
-                print('\tTrimming UDVS table')
+                print('\tTrimming UDVS table to remove unused plot group columns')
             UDVS_mat, UDVS_labs, UDVS_units = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
             old_spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
 
-            #             Will assume that all excitation waveforms have same number of bins
+            # Will assume that all excitation waveforms have same num of bins
             num_actual_udvs_steps = UDVS_mat.shape[0] / udvs_denom
             bins_per_step = tot_bins / num_actual_udvs_steps
+            if verbose:
+                print('\t# UDVS steps: {}, # bins/step: {}'
+                      ''.format(num_actual_udvs_steps, bins_per_step))
 
             if bins_per_step % 1:
                 print('UDVS mat shape: {}, total bins: {}, bins per step: {}'.format(UDVS_mat.shape, tot_bins,
@@ -311,6 +313,8 @@ class BEodfTranslator(Translator):
             del stind, step_index
 
         else:  # BE Line
+            if verbose:
+                print('\tPreparing supporting variables since BE-Line')
             self.signal_type = 1
             self.expt_type = 1  # Stephen has not used this index for some reason
             num_actual_udvs_steps = 1
@@ -329,6 +333,8 @@ class BEodfTranslator(Translator):
         parm_dict['num_udvs_steps'] = num_actual_udvs_steps
         parm_dict['num_steps'] = num_actual_udvs_steps
 
+        if verbose:
+            print('\tPreparing UDVS slices for region references')
         udvs_slices = dict()
         for col_ind, col_name in enumerate(UDVS_labs):
             udvs_slices[col_name] = (slice(None), slice(col_ind, col_ind + 1))
@@ -337,7 +343,8 @@ class BEodfTranslator(Translator):
         exec_bin_vec = self.signal_type * np.ones(len(bin_inds), dtype=np.int32)
 
         if self.expt_type == 2:
-            # Need to double the vectors:
+            if verbose:
+                print('\tExperiment type = 2. Doubling BE vectors')
             exec_bin_vec = np.hstack((exec_bin_vec, -1 * exec_bin_vec))
             bin_inds = np.hstack((bin_inds, bin_inds))
             bin_freqs = np.hstack((bin_freqs, bin_freqs))
@@ -346,6 +353,8 @@ class BEodfTranslator(Translator):
 
         # Create Spectroscopic Values and Spectroscopic Values Labels datasets
         # This is an old and legacy way of doing things. Ideally, all we would need ot do is just get the unit values
+        if verbose:
+            print('\tCalculating spectroscopic values')
         spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat,
                                                                                                      old_spec_inds,
                                                                                                      bin_freqs,
@@ -364,6 +373,8 @@ class BEodfTranslator(Translator):
             spec_vals_slices[row_name] = (slice(row_ind, row_ind + 1), slice(None))
 
         if path.exists(h5_path):
+            if verbose:
+                print('\tRemoving existing / old translated file: ' + h5_path)
             remove(h5_path)
 
         # First create the file
@@ -383,6 +394,8 @@ class BEodfTranslator(Translator):
         global_parms['current_position_y'] = parm_dict['grid_num_rows'] - 1
         global_parms['data_type'] = parm_dict['data_type']
         global_parms['translator'] = 'ODF'
+        if verbose:
+            print('\tWriting attributes to HDF5 file root')
         write_simple_attrs(h5_f, global_parms)
         write_book_keeping_attrs(h5_f)
 
@@ -390,6 +403,8 @@ class BEodfTranslator(Translator):
         h5_meas_group = create_indexed_group(h5_f, 'Measurement')
 
         # Write attributes at the measurement group level
+        if verbose:
+            print('\twriting attributes to Measurement group')
         write_simple_attrs(h5_meas_group, parm_dict)
 
         # Create the Channel group
@@ -400,16 +415,16 @@ class BEodfTranslator(Translator):
                                          'channel_type': 'BE'})
 
         # Now the datasets!
+        if verbose:
+            print('\tCreating ancillary datasets')
         h5_chan_grp.create_dataset('Excitation_Waveform', data=ex_wfm)
 
         h5_udvs = h5_chan_grp.create_dataset('UDVS', data=UDVS_mat)
         write_region_references(h5_udvs, udvs_slices, add_labels_attr=True, verbose=verbose)
         write_simple_attrs(h5_udvs, {'units': UDVS_units}, verbose=verbose)
-        
-        # ds_udvs_labs = MicroDataset('UDVS_Labels',np.array(UDVS_labs))
+
         h5_chan_grp.create_dataset('UDVS_Indices', data=old_spec_inds[1])
 
-        # ds_spec_labs = MicroDataset('Spectroscopic_Labels',np.array(['Bin','UDVS_Step']))
         h5_chan_grp.create_dataset('Bin_Step', data=np.arange(bins_per_step, dtype=INDICES_DTYPE),
                                    dtype=INDICES_DTYPE)
 
@@ -418,9 +433,15 @@ class BEodfTranslator(Translator):
         h5_chan_grp.create_dataset('Bin_FFT', data=bin_FFT)
         h5_chan_grp.create_dataset('Bin_Wfm_Type', data=exec_bin_vec)
 
-        pos_dims = [Dimension('X', 'm', np.arange(num_cols)), Dimension('Y', 'm', np.arange(num_rows))]
+        if verbose:
+            print('\tWriting Position datasets')
+
+        pos_dims = [Dimension('X', 'm', np.arange(num_cols)),
+                    Dimension('Y', 'm', np.arange(num_rows))]
         h5_pos_ind, h5_pos_val = write_ind_val_dsets(h5_chan_grp, pos_dims, is_spectral=False, verbose=verbose)
 
+        if verbose:
+            print('\tWriting Spectroscopic datasets')
         h5_spec_inds = h5_chan_grp.create_dataset('Spectroscopic_Indices', data=spec_inds, dtype=INDICES_DTYPE)        
         h5_spec_vals = h5_chan_grp.create_dataset('Spectroscopic_Values', data=np.array(spec_vals), dtype=VALUES_DTYPE)
         for dset in [h5_spec_inds, h5_spec_vals]:
@@ -429,6 +450,8 @@ class BEodfTranslator(Translator):
             write_simple_attrs(dset, spec_dim_dict)
 
         # Noise floor should be of shape: (udvs_steps x 3 x positions)
+        if verbose:
+            print('\tWriting noise floor dataset')
         h5_chan_grp.create_dataset('Noise_Floor', (num_pix, num_actual_udvs_steps), dtype=nf32,
                                    chunks=(1, num_actual_udvs_steps))
 
@@ -442,30 +465,43 @@ class BEodfTranslator(Translator):
         BEPS_chunks = calc_chunks([num_pix, tot_bins],
                                   np.complex64(0).itemsize,
                                   unit_chunks=(1, bins_per_step))
+        if verbose:
+            print('\tHDF5 dataset will have chunks of size: {}'.format(BEPS_chunks))
+            print('\tCreating empty main dataset')
         self.h5_raw = write_main_dataset(h5_chan_grp, (num_pix, tot_bins), 'Raw_Data', 'Piezoresponse', 'V', None, None,
                                          dtype=np.complex64, chunks=BEPS_chunks, compression='gzip',
                                          h5_pos_inds=h5_pos_ind, h5_pos_vals=h5_pos_val, h5_spec_inds=h5_spec_inds,
                                          h5_spec_vals=h5_spec_vals, verbose=verbose)
 
-        self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix)
+        if verbose:
+            print('\tReading data from binary data files into raw HDF5')
+        self._read_data(UDVS_mat, parm_dict, path_dict, real_size, isBEPS,
+                        add_pix, verbose=verbose)
 
+        if verbose:
+            print('\tGenerating plot groups')
         generatePlotGroups(self.h5_raw, self.mean_resp, folder_path, basename,
                            self.max_resp, self.min_resp, max_mem_mb=self.max_ram,
                            spec_label=spec_label, show_plots=show_plots, save_plots=save_plots,
                            do_histogram=do_histogram, debug=verbose)
-
+        if verbose:
+            print('\tUpgrading to USIDataset')
         self.h5_raw = USIDataset(self.h5_raw)
 
         # Go ahead and read the current data in the second (current) channel
         if current_data_exists:                     #If a .dat file matches
+            if verbose:
+                print('\tReading data in secondary channels (current)')
             self._read_secondary_channel(h5_meas_group, aux_files)
 
+        if verbose:
+            print('\tClosing HDF5 file')
         h5_f.close()
 
         return h5_path
 
-
-    def _read_data(self, UDVS_mat, parm_dict, path_dict, real_size, isBEPS, add_pix):
+    def _read_data(self, UDVS_mat, parm_dict, path_dict, real_size, isBEPS,
+                   add_pix, verbose=False):
         """
         Checks if the data is BEPS or BELine and calls the correct function to read the data from
         file
@@ -484,6 +520,8 @@ class BEodfTranslator(Translator):
             Is the data BEPS
         add_pix : boolean
             Does the reader need to add extra pixels to the end of the dataset
+        verbose : bool, optional. Default = False
+            Whether or not to print logs
 
         Returns
         -------
@@ -492,15 +530,23 @@ class BEodfTranslator(Translator):
         # Now read the raw data files:
         if not isBEPS:
             # Do this for all BE-Line (always small enough to read in one shot)
+            if verbose:
+                print('\t\tReading all raw data for BE-Line in one shot')
             self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
+            if verbose:
+                print('\t\tReading all raw BEPS (out-of-field) data in one shot')
             self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
+            if verbose:
+                print('\t\tReading all raw BEPS (in-field only) data in one shot')
             self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_udvs_steps'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
+            if verbose:
+                print('\t\tReading all raw data for in and out of filed OR very large file')
             self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
         self.h5_raw.file.flush()
 
