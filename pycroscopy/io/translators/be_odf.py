@@ -287,7 +287,9 @@ class BEodfTranslator(Translator):
             UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict, verbose=verbose)
 
             if verbose:
+                print('\tUDVS labels: {}, matrix:\n{}'.format(UDVS_labs, UDVS_mat))
                 print('\tTrimming UDVS table to remove unused plot group columns')
+
             UDVS_mat, UDVS_labs, UDVS_units = trimUDVS(UDVS_mat, UDVS_labs, UDVS_units, ignored_plt_grps)
 
             old_spec_inds = np.zeros(shape=(2, tot_bins), dtype=INDICES_DTYPE)
@@ -371,7 +373,9 @@ class BEodfTranslator(Translator):
 
         if verbose:
             print('\t\tspec_vals_labs: {}'.format(spec_vals_labs))
-            unit_vals = get_unit_values(spec_inds, spec_vals, all_dim_names=spec_vals_labs, is_spec=True, verbose=verbose)
+            unit_vals = get_unit_values(spec_inds, spec_vals,
+                                        all_dim_names=spec_vals_labs,
+                                        is_spec=True, verbose=False)
             print('\tUnit spectroscopic values')
             for key, val in unit_vals.items():
                 print('\t\t{} : length: {}, values:\n\t\t\t{}'.format(key, len(val), val))
