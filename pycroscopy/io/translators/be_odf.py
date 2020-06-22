@@ -259,7 +259,7 @@ class BEodfTranslator(Translator):
         elif 'old_mat_parms' in path_dict.keys():
             if verbose:
                 print('\treading BE arrays from old mat text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'])
+            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
         else:
             if verbose:
                 print('\tGenerating dummy BE arrays')
@@ -901,7 +901,7 @@ class BEodfTranslator(Translator):
 
 
     @staticmethod
-    def __read_old_mat_be_vecs(file_path):
+    def __read_old_mat_be_vecs(file_path, verbose=False):
         """
         Returns information about the excitation BE waveform present in the 
         more parms.mat file
@@ -926,11 +926,19 @@ class BEodfTranslator(Translator):
             This information will be necessary for fixing the UDVS for AC modulation for example
         """
         matread = loadmat(file_path, squeeze_me=True)
+        #TODO: What about key errors?
         BE_wave = matread['BE_wave']
         bin_inds = matread['bin_ind'] - 1  # Python base 0
         bin_w = matread['bin_w']
         dc_amp_vec_full = matread['dc_amp_vec_full']
-        FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
+        if verbose:
+            for vec, var_name in zip([BE_wave, bin_inds, bin_w, dc_amp_vec_full],
+                                     ['BE_wave', 'bin_inds', 'bin_w', 'dc_amp_vec_full']):
+                print('\t\t{} has shape: {} and dtype: {}'.format(var_name, vec.shape, vec.dtype))
+        try:
+            FFT_full = np.fft.fftshift(np.fft.fft(BE_wave))
+        except ValueError:
+            FFT_full = BE_wave
         bin_FFT = np.conjugate(FFT_full[bin_inds])
         return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
