@@ -1103,13 +1103,6 @@ class BEodfTranslator(Translator):
         if verbose:
             print('\t\tassembly_parm_vec: {}'.format(assembly_parm_vec))
 
-        if assembly_parm_vec[2] == 0:
-            parm_dict['VS_measure_in_field_loops'] = 'out-of-field'
-        elif assembly_parm_vec[2] == 1:
-            parm_dict['VS_measure_in_field_loops'] = 'in and out-of-field'
-        else:
-            parm_dict['VS_measure_in_field_loops'] = 'in-field'
-
         parm_dict['IO_Analog_Input_1'] = '+/- 10V, FFT'
         if assembly_parm_vec[3] == 0:
             parm_dict['IO_Analog_Input_2'] = 'off'
@@ -1118,6 +1111,17 @@ class BEodfTranslator(Translator):
 
         # num_driving_bands = assembly_parm_vec[0]  # 0 = 1, 1 = 2 bands
         # band_combination_order = assembly_parm_vec[1]  # 0 parallel 1 series
+
+        if 'SS_parm_vec' not in matread.keys():
+            # BE-Line dataset
+            return parm_dict
+
+        if assembly_parm_vec[2] == 0:
+            parm_dict['VS_measure_in_field_loops'] = 'out-of-field'
+        elif assembly_parm_vec[2] == 1:
+            parm_dict['VS_measure_in_field_loops'] = 'in and out-of-field'
+        else:
+            parm_dict['VS_measure_in_field_loops'] = 'in-field'
 
         VS_parms = matread['SS_parm_vec']
         dc_amp_vec_full = matread['dc_amp_vec_full']
@@ -1164,8 +1168,7 @@ class BEodfTranslator(Translator):
             # Could not tell difference between mode = 1 or 6
             # mode 7 = multiple FORC cycles
             parm_dict['VS_mode'] = 'DC modulation mode'
-            parm_dict[
-                'VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
+            parm_dict['VS_amplitude_[V]'] = 1  # VS_parms[1] # SS_max_offset_amplitude
             parm_dict['VS_offset_[V]'] = 0
             if VS_parms[0] == 7:
                 if verbose:
@@ -1207,8 +1210,8 @@ class BEodfTranslator(Translator):
 
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
-            parm_dict[
-                'VS_offset_[V]'] = 0  # this is not correct. Fix manually when it comes to UDVS generation?
+            parm_dict['VS_offset_[V]'] = 0
+            # this is not correct. Fix manually when it comes to UDVS generation?
         else:
             # Did not see any examples of this...
             parm_dict['VS_mode'] = 'Custom'
