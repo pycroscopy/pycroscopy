@@ -85,6 +85,56 @@ def generate_bipolar_triangular_waveform(cycle_pts, cycle_frac=1, phase=0,
     return dc_vec
 
 
+def infer_bipolar_triangular_fraction_phase(slopes):
+    """
+    Infers the VS cycle fraction and phase when parameters were
+    stored in old mat files
+
+    Parameters
+    --------------------
+    slopes : list / tuple
+        Array of mean slopes of each fraction of a SINGLE cycle
+
+    Returns
+    --------------------
+    tuple:
+        fraction : float
+            Fraction of VS cycle
+        phase : float
+            Phase offset for VS cycle
+    """
+    if all([_ > 0 for _ in slopes]):
+        return 0.25, 0
+    elif all([_ < 0 for _ in slopes]):
+        return 0.25, 0.75
+    elif all([_ > 0 for _ in slopes[:2]]) and all(
+            [_ < 0 for _ in slopes[2:]]):
+        return 0.5, 0
+    elif all([_ < 0 for _ in slopes[:2]]) and all(
+            [_ > 0 for _ in slopes[2:]]):
+        return 0.5, 0.5
+    elif all([_ > 0 for _ in slopes[:1]]) and all(
+            [_ < 0 for _ in slopes[1:]]):
+        return 0.75, 0
+    elif all([_ > 0 for _ in slopes[:3]]) and all(
+            [_ < 0 for _ in slopes[3:]]):
+        return 0.75, 0.25
+    elif all([_ < 0 for _ in slopes[:1]]) and all(
+            [_ > 0 for _ in slopes[1:]]):
+        return 0.75, 0.5
+    elif all([_ < 0 for _ in slopes[:3]]) and all(
+            [_ > 0 for _ in slopes[3:]]):
+        return 0.75, 0.75
+    elif slopes[0] > 0 and slopes[1] < 0 and slopes[2] < 0 and slopes[
+        3] > 0:
+        return 1, 0
+    elif slopes[0] < 0 and slopes[1] > 0 and slopes[2] > 0 and slopes[
+        3] < 0:
+        return 1, 0.5
+    else:
+        return 0, 0
+
+
 def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 

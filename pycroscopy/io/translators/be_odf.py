@@ -16,7 +16,8 @@ import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
-    createSpecVals, requires_conjugate, generate_bipolar_triangular_waveform, nf32
+    createSpecVals, requires_conjugate, generate_bipolar_triangular_waveform, \
+    infer_bipolar_triangular_fraction_phase, nf32
 from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
@@ -153,7 +154,7 @@ class BEodfTranslator(Translator):
         elif 'old_mat_parms' in path_dict.keys():
             if verbose:
                 print('\treading parameters from old mat file')
-            parm_dict = self.__get_parms_from_old_mat(path_dict['old_mat_parms'], verbose=verbose)
+            parm_dict = self._get_parms_from_old_mat(path_dict['old_mat_parms'], verbose=verbose)
             if parm_dict['VS_steps_per_full_cycle'] == 0:
                 isBEPS=False
             else:
@@ -255,7 +256,7 @@ class BEodfTranslator(Translator):
         if 'parm_mat' in path_dict.keys():
             if verbose:
                 print('\treading BE arrays from parameters text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm = self.__read_parms_mat(path_dict['parm_mat'], isBEPS)
+            bin_inds, bin_freqs, bin_FFT, ex_wfm = self._read_parms_mat(path_dict['parm_mat'], isBEPS)
         elif 'old_mat_parms' in path_dict.keys():
             if verbose:
                 print('\treading BE arrays from old mat text file')
@@ -946,57 +947,7 @@ class BEodfTranslator(Translator):
         return bin_inds, bin_w, bin_FFT, BE_wave, dc_amp_vec_full
 
     @staticmethod
-    def __infer_frac_phase(slopes):
-        """
-        Infers the VS cycle fraction and phase when parameters were
-        stored in old mat files
-
-        Parameters
-        --------------------
-        slopes : list / tuple
-            Array of mean slopes of each fraction of a SINGLE cycle
-
-        Returns
-        --------------------
-        tuple:
-            fraction : float
-                Fraction of VS cycle
-            phase : float
-                Phase offset for VS cycle
-        """
-        if all([_ > 0 for _ in slopes]):
-            return 0.25, 0
-        elif all([_ < 0 for _ in slopes]):
-            return 0.25, 0.75
-        elif all([_ > 0 for _ in slopes[:2]]) and all(
-                [_ < 0 for _ in slopes[2:]]):
-            return 0.5, 0
-        elif all([_ < 0 for _ in slopes[:2]]) and all(
-                [_ > 0 for _ in slopes[2:]]):
-            return 0.5, 0.5
-        elif all([_ > 0 for _ in slopes[:1]]) and all(
-                [_ < 0 for _ in slopes[1:]]):
-            return 0.75, 0
-        elif all([_ > 0 for _ in slopes[:3]]) and all(
-                [_ < 0 for _ in slopes[3:]]):
-            return 0.75, 0.25
-        elif all([_ < 0 for _ in slopes[:1]]) and all(
-                [_ > 0 for _ in slopes[1:]]):
-            return 0.75, 0.5
-        elif all([_ < 0 for _ in slopes[:3]]) and all(
-                [_ > 0 for _ in slopes[3:]]):
-            return 0.75, 0.75
-        elif slopes[0] > 0 and slopes[1] < 0 and slopes[2] < 0 and slopes[
-            3] > 0:
-            return 1, 0
-        elif slopes[0] < 0 and slopes[1] > 0 and slopes[2] > 0 and slopes[
-            3] < 0:
-            return 1, 0.5
-        else:
-            return 0, 0
-
-    @staticmethod
-    def __get_parms_from_old_mat(file_path, verbose=False):
+    def _get_parms_from_old_mat(file_path, verbose=False):
         """
         Formats parameters found in the old parameters .mat file into a dictionary
         as though the dataset had a parms.txt describing it
@@ -1226,7 +1177,7 @@ class BEodfTranslator(Translator):
                 slopes.append(np.mean(np.diff(subsection)))
             if verbose:
                 print('\t\t\tslopes for quarters: {}'.format(slopes))
-            frac, phas = BEodfTranslator.__infer_frac_phase(slopes)
+            frac, phas = infer_bipolar_triangular_fraction_phase(slopes)
             if verbose:
                 print('\t\t\tCycle fraction: {}, Phase: {}'.format(frac, phas))
 
@@ -1249,7 +1200,7 @@ class BEodfTranslator(Translator):
         return parm_dict
 
     @staticmethod
-    def __read_parms_mat(file_path, is_beps):
+    def _read_parms_mat(file_path, is_beps):
         """
         Returns information about the excitation BE waveform present in the more parms.mat file
         
