@@ -260,7 +260,7 @@ class BEodfTranslator(Translator):
         elif 'old_mat_parms' in path_dict.keys():
             if verbose:
                 print('\treading BE arrays from old mat text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self.__read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
+            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
         else:
             if verbose:
                 print('\tGenerating dummy BE arrays')
@@ -285,7 +285,7 @@ class BEodfTranslator(Translator):
         if isBEPS:
             if verbose:
                 print('\tBuilding UDVS table for BEPS')
-            UDVS_labs, UDVS_units, UDVS_mat = self.__build_udvs_table(parm_dict, verbose=verbose)
+            UDVS_labs, UDVS_units, UDVS_mat = self._build_udvs_table(parm_dict, verbose=verbose)
 
             if verbose:
                 print('\tTrimming UDVS table to remove unused plot group columns')
@@ -577,25 +577,25 @@ class BEodfTranslator(Translator):
             # Do this for all BE-Line (always small enough to read in one shot)
             if verbose:
                 print('\t\tReading all raw data for BE-Line in one shot')
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
+            self._quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
             if verbose:
                 print('\t\tReading all raw BEPS (out-of-field) data in one shot')
-            self.__quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
+            self._quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
             if verbose:
                 print('\t\tReading all raw BEPS (in-field only) data in one shot')
-            self.__quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_udvs_steps'])
+            self._quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_udvs_steps'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
             if verbose:
                 print('\t\tReading all raw data for in and out of filed OR very large file')
-            self.__read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
+            self._read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
         self.h5_raw.file.flush()
 
-    def __read_beps_data(self, path_dict, udvs_steps, mode, add_pixel=False):
+    def _read_beps_data(self, path_dict, udvs_steps, mode, add_pixel=False):
         """
         Reads the imaginary and real data files pixelwise and writes to the H5 file 
         
@@ -643,8 +643,8 @@ class BEodfTranslator(Translator):
 
             step_size = int(step_size)
 
-        rand_spectra = self.__get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
-                                                 num_spectra=self.num_rand_spectra)
+        rand_spectra = self._get_random_spectra(parsers, self.h5_raw.shape[0], udvs_steps, step_size,
+                                                num_spectra=self.num_rand_spectra)
         take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
 
         self.mean_resp = np.zeros(shape=(self.h5_raw.shape[1]), dtype=np.complex64)
@@ -698,7 +698,7 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')
 
-    def __quick_read_data(self, real_path, imag_path, udvs_steps):
+    def _quick_read_data(self, real_path, imag_path, udvs_steps):
         """
         Returns information about the excitation BE waveform present in the .mat file
 
@@ -716,8 +716,8 @@ class BEodfTranslator(Translator):
         parser = BEodfParser(real_path, imag_path, self.h5_raw.shape[0], self.h5_raw.shape[1] * 4)
 
         step_size = self.h5_raw.shape[1] / udvs_steps
-        rand_spectra = self.__get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
-                                                 num_spectra=self.num_rand_spectra)
+        rand_spectra = self._get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
+                                                num_spectra=self.num_rand_spectra)
         take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
         raw_vec = parser.read_all_data()
         if take_conjugate:
@@ -902,7 +902,7 @@ class BEodfTranslator(Translator):
 
 
     @staticmethod
-    def __read_old_mat_be_vecs(file_path, verbose=False):
+    def _read_old_mat_be_vecs(file_path, verbose=False):
         """
         Returns information about the excitation BE waveform present in the 
         more parms.mat file
@@ -1242,7 +1242,7 @@ class BEodfTranslator(Translator):
 
         return BE_bin_ind, BE_bin_w, BE_bin_FFT, ex_wfm
 
-    def __build_udvs_table(self, parm_dict, verbose=False):
+    def _build_udvs_table(self, parm_dict, verbose=False):
         """
         Generates the UDVS table using the parameters
         
@@ -1426,7 +1426,7 @@ class BEodfTranslator(Translator):
         return UD_VS_table_label, UD_VS_table_unit, udvs_table
 
     @staticmethod
-    def __get_random_spectra(parsers, num_pixels, num_udvs_steps, num_bins, num_spectra=100, verbose=False):
+    def _get_random_spectra(parsers, num_pixels, num_udvs_steps, num_bins, num_spectra=100, verbose=False):
         """
         Parameters
         ----------
