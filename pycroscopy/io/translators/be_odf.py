@@ -1016,6 +1016,45 @@ class BEodfTranslator(Translator):
         parm_dict = dict()
         matread = loadmat(file_path, squeeze_me=True)
 
+        if verbose:
+            print('\t\tEstimating File params from path: {}'.format(file_path))
+        parent, _ = path.split(file_path)
+        parent, expt_name = path.split(parent)
+        if expt_name.endswith('_c'):
+            expt_name = expt_name[:-2]
+        ind = expt_name.rfind('_0')
+
+        suffix = 0
+        if ind > 0:
+            try:
+                suffix = int(expt_name[ind + 1:])
+            except ValueError:
+                # print('Could not convert "' + suffix + '" to integer')
+                pass
+            expt_name = expt_name[:ind]
+
+        parm_dict['File_file_path'] = parent
+        parm_dict['File_file_name'] = expt_name
+        parm_dict['File_file_suffix'] = suffix
+
+        header = matread['__header__'].decode("utf-8")
+        if verbose:
+            print('\t\tEstimating experiment date and time from .mat file '
+                  'header: {} '.format(header))
+        targ_str = 'Created on: '
+        try:
+            ind = header.index(targ_str)
+            header = header[ind + len(targ_str):]
+            # header = 'Wed Jan 04 13:11:21 2012'
+            dt_obj = datetime.datetime.strptime(header,
+                                                '%c')
+            # '%a %b %d %H:%M:%S %Y')
+            # parms.txt contains string formatted as: 09-Apr-2015 HH:MM:SS
+            parm_dict['File_date_and_time'] = dt_obj.strftime(
+                '%d-%b-%Y %H:%M:%S')
+        except ValueError:
+            pass
+
         parm_dict['IO_rate'] = str(int(matread['AO_rate'] / 1E+6)) + ' MHz'
 
         position_vec = matread['position_vec']
@@ -1203,45 +1242,6 @@ class BEodfTranslator(Translator):
                 print('\t\t\tCycle fraction: {}, Phase: {}'
                       ''.format(parm_dict['VS_cycle_fraction'],
                                 parm_dict['VS_cycle_phase_shift']))
-
-        if verbose:
-            print('\t\tEstimating File params from path: {}'.format(file_path))
-        parent, _ = path.split(file_path)
-        parent, expt_name = path.split(parent)
-        if expt_name.endswith('_c'):
-            expt_name = expt_name[:-2]
-        ind = expt_name.rfind('_0')
-
-        suffix = 0
-        if ind > 0:
-            try:
-                suffix = int(expt_name[ind + 1:])
-            except ValueError:
-                # print('Could not convert "' + suffix + '" to integer')
-                pass
-            expt_name = expt_name[:ind]
-
-        parm_dict['File_file_path'] = parent
-        parm_dict['File_file_name'] = expt_name
-        parm_dict['File_file_suffix'] = suffix
-
-        header = matread['__header__'].decode("utf-8")
-        if verbose:
-            print('\t\tEstimating experiment date and time from .mat file '
-                  'header: {} '.format(header))
-        targ_str = 'Created on: '
-        try:
-            ind = header.index(targ_str)
-            header = header[ind + len(targ_str):]
-            # header = 'Wed Jan 04 13:11:21 2012'
-            dt_obj = datetime.datetime.strptime(header,
-                                                '%c')
-            # '%a %b %d %H:%M:%S %Y')
-            # parms.txt contains string formatted as: 09-Apr-2015 HH:MM:SS
-            parm_dict['File_date_and_time'] = dt_obj.strftime(
-                '%d-%b-%Y %H:%M:%S')
-        except ValueError:
-            pass
 
         return parm_dict
 
