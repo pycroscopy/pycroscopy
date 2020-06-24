@@ -1484,7 +1484,7 @@ class BEodfTranslator(Translator):
         selected_steps = np.random.randint(0, num_udvs_steps, size=num_spectra)
         selected_parsers = np.random.randint(0, len(parsers), size=num_spectra)
 
-        if verbose:
+        if verbose and False:
             print('\t' * 4 + 'Selecting the following random pixels, '
                              'UDVS steps, parsers')
             print('\t' * 4 + 'num_spectra: {}'.format(num_spectra))
@@ -1492,11 +1492,15 @@ class BEodfTranslator(Translator):
             print('\t' * 4 + 'selected_steps:\n{}'.format(selected_steps))
             print('\t' * 4 + 'selected_parsers:\n{}'.format(selected_parsers))
 
-        chosen_spectra = np.zeros(shape=(num_spectra, num_bins), dtype=np.complex64)
+        chosen_spectra = list()
+        # np.zeros(shape=(num_spectra, num_bins), dtype=np.complex64)
 
         for spectra_index in range(num_spectra):
             prsr = parsers[selected_parsers[spectra_index]]
             prsr.seek_to_pixel(selected_pixels[spectra_index])
+            if verbose:
+                print('\t' * 5 + 'Seeking and reading pixel #{}'
+                                 ''.format(selected_pixels[spectra_index]))
             raw_vec = prsr.read_pixel()
             spectrogram = raw_vec.reshape(num_udvs_steps, -1)
             if verbose:
@@ -1505,12 +1509,13 @@ class BEodfTranslator(Translator):
                                  'index: {}'.format(raw_vec.shape,
                                                     spectrogram.shape,
                                                     selected_steps[spectra_index]))
-            chosen_spectra[spectra_index] = spectrogram[selected_steps[spectra_index]]
+            # chosen_spectra[spectra_index] = spectrogram[selected_steps[spectra_index]]
+            chosen_spectra.append(spectrogram[selected_steps[spectra_index]])
 
         for prsr in parsers:
             prsr.reset()
 
-        return chosen_spectra
+        return np.array(chosen_spectra)
 
 
 class BEodfParser(object):
