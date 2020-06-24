@@ -577,22 +577,36 @@ class BEodfTranslator(Translator):
             # Do this for all BE-Line (always small enough to read in one shot)
             if verbose:
                 print('\t\tReading all raw data for BE-Line in one shot')
-            self._quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
-        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
+            self._quick_read_data(path_dict['read_real'],
+                                  path_dict['read_imag'],
+                                  parm_dict['num_udvs_steps'],
+                                  verbose=verbose)
+        elif real_size < self.max_ram and \
+                parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
             if verbose:
-                print('\t\tReading all raw BEPS (out-of-field) data in one shot')
-            self._quick_read_data(path_dict['read_real'], path_dict['read_imag'], parm_dict['num_udvs_steps'])
-        elif real_size < self.max_ram and parm_dict['VS_measure_in_field_loops'] == 'in-field':
+                print('\t\tReading all raw BEPS (out-of-field) data at once')
+            self._quick_read_data(path_dict['read_real'],
+                                  path_dict['read_imag'],
+                                  parm_dict['num_udvs_steps'],
+                                  verbose=verbose)
+        elif real_size < self.max_ram and \
+                parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
             if verbose:
-                print('\t\tReading all raw BEPS (in-field only) data in one shot')
-            self._quick_read_data(path_dict['write_real'], path_dict['write_imag'], parm_dict['num_udvs_steps'])
+                print('\t\tReading all raw BEPS (in-field only) data at once')
+            self._quick_read_data(path_dict['write_real'],
+                                  path_dict['write_imag'],
+                                  parm_dict['num_udvs_steps'],
+                                  verbose=verbose)
         else:
             # Large BEPS datasets OR those with in-and-out of field
             if verbose:
-                print('\t\tReading all raw data for in and out of filed OR very large file')
-            self._read_beps_data(path_dict, UDVS_mat.shape[0], parm_dict['VS_measure_in_field_loops'], add_pix)
+                print('\t\tReading all raw data for in-and-out-of-field OR '
+                      'very large file one pixel at a time')
+            self._read_beps_data(path_dict, UDVS_mat.shape[0],
+                                 parm_dict['VS_measure_in_field_loops'],
+                                 add_pix)
         self.h5_raw.file.flush()
 
     def _read_beps_data(self, path_dict, udvs_steps, mode, add_pixel=False):
@@ -698,7 +712,8 @@ class BEodfTranslator(Translator):
 
         print('---- Finished reading files -----')
 
-    def _quick_read_data(self, real_path, imag_path, udvs_steps):
+    def _quick_read_data(self, real_path, imag_path, udvs_steps,
+                         verbose=False):
         """
         Returns information about the excitation BE waveform present in the .mat file
 
@@ -710,18 +725,25 @@ class BEodfTranslator(Translator):
             Absolute file path of the real data file
         udvs_steps : unsigned int
             Number of UDVS steps
+        verbose : bool, optional. Defdault = False
+            Whether or not to print debugging logs
         """
-        print('---- reading all data at once ----------')
-
-        parser = BEodfParser(real_path, imag_path, self.h5_raw.shape[0], self.h5_raw.shape[1] * 4)
+        parser = BEodfParser(real_path, imag_path, self.h5_raw.shape[0],
+                             self.h5_raw.shape[1] * 4)
 
         step_size = self.h5_raw.shape[1] / udvs_steps
-        rand_spectra = self._get_random_spectra([parser], self.h5_raw.shape[0], udvs_steps, step_size,
-                                                num_spectra=self.num_rand_spectra)
+        rand_spectra = self._get_random_spectra([parser],
+                                                self.h5_raw.shape[0],
+                                                udvs_steps, step_size,
+                                                num_spectra=self.num_rand_spectra,
+                                                verbose=verbose)
+        if verbose:
+            print('\t\t\tChecking if conjugate is required')
         take_conjugate = requires_conjugate(rand_spectra, cores=self._cores)
         raw_vec = parser.read_all_data()
         if take_conjugate:
-            print('Taking conjugate to ensure positive Quality factors')
+            if verbose:
+                print('\t'*4 + 'Taking conjugate for positive quality factors')
             raw_vec = np.conjugate(raw_vec)
 
         if raw_vec.shape != np.prod(self.h5_raw.shape):
@@ -735,7 +757,6 @@ class BEodfTranslator(Translator):
             raw_mat = padded_raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
         else:
             raw_mat = raw_vec.reshape(self.h5_raw.shape[0], self.h5_raw.shape[1])
-
 
         # Write to the h5 dataset:
         self.mean_resp = np.mean(raw_mat, axis=0)
@@ -1426,7 +1447,8 @@ class BEodfTranslator(Translator):
         return UD_VS_table_label, UD_VS_table_unit, udvs_table
 
     @staticmethod
-    def _get_random_spectra(parsers, num_pixels, num_udvs_steps, num_bins, num_spectra=100, verbose=False):
+    def _get_random_spectra(parsers, num_pixels, num_udvs_steps, num_bins,
+                            num_spectra=100, verbose=False):
         """
         Parameters
         ----------
@@ -1448,6 +1470,11 @@ class BEodfTranslator(Translator):
         chosen_spectra : 2D complex numpy array
             spectrogram or spectra arranged as [instance, spectrum]
         """
+        if verbose:
+            print('\t' * 4 + 'Getting random spectra for Q factor testing')
+            print('\t' * 4 + 'num_pixels: {} num_udvs_steps: {}, num_bins: {},'
+                  ' num_spectra: {}'.format(num_pixels, num_udvs_steps,
+                                            num_bins, num_spectra))
         num_pixels = int(num_pixels)
         num_udvs_steps = int(num_udvs_steps)
         num_bins = int(num_bins)
@@ -1458,7 +1485,17 @@ class BEodfTranslator(Translator):
         selected_parsers = np.random.randint(0, len(parsers), size=num_spectra)
 
         if verbose:
-            print('Selecting the following random pixels, UDVS steps, parsers')
+            print('\t' * 4 + 'num_spectra: {}'.format(num_spectra))
+            print('\t' * 4 + 'selected_pixels:\n' + '\t' * 5 +
+                  '{}'.format(selected_pixels))
+            print('\t' * 4 + 'selected_steps:\n' + '\t' * 5 +
+                  '{}'.format(selected_steps))
+            print('\t' * 4 + 'selected_parsers:\n' + '\t' * 5 +
+                  '{}'.format(selected_parsers))
+
+        if verbose:
+            print('\t' * 4 + 'Selecting the following random pixels, '
+                             'UDVS steps, parsers')
             print(np.vstack((selected_pixels, selected_steps, selected_parsers)))
 
         chosen_spectra = np.zeros(shape=(num_spectra, num_bins), dtype=np.complex64)
