@@ -748,7 +748,7 @@ class BEodfTranslator(Translator):
 
         if raw_vec.shape != np.prod(self.h5_raw.shape):
             percentage_padded = 100 * (np.prod(self.h5_raw.shape) - raw_vec.shape) / np.prod(self.h5_raw.shape)
-            print('Warning! Raw data length {} is not matching placeholder length {}. '
+            warn('Warning! Raw data length {} is not matching placeholder length {}. '
                   'Padding zeros for {}% of the data!'.format(raw_vec.shape, np.prod(self.h5_raw.shape), percentage_padded))
 
             padded_raw_vec = np.zeros(np.prod(self.h5_raw.shape), dtype = np.complex64)
