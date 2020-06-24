@@ -160,7 +160,7 @@ class BEodfTranslator(Translator):
             else:
                 isBEPS=True
         else:
-            raise IOError('No parameters file found! Cannot translate this dataset!')
+            raise FileNotFoundError('No parameters file found! Cannot translate this dataset!')
 
         if verbose:
             keys = list(parm_dict.keys())
