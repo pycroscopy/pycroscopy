@@ -165,7 +165,7 @@ class BEodfTranslator(Translator):
         if verbose:
             keys = list(parm_dict.keys())
             keys.sort()
-            print('\t:Experiment parameters:')
+            print('\tExperiment parameters:')
             for key in keys:
                 print('\t\t{} : {}'.format(key, parm_dict[key]))
 
@@ -1105,7 +1105,7 @@ class BEodfTranslator(Translator):
         parm_dict['FORC_V_low1_[V]'] = -1
         parm_dict['FORC_V_low2_[V]'] = -10
 
-        if VS_parms[0] == 0 or VS_parms[0] == 9:
+        if VS_parms[0] == 0 or VS_parms[0] == 8 or VS_parms[0] == 9:
             if verbose:
                 print('\t\tDC modulation or current mode based on VS parms[0]')
             parm_dict['VS_mode'] = 'DC modulation mode'
