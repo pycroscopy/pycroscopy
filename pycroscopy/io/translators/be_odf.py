@@ -422,26 +422,6 @@ class BEodfTranslator(Translator):
         h5_meas_group = create_indexed_group(h5_f, 'Measurement')
 
         # Write attributes at the measurement group level
-        keys = list(parm_dict.keys())
-        keys.sort()
-        """
-        for key in keys:
-            print('{} : {}'.format(key, main_dsets[0].parent.parent.attrs[key]))
-        """
-        nest_parm_dict = dict()
-        for key in ['FORC', 'VS', 'grid', 'BE', 'IO', 'File', 'Misc']:
-            nest_parm_dict[key] = dict()
-        for key in keys:
-            parts = key.split('_')
-            parent = 'Misc'
-            rem_key = key
-            if len(parts) > 1:
-                if parts[0] in nest_parm_dict.keys():
-                    parent = parts[0]
-                    rem_key = '_'.join(parts[1:])
-            nest_parm_dict[parent].update(
-                {rem_key: parm_dict[key]})
-
         if verbose:
             print('\twriting attributes to Measurement group')
             keys = list(parm_dict.keys())

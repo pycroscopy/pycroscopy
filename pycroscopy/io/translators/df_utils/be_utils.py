@@ -135,6 +135,43 @@ def infer_bipolar_triangular_fraction_phase(slopes):
         return 0, 0
 
 
+def flat_parm_dict_to_nested(parm_dict):
+    """
+    Creates a nested dictionary of parameters for Band EXcitation from the
+    standard flat dictionary
+
+    Parameters
+    ----------
+    parm_dict : dict
+        Dictionary with parameters
+
+    Returns
+    -------
+    nest_parm_dict : dict
+        Nested dictionary of the same parameters
+    """
+    keys = list(parm_dict.keys())
+    keys.sort()
+    """
+    for key in keys:
+        print('{} : {}'.format(key, main_dsets[0].parent.parent.attrs[key]))
+    """
+    nest_parm_dict = dict()
+    for key in ['FORC', 'VS', 'grid', 'BE', 'IO', 'File', 'Misc']:
+        nest_parm_dict[key] = dict()
+    for key in keys:
+        parts = key.split('_')
+        parent = 'Misc'
+        rem_key = key
+        if len(parts) > 1:
+            if parts[0] in nest_parm_dict.keys():
+                parent = parts[0]
+                rem_key = '_'.join(parts[1:])
+        nest_parm_dict[parent].update(
+            {rem_key: parm_dict[key]})
+    return nest_parm_dict
+
+
 def parmsToDict(filepath, parms_to_remove=[]):
     """
     Translates the parameters in the text file into a dictionary. 
