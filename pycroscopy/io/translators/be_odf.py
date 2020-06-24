@@ -1498,12 +1498,15 @@ class BEodfTranslator(Translator):
         for spectra_index in range(num_spectra):
             prsr = parsers[selected_parsers[spectra_index]]
             prsr.seek_to_pixel(selected_pixels[spectra_index])
-            if verbose:
+            if verbose and False:
                 print('\t' * 5 + 'Seeking and reading pixel #{}'
                                  ''.format(selected_pixels[spectra_index]))
             raw_vec = prsr.read_pixel()
+            if len(raw_vec) < 1:
+                # Empty pixel at the end of the file that may be missing
+                continue
             spectrogram = raw_vec.reshape(num_udvs_steps, -1)
-            if verbose:
+            if verbose and False:
                 print('\t' * 5 + 'reshaped raw vector for pixel of shape {} by'
                                  ' UDVS step to: {} and taking spectrum at '
                                  'index: {}'.format(raw_vec.shape,
@@ -1515,7 +1518,13 @@ class BEodfTranslator(Translator):
         for prsr in parsers:
             prsr.reset()
 
-        return np.array(chosen_spectra)
+        chosen_spectra = np.array(chosen_spectra)
+
+        if verbose:
+            print('\t' * 5 + 'chosen spectra of shape: {}'
+                             ''.format(chosen_spectra.shape))
+
+        return chosen_spectra
 
 
 class BEodfParser(object):
