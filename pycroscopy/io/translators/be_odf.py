@@ -161,8 +161,15 @@ class BEodfTranslator(Translator):
                 isBEPS=True
         else:
             raise IOError('No parameters file found! Cannot translate this dataset!')
+
         if verbose:
-            print('\tisBEPS = {}'.format(isBEPS))
+            keys = list(parm_dict.keys())
+            keys.sort()
+            print('\t:Experiment parameters:')
+            for key in keys:
+                print('\t\t{} : {}'.format(key, parm_dict[key]))
+
+            print('\n\tisBEPS = {}'.format(isBEPS))
 
         ignored_plt_grps = []
         if isBEPS:
@@ -424,10 +431,6 @@ class BEodfTranslator(Translator):
         # Write attributes at the measurement group level
         if verbose:
             print('\twriting attributes to Measurement group')
-            keys = list(parm_dict.keys())
-            keys.sort()
-            for key in keys:
-                print('\t\t{} : {}'.format(key, parm_dict[key]))
         write_simple_attrs(h5_meas_group, parm_dict)
 
         # Create the Channel group
