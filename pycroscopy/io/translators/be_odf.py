@@ -1485,18 +1485,12 @@ class BEodfTranslator(Translator):
         selected_parsers = np.random.randint(0, len(parsers), size=num_spectra)
 
         if verbose:
-            print('\t' * 4 + 'num_spectra: {}'.format(num_spectra))
-            print('\t' * 4 + 'selected_pixels:\n' + '\t' * 5 +
-                  '{}'.format(selected_pixels))
-            print('\t' * 4 + 'selected_steps:\n' + '\t' * 5 +
-                  '{}'.format(selected_steps))
-            print('\t' * 4 + 'selected_parsers:\n' + '\t' * 5 +
-                  '{}'.format(selected_parsers))
-
-        if verbose:
             print('\t' * 4 + 'Selecting the following random pixels, '
                              'UDVS steps, parsers')
-            print(np.vstack((selected_pixels, selected_steps, selected_parsers)))
+            print('\t' * 4 + 'num_spectra: {}'.format(num_spectra))
+            print('\t' * 4 + 'selected_pixels:\n{}'.format(selected_pixels))
+            print('\t' * 4 + 'selected_steps:\n{}'.format(selected_steps))
+            print('\t' * 4 + 'selected_parsers:\n{}'.format(selected_parsers))
 
         chosen_spectra = np.zeros(shape=(num_spectra, num_bins), dtype=np.complex64)
 
@@ -1505,6 +1499,12 @@ class BEodfTranslator(Translator):
             prsr.seek_to_pixel(selected_pixels[spectra_index])
             raw_vec = prsr.read_pixel()
             spectrogram = raw_vec.reshape(num_udvs_steps, -1)
+            if verbose:
+                print('\t' * 5 + 'reshaped raw vector for pixel of shape {} by'
+                                 ' UDVS step to: {} and taking spectrum at '
+                                 'index: {}'.format(raw_vec.shape,
+                                                    spectrogram.shape,
+                                                    selected_steps[spectra_index]))
             chosen_spectra[spectra_index] = spectrogram[selected_steps[spectra_index]]
 
         for prsr in parsers:
