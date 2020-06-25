@@ -520,7 +520,8 @@ class BEodfTranslator(Translator):
         if current_data_exists:                     #If a .dat file matches
             if verbose:
                 print('\tReading data in secondary channels (current)')
-            self._read_secondary_channel(h5_meas_group, aux_files)
+            self._read_secondary_channel(h5_meas_group, aux_files,
+                                         verbose=verbose)
 
         if verbose:
             print('\tClosing HDF5 file')
@@ -804,7 +805,8 @@ class BEodfTranslator(Translator):
 
         return basename, path_dict
 
-    def _read_secondary_channel(self, h5_meas_group, aux_file_path):
+    def _read_secondary_channel(self, h5_meas_group, aux_file_path,
+                                verbose=False):
         """
         Reads secondary channel stored in AI .mat file
         Currently works for in-field measurements only, but should be updated to
@@ -817,15 +819,24 @@ class BEodfTranslator(Translator):
         aux_file_path : String / Unicode
             Absolute file path of the secondary channel file.
         """
-        print('---- Reading Secondary Channel  ----------')
-        if len(aux_file_path)>1:
-            print('Detected multiple files, assuming in and out of field')
+        if verbose:
+            print('\t---------- Reading Secondary Channel  ----------')
+        if len(aux_file_path) > 1:
+            if verbose:
+                print('\t\tDetected multiple files, assuming in and out of '
+                      'field')
             aux_file_paths = aux_file_path
         else:
             aux_file_paths = list(aux_file_path)
 
         freq_index = self.h5_raw.spec_dim_labels.index('Frequency')
         num_pix = self.h5_raw.shape[0]
+
+        if verbose:
+            print('\t\tnum_pix from 1st channel: {}, freq_index: {}'
+                  ''.format(num_pix, freq_index))
+            print('\t\t Going over spec dim sizes: {}'
+                  ''.format(self.h5_raw.spec_dim_sizes))
         spectral_len = 1
 
         for i in range(len(self.h5_raw.spec_dim_sizes)):
@@ -833,24 +844,34 @@ class BEodfTranslator(Translator):
                 continue
             spectral_len = spectral_len * self.h5_raw.spec_dim_sizes[i]
 
+        if verbose:
+            print('\t\tSpectral length = {}'.format(spectral_len))
+
         #num_forc_cycles = self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("FORC")]
         #num_dc_steps =  self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("DC_Offset")]
 
         # create a new channel
-        h5_current_channel_group = create_indexed_group(h5_meas_group, 'Channel')
+        h5_current_channel_group = create_indexed_group(h5_meas_group,
+                                                        'Channel')
 
         # Copy attributes from the main channel
         copy_attributes(self.h5_raw.parent, h5_current_channel_group)
 
         # Modify attributes that are different
-        write_simple_attrs(h5_current_channel_group, {'Channel_Input': 'IO_Analog_Input_2',
-                                                      'channel_type': 'Current'}, verbose=True)
+        write_simple_attrs(h5_current_channel_group,
+                           {'Channel_Input': 'IO_Analog_Input_2',
+                            'channel_type': 'Current'},
+                           verbose=True)
 
-        #Get the reduced dimensions
-        h5_current_spec_inds, h5_current_spec_values = write_reduced_anc_dsets(h5_current_channel_group,
-                                                        self.h5_raw.h5_spec_inds,
-                                                        self.h5_raw.h5_spec_vals, 'Frequency', is_spec=True)
+        # Get the reduced dimensions
+        ret_vals = write_reduced_anc_dsets(h5_current_channel_group,
+                                           self.h5_raw.h5_spec_inds,
+                                           self.h5_raw.h5_spec_vals,
+                                           'Frequency', is_spec=True)
+        h5_current_spec_inds, h5_current_spec_values = ret_vals
 
+        if verbose:
+            print('\t\tCreated groups, wrote attributes and spec datasets')
 
         h5_current_main = write_main_dataset(h5_current_channel_group,  # parent HDF5 group
                                              (num_pix, spectral_len),  # shape of Main dataset
@@ -866,43 +887,71 @@ class BEodfTranslator(Translator):
                                              dtype=np.float32,  # data type / precision
                                              main_dset_attrs={'IO_rate': 4E+6, 'Amplifier_Gain': 9})
 
-        # Now calculate the number of positions that can be stored in memory in one go.
+        if verbose:
+            print('\t\tCreated empty main dataset:\n{}'
+                  ''.format(h5_current_main))
+
+        # calculate the # positions that can be stored in memory in one go.
         b_per_position = np.float32(0).itemsize * spectral_len
 
         max_pos_per_read = int(np.floor((get_available_memory()) / b_per_position))
 
-        # if self._verbose:
-        print('Allowed to read {} pixels per chunk'.format(max_pos_per_read))
+        if verbose:
+            print('\t\tAllowed to read {} pixels per chunk'
+                  ''.format(max_pos_per_read))
+            print('\t\tStarting to read raw binary data')
 
-        #Open the read and write files and write them to the hdf5 file
+        # Open the read and write files and write them to the hdf5 file
         for aux_file in aux_file_paths:
             if 'write' in aux_file:
                 infield = True
             else:
-                infield=False
+                infield = False
+
+            if verbose:
+                print('\t' * 3 + 'Reading file: {}'.format(aux_file))
 
             cur_file = open(aux_file, "rb")
 
             start_pix = 0
 
             while start_pix < num_pix:
+                cur_file.seek(start_pix * b_per_position, 0)
+
                 end_pix = min(num_pix, start_pix + max_pos_per_read)
 
-                # TODO: Fix for when it won't fit in memory.
+                pos_to_read = end_pix - start_pix
+                bytes_to_read = pos_to_read * b_per_position
 
-                #if max_pos_per_read * b_per_position > num_pix * b_per_position:
-                cur_data = np.frombuffer(cur_file.read(), dtype='f')
-                #else:
-                #cur_data = np.frombuffer(cur_file.read(max_pos_per_read * b_per_position), dtype='f')
+                if verbose:
+                    print('\t' * 4 + 'Reading pixels {} to {} - {} bytes'
+                          ''.format(start_pix, end_pix, bytes_to_read))
 
-                cur_data = cur_data.reshape(end_pix - start_pix, spectral_len//2)
+                cur_data = np.frombuffer(cur_file.read(bytes_to_read),
+                                         dtype='f')
+
+                if verbose:
+                    print('\t' * 4 + 'Read vector of shape: {}'
+                                     ''.format(cur_data.shape))
+                    print('\t' * 4 + 'Reshaping to ({}, {})'
+                                     ''.format(pos_to_read, spectral_len//2))
+
+                data_2d = cur_data.reshape(pos_to_read, spectral_len//2)
 
                 # Write to h5
                 if infield:
-                    h5_current_main[start_pix:end_pix, ::2] = cur_data
+                    h5_current_main[start_pix:end_pix, ::2] = data_2d
                 else:
-                    h5_current_main[start_pix:end_pix, 1::2] = cur_data
+                    h5_current_main[start_pix:end_pix, 1::2] = data_2d
+
+                h5_current_main.file.flush()
+
                 start_pix = end_pix
+
+            if verbose:
+                print('\t' * 4 + 'Done reading binary file')
+
+            cur_file.close()
 
 
     @staticmethod
