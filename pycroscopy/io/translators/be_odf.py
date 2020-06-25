@@ -861,7 +861,7 @@ class BEodfTranslator(Translator):
         write_simple_attrs(h5_current_channel_group,
                            {'Channel_Input': 'IO_Analog_Input_2',
                             'channel_type': 'Current'},
-                           verbose=True)
+                           verbose=False)
 
         # Get the reduced dimensions
         ret_vals = write_reduced_anc_dsets(h5_current_channel_group,
@@ -885,7 +885,8 @@ class BEodfTranslator(Translator):
                                              h5_spec_inds=h5_current_spec_inds,
                                              h5_spec_vals=h5_current_spec_values,
                                              dtype=np.float32,  # data type / precision
-                                             main_dset_attrs={'IO_rate': 4E+6, 'Amplifier_Gain': 9})
+                                             main_dset_attrs={'IO_rate': 4E+6, 'Amplifier_Gain': 9},
+                                             verbose=verbose)
 
         if verbose:
             print('\t\tCreated empty main dataset:\n{}'
