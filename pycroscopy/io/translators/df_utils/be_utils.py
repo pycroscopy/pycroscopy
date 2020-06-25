@@ -1198,9 +1198,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
              'take a while. Please be patient')
 
         for step in range(numsteps):
-            if verbose:
-                print('\t' * 4 + 'Working on step: {} of {}'.format(step,
-                                                                    numsteps))
+            print('\t' * 4 + 'Working on step: {} of {}'.format(step,
+                                                                numsteps))
             """
             Calculate the cycle number if needed
             """
