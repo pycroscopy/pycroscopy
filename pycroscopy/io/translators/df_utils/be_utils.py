@@ -770,7 +770,7 @@ def trimUDVS(udvs_mat, udvs_labs, udvs_units, target_col_names):
 
 
 def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
-                   udvs_labs, udvs_units):
+                   udvs_labs, udvs_units, verbose=False):
     """
     This function will determine the proper Spectroscopic Value array for the 
     dataset
@@ -793,6 +793,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         labels for the columns of the UDVS matrix
     udvs_units : list of strings
         units for the columns of the UDVS matrix
+    verbose : bool, optional. Default = False
+        Whether or not to print debugging print statements
     
     Returns
     -----------
@@ -881,7 +883,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         return iSpec_var, ds_spec_val_mat
 
-    def __BEPSVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict, udvs_labs, udvs_units):
+    def __BEPSVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
+                   udvs_labs, udvs_units, verbose=False):
         """
         Returns the Spectroscopic Value array for a BEPS dataset
     
@@ -890,7 +893,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         udvs_mat : hdf5 dataset reference to UDVS dataset
         spec_inds : numpy array containing Spectroscopic indices table 
         bin_freqs : 1D numpy array of frequencies
-        bin_wfm_type : numpy array containing the waveform type for each frequency index
+        bin_wfm_type : numpy array containing the waveform type for each
+            frequency index
         parm_dict : parameter dictinary for dataset
         udvs_labs : list of labels for the columns of the UDVS matrix
         udvs_units : list of units for the columns of the UDVS matrix
@@ -907,27 +911,42 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         if mode == 'DC modulation mode' or mode == 'current mode':
             """ 
-            First we call the FindSpecVals function to get the columns in UDVS of  
-            interest and return a first pass on the spectral value array 
+            First we call the FindSpecVals function to get the columns in UDVS 
+            of interest and return a first pass on the spectral value array 
             """
+            if verbose:
+                print('\t' * 3 + 'DC modulation mode / current mode')
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            if verbose:
+                print('\t' * 3 + 'Generated spec vals. Calling __BEPSDC')
 
-            return __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
+            return __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
+                            parm_dict)
 
         elif mode == 'AC modulation mode with time reversal':
             """ 
-            First we call the FindSpecVals function to get the columns in UDVS of  
-            interest and return a first pass on the spectral value array 
+            First we call the FindSpecVals function to get the columns in UDVS
+            of interest and return a first pass on the spectral value array 
             """
+            if verbose:
+                print('\t' * 3 + 'AC modulation')
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            if verbose:
+                print('\t' * 3 + 'Generated spec vals. Calling __BEPSAC')
 
-            return __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict)
+            return __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
+                            parm_dict)
         else:
             """ 
-            First we call the FindSpecVals function to get the columns in UDVS of  
-            interest and return a first pass on the spectral value array 
+            First we call the FindSpecVals function to get the columns in UDVS
+            of interest and return a first pass on the spectral value array 
             """
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=True)
+            if verbose:
+                print('\t' * 3 + 'user defined voltage spectroscopy')
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
+                                                         usr_defined=True)
+            if verbose:
+                print('\t' * 3 + 'Generated spec vals. Calling __BEPSgen')
 
             return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
                              parm_dict, udvs_labs, iSpecVals, udvs_units)
@@ -1280,6 +1299,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
     """
     dtype = parm_dict['data_type']
     if dtype == 'BELineData':
+        if verbose:
+            print('\t\tWorking on BE Line data')
         ds_spec_val_mat = bin_freqs.reshape([1, -1])
         ds_spec_inds_mat = np.zeros_like(ds_spec_val_mat, dtype=np.int32)
         ds_spec_val_labs = ['Frequency']
@@ -1288,17 +1309,26 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_inds_mat[0, :] = np.arange(ds_spec_val_mat.shape[1])
 
     elif dtype == 'BEPSData':
-        # Call __BEPSVals to finish the refining of the Spectroscopic Value array        
-        ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = __BEPSVals(udvs_mat, spec_inds,
-                                                                                                bin_freqs, bin_wfm_type,
-                                                                                                parm_dict, udvs_labs,
-                                                                                                udvs_units)
+        if verbose:
+            print('\t\tWorking on BEPS data. Calling __BEPSVals')
+        # Call BEPSVals to finish the refining of the Spectroscopic Value array
+        ret_vals = __BEPSVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type,
+                              parm_dict, udvs_labs, udvs_units,
+                              verbose=verbose)
+        if verbose:
+            print('\t\tGenerated values from BEPSVals internal function')
+        ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = ret_vals
         mode = parm_dict['VS_mode']
         ds_spec_inds_mat = create_spec_inds_from_vals(ds_spec_val_mat)
+        if verbose:
+            print('\t\tReturned from create_spec_inds_from_vals')
 
         # Make sure that the frequencies reset properly for user defined case
         spec_start = 0
         if mode == 'load user defined VS Wave from file':
+            if verbose:
+                print('\t\tMaking sure that the frequencies reset properly '
+                      'for user defined voltage spectroscopy case')
             wave_form = udvs_mat[:, 3]
             for wave in wave_form:
                 wave_freqs = bin_freqs[np.argwhere(bin_wfm_type == wave)].squeeze()

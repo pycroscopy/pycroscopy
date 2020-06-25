@@ -370,13 +370,10 @@ class BEodfTranslator(Translator):
         # This is an old and legacy way of doing things. Ideally, all we would need ot do is just get the unit values
         if verbose:
             print('\tCalculating spectroscopic values')
-        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = createSpecVals(UDVS_mat,
-                                                                                                     old_spec_inds,
-                                                                                                     bin_freqs,
-                                                                                                     exec_bin_vec,
-                                                                                                     parm_dict,
-                                                                                                     UDVS_labs,
-                                                                                                     UDVS_units)
+        ret_vals = createSpecVals(UDVS_mat, old_spec_inds, bin_freqs,
+                                  exec_bin_vec, parm_dict, UDVS_labs,
+                                  UDVS_units, verbose=verbose)
+        spec_vals, spec_inds, spec_vals_labs, spec_vals_units, spec_vals_labs_names = ret_vals
 
         if verbose:
             print('\t\tspec_vals_labs: {}'.format(spec_vals_labs))
