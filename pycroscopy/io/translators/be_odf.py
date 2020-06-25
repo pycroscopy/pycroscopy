@@ -1220,6 +1220,12 @@ class BEodfTranslator(Translator):
                 # These numbers seemed to match with the v_dc vector
                 parm_dict['VS_number_of_cycles'] = int(VS_parms[2]) * 2
                 parm_dict['VS_steps_per_full_cycle'] = int(VS_parms[7] // 2)
+            if VS_parms[0] == 4:
+                # cycles are not tracked:
+                slopes = np.diff(dc_amp_vec_full)
+                num_cycles = len(np.where(slopes < 0)[0]) + 1
+                parm_dict['VS_number_of_cycles'] = num_cycles
+                parm_dict['VS_steps_per_full_cycle'] = int(VS_parms[7] // num_cycles)
 
             parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             parm_dict['VS_amplitude_[V]'] = 0.5 * VS_final_loop_amp
