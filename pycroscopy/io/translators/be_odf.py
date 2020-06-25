@@ -821,34 +821,25 @@ class BEodfTranslator(Translator):
         """
         if verbose:
             print('\t---------- Reading Secondary Channel  ----------')
-        if len(aux_file_path) > 1:
-            if verbose:
-                print('\t\tDetected multiple files, assuming in and out of '
-                      'field')
+        if isinstance(aux_file_path, (list, tuple)):
             aux_file_paths = aux_file_path
         else:
             aux_file_paths = list(aux_file_path)
 
-        freq_index = self.h5_raw.spec_dim_labels.index('Frequency')
-        num_pix = self.h5_raw.shape[0]
+        is_in_out_field = 'Field' in self.h5_raw.spec_dim_labels
 
-        if verbose:
-            print('\t\tnum_pix from 1st channel: {}, freq_index: {}'
-                  ''.format(num_pix, freq_index))
-            print('\t\t Going over spec dim sizes: {}'
-                  ''.format(self.h5_raw.spec_dim_sizes))
         spectral_len = 1
-
-        for i in range(len(self.h5_raw.spec_dim_sizes)):
-            if i == freq_index:
+        for dim_name, dim_size in zip(self.h5_raw.spec_dim_labels,
+                                      self.h5_raw.spec_dim_sizes):
+            if dim_name == 'Frequency':
                 continue
-            spectral_len = spectral_len * self.h5_raw.spec_dim_sizes[i]
+            spectral_len = spectral_len * dim_size
 
+        num_pix = self.h5_raw.shape[0]
         if verbose:
-            print('\t\tSpectral length = {}'.format(spectral_len))
-
-        #num_forc_cycles = self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("FORC")]
-        #num_dc_steps =  self.h5_raw.spec_dim_sizes[self.h5_raw.spec_dim_labels.index("DC_Offset")]
+            print('\t\tExpecting this channel to be of shape: ({}, {})'
+                  ''.format(num_pix, spectral_len))
+            print('\t\tis_in_out_field: {}'.format(is_in_out_field))
 
         # create a new channel
         h5_current_channel_group = create_indexed_group(h5_meas_group,
@@ -890,6 +881,13 @@ class BEodfTranslator(Translator):
         if verbose:
             print('\t\tCreated empty main dataset:\n{}'
                   ''.format(h5_current_main))
+
+        if is_in_out_field:
+            if verbose:
+                print('\t\tHalving the spectral length per binary file to: {} '
+                      'since this measurement has in and out of field'
+                      ''.format(spectral_len // 2))
+            spectral_len = spectral_len // 2
 
         # calculate the # positions that can be stored in memory in one go.
         b_per_position = np.float32(0).itemsize * spectral_len
@@ -934,16 +932,20 @@ class BEodfTranslator(Translator):
                     print('\t' * 4 + 'Read vector of shape: {}'
                                      ''.format(cur_data.shape))
                     print('\t' * 4 + 'Reshaping to ({}, {})'
-                                     ''.format(pos_to_read, spectral_len//2))
+                                     ''.format(pos_to_read, spectral_len))
 
-                data_2d = cur_data.reshape(pos_to_read, spectral_len//2)
+                data_2d = cur_data.reshape(pos_to_read, spectral_len)
 
                 # Write to h5
-                if infield:
-                    h5_current_main[start_pix:end_pix, ::2] = data_2d
+                if is_in_out_field:
+                    if infield:
+                        h5_current_main[start_pix:end_pix, ::2] = data_2d
+                    else:
+                        h5_current_main[start_pix:end_pix, 1::2] = data_2d
                 else:
-                    h5_current_main[start_pix:end_pix, 1::2] = data_2d
+                    h5_current_main[start_pix:end_pix, :] = data_2d
 
+                # Flush to make sure that data is committed to HDF5
                 h5_current_main.file.flush()
 
                 start_pix = end_pix
