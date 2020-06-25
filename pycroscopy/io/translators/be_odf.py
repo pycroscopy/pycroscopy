@@ -384,6 +384,10 @@ class BEodfTranslator(Translator):
             for key, val in unit_vals.items():
                 print('\t\t{} : length: {}, values:\n\t\t\t{}'.format(key, len(val), val))
 
+        if spec_inds.shape[1] != tot_bins:
+            raise ValueError('Second axis of spectroscopic indices: {} not '
+                             'matching with second axis of the expected main '
+                             'dataset: {}'.format(spec_inds.shape, tot_bins))
 
         # Not sure what is happening here but this should work.
         spec_dim_dict = dict()
