@@ -1163,7 +1163,7 @@ class BEodfTranslator(Translator):
         parm_dict['FORC_V_low1_[V]'] = -1
         parm_dict['FORC_V_low2_[V]'] = -10
 
-        if VS_parms[0] == 0 or VS_parms[0] == 8 or VS_parms[0] == 9:
+        if VS_parms[0] in [0, 8, 9]:
             if verbose:
                 print('\t\tDC modulation or current mode based on VS parms[0]')
             parm_dict['VS_mode'] = 'DC modulation mode'
@@ -1175,7 +1175,7 @@ class BEodfTranslator(Translator):
             parm_dict['VS_offset_[V]'] = np.max(dc_amp_vec_full) + np.min(
                 dc_amp_vec_full)
 
-        elif VS_parms[0] == 1 or VS_parms[0] == 6 or VS_parms[0] == 7:
+        elif VS_parms[0] in [1, 6, 7]:
             if verbose:
                 print('\t\tFORC, based on VS parms[0]')
             # Could not tell difference between mode = 1 or 6
@@ -1213,7 +1213,7 @@ class BEodfTranslator(Translator):
                 parm_dict['FORC_V_low1_[V]'] = VS_start_V - VS_start_loop_amp
                 parm_dict['FORC_V_low2_[V]'] = VS_start_V - VS_final_loop_amp
 
-        elif VS_parms[0] == 2 or VS_parms[0] == 3:
+        elif VS_parms[0] in [2, 3, 4]:
             if verbose:
                 print('\t\tAC Spectroscopy with time reversal, based on VS parms')
             if VS_parms[0] == 3:
@@ -1230,7 +1230,7 @@ class BEodfTranslator(Translator):
             parm_dict['VS_mode'] = 'Custom'
 
         # Assigning the phase and fraction for bi-polar triangular waveforms
-        if VS_parms[0] not in [2, 3]:
+        if VS_parms[0] not in [2, 3, 4]:
             if verbose:
                 print('\t\tEstimating phase and fraction based on slopes of first cycle')
             slopes = []
