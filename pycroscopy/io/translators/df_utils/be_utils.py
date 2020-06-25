@@ -1192,9 +1192,15 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         FORC = -1
         cycle = -1
+
+        # TODO: Horribly slow process. Speed this up!
+        warn('Generating spectroscopic values for AC spectroscopy. This can '
+             'take a while. Please be patient')
+
         for step in range(numsteps):
             if verbose:
-                print('\t' * 4 + 'Working on step: {}'.format(step))
+                print('\t' * 4 + 'Working on step: {} of {}'.format(step,
+                                                                    numsteps))
             """
             Calculate the cycle number if needed
             """
@@ -1219,9 +1225,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Loop over bins
             """
+
+            # TODO: Consider parallel computing here or vectorization
             for thisbin in this_wave:
-                if verbose:
-                    print('\t' * 5 + 'Working on bin: {}'.format(thisbin))
 
                 colVal = np.array([[bin_freqs[thisbin]],
                                    [inSpecVals[step][0]],
