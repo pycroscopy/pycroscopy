@@ -935,7 +935,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSAC')
 
             return __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
-                            parm_dict)
+                            parm_dict, verbose=verbose)
         else:
             """ 
             First we call the FindSpecVals function to get the columns in UDVS
@@ -1109,7 +1109,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
-    def __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
+    def __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict,
+                 verbose=False):
         """
         Calculates Spectroscopic Values for BEPS data in AC modulation mode with time 
                 reversal
@@ -1192,6 +1193,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         FORC = -1
         cycle = -1
         for step in range(numsteps):
+            if verbose:
+                print('\t' * 4 + 'Working on step: {}'.format(step))
             """
             Calculate the cycle number if needed
             """
@@ -1217,7 +1220,12 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Loop over bins
             """
             for thisbin in this_wave:
-                colVal = np.array([[bin_freqs[thisbin]], [inSpecVals[step][0]], [forrev]])
+                if verbose:
+                    print('\t' * 5 + 'Working on bin: {}'.format(thisbin))
+
+                colVal = np.array([[bin_freqs[thisbin]],
+                                   [inSpecVals[step][0]],
+                                   [forrev]])
                 """
                 Add entries to cycle and/or FORC as needed
                 """
