@@ -828,6 +828,15 @@ class BEodfTranslator(Translator):
 
         is_in_out_field = 'Field' in self.h5_raw.spec_dim_labels
 
+        if not is_in_out_field and len(aux_file_paths) > 1:
+            # TODO: Find a better way to handle this
+            warn('\t\tField was not varied but found more than one file for '
+                 'secondary channel: {}.\n\t\tResults will be overwritten'
+                 ''.format([path.split(item)[-1] for item in aux_file_paths]))
+        elif is_in_out_field and len(aux_file_paths) == 1:
+            warn('\t\tField was varied but only one data file for secondary'
+                 'channel was found. Half the data will be zeros')
+
         spectral_len = 1
         for dim_name, dim_size in zip(self.h5_raw.spec_dim_labels,
                                       self.h5_raw.spec_dim_sizes):
