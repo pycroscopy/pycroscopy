@@ -107,7 +107,8 @@ class BESHOfitter(Fitter):
         Creates the h5 group, guess dataset, corresponding spectroscopic datasets and also
         links the guess dataset to the spectroscopic datasets.
         """
-        self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
+        self.h5_results_grp = create_results_group(self.h5_main,
+                                                   self.process_name,
                                                    h5_parent_group=self._h5_target_group)
         write_simple_attrs(self.h5_results_grp, self.parms_dict)
 
@@ -118,14 +119,27 @@ class BESHOfitter(Fitter):
                                {'data_type': get_attr(self.h5_main.file,
                                                       'data_type')})
 
-        h5_sho_inds, h5_sho_vals = write_reduced_anc_dsets(self.h5_results_grp, self.h5_main.h5_spec_inds,
-                                                            self.h5_main.h5_spec_vals, self._fit_dim_name)
+        ret_vals = write_reduced_anc_dsets(self.h5_results_grp,
+                                           self.h5_main.h5_spec_inds,
+                                           self.h5_main.h5_spec_vals,
+                                           self._fit_dim_name,
+                                           verbose=self.verbose)
 
-        self._h5_guess = write_main_dataset(self.h5_results_grp, (self.h5_main.shape[0], self.num_udvs_steps), 'Guess', 'SHO',
-                                           'compound', None, None, h5_pos_inds=self.h5_main.h5_pos_inds,
-                                           h5_pos_vals=self.h5_main.h5_pos_vals, h5_spec_inds=h5_sho_inds,
-                                           h5_spec_vals=h5_sho_vals, chunks=(1, self.num_udvs_steps), dtype=sho32,
-                                           main_dset_attrs=self.parms_dict, verbose=self.verbose)
+        h5_sho_inds, h5_sho_vals = ret_vals
+
+        self._h5_guess = write_main_dataset(self.h5_results_grp,
+                                            (self.h5_main.shape[0],
+                                             self.num_udvs_steps),
+                                            'Guess', 'SHO', 'compound',
+                                            None, None,
+                                            h5_pos_inds=self.h5_main.h5_pos_inds,
+                                            h5_pos_vals=self.h5_main.h5_pos_vals,
+                                            h5_spec_inds=h5_sho_inds,
+                                            h5_spec_vals=h5_sho_vals,
+                                            chunks=(1, self.num_udvs_steps),
+                                            dtype=sho32,
+                                            main_dset_attrs=self.parms_dict,
+                                            verbose=self.verbose)
 
         # Does not make sense to propagate region refs - nobody uses them
         # copy_region_refs(self.h5_main, self._h5_guess)
