@@ -13,7 +13,7 @@ from enum import Enum
 from warnings import warn
 import numpy as np
 from functools import partial
-from pyUSID.io.hdf_utils import copy_region_refs, write_simple_attrs, \
+from pyUSID.io.hdf_utils import write_simple_attrs, \
     create_results_group, write_reduced_anc_dsets, create_empty_dataset, \
     write_main_dataset, get_attr
 from pyUSID.io.usi_data import USIDataset
@@ -127,7 +127,8 @@ class BESHOfitter(Fitter):
                                            h5_spec_vals=h5_sho_vals, chunks=(1, self.num_udvs_steps), dtype=sho32,
                                            main_dset_attrs=self.parms_dict, verbose=self.verbose)
 
-        copy_region_refs(self.h5_main, self._h5_guess)
+        # Does not make sense to propagate region refs - nobody uses them
+        # copy_region_refs(self.h5_main, self._h5_guess)
 
         self._h5_guess.file.flush()
 
