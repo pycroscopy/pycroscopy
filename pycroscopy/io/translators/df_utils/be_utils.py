@@ -1128,7 +1128,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 ds_spec_val_mat.append(col_val)
 
             if verbose:
-                print('\t' * 4 + 'At step {} ds_spec_val_mat: '.format(step, ds_spec_val_mat.shape))
+                print('\t' * 4 + 'At step {} ds_spec_val_mat: ({}, {})'.format(step, len(ds_spec_val_mat), len(ds_spec_val_mat[0])))
 
         ds_spec_val_mat = np.array(ds_spec_val_mat).T
 
