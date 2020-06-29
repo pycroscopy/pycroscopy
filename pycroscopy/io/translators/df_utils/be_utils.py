@@ -921,7 +921,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSDC')
 
             return __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
-                            parm_dict)
+                            parm_dict, verbose=verbose)
 
         elif mode == 'AC modulation mode with time reversal':
             """ 
@@ -951,7 +951,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             return __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type,
                              parm_dict, udvs_labs, iSpecVals, udvs_units)
 
-    def __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict):
+    def __BEPSDC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict,
+                 verbose=False):
         """
         Calculates Spectroscopic Values for BEPS data in DC modulation mode
         
@@ -962,6 +963,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         bin_freqs : 1D numpy array of frequencies
         bin_wfm_type : numpy array containing the waveform type for each frequency index
         parm_dict : parameter dictinary for dataset
+        verbose: bool, optional. Default = False
+            Whether or not to print statements for debugging
                         
         Returns
         -------
@@ -1062,13 +1065,16 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow, 1])
+        ds_spec_val_mat = list()  # np.empty([nrow, 1])
 
         """
         Main loop over all steps
         """
         FORC = -1
         cycle = -1
+
+        # TODO: Make this horribly slow double for loop much faster!
+
         for step in range(numsteps):
             """
             Calculate the cycle number if needed
@@ -1089,11 +1095,37 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
 
+            suffix = [inSpecVals[step][0]]
+            if field_type == 'in and out-of-field':
+                suffix.append(field)
+            if hascycles:
+                suffix.append(cycle)
+            if hasFORCS:
+                suffix.append(FORC)
+            if verbose:
+                print('\t' * 5 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
+                      ''.format(field_type, hascycles, hasFORCS))
+                print('\t' * 5 + 'Suffix: {}'.format(suffix))
             """
             Loop over bins
             """
+            # TODO: Vectorize this loop at a minimum
+
             for thisbin in this_wave:
-                colVal = np.array([[bin_freqs[thisbin]], [inSpecVals[step][0]]])
+                col_val = [bin_freqs[thisbin]]
+
+                """
+                Add entries for field, cycle and/or FORC as needed
+                """
+                # TODO: Why not add these later as columns instead of per row?
+                col_val += suffix
+
+                ds_spec_val_mat.append(col_val)
+
+                # The OLD WAY:
+
+                colVal = np.array(
+                    [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
 
                 if field_type == 'in and out-of-field':
                     colVal = np.append(colVal, [[field]], axis=0)
@@ -1105,7 +1137,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 if hasFORCS:
                     colVal = np.append(colVal, [[FORC]], axis=0)
 
-                ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
+                if verbose:
+                    print('\t' * 6 + 'Old: {} New: {}'.format(colVal, col_val))
+
+        ds_spec_val_mat = np.array(ds_spec_val_mat)
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
@@ -1121,7 +1156,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         inSpecVals : list holding initial guess at spectral values 
         bin_freqs : 1D numpy array of frequencies
         bin_wfm_type : numpy array containing the waveform type for each frequency index
-        parm_dict : parameter dictinary for dataset            
+        parm_dict : parameter dictinary for dataset
+        verbose: bool, optional. Default = False
+            Whether or not to print statements for debugging
             
         Returns
         -------
@@ -1185,7 +1222,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow, 1])
+        ds_spec_val_mat = list()  # np.empty([nrow, 1])
 
         """
         Main loop over all steps
@@ -1198,8 +1235,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
              'take a while. Please be patient')
 
         for step in range(numsteps):
-            print('\t' * 4 + 'Working on step: {} of {}'.format(step,
-                                                                numsteps))
+            if verbose:
+                print('\t' * 4 + 'Working on step: {} of {}'.format(step,
+                                                                    numsteps))
             """
             Calculate the cycle number if needed
             """
@@ -1239,7 +1277,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 if hasFORCS:
                     colVal = np.append(colVal, [[FORC]], axis=0)
 
-                ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
+                ds_spec_val_mat.append(colVal)
+
+        ds_spec_val_mat = np.array(ds_spec_val_mat)
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
 
