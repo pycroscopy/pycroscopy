@@ -1113,7 +1113,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             # TODO: Vectorize this loop at a minimum
 
-            this_step = list()
+            # this_step = list()
             for thisbin in this_wave:
                 col_val = [bin_freqs[thisbin]]
 
@@ -1123,9 +1123,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 # TODO: Why not add these later as columns instead of per row?
                 col_val += suffix
 
-                this_step.append(col_val)
+                # this_step.append(col_val)
 
-            ds_spec_val_mat.append(this_step)
+                ds_spec_val_mat.append(col_val)
 
 
         ds_spec_val_mat = np.array(ds_spec_val_mat).T
