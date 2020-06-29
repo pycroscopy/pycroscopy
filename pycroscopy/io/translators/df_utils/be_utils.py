@@ -1073,6 +1073,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         FORC = -1
         cycle = -1
 
+        if verbose:
+            print('\t' * 4 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
+                  ''.format(field_type, hascycles, hasFORCS))
+
         # TODO: Make this horribly slow double for loop much faster!
 
         for step in range(numsteps):
@@ -1103,15 +1107,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if hasFORCS:
                 suffix.append(FORC)
             if verbose:
-                print('\t' * 4 + 'DC offset: {}, field_type: {}, hascycles: {}'
-                      ', hasFORCS: {}'.format(suffix[0], field_type, hascycles,
-                                              hasFORCS))
-                print('\t' * 4 + 'Suffix: {}'.format(suffix))
+                print('\t' * 4 + 'Step: {}: Suffix: {}'.format(step, suffix))
             """
             Loop over bins
             """
             # TODO: Vectorize this loop at a minimum
 
+            this_step = list()
             for thisbin in this_wave:
                 col_val = [bin_freqs[thisbin]]
 
@@ -1121,9 +1123,12 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 # TODO: Why not add these later as columns instead of per row?
                 col_val += suffix
 
-                ds_spec_val_mat.append(col_val)
+                this_step.append(col_val)
 
-        ds_spec_val_mat = np.array(ds_spec_val_mat)
+            ds_spec_val_mat.append(this_step)
+
+
+        ds_spec_val_mat = np.array(ds_spec_val_mat).T
 
         if verbose:
             print('\t' * 4 + 'Shape of spec val mat: {}'.format(ds_spec_val_mat.shape))
