@@ -1103,9 +1103,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if hasFORCS:
                 suffix.append(FORC)
             if verbose:
-                print('\t' * 5 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
-                      ''.format(field_type, hascycles, hasFORCS))
-                print('\t' * 5 + 'Suffix: {}'.format(suffix))
+                print('\t' * 4 + 'DC offset: {}, field_type: {}, hascycles: {}'
+                      ', hasFORCS: {}'.format(suffix[0], field_type, hascycles,
+                                              hasFORCS))
+                print('\t' * 4 + 'Suffix: {}'.format(suffix))
             """
             Loop over bins
             """
@@ -1122,25 +1123,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat.append(col_val)
 
-                # The OLD WAY:
-
-                colVal = np.array(
-                    [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
-
-                if field_type == 'in and out-of-field':
-                    colVal = np.append(colVal, [[field]], axis=0)
-                """
-                Add entries to cycle and/or FORC as needed
-                """
-                if hascycles:
-                    colVal = np.append(colVal, [[cycle]], axis=0)
-                if hasFORCS:
-                    colVal = np.append(colVal, [[FORC]], axis=0)
-
-                if verbose:
-                    print('\t' * 6 + 'Old: {} New: {}'.format(colVal, col_val))
-
         ds_spec_val_mat = np.array(ds_spec_val_mat)
+
+        if verbose:
+            print('\t' * 4 + 'Shape of spec val mat: {}'.format(ds_spec_val_mat.shape))
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
