@@ -1244,10 +1244,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = np.empty([nrow, 1])
         ds_spec_val_mat_2 = list()
-
-        also_old_method = True
 
         """
         Main loop over all steps
@@ -1260,7 +1257,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
              'take a while. Please be patient')
 
         for step in range(numsteps):
-            if verbose:
+            if verbose and False:
                 print('\t' * 4 + 'Working on step: {} of {}'.format(step,
                                                                     numsteps))
             """
@@ -1289,7 +1286,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose:
+            if verbose and False:
                 print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
                 print('\t' * 5 + 'this_wave of shape: {}'.format(
                     this_wave.shape))
@@ -1299,22 +1296,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
             # TODO: Consider parallel computing here or vectorization
             for thisbin in this_wave:
-                if also_old_method:
-                    colVal = np.array([[bin_freqs[thisbin]],
-                                       [inSpecVals[step][0]],
-                                       [forrev]])
-                    """
-                    Add entries to cycle and/or FORC as needed
-                    """
-                    if hascycles:
-                        colVal = np.append(colVal, [[cycle]], axis=0)
-                    if hasFORCS:
-                        colVal = np.append(colVal, [[FORC]], axis=0)
-
-                    ds_spec_val_mat = np.append(ds_spec_val_mat, colVal,
-                                                axis=1)
-
-                # #################### NEW METHOD #############################
 
                 col_val = [bin_freqs[thisbin]]
                 """
@@ -1324,27 +1305,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat_2.append(col_val)
 
-            if verbose:
-                blah = ''
-                if also_old_method:
-                    blah = ', ds_spec_val_mat: {}'.format(
-                        ds_spec_val_mat.shape)
-                print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {}) {}'
-                                 ''.format(step, len(ds_spec_val_mat_2),
-                                           len(ds_spec_val_mat_2[0]), blah))
-
         ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
 
         if verbose:
-            blah = ''
-            if also_old_method:
-                blah = ', old: {}'.format(ds_spec_val_mat.shape)
-                blah += ', Matrices identical: {}'.format(
-                    np.allclose(ds_spec_val_mat[:, 1:], ds_spec_val_mat_2))
-            print('\t' * 4 + 'Shape of spec val mats: new: {} {}'
-                             ''.format(ds_spec_val_mat_2.shape, blah))
+            print('\t' * 4 + 'Shape of spec val mats: {}'
+                             ''.format(ds_spec_val_mat_2.shape))
 
-        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
+        return ds_spec_val_mat_2, ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
 
     def __BEPSgen(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, udvs_labs, iSpecVals, udvs_units):
         """
