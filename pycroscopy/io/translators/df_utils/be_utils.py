@@ -1109,7 +1109,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose:
+            if verbose and False:
                 print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
                 print('\t' * 5 + 'this_wave of shape: {}'.format(this_wave.shape))
             """
@@ -1147,7 +1147,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat_2.append(col_val)
 
-            if verbose:
+            if verbose and False:
                 blah = ''
                 if also_old_method:
                     blah = ', ds_spec_val_mat: {}'.format(ds_spec_val_mat.shape)
@@ -1158,7 +1158,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
 
         if verbose:
-            print('\t' * 4 + 'Shape of spec val mats: old: {}, new: {}'.format(ds_spec_val_mat.shape, ds_spec_val_mat_2.shape))
+            blah = ''
+            if also_old_method:
+                blah = ', old: {}'.format(ds_spec_val_mat.shape)
+            print('\t' * 4 + 'Shape of spec val mats: new: {} {}'
+                  ''.format(ds_spec_val_mat_2.shape, blah))
 
         return ds_spec_val_mat_2, ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
