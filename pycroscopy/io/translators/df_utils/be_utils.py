@@ -1376,6 +1376,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             print('\t\tGenerated values from BEPSVals internal function')
         ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = ret_vals
         mode = parm_dict['VS_mode']
+        # TODO: This is a very slow step - vectorize?
         ds_spec_inds_mat = create_spec_inds_from_vals(ds_spec_val_mat)
         if verbose:
             print('\t\tReturned from create_spec_inds_from_vals')
