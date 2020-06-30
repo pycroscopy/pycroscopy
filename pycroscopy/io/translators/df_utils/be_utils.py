@@ -1065,8 +1065,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        also_old_method = False
-        ds_spec_val_mat = np.empty([nrow, 1])
         ds_spec_val_mat_2 = list()
 
         """
@@ -1119,24 +1117,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
             for thisbin in this_wave:
 
-                if also_old_method:
-                    colVal = np.array(
-                        [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
-
-                    if field_type == 'in and out-of-field':
-                        colVal = np.append(colVal, [[field]], axis=0)
-                    """
-                    Add entries to cycle and/or FORC as needed
-                    """
-                    if hascycles:
-                        colVal = np.append(colVal, [[cycle]], axis=0)
-                    if hasFORCS:
-                        colVal = np.append(colVal, [[FORC]], axis=0)
-
-                    ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
-
-                # ######## NEW METHOD #########################################
-
                 col_val = [bin_freqs[thisbin]]
 
                 """
@@ -1148,21 +1128,15 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 ds_spec_val_mat_2.append(col_val)
 
             if verbose and False:
-                blah = ''
-                if also_old_method:
-                    blah = ', ds_spec_val_mat: {}'.format(ds_spec_val_mat.shape)
-                print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {}) {}'
+                print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {})'
                       ''.format(step, len(ds_spec_val_mat_2),
-                                len(ds_spec_val_mat_2[0]), blah))
+                                len(ds_spec_val_mat_2[0])))
 
         ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
 
         if verbose:
-            blah = ''
-            if also_old_method:
-                blah = ', old: {}'.format(ds_spec_val_mat.shape)
-            print('\t' * 4 + 'Shape of spec val mats: new: {} {}'
-                  ''.format(ds_spec_val_mat_2.shape, blah))
+            print('\t' * 4 + 'Shape of spec val mats: {}'
+                  ''.format(ds_spec_val_mat_2.shape))
 
         return ds_spec_val_mat_2, ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
