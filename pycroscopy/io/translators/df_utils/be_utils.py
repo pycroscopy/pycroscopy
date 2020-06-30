@@ -1244,7 +1244,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = list()  # np.empty([nrow, 1])
+        ds_spec_val_mat = np.empty([nrow, 1])
+        ds_spec_val_mat_2 = list()
+
+        also_old_method = True
 
         """
         Main loop over all steps
@@ -1281,27 +1284,63 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
 
+            suffix = [inSpecVals[step][0], forrev]
+            if hascycles:
+                suffix.append(cycle)
+            if hasFORCS:
+                suffix.append(FORC)
+
             """
             Loop over bins
             """
 
+            if verbose:
+                print('\t' * 4 + 'bins in this wave: {}'.format(this_wave.shape))
+
             # TODO: Consider parallel computing here or vectorization
             for thisbin in this_wave:
+                if also_old_method:
+                    colVal = np.array([[bin_freqs[thisbin]],
+                                       [inSpecVals[step][0]],
+                                       [forrev]])
+                    """
+                    Add entries to cycle and/or FORC as needed
+                    """
+                    if hascycles:
+                        colVal = np.append(colVal, [[cycle]], axis=0)
+                    if hasFORCS:
+                        colVal = np.append(colVal, [[FORC]], axis=0)
 
-                colVal = np.array([[bin_freqs[thisbin]],
-                                   [inSpecVals[step][0]],
-                                   [forrev]])
+                    ds_spec_val_mat = np.append(ds_spec_val_mat, colVal,
+                                                axis=1)
+
+                # #################### NEW METHOD #############################
+
+                col_val = [bin_freqs[thisbin]]
                 """
                 Add entries to cycle and/or FORC as needed
                 """
-                if hascycles:
-                    colVal = np.append(colVal, [[cycle]], axis=0)
-                if hasFORCS:
-                    colVal = np.append(colVal, [[FORC]], axis=0)
+                col_val.append(suffix)
 
-                ds_spec_val_mat.append(colVal)
+                ds_spec_val_mat_2.append(col_val)
 
-        ds_spec_val_mat = np.array(ds_spec_val_mat)
+            if verbose:
+                blah = ''
+                if also_old_method:
+                    blah = ', ds_spec_val_mat: {}'.format(
+                        ds_spec_val_mat.shape)
+                print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {}) {}'
+                                 ''.format(step, len(ds_spec_val_mat_2),
+                                           len(ds_spec_val_mat_2[0]), blah))
+
+        ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
+
+        if verbose:
+            blah = ''
+            if also_old_method:
+                blah = ', old: {}'.format(ds_spec_val_mat.shape)
+            print('\t' * 4 + 'Shape of spec val mats: new: {} {}'
+                             ''.format(ds_spec_val_mat_2.shape, blah))
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Direction', ['reverse', 'forward']]]
 
