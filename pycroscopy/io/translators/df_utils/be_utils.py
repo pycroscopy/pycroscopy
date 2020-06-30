@@ -1289,13 +1289,13 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-
+            if verbose:
+                print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
+                print('\t' * 5 + 'this_wave of shape: {}'.format(
+                    this_wave.shape))
             """
             Loop over bins
             """
-
-            if verbose:
-                print('\t' * 4 + 'bins in this wave: {}'.format(this_wave.shape))
 
             # TODO: Consider parallel computing here or vectorization
             for thisbin in this_wave:
@@ -1320,7 +1320,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 """
                 Add entries to cycle and/or FORC as needed
                 """
-                col_val.append(suffix)
+                col_val += suffix
 
                 ds_spec_val_mat_2.append(col_val)
 
