@@ -1339,6 +1339,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             blah = ''
             if also_old_method:
                 blah = ', old: {}'.format(ds_spec_val_mat.shape)
+                blah += ', Matrices identical: {}'.format(
+                    np.allclose(ds_spec_val_mat[:, 1:], ds_spec_val_mat_2))
             print('\t' * 4 + 'Shape of spec val mats: new: {} {}'
                              ''.format(ds_spec_val_mat_2.shape, blah))
 
