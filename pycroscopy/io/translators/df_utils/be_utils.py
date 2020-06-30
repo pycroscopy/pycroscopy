@@ -1065,7 +1065,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
-        ds_spec_val_mat = list()  # np.empty([nrow, 1])
+        ds_spec_val_mat = np.empty([nrow, 1])
+        ds_spec_val_mat_2 = list()
 
         """
         Main loop over all steps
@@ -1076,6 +1077,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         if verbose:
             print('\t' * 4 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
                   ''.format(field_type, hascycles, hasFORCS))
+            print('\t' * 4 + '')
 
         # TODO: Make this horribly slow double for loop much faster!
 
@@ -1107,14 +1109,31 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if hasFORCS:
                 suffix.append(FORC)
             if verbose:
-                print('\t' * 4 + 'Step: {}: Suffix: {}'.format(step, suffix))
+                print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
+                print('\t' * 5 + 'this_wave of shape: {}'.format(this_wave.shape))
             """
             Loop over bins
             """
             # TODO: Vectorize this loop at a minimum
 
-            # this_step = list()
             for thisbin in this_wave:
+                colVal = np.array(
+                    [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
+
+                if field_type == 'in and out-of-field':
+                    colVal = np.append(colVal, [[field]], axis=0)
+                """
+                Add entries to cycle and/or FORC as needed
+                """
+                if hascycles:
+                    colVal = np.append(colVal, [[cycle]], axis=0)
+                if hasFORCS:
+                    colVal = np.append(colVal, [[FORC]], axis=0)
+
+                ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
+
+                # ######## NEW METHOD #########################################
+
                 col_val = [bin_freqs[thisbin]]
 
                 """
@@ -1123,17 +1142,19 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 # TODO: Why not add these later as columns instead of per row?
                 col_val += suffix
 
-                # this_step.append(col_val)
-
-                ds_spec_val_mat.append(col_val)
+                ds_spec_val_mat_2.append(col_val)
 
             if verbose:
-                print('\t' * 4 + 'At step {} ds_spec_val_mat: ({}, {})'.format(step, len(ds_spec_val_mat), len(ds_spec_val_mat[0])))
+                print('\t' * 4 + 'At step {} ds_spec_val_mat_2: ({}, {}), '
+                      'ds_spec_val_mat: {}'.format(step,
+                                                   len(ds_spec_val_mat_2),
+                                                   len(ds_spec_val_mat_2[0]),
+                                                   ds_spec_val_mat.shape))
 
-        ds_spec_val_mat = np.array(ds_spec_val_mat).T
+        ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
 
         if verbose:
-            print('\t' * 4 + 'Shape of spec val mat: {}'.format(ds_spec_val_mat.shape))
+            print('\t' * 4 + 'Shape of spec val mats: old: {}, new: {}'.format(ds_spec_val_mat.shape, ds_spec_val_mat_2.shape))
 
         return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
