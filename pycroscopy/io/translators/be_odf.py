@@ -565,8 +565,7 @@ class BEodfTranslator(Translator):
                 print('\t\tReading all raw data for BE-Line in one shot')
             self._quick_read_data(path_dict['read_real'],
                                   path_dict['read_imag'],
-                                  parm_dict['num_udvs_steps'],
-                                  verbose=self._verbose)
+                                  parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and \
                 parm_dict['VS_measure_in_field_loops'] == 'out-of-field':
             # Do this for out-of-field BEPS ONLY that is also small (256 MB)
@@ -574,8 +573,7 @@ class BEodfTranslator(Translator):
                 print('\t\tReading all raw BEPS (out-of-field) data at once')
             self._quick_read_data(path_dict['read_real'],
                                   path_dict['read_imag'],
-                                  parm_dict['num_udvs_steps'],
-                                  verbose=self._verbose)
+                                  parm_dict['num_udvs_steps'])
         elif real_size < self.max_ram and \
                 parm_dict['VS_measure_in_field_loops'] == 'in-field':
             # Do this for in-field only
@@ -583,8 +581,7 @@ class BEodfTranslator(Translator):
                 print('\t\tReading all raw BEPS (in-field only) data at once')
             self._quick_read_data(path_dict['write_real'],
                                   path_dict['write_imag'],
-                                  parm_dict['num_udvs_steps'],
-                                  verbose=self._verbose)
+                                  parm_dict['num_udvs_steps'])
         else:
             # Large BEPS datasets OR those with in-and-out of field
             if self._verbose:
