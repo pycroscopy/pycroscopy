@@ -1065,6 +1065,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Initialize ds_spec_val_mat so that we can append to it in loop
         """
+        also_old_method = False
         ds_spec_val_mat = np.empty([nrow, 1])
         ds_spec_val_mat_2 = list()
 
@@ -1117,20 +1118,22 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             # TODO: Vectorize this loop at a minimum
 
             for thisbin in this_wave:
-                colVal = np.array(
-                    [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
 
-                if field_type == 'in and out-of-field':
-                    colVal = np.append(colVal, [[field]], axis=0)
-                """
-                Add entries to cycle and/or FORC as needed
-                """
-                if hascycles:
-                    colVal = np.append(colVal, [[cycle]], axis=0)
-                if hasFORCS:
-                    colVal = np.append(colVal, [[FORC]], axis=0)
+                if also_old_method:
+                    colVal = np.array(
+                        [[bin_freqs[thisbin]], [inSpecVals[step][0]]])
 
-                ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
+                    if field_type == 'in and out-of-field':
+                        colVal = np.append(colVal, [[field]], axis=0)
+                    """
+                    Add entries to cycle and/or FORC as needed
+                    """
+                    if hascycles:
+                        colVal = np.append(colVal, [[cycle]], axis=0)
+                    if hasFORCS:
+                        colVal = np.append(colVal, [[FORC]], axis=0)
+
+                    ds_spec_val_mat = np.append(ds_spec_val_mat, colVal, axis=1)
 
                 # ######## NEW METHOD #########################################
 
@@ -1145,18 +1148,19 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 ds_spec_val_mat_2.append(col_val)
 
             if verbose:
-                print('\t' * 4 + 'At step {} ds_spec_val_mat_2: ({}, {}), '
-                      'ds_spec_val_mat: {}'.format(step,
-                                                   len(ds_spec_val_mat_2),
-                                                   len(ds_spec_val_mat_2[0]),
-                                                   ds_spec_val_mat.shape))
+                blah = ''
+                if also_old_method:
+                    blah = ', ds_spec_val_mat: {}'.format(ds_spec_val_mat.shape)
+                print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {}) {}'
+                      ''.format(step, len(ds_spec_val_mat_2),
+                                len(ds_spec_val_mat_2[0]), blah))
 
         ds_spec_val_mat_2 = np.array(ds_spec_val_mat_2).T
 
         if verbose:
             print('\t' * 4 + 'Shape of spec val mats: old: {}, new: {}'.format(ds_spec_val_mat.shape, ds_spec_val_mat_2.shape))
 
-        return ds_spec_val_mat[:, 1:], ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
+        return ds_spec_val_mat_2, ds_spec_val_labs, ds_spec_val_units, [['Field', field_names]]
 
     def __BEPSAC(udvs_mat, inSpecVals, bin_freqs, bin_wfm_type, parm_dict,
                  verbose=False):
