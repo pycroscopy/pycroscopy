@@ -1099,7 +1099,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Get bins for current step based on waveform
             """
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
-
+            print('\t' * 6 + '{}'.format(inSpecVals[step]))
             suffix = [inSpecVals[step][0]]
             if field_type == 'in and out-of-field':
                 suffix.append(field)
@@ -1107,9 +1107,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose and False:
-                print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
-                print('\t' * 5 + 'this_wave of shape: {}'.format(this_wave.shape))
+            if verbose and step == 0:
+                print('\t' * 5 + 'Step: {} of {}: Suffix: {}'
+                                 ''.format(step, numsteps, suffix))
+                print('\t' * 5 + 'this_wave of shape: {}'
+                                 ''.format(this_wave.shape))
             """
             Loop over bins
             """
@@ -1127,7 +1129,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat_2.append(col_val)
 
-            if verbose and False:
+            if verbose and step == 0:
                 print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {})'
                       ''.format(step, len(ds_spec_val_mat_2),
                                 len(ds_spec_val_mat_2[0])))
@@ -1226,7 +1228,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         FORC = -1
         cycle = -1
 
-        # TODO: Horribly slow process. Speed this up!
         warn('Generating spectroscopic values for AC spectroscopy. This can '
              'take a while. Please be patient')
 
@@ -1260,7 +1261,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose and False:
+            if verbose and step == 0:
                 print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
                 print('\t' * 5 + 'this_wave of shape: {}'.format(
                     this_wave.shape))
@@ -1268,7 +1269,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Loop over bins
             """
 
-            # TODO: Consider parallel computing here or vectorization
+            # TODO: Consider vectorizing here
             for thisbin in this_wave:
 
                 col_val = [bin_freqs[thisbin]]
@@ -1377,6 +1378,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = ret_vals
         mode = parm_dict['VS_mode']
         # TODO: This is a very slow step - vectorize?
+        if ds_spec_val_mat.shape[1] > 500E+3:
+            warn('Please be patient while spectroscopic indices are being '
+                 'generated')
         ds_spec_inds_mat = create_spec_inds_from_vals(ds_spec_val_mat)
         if verbose:
             print('\t\tReturned from create_spec_inds_from_vals')

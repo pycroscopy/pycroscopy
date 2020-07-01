@@ -354,7 +354,7 @@ class BEodfTranslator(Translator):
             old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE),
                                        np.zeros(tot_bins, dtype=INDICES_DTYPE)))
 
-        # Some very basic information that can help the processing / analysis crew
+        # legacy parmeters inserted for BEAM
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
         parm_dict['num_udvs_steps'] = num_actual_udvs_steps
