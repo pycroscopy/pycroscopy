@@ -824,6 +824,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         iSpec_var : integer array holding column indices in UDVS that change
         ds_spec_val_mat : array holding all spectral values for columns in iSpec_var
         """
+        if verbose:
+            print('\t' * 3 + '__FindSpecValIndices:')
+            print('\t' * 4 + 'UDVS matrix of shape: {}'.format(udvs_mat.shape))
+            print('\t' * 4 + 'spec_inds of shape: {}'.format(spec_inds.shape))
+
         #         Copy even step values of DC_offset into odd steps
         UDVS = np.copy(udvs_mat)
 
@@ -837,12 +842,18 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         icheck is an array containing all UDVS steps which should be checked.
         """
         icheck = np.unique(spec_inds[1])
+        if verbose:
+            print('\t' * 4 + 'UDVS matrix of shape: {}'.format(UDVS.shape))
+            print('\t' * 4 + 'icheck: {}'.format(icheck))
         """
         Keep only the UDVS values for steps which we care about and the 
         first 5 columns
         """
         UDVS = UDVS[icheck, :5]
         #         UDVS = np.array([UDVS[i] for i in icheck])
+        if verbose:
+            print('\t' * 4 + 'UDVS matrix after downselecting rows: {}'
+                             ''.format(UDVS.shape))
 
         """
         Transpose UDVS for ease of looping later on and store the number of steps
@@ -883,6 +894,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             print('\t' * 4 + 'UDVS matrix of shape: {}'.format(UDVS.shape))
             print('\t' * 4 + 'Taking columns specified by iSpec_var: {}'
                              ''.format(iSpec_var))
+
+        if len(iSpec_var) < 1:
+            raise ValueError('Invalid UDVS inputs. No variables were varied')
 
         iSpec_var = np.asarray(iSpec_var, np.int)
         ds_spec_val_mat = UDVS[:, iSpec_var]
