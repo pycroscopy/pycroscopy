@@ -221,7 +221,10 @@ class BEodfTranslator(Translator):
             imag_size = path.getsize(path_dict['write_imag'])
 
         if real_size != imag_size:
-            raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
+            raise ValueError("Real and imaginary file sizes do not match!")
+
+        if real_size == 0:
+            raise ValueError('Real and imaginary files were empty')
 
         # Check here if a second channel for current is present
         # Look for the file containing the current data
