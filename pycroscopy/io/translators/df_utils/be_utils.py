@@ -808,7 +808,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         labels with the names of their parameters
     """
 
-    def __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=False):
+    def __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=False,
+                             verbose=False):
         """
         This function finds the Spectroscopic Values associated with the dataset that
         have more than one unique value
@@ -878,6 +879,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if uvals.size > 1:
                 iSpec_var = np.append(iSpec_var, int(i))
 
+        if verbose:
+            print('\t' * 4 + 'UDVS matrix of shape: {}'.format(UDVS.shape))
+            print('\t' * 4 + 'Taking columns specified by iSpec_var: {}'
+                             ''.format(iSpec_var))
+
         iSpec_var = np.asarray(iSpec_var, np.int)
         ds_spec_val_mat = UDVS[:, iSpec_var]
 
@@ -916,7 +922,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             if verbose:
                 print('\t' * 3 + 'DC modulation mode / current mode')
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSDC')
 
@@ -930,7 +937,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             if verbose:
                 print('\t' * 3 + 'AC modulation')
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSAC')
 
@@ -944,7 +952,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if verbose:
                 print('\t' * 3 + 'user defined voltage spectroscopy')
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
-                                                         usr_defined=True)
+                                                         usr_defined=True,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSgen')
 
