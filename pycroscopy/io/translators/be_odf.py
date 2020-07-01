@@ -152,10 +152,14 @@ class BEodfTranslator(Translator):
         if 'parm_txt' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from text file')
-            (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
+            isBEPS, parm_dict = parmsToDict(path_dict['parm_txt'])
+
+            # Initial text files named some parameters differently
             if parm_dict['VS_mode'] == 'AC modulation mode':
-                # Initial text files named this differently
                 parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
+            if parm_dict['BE_phase_content'] == 'chirp':
+                parm_dict['BE_phase_content'] ='chirp-sinc hybrid'
+
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from old mat file')
