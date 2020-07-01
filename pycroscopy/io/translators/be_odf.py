@@ -524,8 +524,7 @@ class BEodfTranslator(Translator):
         if current_data_exists:                     #If a .dat file matches
             if self._verbose:
                 print('\tReading data in secondary channels (current)')
-            self._read_secondary_channel(h5_meas_group, aux_files,
-                                         verbose=self._verbose)
+            self._read_secondary_channel(h5_meas_group, aux_files)
 
         if self._verbose:
             print('\tClosing HDF5 file')
