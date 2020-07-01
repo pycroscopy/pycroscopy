@@ -153,6 +153,9 @@ class BEodfTranslator(Translator):
             if self._verbose:
                 print('\treading parameters from text file')
             (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
+            if parm_dict['VS_mode'] == 'AC modulation mode':
+                # Initial text files named this differently
+                parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from old mat file')
@@ -1379,9 +1382,15 @@ class BEodfTranslator(Translator):
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
                                        ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
         VS_ACDC_cond = translate_val(parm_dict['VS_mode'],
-                                     ['DC modulation mode', 'AC modulation mode with time reversal',
-                                      'load user defined VS Wave from file', 'current mode'],
+                                     ['DC modulation mode',
+                                      'AC modulation mode with time reversal',
+                                      'load user defined VS Wave from file',
+                                      'current mode'],
                                      [0, 2, 3, 4])
+        if VS_ACDC_cond is None:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "VS_Mode": "{}"'
+                                      ''.format(parm_dict['VS_mode']))
         self.expt_type = VS_ACDC_cond
         FORC_cycles = parm_dict['FORC_num_of_FORC_cycles']
         FORC_A1 = parm_dict['FORC_V_high1_[V]']
