@@ -1488,6 +1488,9 @@ class BEodfTranslator(Translator):
             udvs_table[:half, 5] = vs_amp_vec[:half]
             udvs_table[half:, 6] = vs_amp_vec[half:]
 
+        else:
+            raise NotImplementedError('Not handling VS_ACDC condition: {}'.format(VS_ACDC_cond))
+
         return UD_VS_table_label, UD_VS_table_unit, udvs_table
 
     @staticmethod
