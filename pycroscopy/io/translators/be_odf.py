@@ -1355,6 +1355,10 @@ class BEodfTranslator(Translator):
                                        ['chirp-sinc hybrid', '1/2 harmonic excitation',
                                         '1/3 harmonic excitation', 'pure sine'],
                                        [1, 2, 3, 4])
+        if BE_signal_type is None:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "BE_phase_content": "{}"'
+                                      ''.format(parm_dict['BE_phase_content']))
         # This is necessary when normalzing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
@@ -1371,16 +1375,31 @@ class BEodfTranslator(Translator):
             VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
                                         ['full', '1/2', '1/4', '3/4'],
                                         [1., 0.5, 0.25, 0.75])
+            if VS_fraction is None:
+                raise NotImplementedError(
+                    'This translator does not know how to '
+                    'handle "VS_cycle_fraction": "{}"'
+                    ''.format(parm_dict['VS_cycle_fraction']))
             VS_shift = parm_dict['VS_cycle_phase_shift']
         except KeyError as exp:
             print()
             raise KeyError(exp)
+
         if VS_shift is not 0:
             if self._verbose:
                 print('\tVS_shift = {}'.format(VS_shift))
             VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
+            if VS_shift is None:
+                raise NotImplementedError(
+                    'This translator does not know how to '
+                    'handle "VS_cycle_phase_shift": "{}"'
+                    ''.format(parm_dict['VS_cycle_phase_shift']))
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
                                        ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
+        if VS_in_out_cond:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "VS_measure_in_field_loops": "{}"'
+                                      ''.format(parm_dict['VS_measure_in_field_loops']))
         VS_ACDC_cond = translate_val(parm_dict['VS_mode'],
                                      ['DC modulation mode',
                                       'AC modulation mode with time reversal',
