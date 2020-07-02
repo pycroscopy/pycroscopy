@@ -834,6 +834,11 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             for ud_row in udvs_mat:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
 
+            fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
+            for ind, axis in enumerate(axes.flat):
+                axis.plot(spec_inds[ind, :])
+                axis.set_title('spec_inds[{}]'.format(ind))
+
         #         Copy even step values of DC_offset into odd steps
         UDVS = np.copy(udvs_mat)
 
