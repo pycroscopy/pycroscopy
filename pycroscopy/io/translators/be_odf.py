@@ -292,6 +292,24 @@ class BEodfTranslator(Translator):
                  'File will be padded with zeros.')
             add_pix = True
 
+        # This would crash and fail later if not fixed here
+        # I don't like this hacky approach to solve this problem
+        if isBEPS and tot_bins % 1 == 0 and parm_dict['VS_mode'] != 'Custom':
+            bins_per_step = parm_dict['FORC_num_of_FORC_cycles'] * \
+                            parm_dict['VS_number_of_cycles'] * \
+                            parm_dict['VS_steps_per_full_cycle'] * \
+                            parm_dict['BE_bins_per_read']
+            if verbose:
+                print('\t\tNumber of bins per step: calculated: {}, actual {}'
+                      ''.format(bins_per_step, tot_bins))
+            if bins_per_step < tot_bins and tot_bins / bins_per_step % 1 == 0:
+                scale = int(tot_bins / bins_per_step)
+                warn('Number of actual ({}) bins per step {}X larger than '
+                     'calculated ({}) values. Will scale VS cycles to get '
+                     'number of bins to match'
+                     ''.format(tot_bins, bins_per_step, scale))
+                parm_dict['VS_number_of_cycles'] *= scale
+
         tot_bins = int(tot_bins) * tot_bins_multiplier
 
         if isBEPS:
