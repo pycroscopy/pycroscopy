@@ -155,23 +155,6 @@ class BEodfTranslator(Translator):
                 print('\treading parameters from text file')
             isBEPS, parm_dict = parmsToDict(path_dict['parm_txt'])
 
-            # Initial text files named some parameters differently
-            if parm_dict['VS_mode'] == 'AC modulation mode':
-                warn('Updating parameter "VS_mode" from invalid value'
-                     ' of "AC modulation mode" to "AC modulation mode with '
-                     'time reversal"')
-                parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
-            if parm_dict['BE_phase_content'] == 'chirp':
-                warn('Updating parameter "BE_phase_content" from older value'
-                     ' of "chirp" to "chirp-sinc hybrid"')
-                parm_dict['BE_phase_content'] ='chirp-sinc hybrid'
-            if parm_dict['BE_amplitude_[V]'] < 1E-2:
-                new_val = 0.5151
-                warn('Updating parameter "BE_amplitude_[V]" from invalid value'
-                     ' of {} to {}'.format(parm_dict['BE_amplitude_[V]'],
-                                           new_val))
-                parm_dict['BE_amplitude_[V]'] = new_val
-
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from old mat file')
@@ -182,6 +165,23 @@ class BEodfTranslator(Translator):
                 isBEPS=True
         else:
             raise FileNotFoundError('No parameters file found! Cannot translate this dataset!')
+
+        # Initial text / mat files named some parameters differently
+        if parm_dict['VS_mode'] == 'AC modulation mode':
+            warn('Updating parameter "VS_mode" from invalid value'
+                 ' of "AC modulation mode" to "AC modulation mode with '
+                 'time reversal"')
+            parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
+        if parm_dict['BE_phase_content'] == 'chirp':
+            warn('Updating parameter "BE_phase_content" from older value'
+                 ' of "chirp" to "chirp-sinc hybrid"')
+            parm_dict['BE_phase_content'] = 'chirp-sinc hybrid'
+        if parm_dict['BE_amplitude_[V]'] < 1E-2:
+            new_val = 0.5151
+            warn('Updating parameter "BE_amplitude_[V]" from invalid value'
+                 ' of {} to {}'.format(parm_dict['BE_amplitude_[V]'],
+                                       new_val))
+            parm_dict['BE_amplitude_[V]'] = new_val
 
         if self._verbose:
             keys = list(parm_dict.keys())
