@@ -833,13 +833,23 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             print('\t'.join(udvs_cols))
             for ud_row in udvs_mat:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
+            if True:
+                fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
+                for ind, axis in enumerate(axes.flat):
+                    axis.plot(spec_inds[ind, :])
+                    axis.set_title('spec_inds[{}]'.format(ind))
 
-            fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
-            for ind, axis in enumerate(axes.flat):
-                axis.plot(spec_inds[ind, :])
-                axis.set_title('spec_inds[{}]'.format(ind))
+        """
+        icheck is an array containing all UDVS steps which should be checked.
+        """
+        icheck = np.unique(spec_inds[1])
+        if verbose:
+            print('\t' * 4 + 'UDVS steps that will be checked: {}'.format(icheck))
+        if len(icheck) < 1:
+            raise ValueError('No row in the spectroscopic indices varied.\n'
+                             'Cannot build spectroscopic datasets further')
 
-        #         Copy even step values of DC_offset into odd steps
+        # Copy even step values of DC_offset into odd steps
         UDVS = np.copy(udvs_mat)
 
         if not usr_defined:
@@ -848,12 +858,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 DC[step + 1] = DC[step]
             UDVS[:, 1] = DC
 
-        """
-        icheck is an array containing all UDVS steps which should be checked.
-        """
-        icheck = np.unique(spec_inds[1])
-        if verbose:
-            print('\t' * 4 + 'UDVS steps that will be checked: {}'.format(icheck))
         """
         Keep only the UDVS values for steps which we care about and the 
         first 5 columns
