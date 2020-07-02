@@ -301,8 +301,8 @@ class BEodfTranslator(Translator):
                 print('\treading BE arrays from old mat text file')
             bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
         else:
-            if self._verbose:
-                print('\tGenerating dummy BE arrays')
+            warn('No secondary parameters file provided. Generating dummy BE '
+                 'arrays')
             band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
             st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
             en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
