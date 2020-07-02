@@ -292,35 +292,6 @@ class BEodfTranslator(Translator):
 
         tot_bins = int(tot_bins) * tot_bins_multiplier
 
-        if 'parm_mat' in path_dict.keys():
-            if self._verbose:
-                print('\treading BE arrays from parameters text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm = self._read_parms_mat(path_dict['parm_mat'], isBEPS)
-        elif 'old_mat_parms' in path_dict.keys():
-            if self._verbose:
-                print('\treading BE arrays from old mat text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
-        else:
-            warn('No secondary parameters file provided. Generating dummy BE '
-                 'arrays')
-            band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
-            st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
-            en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
-            bin_freqs = np.linspace(st_f, en_f, tot_bins, dtype=np.float32)
-
-            warn('No parms .mat file found.... Filling dummy values into ancillary datasets.')
-            bin_inds = np.zeros(shape=tot_bins, dtype=np.int32)
-            bin_FFT = np.zeros(shape=tot_bins, dtype=np.complex64)
-            ex_wfm = np.zeros(shape=100, dtype=np.float32)
-
-        # Forcing standardized datatypes:
-        bin_inds = np.int32(bin_inds)
-        bin_freqs = np.float32(bin_freqs)
-        bin_FFT = np.complex64(bin_FFT)
-        ex_wfm = np.float32(ex_wfm)
-
-        self.FFT_BE_wave = bin_FFT
-
         if isBEPS:
             if self._verbose:
                 print('\tBuilding UDVS table for BEPS')
@@ -376,6 +347,36 @@ class BEodfTranslator(Translator):
 
             old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE),
                                        np.zeros(tot_bins, dtype=INDICES_DTYPE)))
+
+        if 'parm_mat' in path_dict.keys():
+            if self._verbose:
+                print('\treading BE arrays from parameters text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm = self._read_parms_mat(path_dict['parm_mat'], isBEPS)
+        elif 'old_mat_parms' in path_dict.keys():
+            if self._verbose:
+                print('\treading BE arrays from old mat text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
+        else:
+            warn('No secondary parameters file (.mat) provided. Generating '
+                 'dummy BE arrays')
+            band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
+            st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
+            en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
+            bin_freqs = np.linspace(st_f, en_f, bins_per_step, dtype=np.float32)
+
+            if verbose:
+                print('Number of bins: {}'.format(bins_per_step))
+            bin_inds = np.zeros(shape=bins_per_step, dtype=np.int32)
+            bin_FFT = np.zeros(shape=bins_per_step, dtype=np.complex64)
+            ex_wfm = np.zeros(shape=bins_per_step, dtype=np.float32)
+
+        # Forcing standardized datatypes:
+        bin_inds = np.int32(bin_inds)
+        bin_freqs = np.float32(bin_freqs)
+        bin_FFT = np.complex64(bin_FFT)
+        ex_wfm = np.float32(ex_wfm)
+
+        self.FFT_BE_wave = bin_FFT
 
         # legacy parmeters inserted for BEAM
         parm_dict['num_bins'] = tot_bins
