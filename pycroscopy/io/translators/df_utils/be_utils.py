@@ -830,9 +830,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             print('\t' * 3 + '__FindSpecValIndices:')
             print('\t' * 4 + 'UDVS matrix of shape: {}'.format(udvs_mat.shape))
             print('\t' * 4 + 'spec_inds of shape: {}'.format(spec_inds.shape))
-            print('\t'.join(udvs_cols))
-            for ud_row in udvs_mat:
-                print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
+            if False:
+                print('\t'.join(udvs_cols))
+                for ud_row in udvs_mat:
+                    print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
             if False:  # Turn this off if necessary
                 fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
                 for ind, axis in enumerate(axes.flat):
@@ -866,7 +867,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         UDVS = UDVS[icheck, :5]
         udvs_cols = udvs_cols[:5]
         #         UDVS = np.array([UDVS[i] for i in icheck])
-        if verbose:
+        if verbose and False:
             print('\t' * 4 + 'UDVS matrix after down-selecting rows: {}'
                              ''.format(UDVS.shape))
             print('\t'.join(udvs_cols))
