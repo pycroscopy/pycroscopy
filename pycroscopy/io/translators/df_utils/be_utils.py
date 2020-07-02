@@ -824,20 +824,21 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         iSpec_var : integer array holding column indices in UDVS that change
         ds_spec_val_mat : array holding all spectral values for columns in iSpec_var
         """
+        udvs_cols = ['step_num', 'dc_offset', 'ac_ampli', 'wave_type',
+                     'wave_mod', 'in-field', 'out-of-field']
         if verbose:
             print('\t' * 3 + '__FindSpecValIndices:')
             print('\t' * 4 + 'UDVS matrix of shape: {}'.format(udvs_mat.shape))
             print('\t' * 4 + 'spec_inds of shape: {}'.format(spec_inds.shape))
-            udvs_cols = ['step_num', 'dc_offset', 'ac_ampli', 'wave_type',
-                         'wave_mod', 'in-field', 'out-of-field']
             print('\t'.join(udvs_cols))
             for ud_row in udvs_mat:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
-            if True:
+            if True: # Turn this off if necessary
                 fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
                 for ind, axis in enumerate(axes.flat):
                     axis.plot(spec_inds[ind, :])
                     axis.set_title('spec_inds[{}]'.format(ind))
+                fig.tight_layout()
 
         """
         icheck is an array containing all UDVS steps which should be checked.
@@ -863,11 +864,12 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         first 5 columns
         """
         UDVS = UDVS[icheck, :5]
+        udvs_cols = udvs_cols[:5]
         #         UDVS = np.array([UDVS[i] for i in icheck])
         if verbose:
             print('\t' * 4 + 'UDVS matrix after down-selecting rows: {}'
                              ''.format(UDVS.shape))
-            print('\t'.join(udvs_cols[:5]))
+            print('\t'.join(udvs_cols))
             for ud_row in UDVS:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
 
@@ -885,26 +887,32 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Loop over all columns in udvs_mat
         """
-        for i in range(1, num_cols):
+        for col_ind, col_name in zip(range(1, num_cols), udvs_cols):
             """
             Find all unique values in the current column
             """
-            toosmall = np.where(abs(UDVS[:, i]) < 1E-5)[0]
-            UDVS[toosmall, i] = 0
-            uvals = np.unique(UDVS[:, i])
+            toosmall = np.where(abs(UDVS[:, col_ind]) < 1E-5)[0]
+            UDVS[toosmall, col_ind] = 0
+            uvals = np.unique(UDVS[:, col_ind])
             """
             np.unique considers all NaNs to be unique values
             These two lines find the indices of all NaNs in the unique value array 
             and removes all but the first
             """
             nanvals = np.where(np.isnan(uvals))[0]
+            if verbose:
+                print('\t\t\tColumn {}: {} has {} unique values and {} NaNs'
+                      ''.format(col_ind, col_name, len(uvals), len(nanvals)))
             uvals = np.delete(uvals, nanvals[1:])
             """
             Check if more that one unique value
             Append column number to iSpec_var if true
             """
+            if verbose:
+                print('\t\t\tColumn {}: {} had {} actually unique values'
+                      ''.format(col_ind, col_name, len(uvals)))
             if uvals.size > 1:
-                iSpec_var = np.append(iSpec_var, int(i))
+                iSpec_var = np.append(iSpec_var, int(col_ind))
 
         if verbose:
             print('\t' * 4 + 'UDVS matrix of shape: {}'.format(UDVS.shape))
