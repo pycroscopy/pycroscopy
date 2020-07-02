@@ -167,29 +167,30 @@ class BEodfTranslator(Translator):
             raise FileNotFoundError('No parameters file found! Cannot '
                                     'translate this dataset!')
 
-        # Initial text / mat files named some parameters differently
-        if parm_dict['VS_mode'] == 'AC modulation mode':
-            warn('Updating parameter "VS_mode" from invalid value'
-                 ' of "AC modulation mode" to "AC modulation mode with '
-                 'time reversal"')
-            parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
-        if parm_dict['BE_phase_content'] == 'chirp':
-            warn('Updating parameter "BE_phase_content" from older value'
-                 ' of "chirp" to "chirp-sinc hybrid"')
-            parm_dict['BE_phase_content'] = 'chirp-sinc hybrid'
-        if parm_dict['BE_amplitude_[V]'] < 1E-2:
-            new_val = 0.5151
-            warn('Updating parameter "BE_amplitude_[V]" from invalid value'
-                 ' of {} to {}'.format(parm_dict['BE_amplitude_[V]'],
-                                       new_val))
-            parm_dict['BE_amplitude_[V]'] = new_val
-        if 'VS_amplitude_[V]' in parm_dict.keys():
-            if parm_dict['VS_amplitude_[V]'] < 1E-2:
-                new_val = 1
-                warn('Updating parameter "VS_amplitude_[V]" from invalid value'
-                     ' of {} to {}'.format(parm_dict['VS_amplitude_[V]'],
-                                           new_val))
-                parm_dict['VS_amplitude_[V]'] = new_val
+        # Initial text files named some parameters differently:
+        for case in [('VS_mode', 'AC modulation mode',
+                      'AC modulation mode with time reversal'),
+                     ('VS_mode', 'load Arbitrary VS Wave from text file',
+                      'load user defined VS Wave from file'),
+                     ('BE_phase_content', 'chirp', 'chirp-sinc hybrid'),]:
+            key, wrong_val, corr_val = case
+            if key not in parm_dict.keys():
+                continue
+            if parm_dict[key] == wrong_val:
+                warn('Updating parameter "{}" from invalid value of "{}" to '
+                     '"{}"'.format(key, wrong_val, corr_val))
+                parm_dict[key] = corr_val
+
+        # Some .mat files did not set correct values to some parameters:
+        for case in [('BE_amplitude_[V]', 1E-2, 0.5151),
+                     ('VS_amplitude_[V]', 1E-2, 0.9876)]:
+            key, min_val, new_val = case
+            if key not in parm_dict.keys():
+                continue
+            if parm_dict[key] < min_val:
+                warn('Updating parameter "{}" from invalid value of {} to {}'
+                     ''.format(key, parm_dict[key], new_val))
+                parm_dict[key] = new_val
 
         if self._verbose:
             keys = list(parm_dict.keys())
