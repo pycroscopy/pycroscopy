@@ -828,8 +828,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             print('\t' * 3 + '__FindSpecValIndices:')
             print('\t' * 4 + 'UDVS matrix of shape: {}'.format(udvs_mat.shape))
             print('\t' * 4 + 'spec_inds of shape: {}'.format(spec_inds.shape))
-            print('step_num\tdc_offset\tac_ampli\twave_type\twave_mod\tin-field'
-                  '\tout-of-field')
+            udvs_cols = ['step_num', 'dc_offset', 'ac_ampli', 'wave_type',
+                         'wave_mod', 'in-field', 'out-of-field']
+            print('\t'.join(udvs_cols))
             for ud_row in udvs_mat:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
 
@@ -857,8 +858,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         if verbose:
             print('\t' * 4 + 'UDVS matrix after down-selecting rows: {}'
                              ''.format(UDVS.shape))
-            print('step_num\tdc_offset\tac_ampli\twave_type\twave_mod\tin-field'
-                   '\tout-of-field')
+            print('\t'.join(udvs_cols[:5]))
             for ud_row in UDVS:
                 print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
 
