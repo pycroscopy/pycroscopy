@@ -44,6 +44,7 @@ class BEodfTranslator(Translator):
         self.FFT_BE_wave = None
         self.signal_type = None
         self.expt_type = None
+        self._verbose = False
 
     @staticmethod
     def is_valid_file(data_path):
@@ -155,10 +156,16 @@ class BEodfTranslator(Translator):
             isBEPS, parm_dict = parmsToDict(path_dict['parm_txt'])
 
             # Initial text files named some parameters differently
+            updated_parms = False
             if parm_dict['VS_mode'] == 'AC modulation mode':
+                updated_parms = True
                 parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             if parm_dict['BE_phase_content'] == 'chirp':
+                updated_parms = True
                 parm_dict['BE_phase_content'] ='chirp-sinc hybrid'
+            if updated_parms:
+                warn('Parameters were stored in text file with an older format'
+                     '.Values for one or more parameters were updated')
 
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
