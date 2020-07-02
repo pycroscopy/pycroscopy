@@ -182,6 +182,13 @@ class BEodfTranslator(Translator):
                  ' of {} to {}'.format(parm_dict['BE_amplitude_[V]'],
                                        new_val))
             parm_dict['BE_amplitude_[V]'] = new_val
+        if 'VS_offset_[V]' in parm_dict.keys():
+            if parm_dict['VS_offset_[V]'] < 1E-2:
+                new_val = 1
+                warn('Updating parameter "VS_offset_[V]" from invalid value'
+                     ' of {} to {}'.format(parm_dict['VS_offset_[V]'],
+                                           new_val))
+                parm_dict['VS_offset_[V]'] = new_val
 
         if self._verbose:
             keys = list(parm_dict.keys())
