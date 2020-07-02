@@ -365,7 +365,8 @@ class BEodfTranslator(Translator):
             bin_freqs = np.linspace(st_f, en_f, bins_per_step, dtype=np.float32)
 
             if verbose:
-                print('Number of bins: {}'.format(bins_per_step))
+                print('\tGenerating BE arrays of length: '
+                      '{}'.format(bins_per_step))
             bin_inds = np.zeros(shape=bins_per_step, dtype=np.int32)
             bin_FFT = np.zeros(shape=bins_per_step, dtype=np.complex64)
             ex_wfm = np.zeros(shape=bins_per_step, dtype=np.float32)
