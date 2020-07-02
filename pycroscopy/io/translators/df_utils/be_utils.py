@@ -1145,6 +1145,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Get bins for current step based on waveform
             """
+            print('bin_wfm_type: {}, waveform[step]: {}'.format(bin_wfm_type, wave_form[step]))
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
             # print('\t' * 6 + '{}'.format(inSpecVals[step]))
             suffix = [inSpecVals[step][0]]
