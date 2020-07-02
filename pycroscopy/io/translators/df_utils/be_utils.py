@@ -1145,8 +1145,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             Get bins for current step based on waveform
             """
-            print('bin_wfm_type: {}, waveform[step]: {}'.format(bin_wfm_type, wave_form[step]))
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
+            if len(this_wave) < 1:
+                raise ValueError('Waveform type: {} not found in bin_wfm_type:'
+                                 ' {}'.format(wave_form[step], bin_wfm_type))
             # print('\t' * 6 + '{}'.format(inSpecVals[step]))
             suffix = [inSpecVals[step][0]]
             if field_type == 'in and out-of-field':
@@ -1160,8 +1162,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                                  ''.format(step, numsteps, suffix))
                 print('\t' * 5 + 'this_wave of shape: {}'
                                  ''.format(this_wave.shape))
-            if len(this_wave) < 1:
-                raise ValueError('Too few bins in this wave. Something wrong!')
+
             """
             Loop over bins
             """
