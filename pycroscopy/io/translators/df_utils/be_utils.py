@@ -808,7 +808,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         labels with the names of their parameters
     """
 
-    def __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=False):
+    def __FindSpecValIndices(udvs_mat, spec_inds, usr_defined=False,
+                             verbose=False):
         """
         This function finds the Spectroscopic Values associated with the dataset that
         have more than one unique value
@@ -823,7 +824,33 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         iSpec_var : integer array holding column indices in UDVS that change
         ds_spec_val_mat : array holding all spectral values for columns in iSpec_var
         """
-        #         Copy even step values of DC_offset into odd steps
+        udvs_cols = ['step_num', 'dc_offset', 'ac_ampli', 'wave_type',
+                     'wave_mod', 'in-field', 'out-of-field']
+        if verbose:
+            print('\t' * 3 + '__FindSpecValIndices:')
+            print('\t' * 4 + 'UDVS matrix of shape: {}'.format(udvs_mat.shape))
+            print('\t' * 4 + 'spec_inds of shape: {}'.format(spec_inds.shape))
+            print('\t'.join(udvs_cols))
+            for ud_row in udvs_mat:
+                print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
+            if False:  # Turn this off if necessary
+                fig, axes = plt.subplots(nrows=2, figsize=(10, 5))
+                for ind, axis in enumerate(axes.flat):
+                    axis.plot(spec_inds[ind, :])
+                    axis.set_title('spec_inds[{}]'.format(ind))
+                fig.tight_layout()
+
+        """
+        icheck is an array containing all UDVS steps which should be checked.
+        """
+        icheck = np.unique(spec_inds[1])
+        if verbose:
+            print('\t' * 4 + 'UDVS steps that will be checked: {}'.format(icheck))
+        if len(icheck) < 1:
+            raise ValueError('No row in the spectroscopic indices varied.\n'
+                             'Cannot build spectroscopic datasets further')
+
+        # Copy even step values of DC_offset into odd steps
         UDVS = np.copy(udvs_mat)
 
         if not usr_defined:
@@ -833,15 +860,18 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             UDVS[:, 1] = DC
 
         """
-        icheck is an array containing all UDVS steps which should be checked.
-        """
-        icheck = np.unique(spec_inds[1])
-        """
         Keep only the UDVS values for steps which we care about and the 
         first 5 columns
         """
         UDVS = UDVS[icheck, :5]
+        udvs_cols = udvs_cols[:5]
         #         UDVS = np.array([UDVS[i] for i in icheck])
+        if verbose:
+            print('\t' * 4 + 'UDVS matrix after down-selecting rows: {}'
+                             ''.format(UDVS.shape))
+            print('\t'.join(udvs_cols))
+            for ud_row in UDVS:
+                print('\t\t'.join(['{:04.2f}'.format(item) for item in ud_row]))
 
         """
         Transpose UDVS for ease of looping later on and store the number of steps
@@ -857,26 +887,40 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Loop over all columns in udvs_mat
         """
-        for i in range(1, num_cols):
+        for col_ind, col_name in zip(range(1, num_cols), udvs_cols[1:]):
             """
             Find all unique values in the current column
             """
-            toosmall = np.where(abs(UDVS[:, i]) < 1E-5)[0]
-            UDVS[toosmall, i] = 0
-            uvals = np.unique(UDVS[:, i])
+            toosmall = np.where(abs(UDVS[:, col_ind]) < 1E-5)[0]
+            UDVS[toosmall, col_ind] = 0
+            uvals = np.unique(UDVS[:, col_ind])
             """
             np.unique considers all NaNs to be unique values
             These two lines find the indices of all NaNs in the unique value array 
             and removes all but the first
             """
             nanvals = np.where(np.isnan(uvals))[0]
+            if verbose:
+                print('\t\t\tColumn {}: {} has {} unique values and {} NaNs'
+                      ''.format(col_ind, col_name, len(uvals), len(nanvals)))
             uvals = np.delete(uvals, nanvals[1:])
             """
             Check if more that one unique value
             Append column number to iSpec_var if true
             """
+            if verbose:
+                print('\t\t\tColumn {}: {} had {} actually unique values'
+                      ''.format(col_ind, col_name, len(uvals)))
             if uvals.size > 1:
-                iSpec_var = np.append(iSpec_var, int(i))
+                iSpec_var = np.append(iSpec_var, int(col_ind))
+
+        if verbose:
+            print('\t' * 4 + 'UDVS matrix of shape: {}'.format(UDVS.shape))
+            print('\t' * 4 + 'Taking columns specified by iSpec_var: {}'
+                             ''.format(iSpec_var))
+
+        if len(iSpec_var) < 1:
+            raise ValueError('Invalid UDVS inputs. No variables were varied')
 
         iSpec_var = np.asarray(iSpec_var, np.int)
         ds_spec_val_mat = UDVS[:, iSpec_var]
@@ -916,7 +960,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             if verbose:
                 print('\t' * 3 + 'DC modulation mode / current mode')
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSDC')
 
@@ -930,7 +975,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             """
             if verbose:
                 print('\t' * 3 + 'AC modulation')
-            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds)
+            iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSAC')
 
@@ -944,7 +990,8 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             if verbose:
                 print('\t' * 3 + 'user defined voltage spectroscopy')
             iSpecVals, inSpecVals = __FindSpecValIndices(udvs_mat, spec_inds,
-                                                         usr_defined=True)
+                                                         usr_defined=True,
+                                                         verbose=verbose)
             if verbose:
                 print('\t' * 3 + 'Generated spec vals. Calling __BEPSgen')
 
@@ -1076,7 +1123,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         if verbose:
             print('\t' * 4 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
                   ''.format(field_type, hascycles, hasFORCS))
-            print('\t' * 4 + '')
+            print('\t' * 4 + 'Looping over {} steps'.format(numsteps))
 
         # TODO: Make this horribly slow double for loop much faster!
 
@@ -1099,7 +1146,10 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Get bins for current step based on waveform
             """
             this_wave = np.where(bin_wfm_type == wave_form[step])[0]
-
+            if len(this_wave) < 1:
+                raise ValueError('Waveform type: {} not found in bin_wfm_type:'
+                                 ' {}'.format(wave_form[step], bin_wfm_type))
+            # print('\t' * 6 + '{}'.format(inSpecVals[step]))
             suffix = [inSpecVals[step][0]]
             if field_type == 'in and out-of-field':
                 suffix.append(field)
@@ -1107,9 +1157,12 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose and False:
-                print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
-                print('\t' * 5 + 'this_wave of shape: {}'.format(this_wave.shape))
+            if verbose and step == 0:
+                print('\t' * 5 + 'Step: {} of {}: Suffix: {}'
+                                 ''.format(step, numsteps, suffix))
+                print('\t' * 5 + 'this_wave of shape: {}'
+                                 ''.format(this_wave.shape))
+
             """
             Loop over bins
             """
@@ -1127,7 +1180,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat_2.append(col_val)
 
-            if verbose and False:
+            if verbose and step == 0:
                 print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {})'
                       ''.format(step, len(ds_spec_val_mat_2),
                                 len(ds_spec_val_mat_2[0])))
@@ -1226,7 +1279,6 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         FORC = -1
         cycle = -1
 
-        # TODO: Horribly slow process. Speed this up!
         warn('Generating spectroscopic values for AC spectroscopy. This can '
              'take a while. Please be patient')
 
@@ -1260,7 +1312,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
                 suffix.append(cycle)
             if hasFORCS:
                 suffix.append(FORC)
-            if verbose and False:
+            if verbose and step == 0:
                 print('\t' * 5 + 'Step: {}: Suffix: {}'.format(step, suffix))
                 print('\t' * 5 + 'this_wave of shape: {}'.format(
                     this_wave.shape))
@@ -1268,7 +1320,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
             Loop over bins
             """
 
-            # TODO: Consider parallel computing here or vectorization
+            # TODO: Consider vectorizing here
             for thisbin in this_wave:
 
                 col_val = [bin_freqs[thisbin]]
@@ -1377,6 +1429,9 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         ds_spec_val_mat, ds_spec_val_labs, ds_spec_val_units, spec_vals_labs_names = ret_vals
         mode = parm_dict['VS_mode']
         # TODO: This is a very slow step - vectorize?
+        if ds_spec_val_mat.shape[1] > 500E+3:
+            warn('Please be patient while spectroscopic indices are being '
+                 'generated')
         ds_spec_inds_mat = create_spec_inds_from_vals(ds_spec_val_mat)
         if verbose:
             print('\t\tReturned from create_spec_inds_from_vals')

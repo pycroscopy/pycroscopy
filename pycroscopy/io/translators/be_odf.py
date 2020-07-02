@@ -18,9 +18,10 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, generate_bipolar_triangular_waveform, \
     infer_bipolar_triangular_fraction_phase, nf32
+from pyUSID.io.reg_ref import write_region_references
 from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
-from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, write_region_references, \
+from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, \
     create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
     write_reduced_anc_dsets, get_unit_values
 from pyUSID.io.usi_data import USIDataset
@@ -44,6 +45,7 @@ class BEodfTranslator(Translator):
         self.FFT_BE_wave = None
         self.signal_type = None
         self.expt_type = None
+        self._verbose = False
 
     @staticmethod
     def is_valid_file(data_path):
@@ -152,7 +154,8 @@ class BEodfTranslator(Translator):
         if 'parm_txt' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from text file')
-            (isBEPS, parm_dict) = parmsToDict(path_dict['parm_txt'])
+            isBEPS, parm_dict = parmsToDict(path_dict['parm_txt'])
+
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
                 print('\treading parameters from old mat file')
@@ -162,7 +165,33 @@ class BEodfTranslator(Translator):
             else:
                 isBEPS=True
         else:
-            raise FileNotFoundError('No parameters file found! Cannot translate this dataset!')
+            raise FileNotFoundError('No parameters file found! Cannot '
+                                    'translate this dataset!')
+
+        # Initial text files named some parameters differently:
+        for case in [('VS_mode', 'AC modulation mode',
+                      'AC modulation mode with time reversal'),
+                     ('VS_mode', 'load Arbitrary VS Wave from text file',
+                      'load user defined VS Wave from file'),
+                     ('BE_phase_content', 'chirp', 'chirp-sinc hybrid'),]:
+            key, wrong_val, corr_val = case
+            if key not in parm_dict.keys():
+                continue
+            if parm_dict[key] == wrong_val:
+                warn('Updating parameter "{}" from invalid value of "{}" to '
+                     '"{}"'.format(key, wrong_val, corr_val))
+                parm_dict[key] = corr_val
+
+        # Some .mat files did not set correct values to some parameters:
+        for case in [('BE_amplitude_[V]', 1E-2, 0.5151),
+                     ('VS_amplitude_[V]', 1E-2, 0.9876)]:
+            key, min_val, new_val = case
+            if key not in parm_dict.keys():
+                continue
+            if parm_dict[key] < min_val:
+                warn('Updating parameter "{}" from invalid value of {} to {}'
+                     ''.format(key, parm_dict[key], new_val))
+                parm_dict[key] = new_val
 
         if self._verbose:
             keys = list(parm_dict.keys())
@@ -214,7 +243,10 @@ class BEodfTranslator(Translator):
             imag_size = path.getsize(path_dict['write_imag'])
 
         if real_size != imag_size:
-            raise ValueError("Real and imaginary file sizes DON'T match!. Ending")
+            raise ValueError("Real and imaginary file sizes do not match!")
+
+        if real_size == 0:
+            raise ValueError('Real and imaginary files were empty')
 
         # Check here if a second channel for current is present
         # Look for the file containing the current data
@@ -262,35 +294,6 @@ class BEodfTranslator(Translator):
 
         tot_bins = int(tot_bins) * tot_bins_multiplier
 
-        if 'parm_mat' in path_dict.keys():
-            if self._verbose:
-                print('\treading BE arrays from parameters text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm = self._read_parms_mat(path_dict['parm_mat'], isBEPS)
-        elif 'old_mat_parms' in path_dict.keys():
-            if self._verbose:
-                print('\treading BE arrays from old mat text file')
-            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
-        else:
-            if self._verbose:
-                print('\tGenerating dummy BE arrays')
-            band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
-            st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
-            en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
-            bin_freqs = np.linspace(st_f, en_f, tot_bins, dtype=np.float32)
-
-            warn('No parms .mat file found.... Filling dummy values into ancillary datasets.')
-            bin_inds = np.zeros(shape=tot_bins, dtype=np.int32)
-            bin_FFT = np.zeros(shape=tot_bins, dtype=np.complex64)
-            ex_wfm = np.zeros(shape=100, dtype=np.float32)
-
-        # Forcing standardized datatypes:
-        bin_inds = np.int32(bin_inds)
-        bin_freqs = np.float32(bin_freqs)
-        bin_FFT = np.complex64(bin_FFT)
-        ex_wfm = np.float32(ex_wfm)
-
-        self.FFT_BE_wave = bin_FFT
-
         if isBEPS:
             if self._verbose:
                 print('\tBuilding UDVS table for BEPS')
@@ -318,6 +321,9 @@ class BEodfTranslator(Translator):
             bins_per_step = int(bins_per_step)
             num_actual_udvs_steps = int(num_actual_udvs_steps)
 
+            if len(np.unique(UDVS_mat[:, 2])) == 0:
+                raise ValueError('No non-zero rows in AC amplitude')
+
             stind = 0
             for step_index in range(UDVS_mat.shape[0]):
                 if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
@@ -344,7 +350,38 @@ class BEodfTranslator(Translator):
             old_spec_inds = np.vstack((np.arange(tot_bins, dtype=INDICES_DTYPE),
                                        np.zeros(tot_bins, dtype=INDICES_DTYPE)))
 
-        # Some very basic information that can help the processing / analysis crew
+        if 'parm_mat' in path_dict.keys():
+            if self._verbose:
+                print('\treading BE arrays from parameters text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm = self._read_parms_mat(path_dict['parm_mat'], isBEPS)
+        elif 'old_mat_parms' in path_dict.keys():
+            if self._verbose:
+                print('\treading BE arrays from old mat text file')
+            bin_inds, bin_freqs, bin_FFT, ex_wfm, dc_amp_vec = self._read_old_mat_be_vecs(path_dict['old_mat_parms'], verbose=verbose)
+        else:
+            warn('No secondary parameters file (.mat) provided. Generating '
+                 'dummy BE arrays')
+            band_width = parm_dict['BE_band_width_[Hz]'] * (0.5 - parm_dict['BE_band_edge_trim'])
+            st_f = parm_dict['BE_center_frequency_[Hz]'] - band_width
+            en_f = parm_dict['BE_center_frequency_[Hz]'] + band_width
+            bin_freqs = np.linspace(st_f, en_f, bins_per_step, dtype=np.float32)
+
+            if verbose:
+                print('\tGenerating BE arrays of length: '
+                      '{}'.format(bins_per_step))
+            bin_inds = np.zeros(shape=bins_per_step, dtype=np.int32)
+            bin_FFT = np.zeros(shape=bins_per_step, dtype=np.complex64)
+            ex_wfm = np.zeros(shape=bins_per_step, dtype=np.float32)
+
+        # Forcing standardized datatypes:
+        bin_inds = np.int32(bin_inds)
+        bin_freqs = np.float32(bin_freqs)
+        bin_FFT = np.complex64(bin_FFT)
+        ex_wfm = np.float32(ex_wfm)
+
+        self.FFT_BE_wave = bin_FFT
+
+        # legacy parmeters inserted for BEAM
         parm_dict['num_bins'] = tot_bins
         parm_dict['num_pix'] = num_pix
         parm_dict['num_udvs_steps'] = num_actual_udvs_steps
@@ -1349,10 +1386,16 @@ class BEodfTranslator(Translator):
 
         # % Extract values from parm text file
         BE_signal_type = translate_val(parm_dict['BE_phase_content'],
-                                       ['chirp-sinc hybrid', '1/2 harmonic excitation',
-                                        '1/3 harmonic excitation', 'pure sine'],
+                                       ['chirp-sinc hybrid',
+                                        '1/2 harmonic excitation',
+                                        '1/3 harmonic excitation',
+                                        'pure sine'],
                                        [1, 2, 3, 4])
-        # This is necessary when normalzing the AI by the AO
+        if BE_signal_type is None:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "BE_phase_content": "{}"'
+                                      ''.format(parm_dict['BE_phase_content']))
+        # This is necessary when normalizing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
         if BE_signal_type is 4:
@@ -1368,20 +1411,45 @@ class BEodfTranslator(Translator):
             VS_fraction = translate_val(parm_dict['VS_cycle_fraction'],
                                         ['full', '1/2', '1/4', '3/4'],
                                         [1., 0.5, 0.25, 0.75])
+            if VS_fraction is None:
+                raise NotImplementedError(
+                    'This translator does not know how to '
+                    'handle "VS_cycle_fraction": "{}"'
+                    ''.format(parm_dict['VS_cycle_fraction']))
             VS_shift = parm_dict['VS_cycle_phase_shift']
         except KeyError as exp:
             print()
             raise KeyError(exp)
+
         if VS_shift is not 0:
             if self._verbose:
                 print('\tVS_shift = {}'.format(VS_shift))
-            VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
+            VS_shift = translate_val(VS_shift,
+                                     ['1/4', '1/2', '3/4'],
+                                     [0.25, 0.5, 0.75])
+            if VS_shift is None:
+                raise NotImplementedError(
+                    'This translator does not know how to '
+                    'handle "VS_cycle_phase_shift": "{}"'
+                    ''.format(parm_dict['VS_cycle_phase_shift']))
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
-                                       ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
+                                       ['out-of-field', 'in-field',
+                                        'in and out-of-field'],
+                                       [0, 1, 2])
+        if VS_in_out_cond:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "VS_measure_in_field_loops": '
+                                      '"{}"'.format(parm_dict['VS_measure_in_field_loops']))
         VS_ACDC_cond = translate_val(parm_dict['VS_mode'],
-                                     ['DC modulation mode', 'AC modulation mode with time reversal',
-                                      'load user defined VS Wave from file', 'current mode'],
+                                     ['DC modulation mode',
+                                      'AC modulation mode with time reversal',
+                                      'load user defined VS Wave from file',
+                                      'current mode'],
                                      [0, 2, 3, 4])
+        if VS_ACDC_cond is None:
+            raise NotImplementedError('This translator does not know how to '
+                                      'handle "VS_Mode": "{}"'
+                                      ''.format(parm_dict['VS_mode']))
         self.expt_type = VS_ACDC_cond
         FORC_cycles = parm_dict['FORC_num_of_FORC_cycles']
         FORC_A1 = parm_dict['FORC_V_high1_[V]']
@@ -1391,8 +1459,11 @@ class BEodfTranslator(Translator):
         FORC_B2 = parm_dict['FORC_V_low2_[V]']
 
         # % build vector of voltage spectroscopy values
-
-        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:  # DC voltage spectroscopy or current mode
+        if self._verbose:
+            print('\t\tBuilding spectroscopy waveform')
+        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:
+            if self._verbose:
+                print('\t\t\tDC voltage spectroscopy or current mode')
             vs_amp_vec = generate_bipolar_triangular_waveform(VS_steps,
                                                               cycle_frac=VS_fraction,
                                                               phase=VS_shift,
@@ -1400,7 +1471,9 @@ class BEodfTranslator(Translator):
                                                               cycles=VS_cycles,
                                                               offset=VS_offset)
 
-        elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
+        elif VS_ACDC_cond == 2:
+            if self._verbose:
+                print('\t\t\tAC voltage spectroscopy with time reversal')
             # Temporarily scale up the number of points in a cycle
             actual_cycle_pts = int(VS_steps // VS_fraction)
             vs_amp_vec = np.linspace(VS_amp / actual_cycle_pts, VS_amp,
@@ -1415,6 +1488,8 @@ class BEodfTranslator(Translator):
             vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles))
 
         if FORC_cycles > 1:
+            if self._verbose:
+                print('\t\t\tWorking on adding FORC')
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))
             FORC_cycle_vec = np.arange(0, FORC_cycles + 1, FORC_cycles / (FORC_cycles - 1))
             FORC_A_vec = FORC_cycle_vec * (FORC_A2 - FORC_A1) / FORC_cycles + FORC_A1
@@ -1429,7 +1504,11 @@ class BEodfTranslator(Translator):
             vs_amp_vec = VS_amp_mat.reshape(int(FORC_cycles * VS_cycles * VS_steps))
 
         # Build UDVS table:
-        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:  # DC voltage spectroscopy or current mode
+        if self._verbose:
+            print('\t\tBuilding UDVS table')
+        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:
+            if self._verbose:
+                print('\t\t\tDC voltage spectroscopy or current mode')
 
             if VS_ACDC_cond is 0:
                 UD_dc_vec = np.vstack((vs_amp_vec, np.zeros(len(vs_amp_vec))))
@@ -1465,7 +1544,9 @@ class BEodfTranslator(Translator):
             udvs_table[BE_IF_switch == 1, 5] = udvs_table[BE_IF_switch == 1, 1]
             udvs_table[BE_OF_switch == 1, 6] = udvs_table[BE_IF_switch == 1, 1]
 
-        elif VS_ACDC_cond is 2:  # AC voltage spectroscopy
+        elif VS_ACDC_cond is 2:
+            if self._verbose:
+                print('\t\t\tAC voltage spectroscopy')
 
             num_VS_steps = vs_amp_vec.size
             half = int(0.5 * num_VS_steps)
@@ -1487,6 +1568,9 @@ class BEodfTranslator(Translator):
             udvs_table[:, 6] = float('NaN') * np.ones(num_VS_steps)
             udvs_table[:half, 5] = vs_amp_vec[:half]
             udvs_table[half:, 6] = vs_amp_vec[half:]
+
+        else:
+            raise NotImplementedError('Not handling VS_ACDC condition: {}'.format(VS_ACDC_cond))
 
         return UD_VS_table_label, UD_VS_table_unit, udvs_table
 
