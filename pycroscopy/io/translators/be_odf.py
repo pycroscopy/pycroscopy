@@ -164,7 +164,8 @@ class BEodfTranslator(Translator):
             else:
                 isBEPS=True
         else:
-            raise FileNotFoundError('No parameters file found! Cannot translate this dataset!')
+            raise FileNotFoundError('No parameters file found! Cannot '
+                                    'translate this dataset!')
 
         # Initial text / mat files named some parameters differently
         if parm_dict['VS_mode'] == 'AC modulation mode':
