@@ -335,6 +335,9 @@ class BEodfTranslator(Translator):
             bins_per_step = int(bins_per_step)
             num_actual_udvs_steps = int(num_actual_udvs_steps)
 
+            if len(np.unique(UDVS_mat[:, 2])) == 0:
+                raise ValueError('No non-zero rows in AC amplitude')
+
             stind = 0
             for step_index in range(UDVS_mat.shape[0]):
                 if UDVS_mat[step_index, 2] < 1E-3:  # invalid AC amplitude
