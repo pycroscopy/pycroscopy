@@ -156,16 +156,21 @@ class BEodfTranslator(Translator):
             isBEPS, parm_dict = parmsToDict(path_dict['parm_txt'])
 
             # Initial text files named some parameters differently
-            updated_parms = False
             if parm_dict['VS_mode'] == 'AC modulation mode':
-                updated_parms = True
+                warn('Updating parameter "VS_mode" from invalid value'
+                     ' of "AC modulation mode" to "AC modulation mode with '
+                     'time reversal"')
                 parm_dict['VS_mode'] = 'AC modulation mode with time reversal'
             if parm_dict['BE_phase_content'] == 'chirp':
-                updated_parms = True
+                warn('Updating parameter "BE_phase_content" from older value'
+                     ' of "chirp" to "chirp-sinc hybrid"')
                 parm_dict['BE_phase_content'] ='chirp-sinc hybrid'
-            if updated_parms:
-                warn('Parameters were stored in text file with an older format'
-                     '.Values for one or more parameters were updated')
+            if parm_dict['BE_amplitude_[V]'] < 1E-2:
+                new_val = 0.5151
+                warn('Updating parameter "BE_amplitude_[V]" from invalid value'
+                     ' of {} to {}'.format(parm_dict['BE_amplitude_[V]'],
+                                           new_val))
+                parm_dict['BE_amplitude_[V]'] = new_val
 
         elif 'old_mat_parms' in path_dict.keys():
             if self._verbose:
@@ -1369,14 +1374,16 @@ class BEodfTranslator(Translator):
 
         # % Extract values from parm text file
         BE_signal_type = translate_val(parm_dict['BE_phase_content'],
-                                       ['chirp-sinc hybrid', '1/2 harmonic excitation',
-                                        '1/3 harmonic excitation', 'pure sine'],
+                                       ['chirp-sinc hybrid',
+                                        '1/2 harmonic excitation',
+                                        '1/3 harmonic excitation',
+                                        'pure sine'],
                                        [1, 2, 3, 4])
         if BE_signal_type is None:
             raise NotImplementedError('This translator does not know how to '
                                       'handle "BE_phase_content": "{}"'
                                       ''.format(parm_dict['BE_phase_content']))
-        # This is necessary when normalzing the AI by the AO
+        # This is necessary when normalizing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
         if BE_signal_type is 4:
@@ -1405,18 +1412,22 @@ class BEodfTranslator(Translator):
         if VS_shift is not 0:
             if self._verbose:
                 print('\tVS_shift = {}'.format(VS_shift))
-            VS_shift = translate_val(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
+            VS_shift = translate_val(VS_shift,
+                                     ['1/4', '1/2', '3/4'],
+                                     [0.25, 0.5, 0.75])
             if VS_shift is None:
                 raise NotImplementedError(
                     'This translator does not know how to '
                     'handle "VS_cycle_phase_shift": "{}"'
                     ''.format(parm_dict['VS_cycle_phase_shift']))
         VS_in_out_cond = translate_val(parm_dict['VS_measure_in_field_loops'],
-                                       ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
+                                       ['out-of-field', 'in-field',
+                                        'in and out-of-field'],
+                                       [0, 1, 2])
         if VS_in_out_cond:
             raise NotImplementedError('This translator does not know how to '
-                                      'handle "VS_measure_in_field_loops": "{}"'
-                                      ''.format(parm_dict['VS_measure_in_field_loops']))
+                                      'handle "VS_measure_in_field_loops": '
+                                      '"{}"'.format(parm_dict['VS_measure_in_field_loops']))
         VS_ACDC_cond = translate_val(parm_dict['VS_mode'],
                                      ['DC modulation mode',
                                       'AC modulation mode with time reversal',
@@ -1436,8 +1447,11 @@ class BEodfTranslator(Translator):
         FORC_B2 = parm_dict['FORC_V_low2_[V]']
 
         # % build vector of voltage spectroscopy values
-
-        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:  # DC voltage spectroscopy or current mode
+        if self._verbose:
+            print('\t\tBuilding spectroscopy waveform')
+        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:
+            if self._verbose:
+                print('\t\t\tDC voltage spectroscopy or current mode')
             vs_amp_vec = generate_bipolar_triangular_waveform(VS_steps,
                                                               cycle_frac=VS_fraction,
                                                               phase=VS_shift,
@@ -1445,7 +1459,9 @@ class BEodfTranslator(Translator):
                                                               cycles=VS_cycles,
                                                               offset=VS_offset)
 
-        elif VS_ACDC_cond == 2:  # AC voltage spectroscopy with time reversal
+        elif VS_ACDC_cond == 2:
+            if self._verbose:
+                print('\t\t\tAC voltage spectroscopy with time reversal')
             # Temporarily scale up the number of points in a cycle
             actual_cycle_pts = int(VS_steps // VS_fraction)
             vs_amp_vec = np.linspace(VS_amp / actual_cycle_pts, VS_amp,
@@ -1460,6 +1476,8 @@ class BEodfTranslator(Translator):
             vs_amp_vec = np.tile(vs_amp_vec, int(VS_cycles))
 
         if FORC_cycles > 1:
+            if self._verbose:
+                print('\t\t\tWorking on adding FORC')
             vs_amp_vec = vs_amp_vec / np.max(np.abs(vs_amp_vec))
             FORC_cycle_vec = np.arange(0, FORC_cycles + 1, FORC_cycles / (FORC_cycles - 1))
             FORC_A_vec = FORC_cycle_vec * (FORC_A2 - FORC_A1) / FORC_cycles + FORC_A1
@@ -1474,7 +1492,11 @@ class BEodfTranslator(Translator):
             vs_amp_vec = VS_amp_mat.reshape(int(FORC_cycles * VS_cycles * VS_steps))
 
         # Build UDVS table:
-        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:  # DC voltage spectroscopy or current mode
+        if self._verbose:
+            print('\t\tBuilding UDVS table')
+        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:
+            if self._verbose:
+                print('\t\t\tDC voltage spectroscopy or current mode')
 
             if VS_ACDC_cond is 0:
                 UD_dc_vec = np.vstack((vs_amp_vec, np.zeros(len(vs_amp_vec))))
@@ -1510,7 +1532,9 @@ class BEodfTranslator(Translator):
             udvs_table[BE_IF_switch == 1, 5] = udvs_table[BE_IF_switch == 1, 1]
             udvs_table[BE_OF_switch == 1, 6] = udvs_table[BE_IF_switch == 1, 1]
 
-        elif VS_ACDC_cond is 2:  # AC voltage spectroscopy
+        elif VS_ACDC_cond is 2:
+            if self._verbose:
+                print('\t\t\tAC voltage spectroscopy')
 
             num_VS_steps = vs_amp_vec.size
             half = int(0.5 * num_VS_steps)
