@@ -1123,7 +1123,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         if verbose:
             print('\t' * 4 + 'field_type: {}, hascycles: {}, hasFORCS: {}'
                   ''.format(field_type, hascycles, hasFORCS))
-            print('\t' * 4 + '')
+            print('\t' * 4 + 'Looping over {} steps'.format(numsteps))
 
         # TODO: Make this horribly slow double for loop much faster!
 
@@ -1176,7 +1176,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
 
                 ds_spec_val_mat_2.append(col_val)
 
-            if verbose and step == 0:
+            if verbose and step == 0 and len(ds_spec_val_mat_2) > 0:
                 print('\t' * 5 + 'At step {} ds_spec_val_mat_2: ({}, {})'
                       ''.format(step, len(ds_spec_val_mat_2),
                                 len(ds_spec_val_mat_2[0])))
