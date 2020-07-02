@@ -887,7 +887,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         """
         Loop over all columns in udvs_mat
         """
-        for col_ind, col_name in zip(range(1, num_cols), udvs_cols):
+        for col_ind, col_name in zip(range(1, num_cols), udvs_cols[1:]):
             """
             Find all unique values in the current column
             """
