@@ -845,7 +845,7 @@ def createSpecVals(udvs_mat, spec_inds, bin_freqs, bin_wfm_type, parm_dict,
         icheck is an array containing all UDVS steps which should be checked.
         """
         icheck = np.unique(spec_inds[1])
-        if verbose:
+        if verbose and False:
             print('\t' * 4 + 'UDVS steps that will be checked: {}'.format(icheck))
         if len(icheck) < 1:
             raise ValueError('No row in the spectroscopic indices varied.\n'
