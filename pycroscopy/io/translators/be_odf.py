@@ -1459,7 +1459,7 @@ class BEodfTranslator(Translator):
                                        ['out-of-field', 'in-field',
                                         'in and out-of-field'],
                                        [0, 1, 2])
-        if VS_in_out_cond:
+        if VS_in_out_cond is None:
             raise NotImplementedError('This translator does not know how to '
                                       'handle "VS_measure_in_field_loops": '
                                       '"{}"'.format(parm_dict['VS_measure_in_field_loops']))
