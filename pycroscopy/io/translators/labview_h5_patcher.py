@@ -174,7 +174,36 @@ class LabViewH5Patcher(Translator):
             remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
                                            h5_meas, verbose=False)
 
-
+            """
+            Add back some standard metadata to be consistent with older
+            BE data
+            """
+            missing_metadata = dict()
+            if 'File_file_name' not in h5_meas.attrs.keys():
+                missing_metadata['File_file_name'] = os.path.split(h5_raw.file.filename)[-1].replace('.h5', '')
+            if 'File_date_and_time' not in h5_meas.attrs.keys():
+                try:
+                    date_str = get_attr(h5_raw.file, 'date_string')
+                    time_str = get_attr(h5_raw.file, 'time_string')
+                    full_str = date_str.strip() + ' ' + time_str.strip()
+                    """
+                    convert:
+                        date_string : 2018-12-05
+                        time_string : 3:41:45 PM
+                    to: 
+                        File_date_and_time: 19-Jun-2009 18:44:56
+                    """
+                    try:
+                        dt_obj = datetime.datetime.strptime(full_str,
+                                                            "%Y-%m-%d %I:%M:%S %p")
+                        missing_metadata['File_date_and_time'] = dt_obj.strftime('%d-%b-%Y %H:%M:%S')
+                    except ValueError:
+                        pass
+                except KeyError:
+                    pass
+            # Now write to measurement group:
+            if len(missing_metadata) > 0:
+                write_simple_attrs(h5_meas, missing_metadata)
 
             for ilabel, label in enumerate(h5_spec_labels):
                 label_slice = (slice(ilabel, ilabel + 1), slice(None))
