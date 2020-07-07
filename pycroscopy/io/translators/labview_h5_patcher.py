@@ -8,11 +8,15 @@ Created on Tue Nov  3 15:24:12 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 import sys
+import datetime
 import h5py
 import os
 import numpy as np
+
+from .df_utils.be_utils import remove_non_exist_spec_dim_labs
 from pyUSID.io.translator import Translator
-from pyUSID.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
+from pyUSID.io.hdf_utils import get_attr, link_as_main, find_results_groups, \
+    check_and_link_ancillary, find_dataset, write_simple_attrs
 from pyUSID.io.write_utils import create_spec_inds_from_vals
 
 if sys.version_info.major == 3:
@@ -162,6 +166,15 @@ class LabViewH5Patcher(Translator):
                     dset['units'] = ['' for _ in spec_labels]
                 except:
                     raise
+
+            """"
+            In early versions, too many spectroscopic dimension labels and 
+            units were listed compared to the number of rows. Remove here:
+            """
+            remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
+                                           h5_meas, verbose=False)
+
+
 
             for ilabel, label in enumerate(h5_spec_labels):
                 label_slice = (slice(ilabel, ilabel + 1), slice(None))
