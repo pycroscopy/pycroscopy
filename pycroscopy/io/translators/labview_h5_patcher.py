@@ -8,11 +8,15 @@ Created on Tue Nov  3 15:24:12 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 from warnings import warn
 import sys
+import datetime
 import h5py
 import os
 import numpy as np
+
+from .df_utils.be_utils import remove_non_exist_spec_dim_labs
 from pyUSID.io.translator import Translator
-from pyUSID.io.hdf_utils import get_attr, link_as_main, check_and_link_ancillary, find_results_groups, find_dataset
+from pyUSID.io.hdf_utils import get_attr, link_as_main, find_results_groups, \
+    check_and_link_ancillary, find_dataset, write_simple_attrs
 from pyUSID.io.write_utils import create_spec_inds_from_vals
 
 if sys.version_info.major == 3:
@@ -162,6 +166,44 @@ class LabViewH5Patcher(Translator):
                     dset['units'] = ['' for _ in spec_labels]
                 except:
                     raise
+
+            """"
+            In early versions, too many spectroscopic dimension labels and 
+            units were listed compared to the number of rows. Remove here:
+            """
+            remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
+                                           h5_meas, verbose=False)
+
+            """
+            Add back some standard metadata to be consistent with older
+            BE data
+            """
+            missing_metadata = dict()
+            if 'File_file_name' not in h5_meas.attrs.keys():
+                missing_metadata['File_file_name'] = os.path.split(h5_raw.file.filename)[-1].replace('.h5', '')
+            if 'File_date_and_time' not in h5_meas.attrs.keys():
+                try:
+                    date_str = get_attr(h5_raw.file, 'date_string')
+                    time_str = get_attr(h5_raw.file, 'time_string')
+                    full_str = date_str.strip() + ' ' + time_str.strip()
+                    """
+                    convert:
+                        date_string : 2018-12-05
+                        time_string : 3:41:45 PM
+                    to: 
+                        File_date_and_time: 19-Jun-2009 18:44:56
+                    """
+                    try:
+                        dt_obj = datetime.datetime.strptime(full_str,
+                                                            "%Y-%m-%d %I:%M:%S %p")
+                        missing_metadata['File_date_and_time'] = dt_obj.strftime('%d-%b-%Y %H:%M:%S')
+                    except ValueError:
+                        pass
+                except KeyError:
+                    pass
+            # Now write to measurement group:
+            if len(missing_metadata) > 0:
+                write_simple_attrs(h5_meas, missing_metadata)
 
             for ilabel, label in enumerate(h5_spec_labels):
                 label_slice = (slice(ilabel, ilabel + 1), slice(None))

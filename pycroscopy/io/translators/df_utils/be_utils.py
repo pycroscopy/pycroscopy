@@ -17,7 +17,7 @@ import xlrd as xlreader
 
 from pyUSID.io.hdf_utils import get_auxiliary_datasets, find_dataset, \
     link_h5_objects_as_attrs, get_attr, create_indexed_group, \
-    write_simple_attrs, write_main_dataset
+    write_simple_attrs, write_main_dataset, get_unit_values
 
 from pyUSID.io.write_utils import create_spec_inds_from_vals, Dimension
 from pyUSID.processing.comp_utils import get_available_memory, parallel_compute
@@ -125,11 +125,9 @@ def infer_bipolar_triangular_fraction_phase(slopes):
     elif all([_ < 0 for _ in slopes[:3]]) and all(
             [_ > 0 for _ in slopes[3:]]):
         return 0.75, 0.75
-    elif slopes[0] > 0 and slopes[1] < 0 and slopes[2] < 0 and slopes[
-        3] > 0:
+    elif slopes[0] > 0 and slopes[1] < 0 and slopes[2] < 0 and slopes[3] > 0:
         return 1, 0
-    elif slopes[0] < 0 and slopes[1] > 0 and slopes[2] > 0 and slopes[
-        3] < 0:
+    elif slopes[0] < 0 and slopes[1] > 0 and slopes[2] > 0 and slopes[3] < 0:
         return 1, 0.5
     else:
         return 0, 0
@@ -170,6 +168,112 @@ def flat_parm_dict_to_nested(parm_dict):
         nest_parm_dict[parent].update(
             {rem_key: parm_dict[key]})
     return nest_parm_dict
+
+
+def remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
+                                   h5_meas_grp, verbose=False):
+    """
+    Removes non-existent spectroscopic dimension name and units from
+    attributes of spectroscopic datasets.
+
+    Notes
+    -----
+    This was written mainly to clean up
+    after the buggy Labview HDF5 acquisition software. This will be used in
+    the LabviewHDF5Patcher Translator
+
+    Parameters
+    ----------
+    h5_spec_inds : h5py.Dataset
+        Dataset containing the spectroscopic indices
+    h5_spec_vals : h5py.Dataset
+        Dataset containing the spectroscopic values
+    h5_meas_grp : h5py.Group
+        Group containing all the parameters for the BE measurement
+    verbose : bool, optional. Default = False
+        Whether or not to print statements aiding in debugging
+
+    Returns
+    -------
+    None
+    """
+    for obj, name, exp_type in zip([h5_spec_inds, h5_spec_vals, h5_meas_grp],
+                                   ['h5_spec_inds', 'h5_spec_vals', 'h5_meas_grp'],
+                                   [h5py.Dataset, h5py.Dataset, h5py.Group]):
+        if not isinstance(obj, exp_type):
+            raise TypeError('{} should be a {}. Provided object was: {}'
+                            ''.format(name, exp_type, type(obj)))
+
+    spec_dim_names = get_attr(h5_spec_inds, 'labels')
+    spec_dim_units = get_attr(h5_spec_inds, 'units')
+    if len(spec_dim_names) != len(spec_dim_units):
+        raise ValueError('Unqeual lengths for the spec dim names and units')
+    if len(spec_dim_names) <= h5_spec_inds.shape[0]:
+        return
+
+    if verbose:
+        print(
+            'extra dimensions in the list of names attributes: {} compared to '
+            'rows in dataset: {}'
+            ''.format(len(spec_dim_names), h5_spec_inds.shape[0]))
+
+    if len(spec_dim_names) - h5_spec_inds.shape[0] > 1:
+        raise NotImplementedError(
+            'Cannot handle case when more than one dimensions are fake')
+
+    # Gather basic parameters for each dimension
+    # h5_meas_grp = h5_raw.parent.parent
+    field_type = get_attr(h5_meas_grp, 'VS_measure_in_field_loops')
+    num_freq_bins = int(get_attr(h5_meas_grp, 'num_bins') /
+                        get_attr(h5_meas_grp, 'num_UDVS_steps'))
+    num_fields = 1 + int(all([targ in field_type for targ in ['in', 'out']]))
+    dc_off_steps = get_attr(h5_meas_grp, 'VS_steps_per_full_cycle')
+    num_cycles = get_attr(h5_meas_grp, 'VS_number_of_cycles')
+    num_forc_cycles = get_attr(h5_meas_grp, 'VS_num_of_FORC_cycles')
+
+    size_dict = {'Frequency': num_freq_bins,
+                 'DC_Offset': dc_off_steps,
+                 'Field': num_fields,
+                 'Cycle': num_cycles,
+                 'FORC': num_forc_cycles,
+                 }
+
+    if verbose:
+        for key, val in size_dict.items():
+            print('{} : {}'.format(key, val))
+
+    matched_dims = list()
+    matched_units = list()
+
+    row_ind = 0
+
+    for dim_name, dim_units in zip(spec_dim_names, spec_dim_units):
+        # Pass one row at a time:
+        this_dict = get_unit_values(np.expand_dims(h5_spec_inds[row_ind],
+                                                   axis=0),
+                                    np.expand_dims(h5_spec_vals[row_ind],
+                                                   axis=0),
+                                    is_spec=True, all_dim_names=[dim_name])
+
+        if verbose:
+            print(dim_name, len(this_dict[dim_name]), size_dict[dim_name])
+
+        if len(this_dict[dim_name]) == size_dict[dim_name]:
+            row_ind += 1
+            matched_dims.append(dim_name)
+            matched_units.append(dim_units)
+        else:
+            if verbose:
+                print(
+                    '\tDimension: "' + dim_name + '" did not match with what '
+                                                  'was in dataset')
+
+    if verbose:
+        print('Writing new attributes to spectroscopic datasets')
+
+    new_attrs = {'labels': matched_dims, 'units': matched_units}
+    for h5_dset in [h5_spec_inds, h5_spec_vals]:
+        write_simple_attrs(h5_dset, new_attrs)
 
 
 def parmsToDict(filepath, parms_to_remove=[]):
