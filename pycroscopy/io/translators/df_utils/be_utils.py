@@ -170,7 +170,8 @@ def flat_parm_dict_to_nested(parm_dict):
     return nest_parm_dict
 
 
-def remove_non_exist_spec_dim_labs(h5_raw, verbose=False):
+def remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
+                                   h5_meas_grp, verbose=False):
     """
     Removes non-existent spectroscopic dimension name and units from
     attributes of spectroscopic datasets.
@@ -183,8 +184,12 @@ def remove_non_exist_spec_dim_labs(h5_raw, verbose=False):
 
     Parameters
     ----------
-    h5_raw : h5py.Dataset
-        Dataset containing the raw measurement data
+    h5_spec_inds : h5py.Dataset
+        Dataset containing the spectroscopic indices
+    h5_spec_vals : h5py.Dataset
+        Dataset containing the spectroscopic values
+    h5_meas_grp : h5py.Group
+        Group containing all the parameters for the BE measurement
     verbose : bool, optional. Default = False
         Whether or not to print statements aiding in debugging
 
@@ -192,12 +197,12 @@ def remove_non_exist_spec_dim_labs(h5_raw, verbose=False):
     -------
     None
     """
-    if not isinstance(h5_raw, h5py.Dataset):
-        raise TypeError('h5_raw should be a h5py.Dataset. Provided object was:'
-                        ' {}'.format(type(h5_raw)))
-
-    h5_spec_inds = get_auxiliary_datasets(h5_raw, aux_dset_name=['Spectroscopic_Indices'])[0]
-    h5_spec_vals = get_auxiliary_datasets(h5_raw, aux_dset_name=['Spectroscopic_Values'])[0]
+    for obj, name, exp_type in zip([h5_spec_inds, h5_spec_vals, h5_meas_grp],
+                                   ['h5_spec_inds', 'h5_spec_vals', 'h5_meas_grp'],
+                                   [h5py.Dataset, h5py.Dataset, h5py.Group]):
+        if not isinstance(obj, exp_type):
+            raise TypeError('{} should be a {}. Provided object was: {}'
+                            ''.format(name, exp_type, type(obj)))
 
     spec_dim_names = get_attr(h5_spec_inds, 'labels')
     spec_dim_units = get_attr(h5_spec_inds, 'units')
@@ -217,7 +222,7 @@ def remove_non_exist_spec_dim_labs(h5_raw, verbose=False):
             'Cannot handle case when more than one dimensions are fake')
 
     # Gather basic parameters for each dimension
-    h5_meas_grp = h5_raw.parent.parent
+    # h5_meas_grp = h5_raw.parent.parent
     field_type = get_attr(h5_meas_grp, 'VS_measure_in_field_loops')
     num_freq_bins = int(get_attr(h5_meas_grp, 'num_bins') /
                         get_attr(h5_meas_grp, 'num_UDVS_steps'))
@@ -264,7 +269,7 @@ def remove_non_exist_spec_dim_labs(h5_raw, verbose=False):
                                                   'was in dataset')
 
     if verbose:
-        print('Writing new attributs to spec dsets')
+        print('Writing new attributes to spectroscopic datasets')
 
     new_attrs = {'labels': matched_dims, 'units': matched_units}
     for h5_dset in [h5_spec_inds, h5_spec_vals]:
