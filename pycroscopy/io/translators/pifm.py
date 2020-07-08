@@ -12,7 +12,7 @@ class PiFMTranslator(Translator):
     structure.
     """
 
-    def translate(self, path, append_path='', grp_name='Measurement'):
+    def translate(self, path, append_path='', grp_name='Measurement', overwrite=False):
         """
         Parameters
         ----------
@@ -22,6 +22,8 @@ class PiFMTranslator(Translator):
             Whether or not to show  print statements for debugging
         append_path : string (Optional)
             h5_file to add these data to, must be a path to the h5_file on disk
+        overwrite : bool (optional, default=False)
+            If True, will overwrite an existing .h5 file of the same name
         parm_encoding : str, optional
             Codec to be used to decode the bytestrings into Python strings if needed.
             Default 'utf-8'
@@ -38,7 +40,7 @@ class PiFMTranslator(Translator):
         self.read_imgs()
         self.read_spectra()
         self.make_pos_vals_inds_dims()
-        self.create_hdf5_file(append_path, grp_name)
+        self.create_hdf5_file(append_path, grp_name, overwrite)
         self.write_spectrograms()
         self.write_images()
         self.write_spectra()
@@ -210,14 +212,17 @@ class PiFMTranslator(Translator):
                     usid.write_utils.Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
         self.pos_ind, self.pos_val, self.pos_dims = pos_ind, pos_val, pos_dims
 
-    def create_hdf5_file(self, append_path='', grp_name='Measurement'):
+    def create_hdf5_file(self, append_path='', grp_name='Measurement', overwrite=False):
         if not append_path:
             h5_path = os.path.join(self.directory, self.basename.replace('.txt', '.h5'))
             if os.path.exists(h5_path):
-                raise FileExistsError
-            #if file already exists. (maybe there is a better way to check for this)
-            else:
-                self.h5_f = h5py.File(h5_path, mode='w')
+                if not overwrite:
+                    raise FileExistsError('This file already exists). Set attribute overwrite to True')
+                else:
+                    print('Overwriting file', h5_path)
+                    #os.remove(h5_path)
+                    
+            self.h5_f = h5py.File(h5_path, mode='w')
 
         else:
             if not os.path.exists(append_path):
@@ -261,7 +266,7 @@ class PiFMTranslator(Translator):
         if bool(self.img_desc):
             for img_f, descriptors in self.img_desc.items():
                 #check for existing spectrogram or image and link position/spec inds/vals
-                #at most two channels worth of need to be checked
+                #at most two channels worth of need to be checked (Fwd and Bwd)
                 try:
                     str_main = str(usid.hdf_utils.get_all_main(self.h5_f['Measurement_000/Channel_000']))
                     i_beg = str_main.find('located at: \n\t') + 14
@@ -288,6 +293,10 @@ class PiFMTranslator(Translator):
                             h5_spec_inds = channel_data.h5_spec_inds
                             h5_spec_vals = channel_data.h5_spec_vals
                             spec_dims = None
+                        else: # If a forward/bwd spectrogram exist
+                            h5_spec_inds = None
+                            h5_spec_vals = None
+                            spec_dims = usid.write_utils.Dimension('arb', 'a.u', 1)
 
                 #in case where channel does not exist, we make new spec/pos inds/vals
                 except KeyError:
