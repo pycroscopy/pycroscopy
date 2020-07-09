@@ -260,7 +260,7 @@ def remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
                                     is_spec=True, all_dim_names=[dim_name])
 
         std_dim_name = dim_name
-        if dim_name == 'FORC_cycle':
+        if dim_name == 'FORC_Cycle':
             std_dim_name = 'FORC'
 
         if verbose:
