@@ -259,10 +259,14 @@ def remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
                                                    axis=0),
                                     is_spec=True, all_dim_names=[dim_name])
 
-        if verbose:
-            print(dim_name, len(this_dict[dim_name]), size_dict[dim_name])
+        std_dim_name = dim_name
+        if dim_name == 'FORC_cycle':
+            std_dim_name = 'FORC'
 
-        if len(this_dict[dim_name]) == size_dict[dim_name]:
+        if verbose:
+            print(dim_name, len(this_dict[dim_name]), size_dict[std_dim_name])
+
+        if len(this_dict[dim_name]) == size_dict[std_dim_name]:
             row_ind += 1
             matched_dims.append(dim_name)
             matched_units.append(dim_units)
