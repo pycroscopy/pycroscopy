@@ -229,7 +229,11 @@ def remove_non_exist_spec_dim_labs(h5_spec_inds, h5_spec_vals,
     num_fields = 1 + int(all([targ in field_type for targ in ['in', 'out']]))
     dc_off_steps = get_attr(h5_meas_grp, 'VS_steps_per_full_cycle')
     num_cycles = get_attr(h5_meas_grp, 'VS_number_of_cycles')
-    num_forc_cycles = get_attr(h5_meas_grp, 'VS_num_of_FORC_cycles')
+    try:
+        num_forc_cycles = get_attr(h5_meas_grp, 'VS_num_of_FORC_cycles')
+    except KeyError:
+        # This is named differently in some h5 files
+        num_forc_cycles = get_attr(h5_meas_grp, 'VS_num_of_Forc_cycles')
 
     size_dict = {'Frequency': num_freq_bins,
                  'DC_Offset': dc_off_steps,
