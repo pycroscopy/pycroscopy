@@ -205,13 +205,6 @@ class LabViewH5Patcher(Translator):
             if len(missing_metadata) > 0:
                 write_simple_attrs(h5_meas, missing_metadata)
 
-            for ilabel, label in enumerate(h5_spec_labels):
-                label_slice = (slice(ilabel, ilabel + 1), slice(None))
-                if label == '':
-                    label = 'Step'
-                h5_spec_inds.attrs[label] = h5_spec_inds.regionref[label_slice]
-                h5_spec_vals.attrs[label] = h5_spec_vals.regionref[label_slice]
-
             # Link the references to the Indices and Values datasets to the Raw_Data
             link_as_main(h5_raw, h5_pos_inds, h5_pos_vals, h5_spec_inds, h5_spec_vals)
 
@@ -255,14 +248,6 @@ class LabViewH5Patcher(Translator):
 
                     except:
                         raise
-
-                # Make region references in the
-                for ilabel, label in enumerate(h5_sho_spec_labels):
-                    label_slice = (slice(ilabel, ilabel + 1), slice(None))
-                    if label == '':
-                        label = 'Step'.encode('utf-8')
-                    h5_sho_spec_inds.attrs[label] = h5_sho_spec_inds.regionref[label_slice]
-                    h5_sho_spec_vals.attrs[label] = h5_sho_spec_vals.regionref[label_slice]
 
             h5_file.flush()
 
