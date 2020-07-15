@@ -16,8 +16,9 @@ from sklearn.utils.extmath import randomized_svd
 
 from pyUSID.processing.process import Process
 from .proc_utils import get_component_slice
-from pyUSID.io.hdf_utils import find_results_groups, get_indices_for_region_ref, \
-    create_region_reference, copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
+from pyUSID.io.reg_ref import get_indices_for_region_ref, create_region_reference
+from pyUSID.io.hdf_utils import find_results_groups, \
+    copy_attributes, reshape_to_n_dims, get_attr, write_main_dataset, \
     create_results_group, write_simple_attrs, create_indexed_group
 from pyUSID.processing.comp_utils import get_available_memory
 from pyUSID.io.io_utils import format_time
