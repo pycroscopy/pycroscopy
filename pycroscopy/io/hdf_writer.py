@@ -16,7 +16,7 @@ from warnings import warn
 import h5py
 
 from pyUSID.io.hdf_utils import assign_group_index, write_simple_attrs
-from pyUSID.io.reg_reg import attempt_reg_ref_build, write_region_references
+from pyUSID.io.reg_ref import attempt_reg_ref_build, write_region_references
 from .virtual_data import VirtualGroup, VirtualDataset, VirtualData
 from ..__version__ import version
 
