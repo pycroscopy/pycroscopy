@@ -8,7 +8,7 @@ Created on Mon Sep 28 11:35:57 2015
 from __future__ import division, print_function, absolute_import, unicode_literals
 import numpy as np
 from numpy import exp, abs, sqrt, sum, real, imag, arctan2, append
-
+from scipy.optimize import minimize
 
 def SHOfunc(parms, w_vec):
     """
@@ -24,6 +24,26 @@ def SHOfunc(parms, w_vec):
     return parms[0] * exp(1j * parms[3]) * parms[1] ** 2 / \
         (w_vec ** 2 - 1j * w_vec * parms[1] / parms[2] - parms[1] ** 2)
 
+
+def SHOfit(parms, w_vec, resp_vec):
+    """
+    Cost function minimization of SHO fitting
+
+    Parameters
+    -----------
+    parms : list or tuple
+        SHO parameters=(A,w0,Q,phi)
+    w_vec : 1D numpy array
+        Vector of frequency values
+    resp_vec : 1D complex numpy array or list
+        Cantilever response vector as a function of frequency
+    """
+    # Cost function to minimize.
+    cost = lambda p: np.sum((SHOfunc(parms, w_vec) - resp_vec) ** 2)
+
+    popt = minimize(cost, parms, method='TNC', options={'disp':False})
+
+    return popt.x
 
 def SHOestimateGuess(resp_vec, w_vec, num_points=5):
     """
