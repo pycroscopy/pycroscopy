@@ -7,7 +7,8 @@ import numpy as np
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr
+from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr, copy_dataset, \
+    write_main_dataset, write_simple_attrs, create_indexed_group, create_results_group, write_reduced_anc_dsets
 from pyUSID.io.dtype_utils import stack_real_to_compound
 from pyUSID.io.translator import Translator
 from pyUSID import USIDataset
@@ -395,17 +396,17 @@ class FakeBEPSGenerator(Translator):
 
         # Write the file
         self.h5_f = h5py.File(self.h5_path, 'w')
-        usid.hdf_utils.write_simple_attrs(self.h5_f, root_parms)
+        write_simple_attrs(self.h5_f, root_parms)
 
-        meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement')
-        chan_grp = usid.hdf_utils.create_indexed_group(meas_grp, 'Channel')
+        meas_grp = create_indexed_group(self.h5_f, 'Measurement')
+        chan_grp = create_indexed_group(meas_grp, 'Channel')
 
-        usid.hdf_utils.write_simple_attrs(meas_grp, data_gen_parms)
+        write_simple_attrs(meas_grp, data_gen_parms)
 
         # Create the Position and Spectroscopic datasets for the Raw Data
         h5_pos_dims, h5_spec_dims = self._build_ancillary_datasets()
 
-        h5_raw_data = usid.hdf_utils.write_main_dataset(chan_grp, (self.n_pixels, self.n_spec_bins),
+        h5_raw_data = write_main_dataset(chan_grp, (self.n_pixels, self.n_spec_bins),
                                                         'Raw_Data',
                                                         'Deflection',
                                                         'Volts',
@@ -416,14 +417,14 @@ class FakeBEPSGenerator(Translator):
         '''
         Build the SHO Group
         '''
-        sho_grp = usid.hdf_utils.create_results_group(h5_raw_data, 'SHO_Fit')
+        sho_grp = create_results_group(h5_raw_data, 'SHO_Fit')
 
         # Build the Spectroscopic datasets for the SHO Guess and Fit
 
         h5_sho_spec_inds, h5_sho_spec_vals = write_reduced_anc_dsets(
             sho_grp, h5_raw_data.h5_spec_inds, h5_raw_data.h5_spec_vals, 'Frequency', is_spec=True)
 
-        h5_sho_fit = usid.hdf_utils.write_main_dataset(sho_grp,
+        h5_sho_fit = write_main_dataset(sho_grp,
                                                        (self.n_pixels, int(self.n_spec_bins // self.n_bins)),
                                                        'Fit',
                                                        'SHO Parameters',
@@ -435,13 +436,13 @@ class FakeBEPSGenerator(Translator):
                                                        h5_spec_vals=h5_sho_spec_vals,
                                                        slow_to_fast=True, dtype=sho32)
 
-        h5_sho_guess = usid.hdf_utils.copy_dataset(h5_sho_fit, sho_grp, alias='Guess')
+        h5_sho_guess = copy_dataset(h5_sho_fit, sho_grp, alias='Guess')
 
         '''
         Build the loop group
         '''
 
-        loop_grp = usid.hdf_utils.create_results_group(h5_sho_fit, 'Loop_Fit')
+        loop_grp = create_results_group(h5_sho_fit, 'Loop_Fit')
 
         # Build the Spectroscopic datasets for the loops
 
@@ -449,7 +450,7 @@ class FakeBEPSGenerator(Translator):
             loop_grp, h5_sho_fit.h5_spec_inds, h5_sho_fit.h5_spec_vals,
             'DC_Offset', is_spec=True)
 
-        h5_loop_fit = usid.hdf_utils.write_main_dataset(loop_grp,
+        h5_loop_fit = write_main_dataset(loop_grp,
                                                         (self.n_pixels, self.n_loops),
                                                         'Fit',
                                                         'Loop Fitting Parameters',
@@ -461,7 +462,7 @@ class FakeBEPSGenerator(Translator):
                                                         h5_spec_vals=h5_loop_spec_vals,
                                                         slow_to_fast=True, dtype=loop_fit32)
 
-        h5_loop_guess = usid.hdf_utils.copy_dataset(h5_loop_fit, loop_grp, alias='Guess')
+        h5_loop_guess = copy_dataset(h5_loop_fit, loop_grp, alias='Guess')
 
         self.h5_raw = h5_raw_data
         self.h5_sho_guess = h5_sho_guess
