@@ -49,10 +49,18 @@ class Fitter(Process):
 
         # Validate other arguments / kwargs here:
         if variables is not None:
-            if not np.all(np.isin(variables, self.h5_main.spec_dim_labels)):
+            if isinstance(variables, str):
+                variables = [variables]
+            if not isinstance(variables, (list, tuple)):
+                raise TypeError('variables should be a string / list or tuple'
+                                'of strings. Provided object was of type: {}'
+                                ''.format(type(variables)))
+            if not all([dim in self.h5_main.spec_dim_labels for dim in variables]):
                 raise ValueError('Provided dataset does not appear to have the'
-                                 ' spectroscopic dimension(s): "{}" that need '
-                                 'to be fitted'.format(variables))
+                                 ' spectroscopic dimension(s): {} that need '
+                                 'to be fitted: {}'
+                                 ''.format(self.h5_main.spec_dim_labels,
+                                           variables))
 
         # Variables specific to Fitter
         self._guess = None
