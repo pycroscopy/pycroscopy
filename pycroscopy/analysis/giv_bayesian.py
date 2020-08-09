@@ -12,12 +12,13 @@ Created on Thu Nov 02 11:48:53 2017
 from __future__ import division, print_function, absolute_import, unicode_literals
 
 import numpy as np
-from pyUSID.processing.process import Process
-from pyUSID.processing.comp_utils import parallel_compute
-from pyUSID.io.dtype_utils import stack_real_to_compound
-from pyUSID.io.hdf_utils import write_main_dataset, create_results_group, create_empty_dataset, write_simple_attrs, \
-    print_tree, get_attributes
+from sidpy.proc.comp_utils import parallel_compute
+from sidpy.hdf.dtype_utils import stack_real_to_compound
+from sidpy.hdf.hdf_utils import write_simple_attrs, print_tree, get_attributes
 from pyUSID.io.write_utils import Dimension
+from pyUSID.processing.process import Process
+from pyUSID.io.hdf_utils import write_main_dataset, create_results_group, \
+    create_empty_dataset
 from pyUSID import USIDataset
 from .utils.giv_utils import do_bayesian_inference, bayesian_inference_on_period
 

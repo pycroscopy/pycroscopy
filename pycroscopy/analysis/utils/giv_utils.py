@@ -14,8 +14,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.linalg import sqrtm
 
-from pyUSID.io.hdf_utils import get_auxiliary_datasets
-from pyUSID.viz.plot_utils import set_tick_font_size
+from sidpy.hdf.hdf_utils import get_auxiliary_datasets
+from sidpy.viz.plot_utils import set_tick_font_size
 
 
 def do_bayesian_inference(i_meas, bias, freq, num_x_steps=251, r_extra=110, gam=0.03, e=10.0, sigma=10., sigmaC=1.,

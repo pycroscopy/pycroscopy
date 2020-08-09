@@ -14,12 +14,14 @@ import time
 import numpy as np
 import sklearn.decomposition as dec
 
+from sidpy.hdf.hdf_utils import write_simple_attrs, get_attr
+from sidpy.base.string_utils import format_time
+from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
+
 from pyUSID.processing.process import Process
-from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
-    write_simple_attrs
+from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, \
+    write_main_dataset
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
-from pyUSID.io.io_utils import format_time
 from pyUSID import USIDataset
 
 
