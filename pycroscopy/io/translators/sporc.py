@@ -13,12 +13,13 @@ import h5py
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from pyUSID.io.translator import Translator  # Because this class extends the abstract Translator class
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+
 from pyUSID.io.write_utils import Dimension, INDICES_DTYPE, VALUES_DTYPE
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+
 from ..write_utils import build_ind_val_dsets
-from ..hdf_writer import HDFwriter  # Now the translator is responsible for writing the data.
-# The building blocks for defining heirarchical storage in the H5 file
+from ..hdf_writer import HDFwriter
 from ..virtual_data import VirtualGroup, VirtualDataset
 
 

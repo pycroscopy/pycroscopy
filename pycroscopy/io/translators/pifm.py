@@ -1,10 +1,14 @@
 import os
 import numpy as np
-from pyUSID.io.translator import Translator
-from pyUSID.io import write_utils
-from pyUSID import USIDataset
-import pyUSID as usid
 import h5py
+
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
+from pyUSID.io.write_utils import Dimension, build_ind_val_matrices
+from pyUSID.hdf_utils import write_main_dataset, create_indexed_group, get_all_main
+from pyUSID import USIDataset
+
 
 class PiFMTranslator(Translator):
     """
@@ -205,11 +209,11 @@ class PiFMTranslator(Translator):
         #assumes y scan direction:down; scan angle: 0 deg
         y_linspace = -np.arange(y_start, y_end, step=dy)
         x_linspace = np.arange(x_start, x_end, step=dx)
-        pos_ind, pos_val = write_utils.build_ind_val_matrices(unit_values=(x_linspace, y_linspace), is_spectral=False)
-        #usid.write_utils.Dimension uses ascii encoding, which can not encode
+        pos_ind, pos_val = build_ind_val_matrices(unit_values=(x_linspace, y_linspace), is_spectral=False)
+        #Dimension uses ascii encoding, which can not encode
         # micron symbol, so we replace it, if present, with the letter u.
-        pos_dims = [usid.write_utils.Dimension('X', self.params_dictionary['XPhysUnit'].replace('\xb5', 'u'), self.x_len),
-                    usid.write_utils.Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
+        pos_dims = [Dimension('X', self.params_dictionary['XPhysUnit'].replace('\xb5', 'u'), self.x_len),
+                    Dimension('Y', self.params_dictionary['YPhysUnit'].replace('\xb5', 'u'), self.y_len)]
         self.pos_ind, self.pos_val, self.pos_dims = pos_ind, pos_val, pos_dims
 
     def create_hdf5_file(self, append_path='', grp_name='Measurement', overwrite=False):
@@ -229,19 +233,19 @@ class PiFMTranslator(Translator):
                 raise Exception('File does not exist. Check pathname.')
             self.h5_f = h5py.File(append_path, mode='r+')
 
-        self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, grp_name)
+        self.h5_meas_grp = create_indexed_group(self.h5_f, grp_name)
         
-        usid.hdf_utils.write_simple_attrs(self.h5_meas_grp, self.params_dictionary)
+        write_simple_attrs(self.h5_meas_grp, self.params_dictionary)
 
         return
     
     def write_spectrograms(self):
         if bool(self.spectrogram_desc):
             for spectrogram_f, descriptors in self.spectrogram_desc.items():
-                channel_i = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'Channel_')
+                channel_i = create_indexed_group(self.h5_meas_grp, 'Channel_')
                 spec_vals_i = self.spectrogram_spec_vals[spectrogram_f]
-                spectrogram_spec_dims = usid.write_utils.Dimension('Wavelength', descriptors[8], spec_vals_i)
-                h5_raw = usid.hdf_utils.write_main_dataset(channel_i,  # parent HDF5 group
+                spectrogram_spec_dims = Dimension('Wavelength', descriptors[8], spec_vals_i)
+                h5_raw = write_main_dataset(channel_i,  # parent HDF5 group
                                                            (self.x_len *
                                                             self.y_len, len(spec_vals_i)),  # shape of Main dataset
                                                            'Raw_Data',  # Name of main dataset
@@ -268,7 +272,7 @@ class PiFMTranslator(Translator):
                 #check for existing spectrogram or image and link position/spec inds/vals
                 #at most two channels worth of need to be checked (Fwd and Bwd)
                 try:
-                    str_main = str(usid.hdf_utils.get_all_main(self.h5_f['Measurement_000/Channel_000']))
+                    str_main = str(get_all_main(self.h5_f['Measurement_000/Channel_000']))
                     i_beg = str_main.find('located at: \n\t') + 14
                     i_end = str_main.find('\nData contains') - 1
                     data_loc = str_main[i_beg:i_end]
@@ -283,7 +287,7 @@ class PiFMTranslator(Translator):
                         spec_dims = None
                     #if channel 000 is spectrogram, check next dataset
                     elif channel_data.spec_dim_sizes[0] !=1:
-                        str_main = str(usid.hdf_utils.get_all_main(self.h5_f['Measurement_000/Channel_001']))
+                        str_main = str(get_all_main(self.h5_f['Measurement_000/Channel_001']))
                         i_beg = str_main.find('located at: \n\t') + 14
                         i_end = str_main.find('\nData contains') - 1
                         data_loc = str_main[i_beg:i_end]
@@ -296,7 +300,7 @@ class PiFMTranslator(Translator):
                         else: # If a forward/bwd spectrogram exist
                             h5_spec_inds = None
                             h5_spec_vals = None
-                            spec_dims = usid.write_utils.Dimension('arb', 'a.u', 1)
+                            spec_dims = Dimension('arb', 'a.u', 1)
 
                 #in case where channel does not exist, we make new spec/pos inds/vals
                 except KeyError:
@@ -308,10 +312,10 @@ class PiFMTranslator(Translator):
                     #spec dims
                     h5_spec_inds = None
                     h5_spec_vals = None
-                    spec_dims = usid.write_utils.Dimension('arb', 'a.u', 1)
+                    spec_dims = Dimension('arb', 'a.u', 1)
 
-                channel_i = usid.hdf_utils.create_indexed_group(self.h5_meas_grp,'Channel_')
-                h5_raw = usid.hdf_utils.write_main_dataset(channel_i, #parent HDF5 group
+                channel_i = create_indexed_group(self.h5_meas_grp,'Channel_')
+                h5_raw = write_main_dataset(channel_i, #parent HDF5 group
                                                                (self.x_len * self.y_len, 1),  # shape of Main dataset
                                                                'Raw_' + descriptors[0].replace('-', '_'),
                                                                # Name of main dataset
@@ -339,21 +343,21 @@ class PiFMTranslator(Translator):
         if bool(self.spectrum_desc):
             for spec_f, descriptors in self.spectrum_desc.items():
                 #create new measurement group for ea spectrum
-                self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+                self.h5_meas_grp = create_indexed_group(self.h5_f, 'Measurement_')
                 x_name = self.spectra_x_y_dim_name[spec_f][0].split(' ')[0]
                 x_unit = self.spectra_x_y_dim_name[spec_f][0].split(' ')[1]
                 y_name = self.spectra_x_y_dim_name[spec_f][1].split(' ')[0]
                 y_unit = self.spectra_x_y_dim_name[spec_f][1].split(' ')[1]
-                spec_i_spec_dims = usid.write_utils.Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
-                spec_i_pos_dims = [usid.write_utils.Dimension('X',
+                spec_i_spec_dims = Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
+                spec_i_pos_dims = [Dimension('X',
                                                               self.params_dictionary['XPhysUnit'].replace('\xb5','u'),
                                                               np.array([float(descriptors[1])])),
-                                   usid.write_utils.Dimension('Y',
+                                   Dimension('Y',
                                                               self.params_dictionary['YPhysUnit'].replace('\xb5','u'),
                                                               np.array([float(descriptors[1])]))]
                 #write data to a channel in the measurement group
-                spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'Spectrum_')
-                h5_raw = usid.hdf_utils.write_main_dataset(spec_i_ch,  # parent HDF5 group
+                spec_i_ch = create_indexed_group(self.h5_meas_grp, 'Spectrum_')
+                h5_raw = write_main_dataset(spec_i_ch,  # parent HDF5 group
                                                            (1, len(self.spectra_spec_vals[spec_f])),  # shape of Main dataset
                                                            'Raw_Spectrum',
                                                            # Name of main dataset
@@ -373,23 +377,23 @@ class PiFMTranslator(Translator):
             for spec_f, descriptors in self.pspectrum_desc.items():
 
                 # create new measurement group for ea spectrum
-                self.h5_meas_grp = usid.hdf_utils.create_indexed_group(self.h5_f, 'Measurement_')
+                self.h5_meas_grp = create_indexed_group(self.h5_f, 'Measurement_')
                 x_name = self.spectra_x_y_dim_name[spec_f][0].split(' ')[0]
                 x_unit = self.spectra_x_y_dim_name[spec_f][0].split(' ')[1]
                 y_name = self.spectra_x_y_dim_name[spec_f][1].split(' ')[0]
                 y_unit = self.spectra_x_y_dim_name[spec_f][1].split(' ')[1]
-                spec_i_spec_dims = usid.write_utils.Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
-                spec_i_pos_dims = [usid.write_utils.Dimension('X',
+                spec_i_spec_dims = Dimension(x_name, x_unit, self.spectra_spec_vals[spec_f])
+                spec_i_pos_dims = [Dimension('X',
                                                               self.params_dictionary['XPhysUnit'].replace(
                                                                   '\xb5', 'u'),
                                                               np.array([0])),
-                                   usid.write_utils.Dimension('Y',
+                                   Dimension('Y',
                                                               self.params_dictionary['YPhysUnit'].replace(
                                                                   '\xb5', 'u'),
                                                               np.array([0]))]
                 # write data to a channel in the measurement group
-                spec_i_ch = usid.hdf_utils.create_indexed_group(self.h5_meas_grp, 'PowerSpectrum_')
-                h5_raw = usid.hdf_utils.write_main_dataset(spec_i_ch,  # parent HDF5 group
+                spec_i_ch = create_indexed_group(self.h5_meas_grp, 'PowerSpectrum_')
+                h5_raw = write_main_dataset(spec_i_ch,  # parent HDF5 group
                                                            (1, len(self.spectra_spec_vals[spec_f])),
                                                            # shape of Main dataset
                                                            'Raw_Spectrum',

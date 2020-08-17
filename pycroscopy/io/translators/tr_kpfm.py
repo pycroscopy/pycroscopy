@@ -12,10 +12,12 @@ import re
 import numpy as np  # For array operations
 import h5py
 from scipy.io import loadmat
-from pyUSID.io.translator import Translator
+
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.hdf_utils import write_simple_attrs, write_main_dataset, \
-    create_indexed_group
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group
 
 if sys.version_info.major == 3:
     unicode = str

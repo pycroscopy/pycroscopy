@@ -7,10 +7,14 @@ import os
 from warnings import warn
 import numpy as np
 import h5py
-from pyUSID.io.hdf_utils import (create_indexed_group, write_main_dataset,
-                                 write_simple_attrs, Dimension,
-                                 write_ind_val_dsets)
-from pyUSID.io.translator import Translator
+
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset,\
+    write_ind_val_dsets
+from pyUSID.io.write_utils import Dimension
+
 from .df_utils.nanonis_utils import read_nanonis_file
 # TODO: Adopt any missing features from https://github.com/paruch-group/distortcorrect/blob/master/afm/filereader/nanonisFileReader.py
 

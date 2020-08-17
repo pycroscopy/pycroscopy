@@ -12,12 +12,15 @@ import numpy as np
 from skimage.measure import block_reduce
 import h5py
 
-from .df_utils.dm_utils import read_dm3
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
 from pyUSID.io.image import read_image
-from pyUSID.io.translator import Translator
 from pyUSID.io.write_utils import Dimension, calc_chunks
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, write_main_dataset, \
-    write_simple_attrs, create_indexed_group
+from pyUSID.io.hdf_utils import link_as_main, write_main_dataset, \
+    create_indexed_group
+
+from .df_utils.dm_utils import read_dm3
 
 
 class MovieTranslator(Translator):
