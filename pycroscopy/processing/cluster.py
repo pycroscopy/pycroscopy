@@ -21,8 +21,8 @@ from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
 from sidpy.proc.comp_utils import parallel_compute
 
 from pyUSID.processing.process import Process
-from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, \
-    write_ind_val_dsets
+from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, \
+    write_main_dataset, write_ind_val_dsets
 from pyUSID import USIDataset
 from pyUSID.io.write_utils import Dimension
 
