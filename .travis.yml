@@ -10,7 +10,7 @@ before_install:
 dist: xenial
 sudo: true
 install: pip install .
-script: pytest
+script: pwd
 stages:
   - name: after_success
     if: env(python) = "3.6"
