@@ -14,7 +14,7 @@ from warnings import warn
 import joblib
 from scipy.optimize import least_squares
 
-from pyUSID.processing.comp_utils import recommend_cpu_cores
+from sidpy.proc.comp_utils import recommend_cpu_cores
 from pyUSID.processing.process import Process
 from pyUSID.io.usi_data import USIDataset
 

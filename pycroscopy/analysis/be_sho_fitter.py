@@ -13,9 +13,9 @@ from enum import Enum
 from warnings import warn
 import numpy as np
 from functools import partial
-from pyUSID.io.hdf_utils import write_simple_attrs, \
-    create_results_group, write_reduced_anc_dsets, create_empty_dataset, \
-    write_main_dataset, get_attr
+from sidpy.hdf.hdf_utils import write_simple_attrs, get_attr
+from pyUSID.io.hdf_utils import create_results_group, write_main_dataset, \
+    write_reduced_anc_dsets, create_empty_dataset
 from pyUSID.io.usi_data import USIDataset
 
 from scipy.signal import find_peaks_cwt

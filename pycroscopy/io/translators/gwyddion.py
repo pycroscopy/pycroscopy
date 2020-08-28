@@ -11,9 +11,12 @@ import sys
 import numpy as np
 import h5py
 
-from pyUSID.io.translator import Translator
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, \
+    write_ind_val_dsets
 
 # packages specific to this kind of file
 from .df_utils.gsf_read import gsf_read

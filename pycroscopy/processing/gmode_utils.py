@@ -15,9 +15,13 @@ from numbers import Number
 import matplotlib.pyplot as plt
 import numpy as np
 from .fft import get_noise_floor, are_compatible_filters, build_composite_freq_filter
+
+from sidpy.hdf.hdf_utils import get_attr
+from sidpy.viz.plot_utils import set_tick_font_size, plot_curves
+
 from pyUSID import USIDataset
-from pyUSID.io.hdf_utils import check_if_main, get_attr, write_main_dataset, create_results_group
-from pyUSID.viz.plot_utils import set_tick_font_size, plot_curves
+from pyUSID.io.hdf_utils import check_if_main, write_main_dataset, \
+    create_results_group
 from pyUSID.io.write_utils import Dimension
 
 if sys.version_info.major == 3:

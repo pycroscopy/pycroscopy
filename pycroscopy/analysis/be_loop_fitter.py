@@ -20,12 +20,13 @@ from sklearn.cluster import KMeans
 from scipy.optimize import least_squares
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from pyUSID.io.dtype_utils import stack_real_to_compound, \
+from sidpy.hdf.dtype_utils import stack_real_to_compound, \
     flatten_compound_to_real
+from sidpy.hdf.hdf_utils import get_attr, write_simple_attrs
+from sidpy.proc.comp_utils import get_MPI, recommend_cpu_cores
 from pyUSID.io.hdf_utils import get_unit_values, get_sort_order, \
-    reshape_to_n_dims, get_attr, create_empty_dataset, create_results_group, \
-    write_reduced_anc_dsets, write_simple_attrs, write_main_dataset
-from pyUSID.processing.comp_utils import get_MPI, recommend_cpu_cores
+    reshape_to_n_dims, create_empty_dataset, create_results_group, \
+    write_reduced_anc_dsets, write_main_dataset
 from pyUSID.io.usi_data import USIDataset
 from .utils.be_loop import projectLoop, fit_loop, generate_guess, \
     loop_fit_function, calc_switching_coef_vec, switching32

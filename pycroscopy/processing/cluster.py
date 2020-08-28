@@ -14,15 +14,20 @@ import numpy as np
 import sklearn.cluster as cls
 from scipy.cluster.hierarchy import linkage
 from scipy.spatial.distance import pdist
-from .proc_utils import get_component_slice
+
+from sidpy.hdf.hdf_utils import write_simple_attrs, get_attr
+from sidpy.base.string_utils import format_time
+from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
+from sidpy.proc.comp_utils import parallel_compute
+
 from pyUSID.processing.process import Process
-from pyUSID.processing.comp_utils import parallel_compute
-from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, write_main_dataset, get_attr, \
-    write_simple_attrs, link_h5_obj_as_alias, write_ind_val_dsets
+from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, \
+    write_main_dataset, write_ind_val_dsets
 from pyUSID import USIDataset
-from pyUSID.io.io_utils import format_time
 from pyUSID.io.write_utils import Dimension
-from pyUSID.io.dtype_utils import check_dtype, stack_real_to_target_dtype
+
+from .proc_utils import get_component_slice
+
 
 
 class Cluster(Process):

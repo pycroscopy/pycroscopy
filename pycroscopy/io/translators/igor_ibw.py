@@ -12,9 +12,12 @@ import numpy as np  # For array operations
 import h5py
 from igor import binarywave as bw
 
-from pyUSID.io.translator import Translator # Because this class extends the abstract Translator class
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
-from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, write_ind_val_dsets
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, \
+    write_ind_val_dsets
 
 if sys.version_info.major == 3:
     unicode = str

@@ -11,7 +11,7 @@ import scipy
 from matplotlib import pyplot as plt
 from mpl_toolkits.axes_grid1 import ImageGrid
 
-from pyUSID.viz.plot_utils import plot_map
+from sidpy.viz.plot_utils import plot_map
 
 
 def plot_image_cleaning_results(raw_image, clean_image, stdevs=2, heading='Image Cleaning Results',

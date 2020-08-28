@@ -16,12 +16,15 @@ import numpy as np
 import xlrd as xlreader  # To read the UDVS spreadsheet
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
-    normalizeBEresponse, createSpecVals, nf32
-from pyUSID.io.translator import Translator
-from pyUSID.io.write_utils import make_indices_matrix, VALUES_DTYPE, INDICES_DTYPE, calc_chunks
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs
+
+from pyUSID.io.write_utils import make_indices_matrix, VALUES_DTYPE, \
+    INDICES_DTYPE, calc_chunks
 from pyUSID.io.usi_data import USIDataset
+
+from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, \
+    parmsToDict, generatePlotGroups, normalizeBEresponse, createSpecVals, nf32
 from ..hdf_writer import HDFwriter
 from ..virtual_data import VirtualGroup, VirtualDataset
 

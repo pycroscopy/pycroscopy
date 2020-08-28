@@ -14,12 +14,15 @@ import h5py
 from skimage.measure import block_reduce
 from skimage.util import crop
 
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
+from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
+
+from .image import read_image
 from .df_utils import dm4reader
 from .df_utils.dm_utils import parse_dm4_parms, read_dm3
-from pyUSID.io.translator import Translator
-from pyUSID.io.write_utils import Dimension, calc_chunks
-from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
-from pycroscopy.io.translators.image import read_image
 
 
 class OneViewTranslator(Translator):

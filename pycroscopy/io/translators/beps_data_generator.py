@@ -7,11 +7,12 @@ import numpy as np
 from sklearn.utils import gen_batches
 from skimage.measure import block_reduce
 # Pycroscopy imports
-from pyUSID.io.hdf_utils import get_h5_obj_refs, link_as_main, get_attr, copy_dataset, \
-    write_main_dataset, write_simple_attrs, create_indexed_group, create_results_group, write_reduced_anc_dsets
-from pyUSID.io.dtype_utils import stack_real_to_compound
-from pyUSID.io.translator import Translator
-from pyUSID import USIDataset
+from sidpy.hdf.hdf_utils import get_attr, write_simple_attrs
+from sidpy.hdf.dtype_utils import stack_real_to_compound
+from sidpy.sid import Translator
+from pyUSID.io.hdf_utils import link_as_main, copy_dataset, \
+    write_main_dataset, create_indexed_group, create_results_group, \
+    write_reduced_anc_dsets
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.image import read_image
 from ...analysis.utils.be_loop import loop_fit_function

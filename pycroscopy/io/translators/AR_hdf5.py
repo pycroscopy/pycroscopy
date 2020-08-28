@@ -10,9 +10,10 @@ import os
 import sys
 import re  # used to get note values
 
-from pyUSID.io.translator import Translator
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs, print_tree, get_attributes
 from pyUSID.io.write_utils import Dimension, make_indices_matrix
-from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs, print_tree, get_attributes
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
 
 if sys.version_info.major == 3:
     unicode = str

@@ -12,10 +12,14 @@ import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
-from .df_utils.be_utils import parmsToDict
-from pyUSID.io.translator import Translator
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
-from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, write_simple_attrs, write_ind_val_dsets
+from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, \
+    write_ind_val_dsets
+
+from .df_utils.be_utils import parmsToDict
 
 if sys.version_info.major == 3:
     unicode = str

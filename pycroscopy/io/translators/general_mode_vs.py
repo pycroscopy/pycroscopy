@@ -13,11 +13,13 @@ import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 import h5py
 
-from .df_utils.gmode_utils import readGmodeParms
-from pyUSID.io.translator import Translator  # Because this class extends the abstract Translator class
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs, link_h5_objects_as_attrs
+
 from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
-from pyUSID.io.hdf_utils import link_h5_objects_as_attrs, create_indexed_group, \
-    write_simple_attrs, write_main_dataset
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
+
+from .df_utils.gmode_utils import readGmodeParms
 
 
 class GVSTranslator(Translator):
@@ -59,7 +61,7 @@ class GVSTranslator(Translator):
         #parm_dict['freq_sweep_delay'] = np.float(freq_sweep_parms['delay'].item())
         gen_sig = parm_data['genSig']
         #parm_dict['wfm_fix_d_fast'] = np.int32(gen_sig['restrictT'].item())
-        #freq_array = np.float32(parm_data['freqArray'])
+        freq_array = np.float32(parm_data['freqArray'])
 
         # prepare and write spectroscopic values
         samp_rate = parm_dict['IO_down_samp_rate_[Hz]']

@@ -14,10 +14,14 @@ import h5py
 import numpy as np
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 
+from sidpy.hdf.hdf_utils import write_simple_attrs
+
+from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
+from pyUSID.io.hdf_utils import create_indexed_group, write_ind_val_dsets, \
+    write_main_dataset
+
 from .df_utils.be_utils import parmsToDict
 from .gmode_line import GLineTranslator
-from pyUSID.io.write_utils import VALUES_DTYPE, Dimension
-from pyUSID.io.hdf_utils import write_simple_attrs, create_indexed_group, write_ind_val_dsets, write_main_dataset
 
 
 class GTuneTranslator(GLineTranslator):

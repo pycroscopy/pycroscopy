@@ -18,10 +18,11 @@ from matplotlib import pyplot as plt
 if sys.version_info.major == 3:
     unicode = str
 
-from pyUSID import USIDataset
-from pyUSID.io.hdf_utils import get_attr
-from pyUSID.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, plot_map, \
+
+from sidpy.hdf.hdf_utils import get_attr
+from sidpy.viz.plot_utils import plot_complex_spectra, plot_map_stack, default_cmap, plot_map, \
     discrete_cmap, plot_line_family, make_scalar_mappable, plot_curves
+from pyUSID import USIDataset
 
 
 def plot_cluster_h5_group(h5_group, labels_kwargs=None, centroids_kwargs=None):

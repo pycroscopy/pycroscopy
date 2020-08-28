@@ -9,16 +9,16 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 
 from os import path, remove  # File Path formatting
 from warnings import warn
-
 import numpy as np  # For array operations
 from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat file
 import h5py
-
-from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, generatePlotGroups, createSpecVals, maxReadPixels, \
-    nf32
-from pyUSID.io.translator import Translator
+from sidpy.sid import Translator
+from sidpy.hdf.hdf_utils import write_simple_attrs
 from pyUSID.io.write_utils import INDICES_DTYPE, Dimension
-from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset, write_simple_attrs
+from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
+
+from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, \
+    generatePlotGroups, createSpecVals, maxReadPixels, nf32
 
 
 class BEodfRelaxationTranslator(Translator):

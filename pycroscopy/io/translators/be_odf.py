@@ -18,14 +18,16 @@ from scipy.io.matlab import loadmat  # To load parameters stored in Matlab .mat 
 from .df_utils.be_utils import trimUDVS, getSpectroscopicParmLabel, parmsToDict, generatePlotGroups, \
     createSpecVals, requires_conjugate, generate_bipolar_triangular_waveform, \
     infer_bipolar_triangular_fraction_phase, nf32
-from pyUSID.io.reg_ref import write_region_references
-from pyUSID.io.translator import Translator
+
+from sidpy.hdf.hdf_utils import write_simple_attrs
+from sidpy.hdf.reg_ref import write_region_references
+from sidpy.sid import Translator
+from sidpy.proc.comp_utils import get_available_memory
 from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, calc_chunks
 from pyUSID.io.hdf_utils import write_ind_val_dsets, write_main_dataset, \
-    create_indexed_group, write_simple_attrs, write_book_keeping_attrs, copy_attributes,\
+    create_indexed_group, write_book_keeping_attrs, copy_attributes,\
     write_reduced_anc_dsets, get_unit_values
 from pyUSID.io.usi_data import USIDataset
-from pyUSID.processing.comp_utils import get_available_memory
 
 if sys.version_info.major == 3:
     unicode = str

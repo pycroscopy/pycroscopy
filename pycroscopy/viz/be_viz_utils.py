@@ -16,13 +16,14 @@ import numpy as np
 from IPython.display import display
 from matplotlib import pyplot as plt
 
-from pyUSID.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
+from sidpy.viz.plot_utils import plot_curves, plot_map_stack, get_cmap_object, plot_map, set_tick_font_size, \
     plot_complex_spectra
-from pyUSID.viz.jupyter_utils import save_fig_filebox_button
+from sidpy.viz.jupyter_utils import save_fig_filebox_button
+from sidpy.hdf.hdf_utils import get_auxiliary_datasets, get_attr
 from ..analysis.utils.be_loop import loop_fit_function
 from ..analysis.utils.be_sho import SHOfunc
-from pyUSID.io.hdf_utils import reshape_to_n_dims, get_auxiliary_datasets, get_sort_order, get_dimensionality, \
-    get_attr, get_source_dataset
+from pyUSID.io.hdf_utils import reshape_to_n_dims, get_sort_order, get_dimensionality, \
+    get_source_dataset
 from pyUSID import USIDataset
 
 

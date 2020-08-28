@@ -17,7 +17,7 @@ from warnings import warn
 import numpy as np
 import sys
 
-from pyUSID.io.io_utils import get_time_stamp
+from sidpy.base.string_utils import get_time_stamp
 
 if sys.version_info.major == 3:
     unicode = str
