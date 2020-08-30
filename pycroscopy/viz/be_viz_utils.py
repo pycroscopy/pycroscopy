@@ -965,13 +965,14 @@ def jupyter_visualize_parameter_maps(h5_loop_parameters, cmap=None, **kwargs):
                                          [pos_dims[0], pos_dims[1], -1])
         parameter_map_stack = np.moveaxis(parameter_map_stack, -1, 0)
 
+        print('parameter map stack size is ', parameter_map_stack.shape)
         fig.suptitle('Maps of Loop Parameter {}'.format(parameter_name))
         # Loop over all axes
         for icycle, ax_cycle in enumerate(axes[:num_cycles]):
             image = ax_cycle.get_images()[0]
-            image.set_data(parameter_map_stack[:, :, icycle])
-            image.set_clim(vmin=np.min(parameter_map_stack[:, :, icycle]),
-                           vmax=np.max(parameter_map_stack[:, :, icycle]))
+            image.set_data(parameter_map_stack[icycle,:, :])
+            image.set_clim(vmin=np.min(parameter_map_stack[icycle, :, :]),
+                           vmax=np.max(parameter_map_stack[icycle, :, :]))
 
         fig.canvas.draw()
 
