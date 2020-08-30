@@ -5,6 +5,7 @@ Utility functions for the Fake BEPS generator
 import os
 import numpy as np
 from sklearn.utils import gen_batches
+from sidpy.proc.comp_utils import get_available_memory
 from skimage.measure import block_reduce
 # Pycroscopy imports
 from sidpy.hdf.hdf_utils import get_attr, write_simple_attrs
@@ -13,6 +14,7 @@ from sidpy.sid import Translator
 from pyUSID.io.hdf_utils import link_as_main, copy_dataset, \
     write_main_dataset, create_indexed_group, create_results_group, \
     write_reduced_anc_dsets
+from pyUSID.io.reg_ref import copy_all_region_refs , write_region_references
 from pyUSID.io.write_utils import Dimension, calc_chunks
 from pyUSID.io.image import read_image
 from ...analysis.utils.be_loop import loop_fit_function
@@ -68,6 +70,8 @@ class FakeBEPSGenerator(Translator):
         self.rebin = None
         self.bin_factor = None
         self.bin_func = None
+        #self.max_ram = 1024**8
+
 
     def _read_data(self, folder):
         """
@@ -420,8 +424,8 @@ class FakeBEPSGenerator(Translator):
         '''
         sho_grp = create_results_group(h5_raw_data, 'SHO_Fit')
 
-        # Build the Spectroscopic datasets for the SHO Guess and Fit
 
+        # Build the Spectroscopic datasets for the SHO Guess and Fit
         h5_sho_spec_inds, h5_sho_spec_vals = write_reduced_anc_dsets(
             sho_grp, h5_raw_data.h5_spec_inds, h5_raw_data.h5_spec_vals, 'Frequency', is_spec=True)
 
@@ -464,6 +468,7 @@ class FakeBEPSGenerator(Translator):
                                                         slow_to_fast=True, dtype=loop_fit32)
 
         h5_loop_guess = copy_dataset(h5_loop_fit, loop_grp, alias='Guess')
+        copy_all_region_refs(h5_loop_guess, h5_loop_fit)
 
         self.h5_raw = h5_raw_data
         self.h5_sho_guess = h5_sho_guess
@@ -552,14 +557,16 @@ class FakeBEPSGenerator(Translator):
         None
 
         """
-        vdc_vec = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['DC_Offset']].squeeze()
-        sho_field = self.h5_sho_spec_vals[self.h5_sho_spec_vals.attrs['Field']].squeeze()
+        print(list(self.h5_sho_spec_vals.attrs))
+        vdc_vec = self.h5_sho_spec_vals[self.h5_sho_fit.spec_dim_labels.index('DC_Offset')].squeeze()
+        sho_field = self.h5_sho_spec_vals[self.h5_sho_fit.spec_dim_labels.index('Field')].squeeze()
         sho_of_inds = sho_field == 0
         sho_if_inds = sho_field == 1
 
         # determine how many pixels can be read at once
         mem_per_pix = vdc_vec.size * np.float32(0).itemsize
-        free_mem = self.max_ram - vdc_vec.size * vdc_vec.dtype.itemsize * 6
+        #free_mem = self.max_ram - vdc_vec.size * vdc_vec.dtype.itemsize * 6
+        free_mem = 1024
         batch_size = int(free_mem / mem_per_pix)
         batches = gen_batches(self.n_pixels, batch_size)
 
@@ -620,11 +627,12 @@ class FakeBEPSGenerator(Translator):
 
         """
         mem_per_pix = self.n_sho_bins * self.h5_sho_fit.dtype.itemsize + self.n_spec_bins * self.h5_raw.dtype.itemsize
-        free_mem = self.max_ram
+
+        free_mem = get_available_memory()
         batch_size = int(free_mem / mem_per_pix)
         batches = gen_batches(self.n_pixels, batch_size)
 
-        w_vec = self.h5_spec_vals[get_attr(self.h5_spec_vals, 'Frequency')].squeeze()
+        w_vec = self.h5_spec_vals[self.h5_raw.spec_dim_labels.index('Frequency')].squeeze()
         w_vec = w_vec[:self.n_bins]
 
         for pix_batch in batches:
