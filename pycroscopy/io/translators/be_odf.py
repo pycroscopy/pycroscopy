@@ -1423,7 +1423,7 @@ class BEodfTranslator(Translator):
         # This is necessary when normalizing the AI by the AO
         self.harmonic = BE_signal_type
         self.signal_type = BE_signal_type
-        if BE_signal_type is 4:
+        if BE_signal_type == 4:
             self.harmonic = 1
         BE_amp = parm_dict['BE_amplitude_[V]']
         try:
@@ -1446,7 +1446,7 @@ class BEodfTranslator(Translator):
             print()
             raise KeyError(exp)
 
-        if VS_shift is not 0:
+        if VS_shift != 0:
             if self._verbose:
                 print('\tVS_shift = {}'.format(VS_shift))
             VS_shift = translate_val(VS_shift,
@@ -1531,13 +1531,13 @@ class BEodfTranslator(Translator):
         # Build UDVS table:
         if self._verbose:
             print('\t\tBuilding UDVS table')
-        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:
+        if VS_ACDC_cond == 0 or VS_ACDC_cond == 4:
             if self._verbose:
                 print('\t\t\tDC voltage spectroscopy or current mode')
 
-            if VS_ACDC_cond is 0:
+            if VS_ACDC_cond == 0:
                 UD_dc_vec = np.vstack((vs_amp_vec, np.zeros(len(vs_amp_vec))))
-            if VS_ACDC_cond is 4:
+            if VS_ACDC_cond == 4:
                 UD_dc_vec = np.vstack((vs_amp_vec, vs_amp_vec))
 
             UD_dc_vec = UD_dc_vec.transpose().reshape(UD_dc_vec.size)
@@ -1553,11 +1553,11 @@ class BEodfTranslator(Translator):
             BE_IF_switch = np.abs(np.imag(np.exp(1j * np.pi / 2 * np.arange(1, num_VS_steps + 1))))
             BE_OF_switch = np.abs(np.real(np.exp(1j * np.pi / 2 * np.arange(1, num_VS_steps + 1))))
 
-            if VS_in_out_cond is 0:  # out of field only
+            if VS_in_out_cond == 0:  # out of field only
                 udvs_table[:, 2] = BE_amp * BE_OF_switch
-            elif VS_in_out_cond is 1:  # in field only
+            elif VS_in_out_cond == 1:  # in field only
                 udvs_table[:, 2] = BE_amp * BE_IF_switch
-            elif VS_in_out_cond is 2:  # both in and out of field
+            elif VS_in_out_cond == 2:  # both in and out of field
                 udvs_table[:, 2] = BE_amp * np.ones(num_VS_steps)
 
             udvs_table[:, 3] = np.ones(num_VS_steps)  # wave type
@@ -1569,7 +1569,7 @@ class BEodfTranslator(Translator):
             udvs_table[BE_IF_switch == 1, 5] = udvs_table[BE_IF_switch == 1, 1]
             udvs_table[BE_OF_switch == 1, 6] = udvs_table[BE_IF_switch == 1, 1]
 
-        elif VS_ACDC_cond is 2:
+        elif VS_ACDC_cond == 2:
             if self._verbose:
                 print('\t\t\tAC voltage spectroscopy')
 

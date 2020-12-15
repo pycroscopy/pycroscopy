@@ -542,7 +542,7 @@ class BEodfRelaxationTranslator(Translator):
         VS_cycles = parm_dict['VS_number_of_cycles']
         VS_fraction = translateVal(parm_dict['VS_cycle_fraction'], ['full', '1/2', '1/4', '3/4'], [1., 0.5, 0.25, 0.75])
         VS_shift = parm_dict['VS_cycle_phase_shift']
-        if VS_shift is not 0:
+        if VS_shift != 0:
             VS_shift = translateVal(VS_shift, ['1/4', '1/2', '3/4'], [0.25, 0.5, 0.75])
         VS_in_out_cond = translateVal(parm_dict['VS_measure_in_field_loops'],
                                       ['out-of-field', 'in-field', 'in and out-of-field'], [0, 1, 2])
@@ -589,7 +589,7 @@ class BEodfRelaxationTranslator(Translator):
         total_steps = len(VS_amp_vec) * BE_repeats  # Needed for relaxation datasets
 
         # % Build UDVS table:
-        if VS_ACDC_cond is 0 or VS_ACDC_cond is 4:  # relaxation measurements
+        if VS_ACDC_cond ==  0 or VS_ACDC_cond == 4:  # relaxation measurements
 
             num_VS_steps = total_steps * 2  # To account for IF and OOF
 
@@ -606,11 +606,11 @@ class BEodfRelaxationTranslator(Translator):
             BE_IF_switch = np.abs(np.imag(np.exp(1j * np.pi / 2 * np.arange(1, num_VS_steps + 1))))
             BE_OF_switch = np.abs(np.real(np.exp(1j * np.pi / 2 * np.arange(1, num_VS_steps + 1))))
 
-            if VS_in_out_cond is 0:  # out of field only
+            if VS_in_out_cond == 0:  # out of field only
                 UD_VS_table[:, 2] = BE_amp * BE_OF_switch
-            elif VS_in_out_cond is 1:  # in field only
+            elif VS_in_out_cond == 1:  # in field only
                 UD_VS_table[:, 2] = BE_amp * BE_IF_switch
-            elif VS_in_out_cond is 2:  # both in and out of field
+            elif VS_in_out_cond == 2:  # both in and out of field
                 UD_VS_table[:, 2] = BE_amp * np.ones(num_VS_steps)
 
             UD_VS_table[:, 3] = np.ones(num_VS_steps)  # wave type
