@@ -139,6 +139,12 @@ class SVD(Process):
         if not success:
             raise ValueError('Could not reshape U to N-Dimensional dataset! Error:' + success)
 
+        # When the source dataset has a singular valued spectroscopic dimension
+        # stack_real_to_target causes V to lose all its dimensions
+        if self.__v.ndim == 0:
+            # However, we want V to be 2D:
+            self.__v = np.atleast_2d(self.__v)
+
         v_mat, success = reshape_to_n_dims(self.__v, h5_pos=np.expand_dims(np.arange(self.__u.shape[1]), axis=1),
                                            h5_spec=self.h5_main.h5_spec_inds)
         if not success:
