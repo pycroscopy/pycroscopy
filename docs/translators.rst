@@ -1,5 +1,13 @@
 Data Translators
-=================
+================
+
+.. note::
+
+  ``Translators`` in ``pycroscopy`` will eventually be replaced by ``sidpy.Reader`` classes
+  which only extract information from instrument-specific data files and will not write data into any data files, unlike ``Translator`` classes.
+
+  The new ``Reader`` classes will be hosted in the ``ScopeReaders`` package instead of ``pycroscopy``.
+
 * Pycroscopy uses ``Translators`` to extract data and metadata from files (often measurement data stored in instrument-generated proprietary file formats) and write them into `Universal Spectroscopy and Imaging Data (USID) HDF5 files <../../USID/index.html>`_.
 * You can write your own ``Translator`` easily by following `this example <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_numpy_translator.html>`_ on our sister project's documentation.
 * Below is a list of ``Translators`` already available in pycroscopy to translate data.
@@ -22,7 +30,7 @@ Quick example
 --------------------
 Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect the contents. Only the translator changes for different file formats, all other steps should remain the same.
 
-.. code:: bash
+.. code:: python
 
  import h5py
  import pyUSID as usid
@@ -70,29 +78,8 @@ Scanning Tunnelling Microscopy (STM)
 
 Atomic Force Microscopy (AFM)
 -----------------------------
-Common formats
-~~~~~~~~~~~~~~~
 * Asylum Research - Igor IBWs for images and force curves - ``IgorIBWTranslator``
 * Asylum Research - ``ARhdf5``
 * Bruker / Veeco / Digital Instruments - images, force curves, force maps - ``BrukerAFMTranslator``
 * Molecular Vista - Photoinduced Force Microscope - ``PiFMTranslator``
 * Nanonis Controllers - ``NanonisTranslator``
-
-CNMS specific
-~~~~~~~~~~~~~~
-* Band Excitation (BE):
-
-  * BE-Line and BEPS (Pre 2013) - ``BEodfTranslator``
-  * BEPS (Post 2013) - ``BEPSndfTranslator``
-  * BE Relaxation - ``BEodfRelaxationTranslator``
-  * Time Resolved Kelvin Probe Force Microscopy (trKPFM) - ``TRKPFMTranslator``
-  * Synthetic BEPS data generator - ``FakeBEPSGenerator``
-  * Post 2016 Band Excitation data patcher - ``LabViewH5Patcher``
-
-* General Mode (G-mode):
-
-  * G-Mode Line - ``GLineTranslator``
-  * G-Mode Current-Voltage (G-IV) - ``GIVTranslator``
-  * G-Mode Frequency Tune - ``GTuneTranslator``
-  * General Dynamic Mode (GDM) - ``GDMTranslator``
-  * Speedy First Order Reversal Curve (SPORC) - ``SporcTranslator``
