@@ -10,7 +10,7 @@ If you are confused or need more help, please feel free to `contact us <./contac
 
 General guidelines
 ------------------
-Our sister project, pyUSID, has `comprehensive guidelines <https://pycroscopy.github.io/pyUSID/contribution_guidelines.html>`_ about contributing code.
+Our sister project, pyUSID, has `comprehensive guidelines <https://pycroscopy.github.io/sidpy/contribution_guidelines.html>`_ about contributing code.
 Please refer to that page before following pycroscopy specific guidelines below.
 
 Pycroscopy guidelines
