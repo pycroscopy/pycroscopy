@@ -109,7 +109,7 @@ usid.hdf_utils.write_simple_attrs(h5_main, {'quantity': 'Deflection', 'units': '
 
 # Extracting the X axis - vector of frequencies
 h5_spec_vals = usid.hdf_utils.get_auxiliary_datasets(h5_main, 'Spectroscopic_Values')[-1]
-freq_vec = np.squeeze(h5_spec_vals.value) * 1E-3
+freq_vec = np.squeeze(h5_spec_vals[()]) * 1E-3
 
 print('Data currently of shape:', h5_main.shape)
 
