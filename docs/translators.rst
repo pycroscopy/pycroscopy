@@ -36,10 +36,10 @@ Let's translate an Igor Binaray Wave (ibw) file to a USID h5 file, and inspect t
  import pycroscopy as px
 
  #path to file you wish to translate 
- file_path = r'/my_folder/a10.ibw'
+ file_path = r'/my_folder/a10.sxm'
 
  #Do the translation
- translator = px.io.translators.IgorIBWTranslator() #Instantiating IgorIBW translator. 
+ translator = px.io.translators.NanonisTranslator() #Instantiating translator.
  #Note: Change translator depending on your input file format
  
  h5_path = translator.translate(file_path) #translates, and then returns path of translated file
