@@ -279,13 +279,13 @@ class Cluster(Process):
         print('Writing clustering results to file.')
         num_clusters = self.__mean_resp.shape[0]
 
-        h5_cluster_group = create_results_group(self.h5_main, self.process_name,
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
                                                 h5_parent_group=self._h5_target_group)
         self._write_source_dset_provenance()
 
-        write_simple_attrs(h5_cluster_group, self.parms_dict)
+        write_simple_attrs(self.h5_results_grp, self.parms_dict)
 
-        h5_labels = write_main_dataset(h5_cluster_group, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
+        h5_labels = write_main_dataset(self.h5_results_grp, np.uint32(self.__labels.reshape([-1, 1])), 'Labels',
                                        'Cluster ID', 'a. u.', None, Dimension('Cluster', 'ID', 1),
                                        h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals,
                                        aux_spec_prefix='Cluster_', dtype=np.uint32)
@@ -311,14 +311,14 @@ class Cluster(Process):
                 vals_slice = self.data_slice[1]
             vals = self.h5_main.h5_spec_vals[:, vals_slice].squeeze()
             new_spec = Dimension('Original_Spectral_Index', 'a.u.', vals)
-            h5_inds, h5_vals = write_ind_val_dsets(h5_cluster_group, new_spec, is_spectral=True)
+            h5_inds, h5_vals = write_ind_val_dsets(self.h5_results_grp, new_spec, is_spectral=True)
 
         else:
             h5_inds = self.h5_main.h5_spec_inds
             h5_vals = self.h5_main.h5_spec_vals
 
         # For now, link centroids with default spectroscopic indices and values.
-        h5_centroids = write_main_dataset(h5_cluster_group, self.__mean_resp, 'Mean_Response',
+        h5_centroids = write_main_dataset(self.h5_results_grp, self.__mean_resp, 'Mean_Response',
                                           get_attr(self.h5_main, 'quantity')[0], get_attr(self.h5_main, 'units')[0],
                                           Dimension('Cluster', 'a. u.', np.arange(num_clusters)), None,
                                           h5_spec_inds=h5_inds, aux_pos_prefix='Mean_Resp_Pos_',
@@ -326,12 +326,12 @@ class Cluster(Process):
 
         # Marking completion:
         self._status_dset_name = 'completed_positions'
-        self._h5_status_dset = h5_cluster_group.create_dataset(self._status_dset_name,
+        self._h5_status_dset = self.h5_results_grp.create_dataset(self._status_dset_name,
                                                                data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
         # keeping legacy option:
-        h5_cluster_group.attrs['last_pixel'] = self.h5_main.shape[0]
+        self.h5_results_grp.attrs['last_pixel'] = self.h5_main.shape[0]
 
-        return h5_cluster_group
+        return self.h5_results_grp
 
 
 def reorder_clusters(labels, mean_response, transform_function=None):

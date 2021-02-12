@@ -221,35 +221,35 @@ class Decomposition(Process):
             Reference to the group that contains the decomposition results
         """
 
-        h5_decomp_group = create_results_group(self.h5_main, self.process_name,
+        self.h5_results_grp = create_results_group(self.h5_main, self.process_name,
                                                h5_parent_group=self._h5_target_group)
         self._write_source_dset_provenance()
-        write_simple_attrs(h5_decomp_group, self.parms_dict)
-        write_simple_attrs(h5_decomp_group, {'n_components': self.__components.shape[0],
+        write_simple_attrs(self.h5_results_grp, self.parms_dict)
+        write_simple_attrs(self.h5_results_grp, {'n_components': self.__components.shape[0],
                                              'n_samples': self.h5_main.shape[0]})
 
         decomp_desc = Dimension('Endmember', 'a. u.', self.__components.shape[0])
 
         # equivalent to V - compound / complex
-        h5_components = write_main_dataset(h5_decomp_group, self.__components, 'Components',
+        h5_components = write_main_dataset(self.h5_results_grp, self.__components, 'Components',
                                            get_attr(self.h5_main, 'quantity')[0], 'a.u.', decomp_desc,
                                            None,
                                            h5_spec_inds=self.h5_main.h5_spec_inds,
                                            h5_spec_vals=self.h5_main.h5_spec_vals)
 
         # equivalent of U - real
-        h5_projections = write_main_dataset(h5_decomp_group, np.float32(self.__projection), 'Projection', 'abundance',
+        h5_projections = write_main_dataset(self.h5_results_grp, np.float32(self.__projection), 'Projection', 'abundance',
                                             'a.u.', None, decomp_desc, dtype=np.float32,
                                             h5_pos_inds=self.h5_main.h5_pos_inds, h5_pos_vals=self.h5_main.h5_pos_vals)
 
         # return the h5 group object
-        self.h5_results_grp = h5_decomp_group
+        self.h5_results_grp = self.h5_results_grp
 
         # Marking completion:
         self._status_dset_name = 'completed_positions'
-        self._h5_status_dset = h5_decomp_group.create_dataset(self._status_dset_name,
+        self._h5_status_dset = self.h5_results_grp.create_dataset(self._status_dset_name,
                                                               data=np.ones(self.h5_main.shape[0], dtype=np.uint8))
         # keeping legacy option:
-        h5_decomp_group.attrs['last_pixel'] = self.h5_main.shape[0]
+        self.h5_results_grp.attrs['last_pixel'] = self.h5_main.shape[0]
 
         return self.h5_results_grp
