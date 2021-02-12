@@ -15,7 +15,7 @@ from .pifm import PiFMTranslator
 __all__ = ['BrukerAFMTranslator', 'PiFMTranslator', 'NanonisTranslator',
            'ARhdf5']
 
-afm_translators = [PiFMTranslator, BrukerAFMTranslator, AR_hdf5]
+afm_translators = [PiFMTranslator, BrukerAFMTranslator, ARhdf5]
 
 stm_translators = [NanonisTranslatorCorrect]
 
