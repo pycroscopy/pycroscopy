@@ -14,7 +14,7 @@ import h5py
 import numpy as np
 
 from .virtual_data import VirtualDataset
-from pyUSID.io.write_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, build_ind_val_matrices, get_aux_dset_slicing
+from pyUSID.io.anc_build_utils import INDICES_DTYPE, VALUES_DTYPE, Dimension, build_ind_val_matrices, get_aux_dset_slicing
 
 if sys.version_info.major == 3:
     unicode = str

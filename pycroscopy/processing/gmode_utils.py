@@ -22,7 +22,7 @@ from sidpy.viz.plot_utils import set_tick_font_size, plot_curves
 from pyUSID import USIDataset
 from pyUSID.io.hdf_utils import check_if_main, write_main_dataset, \
     create_results_group
-from pyUSID.io.write_utils import Dimension
+from sidpy import Dimension
 
 if sys.version_info.major == 3:
     unicode = str

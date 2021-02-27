@@ -24,7 +24,7 @@ from pyUSID.processing.process import Process
 from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, \
     write_main_dataset, write_ind_val_dsets
 from pyUSID import USIDataset
-from pyUSID.io.write_utils import Dimension
+from sidpy import Dimension
 
 from .proc_utils import get_component_slice
 
