@@ -369,8 +369,8 @@ class PiFMTranslator(Translator):
                                                            pos_dims=spec_i_pos_dims, spec_dims=spec_i_spec_dims,
                                                            # Spectroscopic dimensions
                                                            dtype=np.float32,  # data type / precision
-                                                           main_dset_attrs={'XLoc': descriptors[0],
-                                                                            'YLoc': descriptors[1]})
+                                                           main_dset_attrs={'XLoc': descriptors[1],
+                                                                            'YLoc': descriptors[2]})
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 
     def write_ps_spectra(self):
