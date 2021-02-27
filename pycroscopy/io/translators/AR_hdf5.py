@@ -10,7 +10,7 @@ import os
 import sys
 import re  # used to get note values
 
-from pyUSID.io import Dimension
+from pyUSID import Dimension
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs, print_tree, get_attributes
 #from sidpy.io.write_utils import make_indices_matrix

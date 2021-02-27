@@ -5,7 +5,7 @@ import h5py
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from sidpy import Dimension
+from pyUSID import Dimension
 from pyUSID.io.anc_build_utils import build_ind_val_matrices
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, get_all_main
 from pyUSID import USIDataset
