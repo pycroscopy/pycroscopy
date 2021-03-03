@@ -99,6 +99,7 @@ print(h5_main)
 # Notice that the X and Y axis have scientific information encoded, as does the color bar
 fig, axis = h5_main.visualize(cmap=plt.cm.inferno)
 axis.set_title('original image of STO captured via STEM', fontsize=20)
+plt.show()
 
 ####################################################################################
 # get the contents as Numpy array using a single command:
@@ -169,6 +170,7 @@ fft_image_raw = npf.fft2(image_raw)
 fig, axis = plt.subplots(figsize=(5, 5))
 _ = usid.plot_utils.plot_map(axis, np.abs(fft_image_raw), cmap=plt.cm.OrRd, clim=[0, 3E+3])
 axis.set_title('FFT2 of image')
+plt.show()
 
 ####################################################################################
 # To correct this, use the ‘fftshift’ command. 
@@ -258,6 +260,7 @@ inverse_gauss_filter = 1-np.e**(-(r*filter_width)**2)
 fig, axis = plt.subplots()
 _ = usid.plot_utils.plot_map(axis, inverse_gauss_filter, cmap=plt.cm.OrRd)
 axis.set_title('background filter')
+plt.show()
 
 ####################################################################################
 # Let's perform the same process of taking the FFT of the image, multiplying with the filter
