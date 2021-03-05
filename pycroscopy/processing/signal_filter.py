@@ -17,7 +17,7 @@ from collections import Iterable
 from sidpy.proc.comp_utils import parallel_compute
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from pyUSID.io.write_utils import Dimension
+from pyUSID import Dimension
 from pyUSID.io.hdf_utils import create_results_group, write_main_dataset, create_empty_dataset, \
     write_ind_val_dsets
 from pyUSID.processing.process import Process

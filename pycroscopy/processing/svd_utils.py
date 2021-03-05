@@ -15,17 +15,18 @@ from sklearn.utils import gen_batches
 from sklearn.utils.extmath import randomized_svd
 
 from sidpy.hdf.reg_ref import get_indices_for_region_ref, create_region_reference
-from sidpy.hdf.hdf_utils import get_attr, write_simple_attrs
+from sidpy.hdf.hdf_utils import get_attr, write_simple_attrs, copy_attributes
 from sidpy.proc.comp_utils import get_available_memory
 from sidpy.base.string_utils import format_time
 from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
 
 from pyUSID.processing.process import Process
 from .proc_utils import get_component_slice
-from pyUSID.io.hdf_utils import find_results_groups, copy_attributes, \
+from pyUSID.io.hdf_utils import find_results_groups,  \
     reshape_to_n_dims, write_main_dataset, create_results_group, \
     create_indexed_group, find_dataset
-from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID import Dimension
+from pyUSID.io.anc_build_utils import calc_chunks
 from pyUSID import USIDataset
 
 import h5py

@@ -21,7 +21,7 @@ from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
 from pyUSID.processing.process import Process
 from pyUSID.io.hdf_utils import reshape_to_n_dims, create_results_group, \
     write_main_dataset
-from pyUSID.io.write_utils import Dimension
+from pyUSID.io import Dimension
 from pyUSID import USIDataset
 
 
