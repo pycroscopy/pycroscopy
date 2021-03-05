@@ -1,5 +1,5 @@
 """
-Plotting functions and interactive jupyter widgets for scientific applications
+Primarily dashboards. Generic plotting is in sidpy
 
 Submodules
 ----------
@@ -7,11 +7,6 @@ Submodules
 .. autosummary::
     :toctree: _autosummary
 
-    cluster_utils
-    image_cleaning_utils
-
 """
-from . import image_cleaning_utils
-from . import cluster_utils
 
-__all__ = ['cluster_utils', 'image_cleaning_utils']
+__all__ = ['']

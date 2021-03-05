@@ -12,7 +12,6 @@ with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
 
 # TODO: Move requirements to requirements.txt
 requirements = ['numpy>=1.13.0',
-                'h5py>=2.6.0',
                 'scipy>=0.17.1',
                 'scikit-image>=0.12.3',
                 'scikit-learn>=0.17.1',
@@ -29,14 +28,9 @@ requirements = ['numpy>=1.13.0',
 
                 'unittest2;python_version<"3.0"',
 
-                'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
-
                 'sidpy>=0.0.1',
                 'pyUSID>=0.0.8',
 
-                'xlrd>=1.0.0',
-                'igor',
-                'gwyfile',
                 ]
 
 setup(
