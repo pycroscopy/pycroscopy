@@ -60,6 +60,15 @@ def test_convblock_dim(dim, conv_expected):
 
 
 @pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
+def test_convblock_pool(dim, size):
+    data = torch.randn(2, 2, *size)
+    conv = nnblocks.ConvBlock(dim, 2, 2, 2, pool=True)
+    out = conv(data)
+    size_ = sum([out.size(i+2) for i in range(dim)])
+    assert_equal(size_, sum(size) / 2)
+
+
+@pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
 def test_upsample_block(dim, size):
     data = torch.randn(2, 2, *size)
     up = nnblocks.UpsampleBlock(dim, 2, 2, mode="nearest")
@@ -76,4 +85,3 @@ def test_upsampleblock_change_number_of_channels(in_channels, out_channels):
     out = up(data)
     assert_equal(out.size(1), out_channels)
 
-    

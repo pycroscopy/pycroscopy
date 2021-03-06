@@ -4,13 +4,15 @@ nnblocks.py
 
 Individual NN blocks
 
-Created by Maxim Ziatdinov (email: ziatdinovmax@gmail.com)
+by Maxim Ziatdinov (email: ziatdinovmax@gmail.com)
 """
 from typing import Union, Tuple, Type
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from warnings import warn
 
 
 class ConvBlock(nn.Module):
@@ -36,14 +38,23 @@ class ConvBlock(nn.Module):
         batch_norm:
             Add batch normalization to each layer in the block (Default: False)
         activation:
-            non-linear activation ("relu", "lrelu", "tanh", "softplus", or None)
+            Non-linear activation ("relu", "lrelu", "tanh", "softplus", or None)
+        pool:
+            Applies max-pooling operation at the end of the block
 
         Example:
 
-        >>> # Get convolutional block with three 1D convolutions and batch normalization
-        >>> convblock1d = ConvBlock(ndim=1, nlayers=3,
-        >>>                         input_channels=1, output_channels=32,
-        >>>                         batch_norm: bool = False)
+        Get convolutional block with three 1D convolutions and a batch normalization
+
+        >>> convblock1d = ConvBlock(
+        >>>     ndim=1, nlayers=3, input_channels=1,
+        >>>     output_channels=32, batch_norm=True)
+
+        Get convolutional block with two 2D convolutions and max-pooling at the end
+
+        >>> convblock1d = ConvBlock(
+        >>>     ndim=2, nlayers=2, input_channels=1,
+        >>>     output_channels=32, pool=True)
     """
     def __init__(self,
                  ndim: int,
@@ -55,6 +66,7 @@ class ConvBlock(nn.Module):
                  padding: Union[Tuple[int], int] = 1,
                  batchnorm: bool = False,
                  activation: str = "lrelu",
+                 pool: bool = False,
                  **kwargs: float,
                  ) -> None:
         """
@@ -65,14 +77,16 @@ class ConvBlock(nn.Module):
             raise AssertionError("ndim must be equal to 1, 2 or 3")
         activation = get_activation(activation)
         block = []
-        for idx in range(nlayers):
-            input_channels = output_channels if idx > 0 else input_channels
+        for i in range(nlayers):
+            input_channels = output_channels if i > 0 else input_channels
             block.append(get_conv(ndim)(input_channels, output_channels,
                          kernel_size=kernel_size, stride=stride, padding=padding))
             if activation is not None:
                 block.append(activation())
             if batchnorm:
                 block.append(get_bnorm(ndim)(output_channels))
+        if pool:
+            block.append(get_maxpool(ndim)(2, 2))
         self.block = nn.Sequential(*block)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -85,9 +99,9 @@ class ConvBlock(nn.Module):
 
 class UpsampleBlock(nn.Module):
     """
-    Defines upsampling block performed using bilinear
-    or nearest-neigbor interpolation followed by 1-by-1 convolution
-    (the latter can be used to reduce a number of feature channels)
+    Upsampling performed using bilinear or nearest-neigbor interpolation
+    followed by 1-by-1 convolution, which an be used to reduce a number of
+    feature channels
 
     Args:
         ndim:
@@ -100,6 +114,7 @@ class UpsampleBlock(nn.Module):
             Scale factor for upsampling
         mode:
             Upsampling mode. Select between "bilinear" and "nearest"
+            (Default: bilinear for 2D, nearest for 1D and 3D)
 
         Example:
 
@@ -117,13 +132,18 @@ class UpsampleBlock(nn.Module):
         Initializes module parameters
         """
         super(UpsampleBlock, self).__init__()
+        warn_msg = ("'bilinear' mode is not supported for 1D and 3D;" +
+                    " switching to 'nearest' mode")
         if mode not in ("bilinear", "nearest"):
             raise NotImplementedError(
-                "use 'bilinear' or 'nearest' for upsampling mode")
+                "Use 'bilinear' or 'nearest' for upsampling mode")
         if not 0 < ndim < 4:
             raise AssertionError("ndim must be equal to 1, 2 or 3")
+        if mode == "bilinear" and ndim in (3, 1):
+            warn(warn_msg, category=UserWarning)
+            mode = "nearest"
+        self.mode = mode
         self.scale_factor = scale_factor
-        self.mode = mode if ndim > 1 else "nearest"
         self.conv = get_conv(ndim)(
             input_channels, output_channels,
             kernel_size=1, stride=1, padding=0)
@@ -144,6 +164,11 @@ def get_bnorm(dim: int) -> Type[nn.Module]:
 
 def get_conv(dim: int) -> Type[nn.Module]:
     conv_dict = {1: nn.Conv1d, 2: nn.Conv2d, 3: nn.Conv3d}
+    return conv_dict[dim]
+
+
+def get_maxpool(dim: int) -> Type[nn.Module]:
+    conv_dict = {1: nn.MaxPool1d, 2: nn.MaxPool2d, 3: nn.MaxPool3d}
     return conv_dict[dim]
 
 
