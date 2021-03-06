@@ -17,3 +17,7 @@ Submodules
     :toctree: _autosummary
 
 """
+
+from .dl import nnblocks
+
+__all__ = ["nnblocks"]
