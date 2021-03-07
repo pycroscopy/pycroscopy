@@ -1,8 +1,8 @@
 """
-nets.py
+models.py
 =========
 
-Autoencoder and denoising autoencoder neural nets
+Autoencoder and denoising autoencoder
 
 by Maxim Ziatdinov (email: ziatdinovmax@gmail.com)
 """
