@@ -18,6 +18,6 @@ Submodules
 
 """
 
-from .dl import nnblocks
+from .dl import nnblocks, models
 
-__all__ = ["nnblocks"]
+__all__ = ['nnblocks', 'models']
