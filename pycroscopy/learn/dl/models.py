@@ -22,14 +22,41 @@ class FeatureExtractor(nn.Sequential):
     """
     Convolutional feature extractor
 
+    Parameters
+    ----------
+    ndim
+        Data dimensionality (1, 2, or 3).
+    input_channels
+        Number of input feature channels
+        (Defaults to a greyscale image with a single channel)
+    layers_per_block
+        Number of layers in each block (Default: [1, 2, 2]).
+    nfilters
+        Number of convolutional filters in the first convolutional block.
+        The number of filters in each consecutive block is computed as
+        :math:`block_i = nfilters * (i+1)` (Default: 32).
+    batchnorm
+        Add batch normalization to each layer in the block (Default: False).
+    activation
+        Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
+        (Default: "lrelu").
+    pool
+        Applies max-pooling operation at the end of the block (Default: True).
+
     Examples
     --------
 
-    Get convolutional block with three 1D convolutions and batch normalization
+    Create a feature extractor for RGB-like 2D data
 
-    >>> convblock1d = ConvBlock(
-    >>>     ndim=1, nlayers=3, input_channels=1,
-    >>>     output_channels=32, batch_norm=True)
+    >>> layers_per_block = [2, 2, 3]
+    >>> feature_extractor = FeatureExtractor(
+    >>>     ndim=2, input_channels=3, layers_per_block=layers_per_block)
+
+    Create a feature extractor for greyscale 2D data
+
+    >>> layers_per_block = [2, 2, 3]
+    >>> feature_extractor = FeatureExtractor(
+    >>>     ndim=2, input_channels=1, layers_per_block=layers_per_block)
     """
     def __init__(self,
                  ndim: int,
@@ -42,27 +69,6 @@ class FeatureExtractor(nn.Sequential):
                  ) -> None:
         """
         Initializes feature extractor module
-
-        Parameters
-        ----------
-        ndim
-            Data dimensionality (1, 2, or 3).
-        input_channels
-            Number of input feature channels
-            (Defaults to a greyscale image with a single channel)
-        layers_per_block
-            Number of layers in each block (Default: [1, 2, 2]).
-        nfilters
-            Number of convolutional filters in the first convolutional block.
-            The number of filters in each consecutive block is computed as
-            :math:`block_i = nfilters * (i+1)` (Default: 32).
-        batchnorm
-            Add batch normalization to each layer in the block (Default: False).
-        activation
-            Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
-            (Default: "lrelu").
-        pool
-            Applies max-pooling operation at the end of the block (Default: True).
         """
         super(FeatureExtractor, self).__init__()
         if layers_per_block is None:
@@ -78,6 +84,30 @@ class FeatureExtractor(nn.Sequential):
 class Upsampler(nn.Sequential):
     """
     Convolutional upsampler (aka 'decoder')
+
+    Parameters
+    ----------
+    ndim
+        Data dimensionality (1, 2, or 3).
+    input_channels
+        Number of input channels (convolutional filters) for the input layer.
+        The number of filters in each consecutive block is computed as
+        :math:`block_i = nfilters // (i+1)` (Default: 96).
+    layers_per_block
+        Number of layers in each block (Default: [2, 2, 1]).
+    output_channels
+        Number of the output channels (Deafult: 1)
+    batchnorm
+        Add batch normalization to each layer in the block (Default: False).
+    activation
+        Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
+        (Default: "lrelu").
+    activation_out:
+        Applies sigmoid (output_channels=1) or softmax (output_channels>1)
+        activation to the final convolutional layer (Default: True)
+    upsampling_mode
+        Upsampling mode. Select between "bilinear" and "nearest"
+        (Default: bilinear for 2D, nearest for 1D and 3D).
     """
     def __init__(self,
                  ndim: int,
@@ -90,31 +120,7 @@ class Upsampler(nn.Sequential):
                  upsampling_mode: str = "bilinear",
                  ) -> None:
         """
-        Initializes upsampler module
-
-        Parameters
-        ----------
-        ndim
-            Data dimensionality (1, 2, or 3).
-        input_channels
-            Number of input channels (convolutional filters) for the input layer.
-            The number of filters in each consecutive block is computed as
-            :math:`block_i = nfilters // (i+1)` (Default: 96).
-        layers_per_block
-            Number of layers in each block (Default: [2, 2, 1]).
-        output_channels
-            Number of the output channels (Deafult: 1)
-        batchnorm
-            Add batch normalization to each layer in the block (Default: False).
-        activation
-            Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
-            (Default: "lrelu").
-        activation_out:
-            Applies sigmoid (output_channels=1) or softmax (output_channels>1)
-            activation to the final convolutional layer (Default: True)
-        upsampling_mode
-            Upsampling mode. Select between "bilinear" and "nearest"
-            (Default: bilinear for 2D, nearest for 1D and 3D). 
+        Initializes upsampler module 
         """
         super(Upsampler, self).__init__()
         if layers_per_block is None:
@@ -143,9 +149,47 @@ class Upsampler(nn.Sequential):
 class AutoEncoder(nn.Module):
     """
     Convolutional autoencoder with latent space
+
+    Parameters
+    ----------
+    input_dim
+        Input dimensions: (channels, length), (channels, height, width) 
+        or (height, width, depth).
+    latent_dim
+        Latent sapce dimensionality (Default: 2).
+    layers_per_block
+        List with the number of layers for each block of the encoder.
+        The number of layers for the decoder is computed by reversing
+        this list (Default: [1, 2, 2]).
+    nfilters
+        Number of convolutional filters in the first convolutional block
+        of the encoder. The number of filters in each consecutive block
+        is computed as :math:`block_i = nfilters * (i+1)`. The number of
+        filters in the first layer of the decoder is equal to the number of
+        filters in the last layer of the encoder and the number of filters
+        in each consecutive block is computed as :math:`block_i = nfilters // (i+1)`
+        (Default: 32).
+    batchnorm
+        Add batch normalization to each layer (Default: True).
+    activation
+        Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
+        (Default: "lrelu").
+    activation_out:
+        Applies sigmoid (output_channels=1) or softmax (output_channels>1)
+        activation to the final convolutional layer (Default: True).
+    upsampling_mode
+        Upsampling mode. Select between "bilinear" and "nearest"
+        (Default: bilinear for 2D, nearest for 1D and 3D).
+
+    Examples
+    --------
+
+    Create autoencoder for dataset with 64 x 64 greyscale images
+    
+    >>> input_dim = (1, 64, 64)  # (channles, height, width)
+    >>> ae = AutoEncoder(input_dim, latent_dim=2)
     """
     def __init__(self,
-                 ndim: int,
                  input_dim: Tuple[int],
                  latent_dim: int = 2,
                  layers_per_block: List[int] = [1, 2, 2],
@@ -157,43 +201,11 @@ class AutoEncoder(nn.Module):
                  ) -> None:
         """
         Initializes encoder, decoder, and latent parts of the model
-
-        Parameters
-        ----------
-        ndim
-            Data dimensionality (1, 2, or 3).
-        input_dim
-            Input dimensions: (channels, length), (channels, height, width) 
-            or (height, width, depth).
-        latent_dim
-            Latent sapce dimensionality (Default: 2).
-        layers_per_block
-            List with the number of layers for each block of the encoder.
-            The number of layers for the decoder is computed by reversing
-            this list (Default: [1, 2, 2]).
-        nfilters
-            Number of convolutional filters in the first convolutional block
-            of the encoder. The number of filters in each consecutive block
-            is computed as :math:`block_i = nfilters * (i+1)`. The number of
-            filters in the first layer of the decoder is equal to the number of
-            filters in the last layer of the encoder and the number of filters
-            in each consecutive block is computed as :math:`block_i = nfilters // (i+1)`
-            (Default: 32).
-        batchnorm
-            Add batch normalization to each layer (Default: True).
-        activation
-            Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
-            (Default: "lrelu").
-        activation_out:
-            Applies sigmoid (output_channels=1) or softmax (output_channels>1)
-            activation to the final convolutional layer (Default: True).
-        upsampling_mode
-            Upsampling mode. Select between "bilinear" and "nearest"
-            (Default: bilinear for 2D, nearest for 1D and 3D).
         """
         super(AutoEncoder, self).__init__()
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         self.input_dim = input_dim
+        ndim = len(input_dim) - 1
         layers_per_block_e = layers_per_block
         layers_per_block_d = layers_per_block[::-1]
         encoder_channels_out = nfilters * len(layers_per_block)
