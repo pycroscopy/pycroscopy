@@ -11,6 +11,7 @@ from typing import Union, Tuple, Type
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.tensor as tt
 
 from warnings import warn
 
@@ -67,7 +68,6 @@ class ConvBlock(nn.Module):
                  batchnorm: bool = False,
                  activation: str = "lrelu",
                  pool: bool = False,
-                 **kwargs: float,
                  ) -> None:
         """
         Initializes module parameters
@@ -155,6 +155,36 @@ class UpsampleBlock(nn.Module):
         x = F.interpolate(
             x, scale_factor=self.scale_factor, mode=self.mode)
         return self.conv(x)
+
+
+class features_to_latent(nn.Module):
+    """
+    Maps features (usually, from a convolutional net/layer) to latent space
+    """
+    def __init__(self, input_dim: Tuple[int], latent_dim: int = 2) -> None:
+        super(features_to_latent, self).__init__()
+        print(input_dim)
+        self.reshape_ = torch.prod(tt(input_dim))
+        self.fc_latent = nn.Linear(self.reshape_, latent_dim)
+    
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = x.view(-1, self.reshape_)
+        return self.fc_latent(x)
+
+
+class latent_to_features(nn.Module):
+    """
+    Maps latent vector to feature space
+    """
+    def __init__(self, latent_dim: int, out_dim: Tuple[int]) -> None:
+        super(latent_to_features, self).__init__()
+        self.reshape_ = out_dim
+        self.fc = nn.Linear(latent_dim, torch.prod(tt(out_dim)).item())
+         
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.fc(x)
+        return x.view(-1, *self.reshape_)
+
 
 
 def get_bnorm(dim: int) -> Type[nn.Module]:
