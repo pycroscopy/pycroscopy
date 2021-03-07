@@ -21,41 +21,44 @@ class ConvBlock(nn.Module):
     Creates a block of layers each consisting of convolution operation,
     nonlinear activation and (optionally) batch normalization
 
-    Args:
-        ndim:
-            Data dimensionality (1, 2, or 3)
-        nb_layers:
-            Number of layers in the block
-        input_channels:
-            Number of input channels for the block
-        output_channels:
-            Number of the output channels for the block
-        kernel_size:
-            Size of convolutional filter in pixels (Default: 3)
-        stride:
-            Stride of convolutional filter (Default: 1)
-        padding:
-            Value for edge padding (Default: 1)
-        batch_norm:
-            Add batch normalization to each layer in the block (Default: False)
-        activation:
-            Non-linear activation ("relu", "lrelu", "tanh", "softplus", or None)
-        pool:
-            Applies max-pooling operation at the end of the block
+    Parameters
+    ----------
+    ndim
+        Data dimensionality (1, 2, or 3)
+    nlayers
+        Number of layers in the block
+    input_channels
+        Number of input feature channels for the block
+    output_channels
+        Number of output feature channels for the block
+    kernel_size
+        Size of convolutional filter in pixels (Default: 3)
+    stride
+        Stride of convolutional filter (Default: 1)
+    padding
+        Value for edge padding (Default: 1)
+    batchnorm
+        Add batch normalization to each layer in the block (Default: False)
+    activation
+        Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
+        (Default: "lrelu").
+    pool
+        Applies max-pooling operation at the end of the block (Default: True).
 
-        Example:
+    Examples
+    --------
 
-        Get convolutional block with three 1D convolutions and a batch normalization
+    Get convolutional block with three 1D convolutions and batch normalization
 
-        >>> convblock1d = ConvBlock(
-        >>>     ndim=1, nlayers=3, input_channels=1,
-        >>>     output_channels=32, batch_norm=True)
+    >>> convblock1d = ConvBlock(
+    >>>     ndim=1, nlayers=3, input_channels=1,
+    >>>     output_channels=32, batch_norm=True)
 
-        Get convolutional block with two 2D convolutions and max-pooling at the end
+    Get convolutional block with two 2D convolutions and max-pooling at the end
 
-        >>> convblock1d = ConvBlock(
-        >>>     ndim=2, nlayers=2, input_channels=1,
-        >>>     output_channels=32, pool=True)
+    >>> convblock1d = ConvBlock(
+    >>>     ndim=2, nlayers=2, input_channels=1,
+    >>>     output_channels=32, pool=True)
     """
     def __init__(self,
                  ndim: int,
@@ -103,24 +106,27 @@ class UpsampleBlock(nn.Module):
     followed by 1-by-1 convolution, which an be used to reduce a number of
     feature channels
 
-    Args:
-        ndim:
-            Data dimensionality (1, 2, or 3)
-        input_channels:
-            Number of input channels for the block
-        output_channels:
-            Number of the output channels for the block
-        scale_factor:
-            Scale factor for upsampling
-        mode:
-            Upsampling mode. Select between "bilinear" and "nearest"
-            (Default: bilinear for 2D, nearest for 1D and 3D)
+    Parameters
+    ----------
+    ndim
+        Data dimensionality (1, 2, or 3).
+    input_channels
+        Number of input channels for the block.
+    output_channels
+        Number of the output channels for the block.
+    scale_factor
+        Scale factor for upsampling.
+    mode
+        Upsampling mode. Select between "bilinear" and "nearest"
+        (Default: bilinear for 2D, nearest for 1D and 3D).
 
-        Example:
+    Examples
+    --------
 
-        >>> # Get a 2-dimenisonal upsampling module with 2x channel reduction
-        >>> upsample2d = UpsampleBlock(ndim=1, input_channels=64, output_channels=32,
-        >>>                            scale_factor=2, mode="bilinear")
+    2D upsampling with a 2x reduction in the number of feature channels
+
+    >>> upsample2d = UpsampleBlock(ndim=1, input_channels=64, output_channels=32,
+    >>>                            scale_factor=2, mode="bilinear")
     """
     def __init__(self,
                  ndim: int,
@@ -163,10 +169,9 @@ class features_to_latent(nn.Module):
     """
     def __init__(self, input_dim: Tuple[int], latent_dim: int = 2) -> None:
         super(features_to_latent, self).__init__()
-        print(input_dim)
         self.reshape_ = torch.prod(tt(input_dim))
         self.fc_latent = nn.Linear(self.reshape_, latent_dim)
-    
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = x.view(-1, self.reshape_)
         return self.fc_latent(x)
@@ -180,11 +185,10 @@ class latent_to_features(nn.Module):
         super(latent_to_features, self).__init__()
         self.reshape_ = out_dim
         self.fc = nn.Linear(latent_dim, torch.prod(tt(out_dim)).item())
-         
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         x = self.fc(x)
         return x.view(-1, *self.reshape_)
-
 
 
 def get_bnorm(dim: int) -> Type[nn.Module]:
