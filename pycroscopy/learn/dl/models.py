@@ -120,7 +120,7 @@ class Upsampler(nn.Sequential):
                  upsampling_mode: str = "bilinear",
                  ) -> None:
         """
-        Initializes upsampler module 
+        Initializes upsampler module
         """
         super(Upsampler, self).__init__()
         if layers_per_block is None:
@@ -153,7 +153,7 @@ class AutoEncoder(nn.Module):
     Parameters
     ----------
     input_dim
-        Input dimensions: (channels, length), (channels, height, width) 
+        Input dimensions: (channels, length), (channels, height, width)
         or (height, width, depth).
     latent_dim
         Latent sapce dimensionality (Default: 2).
@@ -185,7 +185,7 @@ class AutoEncoder(nn.Module):
     --------
 
     Create autoencoder for dataset with 64 x 64 greyscale images
-    
+
     >>> input_dim = (1, 64, 64)  # (channles, height, width)
     >>> ae = AutoEncoder(input_dim, latent_dim=2)
     """
