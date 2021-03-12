@@ -17,3 +17,8 @@ Submodules
     :toctree: _autosummary
 
 """
+
+from .dl import nnblocks, models, datautils
+from .dl.trainer import Trainer
+
+__all__ = ['nnblocks', 'models', 'Trainer', 'datautils']
