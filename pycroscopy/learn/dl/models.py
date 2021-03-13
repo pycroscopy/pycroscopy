@@ -232,17 +232,34 @@ class AutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
 
-    def encode(self, x: Union[torch.Tensor, np.ndarray]) -> np.ndarray:  # TODO: Add batch-by-batch encoding
+    def encode(self,
+               x: Union[torch.Tensor, np.ndarray],
+               **kwargs: int) -> np.ndarray:
         """
         Encodes new data
         """
-        x = self._2torch(x).to(self.device)
-        with torch.no_grad():
-            x = self.encoder(x)
-            x = self.features2latent(x)
-        return x.cpu().numpy()
+        def _encode(xi) -> torch.Tensor:
+            xi = self._2torch(xi).to(self.device)
+            with torch.no_grad():
+                xi = self.encoder(xi)
+                xi = self.features2latent(xi)
+            return xi.cpu()
 
-    def decode(self, x: Union[torch.Tensor, np.ndarray, List]) -> np.ndarray:  # TODO: Add batch-by-batch decoding
+        num_batches = kwargs.get("num_batches", 10)
+        batch_size = len(x) // num_batches if len(x) > num_batches else len(x)
+        z_all = []
+        for i in range(num_batches):
+            xi = x[i*batch_size:(i+1)*batch_size]
+            z_i = _encode(xi)
+            z_all.append(z_i)
+        xi = x[(i+1)*batch_size:]
+        if len(xi) > 0:
+            z_i = _encode(xi)
+            z_all.append(z_i)
+
+        return torch.cat(z_all).numpy()
+
+    def decode(self, x: Union[torch.Tensor, np.ndarray, List]) -> np.ndarray:
         """
         Decodes latent coordinate(s) to data space
         """
