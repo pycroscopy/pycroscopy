@@ -245,8 +245,10 @@ class AutoEncoder(nn.Module):
                 xi = self.features2latent(xi)
             return xi.cpu()
 
-        num_batches = kwargs.get("num_batches", 10)
-        batch_size = len(x) // num_batches if len(x) > num_batches else len(x)
+        batch_size = kwargs.get("batch_size", 100)
+        num_batches = len(x) // batch_size
+        if num_batches == 0:
+            num_batches += 1
         z_all = []
         for i in range(num_batches):
             xi = x[i*batch_size:(i+1)*batch_size]
@@ -376,8 +378,10 @@ class DenoisingAutoEncoder(nn.Module):
                 xi = self.decoder(xi)
             return xi.cpu()
 
-        num_batches = kwargs.get("num_batches", 10)
-        batch_size = len(x) // num_batches if len(x) > num_batches else len(x)
+        batch_size = kwargs.get("batch_size", 100)
+        num_batches = len(x) // batch_size
+        if num_batches == 0:
+            num_batches += 1
         z_all = []
         for i in range(num_batches):
             xi = x[i*batch_size:(i+1)*batch_size]
