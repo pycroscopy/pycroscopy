@@ -338,7 +338,7 @@ class DenoisingAutoEncoder(nn.Module):
                  nfilters: int = 32,
                  batchnorm: bool = True,
                  activation: str = "lrelu",
-                 activation_out: bool = True,
+                 activation_out: bool = False,
                  upsampling_mode: str = "bilinear"
                  ) -> None:
         """
