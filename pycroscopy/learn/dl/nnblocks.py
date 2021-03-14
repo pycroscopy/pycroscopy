@@ -13,7 +13,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.tensor as tt
 
-from warnings import warn
+from warnings import warn, filterwarnings
+
+filterwarnings("ignore", module="torch.nn.functional")
 
 
 class ConvBlock(nn.Module):
