@@ -1,6 +1,5 @@
-==========
-Pycroscopy
-==========
+Pycroscopy Package
+==================
 
 **Scientific analysis of nanoscience data**
 
@@ -20,11 +19,6 @@ Pycroscopy
    If you would like to participate, please email us at vasudevanrk *at* ornl.gov
 
 
-Pycroscopy Package
-------------------
-
-What?
-------
 * pycroscopy is a `python <http://www.python.org/>`_ package for analyzing and visualizing nanoscience data.
 * pycroscopy uses the **Universal Spectroscopy and Imaging Data (USID)** `model <../../USID/about.html>`_ as its foundation, which:
 
@@ -38,10 +32,3 @@ What?
 * For more information, please consider reading our `Arxiv <https://arxiv.org/abs/1903.09515>`_ **paper**.
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
 * Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
-
-
-Who?
------
-* This project begun largely as an effort by scientists and engineers at the **I**\nstitute for **F**\unctional **I**\maging of **M**\aterials (`IFIM <https://ifim.ornl.gov>`_) to implement a python library that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes generate (thanks to the large IFIM users community!).
-* By sharing our methodology and code for analyzing scientific imaging data we hope that it will benefit the wider scientific community. We also hope, quite ardently, that other scientists would follow suit.
-* Please visit our `credits and acknowledgements <./credits.html>`_ page for more information about the people behind pycroscopy.
