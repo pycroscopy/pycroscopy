@@ -25,12 +25,9 @@ Documentation Index
     getting_started
     install
     external_guides
-    auto_examples/index
-    translators
     faq
     contribution_guidelines
     contact
-    whats_new
     credits
     api
 

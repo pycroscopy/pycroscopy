@@ -1,6 +1,10 @@
 What's New
 ==========
 
+.. attention::
+
+  This page is not up to date. Please visit the github project for latest information
+
 `Jun 28 2018: <https://github.com/pycroscopy/pycroscopy/pull/181>`_
 ------------------------------------------------------------------------
 Moved ``pycroscopy.core`` into separate package - `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
