@@ -19,6 +19,15 @@ Pycroscopy Package
    If you would like to participate, please email us at vasudevanrk *at* ornl.gov
 
 * pycroscopy is a `python <http://www.python.org/>`_ package for analyzing and visualizing nanoscience data.
+* Code in this package is meant to be useful for multiple scientific domains or applications.
+* The upcoming version of pycroscopy will be `organized <https://github.com/pycroscopy/pycroscopy/issues/245>`_ as follows:
+
+  * ``learn`` - machine and deep learning tools
+  * ``stats`` - statistics tools
+  * ``image`` - image analysis and processing tools
+  * ``signal`` - signal processing and analysis tools
+  * ``corr`` - tools to correlate datasets from multiple sources (images with spectra, simulation with experiment, experiments with machine learning, etc.)
+  * ``viz`` - visualization tools and dashboards
 * For more information, please consider reading our `Arxiv <https://arxiv.org/abs/1903.09515>`_ **paper**.
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
 * Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
