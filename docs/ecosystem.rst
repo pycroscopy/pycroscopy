@@ -2,7 +2,7 @@ Pycroscopy Ecosystem
 ====================
 
 Structure
----------
+~~~~~~~~~
 The following diagram provides a graphical representation and description of the several python packages that
 make up the pycroscopy ecosystem.
 
@@ -10,11 +10,11 @@ make up the pycroscopy ecosystem.
 
 Here is a brief overview of various technologies and packages that comprise the pycroscopy ecosystem:
 
-* General scientific packages:
+* **General scientific packages**:
 
   * `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_ – tools to extract data and metadata out of vendor specific data files. Extracted information is stored only in memory
   * `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_ – scientific and data analytics tools that can be used across scientific domains
-* Application scientific packages:
+* **Application scientific packages**:
 
   * `pyTEMlib <https://pycroscopy.github.io/pyTEMlib/about.html>`_ - Physics model-based TEM data quantification library
   * `stemtool <https://github.com/pycroscopy/stemtool>`_ - Tools to analyze atomic resolution STEM, 4D-STEM and STEM-EELS datasets
@@ -22,23 +22,27 @@ Here is a brief overview of various technologies and packages that comprise the 
   * `AICrystallographer <https://github.com/pycroscopy/AICrystallographer>`_ - Deep and machine learning models that aid in automated analysis of atomically resolved images
   * `BGlib <https://pycroscopy.github.io/BGlib/index.html>`_ - Utilities to analyze Band Excitation and General Mode Data for `ORNL's Center for Nanophase Materials Science SPM <https://www.ornl.gov/content/advanced-afm>`_ users
   * `FFTA <https://github.com/rajgiriUW/ffta>`_ - Fast Free Transient Analysis of atomic force microscopy data
-* Data infrastructure - domain agnostic
+* **Data infrastructure** - domain agnostic
 
   * `sidpy <pycroscopy.github.io/sidpy/>`_ – core engineering tools to support scientific packages and file I/O packages
-  * Abstract models to represent data:
+  * **Abstract models** to represent data:
 
     * `USID – Universal Spectroscopy and Imaging and Data model <pycroscopy.github.io/usid/about.html>`_ – General model for representing data with or without N-dimensional forms
     * `NSID – N-Dimensional Spectroscopy and Imaging Data model <https://pycroscopy.github.io/pyNSID/nsid.html>`_ – Model for data with a clear N-dimensional form
-  * Interfaces to reading and writing pycroscopy formatted data into `Hierarchical Data Format Files (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_:
+  * **Interfaces to reading and writing** pycroscopy formatted data into `Hierarchical Data Format Files (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_:
 
     * `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ – Python interface USID
     * `pyNSID <https://pycroscopy.github.io/pyNSID/about.html>`_ – Python interface to NSID
 
+Philosophy
+~~~~~~~~~~
 
-With pycroscopy we aim to:
+Vision
+------
+With the pycroscopy ecosystem, we aim to:
 
-#. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
-#. serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
+* significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
+* serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
 
 Why?
 -----
@@ -73,18 +77,33 @@ As we see it, there are a few opportunities in scientific imaging (that surely a
 
 How?
 -----
-* pycroscopy uses the `Universal Spectroscopy and Imaging Data model <../../USID/index.html>`_ that facilitates the storage of data, regardless
-  of dimensionality (conventional 1D spectra and 2D images to 9D hyperspectral datasets and beyond!) or instrument of origin (AFMs, STEMs, Raman spectroscopy etc.).
-* This generalized representation of data allows us to write a single and
-  generalized version of analysis and processing functions that can be applied to any kind of data.
-* The data are stored in `hierarchical
-  data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
-  files which have numerous benefits including flexibility in storing multiple datasets of arbitrary sizes and dimensionality,
-  supercomputer compatibility, storage of important metadata.
-* Once the relevant data and metadata are extracted from proprietary raw data files and written into USID HDF5 files
-  via a `translation process <https://pycroscopy.github.io/pyUSID/auto_examples/beginner/plot_numpy_translator.html>`_,
-  the user gains access to the rest of the utilities present in ``pycroscopy.*``.
-* Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
+* **Modularity** - The pycroscopy ecosystem is  modular in that it separates codes necessary to read data from instruments, write data to open formats,
+  generic engineering tools, common scientific kernels, and the domain specific applications themselves. This will allow users to freely use components from the various packages.
+* **Low entry barriers** - The pycroscopy ecosystem aims to lower the barrier to entry for both users and developers as much as possible.
+  Information is exchanged across the pycroscopy ecosystem via `sidpy.Dataset <https://pycroscopy.github.io/sidpy/notebooks/00_basic_usage/create_dataset.html>`_ objects
+  which are thin wrappers on `dask.array <https://docs.dask.org/en/latest/array.html>`_.
+  These ``sidpy.Datasets`` can be created from popular numpy or dask arrays with just one line of code.
+  Users can continue to slice and perform matrix operations on ``sidpy.Datasets`` just as they would with ``numpy`` arrays.
+  Code already developed by researchers can easily be adapted to use ``sidpy.Datasets`` in place of ``numpy`` or ``dask`` arrays.
+* **Consistency** - Regardless of the dimensionality (conventional 1D spectra and 2D images to 9D hyperspectral datasets and beyond!),
+  size, instrument (or simulation) of origin (AFMs, STEMs, Raman spectroscopy etc.),
+  data can be represented as ``sidpy.Datasets`` which are exchangeable and interoperable.
+* **Open data and file formats** - Regardless of the dimensionality, size, origin (instrument, simulation, data processing, data analysis),
+  data can be written into ``USID`` or ``NSID`` formatted HDF5 files.
+  HDF5 files themselves are one of the defacto standards for storing data in scientific research.
+* **Scalability** -
+
+  * *Storage* - `hierarchical data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
+    files have numerous benefits including flexibility in storing multiple datasets of arbitrary sizes and dimensionality, storage of metadata,
+    and work readily on laptops as well as supercomputers.
+  * *Computation* - The engineering packages in the pycroscopy ecosystem offer means to use multiple CPU cores, multiple GPUs, to multiple nodes in a high performance computing cluster
+    through the use of scalable packages such as ``pyTorch``, ``Tensor Flow``, ``dask.distributed``, ``mpi4py``, and ``joblib``.
+* **Accessibility** - Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
   that are interactive and portable web applications containing text, images, code / scripts, and graphical results.
-  Notebooks containing the complete / parts of workflow from raw data to publishable figures often become supplementary
-  material for `journal publications <./papers_conferences.html>`_ thereby enabling traceability, reproducibility for open science.
+  Notebooks containing the  workflow from raw data to publishable figures often become supplementary
+  material for `journal publications <./papers_conferences.html>`_ thereby juxtapositioning the data analytics and computations with articles.
+* **Traceability and Reproducibility** -
+
+  * *Workflows* - Well crafted and annotated Jupyter Notebooks alongside software containers allow users to reproduce data processing steps.
+  * *Storage* - ``sidpy`` offers tools that allow results of computations / data processing to be stored alongside the source datasets
+    along with links in the same HDF5 file
