@@ -15,7 +15,5 @@ Other modes
 #. Join our `google group <https://groups.google.com/forum/#!forum/pycroscopy>`_ to discuss about pycroscopy, ask questions, get help etc.
    *This is our preferred mode of communication*.
    Future users who have similar questions as yourself can benefit by finding the (publicly visible) answers via a web search.
-#. We also have an instant messaging group at `pycroscopy@slack.com <pycroscopy@slack.com>`_. Please send us an `email <pycroscopy@gmail.com>`_ if you have trouble joining.
-   Please note that we may ask you to post some of your important questions on our google group so that everyone benefits from the discussion.
 #. While not encouraged, you can get in touch with us via `email <pycroscopy@gmail.com>`_ as well.
    This mode of communication is preferred for administrative purposes.
