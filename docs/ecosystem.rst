@@ -1,5 +1,8 @@
 Pycroscopy Ecosystem
---------------------
+====================
+
+Structure
+---------
 The following diagram provides a graphical representation and description of the several python packages that
 make up the pycroscopy ecosystem.
 

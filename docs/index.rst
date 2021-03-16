@@ -20,6 +20,7 @@ Documentation Index
 
 .. toctree::
     about
+    ecosystem
     papers_conferences
     getting_started
     install
