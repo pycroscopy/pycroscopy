@@ -5,7 +5,8 @@ import h5py
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from pyUSID.io.write_utils import Dimension, build_ind_val_matrices
+from pyUSID import Dimension
+from pyUSID.io.anc_build_utils import build_ind_val_matrices
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group, get_all_main
 from pyUSID import USIDataset
 
@@ -368,8 +369,8 @@ class PiFMTranslator(Translator):
                                                            pos_dims=spec_i_pos_dims, spec_dims=spec_i_spec_dims,
                                                            # Spectroscopic dimensions
                                                            dtype=np.float32,  # data type / precision
-                                                           main_dset_attrs={'XLoc': descriptors[0],
-                                                                            'YLoc': descriptors[1]})
+                                                           main_dset_attrs={'XLoc': descriptors[1],
+                                                                            'YLoc': descriptors[2]})
                 h5_raw[:, :] = self.spectra[spec_f].reshape(h5_raw.shape)
 
     def write_ps_spectra(self):
