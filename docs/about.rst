@@ -2,15 +2,64 @@
 Pycroscopy
 ==========
 
-**Scientific analysis of nanoscale materials imaging data**
+**Scientific analysis of nanoscience data**
+
+.. attention::
+
+   The pycroscopy ecosystem of packages have been undergoing a major restructuring process.
+   The pycroscopy python package is being completely restructured under the `phoenix <https://github.com/pycroscopy/pycroscopy/tree/phoenix>`_ branch.
+   Those wishing to continue to use the legacy version of pycroscopy can do so using the `legacy <https://github.com/pycroscopy/pycroscopy/tree/legacy>`_ branch.
 
 .. note::
-   **Weekly hackathons**
-   We are running weekly hackathons for pycroscopy and pyUSID to encourage community engagement, increase development, issue bug fixes and generally improve the packages. Hackathons are run every Friday 3-5PM USA Eastern time. The requirements for participation are: knowledge of python, git, pyUSID, and we expect that you will be comfortable in understanding the structure of the packages (and have gone through the documentation). If you would like to contribute, please let us know. Email vasudevanrk *at* ornl.gov
+   **Weekly Hackathons**
+
+   We run weekly hackathons to develop the pycroscopy ecosystem of python packages.
+   Hackathons are held every Friday 3-5PM USA Eastern time.
+   The requirements for participation are: knowledge of python, git,
+   and the basic structure and philosophy of the pycroscopy ecosystem (available through documentation).
+   If you would like to participate, please email us at vasudevanrk *at* ornl.gov
+
+Pycroscopy Ecosystem
+--------------------
+The following diagram provides a graphical representation and description of the several python packages that
+make up the pycroscopy ecosystem.
+
+.. image:: ./pycroscopy_ecosystem.png
+
+Here is a brief overview of various technologies and packages that comprise the pycroscopy ecosystem:
+
+* General scientific packages:
+
+  * `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_ – tools to extract data and metadata out of vendor specific data files. Extracted information is stored only in memory
+  * `Pycroscopy <https://pycroscopy.github.io/pycroscopy/about.html>`_ – scientific and data analytics tools that can be used across scientific domains
+* Application scientific packages:
+
+  * `pyTEMlib <https://pycroscopy.github.io/pyTEMlib/about.html>`_ - Physics model-based TEM data quantification library
+  * `stemtool <https://github.com/pycroscopy/stemtool>`_ - Tools to analyze atomic resolution STEM, 4D-STEM and STEM-EELS datasets
+  * `atomAI <https://github.com/pycroscopy/atomai>`_ - Deep and machine learning for atomic-scale and mesoscale data
+  * `AICrystallographer <https://github.com/pycroscopy/AICrystallographer>`_ - Deep and machine learning models that aid in automated analysis of atomically resolved images
+  * `BGlib <https://pycroscopy.github.io/BGlib/index.html>`_ - Utilities to analyze Band Excitation and General Mode Data for `ORNL's Center for Nanophase Materials Science SPM <https://www.ornl.gov/content/advanced-afm>`_ users
+  * `FFTA <https://github.com/rajgiriUW/ffta>`_ - Fast Free Transient Analysis of atomic force microscopy data
+* Data infrastructure - domain agnostic
+
+  * `sidpy <pycroscopy.github.io/sidpy/>`_ – core engineering tools to support scientific packages and file I/O packages
+  * Abstract models to represent data:
+
+    * `USID – Universal Spectroscopy and Imaging and Data model <pycroscopy.github.io/usid/about.html>`_ – General model for representing data with or without N-dimensional forms
+    * `NSID – N-Dimensional Spectroscopy and Imaging Data model <https://pycroscopy.github.io/pyNSID/nsid.html>`_ – Model for data with a clear N-dimensional form
+  * Interfaces to reading and writing pycroscopy formatted data into `Hierarchical Data Format Files (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_:
+
+    * `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ – Python interface USID
+    * `pyNSID <https://pycroscopy.github.io/pyNSID/about.html>`_ – Python interface to NSID
+
+
+Pycroscopy Package
+------------------
+
 
 What?
 ------
-* pycroscopy is a `python <http://www.python.org/>`_ package for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
+* pycroscopy is a `python <http://www.python.org/>`_ package for analyzing and visualizing nanoscience data.
 * pycroscopy uses the **Universal Spectroscopy and Imaging Data (USID)** `model <../../USID/about.html>`_ as its foundation, which:
 
   * facilitates the representation of any spectroscopic or imaging data regardless of its origin, modality, size, or dimensionality.
@@ -21,7 +70,6 @@ What?
   In addition, pycroscopy uses popular packages such as numpy, scipy, scikit-image, scikit-learn, joblib, matplotlib, etc. for most of the computation, analysis and visualization.
 * You can choose to perform your analysis outside pycroscopy if you prefer and use pyUSID to standardize the data storage.
 * For more information, please consider reading our `Arxiv <https://arxiv.org/abs/1903.09515>`_ **paper**.
-* See a high-level overview of pycroscopy in this `presentation <https://github.com/pycroscopy/pycroscopy/blob/master/docs/USID_pyUSID_pycroscopy.pdf>`_
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
 * Jump to our `GitHub project <https://github.com/pycroscopy/pycroscopy>`_
 
