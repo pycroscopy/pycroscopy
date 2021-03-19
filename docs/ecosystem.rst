@@ -44,6 +44,8 @@ With the pycroscopy ecosystem, we aim to:
 * significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
 * serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
 
+For more information, please consider reading our `Arxiv <https://arxiv.org/abs/1903.09515>`_ paper.
+
 Why?
 -----
 As we see it, there are a few opportunities in scientific imaging (that surely apply to several other scientific domains):
