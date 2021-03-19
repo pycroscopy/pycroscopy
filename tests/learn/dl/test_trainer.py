@@ -1,5 +1,5 @@
 import sys
-
+import pytest
 import numpy as np
 import torch
 from numpy.testing import assert_
@@ -18,38 +18,43 @@ def assert_weights_equal(m1, m2):
     return all(eq_w)
 
 
-def test_trainer():
+@pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
+def test_trainer(dim, size):
     # Initialize a model
-    in_dim = (1, 16, 16)
-    model = models.AutoEncoder(in_dim, layers_per_block=[1, 2])
+    in_dim = (1, *size)
+    model = models.AutoEncoder(
+        in_dim, layers_per_block=[1, 1], nfilters=2)
     weights_before = model.state_dict()
     # Create dummy train set
-    X_train = torch.randn(60, 1, 16, 16)
+    X_train = torch.randn(5, *in_dim)
     # Initialize trainer
-    t = Trainer(model, X_train, X_train, num_epochs=2)
+    t = Trainer(model, X_train, X_train, batch_size=2)
     # train and compare model params before and after
-    t.run()
+    t.fit(num_epochs=2)
     weights_after = model.state_dict()
     assert_(not assert_weights_equal(weights_before, weights_after))
 
 
-def test_trainer_determenism():
+@pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
+def test_trainer_determenism(dim, size):
+    in_dim = (1, *size)
     # Create dummy train set
     torch.manual_seed(0)
-    X_train = torch.randn(60, 1, 16, 16)
+    X_train = torch.randn(5, *in_dim)
     # Initialize a model
-    in_dim = (1, 16, 16)
     model1 = models.AutoEncoder(
-        in_dim, layers_per_block=[1, 2], upsampling_mode="nearest")
+        in_dim, layers_per_block=[1, 1], nfilters=2,
+        upsampling_mode="nearest")
     # Initialize trainer
-    t = Trainer(model1, X_train, X_train, num_epochs=5)
+    t = Trainer(model1, X_train, X_train, batch_size=2)
     # train
-    t.run()
+    t.fit(num_epochs=4)
     # Reininitiaize model and train again
     torch.manual_seed(0)
-    X_train = torch.randn(60, 1, 16, 16)
+    X_train = torch.randn(5, *in_dim)
     model2 = models.AutoEncoder(
-        in_dim, layers_per_block=[1, 2], upsampling_mode="nearest")
-    t = Trainer(model2, X_train, X_train, num_epochs=5)
-    t.run()
+        in_dim, layers_per_block=[1, 1], nfilters=2,
+        upsampling_mode="nearest")
+    t = Trainer(model2, X_train, X_train, batch_size=2)
+    t.fit(num_epochs=4)
     assert_(assert_weights_equal(model1.state_dict(), model2.state_dict()))
