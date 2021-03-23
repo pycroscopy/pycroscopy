@@ -60,7 +60,7 @@ class ImageWindowing:
             all_dims = np.arange(0, num_dimensions)
             image_source = dataset[image_dims]
 
-    image_shape = image_source.shape
+        image_shape = image_source.shape
 
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
