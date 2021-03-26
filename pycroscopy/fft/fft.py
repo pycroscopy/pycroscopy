@@ -55,7 +55,7 @@ def fourier_transform(dset, dimension_type=None):
 
     Parameters
     ----------
-    dset : 2D or 3D sidpy.Dataset
+    dset : 1D, 2D, or 3D sidpy.Dataset
         Either a 2D matrix [x, y] or a stack of 2D images; needs exactly two spatial dimensions
     dimension_type: None, str, or sidpy.DimensionType - optional
         dimension_type over which fourier transform is performed, if None an educated guess will determine
@@ -76,12 +76,11 @@ def fourier_transform(dset, dimension_type=None):
         raise TypeError('Expected a sidpy Dataset')
 
     if dimension_type is None:
-        # First test for data_type of Datset
-        if dset.data_type.name in ['SPECTRUM', 'IMAGE', 'LINE_PLOT']:
-            dimension_type = dset.dim_0.dimension_type
-        else:
+        # test for data_type of Dataset
+        if dset.data_type.name in ['IMAGE_MAP', 'IMAGE_STACK', 'SPECTRAL_IMAGE', 'IMAGE_4D']:
             dimension_type = dset.dim_2.dimension_type
-
+        else:
+            dimension_type = dset.dim_0.dimension_type
 
     if isinstance(dimension_type, str):
         dimension_type = sidpy.DimensionType[dimension_type.upper()]
@@ -89,18 +88,16 @@ def fourier_transform(dset, dimension_type=None):
     if not isinstance(dimension_type, sidpy.DimensionType):
         raise TypeError('Could not identify a dimension_type to perform Fourier transform on')
 
-    forward = True
     if dimension_type.name == 'SPATIAL':
         if len(get_dimensions_by_type(dimension_type, dset)) != 2:
-            raise TypeError('sidpy dataset of type', dset.data_type,' has no obvious dimension over which to perform fourier transform, '
-                                'please specify')
+            raise TypeError('sidpy dataset of type', dset.data_type,
+                            ' has no obvious dimension over which to perform fourier transform, '
+                            'please specify')
     elif dimension_type.name == 'RECIPROCAL':
         if len(get_dimensions_by_type(dimension_type, dset)) != 2:
             raise TypeError('sidpy dataset of type', dset.data_type,
                             ' has no obvious dimension over which to perform fourier transform, '
                             'please specify')
-        else:
-            forward = False
     elif dimension_type.name == 'SPECTRAL':
         if len(get_dimensions_by_type(dimension_type, dset)) != 1:
             raise TypeError('sidpy dataset of type', dset.data_type,
@@ -109,11 +106,13 @@ def fourier_transform(dset, dimension_type=None):
 
     new_dset = dset-dset.min()
     if dimension_type == sidpy.DimensionType.SPECTRAL:
-        fft_transform = np.fft.fftshift(dask.array.fft.fft(new_dset))
+        dd = get_dimensions_by_type('spectral', dset)
+        print(dd)
+        fft_transform = np.fft.fftshift(dask.array.fft.fftn(new_dset, axes=get_dimensions_by_type('spectral', dset)))
     elif dimension_type == sidpy.DimensionType.SPATIAL:
         fft_transform = np.fft.fftshift(dask.array.fft.fft2(new_dset, axes=get_dimensions_by_type('spatial', dset)))
     elif dimension_type == sidpy.DimensionType.RECIPROCAL:
-        fft_transform = np.fft.fftshift(dask.array.fft.fft2(new_dset, axes=get_dimensions_by_type('spatial', dset)))
+        fft_transform = np.fft.fftshift(dask.array.fft.ifft2(new_dset, axes=get_dimensions_by_type('reciprocal', dset)))
     else:
         raise NotImplementedError('fourier transform not implemented for dimension_type ', dimension_type.name)
 
