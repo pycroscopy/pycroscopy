@@ -1,0 +1,37 @@
+pycroscopy.processing.svd\_utils
+================================
+
+.. automodule:: pycroscopy.processing.svd_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      plot_svd
+      rebuild_svd
+      simplified_kpca
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SVD
+   
+   
+
+   
+   
+   
+
+
+

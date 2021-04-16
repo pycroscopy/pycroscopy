@@ -1,0 +1,29 @@
+pycroscopy.processing.signal\_filter
+====================================
+
+.. automodule:: pycroscopy.processing.signal_filter
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SignalFilter
+   
+   
+
+   
+   
+   
+
+
+

@@ -1,0 +1,46 @@
+pycroscopy.processing.fft
+=========================
+
+.. automodule:: pycroscopy.processing.fft
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      are_compatible_filters
+      build_composite_freq_filter
+      build_radius_matrix
+      down_sample
+      fft_to_real
+      get_2d_gauss_lpf
+      get_fft_stack
+      get_noise_floor
+   
+   
+
+   
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BandPassFilter
+      FrequencyFilter
+      HarmonicPassFilter
+      LowPassFilter
+      NoiseBandFilter
+   
+   
+
+   
+   
+   
+
+
+

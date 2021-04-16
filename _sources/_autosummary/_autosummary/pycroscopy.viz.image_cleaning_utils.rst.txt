@@ -1,0 +1,29 @@
+pycroscopy.viz.image\_cleaning\_utils
+=====================================
+
+.. automodule:: pycroscopy.viz.image_cleaning_utils
+
+   
+   
+   
+
+   
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      plot_image_cleaning_results
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
