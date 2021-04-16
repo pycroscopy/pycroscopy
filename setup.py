@@ -32,7 +32,7 @@ requirements = ['numpy>=1.13.0',
                 'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
 
                 'sidpy>=0.0.1',
-                'pyUSID>=0.0.8',
+                'pyUSID>=0.0.10',
 
                 'xlrd>=1.0.0',
                 'igor',
