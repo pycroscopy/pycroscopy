@@ -17,7 +17,8 @@ from skimage.util import crop
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.anc_build_utils import calc_chunks
+from pyUSID import Dimension
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
 
 from .image import read_image

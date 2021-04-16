@@ -15,11 +15,12 @@ from skimage.measure import block_reduce
 import h5py
 
 from sidpy.sid import Translator
-from sidpy.hdf.hdf_utils import write_simple_attrs, get_h5_obj_refs
+from sidpy.hdf.hdf_utils import write_simple_attrs
 
 from pyUSID.io.image import read_image
-from pyUSID.io.write_utils import Dimension, calc_chunks
-from pyUSID.io.hdf_utils import link_as_main, write_main_dataset, \
+from pyUSID.io.anc_build_utils import calc_chunks
+from pyUSID import Dimension
+from pyUSID.io.hdf_utils import write_main_dataset, \
     create_indexed_group
 
 from .df_utils.image_utils import no_bin

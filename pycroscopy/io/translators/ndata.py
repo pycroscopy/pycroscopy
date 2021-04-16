@@ -19,11 +19,11 @@ from skimage.util import crop
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from pyUSID.io.write_utils import Dimension, calc_chunks
+from pyUSID.io.anc_build_utils import calc_chunks
+from pyUSID import Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group
 
 from .df_utils.image_utils import unnest_parm_dicts
-from .df_utils.dm_utils import read_dm3
 
 
 class NDataTranslator(Translator):

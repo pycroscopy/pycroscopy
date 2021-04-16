@@ -15,7 +15,7 @@ from scipy.io import loadmat
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs
 
-from pyUSID.io.write_utils import Dimension
+from pyUSID.io import Dimension
 from pyUSID.io.hdf_utils import write_main_dataset, create_indexed_group
 
 

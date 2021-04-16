@@ -9,11 +9,11 @@ from __future__ import division, print_function, absolute_import, unicode_litera
 from os import path
 import re
 import numpy as np  # For array operations
-from pyUSID.io.write_utils import Dimension
-from pyUSID.io.numpy_translator import NumpyTranslator
+from pyUSID import Dimension
+from pyUSID.io.array_translator import ArrayTranslator
 
 
-class AscTranslator(NumpyTranslator):
+class AscTranslator(ArrayTranslator):
     """
     Translates Scanning Tunnelling Spectroscopy (STS) data in .asc files obtained from Omicron STMs.
     """
