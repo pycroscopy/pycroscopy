@@ -17,6 +17,7 @@ requirements = ['numpy>=1.13.0',
                 'scikit-learn>=0.17.1',
                 'matplotlib>=2.0.0',
                 'torch>=1.0.0',
+                'tensorly>=0.6.0',
 
                 'psutil',
                 'six',
