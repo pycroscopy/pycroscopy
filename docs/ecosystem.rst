@@ -3,7 +3,9 @@ Pycroscopy Ecosystem
 
 Please see the poster below (click) for an overview of the Pycroscopy ecosystem
 
-.. image:: ./2021_Pycroscopy_Ecosystem_Poster_Thumbnail.png :target: ./2021_Pycroscopy_Ecosystem_Poster.pdf
+.. image:: ./2021_Pycroscopy_Ecosystem_Poster_Thumbnail.png
+   :width: 300
+   :target: ./2021_Pycroscopy_Ecosystem_Poster.pdf
 
 Structure
 ~~~~~~~~~
