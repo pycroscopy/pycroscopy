@@ -9,20 +9,43 @@ from skimage.transform import rescale
 import sidpy
 
 class ImageWindowing:
-
-    def __init__(self, parms_dict):
+    """
+    This class will generate windows from sidpy dataset objects. At present only 2D windowing is allowed.
+    """
+    def __init__(self, parms_dict, verbose = False):
         '''Sliding Window Class.
-       This class will generate windows from 2D sidpy dataset objects
 
-       #TODO: add the docstrings for all the options for the windowing
+        Parameters
+        ----------
+        - parms_dict : dictionary
+            Dictionary with parameters of the windowing process, see below.
 
+            Keys:
+            - 'window_size_x' (integer) (required): size of the window across the x-axis
+            - 'window_size_y' (integer) (required): size of the window across the y-axis
+            - 'window_step_x' (integer) (required): step size of the window across the x-axis. Sometimes referred to as 'strides'
+            - 'window_step_y' (integer) (required): step size of the window across the y-axis. Sometimes referred to as 'strides'
+            - 'mode' (string) (Optional, default is 'fft'): One of 'image' or 'fft' which defines the processing to be performed for each window.
+                The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
+            - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'amp', 'phase'.
+            - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
+            - 'zoom_factor' (float) (Optional, default is 1.0): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
+            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
+            The filter is applied to each window before 'mode'.
+        - verbose : (Optional) Boolean
+            Verbose flag. Default is False.
 
+        Returns
+        --------
+        Instance of ImageWindowing object setup with parameters defined by the parms_dict above.
        '''
-
+        self.window_parms = parms_dict
         self.window_step_x = parms_dict['window_step_x']
         self.window_step_y = parms_dict['window_step_y']
         self.window_size_x = parms_dict['window_size_x']
         self.window_size_y = parms_dict['window_size_y']
+        self.fft_mode = 'abs'
+        self.verbose = verbose
 
         if 'mode' in parms_dict.keys():
             if parms_dict['mode'] not in ['image', 'fft']:
@@ -60,6 +83,16 @@ class ImageWindowing:
                         filter_x = blackman(self.window_size_final_x)
                         filter_y = blackman(self.window_size_final_y)
                         self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
+            if 'fft_mode' in parms_dict.keys():
+                if parms_dict['fft_mode'] not in ['abs', 'phase']:
+                    raise ValueError("Parameter 'fft_mode' must be one of 'abs', 'phase'")
+                else:
+                    self.fft_mode = parms_dict['fft_mode']
+            else:
+                self.fft_mode = 'abs' #default to absolute value in case fft mode is not provided
+
+        if self.verbose:
+            print('ImageWindowing Object created with parameters {}'.format(parms_dict))
 
         return
 
@@ -119,6 +152,8 @@ class ImageWindowing:
             image_source = dataset[tuple(slice_list)]
 
         image_shape = image_source.shape
+        if self.verbose:
+            print('Full image shape is {}'.format(image_shape))
 
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
@@ -126,12 +161,11 @@ class ImageWindowing:
 
         dim_vec = []
         for i in range(2):
-            #print(image_shape[i], window_size[i], window_step[i])
             dim_vec.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]))
-        #print("dim vec is {}".format(dim_vec))
 
         _, pos_vec = self.build_ind_val_matrices(dim_vec)
-        #print("Pos vec is {}".format(pos_vec))
+        if self.verbose:
+            print("Pos vec is {}".format(pos_vec))
 
         pca_mat = np.zeros(shape=(pos_vec.shape[0], np.prod(window_size_final)), dtype=np.complex64)
         pos_vec = np.int32(pos_vec)
@@ -140,43 +174,70 @@ class ImageWindowing:
             start_stop = [slice(x, x + y, 1) for x, y in zip(pos, window_size)]
             full_slice = image_source[tuple(start_stop)]
             full_slice = self._return_win_image_processed(full_slice)
-
             pca_mat[ind] = full_slice.flatten()
 
         self.pos_vec = pos_vec
+
         # Get the positions and make them dimensions
-        new_x_vals = np.unique(pos_vec[:, 0])
-        new_y_vals = np.unique(pos_vec[:, 1])
+        new_x_vals = np.linspace(dataset._axes[image_dims[0]].values.min(),
+                                 dataset._axes[image_dims[0]].values.max(), len(np.unique(pos_vec[:, 0])))
+
+        new_y_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
+                                 dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 0])))
 
         windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
-
-        # Now we need to return the sidpy dataset object
+        if self.verbose:
+            print('Reshaped windows size is {}'.format(windows_reshaped.shape))
 
         # Make a sidpy dataset
+        #if the data is complex, then convert it to absolute
+        #this needs to be changed..depending on user preferences.
+        if np.iscomplexobj(windows_reshaped):
+            if self.fft_mode == 'abs':
+                windows_reshaped = np.array(np.abs(windows_reshaped), dtype = np.float64)
+            elif self.fft_mode == 'phase':
+                windows_reshaped = np.array(np.angle(windows_reshaped), dtype=np.float64)
+
         data_set = sidpy.Dataset.from_array(windows_reshaped,
-                                            name='Current_spectral_map_Windowed')
+                                            name='Image_Windowed')
 
         # Set the data type
-        data_set.data_type = 'IMAGE_STACK'
+        data_set.data_type = 'Image_4d'
 
         # Add quantity and units
         data_set.units = dataset.units
         data_set.quantity = dataset.quantity
 
         # Add dimension info
-        # TODO: Fix the quantities and stuff here
 
-        z_dimx = np.arange(0, data_set.shape[2])
-        z_dimy = np.arange(0, data_set.shape[3])
+        window_size_fraction_x = window_size[0]/image_shape[0]
+        window_size_fraction_y = window_size[1] / image_shape[1]
+
+        window_extent_x = (dataset._axes[image_dims[0]].values.max() -
+                           dataset._axes[image_dims[0]].values.min())*window_size_fraction_x
+
+        window_extent_y = (dataset._axes[image_dims[1]].values.max() -
+                           dataset._axes[image_dims[1]].values.min()) * window_size_fraction_y
+
+        if self.mode =='fft':
+            #to check if this is correct
+            z_dimx = np.linspace(0, 1.0/(window_extent_x / self.zoom_factor), data_set.shape[2])
+            z_dimy = np.linspace(0, 1.0/(window_extent_y / self.zoom_factor), data_set.shape[3])
+        else:
+            z_dimx = np.linspace(0, window_extent_x/self.zoom_factor, data_set.shape[2])
+            z_dimy = np.linspace(0, window_extent_y/self.zoom_factor, data_set.shape[3])
 
         data_set.set_dimension(0, sidpy.Dimension(new_x_vals,
-                                                  name='x',
-                                                  units='m', quantity='x',
+                                                  name=dataset._axes[image_dims[0]].name,
+                                                  units=dataset._axes[image_dims[0]].units,
+                                                  quantity=dataset._axes[image_dims[0]].quantity,
                                                   dimension_type='spatial'))
+
         data_set.set_dimension(1, sidpy.Dimension(new_y_vals,
-                                                  name='y',
-                                                  units='m', quantity='y',
+                                                  name=dataset._axes[image_dims[1]].name,
+                                                  units=dataset._axes[image_dims[1]].units,
+                                                  quantity=dataset._axes[image_dims[1]].quantity,
                                                   dimension_type='spatial'))
 
         data_set.set_dimension(2, sidpy.Dimension(z_dimx,
@@ -190,7 +251,8 @@ class ImageWindowing:
                                                   dimension_type='spectral'))
 
         # append metadata
-        # data_set.metadata = parms_dict_expt
+        data_set.metadata = self._merge_dictionaries(dataset.metadata, self.window_parms)
+
         return data_set
 
     def _return_win_image_processed(self, img_window):
@@ -204,6 +266,11 @@ class ImageWindowing:
             img_window *= self.filter_mat  # Apply filter
             if self.mode == 'fft': img_window = np.fft.fftshift(np.fft.fft2(img_window))
         return img_window
+
+    def _merge_dictionaries(self, dict1, dict2):
+        #given two dictionaries, merge them into one
+        merged_dict = {**dict1, **dict2}
+        return merged_dict
 
     def build_ind_val_matrices(self, unit_values):
         """
