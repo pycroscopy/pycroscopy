@@ -1,12 +1,12 @@
 # Image windowing class
 
-
 import numpy as np
+import sidpy
 from scipy import fftpack
 from scipy.ndimage import zoom
 from scipy.signal import hanning, blackman
 from skimage.transform import rescale
-import sidpy
+from sidpy.base.num_utils import build_ind_val_matrices
 
 class ImageWindowing:
     """
@@ -162,8 +162,9 @@ class ImageWindowing:
         dim_vec = []
         for i in range(2):
             dim_vec.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]))
+        print("dim vec is {}".format(dim_vec))
 
-        _, pos_vec = self.build_ind_val_matrices(dim_vec)
+        _, pos_vec = build_ind_val_matrices(dim_vec)
         if self.verbose:
             print("Pos vec is {}".format(pos_vec))
 
@@ -272,39 +273,5 @@ class ImageWindowing:
         merged_dict = {**dict1, **dict2}
         return merged_dict
 
-    def build_ind_val_matrices(self, unit_values):
-        """
-        Builds indices and values matrices using given unit values for each dimension.
-        This function is taken from pyUSID.io
-        Unit values must be arranged from fastest varying to slowest varying
-
-        Parameters
-        ----------
-        unit_values : list / tuple
-            Sequence of values vectors for each dimension
-
-        Returns
-        -------
-        ind_mat : 2D numpy array
-            Indices matrix
-        val_mat : 2D numpy array
-            Values matrix
-        """
-        if not isinstance(unit_values, (list, tuple)):
-            raise TypeError('unit_values should be a list or tuple')
-        if not np.all([np.array(x).ndim == 1 for x in unit_values]):
-            raise ValueError('unit_values should only contain 1D array')
-        lengths = [len(x) for x in unit_values]
-        tile_size = [np.prod(lengths[x:]) for x in range(1, len(lengths))] + [1]
-        rep_size = [1] + [np.prod(lengths[:x]) for x in range(1, len(lengths))]
-        val_mat = np.zeros(shape=(len(lengths), np.prod(lengths)))
-        ind_mat = np.zeros(shape=val_mat.shape, dtype=np.uint32)
-        for ind, ts, rs, vec in zip(range(len(lengths)), tile_size, rep_size, unit_values):
-            val_mat[ind] = np.tile(np.repeat(vec, rs), ts)
-            ind_mat[ind] = np.tile(np.repeat(np.arange(len(vec)), rs), ts)
-
-        val_mat = val_mat.T
-        ind_mat = ind_mat.T
-        return ind_mat, val_mat
 
 
