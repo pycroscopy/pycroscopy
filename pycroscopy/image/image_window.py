@@ -27,7 +27,7 @@ class ImageWindowing:
             - 'window_step_y' (integer) (required): step size of the window across the y-axis. Sometimes referred to as 'strides'
             - 'mode' (string) (Optional, default is 'image'): One of 'image' or 'fft' which defines the processing to be performed for each window.
                 The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
-            - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'amp', 'phase'.
+            - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'abs', 'phase'.
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
             - 'zoom_factor' (float) (Optional, default is 1.0): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
             - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
