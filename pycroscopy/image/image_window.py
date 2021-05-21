@@ -25,7 +25,7 @@ class ImageWindowing:
             - 'window_size_y' (integer) (required): size of the window across the y-axis
             - 'window_step_x' (integer) (required): step size of the window across the x-axis. Sometimes referred to as 'strides'
             - 'window_step_y' (integer) (required): step size of the window across the y-axis. Sometimes referred to as 'strides'
-            - 'mode' (string) (Optional, default is 'fft'): One of 'image' or 'fft' which defines the processing to be performed for each window.
+            - 'mode' (string) (Optional, default is 'image'): One of 'image' or 'fft' which defines the processing to be performed for each window.
                 The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
             - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'amp', 'phase'.
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
@@ -39,7 +39,7 @@ class ImageWindowing:
         --------
         Instance of ImageWindowing object setup with parameters defined by the parms_dict above.
        '''
-        self.window_parms = parms_dict
+
         self.window_step_x = parms_dict['window_step_x']
         self.window_step_y = parms_dict['window_step_y']
         self.window_size_x = parms_dict['window_size_x']
@@ -55,12 +55,17 @@ class ImageWindowing:
                 self.mode = parms_dict['mode']
         else:
             self.mode = 'image'
+            parms_dict['mode'] = 'image'
 
         if 'interpol_factor' in parms_dict.keys(): self.interpol_factor = parms_dict['interpol_factor']
-        else: self.interpol_factor = 1
+        else:
+            self.interpol_factor = 1
+            parms_dict['interpol_facor']=1
 
         if 'zoom_factor' in parms_dict.keys(): self.zoom_factor = parms_dict['zoom_factor']
-        else: self.zoom_factor = 1
+        else:
+            self.zoom_factor = 1
+            parms_dict['zoom_facor'] = 1
 
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
@@ -90,9 +95,11 @@ class ImageWindowing:
                     self.fft_mode = parms_dict['fft_mode']
             else:
                 self.fft_mode = 'abs' #default to absolute value in case fft mode is not provided
-
+                parms_dict['fft_mode'] = 'abs'
         if self.verbose:
             print('ImageWindowing Object created with parameters {}'.format(parms_dict))
+
+        self.window_parms = parms_dict
 
         return
 
