@@ -92,7 +92,7 @@ class TestImageWindowing(unittest.TestCase):
         parms_dict['mode'] = 'fft'
 
         #check that both modes work
-        for fft_mode in ['amp', 'phase']:
+        for fft_mode in ['abs', 'phase']:
             parms_dict['fft_mode'] = fft_mode
             iw = ImageWindowing(parms_dict)
             windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
