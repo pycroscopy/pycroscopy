@@ -136,6 +136,7 @@ class ImageWindowing:
                                  'with more than 2 dimensions without specifying slices')
             else:
                 image_source = dataset[:]
+                image_dims = [0,1]
         elif dim_slice is not None:
             """Get all spatial dimensions"""
             image_dims = []
@@ -184,8 +185,9 @@ class ImageWindowing:
                                  dataset._axes[image_dims[0]].values.max(), len(np.unique(pos_vec[:, 0])))
 
         new_y_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
-                                 dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 0])))
-
+                                 dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
+        if self.verbose:
+            print("position values x {} and y {}".format(new_x_vals, new_y_vals))
         windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
