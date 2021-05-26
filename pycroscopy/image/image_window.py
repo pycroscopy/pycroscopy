@@ -168,7 +168,7 @@ class ImageWindowing:
 
         dim_vec = []
         for i in range(2):
-            dim_vec.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]))
+            dim_vec.append(np.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]), image_shape[i] - window_size[i]))
         print("dim vec is {}".format(dim_vec))
 
         _, pos_vec = self.build_ind_val_matrices(dim_vec)
