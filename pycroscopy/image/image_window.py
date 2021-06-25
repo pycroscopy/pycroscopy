@@ -1,12 +1,11 @@
 # Image windowing class
 
-
 import numpy as np
+import sidpy
 from scipy import fftpack
 from scipy.ndimage import zoom
 from scipy.signal import hanning, blackman
 from skimage.transform import rescale
-import sidpy
 
 class ImageWindowing:
     """
@@ -25,9 +24,9 @@ class ImageWindowing:
             - 'window_size_y' (integer) (required): size of the window across the y-axis
             - 'window_step_x' (integer) (required): step size of the window across the x-axis. Sometimes referred to as 'strides'
             - 'window_step_y' (integer) (required): step size of the window across the y-axis. Sometimes referred to as 'strides'
-            - 'mode' (string) (Optional, default is 'fft'): One of 'image' or 'fft' which defines the processing to be performed for each window.
+            - 'mode' (string) (Optional, default is 'image'): One of 'image' or 'fft' which defines the processing to be performed for each window.
                 The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
-            - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'amp', 'phase'.
+            - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'abs', 'phase'.
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
             - 'zoom_factor' (float) (Optional, default is 1.0): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
             - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
@@ -39,7 +38,7 @@ class ImageWindowing:
         --------
         Instance of ImageWindowing object setup with parameters defined by the parms_dict above.
        '''
-        self.window_parms = parms_dict
+
         self.window_step_x = parms_dict['window_step_x']
         self.window_step_y = parms_dict['window_step_y']
         self.window_size_x = parms_dict['window_size_x']
@@ -55,12 +54,17 @@ class ImageWindowing:
                 self.mode = parms_dict['mode']
         else:
             self.mode = 'image'
+            parms_dict['mode'] = 'image'
 
         if 'interpol_factor' in parms_dict.keys(): self.interpol_factor = parms_dict['interpol_factor']
-        else: self.interpol_factor = 1
+        else:
+            self.interpol_factor = 1
+            parms_dict['interpol_facor']=1
 
         if 'zoom_factor' in parms_dict.keys(): self.zoom_factor = parms_dict['zoom_factor']
-        else: self.zoom_factor = 1
+        else:
+            self.zoom_factor = 1
+            parms_dict['zoom_facor'] = 1
 
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
@@ -90,9 +94,11 @@ class ImageWindowing:
                     self.fft_mode = parms_dict['fft_mode']
             else:
                 self.fft_mode = 'abs' #default to absolute value in case fft mode is not provided
-
+                parms_dict['fft_mode'] = 'abs'
         if self.verbose:
             print('ImageWindowing Object created with parameters {}'.format(parms_dict))
+
+        self.window_parms = parms_dict
 
         return
 
@@ -152,9 +158,9 @@ class ImageWindowing:
                     slice_list.append(dim_slice)
             image_source = dataset[tuple(slice_list)]
 
-        self.image_shape = image_source.shape
+        image_shape = image_source.shape
         if self.verbose:
-            print('Full image shape is {}'.format(self.image_shape))
+            print('Full image shape is {}'.format(image_shape))
 
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
@@ -162,7 +168,8 @@ class ImageWindowing:
 
         dim_vec = []
         for i in range(2):
-            dim_vec.append(np.append(np.arange(0, self.image_shape[i] - window_size[i], window_step[i]), self.image_shape[i] - window_size[i]))
+            dim_vec.append(np.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]), image_shape[i] - window_size[i]))
+        print("dim vec is {}".format(dim_vec))
 
         _, pos_vec = self.build_ind_val_matrices(dim_vec)
         if self.verbose:
@@ -184,8 +191,9 @@ class ImageWindowing:
                                  dataset._axes[image_dims[0]].values.max(), len(np.unique(pos_vec[:, 0])))
 
         new_y_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
-                                 dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 0])))
-
+                                 dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
+        if self.verbose:
+            print("position values x {} and y {}".format(new_x_vals, new_y_vals))
         windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
@@ -212,8 +220,8 @@ class ImageWindowing:
 
         # Add dimension info
 
-        window_size_fraction_x = window_size[0]/self.image_shape[0]
-        window_size_fraction_y = window_size[1] / self.image_shape[1]
+        window_size_fraction_x = window_size[0]/image_shape[0]
+        window_size_fraction_y = window_size[1] / image_shape[1]
 
         window_extent_x = (dataset._axes[image_dims[0]].values.max() -
                            dataset._axes[image_dims[0]].values.min())*window_size_fraction_x
@@ -255,94 +263,11 @@ class ImageWindowing:
         data_set.metadata = self._merge_dictionaries(dataset.metadata, self.window_parms)
 
         return data_set
-
-    def _return_win_image_processed(self, img_window):
-        #Real image slice, returns it back with image processed
-        if self.zoom_factor==1 and self.interpol_factor==1 and self.filter == 'None':
-            #simply skip this function if there is no zooming, interpolation to be done.
-            return img_window
-        else:
-            img_window = zoom(img_window, self.zoom_factor) #Zoom it
-            img_window = rescale(img_window, self.interpol_factor) #Rescale
-            img_window *= self.filter_mat  # Apply filter
-            if self.mode == 'fft': img_window = np.fft.fftshift(np.fft.fft2(img_window))
-        return img_window
-
-    def _merge_dictionaries(self, dict1, dict2):
-        #given two dictionaries, merge them into one
-        merged_dict = {**dict1, **dict2}
-        return merged_dict
-
-    def build_clean_image(self, windows_2d):
-
-        #TODO: Output a sidpy dataset instead of the numpy array
-
-        """
-        Reconstructs the cleaned image from the windowed dataset
-        Parameters
-        ----------
-        windows_2d: windows dataset, can be sidpy dataset or numpy array, made by the MakeWindows() method
-                    Typically these windows are modified, e.g. cleaned by SVD, and then passed to this method
-                    to regenerate the image
-
-        Returns
-        -------
-        h5_clean : numpy arr
-            The cleaned image
-        """
-
-        win_x = self.window_size_final_x
-        win_y = self.window_size_final_y
-        win_step_x = self.window_step_x
-        win_step_y = self.window_step_y
-        im_x, im_y = self.image_shape[0], self.image_shape[1]
-
-        '''
-        Calculate the steps taken to create original windows
-        '''
-        x_steps = np.arange(0, im_x - win_x + 1, win_step_x)
-        y_steps = np.arange(0, im_y - win_y + 1, win_step_y)
-
-        '''
-        Initialize arrays to hold summed windows and counts for each position
-        '''
-        counts = np.zeros([im_x, im_y], np.uint8)
-        accum = np.zeros([im_x, im_y], np.float32)
-
-        nx = len(x_steps)
-        ny = len(y_steps)
-        n_wins = nx * ny
-
-        '''
-        Create slice object from the positions
-        '''
-        win_slices = [[slice(x, x + win_x), slice(y, y + win_y)] for x, y in np.array([np.tile(x_steps, nx),
-                                                                                       np.repeat(y_steps, ny)]).T]
-
-        '''
-        Loop over all windows.  Increment counts for window positions and 
-        add current window to total.
-        '''
-        ones = np.ones([win_x, win_y], dtype=counts.dtype)
-        for islice, this_slice in enumerate(win_slices):
-            selected = islice % np.rint(n_wins / 10) == 0
-            if selected:
-                per_done = np.rint(100 * islice / n_wins)
-                print('Reconstructing Image...{}% -- step # {}'.format(per_done, islice))
-            counts[this_slice] += ones
-
-            accum[this_slice] += windows_2d[islice].reshape(win_x, win_y)
-
-        clean_image = accum / counts
-
-        clean_image[np.isnan(clean_image)] = 0
-
-        return clean_image
-
+    #TODO: After next release of sidpy, remove this method and use sidpy.base.num_utils copy
     def build_ind_val_matrices(self, unit_values):
         """
         Builds indices and values matrices using given unit values for each dimension.
-        This function is taken from pyUSID.io
+        This function is originally from pyUSID.io
         Unit values must be arranged from fastest varying to slowest varying
 
         Parameters
@@ -373,5 +298,23 @@ class ImageWindowing:
         val_mat = val_mat.T
         ind_mat = ind_mat.T
         return ind_mat, val_mat
+
+    def _return_win_image_processed(self, img_window):
+        #Real image slice, returns it back with image processed
+        if self.zoom_factor==1 and self.interpol_factor==1 and self.filter == 'None':
+            #simply skip this function if there is no zooming, interpolation to be done.
+            return img_window
+        else:
+            img_window = zoom(img_window, self.zoom_factor) #Zoom it
+            img_window = rescale(img_window, self.interpol_factor) #Rescale
+            img_window *= self.filter_mat  # Apply filter
+            if self.mode == 'fft': img_window = np.fft.fftshift(np.fft.fft2(img_window))
+        return img_window
+
+    def _merge_dictionaries(self, dict1, dict2):
+        #given two dictionaries, merge them into one
+        merged_dict = {**dict1, **dict2}
+        return merged_dict
+
 
 

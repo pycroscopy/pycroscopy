@@ -16,3 +16,6 @@ Submodules
 
 """
 
+from .image_window import ImageWindowing
+__all__ = ['ImageWindowing']
+
