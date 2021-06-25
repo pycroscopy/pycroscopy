@@ -158,9 +158,10 @@ class ImageWindowing:
                     slice_list.append(dim_slice)
             image_source = dataset[tuple(slice_list)]
 
-        image_shape = image_source.shape
+        self.image_shape = image_source.shape
+        
         if self.verbose:
-            print('Full image shape is {}'.format(image_shape))
+            print('Full image shape is {}'.format(self.image_shape))
 
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
@@ -168,7 +169,7 @@ class ImageWindowing:
 
         dim_vec = []
         for i in range(2):
-            dim_vec.append(np.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]), image_shape[i] - window_size[i]))
+            dim_vec.append(np.append(np.arange(0, self.image_shape[i] - window_size[i], window_step[i]), self.image_shape[i] - window_size[i]))
         print("dim vec is {}".format(dim_vec))
 
         _, pos_vec = self.build_ind_val_matrices(dim_vec)
@@ -220,8 +221,8 @@ class ImageWindowing:
 
         # Add dimension info
 
-        window_size_fraction_x = window_size[0]/image_shape[0]
-        window_size_fraction_y = window_size[1] / image_shape[1]
+        window_size_fraction_x = window_size[0]/self.image_shape[0]
+        window_size_fraction_y = window_size[1] / self.image_shape[1]
 
         window_extent_x = (dataset._axes[image_dims[0]].values.max() -
                            dataset._axes[image_dims[0]].values.min())*window_size_fraction_x
