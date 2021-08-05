@@ -169,7 +169,8 @@ class ImageWindowing:
         dim_vec = []
         for i in range(2):
             dim_vec.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]))
-        print("dim vec is {}".format(dim_vec))
+        if self.verbose:
+            print("dim vec is {}".format(dim_vec))
 
         _, pos_vec = self.build_ind_val_matrices(dim_vec)
         if self.verbose:
@@ -301,14 +302,16 @@ class ImageWindowing:
 
     def _return_win_image_processed(self, img_window):
         #Real image slice, returns it back with image processed
+
         if self.zoom_factor==1 and self.interpol_factor==1 and self.filter == 'None':
             #simply skip this function if there is no zooming, interpolation to be done.
-            return img_window
+            img_window = img_window
         else:
             img_window = zoom(img_window, self.zoom_factor) #Zoom it
             img_window = rescale(img_window, self.interpol_factor) #Rescale
             img_window *= self.filter_mat  # Apply filter
-            if self.mode == 'fft': img_window = np.fft.fftshift(np.fft.fft2(img_window))
+        if self.mode == 'fft':
+            img_window = np.fft.fftshift(np.fft.fft2(img_window))
         return img_window
 
     def _merge_dictionaries(self, dict1, dict2):
