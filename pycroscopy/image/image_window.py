@@ -305,13 +305,13 @@ class ImageWindowing:
     def _return_win_image_processed(self, img_window):
         #Real image slice, returns it back with image processed
 
-        if self.filter is not 'None':
+        if self.filter != 'None':
             img_window *= self.filter_mat  # Apply filter
-        if self.mode is 'fft': # Apply FFT if needed
+        if self.mode == 'fft': # Apply FFT if needed
             img_window = np.fft.fftshift(np.fft.fft2(img_window))
-            if self.fft_mode is 'amp':
+            if self.fft_mode == 'amp':
                 img_window = np.abs(img_window)
-            elif self.fft_mode is 'phase':
+            elif self.fft_mode == 'phase':
                 img_window = np.angle(img_window)
             img_window = np.array(img_window, dtype = np.float64)
 
