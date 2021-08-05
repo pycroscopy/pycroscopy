@@ -108,12 +108,12 @@ class ImageWindowing:
         '''
 
         image_test = np.random.uniform(size=(self.window_size_x, self.window_size_y))
-
+        print('image test is shape {}'.format(image_test.shape))
         image_zoomed = self.zoom(image_test, self.zoom_factor)
-
+        print('image zoomed is shape {}'.format(image_zoomed.shape))
         #interpolate it
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
-
+        print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
         return zoomed_interpolated.shape[0],zoomed_interpolated.shape[1]
 
     def MakeWindows(self, dataset, dim_slice=None):
@@ -305,15 +305,23 @@ class ImageWindowing:
     def _return_win_image_processed(self, img_window):
         #Real image slice, returns it back with image processed
 
-        if self.zoom_factor==1 and self.interpol_factor==1 and self.filter == 'None':
-            #simply skip this function if there is no zooming, interpolation to be done.
-            img_window = img_window
+        if self.filter is not 'None':
+            img_window *= self.filter_mat  # Apply filter
+        if self.mode is 'fft': # Apply FFT if needed
+            img_window = np.fft.fftshift(np.fft.fft2(img_window))
+            if self.fft_mode is 'amp':
+                img_window = np.abs(img_window)
+            elif self.fft_mode is 'phase':
+                img_window = np.angle(img_window)
+            img_window = np.array(img_window, dtype = np.float64)
+
+        #Zoom and interpolate if needed
+        if self.zoom_factor == 1 and self.interpol_factor == 1:
+            return img_window
         else:
             img_window = self.zoom(img_window, self.zoom_factor)  # Zoom it
-            img_window = rescale(img_window, self.interpol_factor) #Rescale
-            img_window *= self.filter_mat  # Apply filter
-        if self.mode == 'fft':
-            img_window = np.fft.fftshift(np.fft.fft2(img_window))
+            img_window = rescale(img_window, self.interpol_factor)  # Rescale
+
         return img_window
 
     def _merge_dictionaries(self, dict1, dict2):
@@ -323,8 +331,12 @@ class ImageWindowing:
 
     def zoom(self, img_window, zoom_factor):
         #Zooms by the zoom factor
-        if type(zoom_factor) is int:
-            zoom_factor = [zoom_factor, zoom_factor]
+        if zoom_factor==1:
+            return img_window
+        else:
+            if type(zoom_factor) is int:
+                zoom_factor = [zoom_factor, zoom_factor]
+
         #Find the midpoint
         img_x_mid = img_window.shape[0]//2
         img_y_mid = img_window.shape[1]//2
