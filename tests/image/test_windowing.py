@@ -66,7 +66,7 @@ class TestImageWindowing(unittest.TestCase):
         parms_dict['window_size_y'] = 6
         iw = ImageWindowing(parms_dict)
         windows = iw.MakeWindows(sidpy_dset_image)
-        assert windows.shape == (3, 1, 3, 6)
+        assert windows.shape == (4, 2, 3, 6)
 
     def test_three_dim_case(self):
         #test that spectral image works
@@ -78,7 +78,7 @@ class TestImageWindowing(unittest.TestCase):
         parms_dict['window_size_y'] = 4
         iw = ImageWindowing(parms_dict)
         windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
-        assert windows.shape == (4, 2, 3, 4)
+        assert windows.shape == (5, 3, 3, 4)
 
     def test_fft_works(self):
         #test that we can fft
@@ -96,7 +96,7 @@ class TestImageWindowing(unittest.TestCase):
             parms_dict['fft_mode'] = fft_mode
             iw = ImageWindowing(parms_dict)
             windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
-            assert windows.shape == (4, 2, 3, 4)
+            assert windows.shape == (5, 3, 3, 4)
             assert windows.metadata['fft_mode'] == fft_mode
 
 

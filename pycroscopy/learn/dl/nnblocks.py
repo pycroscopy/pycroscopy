@@ -11,7 +11,7 @@ from typing import Union, Tuple, Type
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.tensor as tt
+tt = torch.tensor
 
 from warnings import warn, filterwarnings
 
