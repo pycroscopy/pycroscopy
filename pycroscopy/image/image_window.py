@@ -3,7 +3,6 @@
 import numpy as np
 import sidpy
 from scipy import fftpack
-from scipy.ndimage import zoom
 from scipy.signal import hanning, blackman
 from skimage.transform import rescale
 
@@ -28,7 +27,8 @@ class ImageWindowing:
                 The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
             - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'abs', 'phase'.
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
-            - 'zoom_factor' (float) (Optional, default is 1.0): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
+            - 'zoom_factor' (integer or list of ints) (Optional, default is 1): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
+                            If passing a list of ints, this will determine the degree of cropping per axis
             - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
             The filter is applied to each window before 'mode'.
         - verbose : (Optional) Boolean
@@ -109,7 +109,7 @@ class ImageWindowing:
 
         image_test = np.random.uniform(size=(self.window_size_x, self.window_size_y))
 
-        image_zoomed = zoom(image_test, self.zoom_factor)
+        image_zoomed = self.zoom(image_test, self.zoom_factor)
 
         #interpolate it
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
@@ -309,7 +309,7 @@ class ImageWindowing:
             #simply skip this function if there is no zooming, interpolation to be done.
             img_window = img_window
         else:
-            img_window = zoom(img_window, self.zoom_factor) #Zoom it
+            img_window = self.zoom(img_window, self.zoom_factor)  # Zoom it
             img_window = rescale(img_window, self.interpol_factor) #Rescale
             img_window *= self.filter_mat  # Apply filter
         if self.mode == 'fft':
@@ -320,6 +320,22 @@ class ImageWindowing:
         #given two dictionaries, merge them into one
         merged_dict = {**dict1, **dict2}
         return merged_dict
+
+    def zoom(self, img_window, zoom_factor):
+        #Zooms by the zoom factor
+        if type(zoom_factor) is int:
+            zoom_factor = [zoom_factor, zoom_factor]
+        #Find the midpoint
+        img_x_mid = img_window.shape[0]//2
+        img_y_mid = img_window.shape[1]//2
+        zoom_x_size = (img_window.shape[0] / zoom_factor[0])/2
+        zoom_y_size = (img_window.shape[1] / zoom_factor[1])/2
+
+        img_window = img_window[int(img_x_mid - zoom_x_size) : int(img_x_mid + zoom_x_size),
+                     int(img_y_mid - zoom_y_size ): int(img_y_mid + zoom_y_size)]
+
+        return img_window
+
 
 
 
