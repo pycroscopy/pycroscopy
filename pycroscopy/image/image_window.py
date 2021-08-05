@@ -169,7 +169,8 @@ class ImageWindowing:
 
         dim_vec = []
         for i in range(2):
-            dim_vec.append(np.arange(0, image_shape[i] - window_size[i], window_step[i]))
+            dim_vec.append(np.arange(0, self.image_shape[i] - window_size[i], window_step[i]))
+
         if self.verbose:
             print("dim vec is {}".format(dim_vec))
 
