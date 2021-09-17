@@ -88,8 +88,9 @@ class ImageWindowing:
                         filter_y = blackman(self.window_size_final_y)
                         self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
             if 'fft_mode' in parms_dict.keys():
-                if parms_dict['fft_mode'] not in ['abs', 'phase']:
-                    raise ValueError("Parameter 'fft_mode' must be one of 'abs', 'phase'")
+                if parms_dict['fft_mode'] not in ['abs', 'phase', 'complex']:
+                    raise ValueError("Parameter 'fft_mode' must be \
+                    one of 'abs', 'phase' or 'complex' ")
                 else:
                     self.fft_mode = parms_dict['fft_mode']
             else:
@@ -310,17 +311,18 @@ class ImageWindowing:
         if self.mode == 'fft': # Apply FFT if needed
             img_window = np.fft.fftshift(np.fft.fft2(img_window))
             if self.fft_mode == 'amp':
-                img_window = np.abs(img_window)
+                img_window = np.abs(img_window,)
             elif self.fft_mode == 'phase':
                 img_window = np.angle(img_window)
-            img_window = np.array(img_window, dtype = np.float64)
-
+            elif self.fft_mode == 'complex':
+                img_window = np.array(img_window, dtype = np.complex64)
+        
         #Zoom and interpolate if needed
         if self.zoom_factor == 1 and self.interpol_factor == 1:
             return img_window
         else:
             img_window = self.zoom(img_window, self.zoom_factor)  # Zoom it
-            img_window = rescale(img_window, self.interpol_factor)  # Rescale
+            img_window = self.rescale_win(img_window, self.interpol_factor)  # Rescale
 
         return img_window
 
@@ -347,6 +349,20 @@ class ImageWindowing:
                      int(img_y_mid - zoom_y_size ): int(img_y_mid + zoom_y_size)]
 
         return img_window
+
+    def rescale_win(self, img_window, interpol_factor):
+        if self.fft_mode is not 'complex':
+            img_window = np.array(img_window, dtype = np.float32)
+            complex_rescaled_image = rescale(img_window, interpol_factor)
+        else:
+            real_img = np.real(img_window)
+            imag_img = np.imag(img_window)
+            real_img_scaled = rescale(real_img, interpol_factor)
+            imag_img_scaled = rescale(imag_img, interpol_factor)
+            complex_rescaled_image = real_img_scaled + 1j*imag_img_scaled
+            
+        return complex_rescaled_image
+
 
 
 
