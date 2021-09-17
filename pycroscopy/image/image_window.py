@@ -351,7 +351,7 @@ class ImageWindowing:
         return img_window
 
     def rescale_win(self, img_window, interpol_factor):
-        if self.fft_mode is not 'complex':
+        if self.fft_mode !='complex':
             img_window = np.array(img_window, dtype = np.float32)
             complex_rescaled_image = rescale(img_window, interpol_factor)
         else:
