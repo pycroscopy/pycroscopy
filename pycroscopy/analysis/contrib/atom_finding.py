@@ -353,7 +353,7 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
         image_path = "%s/Filter_Step_%04i" % (image_path, x)
 
     s = 1.1  # constant for now change latter
-
+    img = None
     size = img.shape
     s1 = size[0]
     s2 = size[1]
@@ -368,11 +368,11 @@ def apply_find(file_path_h5, file_name_h5, file_path_png, file_name_png, filter_
                                                                                          -filter_width - k1 - 1,
                                                                                          filter_width - k2:
                                                                                          -filter_width - k2 - 1],
-                                                                                h5_image)
+                                                                                img)
 
-    deconv_mat_temp = mat_large[filter_width:len(mat_larg[1, :]) - filter_width,
-                      filter_width:len(mat_larg[:, 1]) - filter_width]
-    filtered_image = h5_image - deconv_mat_temp
+    deconv_mat_temp = mat_large[filter_width:len(mat_large[1, :]) - filter_width,
+                      filter_width:len(mat_large[:, 1]) - filter_width]
+    filtered_image = img - deconv_mat_temp
 
     return 1
 
@@ -887,8 +887,8 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
             vector = img[pos[k1, 0] - box_width:pos[k1, 0] + box_width, pos[k1, 1] - box_width:pos[k1, 1] + box_width]
             img_vectors.append(vector.reshape([(box_width * 2) ** 2]))
 
-    new_pos = array(new_pos)
-    img_vectors = array(img_vectors)
+    new_pos = np.array(new_pos)
+    img_vectors = np.array(img_vectors)
 
     U, S, V = linalg.svd(img_vectors)
     V = V[0:len(S)]
@@ -1032,7 +1032,7 @@ def run_PCA_atoms(file_in_h5, img_num, box_width):
     new_pi_reg = h5_image_new.regionref[0:1, 0:len(xy[0])]
 
     image_path_b = "%s/Analysis_Data_03_V" % image_path
-    main_h5_handle[image_path_b] = V1
+    main_h5_handle[image_path_b] = 1 # V1
     h5_image_new = main_h5_handle.get(image_path_b)
     h5_new_attrs = h5_image_new.attrs
     h5_new_attrs["Filter_Name"] = "PCA_Atom_Shape"

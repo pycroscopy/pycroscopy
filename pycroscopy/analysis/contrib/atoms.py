@@ -784,8 +784,8 @@ class AtomSeries:
         if self.num_comps==4:
             colors = ['r', 'k', 'b', 'g']
         else:
-            cm = plt.cm.get_cmap('jet', num_comps)
-            colors = [cm(ind) for ind in range(num_comps)]
+            cm = plt.cm.get_cmap('jet', self.num_comps)
+            colors = [cm(ind) for ind in range(self.num_comps)]
         
         for ind in range(len(self.all_results)):
             fig = plt.figure()   

@@ -19,6 +19,7 @@ from scipy.signal import blackman
 from sklearn.utils import gen_batches
 
 from sidpy.proc.comp_utils import get_available_memory
+<<<<<<< HEAD
 from sidpy.hdf.hdf_utils import copy_attributes, get_h5_obj_refs, \
     link_h5_objects_as_attrs
 
@@ -27,6 +28,15 @@ from pyUSID.io.hdf_utils import find_results_groups, link_as_main, \
     check_for_old
 from pyUSID.io.anc_build_utils import make_indices_matrix, \
     get_aux_dset_slicing, INDICES_DTYPE, VALUES_DTYPE, calc_chunks
+=======
+from sidpy.hdf.hdf_utils import get_h5_obj_refs, link_h5_objects_as_attrs, copy_attributes
+
+from pyUSID import USIDataset
+from pyUSID.io.hdf_utils import find_results_groups, \
+    link_as_main, check_for_old
+from pyUSID.io.anc_build_utils import make_indices_matrix, get_aux_dset_slicing, \
+    INDICES_DTYPE, VALUES_DTYPE, calc_chunks
+>>>>>>> 73627a3344cf5c6cc20a260e39b9c1a5e533ece5
 
 from ..io.hdf_writer import HDFwriter
 from ..io.virtual_data import VirtualGroup, VirtualDataset

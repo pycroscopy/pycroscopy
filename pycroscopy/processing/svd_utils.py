@@ -22,11 +22,20 @@ from sidpy.hdf.dtype_utils import check_dtype, stack_real_to_target_dtype
 
 from pyUSID.processing.process import Process
 from .proc_utils import get_component_slice
+<<<<<<< HEAD
 from pyUSID.io.hdf_utils import find_results_groups, \
     reshape_to_n_dims, write_main_dataset, create_results_group, \
     create_indexed_group, find_dataset
 from pyUSID.io.anc_build_utils import calc_chunks
 from pyUSID import USIDataset, Dimension
+=======
+from pyUSID.io.hdf_utils import find_results_groups,  \
+    reshape_to_n_dims, write_main_dataset, create_results_group, \
+    create_indexed_group, find_dataset
+from pyUSID import Dimension
+from pyUSID.io.anc_build_utils import calc_chunks
+from pyUSID import USIDataset
+>>>>>>> 73627a3344cf5c6cc20a260e39b9c1a5e533ece5
 
 import h5py
 from matplotlib import pyplot as plt

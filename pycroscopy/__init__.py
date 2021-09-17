@@ -9,7 +9,6 @@ Submodules
 """
 from warnings import warn
 from .io import translators
-from .io.translators import ImageTranslator  # Use pycroscopy version of ImageTranslator rather than pyUSID's
 from . import analysis
 from . import processing
 from . import viz

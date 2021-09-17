@@ -10,9 +10,14 @@ import os
 import sys
 import re  # used to get note values
 
+from pyUSID import Dimension
 from sidpy.sid import Translator
 from sidpy.hdf.hdf_utils import write_simple_attrs, print_tree, get_attributes
+<<<<<<< HEAD
 from pyUSID import Dimension
+=======
+#from sidpy.io.write_utils import make_indices_matrix
+>>>>>>> 73627a3344cf5c6cc20a260e39b9c1a5e533ece5
 from pyUSID.io.hdf_utils import create_indexed_group, write_main_dataset
 
 if sys.version_info.major == 3:
