@@ -12,7 +12,7 @@ class MatrixFactor():
         """
         Parameters:
             - data: (sidpy.Dataset)
-            - 
+            - None
         """
         self.data = data
         self.allowed_methods = ['svd', 'nmf', 'ica', 'nfindr', 'kernelpca'] #Might want to add others...
