@@ -48,9 +48,8 @@ class MatrixFactor():
             nmf = NMF(n_components = self.num_components)
             nmf.fit_transform(self.data_2d[:])
             components = nmf.components_
-            abundances = 
+            
 
-        
         #Then we want to return components, abundances, and explained variances if available.
         # We should return a list of sidpy dataset objects
         self.components = components
