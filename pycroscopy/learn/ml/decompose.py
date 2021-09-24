@@ -47,7 +47,7 @@ class TensorFactor():
         # Mani's code will be used here. So ignore this for now.
         return
 
-    def do_fit(self, **kwargs) -> sidpy.Dataset.dataset:
+    def do_fit(self, **kwargs):
         """
         Parameters:
         **kwargs
