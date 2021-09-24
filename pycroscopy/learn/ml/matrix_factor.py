@@ -5,6 +5,7 @@
 import sidpy
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import NMF
 
 class MatrixFactor():
     def __init__(self, data, method = 'svd', n_components = 5, normalize = False) -> None:
@@ -18,7 +19,7 @@ class MatrixFactor():
         assert method in self._allowed_methods, "Method must be one of {}".format(self._allowed_methods)
         self.method = method
         self.normalize = normalize
-        self.data_2d = _return_2d_dataset(self, self.data)
+        self.data_2d = self._return_2d_dataset(self, self.data)
         self.results_computed = False
 
     def _return_2d_dataset(self, data):
