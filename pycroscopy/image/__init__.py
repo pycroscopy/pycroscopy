@@ -17,5 +17,10 @@ Submodules
 """
 
 from .image_window import ImageWindowing
-__all__ = ['ImageWindowing']
+
+from .image_utilities import crop_image
+from .image_clean import decon_lr, clean_svd
+from .image_atoms import find_atoms, atom_refine
+
+__all__ = ['ImageWindowing', 'crop_image', 'decon_lr', 'clean_svd', 'find_atoms', 'atom_refine']
 

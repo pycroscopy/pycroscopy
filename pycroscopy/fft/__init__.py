@@ -13,3 +13,8 @@ Submodules
     :toctree: _autosummary
 
 """
+
+from .image_fft import power_spectrum, diffractogram_spots
+
+
+__all__ = ['power_spectrum', 'diffractogram_spots']
