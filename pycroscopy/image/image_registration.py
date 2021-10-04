@@ -1,3 +1,17 @@
+import numpy as np
+from tqdm.auto import trange
+import skimage
+import scipy.ndimage as ndimage
+import sidpy
+
+_SimpleITK_present = True
+
+try:
+    import SimpleITK as sitk
+except BaseException:
+    _SimpleITK_present = False
+if not _SimpleITK_present:
+    print('SimpleITK not installed; Registration Functions for Image Stacks not available')
 
 
 #####################################################
@@ -37,12 +51,12 @@ def complete_registration(main_dataset, storage_channel=None):
     if storage_channel is None:
         storage_channel = main_dataset.h5_dataset.parent.parent
 
-    registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
+    # registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
 
     print('Non-Rigid_Registration')
 
     non_rigid_registered = demon_registration(rigid_registered_dataset)
-    registration_channel = ft.log_results(storage_channel, non_rigid_registered)
+    # registration_channel = ft.log_results(storage_channel, non_rigid_registered)
 
     return non_rigid_registered, rigid_registered_dataset
 
@@ -86,31 +100,31 @@ def demon_registration(dataset, verbose=False):
 
     fixed_np = np.average(np.array(dataset), axis=0)
 
-    fixed = sITK.GetImageFromArray(fixed_np)
-    fixed = sITK.DiscreteGaussian(fixed, 2.0)
+    fixed = sitk.GetImageFromArray(fixed_np)
+    fixed = sitk.DiscreteGaussian(fixed, 2.0)
 
     # demons = sITK.SymmetricForcesDemonsRegistrationFilter()
-    demons = sITK.DiffeomorphicDemonsRegistrationFilter()
+    demons = sitk.DiffeomorphicDemonsRegistrationFilter()
 
     demons.SetNumberOfIterations(200)
     demons.SetStandardDeviations(1.0)
 
-    resampler = sITK.ResampleImageFilter()
+    resampler = sitk.ResampleImageFilter()
     resampler.SetReferenceImage(fixed)
-    resampler.SetInterpolator(sITK.sitkBSpline)
+    resampler.SetInterpolator(sitk.sitkBSpline)
     resampler.SetDefaultPixelValue(0)
 
     done = 0
 
     for i in trange(nimages):
 
-        moving = sITK.GetImageFromArray(dataset[i])
-        moving_f = sITK.DiscreteGaussian(moving, 2.0)
+        moving = sitk.GetImageFromArray(dataset[i])
+        moving_f = sitk.DiscreteGaussian(moving, 2.0)
         displacement_field = demons.Execute(fixed, moving_f)
-        out_tx = sITK.DisplacementFieldTransform(displacement_field)
+        out_tx = sitk.DisplacementFieldTransform(displacement_field)
         resampler.SetTransform(out_tx)
         out = resampler.Execute(moving)
-        dem_reg[i, :, :] = sITK.GetArrayFromImage(out)
+        dem_reg[i, :, :] = sitk.GetArrayFromImage(out)
 
     print(':-)')
     print('You have successfully completed Diffeomorphic Demons Registration')
@@ -168,9 +182,9 @@ def rigid_registration(dataset):
         moving = np.array(dataset[i])
         fft_moving = np.fft.fft2(moving)
         if skimage.__version__[:4] == '0.16':
-            shift = register_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
+            shift = rskimage.egister_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
         else:
-            shift = registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
+            shift = skimage.registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
 
         fft_fixed = fft_moving
 
