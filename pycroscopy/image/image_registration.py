@@ -48,8 +48,8 @@ def complete_registration(main_dataset, storage_channel=None):
     print('Rigid_Registration')
 
     rigid_registered_dataset = rigid_registration(main_dataset)
-    if storage_channel is None:
-        storage_channel = main_dataset.h5_dataset.parent.parent
+    #if storage_channel is None:
+    #    storage_channel = main_dataset.h5_dataset.parent.parent
 
     # registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
 
@@ -167,22 +167,42 @@ def rigid_registration(dataset):
     if dataset.data_type.name != 'IMAGE_STACK':
         raise TypeError('Registration makes only sense for an image stack')
 
-    nopix = dataset.shape[1]
-    nopiy = dataset.shape[2]
-    nimages = dataset.shape[0]
+    frame_dim = []
+    spatial_dim = []
+    selection = []
+
+    for i, axis in dataset._axes.items():
+        if axis.dimension_type.name == 'SPATIAL':
+            spatial_dim.append(i)
+            selection.append(slice(None))
+        else:
+            frame_dim.append(i)
+            selection.append(slice(0, 1))
+        
+    if len(spatial_dim) != 2:
+        print('need two spatial dimensions')
+    if len(frame_dim) != 1:
+        print('need one frame dimensions')
+    
+    nopix = dataset.shape[spatial_dim[0]]
+    nopiy = dataset.shape[spatial_dim[1]]
+    nimages = dataset.shape[frame_dim[0]]
 
     print('Stack contains ', nimages, ' images, each with', nopix, ' pixels in x-direction and ', nopiy,
           ' pixels in y-direction')
-    fixed = np.array(dataset[0])
+    
+    fixed = np.array(dataset[tuple(selection)].squeeze())
     fft_fixed = np.fft.fft2(fixed)
 
     relative_drift = [[0., 0.]]
 
+
     for i in trange(nimages):
-        moving = np.array(dataset[i])
+        selection[frame_dim[0]]=slice(i,i+1)
+        moving = np.array(dataset[tuple(selection)].squeeze())
         fft_moving = np.fft.fft2(moving)
         if skimage.__version__[:4] == '0.16':
-            shift = rskimage.egister_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
+            shift = skimage.register_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
         else:
             shift = skimage.registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
 
@@ -199,7 +219,13 @@ def rigid_registration(dataset):
     rigid_registered.source = dataset.title
     rigid_registered.metadata = {'analysis': 'rigid sub-pixel registration', 'drift': drift,
                                  'input_crop': input_crop, 'input_shape': dataset.shape[1:]}
-
+    del rigid_registered.z                             
+    del rigid_registered.x                             
+    del rigid_registered.y
+    rigid_registered._axes = {}
+    rigid_registered.set_dimension(0, dataset._axes[frame_dim[0]])
+    rigid_registered.set_dimension(1, dataset._axes[spatial_dim[0]])
+    rigid_registered.set_dimension(2, dataset._axes[spatial_dim[1]])
     return rigid_registered
 
 
@@ -224,7 +250,25 @@ def rig_reg_drift(dset, rel_drift):
     drift: list of drift in pixel
     """
 
-    rig_reg = np.zeros(dset.shape)
+    frame_dim = []
+    spatial_dim = []
+    selection = []
+
+    for i, axis in dset._axes.items():
+        if axis.dimension_type.name == 'SPATIAL':
+            spatial_dim.append(i)
+            selection.append(slice(None))
+        else:
+            frame_dim.append(i)
+            selection.append(slice(0, 1))
+        
+    if len(spatial_dim) != 2:
+        print('need two spatial dimensions')
+    if len(frame_dim) != 1:
+        print('need one frame dimensions')
+
+    rig_reg = np.zeros([dset.shape[frame_dim[0]], dset.shape[spatial_dim[0]], dset.shape[spatial_dim[1]]])
+    
     # absolute drift
     drift = np.array(rel_drift).copy()
 
@@ -235,8 +279,9 @@ def rig_reg_drift(dset, rel_drift):
     drift = drift - center_drift
     # Shift images
     for i in range(rig_reg.shape[0]):
+        selection[frame_dim[0]]=slice(i,i+1)
         # Now we shift
-        rig_reg[i, :, :] = ndimage.shift(dset[i], [drift[i, 0], drift[i, 1]], order=3)
+        rig_reg[i, :, :] = ndimage.shift(dset[tuple(selection)].squeeze(), [drift[i, 0], drift[i, 1]], order=3)
     return rig_reg, drift
 
 
