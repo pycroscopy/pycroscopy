@@ -31,7 +31,7 @@ from pyUSID import USIDataset
 
 import h5py
 from matplotlib import pyplot as plt
-from pyUSID.viz import plot_utils
+from sidpy.viz import plot_utils
 
 class SVD(Process):
     """
