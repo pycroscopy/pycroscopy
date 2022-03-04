@@ -390,7 +390,7 @@ def make_structural_units(atoms, voronoi_vertices, voronoi_tetrahedrons, cluster
                             'interstitial_site': np.array(voronoi_tetrahedrons)[cluster].mean(axis=0),
                             'volume': hull.volume}
         if False:  # isinstance(atoms, ase.Atoms):
-                polyhedra[index]['atomic_numbers'] = atoms.get_atomic_numbers()[vertices],
+                polyhedra[index]['atomic_numbers'] = atoms.get_atomic_numbers()[voronoi_tetrahedrons],
 
         # 'coplanar': hull.coplanar}
 
