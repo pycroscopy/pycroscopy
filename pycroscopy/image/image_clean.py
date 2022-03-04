@@ -1,6 +1,6 @@
 import numpy as np
 import sidpy
-from tqdm.auto import trange, tqdm
+from tqdm import trange, tqdm
 from sklearn.feature_extraction import image
 from sklearn.utils.extmath import randomized_svd
 

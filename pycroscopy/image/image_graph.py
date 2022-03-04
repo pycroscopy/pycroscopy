@@ -34,7 +34,7 @@ from scipy.spatial import Voronoi, cKDTree  # , KDTree
 import matplotlib
 import matplotlib.patches as patches
 from matplotlib.collections import PatchCollection
-from tqdm.auto import trange
+from tqdm import trange
 
 #####################
 # Polygon Functions #

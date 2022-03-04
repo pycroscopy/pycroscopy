@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm.auto import trange
+from tqdm import trange
 import skimage
 import scipy.ndimage as ndimage
 import sidpy

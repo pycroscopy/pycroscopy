@@ -19,7 +19,7 @@ import scipy.optimize as optimization
 import pyTEMlib.probe_tools as probe_tools
 import pyTEMlib.file_tools as ft
 import sidpy
-from tqdm.auto import trange
+from tqdm import trange
 
 
 
