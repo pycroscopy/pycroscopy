@@ -5,7 +5,7 @@ Please see the poster below (click) for an overview of the Pycroscopy ecosystem
 
 .. image:: ./2021_Pycroscopy_Ecosystem_Poster_Thumbnail.png
    :width: 300
-   :target: https://gitcdn.link/repo/pycroscopy/pycroscopy/master/docs/2021_Pycroscopy_Ecosystem_Poster.pdf
+   :target: https://github.com/pycroscopy/pycroscopy/blob/master/docs/2021_Pycroscopy_Ecosystem_Poster.pdf
 
 Structure
 ~~~~~~~~~
