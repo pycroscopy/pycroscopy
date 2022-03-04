@@ -7,6 +7,8 @@ author: Gerd Duscher, UTK
 """
 
 import numpy as np
+from scipy import ndimage
+from skimage.feature import peak_local_max, blob_log
 import sidpy
 
 
