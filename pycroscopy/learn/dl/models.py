@@ -12,7 +12,7 @@ from typing import List, Tuple, Union
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.tensor as tt
+tt = torch.tensor
 
 from .nnblocks import (ConvBlock, UpsampleBlock, features_to_latent,
                        latent_to_features)
