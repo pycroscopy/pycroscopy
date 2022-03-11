@@ -8,44 +8,6 @@ import dask
 # from warnings import warn
 
 
-def get_image_dims(dataset):
-    """Get all spatial dimensions"""
-
-    image_dims = []
-    for dim, axis in dataset._axes.items():
-        if axis.dimension_type == sidpy.DimensionType.SPATIAL:
-            image_dims.append(dim)
-    return image_dims
-
-
-def get_dimensions_by_type(dims_in, dataset):
-    """ get dimension by dimension_type name
-
-    Parameters
-    ----------
-    dims_in: dimension_type or list of dimension_types
-        the dimensions by numerical order
-    dataset: sidpy.Dataset
-
-    Returns
-    -------
-    dims_out: list of dimensions
-    """
-
-    if isinstance(dims_in, (str, sidpy.DimensionType)):
-        dims_in = [dims_in]
-    for i in range(len(dims_in)):
-        if isinstance(dims_in[i], str):
-            dims_in[i] = sidpy.DimensionType[dims_in[i].upper()]
-    dims_out = []
-    dims_out_index = []
-    for dim, axis in dataset._axes.items():
-        if axis.dimension_type in dims_in:
-            dims_out.append([dim, dataset._axes[dim]])
-            dims_out_index.append(dim)
-    return dims_out_index
-
-
 get_slope = sidpy.base.num_utils.get_slope
 
 
@@ -89,30 +51,30 @@ def fourier_transform(dset, dimension_type=None):
         raise TypeError('Could not identify a dimension_type to perform Fourier transform on')
 
     if dimension_type.name == 'SPATIAL':
-        if len(get_dimensions_by_type(dimension_type, dset)) != 2:
+        if len(dset.get_dimensions_by_type(dimension_type)) != 2:
             raise TypeError('sidpy dataset of type', dset.data_type,
                             ' has no obvious dimension over which to perform fourier transform, '
                             'please specify')
     elif dimension_type.name == 'RECIPROCAL':
-        if len(get_dimensions_by_type(dimension_type, dset)) != 2:
+        if len(dset.get_dimensions_by_type(dimension_type)) != 2:
             raise TypeError('sidpy dataset of type', dset.data_type,
                             ' has no obvious dimension over which to perform fourier transform, '
                             'please specify')
     elif dimension_type.name == 'SPECTRAL':
-        if len(get_dimensions_by_type(dimension_type, dset)) != 1:
+        if len(dset.get_dimensions_by_type(dimension_type)) != 1:
             raise TypeError('sidpy dataset of type', dset.data_type,
                             ' has no obvious dimension over which to perform fourier transform, '
                             'please specify')
 
     new_dset = dset-dset.min()
     if dimension_type == sidpy.DimensionType.SPECTRAL:
-        dd = get_dimensions_by_type('spectral', dset)
+        dd = dset.get_dimensions_by_type('spectral')
         print(dd)
-        fft_transform = np.fft.fftshift(dask.array.fft.fftn(new_dset, axes=get_dimensions_by_type('spectral', dset)))
+        fft_transform = np.fft.fftshift(dask.array.fft.fftn(new_dset, axes=dset.get_dimensions_by_type('spectral')))
     elif dimension_type == sidpy.DimensionType.SPATIAL:
-        fft_transform = np.fft.fftshift(dask.array.fft.fft2(new_dset, axes=get_dimensions_by_type('spatial', dset)))
+        fft_transform = np.fft.fftshift(dask.array.fft.fft2(new_dset, axes=dset.get_dimensions_by_type('spatial')))
     elif dimension_type == sidpy.DimensionType.RECIPROCAL:
-        fft_transform = np.fft.fftshift(dask.array.fft.ifft2(new_dset, axes=get_dimensions_by_type('reciprocal', dset)))
+        fft_transform = np.fft.fftshift(dask.array.fft.ifft2(new_dset, axes=dset.get_dimensions_by_type('reciprocal')))
     else:
         raise NotImplementedError('fourier transform not implemented for dimension_type ', dimension_type.name)
 
@@ -136,7 +98,7 @@ def fourier_transform(dset, dimension_type=None):
     fft_dset.modality = 'fft'
 
     if dimension_type == sidpy.DimensionType.SPATIAL:
-        image_dims = get_dimensions_by_type(dimension_type, dset)
+        image_dims = dset.get_dimensions_by_type(dimension_type)
         units_x = '1/' + dset._axes[image_dims[0]].units
         units_y = '1/' + dset._axes[image_dims[1]].units
         fft_dset.set_dimension(image_dims[0], sidpy.Dimension(np.fft.fftshift(np.fft.fftfreq(dset.shape[image_dims[0]],
@@ -154,7 +116,7 @@ def fourier_transform(dset, dimension_type=None):
                 fft_dset.set_dimension(i, dset._axes[i])
 
     elif dimension_type == sidpy.DimensionType.RECIPROCAL:
-        image_dims = get_dimensions_by_type(dimension_type, dset)
+        image_dims = dset.get_dimensions_by_type(dimension_type)
         units_x = '1/' + dset._axes[image_dims[0]].units
         units_y = '1/' + dset._axes[image_dims[1]].units
         fft_dset.set_dimension(image_dims[0], sidpy.Dimension(np.fft.fftshift(np.fft.fftfreq(dset.shape[image_dims[0]],
@@ -172,7 +134,7 @@ def fourier_transform(dset, dimension_type=None):
                 fft_dset.set_dimension(i, dset._axes[i])
 
     elif dimension_type == sidpy.DimensionType.SPECTRAL:
-        spec_dim = get_dimensions_by_type(dimension_type, dset)
+        spec_dim = dset.get_dimensions_by_type(dimension_type)
         units = '1/' + dset._axes[spec_dim[0]].units
         fft_dset.set_dimension(spec_dim[0], sidpy.Dimension(np.fft.fftshift(np.fft.fftfreq(dset.shape[spec_dim[0]],
                                                                                            d=get_slope(dset.x.values))),
