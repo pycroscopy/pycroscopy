@@ -3,24 +3,34 @@ Voronoi analysis of atom positions
 
 author Gerd and Rama
 
-part of pycrosocpy
+part of pycroscopy
 """
 
 import numpy as np
 import sys
 
-# from skimage.feature import peak_local_max
+# from skimage.feapytemure import peak_local_max
 from skimage.feature import blob_log
 
 from sklearn.cluster import KMeans
 from scipy.spatial import cKDTree
 import scipy.optimize as optimization
 
-import pyTEMlib.probe_tools as probe_tools
-import pyTEMlib.file_tools as ft
 import sidpy
 from tqdm import trange
 
+get_slope = sidpy.base.num_utils.get_slope
+
+
+def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
+    """Make a Gaussian shaped probe """
+    size_x = size_x/2
+    size_y = size_y/2
+    x, y = np.mgrid[-size_x:size_x, -size_y:size_y]
+    g = np.exp(-((x-x0)**2 + (y-y0)**2) / 2.0 / width**2)
+    probe = g / g.sum() * intensity
+
+    return probe
 
 
 def find_atoms(image, atom_size=0.1, threshold=-1.):
@@ -50,7 +60,7 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
     if not isinstance(threshold, float):
         raise TypeError('threshold parameter has to be a float number')
 
-    scale_x = ft.get_slope(image.dim_0)
+    scale_x = get_slope(image.dim_0)
     im = np.array(image-image.min())
     im = im/im.max()
     if threshold < 0.:
@@ -95,7 +105,7 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
 def gauss_difference(params, area):
     """
     Difference between part of an image and a Gaussian
-    This function is used int he atom refine function of pyTEMlib
+    This function is used in atom refine function of pycroscopy
 
     Parameters
     ----------
@@ -109,8 +119,7 @@ def gauss_difference(params, area):
     numpy array: flattened array of difference
 
     """
-    gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2],
-                                   intensity=params[3])
+    gauss = make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2], intensity=params[3])
     return (area - gauss).flatten()
 
 
@@ -156,7 +165,6 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
     gauss_amplitude = []
     gauss_intensity = []
 
-    done = 0
     for i in trange(len(atoms)):
         x, y = atoms[i][0:2]
         x = int(x)
@@ -198,8 +206,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
         if all(v == 0 for v in pout):
             gauss_intensity.append(0.)
         else:
-            gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
-                                           intensity=pout[3])
+            gauss = make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2], intensity=pout[3])
             gauss_intensity.append((gauss * mask).sum())
         gauss_width.append(pout[0])
         gauss_amplitude.append(pout[3])
