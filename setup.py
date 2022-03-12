@@ -18,7 +18,7 @@ requirements = ['numpy>=1.13.0',
                 'matplotlib>=2.0.0',
                 'torch>=1.0.0',
                 'tensorly>=0.6.0',
-
+                'tqdm',
                 'psutil',
                 'six',
                 'pillow',
