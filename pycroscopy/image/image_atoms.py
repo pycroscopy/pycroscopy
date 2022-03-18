@@ -11,8 +11,8 @@ from skimage.feature import blob_log
 from sklearn.cluster import KMeans
 from scipy.spatial import cKDTree
 import scipy.optimize as optimization
-import sidpy
 from tqdm import trange
+import sidpy
 
 
 def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
@@ -112,8 +112,8 @@ def gauss_difference(params, area):
     numpy array: flattened array of difference
 
     """
-    gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2],
-                                   intensity=params[3])
+    gauss = make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2],
+                       intensity=params[3])
     return (area - gauss).flatten()
 
 
@@ -201,7 +201,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
         if all(v == 0 for v in pout):
             gauss_intensity.append(0.)
         else:
-            gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
+            gauss = make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
                                            intensity=pout[3])
             gauss_intensity.append((gauss * mask).sum())
         gauss_width.append(pout[0])
