@@ -17,7 +17,6 @@ from scipy.spatial import cKDTree
 import scipy.optimize as optimization
 
 import pyTEMlib.probe_tools as probe_tools
-import pyTEMlib.file_tools as ft
 import sidpy
 from tqdm import trange
 
@@ -50,7 +49,7 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
     if not isinstance(threshold, float):
         raise TypeError('threshold parameter has to be a float number')
 
-    scale_x = ft.get_slope(image.dim_0)
+    scale_x = sidpy.base.num_utils.get_slope(image.dim_0)
     im = np.array(image-image.min())
     im = im/im.max()
     if threshold < 0.:
