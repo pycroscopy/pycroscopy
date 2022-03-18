@@ -7,19 +7,23 @@ part of pycrosocpy
 """
 
 import numpy as np
-import sys
-
-# from skimage.feature import peak_local_max
 from skimage.feature import blob_log
-
 from sklearn.cluster import KMeans
 from scipy.spatial import cKDTree
 import scipy.optimize as optimization
-
-import pyTEMlib.probe_tools as probe_tools
 import sidpy
 from tqdm import trange
 
+
+def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
+    """Make a Gaussian shaped probe """
+    size_x = size_x/2
+    size_y = size_y/2
+    x, y = np.mgrid[-size_x:size_x, -size_y:size_y]
+    g = np.exp(-((x-x0)**2 + (y-y0)**2) / 2.0 / width**2)
+    probe = g / g.sum() * intensity
+
+    return probe
 
 
 def find_atoms(image, atom_size=0.1, threshold=-1.):
