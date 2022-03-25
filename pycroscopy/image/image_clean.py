@@ -7,6 +7,11 @@ from sklearn.utils.extmath import randomized_svd
 
 def clean_svd(im, pixel_size=1, source_size=5):
     """De-noising of image by using first component of single value decomposition"""
+    if not isinstance(im, sidpy.Dataset):
+        raise TypeError('We need a sidpy.Dataset')
+    if im.data_type.name != 'IMAGE':
+        raise TypeError('We need sidpy.Dataset of sidpy.Datatype: IMAGE')
+
     patch_size = int(source_size/pixel_size)
     if patch_size < 3:
         patch_size = 3

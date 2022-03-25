@@ -32,7 +32,7 @@ def test_trainer(dim, size):
     # train and compare model params before and after
     t.fit(num_epochs=2)
     weights_after = model.state_dict()
-    # assert_(not assert_weights_equal(weights_before, weights_after))
+    # assert_(not assert_weights_equal(weights_before, weights_after))  # Todo: re-enable
 
 
 @pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
