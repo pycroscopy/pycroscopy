@@ -11,6 +11,7 @@ from scipy import ndimage
 from skimage.feature import peak_local_max, blob_log
 import sidpy
 
+get_slope = sidpy.base.num_utils.get_slope
 
 def power_spectrum(dset, smoothing=3):
     """
@@ -89,8 +90,9 @@ def diffractogram_spots(dset, spot_threshold):
     print(f'Found {spots_random.shape[0]} reflections')
 
     # Needed for conversion from pixel to Reciprocal space
-    rec_scale = np.array([sidpy.base.num_utils.get_slope(dset.u.values),
-                          sidpy.base.num_utils.get_slope(dset.v.values)])
+
+    rec_scale = np.array([get_slope(dset.u.values), get_slope(dset.v.values)])
+
     spots_random[:, :2] = spots_random[:, :2]*rec_scale+[dset.u.values[0], dset.v.values[0]]
     # sort reflections
     spots_random[:, 2] = np.linalg.norm(spots_random[:, 0:2], axis=1)
@@ -99,3 +101,49 @@ def diffractogram_spots(dset, spot_threshold):
     # third row is angles
     spots[:, 2] = np.arctan2(spots[:, 0], spots[:, 1])
     return spots
+
+def adaptive_fourier_filter(dset, spots, low_pass=3, reflection_radius=0.3):
+    """
+    Use spots in diffractogram for a Fourier Filter
+
+    Parameters:
+    -----------
+    dset: sidpu.Dataset
+        image to be filtered
+    spots: np.ndarray(N,2)
+        sorted spots in diffractogram in 1/nm
+    low_pass:  float
+        low pass filter in center of diffractogram in 1/nm
+    reflection_radius:  float
+        radius of masked reflections in 1/nm
+
+    Output:
+    -------
+            Fourier filtered image
+    """
+
+    if not isinstance(dset, sidpy.Dataset):
+        raise TypeError('We need a sidpy.Dataset')
+    fft_transform = dset.fft()
+
+    # prepare mask
+    x, y = np.meshgrid(fft_transform.u.values, fft_transform.v.values)
+    mask = np.zeros(dset.shape)
+
+    # mask reflections
+    for spot in spots:
+        mask_spot = (x - spot[1]) ** 2 + (y - spot[0]) ** 2 < reflection_radius ** 2  # make a spot
+        mask = mask + mask_spot  # add spot to mask
+
+    # mask zero region larger (low-pass filter = intensity variations)
+    mask_spot = x ** 2 + y ** 2 < low_pass ** 2
+    mask = mask + mask_spot
+    mask[np.where(mask > 1)] = 1
+    fft_filtered = np.array(fft_transform * mask)
+
+    filtered_image = dset.like_data(np.fft.ifft2(np.fft.fftshift(fft_filtered)).real)
+    filtered_image.title = 'Fourier filtered ' + dset.title
+    filtered_image.source = dset.title
+    filtered_image.metadata = {'analysis': 'adaptive fourier filtered', 'spots': spots,
+                               'low_pass': low_pass, 'reflection_radius': reflection_radius}
+    return filtered_image
