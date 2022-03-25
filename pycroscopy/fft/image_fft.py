@@ -13,7 +13,6 @@ import sidpy
 
 get_slope = sidpy.base.num_utils.get_slope
 
-
 def power_spectrum(dset, smoothing=3):
     """
     Calculate power spectrum
@@ -91,7 +90,9 @@ def diffractogram_spots(dset, spot_threshold):
     print(f'Found {spots_random.shape[0]} reflections')
 
     # Needed for conversion from pixel to Reciprocal space
+
     rec_scale = np.array([get_slope(dset.u.values), get_slope(dset.v.values)])
+
     spots_random[:, :2] = spots_random[:, :2]*rec_scale+[dset.u.values[0], dset.v.values[0]]
     # sort reflections
     spots_random[:, 2] = np.linalg.norm(spots_random[:, 0:2], axis=1)

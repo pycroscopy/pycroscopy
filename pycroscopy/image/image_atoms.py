@@ -9,15 +9,23 @@ part of pycroscopy
 import numpy as np
 import sys
 
-# from skimage.feapytemure import peak_local_max
 from skimage.feature import blob_log
-
 from sklearn.cluster import KMeans
 from scipy.spatial import cKDTree
 import scipy.optimize as optimization
 
 import sidpy
 from tqdm import trange
+import sidpy
+
+
+def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
+    """Make a Gaussian shaped probe """
+    size_x = size_x/2
+    size_y = size_y/2
+    x, y = np.mgrid[-size_x:size_x, -size_y:size_y]
+    g = np.exp(-((x-x0)**2 + (y-y0)**2) / 2.0 / width**2)
+    probe = g / g.sum() * intensity
 
 get_slope = sidpy.base.num_utils.get_slope
 
@@ -59,6 +67,7 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
         raise TypeError('atom_size parameter has to be a number')
     if not isinstance(threshold, float):
         raise TypeError('threshold parameter has to be a float number')
+
 
     scale_x = get_slope(image.dim_0)
     im = np.array(image-image.min())
