@@ -18,15 +18,6 @@ import sidpy
 from tqdm import trange
 import sidpy
 
-
-def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
-    """Make a Gaussian shaped probe """
-    size_x = size_x/2
-    size_y = size_y/2
-    x, y = np.mgrid[-size_x:size_x, -size_y:size_y]
-    g = np.exp(-((x-x0)**2 + (y-y0)**2) / 2.0 / width**2)
-    probe = g / g.sum() * intensity
-
 get_slope = sidpy.base.num_utils.get_slope
 
 
