@@ -71,7 +71,6 @@ class TensorFactor():
         return fig
 
 
-
 def tensor_decomposition(data: Union[np.ndarray, dask.array.Array],
                          rank: Union[int, List[int]],
                          decomposition_type: str = "cp",
