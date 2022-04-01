@@ -8,38 +8,16 @@
 # incepted by Liam and involving Kelvin probe microscopy.
 
 from __future__ import division, print_function, absolute_import, unicode_literals
-from pyUSID.processing.process import Process
+
 import numpy as np
 import h5py
-
-# Helper function for importing packages if they have not been installed yet
-import os
-import subprocess
-import sys
-def install(package):
-	subsystem.call([sys.executable, "-m", "pip", "install", "--user", package])
-
-try:
-	import pyUSID as usid 
-except ImportError:
-	print("pyUSID not found. Will install with pip.")
-	import pip
-	install("pyUSID")
-	import pyUSID as usid 
-
-try:
-	import pycroscopy as px 
-except ImportError:
-	print("pycroscopy not found. Will install with pip.")
-	import pip
-	install("pycroscopy")
-	import pycroscopy as px 
-
-from pyUSID.processing.comp_utils import parallel_compute
+from sidpy.proc.comp_utils import parallel_compute
 from pyUSID.io.hdf_utils import create_results_group, write_main_dataset, write_simple_attrs, create_empty_dataset, \
 	write_ind_val_dsets
 from pyUSID.io.write_utils import Dimension
-from kpfm_bayesian_utils import get_default_parameters, process_pixel
+from pyUSID.processing.process import Process
+
+from .kpfm_bayesian_utils import get_default_parameters, process_pixel
 
 
 class KPFMBayesianInference(Process):

@@ -7,8 +7,7 @@
 # on said input to confirm that the processes are functional.
 
 import numpy as np
-from matplotlib import pyplot as plt
-from kpfm_bayesian_utils import get_default_parameters, BayesianInference, processResults, process_pixel
+from .kpfm_bayesian_utils import get_default_parameters, process_pixel
 
 # Grab the simulated data.
 # Note: simulated data was produced by Matlab code in RunSimulations_SNRnoiseLooping.m and saved

@@ -8,10 +8,7 @@
 # due to inappropriate inputs. This is meant to act as only an example to use when writing actual code.
 
 import h5py
-import numpy as np
-import pyUSID as usid
-from matplotlib import pyplot as plt
-from kpfm_bayesian import KPFMBayesianInference
+from .kpfm_bayesian import KPFMBayesianInference
 
 # This is the path to the h5 file in which the data to be process is stored
 h5_path = r"C:\Users\Administrator\Dropbox\polynomial approximation paper\G data\GFA0_n1000mV_0003\GFA0_n1000mV_0003.h5"
