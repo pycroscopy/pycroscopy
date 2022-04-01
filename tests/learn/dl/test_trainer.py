@@ -18,7 +18,7 @@ def assert_weights_equal(m1, m2):
             p2.detach().cpu().numpy()))
     return all(eq_w)
 
-
+@unittest.skip('Currently skipping')
 @pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
 def test_trainer(dim, size):
     # Initialize a model
