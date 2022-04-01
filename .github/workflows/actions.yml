@@ -55,7 +55,7 @@ jobs:
         pytest --cov=./ --cov-report=xml
 
     - name: Documentation build
-      if: ${{ matrix.python-version == env.PYTHON_MAIN_VERSION && github.ref == 'refs/heads/master'}}
+      if: ${{ matrix.python-version == env.PYTHON_MAIN_VERSION && github.ref == 'refs/heads/phoenix'}}
       run: |
         pip install sphinx>=3.1.1 sphinx-gallery sphinx-rtd-theme>=0.5.0 sphinx-autodoc-typehints numpydoc wget pysptools cvxopt scipy nbsphinx
         sudo apt-get install pandoc
@@ -63,7 +63,7 @@ jobs:
         touch docs/_build/html/.nojekyll
 
     - name: Deploy to GitHub Pages
-      if: ${{ matrix.python-version == env.PYTHON_MAIN_VERSION && github.ref == 'refs/heads/master'}}
+      if: ${{ matrix.python-version == env.PYTHON_MAIN_VERSION && github.ref == 'refs/heads/phoenix'}}
       uses: crazy-max/ghaction-github-pages@v2
       with:
         target_branch: gh-pages
