@@ -68,8 +68,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pycroscopy'
-copyright = u'2016, Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
-author = u'Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
+copyright = u'2016, Pycroscopy Contributors'
+author = u'Pycroscopy Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -260,7 +260,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'pycroscopy.tex', u'pycroscopy Documentation',
-     u'Suhas Somnath, Chris Smith, Numan Laanait', 'manual'),
+     u'Pycroscopy Contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of

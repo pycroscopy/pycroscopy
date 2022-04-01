@@ -12,14 +12,16 @@ with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
 
 # TODO: Move requirements to requirements.txt
 requirements = ['numpy>=1.13.0',
-                'h5py>=2.6.0',
                 'scipy>=0.17.1',
                 'scikit-image>=0.12.3',
                 'scikit-learn>=0.17.1',
                 'matplotlib>=2.0.0',
-
+                'torch>=1.0.0',
+                'tensorly>=0.6.0',
+                'tqdm',
                 'psutil',
                 'six',
+                'pillow',
                 'joblib>=0.11.0',
 
                 'ipywidgets>=5.2.2',
@@ -27,19 +29,8 @@ requirements = ['numpy>=1.13.0',
                 'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
 
                 'unittest2;python_version<"3.0"',
-
-                # 'pyqt;python_version<"3.5"',
-                'pyqt5;python_version>="3.5"',
-                'pyqtgraph>=0.10',
-
-                'numpy_groupies==0.9.7',  # New build of 0.9.8.4 appears to cause build problems
-
-                'numba',
-                'pyUSID==0.0.5.1', #pyUSID is undergoing developments, so falling back for timebeing.
-
-                'xlrd>=1.0.0',
-                'igor',
-                'gwyfile',
+                'sidpy>=0.0.6',
+                'pyUSID>=0.0.8',
                 ]
 
 setup(
@@ -55,7 +46,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Cython',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
@@ -73,17 +63,20 @@ setup(
               'denoising', 'model', 'msa', 'quantification',
               'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
               'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
-    packages=find_packages(exclude='tests'),
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     url='https://pycroscopy.github.io/pycroscopy/about.html',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
     install_requires=requirements,
     setup_requires=['pytest-runner'],
-    tests_require=['pytest', 'Nose'],
+    tests_require=['pytest'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='pytest',
+    extras_require={
+        'legacy_guis':  ['pyqt5;python_version>="3.5"',
+                         'pyqtgraph>=0.10']},
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,
