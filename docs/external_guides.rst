@@ -5,7 +5,7 @@ Tutorials on Basics
 
 Python, packages, editors, ...
 ------------------------------
-Our sister project, **PyUSID**, has a `list of excellent tutorials <../../pyUSID/external_guides.html>`_ on most common topics
+Our sister project, ``sidpy``, has a `list of excellent tutorials <../../sidpy/external_guides.html>`_ on most common topics
 such as on reading, using / running and writing code. Tutorials the ones relevant to pycroscopy are listed below.
 
 Data Science

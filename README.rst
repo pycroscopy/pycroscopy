@@ -6,9 +6,9 @@ pycroscopy
     :target: http://pepy.tech/project/pycroscopy
     :alt: Downloads
 
-.. image:: https://img.shields.io/travis/pycroscopy/pycroscopy/master.svg
-    :target: https://travis-ci.org/pycroscopy/pycroscopy
-    :alt: TravisCI
+.. image:: https://github.com/pycroscopy/pycroscopy/workflows/build/badge.svg?branch=phoenix
+    :target: https://github.com/pycroscopy/pycroscopy/actions?query=workflow%3Abuild
+    :alt: GitHub Actions
     
 .. image:: https://img.shields.io/pypi/v/pycroscopy.svg
     :target: https://pypi.org/project/pyCroscopy/
