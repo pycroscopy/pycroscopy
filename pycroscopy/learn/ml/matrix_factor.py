@@ -111,24 +111,24 @@ class MatrixFactor():
         print('Components')
 
         gs = gridspec.GridSpec(int(self.n_components//3)+1, 3)
-        fig = plt.figure(figsize = (4*(int(self.n_components//3)+1), 4*(4//1.5))))
+        fig = plt.figure(figsize = (4*(int(self.n_components//3)+1), 4*(4//1.5)))
         if len(self.shape) == 2:   
             for i in range(self.n_components):
                 ax = fig.add_subplot(gs[i])
-                ax.plot(components[i])
+                ax.plot(abundances[i])
                 ax.set_title('Component ' + str(i + 1))
             plt.show()
         elif self.data_type == "SPECTRAL_IMAGE":
             for i in range(self.n_components):
                 ax = fig.add_subplot(gs[i])
-                ax.plot(components[i])
+                ax.plot(abundances[i])
                 ax.set_title('Component ' + str(i + 1))
             plt.show()
         elif self.data_type == "IMAGE_STACK":
             d1, d2, _ = self.shape 
             for i in range(self.n_components):
                 ax = fig.add_subplot(gs[i])
-                ax.plot(components[i].reshape(d1, d2))
+                ax.plot(abundances[i].reshape(d1, d2))
                 ax.set_title('Component ' + str(i + 1))
             plt.show()
         
