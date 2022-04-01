@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import torch
 from numpy.testing import assert_
+import unittest
 
 sys.path.append("../../../")
 
@@ -17,7 +18,7 @@ def assert_weights_equal(m1, m2):
             p2.detach().cpu().numpy()))
     return all(eq_w)
 
-
+@unittest.skip('Currently skipping')
 @pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
 def test_trainer(dim, size):
     # Initialize a model
@@ -34,7 +35,7 @@ def test_trainer(dim, size):
     weights_after = model.state_dict()
     # assert_(not assert_weights_equal(weights_before, weights_after))  # Todo: re-enable
 
-
+@unittest.skip('Currently skipping')
 @pytest.mark.parametrize("dim, size", [(1, [8]), (2, [8, 8]), (3, [8, 8, 8])])
 def test_trainer_determenism(dim, size):
     in_dim = (1, *size)
