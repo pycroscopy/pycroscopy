@@ -1,3 +1,5 @@
+import numpy as np
+
 def fit_cKPFM_linear(bias_vec_r,resp_mat_vsr):
 
     """

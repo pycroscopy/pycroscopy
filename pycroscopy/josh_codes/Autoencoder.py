@@ -1,8 +1,12 @@
 import os
+import shutil
 import numpy as np
-from scipy import (signal, io)
+from scipy import signal, io
+from argparse import ArgumentParser, Namespace
 import h5py
-import tensorflow as tf
+from keras.optimizers import Adam
+from keras.callbacks import TensorBoard, ModelCheckpoint
+from keras_tqdm import TQDMCallback
 from keras.models import Sequential
 from keras.layers import (Dense, Conv1D, GRU, LSTM, Recurrent, Bidirectional, TimeDistributed,
                           Dropout, Flatten, RepeatVector, Reshape, MaxPooling1D, UpSampling1D)
@@ -72,12 +76,6 @@ def conv_auto(size, num_layers, embedding, n_step, kernel_size, drop_frac=0., **
 
 
 def main(arg_dict=None):
-    from keras.optimizers import Adam
-    import shutil
-    from keras.callbacks import TensorBoard, ModelCheckpoint
-    from keras_tqdm import TQDMCallback
-
-    from argparse import ArgumentParser, Namespace
     parser = ArgumentParser()
     parser.add_argument("--data_path", type=str, default='data/cleaned_data.mat')
     parser.add_argument("--size", type=int)
