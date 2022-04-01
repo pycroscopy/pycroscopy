@@ -68,8 +68,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pycroscopy'
-copyright = u'2016, Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
-author = u'Suhas Somnath, Chris Smith, Stephen Jesse, Numan Laanait'
+copyright = u'2016, Pycroscopy Contributors'
+author = u'Pycroscopy Contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -162,7 +162,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = 'logo_v01.png'
 
 # The name of an image file (relative to this directory) to use as a favicon of
 # the docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -260,7 +260,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'pycroscopy.tex', u'pycroscopy Documentation',
-     u'Numan Laanait, Suhas Somnath, Chris Smith', 'manual'),
+     u'Pycroscopy Contributors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -397,6 +397,9 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
                        'matplotlib': ('https://matplotlib.org/', None),
                        'sklearn': ('http://scikit-learn.org/stable', None),
                        'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
+                       'cv2': ('http://docs.opencv.org/2.4/', None),
+                       'h5py': ('http://docs.h5py.org/en/latest/', None),
+                       'pyUSID': ('https://pycroscopy.github.io/pyUSID/api.html', None),
                        }
 
 #
@@ -404,11 +407,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
 # -------------------------------------------------
 from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder #Can't use until next release of sphinx-gallery
 # Sphinx-gallery configuration
-sphinx_gallery_conf = dict(examples_dirs=['../examples',
-                                          '../examples/dev_tutorials',
-                                          # '../examples/publications',
-                                          '../examples/user_tutorials'],
-                           gallery_dirs=['auto_examples', 'auto_tutorials', 'auto_publications'],
+sphinx_gallery_conf = dict(examples_dirs=['../examples'],
+                           gallery_dirs=['auto_examples'],
                            within_subsection_order=ExampleTitleSortKey,
                            reference_url=dict(pycroscopy=None,
                                               matplotlib='https://matplotlib.org',

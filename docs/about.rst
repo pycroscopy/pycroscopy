@@ -1,105 +1,104 @@
-==========
-Pycroscopy
-==========
+Pycroscopy Package
+==================
 
-**Scientific analysis of nanoscale materials imaging data**
+**Python Package for scientific analysis of nanoscience data**
 
-What?
---------------------
-pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy. pycroscopy uses a data-centric model wherein the raw data collected from the microscope, results from analysis and processing routines are all written to standardized hierarchical data format (HDF5) files for traceability, reproducibility, and provenance.
+.. attention::
 
-With  pycroscopy we aim to:
-	1. Serve as a hub for collaboration across scientific domains (microscopists, material scientists, biologists...)
-	2. provide a community-developed, open standard for data formatting 
-	3. provide a framework for developing data analysis routines 
-	4. significantly lower the barrier to advanced data analysis procedures by simplifying I/O, processing, visualization, etc.
+   Pycroscopy is undergoing a major reorganization and change to the scope and nature of the package.
 
-To learn more about the motivation, general structure, and philosophy of pycroscopy, please read this `short introduction <https://github.com/pycroscopy/pycroscopy/blob/master/docs/pycroscopy_2017_07_11.pdf>`_.
+.. note::
+   **Weekly Hackathons**
 
-Who?
------------
-This project begun largely as an effort by scientists and engineers at the **C**\enter for **N**\anophase
-**M**\aterials **S**\ciences (`CNMS <https://www.ornl.gov/facility/cnms>`_) to implement a python library
-that can support the I/O, processing, and analysis of the gargantuan stream of images that their microscopes
-generate (thanks to the large CNMS users community!).
+   We run weekly hackathons to develop the pycroscopy ecosystem of python packages.
+   Hackathons are held every Friday 3-5PM USA Eastern time.
+   The requirements for participation are: knowledge of python, git,
+   and the basic structure and philosophy of the pycroscopy ecosystem (available through documentation).
+   If you would like to participate, please email us at vasudevanrk *at* ornl.gov
 
-By sharing our methodology and code for analyzing materials imaging we hope that it will benefit the wider
-community of materials science/physics. We also hope, quite ardently, that other materials scientists would
-follow suit.
+Reimagined Package
+~~~~~~~~~~~~~~~~~~
 
-**The (core) pycroscopy team:**
+.. attention::
 
-* `@ssomnath <https://github.com/ssomnath>`_ (Suhas Somnath), 
-* `@CompPhysChris <https://github.com/CompPhysChris>`_ (Chris R. Smith), 
-* `@nlaanait <https://github.com/nlaanait>`_ (Numan Laanait), 
-* `@stephenjesse <https://github.com/stephenjesse>`_ (Stephen Jesse) 
-* and many more...
+   This version of the pycroscopy python package is under development and is not
+   yet available to download or use.
 
-Why?
----------------
-There is that little thing called open science...
+* Code in this package is meant to be useful for multiple scientific domains or applications.
+* See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
+* The upcoming version of pycroscopy is being thoroughly restructured and will be substantially different to current or prior versions.
+  Differences between the upcoming and existing legacy versions are largely centered in how data is handled:
 
-As we see it, there are a few  opportunities in microscopy / imaging and materials science:
+  * The reimagined pycroscopy package will **not** deal with data files.
 
-**1. Growing data sizes**
-  * Cannot use desktop computers for analysis
-  * *Need: High performance computing, storage resources and compatible, scalable file structures*
+    * `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_
+      provides ``Readers`` to extract data and metadata from scientific data files into python objects in memory.
+      This is unlike ``Translators`` that were part of pycroscopy that wrote the extracted data into
+      `USID – Universal Spectroscopy and Imaging and Data <pycroscopy.github.io/usid/about.html>`_
+      formatted HDF5 files.
+    * Input and output data would be exchanged in the form of ``sidpy.Dataset`` objects
+      rather than HDF5 Datasets in a file
+    * Users interested in saving results of analyses in ``pycroscopy`` are encouraged to use
+      their choice of `pyNSID <https://pycroscopy.github.io/pyNSID/index.html>`_
+      or `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ to write their data to files.
+  * pycroscopy will not force the use of specific computational backends like ``joblib``, ``mpi4py``, ``dask``, etc.
 
-**2. Increasing data complexity**
-  * Sophisticated imaging and spectroscopy modes resulting in 5,6,7... dimensional data
-  * *Need: Robust software and generalized data formatting*
+* The upcoming version of pycroscopy will be `organized <https://github.com/pycroscopy/pycroscopy/issues/245>`_ as follows:
 
-**3. Multiple file formats**
-  * Different formats from each instrument. Proprietary in most cases
-  * Incompatible for correlation
-  * *Need: Open, instrument independent data format*
+  * ``learn`` - machine and deep learning tools
+  * ``stats`` - statistics tools
+  * ``image`` - image analysis and processing tools
+  * ``signal`` - signal processing and analysis tools
+  * ``corr`` - tools to correlate datasets from multiple sources (images with spectra, simulation with experiment, experiments with machine learning, etc.)
+  * ``viz`` - visualization tools and dashboards
 
-**4. Disjoint communities**
-  * Similar analysis routines written by each community (SPM, STEM, TOF SIMs, XRD...) *independently*!
-  * *Need: Centralized repository, instrument agonistic analysis routines that bring communities together*
+* The source code is available under the `phoenix <https://github.com/pycroscopy/pycroscopy/tree/phoenix>`_ branch.
 
-**5. Expensive analysis software**
-  * Software supplied with instruments often insufficient / incapable of custom analysis routines
-  * Commercial software (Eg: Matlab, Origin..) are often prohibitively expensive.
-  * *Need: Free, powerful, open souce, user-friendly software*
+Legacy Package
+~~~~~~~~~~~~~~
 
-How?
------------------
-* pycroscopy uses an **instrument agnostic data structure** that facilitates the storage of data, regardless
-  of dimensionality (conventional 2D images to 9D multispectral SPM datasets) or instrument of origin (AFMs,
-  STMs, STEMs, TOF SIMS, and many more). 
-* This general defenition of data allows us to write a single and
-  generalized version of analysis and processing functions that can be applied to any kind of data.
-* The data is stored in `heirarchical
-  data format (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_
-  files which:
+.. attention::
 
-  * Allow easy and open acceess to data from any programming language.
-  * Accomodate datasets ranging from kilobytes (kB) to petabytes (pB)
-  * Are readily compaible with supercomputers and support parallel I/O
-  * Allows storage of relevant parameters along with data for improved traceability and reproducability of
-    analysis
-* Scientific workflows are developed and disseminated through `jupyter notebooks <http://jupyter.org/>`_
-  that are interactive and portable web applications containing, text, images, code / scripts, and text-based
-  and graphical results
-* Once a user converts their microscope's data format into a HDF5 format, by simply extending some of the
-  classes in \`io\`, the user gains access to the rest of the utilities present in `pycroscopy.\*`.
+   `V 0.60.7 <https://pypi.org/project/pyCroscopy/>`_ is the last version of
+   the legacy iteration of pycroscopy available through pip and conda.
 
-Package Structure
------------------
-The package structure is simple, with 4 main modules:
-   1. **io**: Reading and writing to HDF5 files + translating data from custom & proprietary microscope formats to HDF5.
-   2. **processing**: multivariate statistics, machine Learning, and signal filtering.
-   3. **analysis**: model-dependent analysis of information.
-   4. **viz**: Plotting functions and interactive jupyter widgets to visualize multidimenional data
-   
-Acknowledgements
-----------------
-Besides the packages used in pycroscopy, we would like to thank the developers of the following software
-packages:
+For those interested in the older version, please visit the legacy branch, which will not be amended from hereon. The new version is under development in the 'phoenix' branch, which will be shifted to master in due course.
 
-+ `Python <https://www.python.org>`_
-+ `Anaconda Python <https://www.continuum.io/anaconda-overview>`_
-+ `jupyter <http://jupyter.org/>`_
-+ `PyCharm <https://www.jetbrains.com/pycharm/>`_
-+ `GitKraken <https://www.gitkraken.com/>`_
+* The pycroscopy package has so far focused on providing standardized solutions for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
+* The legacy iteration of pycroscopy used a data and file-centric approach based on the
+  `USID – Universal Spectroscopy and Imaging and Data <pycroscopy.github.io/usid/about.html>`_ model
+  wherein the raw data collected from the microscope, results from analysis and processing routines are all written to
+  standardized hierarchical data format (HDF5) files for traceability, reproducibility, and provenance.
+
+  * pycroscopy therefore used `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_
+    which provides tools to read, write, visualize, and process USID data stored in HDF5 files.
+* The following provides an overview of the existing organization of the pycroscopy
+  package and how these capabilities have been / will be made available in the reimagined pycroscopy:
+
+  * ``analysis``
+
+    * Atom finding functions - will be made available under the ``image`` subpackage of the reimagined pycroscopy
+    * Band Excitation and General-mode specific functional fitting that have been moved to `BGlib <https://pycroscopy.github.io/BGlib/index.html>`_
+  * ``processing``
+
+    * Unsupervised machine learning wrappers - ``Cluster``, ``Decomposition``, ``SVD`` - these will be available via the ``learn`` subpackage of the reimagined pycroscopy.
+    * ``fft``, ``SignalFilter`` will be available via the ``signal`` subpackage of the reimagined pycroscopy
+    * ``histogram``, ``image_processing`` will be made available as well.
+  * ``io``
+
+    * Deprecated utility classes like ``HDFWriter``, ``VirtualDataGroup`` and ``VirtualDataset``
+    * ``translators`` from proprietary data formats to USID formatted HDF5 files
+
+      * Band Excitation and General-mode specific translators have been moved to `BGlib <https://github.com/pycroscopy/BGlib/tree/master/BGlib/be/translators>`_.
+      * Others have now been refactored to ``Readers`` in `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_
+  * ``viz``
+
+    * Band Excitation visualizers - have been moved to ``BGLib``
+    * Clustering visualization - will be moved to ``viz`` in the new pycroscopy
+    * Image cleaning visualization - will be moved to ``viz`` in the new pycroscopy
+
+* `V 0.60.7 <https://pypi.org/project/pyCroscopy/>`_ is the last version of the
+  legacy iteration of pycroscopy available through pip and conda.
+  All future versions will be on the reimagined package described above.
+* The source code for the legacy iteration always be available on the
+  `legacy <https://github.com/pycroscopy/pycroscopy/tree/legacy>`_ branch.

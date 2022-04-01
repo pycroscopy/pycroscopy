@@ -1,36 +1,41 @@
 from codecs import open
 import os
 
-on_rtd = os.environ.get('READTHEDOCS') == 'True'
-
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(here, 'README.rst')) as f:
     long_description = f.read()
 
-if on_rtd:
-    requirements = ['psutil',
-                    'xlrd>=1.0.0']
-else:
-    requirements = ['numpy_groupies>=0.9.6',
-                    'pyqtgraph>=0.10',
-                    'h5py>=2.6.0',
-                    'igor',
-                    'matplotlib>=2.0.0',
-                    'scikit-learn>=0.17.1',
-                    'xlrd>=1.0.0',
-                    'joblib>=0.11',
-                    'psutil',
-                    'scikit-image>=0.12.3',
-                    'scipy>=0.17.1',
-                    'numpy>=1.11.0',
-                    'ipywidgets>=5.2.2',
-                    'ipython>=5.1.0']
+with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
+    __version__ = f.read().split("'")[1]
+
+# TODO: Move requirements to requirements.txt
+requirements = ['numpy>=1.13.0',
+                'scipy>=0.17.1',
+                'scikit-image>=0.12.3',
+                'scikit-learn>=0.17.1',
+                'matplotlib>=2.0.0',
+                'torch>=1.0.0',
+                'tensorly>=0.6.0',
+                'tqdm',
+                'psutil',
+                'six',
+                'pillow',
+                'joblib>=0.11.0',
+
+                'ipywidgets>=5.2.2',
+                'ipython>=5.1.0,<6;python_version<"3.3"',  # IPython 6.0+ does not support Python 2.6, 2.7, 3.0, 3.1, or 3.2
+                'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
+
+                'unittest2;python_version<"3.0"',
+                'sidpy>=0.0.6',
+                'pyUSID>=0.0.8',
+                ]
 
 setup(
     name='pycroscopy',
-    version='0.59.3',
+    version=__version__,
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
     classifiers=[
@@ -41,9 +46,10 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Cython',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering :: Chemistry',
         'Topic :: Scientific/Engineering :: Physics',
@@ -57,19 +63,22 @@ setup(
               'denoising', 'model', 'msa', 'quantification',
               'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
               'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
-    packages=find_packages(exclude='tests'),
+    packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     url='https://pycroscopy.github.io/pycroscopy/about.html',
     license='MIT',
     author='S. Somnath, C. R. Smith, N. Laanait',
     author_email='pycroscopy@gmail.com',
-
     install_requires=requirements,
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
-    test_suite='nose.collector',
-    tests_require='Nose',
-    dependency='',
-    dependency_links=[''],
+    test_suite='pytest',
+    extras_require={
+        'legacy_guis':  ['pyqt5;python_version>="3.5"',
+                         'pyqtgraph>=0.10']},
+    # dependency='',
+    # dependency_links=[''],
     include_package_data=True,
 
     # If there are data files included in your packages that need to be
