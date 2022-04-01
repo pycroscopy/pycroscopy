@@ -22,8 +22,6 @@ class Trainer:
         Testing data
     batch_size
         Batch size (Default: 32)
-    num_epochs
-        Number of training epochs (Default: 20)
     filename
         filename for saving trained weights
     kwargs
@@ -34,10 +32,10 @@ class Trainer:
 
     Initialize a trainer and train an autoencoder model for 30 epochs
 
-    >>> # Notice that the inputs and targets are identical in this case
-    >>> t = Trainer(model, images, images, num_epochs=30)
+    >>> # The inputs and targets are identical in this case
+    >>> t = Trainer(model, images, images)
     >>> # Train
-    >>> t.run()
+    >>> t.fit(num_epochs=30)
     """
     def __init__(self,
                  model: Type[torch.nn.Module],
@@ -46,7 +44,6 @@ class Trainer:
                  X_test: Optional[Union[torch.Tensor, np.ndarray]] = None,
                  y_test: Optional[Union[torch.Tensor, np.ndarray]] = None,
                  batch_size: int = 32,
-                 num_epochs: int = 20,
                  filename: str = 'model',
                  **kwargs: Union[int, float]
                  ) -> None:
@@ -64,7 +61,6 @@ class Trainer:
         (self.train_iterator,
          self.test_iterator) = init_dataloaders(
              X_train, y_train, X_test, y_test, batch_size)
-        self.num_epochs = num_epochs
         self.filename = filename
         self.train_losses = []
         self.test_losses = []
@@ -103,24 +99,22 @@ class Trainer:
         c, c_test = 0, 0
         losses, losses_test = 0, 0
         for feature, target in self.train_iterator:
-            b = feature.size(0)
             losses += self.train_step(feature, target)
-            c += b
+            c += 1
         self.train_losses.append(losses / c)
 
         if self.test_iterator is not None:
             for feature, target in self.test_iterator:
-                b = feature.size(0)
                 losses_test += self.test_step(feature, target)
-                c_test += b
+                c_test += 1
             self.test_losses.append(losses_test / c_test)
 
-    def run(self) -> None:
+    def fit(self, num_epochs: int = 20) -> None:
         """
         Wraps train and test steps. Print statistics after each epoch
         and saves trained weights at the end
         """
-        for e in range(self.num_epochs):
+        for e in range(num_epochs):
             self.step()
             self.print_statistics(e)
         self.save_weights()

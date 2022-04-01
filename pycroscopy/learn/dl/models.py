@@ -232,17 +232,36 @@ class AutoEncoder(nn.Module):
         x = self.decoder(x)
         return x
 
-    def encode(self, x: Union[torch.Tensor, np.ndarray]) -> np.ndarray:  # TODO: Add batch-by-batch encoding
+    def encode(self,
+               x: Union[torch.Tensor, np.ndarray],
+               **kwargs: int) -> np.ndarray:
         """
         Encodes new data
         """
-        x = self._2torch(x).to(self.device)
-        with torch.no_grad():
-            x = self.encoder(x)
-            x = self.features2latent(x)
-        return x.cpu().numpy()
+        def _encode(xi) -> torch.Tensor:
+            xi = self._2torch(xi).to(self.device)
+            with torch.no_grad():
+                xi = self.encoder(xi)
+                xi = self.features2latent(xi)
+            return xi.cpu()
 
-    def decode(self, x: Union[torch.Tensor, np.ndarray, List]) -> np.ndarray:  # TODO: Add batch-by-batch decoding
+        batch_size = kwargs.get("batch_size", 100)
+        num_batches = len(x) // batch_size
+        if num_batches == 0:
+            num_batches += 1
+        z_all = []
+        for i in range(num_batches):
+            xi = x[i*batch_size:(i+1)*batch_size]
+            z_i = _encode(xi)
+            z_all.append(z_i)
+        xi = x[(i+1)*batch_size:]
+        if len(xi) > 0:
+            z_i = _encode(xi)
+            z_all.append(z_i)
+
+        return torch.cat(z_all).numpy()
+
+    def decode(self, x: Union[torch.Tensor, np.ndarray, List]) -> np.ndarray:
         """
         Decodes latent coordinate(s) to data space
         """
@@ -269,6 +288,111 @@ class AutoEncoder(nn.Module):
                 decoded_grid.append(self.decode([xi, yi]))
         decoded_grid = np.concatenate(decoded_grid)
         return decoded_grid.reshape(-1, *self.input_dim[1:])
+
+    @classmethod
+    def _2torch(cls, x: Union[np.ndarray, List]) -> torch.Tensor:
+        if isinstance(x, np.ndarray):
+            x = torch.from_numpy(x).float()
+        elif isinstance(x, list):
+            x = tt(x).float()
+        x = x.view(1, -1) if x.ndim == 1 else x
+        return x
+
+
+class DenoisingAutoEncoder(nn.Module):
+    """
+    Fully convolutional convolutional denosing autoencoder
+
+    Parameters
+    ----------
+    n_dim
+        Dimensionality (1, 2 or 3)
+    layers_per_block
+        List with the number of layers for each block of the encoder.
+        The number of layers for the decoder is computed by reversing
+        this list (Default: [1, 2, 2]).
+    nfilters
+        Number of convolutional filters in the first convolutional block
+        of the encoder. The number of filters in each consecutive block
+        is computed as :math:`block_i = nfilters * (i+1)`. The number of
+        filters in the first layer of the decoder is equal to the number of
+        filters in the last layer of the encoder and the number of filters
+        in each consecutive block is computed as :math:`block_i = nfilters // (i+1)`
+        (Default: 32).
+    batchnorm
+        Add batch normalization to each layer (Default: True).
+    activation
+        Non-linear activation: "relu", "lrelu", "tanh", "softplus", or None.
+        (Default: "lrelu").
+    activation_out:
+        Applies sigmoid (output_channels=1) or softmax (output_channels>1)
+        activation to the final convolutional layer (Default: True).
+    upsampling_mode
+        Upsampling mode. Select between "bilinear" and "nearest"
+        (Default: bilinear for 2D, nearest for 1D and 3D).
+    """
+    def __init__(self,
+                 ndim: Tuple[int],
+                 input_channels: int = 1,
+                 layers_per_block: List[int] = [1, 2, 2],
+                 nfilters: int = 32,
+                 batchnorm: bool = True,
+                 activation: str = "lrelu",
+                 activation_out: bool = False,
+                 upsampling_mode: str = "bilinear"
+                 ) -> None:
+        """
+        Initializes encoder, decoder, and latent parts of the model
+        """
+        super(DenoisingAutoEncoder, self).__init__()
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        layers_per_block_e = layers_per_block
+        layers_per_block_d = layers_per_block[::-1]
+        encoder_channels_out = nfilters * len(layers_per_block)
+
+        self.encoder = FeatureExtractor(
+            ndim, input_channels, layers_per_block_e,
+            nfilters, batchnorm, activation, pool=True)
+        self.decoder = Upsampler(
+            ndim, encoder_channels_out, layers_per_block_d, input_channels,
+            batchnorm, activation, activation_out, upsampling_mode)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass
+        """
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
+
+    def predict(self,
+                x: Union[torch.Tensor, np.ndarray],
+                **kwargs: int) -> np.ndarray:
+        """
+        Predicts on new data
+        """
+        def _predict(xi) -> torch.Tensor:
+            xi = self._2torch(xi).to(self.device)
+            with torch.no_grad():
+                xi = self.encoder(xi)
+                xi = self.decoder(xi)
+            return xi.cpu()
+
+        batch_size = kwargs.get("batch_size", 100)
+        num_batches = len(x) // batch_size
+        if num_batches == 0:
+            num_batches += 1
+        z_all = []
+        for i in range(num_batches):
+            xi = x[i*batch_size:(i+1)*batch_size]
+            z_i = _predict(xi)
+            z_all.append(z_i)
+        xi = x[(i+1)*batch_size:]
+        if len(xi) > 0:
+            z_i = _predict(xi)
+            z_all.append(z_i)
+
+        return torch.cat(z_all).numpy()
 
     @classmethod
     def _2torch(cls, x: Union[np.ndarray, List]) -> torch.Tensor:

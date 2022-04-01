@@ -17,7 +17,8 @@ requirements = ['numpy>=1.13.0',
                 'scikit-learn>=0.17.1',
                 'matplotlib>=2.0.0',
                 'torch>=1.0.0',
-
+                'tensorly>=0.6.0',
+                'tqdm',
                 'psutil',
                 'six',
                 'pillow',
@@ -28,10 +29,8 @@ requirements = ['numpy>=1.13.0',
                 'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
 
                 'unittest2;python_version<"3.0"',
-
-                'sidpy>=0.0.1',
+                'sidpy>=0.0.6',
                 'pyUSID>=0.0.8',
-
                 ]
 
 setup(
