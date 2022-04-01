@@ -7,6 +7,7 @@ from scipy import fftpack
 from scipy.signal import hanning, blackman
 from skimage.transform import rescale
 
+
 class ImageWindowing:
     """
     This class will generate windows from sidpy dataset objects. At present only 2D windowing is allowed.
