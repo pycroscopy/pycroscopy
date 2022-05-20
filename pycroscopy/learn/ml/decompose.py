@@ -5,6 +5,7 @@ import numpy as np
 from tensorly.decomposition import non_negative_parafac, tucker
 import sidpy
 import matplotlib.pyplot as plt
+import warnings
 
 
 class TensorFactor():
