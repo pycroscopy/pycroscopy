@@ -44,7 +44,7 @@ class TensorFactor():
                 "Currently available decomposition types are {}".format(self.allowed_methods))
 
         self.decomposition_type = decomposition_type
-        self.data_3d = self._return_3d_dataset(self, self.data, spec_dims)
+        self.data_3d = self._return_3d_dataset(self.data, spec_dims)
         self.results_computed = False
         self.rank = rank
 
@@ -67,10 +67,10 @@ class TensorFactor():
             dim_order = [[], [], []]
 
             for dim, axis in data._axes.items():
-                if axis.dimension_type == sidpy.dimension.DimensionType.SPATIAL:
-                    spa_dims.extend(dim)
-                elif axis.dimension_type == sidpy.dimension.DimensionType.SPECTRAL:
-                    spec_dims.extend(dim)
+                if axis.dimension_type == sidpy.DimensionType.SPATIAL:
+                    spa_dims.extend([dim])
+                elif axis.dimension_type == sidpy.DimensionType.SPECTRAL:
+                    spec_dims.extend([dim])
                 else:
                     raise NotImplementedError('Dimension {} is not one of SPATIAL or SPECTRAl'.format(dim))
 
@@ -111,10 +111,10 @@ class TensorFactor():
         """
 
         if self.decomposition_type == "cp":
-            weights, factors = non_negative_parafac(self.data_3d, self.rank, **kwargs)
+            weights_and_factors = non_negative_parafac(np.array(self.data_3d[:]), self.rank, **kwargs)
         elif self.decomposition_type == "tucker":
-            weights, factors = tucker(self.data_3d, self.rank, **kwargs)
-        return weights, factors
+            weights_and_factors = tucker(np.array(self.data_3d[:]), self.rank, **kwargs)
+        return weights_and_factors
 
     def plot_results(self) -> plt.figure:
         """Plots the results"""
@@ -122,42 +122,3 @@ class TensorFactor():
             raise RuntimeError("No results are available. Call 'do_fit()' method first")
         fig, axes = plt.subplots()
         return fig
-
-
-def tensor_decomposition(data: Union[np.ndarray, dask.array.Array],
-                         rank: Union[int, List[int]],
-                         decomposition_type: str = "cp",
-                         flat_from: Optional[int] = None,
-                         **kwargs) -> Tuple[np.ndarray, List[np.ndarray]]:
-    """
-    Tensor decomposition
-
-    Parameters
-    ----------
-    data
-        Multidimensional array/tensor
-    rank
-        Number of components
-    decomposition type
-        PARAFAC ('cp') or Tucker ('tucker'). Default: 'cp'
-    flat_from
-        flattens image dimensions starting from the specified integer
-    **kwargs
-        additional parameters passed to PARAFAC or tucker decomposition methods
-
-    Returns
-    -------
-    weights and list of factors from the decomposition
-    """
-    if decomposition_type not in ["cp", "tucker"]:
-        raise NotImplementedError(
-            "Currently available decomposition types are 'ce' and 'tucker'")
-    if flat_from is not None:
-        reshape_ = np.product(data.shape[flat_from:])
-        keep_dim = data.shape[:flat_from]
-        data = data.reshape(*keep_dim, reshape_)
-    if decomposition_type == "cp":
-        weights, factors = non_negative_parafac(data, rank, **kwargs)
-    else:
-        weights, factors = tucker(data, rank, **kwargs)
-    return weights, factors
