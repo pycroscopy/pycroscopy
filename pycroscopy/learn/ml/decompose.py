@@ -38,7 +38,7 @@ class TensorFactor():
         """
 
         self.data = data
-        self.allowed_methods = ['cp', 'parfac']  # Might want to add others...
+        self.allowed_methods = ['cp', 'tucker']  # Might want to add others...
         if decomposition_type not in self.allowed_methods:
             raise NotImplementedError(
                 "Currently available decomposition types are {}".format(self.allowed_methods))
