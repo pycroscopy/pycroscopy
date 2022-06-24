@@ -205,9 +205,8 @@ def rigid_registration(dataset):
 
     relative_drift = [[0., 0.]]
 
-
     for i in trange(nimages):
-        selection[frame_dim[0]]=slice(i,i+1)
+        selection[frame_dim[0]] = slice(i, i+1)
         moving = np.array(dataset[tuple(selection)].squeeze())
         fft_moving = np.fft.fft2(moving)
         if skimage.__version__[:4] == '0.16':
@@ -291,7 +290,7 @@ def rig_reg_drift(dset, rel_drift):
     drift = drift - center_drift
     # Shift images
     for i in range(rig_reg.shape[0]):
-        selection[frame_dim[0]]=slice(i,i+1)
+        selection[frame_dim[0]] = slice(i, i+1)
         # Now we shift
         rig_reg[i, :, :] = ndimage.shift(dset[tuple(selection)].squeeze(), [drift[i, 0], drift[i, 1]], order=3)
     return rig_reg, drift
@@ -307,7 +306,8 @@ def crop_image_stack(rig_reg, drift):
     rig_reg: numpy array (N,x,y)
     drift: list (2,B)
 
-    Returns:
+    Returns
+    -------
     numpy array
     """
 
