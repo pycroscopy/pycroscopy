@@ -48,6 +48,7 @@ class TensorFactor():
         self.dim_order = self.data_3d.metadata['fold_attr']['dim_order']
         self.results_computed = False
         self.rank = rank
+        self.weights, self.factors = None, None  # Datasets to be returned
 
     def _return_3d_dataset(self, data, spec_dims):
         # here goes the code for flattening the dataset into a 3D block
@@ -118,7 +119,13 @@ class TensorFactor():
 
         # Let's create the sidpy datasets from these numpy arrays and lists
         weights_dset = sidpy.Dataset.from_array(weights, title='weights')
-        # This correponds to the spa_dims*rank dset
+
+        rank_dim = sidpy.Dimension(np.arange(self.rank),
+                                   name='components/rank',
+                                   units='generic', quantity='generic',
+                                   dimension_type='spectral')
+
+        # This corresponds to the spa_dims*rank dset
 
         fac_dset0 = self.data_3d.like_data(factors[0], title='factors_0',
                                            check_dims=False)
@@ -126,10 +133,7 @@ class TensorFactor():
         fac_dset0_axes = {}
         for i, dim in enumerate(self.dim_order[0]):
             fac_dset0_axes[i] = self.data_3d.metadata['fold_attr']['_axes'][dim].copy()
-        fac_dset0_axes[len(self.dim_order[0])] = sidpy.Dimension(np.arange(self.rank),
-                                                                 name='weights',
-                                                                 units='generic', quantity='generic',
-                                                                 dimension_type='spectral')
+        fac_dset0_axes[len(self.dim_order[0])] = rank_dim
         fac_dset0.metadata['fold_attr'] = dict(dim_order_flattened=list(np.arange(len(self.dim_order[0]) + 1)),
                                                shape_transposed=self.data_3d.metadata['fold_attr'][
                                                                     'shape_transposed'][:len(self.dim_order[0])]
@@ -141,13 +145,12 @@ class TensorFactor():
         fac_dset1_axes = {}
         for i, dim in enumerate(self.dim_order[1]):
             fac_dset1_axes[i] = self.data_3d.metadata['fold_attr']['_axes'][dim].copy()
-        fac_dset1_axes[len(self.dim_order[1])] = sidpy.Dimension(np.arange(self.rank),
-                                                                 name='weights',
-                                                                 units='generic', quantity='generic',
-                                                                 dimension_type='spectral')
+        fac_dset1_axes[len(self.dim_order[1])] = rank_dim
         fac_dset1.metadata['fold_attr'] = dict(dim_order_flattened=list(np.arange(len(self.dim_order[1]) + 1)),
                                                shape_transposed=self.data_3d.metadata['fold_attr'][
-                                                                    'shape_transposed'][len(self.dim_order[0]):len(self.dim_order[0])+len(self.dim_order[1])]
+                                                                    'shape_transposed'][
+                                                                len(self.dim_order[0]):len(self.dim_order[0]) + len(
+                                                                    self.dim_order[1])]
                                                                 + [self.rank], _axes=fac_dset1_axes)
 
         fac_dset2 = self.data_3d.like_data(factors[2], title='factors_2',
@@ -156,23 +159,18 @@ class TensorFactor():
         fac_dset2_axes = {}
         for i, dim in enumerate(self.dim_order[2]):
             fac_dset2_axes[i] = self.data_3d.metadata['fold_attr']['_axes'][dim].copy()
-        fac_dset2_axes[len(self.dim_order[2])] = sidpy.Dimension(np.arange(self.rank),
-                                                                 name='weights',
-                                                                 units='generic', quantity='generic',
-                                                                 dimension_type='spectral')
+        fac_dset2_axes[len(self.dim_order[2])] = rank_dim
         fac_dset2.metadata['fold_attr'] = dict(dim_order_flattened=list(np.arange(len(self.dim_order[2]) + 1)),
                                                shape_transposed=self.data_3d.metadata['fold_attr'][
                                                                     'shape_transposed'][-len(self.dim_order[2]):]
                                                                 + [self.rank], _axes=fac_dset2_axes)
 
-        return weights_dset, [fac_dset0.unfold(), fac_dset1.unfold(), fac_dset2.unfold()]
-
-    def plot_results(self) -> plt.figure:
-        """Plots the results"""
-        if self.results_computed is False:
-            raise RuntimeError("No results are available. Call 'do_fit()' method first")
-        fig, axes = plt.subplots()
-        return fig
+        self.weights = weights_dset
+        self.factors = [fac_dset0.unfold(), fac_dset1.unfold(), fac_dset2.unfold()]
+        self.factors[0].data_type = sidpy.DataType.IMAGE_STACK
+        self.factors[1].data_type = sidpy.DataType.LINE_PLOT_FAMILY
+        self.factors[2].data_type = sidpy.DataType.LINE_PLOT_FAMILY
+        return self.factors, self.weights
 
 
 def tensor_decomposition(data: Union[np.ndarray, dask.array.Array],
