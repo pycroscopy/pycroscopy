@@ -48,15 +48,18 @@ def complete_registration(main_dataset, storage_channel=None):
     print('Rigid_Registration')
 
     rigid_registered_dataset = rigid_registration(main_dataset)
-    #if storage_channel is None:
-    #    storage_channel = main_dataset.h5_dataset.parent.parent
 
-    # registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
+    if main_dataset.h5_dataset is not None:
+        if storage_channel is None:
+            storage_channel = main_dataset.h5_dataset.parent.parent
+
+        registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
 
     print('Non-Rigid_Registration')
 
     non_rigid_registered = demon_registration(rigid_registered_dataset)
-    # registration_channel = ft.log_results(storage_channel, non_rigid_registered)
+    if main_dataset.h5_dataset is not None:
+        registration_channel = ft.log_results(storage_channel, non_rigid_registered)
 
     return non_rigid_registered, rigid_registered_dataset
 
@@ -91,7 +94,8 @@ def demon_registration(dataset, verbose=False):
         raise TypeError('We need a sidpy.Dataset')
     if dataset.data_type.name != 'IMAGE_STACK':
         raise TypeError('Registration makes only sense for an image stack')
-
+    if dataset._axes[0].dimension_type.name != 'TEMPORAL':
+        raise TypeError('Need images stacked on axis 0')
     dem_reg = np.zeros(dataset.shape)
     nimages = dataset.shape[0]
     if verbose:
@@ -129,7 +133,20 @@ def demon_registration(dataset, verbose=False):
     print(':-)')
     print('You have successfully completed Diffeomorphic Demons Registration')
 
-    demon_registered = dataset.like_data(dem_reg)
+    demon_registered = sidpy.Dataset.from_array(dem_reg)
+
+    delattr(demon_registered, 'a')
+    delattr(demon_registered, 'b')
+    delattr(demon_registered, 'c')
+    axis = dataset._axes[0]
+    axis.name = 'frame'
+    demon_registered.set_dimension(0, axis)
+    axis = dataset._axes[1]
+    axis.name = 'x'
+    demon_registered.set_dimension(1, axis)
+    axis = dataset._axes[2]
+    axis.name = 'y'
+    demon_registered.set_dimension(2, axis)
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
 
@@ -178,19 +195,19 @@ def rigid_registration(dataset):
         else:
             frame_dim.append(i)
             selection.append(slice(0, 1))
-        
+
     if len(spatial_dim) != 2:
         print('need two spatial dimensions')
     if len(frame_dim) != 1:
         print('need one frame dimensions')
-    
+
     nopix = dataset.shape[spatial_dim[0]]
     nopiy = dataset.shape[spatial_dim[1]]
     nimages = dataset.shape[frame_dim[0]]
 
     print('Stack contains ', nimages, ' images, each with', nopix, ' pixels in x-direction and ', nopiy,
           ' pixels in y-direction')
-    
+
     fixed = np.array(dataset[tuple(selection)].squeeze())
     fft_fixed = np.fft.fft2(fixed)
 
@@ -219,9 +236,12 @@ def rigid_registration(dataset):
     rigid_registered.source = dataset.title
     rigid_registered.metadata = {'analysis': 'rigid sub-pixel registration', 'drift': drift,
                                  'input_crop': input_crop, 'input_shape': dataset.shape[1:]}
-    del rigid_registered.z                             
-    del rigid_registered.x                             
-    del rigid_registered.y
+    if hasattr(rigid_registered, 'z'):
+        del rigid_registered.z
+    if hasattr(rigid_registered, 'x'):
+        del rigid_registered.x
+    if hasattr(rigid_registered, 'y'):
+        del rigid_registered.y
     rigid_registered._axes = {}
     rigid_registered.set_dimension(0, dataset._axes[frame_dim[0]])
     rigid_registered.set_dimension(1, dataset._axes[spatial_dim[0]])
@@ -261,14 +281,14 @@ def rig_reg_drift(dset, rel_drift):
         else:
             frame_dim.append(i)
             selection.append(slice(0, 1))
-        
+
     if len(spatial_dim) != 2:
         print('need two spatial dimensions')
     if len(frame_dim) != 1:
         print('need one frame dimensions')
 
     rig_reg = np.zeros([dset.shape[frame_dim[0]], dset.shape[spatial_dim[0]], dset.shape[spatial_dim[1]]])
-    
+
     # absolute drift
     drift = np.array(rel_drift).copy()
 
