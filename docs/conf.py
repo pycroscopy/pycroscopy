@@ -391,17 +391,15 @@ epub_exclude_files = ['search.html']
 #epub_use_index = True
 
 # Example configuration for intersphinx: refer to the Python standard library.
+"""
 intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.version_info), None),
                        'numpy': ('https://docs.scipy.org/doc/numpy/', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
                        'matplotlib': ('https://matplotlib.org/', None),
                        'sklearn': ('http://scikit-learn.org/stable', None),
                        'sphinx': ('http://www.sphinx-doc.org/en/stable', None),
-                       'cv2': ('http://docs.opencv.org/2.4/', None),
-                       'h5py': ('http://docs.h5py.org/en/latest/', None),
-                       'pyUSID': ('https://pycroscopy.github.io/pyUSID/api.html', None),
                        }
-
+"""
 #
 
 # -------------------------------------------------
@@ -410,12 +408,6 @@ from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder #Can't use
 sphinx_gallery_conf = dict(examples_dirs=['../examples'],
                            gallery_dirs=['auto_examples'],
                            within_subsection_order=ExampleTitleSortKey,
-                           reference_url=dict(pycroscopy=None,
-                                              matplotlib='https://matplotlib.org',
-                                              numpy='https://docs.scipy.org/doc/numpy',
-                                              scipy='https://docs.scipy.org/doc/scipy/reference',
-                                              h5py='http://docs.h5py.org/en/latest/'),
-                           # directory where function granular galleries are stored
                            backreferences_dir='_autosummary/backreferences',
                            # Modules for which function level galleries are created.
                            doc_module='pycroscopy')

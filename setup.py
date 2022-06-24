@@ -19,18 +19,9 @@ requirements = ['numpy>=1.13.0',
                 'torch>=1.0.0',
                 'tensorly>=0.6.0',
                 'tqdm',
-                'psutil',
-                'six',
-                'pillow',
-                'joblib>=0.11.0',
-
                 'ipywidgets>=5.2.2',
-                'ipython>=5.1.0,<6;python_version<"3.3"',  # IPython 6.0+ does not support Python 2.6, 2.7, 3.0, 3.1, or 3.2
-                'ipython>=6.0;python_version>="3.3"',  # Beginning with IPython 6.0, Python 3.3 and above is required.
-
-                'unittest2;python_version<"3.0"',
+                'ipython',
                 'sidpy>=0.0.6',
-                'pyUSID>=0.0.8',
                 ]
 
 setup(
@@ -55,18 +46,16 @@ setup(
         'Topic :: Scientific/Engineering :: Physics',
         'Topic :: Scientific/Engineering :: Information Analysis'],
     keywords=['EELS', 'STEM', 'TEM', 'XRD', 'AFM', 'SPM', 'STS', 'band excitation', 'BE', 'BEPS', 'Raman', 'NanoIR',
-              'ptychography', 'g-mode', 'general mode', 'electron microscopy', ' scanning probe', ' x-rays', 'probe',
+              'electron microscopy', ' scanning probe', ' x-rays', 
               'atomic force microscopy', 'SIMS', 'energy', 'spectroscopy', 'imaging', 'microscopy', 'spectra'
               'characterization', 'spectrogram', 'hyperspectral', 'multidimensional', 'data format', 'universal',
-              'clustering', 'decomposition', 'curve fitting', 'data analysis PCA', ' SVD', ' NMF', ' DBSCAN', ' kMeans',
+              'clustering', 'decomposition', 'curve fitting', 'data analysis', 'PCA', ' SVD', ' NMF', ' DBSCAN', ' kMeans',
               'machine learning', 'bayesian inference', 'fft filtering', 'signal processing', 'image cleaning',
-              'denoising', 'model', 'msa', 'quantification',
-              'png', 'tiff', 'hdf5', 'igor', 'ibw', 'dm3', 'oneview', 'KPFM', 'FORC', 'ndata',
-              'Asylum', 'MFP3D', 'Cypher', 'Omicron', 'Nion', 'Nanonis', 'FEI'],
+              'denoising', 'model', 'msa', 'quantification'],
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     url='https://pycroscopy.github.io/pycroscopy/about.html',
     license='MIT',
-    author='S. Somnath, C. R. Smith, N. Laanait',
+    author='Pycroscopy contributors',
     author_email='pycroscopy@gmail.com',
     install_requires=requirements,
     setup_requires=['pytest-runner'],
@@ -74,9 +63,7 @@ setup(
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
     # package_data={'sample':['dataset_1.dat']}
     test_suite='pytest',
-    extras_require={
-        'legacy_guis':  ['pyqt5;python_version>="3.5"',
-                         'pyqtgraph>=0.10']},
+    extras_require={},
     # dependency='',
     # dependency_links=[''],
     include_package_data=True,

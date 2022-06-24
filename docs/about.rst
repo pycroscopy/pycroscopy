@@ -3,10 +3,6 @@ Pycroscopy Package
 
 **Python Package for scientific analysis of nanoscience data**
 
-.. attention::
-
-   Pycroscopy is undergoing a major reorganization and change to the scope and nature of the package.
-
 .. note::
    **Weekly Hackathons**
 
@@ -19,31 +15,26 @@ Pycroscopy Package
 Reimagined Package
 ~~~~~~~~~~~~~~~~~~
 
-.. attention::
-
-   This version of the pycroscopy python package is under development and is not
-   yet available to download or use.
-
 * Code in this package is meant to be useful for multiple scientific domains or applications.
 * See `scientific research enabled by pycroscopy <https://pycroscopy.github.io/pycroscopy/papers_conferences.html>`_.
-* The upcoming version of pycroscopy is being thoroughly restructured and will be substantially different to current or prior versions.
-  Differences between the upcoming and existing legacy versions are largely centered in how data is handled:
+* The latest version of pycroscopy is thoroughly restructured and is substantially different to prior versions.
+  Differences between the current and legacy versions are largely centered in how data is handled:
 
-  * The reimagined pycroscopy package will **not** deal with data files.
+  * The reimagined pycroscopy package does **not** deal with data files.
 
     * `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_
       provides ``Readers`` to extract data and metadata from scientific data files into python objects in memory.
       This is unlike ``Translators`` that were part of pycroscopy that wrote the extracted data into
       `USID – Universal Spectroscopy and Imaging and Data <pycroscopy.github.io/usid/about.html>`_
       formatted HDF5 files.
-    * Input and output data would be exchanged in the form of ``sidpy.Dataset`` objects
+    * Input and output data are exchanged in the form of ``sidpy.Dataset`` objects
       rather than HDF5 Datasets in a file
     * Users interested in saving results of analyses in ``pycroscopy`` are encouraged to use
       their choice of `pyNSID <https://pycroscopy.github.io/pyNSID/index.html>`_
       or `pyUSID <https://pycroscopy.github.io/pyUSID/about.html>`_ to write their data to files.
-  * pycroscopy will not force the use of specific computational backends like ``joblib``, ``mpi4py``, ``dask``, etc.
+    * pycroscopy will not force the use of specific computational backends like ``joblib``, ``mpi4py``, ``dask``, etc.
 
-* The upcoming version of pycroscopy will be `organized <https://github.com/pycroscopy/pycroscopy/issues/245>`_ as follows:
+* The latest version of pycroscopy is organized as follows:
 
   * ``learn`` - machine and deep learning tools
   * ``stats`` - statistics tools
@@ -51,8 +42,6 @@ Reimagined Package
   * ``signal`` - signal processing and analysis tools
   * ``corr`` - tools to correlate datasets from multiple sources (images with spectra, simulation with experiment, experiments with machine learning, etc.)
   * ``viz`` - visualization tools and dashboards
-
-* The source code is available under the `phoenix <https://github.com/pycroscopy/pycroscopy/tree/phoenix>`_ branch.
 
 Legacy Package
 ~~~~~~~~~~~~~~
@@ -62,7 +51,9 @@ Legacy Package
    `V 0.60.7 <https://pypi.org/project/pyCroscopy/>`_ is the last version of
    the legacy iteration of pycroscopy available through pip and conda.
 
-For those interested in the older version, please visit the legacy branch, which will not be amended from hereon. The new version is under development in the 'phoenix' branch, which will be shifted to master in due course.
+For those interested in the source code for this older version, please visit the 
+`legacy <https://github.com/pycroscopy/pycroscopy/tree/legacy>`_ 
+branch, which will not be amended from hereon. 
 
 * The pycroscopy package has so far focused on providing standardized solutions for processing, analyzing, and visualizing multidimensional imaging and spectroscopy data.
 * The legacy iteration of pycroscopy used a data and file-centric approach based on the
@@ -96,9 +87,3 @@ For those interested in the older version, please visit the legacy branch, which
     * Band Excitation visualizers - have been moved to ``BGLib``
     * Clustering visualization - will be moved to ``viz`` in the new pycroscopy
     * Image cleaning visualization - will be moved to ``viz`` in the new pycroscopy
-
-* `V 0.60.7 <https://pypi.org/project/pyCroscopy/>`_ is the last version of the
-  legacy iteration of pycroscopy available through pip and conda.
-  All future versions will be on the reimagined package described above.
-* The source code for the legacy iteration always be available on the
-  `legacy <https://github.com/pycroscopy/pycroscopy/tree/legacy>`_ branch.

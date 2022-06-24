@@ -20,6 +20,6 @@ Submodules
 
 from .dl import nnblocks, models, datautils
 from .dl.trainer import Trainer
-from .ml import tensor_decomposition
+from .ml import TensorFactor
 
-__all__ = ['nnblocks', 'models', 'Trainer', 'datautils', 'tensor_decomposition']
+__all__ = ['nnblocks', 'models', 'Trainer', 'datautils', 'TensorFactor']
