@@ -5,23 +5,42 @@
 import sidpy
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.decomposition import NMF
+from sklearn.decomposition import NMF, PCA, FastICA, KernelPCA
+from pysptools.eea import nfindr
 
 
-class MatrixFactor():
-    def __init__(self, data, method='svd', n_components=5, normalize=False) -> None:
+class MatrixFactor:
+    def __init__(self, data, method='nmf', n_components=2, return_fit=False,
+                 ) -> None:
         """
         Parameters:
             - data: (sidpy.Dataset)
-            - 
+            - method: Type of Matrix Decomposition to be performed. The User can be choose from:
+                    PCA
+                    SVD
+                    NMF
+                    ICA
+                    nfindr
+                    kernelpca
+            - n_components: number of components, Default: None
+            - return_fit: Whether to return the fitted dataset, Default: False
+
         """
         self.data = data
-        self.allowed_methods = ['svd', 'nmf', 'ica', 'nfindr', 'kernelpca']  # Might want to add others...
+        self.ncomp = n_components
+        self._allowed_methods = ['pca', 'svd', 'nmf', 'ica', 'nfindr', 'kernelpca']  # Might want to add others...
         assert method in self._allowed_methods, "Method must be one of {}".format(self._allowed_methods)
         self.method = method
-        self.normalize = normalize
-        self.data_2d = self._return_2d_dataset(self, self.data)
+        self.data_2d = self._return_2d_dataset(self.data)
+        self.dim_order = self.data_2d.metadata['fold_attr']['dim_order']
+        self.return_fit = return_fit
         self.results_computed = False
+
+        # Datasets to be returned
+        self.abundances = None
+        self.components = None
+        if self.return_fit:
+            self.fit_dset = None
 
     def _return_2d_dataset(self, data):
         # Flattening the dataset as spatial-spectral
@@ -29,7 +48,7 @@ class MatrixFactor():
 
         return folded_dset
 
-    def do_fit(self) -> sidpy.Dataset.dataset:
+    def do_fit(self, **kwargs) -> sidpy.Dataset:
         """
         Parameters:
         (none)
@@ -40,40 +59,82 @@ class MatrixFactor():
         """
 
         if self.method == 'svd':
-            u, s, v = np.linalg.svd(self.data_2d)
-            components = s * v.T  # check...
-            abundances = u
-            # components = ...
-            # abundances = ...
+            u, s, v = np.linalg.svd(np.array(self.data_2d), full_matrices=False, compute_uv=True)
+            abundances = u  # check...
+            components = (s * v.T).T  # check again
         elif self.method == 'nmf':
             # code goes here...
-            nmf = NMF(n_components=self.num_components)
-            nmf.fit_transform(self.data_2d[:])
+            nmf = NMF(n_components=self.ncomp, **kwargs)
+            abundances = nmf.fit_transform(np.array(self.data_2d))
             components = nmf.components_
+        elif self.method == 'pca':
+            pca = PCA(n_components=self.ncomp, **kwargs)
+            abundances = pca.fit_transform(np.array(self.data_2d))
+            components = pca.components_
+        elif self.method == 'ica':
+            ica = FastICA(n_components=self.ncomp, **kwargs)
+            abundances = ica.fit_transform(np.array(self.data_2d))
+            components = ica.components_
+        elif self.method == 'kernelpca':
+            kpca = KernelPCA(n_components=self.ncomp, **kwargs)
+            X_kpca = kpca.fit(np.array(self.data_2d).T)
+            abundances = X_kpca.fit_transform(np.array(self.data_2d))
+            components = X_kpca.eigenvectors_.T
+
+        # Getting the fit dataset i.e., abundances*components and unfolding it into the original shape
+        self.fit_dset = self.data_2d.like_data(np.matmul(abundances, components),
+                                               title_suffix='_factorized').unfold()
+
+        # Now we need to prepare an abundance dataset and a component dataset and make sure their spatial dimensions
+        # are unfolded
+        abundances_dset = self.data_2d.like_data(abundances, title='abundances',
+                                                 check_dims=False)
+        # Image stack
+        # We will delete this for now and add this back manually
+        del abundances_dset.metadata['fold_attr']
+        abun_axes = {}
+        for i, dim in enumerate(self.dim_order[0]):
+            abun_axes[i] = self.data_2d.metadata['fold_attr']['_axes'][dim].copy()
+        abun_axes[len(self.dim_order[0])] = sidpy.Dimension(np.arange(self.ncomp),
+                                                            name='weights',
+                                                            units='generic', quantity='generic',
+                                                            dimension_type='spectral')
+
+        abundances_dset.metadata['fold_attr'] = dict(dim_order_flattened=list(np.arange(len(self.dim_order[0]) + 1)),
+                                                     shape_transposed=self.data_2d.metadata['fold_attr'][
+                                                                          'shape_transposed'][:len(self.dim_order[0])]
+                                                                      + [self.ncomp], _axes=abun_axes)
+
+        # Check the number of spectral dimensions
+        # Check whether we will have the same datatype and other attributes
+        components_dset = self.data_2d.like_data(components, title='components',
+                                                 check_dims=False)
+        del components_dset.metadata['fold_attr']
+        comp_axes = {}
+        comp_axes[0] = sidpy.Dimension(np.arange(self.ncomp),
+                                       name='component_number',
+                                       units='generic', quantity='generic',
+                                       dimension_type='spectral')
+        for i, dim in enumerate(self.dim_order[1]):
+            comp_axes[i + 1] = self.data_2d.metadata['fold_attr']['_axes'][dim].copy()
+        components_dset.metadata['fold_attr'] = {
+            'dim_order_flattened': list(np.arange(len(self.dim_order[1]) + 1)),
+            'shape_transposed': [self.ncomp] + self.data_2d.metadata['fold_attr']['shape_transposed'][
+                                               len(self.dim_order[0]):],
+            '_axes': comp_axes
+
+        }
 
         # Then we want to return components, abundances, and explained variances if available.
         # We should return a list of sidpy dataset objects
-        self.components = components
-        self.abundances = abundances
+        self.abundances = abundances_dset.unfold()
+        self.abundances.data_type = sidpy.DataType.IMAGE_STACK
+
+        self.components = components_dset.unfold()
+        self.components.data_type = sidpy.DataType.LINE_PLOT_FAMILY  # Check this again
         self.results_computed = True
 
-        return components, abundances
-
-    def plot_results(self):
-        if self.results_computed is False:
-            raise RuntimeError("No results are available. Call 'do_fit()' method first")
-        self._plot_abundances(self.abundances)
-        self._plot_components(self.components)
-
-    def _plot_abundances(self, abundances) -> plt.figure:
-        # We may need to think about this a little it
-        # Note that we have some viz in sidpy already. We can try to leverage.
-        fig, axes = plt.subplots()
-
-        return fig
-
-    def _plot_components(self, abundances) -> plt.figure:
-        # We may need to think about this a little it
-        fig, axes = plt.subplots()
-
-        return fig
+        if self.return_fit:
+            return self.abundances, self.components, self.fit_dset
+        else:
+            return self.abundances, self.components

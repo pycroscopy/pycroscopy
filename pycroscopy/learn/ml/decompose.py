@@ -80,7 +80,7 @@ class TensorFactor():
 
             if len(spec_dims) == 1:
                 raise NotImplementedError("Only one SPECTRAL Dimension found. "
-                                          "Can't reshape the array.Please provide "
+                                          "Matrix Factorization works "
                                           "spec_dims to work around this problem.")
 
             if len(spec_dims) > 2:
