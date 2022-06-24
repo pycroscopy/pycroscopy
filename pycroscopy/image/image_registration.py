@@ -49,17 +49,9 @@ def complete_registration(main_dataset, storage_channel=None):
 
     rigid_registered_dataset = rigid_registration(main_dataset)
 
-    if main_dataset.h5_dataset is not None:
-        if storage_channel is None:
-            storage_channel = main_dataset.h5_dataset.parent.parent
-
-        registration_channel = ft.log_results(storage_channel, rigid_registered_dataset)
-
     print('Non-Rigid_Registration')
 
     non_rigid_registered = demon_registration(rigid_registered_dataset)
-    if main_dataset.h5_dataset is not None:
-        registration_channel = ft.log_results(storage_channel, non_rigid_registered)
 
     return non_rigid_registered, rigid_registered_dataset
 
