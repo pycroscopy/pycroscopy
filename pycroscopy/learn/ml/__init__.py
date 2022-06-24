@@ -1,1 +1,1 @@
-from .decompose import tensor_decomposition
+from .decompose import TensorFactor
