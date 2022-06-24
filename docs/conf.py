@@ -411,11 +411,13 @@ from sphinx_gallery.sorting import ExampleTitleSortKey, ExplicitOrder #Can't use
 sphinx_gallery_conf = dict(examples_dirs=['../examples'],
                            gallery_dirs=['auto_examples'],
                            within_subsection_order=ExampleTitleSortKey,
+                           """
                            reference_url=dict(pycroscopy=None,
                                               matplotlib='https://matplotlib.org',
                                               numpy='https://docs.scipy.org/doc/numpy',
                                               scipy='https://docs.scipy.org/doc/scipy/reference',
                                               h5py='http://docs.h5py.org/en/latest/'),
+                           """                
                            # directory where function granular galleries are stored
                            backreferences_dir='_autosummary/backreferences',
                            # Modules for which function level galleries are created.
