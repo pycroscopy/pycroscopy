@@ -13,7 +13,7 @@ class TensorFactor():
                  rank: Union[int, List[int]],
                  decomposition_type: str = "cp",
                  flat_from: Optional[int] = None,
-                 spec_dims: Optional = None
+                 spec_dims: Optional[int] = None
                  ) -> Tuple[np.ndarray, List[np.ndarray]]:
         """
         Tensor decomposition
