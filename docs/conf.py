@@ -391,6 +391,7 @@ epub_exclude_files = ['search.html']
 #epub_use_index = True
 
 # Example configuration for intersphinx: refer to the Python standard library.
+"""
 intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.version_info), None),
                        'numpy': ('https://docs.scipy.org/doc/numpy/', None),
                        'scipy': ('https://docs.scipy.org/doc/scipy/reference', None),
@@ -401,7 +402,7 @@ intersphinx_mapping = {'python': ('https://docs.python.org/{.major}'.format(sys.
                        'h5py': ('http://docs.h5py.org/en/latest/', None),
                        'pyUSID': ('https://pycroscopy.github.io/pyUSID/api.html', None),
                        }
-
+"""
 #
 
 # -------------------------------------------------
