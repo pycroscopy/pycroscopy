@@ -111,10 +111,10 @@ class TensorFactor():
         """
 
         if self.decomposition_type == "cp":
-            weights_and_factors = non_negative_parafac(np.array(self.data_3d[:]), self.rank, **kwargs)
+            weights, factors = non_negative_parafac(np.array(self.data_3d[:]), self.rank, **kwargs)
         elif self.decomposition_type == "tucker":
-            weights_and_factors = tucker(np.array(self.data_3d[:]), self.rank, **kwargs)
-        return weights_and_factors
+            weights, factors = tucker(np.array(self.data_3d[:]), self.rank, **kwargs)
+        return weights, factors
 
     def plot_results(self) -> plt.figure:
         """Plots the results"""

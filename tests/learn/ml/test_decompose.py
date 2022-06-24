@@ -73,36 +73,15 @@ def return_4D_mat(data_shape=(10,10,9,7)):
 def test_input_dim(in_dim, decomp_type):
     x = return_4D_mat(in_dim)
     tf = TensorFactor(x, rank=4,decomposition_type = decomp_type )
-    f = tf.do_fit()
-    if decomp_type == 'cp':
-        assert_equal(len(f),3)
-    elif decomp_type == 'tucker':
-        assert_equal(len(f),2)
-
-'''
-@pytest.mark.parametrize("decomp_type", ["cp", "tucker"])
-@pytest.mark.parametrize("in_dim", [(8, 4, 4), (8, 4, 4, 3)])
-def test_input_dim(in_dim, decomp_type):
-    x = np.random.randn(*in_dim)
-    _, f = tensor_decomposition(x, 3)
-    assert_equal(len(f), len(in_dim))
+    _, factors = tf.do_fit()
+    assert_equal(len(factors),3)
 
 
 @pytest.mark.parametrize("decomp_type", ["cp", "tucker"])
-@pytest.mark.parametrize("rank", [2, 3, 4])
-def test_factors_dim(rank, decomp_type):
-    x = np.random.randn(8, 4, 4, 3)
-    weights, factors = tensor_decomposition(x, rank)
-    assert_equal(len(weights), rank)
-    f_shapes = [f.shape[-1] == rank for f in factors]
-    assert_(all(f_shapes))
-
-
-@pytest.mark.parametrize("decomp_type", ["cp", "tucker"])
-@pytest.mark.parametrize("start_with", [2, 3])
-def test_flat_dim(start_with, decomp_type):
-    x = np.random.randn(8, 4, 4, 3)
-    weights, factors = tensor_decomposition(x, 3, decomp_type, start_with)
-    assert_equal(len(factors), start_with + 1)'''
-
-
+@pytest.mark.parametrize("rank", [1,2,3,4])
+@pytest.mark.parametrize("in_dim", [(3, 5, 7,4), (2, 2, 8, 5)])
+def test_rank_output(in_dim, rank, decomp_type):
+    x = return_4D_mat(in_dim)
+    tf = TensorFactor(x, rank=rank,decomposition_type = decomp_type )
+    weights, _ = tf.do_fit()
+    assert_equal(weights.shape[-1],rank)
