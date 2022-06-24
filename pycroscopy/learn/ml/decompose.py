@@ -45,6 +45,7 @@ class TensorFactor():
 
         self.decomposition_type = decomposition_type
         self.data_3d = self._return_3d_dataset(self.data, spec_dims)
+        self.dim_order = self.data_3d.metadata['fold_attr']['dim_order']
         self.results_computed = False
         self.rank = rank
 
@@ -80,7 +81,7 @@ class TensorFactor():
 
             if len(spec_dims) == 1:
                 raise NotImplementedError("Only one SPECTRAL Dimension found. "
-                                          "Matrix Factorization works "
+                                          "Can't reshape the array.Please provide "
                                           "spec_dims to work around this problem.")
 
             if len(spec_dims) > 2:
@@ -106,15 +107,35 @@ class TensorFactor():
         **kwargs
             additional parameters passed to PARAFAC or tucker decomposition methods
 
-        Returns: 
+        Returns:
             Sidpy dataset after fit operation. Fit will calculate according to the method chosen.
         """
 
         if self.decomposition_type == "cp":
-            weights, factors = non_negative_parafac(self.data_3d, self.rank, **kwargs)
+            weights, factors = non_negative_parafac(np.array(self.data_3d), self.rank, **kwargs)
         elif self.decomposition_type == "tucker":
-            weights, factors = tucker(self.data_3d, self.rank, **kwargs)
-        return weights, factors
+            weights, factors = tucker(np.array(self.data_3d), self.rank, **kwargs)
+
+        # Let's create the sidpy datasets from these numpy arrays and lists
+        weights_dset = sidpy.Dataset.from_array(weights, title='weights')
+        # This correponds to the spa_dims*rank dset
+
+        fac_dset1 = self.data_3d.like_data(factors[0], title='factors_1',
+                                           check_dims=False)
+        del fac_dset1.metadata['fold_attr']
+        fac_dset1_axes = {}
+        for i, dim in enumerate(self.dim_order[0]):
+            fac_dset1_axes[i] = self.data_3d.metadata['fold_attr']['_axes'][dim].copy()
+        fac_dset1_axes[len(self.dim_order[0])] = sidpy.Dimension(np.arange(self.rank),
+                                                                 name='weights',
+                                                                 units='generic', quantity='generic',
+                                                                 dimension_type='spectral')
+        fac_dset1.metadata['fold_attr'] = dict(dim_order_flattened=list(np.arange(len(self.dim_order[0]) + 1)),
+                                               shape_transposed=self.data_3d.metadata['fold_attr'][
+                                                                    'shape_transposed'][:len(self.dim_order[0])]
+                                                                + [self.rank], _axes=fac_dset1_axes)
+
+        return fac_dset1.unfold(), weights, factors
 
     def plot_results(self) -> plt.figure:
         """Plots the results"""
