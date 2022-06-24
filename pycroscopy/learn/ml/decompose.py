@@ -44,7 +44,7 @@ class TensorFactor():
                 "Currently available decomposition types are {}".format(self.allowed_methods))
 
         self.decomposition_type = decomposition_type
-        self.data_3d = self._return_3d_dataset(self, self.data, spec_dims)
+        self.data_3d = self._return_3d_dataset(self.data, spec_dims)
         self.results_computed = False
         self.rank = rank
 
@@ -67,10 +67,10 @@ class TensorFactor():
             dim_order = [[], [], []]
 
             for dim, axis in data._axes.items():
-                if axis.dimension_type == sidpy.dimension.DimensionType.SPATIAL:
-                    spa_dims.extend(dim)
-                elif axis.dimension_type == sidpy.dimension.DimensionType.SPECTRAL:
-                    spec_dims.extend(dim)
+                if axis.dimension_type == sidpy.DimensionType.SPATIAL:
+                    spa_dims.extend([dim])
+                elif axis.dimension_type == sidpy.DimensionType.SPECTRAL:
+                    spec_dims.extend([dim])
                 else:
                     raise NotImplementedError('Dimension {} is not one of SPATIAL or SPECTRAl'.format(dim))
 
