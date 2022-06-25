@@ -51,8 +51,10 @@ def complete_registration(main_dataset, storage_channel=None):
 
     print('Non-Rigid_Registration')
 
-    non_rigid_registered = demon_registration(rigid_registered_dataset)
-
+    if  _SimpleITK_present:
+        non_rigid_registered = demon_registration(rigid_registered_dataset)
+    else:
+        non_rigid_registered = None
     return non_rigid_registered, rigid_registered_dataset
 
 
@@ -93,7 +95,8 @@ def demon_registration(dataset, verbose=False):
     if verbose:
         print(nimages)
     # create fixed image by summing over rigid registration
-
+    if not _SimpleITK_present:
+        return
     fixed_np = np.average(np.array(dataset), axis=0)
 
     fixed = sitk.GetImageFromArray(fixed_np)
