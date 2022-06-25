@@ -21,6 +21,7 @@ requirements = ['numpy>=1.13.0',
                 'tqdm',
                 'ipywidgets>=5.2.2',
                 'ipython',
+                'simpleitk',
                 'sidpy>=0.0.6',
                 ]
 
