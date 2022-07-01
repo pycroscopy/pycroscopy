@@ -111,12 +111,12 @@ class ImageWindowing:
         '''
 
         image_test = np.random.uniform(size=(self.window_size_x, self.window_size_y))
-        print('image test is shape {}'.format(image_test.shape))
+        #print('image test is shape {}'.format(image_test.shape))
         image_zoomed = self.zoom(image_test, self.zoom_factor)
-        print('image zoomed is shape {}'.format(image_zoomed.shape))
+        #print('image zoomed is shape {}'.format(image_zoomed.shape))
         #interpolate it
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
-        print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
+        #print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
         return zoomed_interpolated.shape[0],zoomed_interpolated.shape[1]
 
     def MakeWindows(self, dataset, dim_slice=None):
@@ -200,7 +200,7 @@ class ImageWindowing:
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
             print("position values x {} and y {}".format(new_x_vals, new_y_vals))
-        windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
+        windows_reshaped = pca_mat.reshape(len(new_y_vals), len(new_x_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
             print('Reshaped windows size is {}'.format(windows_reshaped.shape))
