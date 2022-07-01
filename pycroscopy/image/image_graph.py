@@ -12,8 +12,11 @@ This is a modification of the method of Banadaki and Patala
     http://dx.doi.org/10.1038/s41524-017-0016-0
 for 2-D (works in 3D as well)
 
-Starting from the atom positions we make a Delaunay tesselation and determine the size of the intersitital (circumscribed circle radius minus the atom radius).
-If neighbouring interstitials overlap we merge those triangles (in 3D the tetrhedra). This will give an unanbiguous tesselation or graph for a given atomic size.
+Starting from the atom positions we make a Delaunay tesselation and determine the size of the intersitital
+(circumscribed circle radius minus the atom radius).
+
+If neighbouring interstitials overlap we merge those triangles (in 3D the tetrhedra). This will give an unanbiguous
+tesselation or graph for a given atomic size.
 
 The main functions are:
 >import pycroscopy as px
