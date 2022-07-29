@@ -6,7 +6,7 @@ from sidpy.base.num_utils import build_ind_val_matrices
 from scipy import fftpack
 from scipy.signal import hanning, blackman
 from skimage.transform import rescale
-
+import dask
 
 class ImageWindowing:
     """
@@ -61,12 +61,12 @@ class ImageWindowing:
         if 'interpol_factor' in parms_dict.keys(): self.interpol_factor = parms_dict['interpol_factor']
         else:
             self.interpol_factor = 1
-            parms_dict['interpol_facor']=1
+            parms_dict['interpol_factor'] = 1
 
         if 'zoom_factor' in parms_dict.keys(): self.zoom_factor = parms_dict['zoom_factor']
         else:
             self.zoom_factor = 1
-            parms_dict['zoom_facor'] = 1
+            parms_dict['zoom_factor'] = 1
 
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
@@ -184,12 +184,21 @@ class ImageWindowing:
         pca_mat = np.zeros(shape=(pos_vec.shape[0], np.prod(window_size_final)), dtype=np.complex64)
         pos_vec = np.int32(pos_vec)
 
-        for ind, pos in enumerate(pos_vec):
+        def make_windows_parallel(ind, pos):
             start_stop = [slice(x, x + y, 1) for x, y in zip(pos, window_size)]
             full_slice = image_source[tuple(start_stop)]
             full_slice = self._return_win_image_processed(full_slice)
-            pca_mat[ind] = full_slice.flatten()
+            full_slice_flat = full_slice.flatten()
+            return full_slice_flat
 
+        window_results = []
+        for ind, pos in enumerate(pos_vec):
+            lazy_result = dask.delayed(make_windows_parallel)(ind, pos)
+            window_results.append(lazy_result)
+
+        pca_mat = dask.compute(*window_results)
+        pca_mat = np.array(pca_mat) #it comes out as a tuple, make it array
+        
         self.pos_vec = pos_vec
 
         # Get the positions and make them dimensions
