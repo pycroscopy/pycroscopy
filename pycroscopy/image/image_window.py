@@ -3,8 +3,7 @@
 import numpy as np
 import sidpy
 from sidpy.base.num_utils import build_ind_val_matrices
-from scipy import fftpack
-from scipy.signal import hanning, blackman
+from scipy.signal.windows import hanning, blackman
 from skimage.transform import rescale
 import dask
 
