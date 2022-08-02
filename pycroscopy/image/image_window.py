@@ -3,7 +3,7 @@
 import numpy as np
 import sidpy
 from sidpy.base.num_utils import build_ind_val_matrices
-from scipy.signal.windows import hanning, blackman
+from scipy.signal.windows import hamming, blackman
 from skimage.transform import rescale
 import dask
 
@@ -30,7 +30,7 @@ class ImageWindowing:
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
             - 'zoom_factor' (integer or list of ints) (Optional, default is 1): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
                             If passing a list of ints, this will determine the degree of cropping per axis
-            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
+            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hamming'.
             The filter is applied to each window before 'mode'.
         - verbose : (Optional) Boolean
             Verbose flag. Default is False.
@@ -76,13 +76,13 @@ class ImageWindowing:
         if self.mode=='fft':
             #load FFT options
             if 'filter' in parms_dict.keys():
-                if parms_dict['filter'] not in ['blackman', 'hanning']:
-                    raise ValueError("Parameter 'filter' must be one of 'hanning', 'blackman'")
+                if parms_dict['filter'] not in ['blackman', 'hamming']:
+                    raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
                 else:
                     self.filter = parms_dict['filter']
-                    if self.filter=='hanning':
-                        filter_x = hanning(self.window_size_final_x)
-                        filter_y = hanning(self.window_size_final_y)
+                    if self.filter=='hamming':
+                        filter_x = hamming(self.window_size_final_x)
+                        filter_y = hamming(self.window_size_final_y)
                         self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
                     elif self.filter=='blackman':
                         filter_x = blackman(self.window_size_final_x)
