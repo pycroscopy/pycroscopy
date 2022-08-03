@@ -138,6 +138,7 @@ class ImageWindowing:
 
         # This is the windowing function. Will generate the windows (but not the FFT)
         num_dimensions = dataset.ndim
+        self.dataset = dataset
         if dim_slice is None:
             if num_dimensions > 2:
                 raise ValueError('You have specified windowing on a sidpy dataset '
@@ -338,6 +339,18 @@ class ImageWindowing:
             
         return complex_rescaled_image
 
+    def clean_image(self, n_comps = 4):
+        self.mode = 'image'
+        self.interpol_factor = 1
+        self.zoom_factor = 1
+        self.window_size_final_x = self.window_size_x
+        self.window_size_final_y = self.window_size_y
+        new_windows = self.MakeWindows(self.dataset)
+        
+        from ..learn.ml import MatrixFactor
+        svd_results = MatrixFactor(new_windows, method='svd', n_components = n_comps)
+
+        return svd_results
 
 
 
