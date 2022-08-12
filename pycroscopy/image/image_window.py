@@ -3,10 +3,9 @@
 import numpy as np
 import sidpy
 from sidpy.base.num_utils import build_ind_val_matrices
-from scipy import fftpack
-from scipy.signal import hanning, blackman
+from scipy.signal.windows import hamming, blackman
 from skimage.transform import rescale
-
+import dask
 
 class ImageWindowing:
     """
@@ -31,7 +30,7 @@ class ImageWindowing:
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
             - 'zoom_factor' (integer or list of ints) (Optional, default is 1): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
                             If passing a list of ints, this will determine the degree of cropping per axis
-            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hanning'.
+            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hamming'.
             The filter is applied to each window before 'mode'.
         - verbose : (Optional) Boolean
             Verbose flag. Default is False.
@@ -61,12 +60,12 @@ class ImageWindowing:
         if 'interpol_factor' in parms_dict.keys(): self.interpol_factor = parms_dict['interpol_factor']
         else:
             self.interpol_factor = 1
-            parms_dict['interpol_facor']=1
+            parms_dict['interpol_factor'] = 1
 
         if 'zoom_factor' in parms_dict.keys(): self.zoom_factor = parms_dict['zoom_factor']
         else:
             self.zoom_factor = 1
-            parms_dict['zoom_facor'] = 1
+            parms_dict['zoom_factor'] = 1
 
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
@@ -77,13 +76,13 @@ class ImageWindowing:
         if self.mode=='fft':
             #load FFT options
             if 'filter' in parms_dict.keys():
-                if parms_dict['filter'] not in ['blackman', 'hanning']:
-                    raise ValueError("Parameter 'filter' must be one of 'hanning', 'blackman'")
+                if parms_dict['filter'] not in ['blackman', 'hamming']:
+                    raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
                 else:
                     self.filter = parms_dict['filter']
-                    if self.filter=='hanning':
-                        filter_x = hanning(self.window_size_final_x)
-                        filter_y = hanning(self.window_size_final_y)
+                    if self.filter=='hamming':
+                        filter_x = hamming(self.window_size_final_x)
+                        filter_y = hamming(self.window_size_final_y)
                         self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
                     elif self.filter=='blackman':
                         filter_x = blackman(self.window_size_final_x)
@@ -111,12 +110,12 @@ class ImageWindowing:
         '''
 
         image_test = np.random.uniform(size=(self.window_size_x, self.window_size_y))
-        print('image test is shape {}'.format(image_test.shape))
+        #print('image test is shape {}'.format(image_test.shape))
         image_zoomed = self.zoom(image_test, self.zoom_factor)
-        print('image zoomed is shape {}'.format(image_zoomed.shape))
+        #print('image zoomed is shape {}'.format(image_zoomed.shape))
         #interpolate it
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
-        print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
+        #print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
         return zoomed_interpolated.shape[0],zoomed_interpolated.shape[1]
 
     def MakeWindows(self, dataset, dim_slice=None):
@@ -184,12 +183,21 @@ class ImageWindowing:
         pca_mat = np.zeros(shape=(pos_vec.shape[0], np.prod(window_size_final)), dtype=np.complex64)
         pos_vec = np.int32(pos_vec)
 
-        for ind, pos in enumerate(pos_vec):
+        def make_windows_parallel(ind, pos):
             start_stop = [slice(x, x + y, 1) for x, y in zip(pos, window_size)]
             full_slice = image_source[tuple(start_stop)]
             full_slice = self._return_win_image_processed(full_slice)
-            pca_mat[ind] = full_slice.flatten()
+            full_slice_flat = full_slice.flatten()
+            return full_slice_flat
 
+        window_results = []
+        for ind, pos in enumerate(pos_vec):
+            lazy_result = dask.delayed(make_windows_parallel)(ind, pos)
+            window_results.append(lazy_result)
+
+        pca_mat = dask.compute(*window_results)
+        pca_mat = np.array(pca_mat) #it comes out as a tuple, make it array
+        
         self.pos_vec = pos_vec
 
         # Get the positions and make them dimensions
@@ -200,7 +208,7 @@ class ImageWindowing:
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
             print("position values x {} and y {}".format(new_x_vals, new_y_vals))
-        windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
+        windows_reshaped = pca_mat.reshape(len(new_y_vals), len(new_x_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
             print('Reshaped windows size is {}'.format(windows_reshaped.shape))
