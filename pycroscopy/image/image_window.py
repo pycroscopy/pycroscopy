@@ -190,12 +190,12 @@ class ImageWindowing:
             full_slice_flat = full_slice.flatten()
             return full_slice_flat
 
-        window_results = []
+        self.window_results = []
         for ind, pos in enumerate(pos_vec):
             lazy_result = dask.delayed(make_windows_parallel)(ind, pos)
-            window_results.append(lazy_result)
+            self.window_results.append(lazy_result)
 
-        pca_mat = dask.compute(*window_results)
+        pca_mat = dask.compute(*self.window_results)
         pca_mat = np.array(pca_mat) #it comes out as a tuple, make it array
         
         self.pos_vec = pos_vec
