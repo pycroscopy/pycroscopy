@@ -191,12 +191,12 @@ class ImageWindowing:
             full_slice_flat = full_slice.flatten()
             return full_slice_flat
 
-        window_results = []
+        self.window_results = []
         for ind, pos in enumerate(pos_vec):
             lazy_result = dask.delayed(make_windows_parallel)(ind, pos)
-            window_results.append(lazy_result)
+            self.window_results.append(lazy_result)
 
-        pca_mat = dask.compute(*window_results)
+        pca_mat = dask.compute(*self.window_results)
         pca_mat = np.array(pca_mat) #it comes out as a tuple, make it array
         
         self.pos_vec = pos_vec
@@ -209,7 +209,7 @@ class ImageWindowing:
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
             print("position values x {} and y {}".format(new_x_vals, new_y_vals))
-        windows_reshaped = pca_mat.reshape(len(new_y_vals), len(new_x_vals),
+        windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
             print('Reshaped windows size is {}'.format(windows_reshaped.shape))
