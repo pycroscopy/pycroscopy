@@ -70,24 +70,24 @@ class ImageWindowing:
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
         #Setup the filter for the window
-        self.filter = 'None'
-        self.filter_mat = np.ones((self.window_size_final_x, self.window_size_final_y))
+        if 'filter' in parms_dict.keys():
+            if parms_dict['filter'] not in ['blackman', 'hamming']:
+                raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
+            else:
+                self.filter = parms_dict['filter']
+                if self.filter == 'hamming':
+                    filter_x = hamming(self.window_size_final_x)
+                    filter_y = hamming(self.window_size_final_y)
+                    self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
+                elif self.filter == 'blackman':
+                    filter_x = blackman(self.window_size_final_x)
+                    filter_y = blackman(self.window_size_final_y)
+                    self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
+        else:
+            self.filter = 'None'
 
         if self.mode=='fft':
             #load FFT options
-            if 'filter' in parms_dict.keys():
-                if parms_dict['filter'] not in ['blackman', 'hamming']:
-                    raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
-                else:
-                    self.filter = parms_dict['filter']
-                    if self.filter=='hamming':
-                        filter_x = hamming(self.window_size_final_x)
-                        filter_y = hamming(self.window_size_final_y)
-                        self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
-                    elif self.filter=='blackman':
-                        filter_x = blackman(self.window_size_final_x)
-                        filter_y = blackman(self.window_size_final_y)
-                        self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
             if 'fft_mode' in parms_dict.keys():
                 if parms_dict['fft_mode'] not in ['abs', 'phase', 'complex']:
                     raise ValueError("Parameter 'fft_mode' must be \
@@ -191,12 +191,12 @@ class ImageWindowing:
             full_slice_flat = full_slice.flatten()
             return full_slice_flat
 
-        self.window_results = []
+        window_results = []
         for ind, pos in enumerate(pos_vec):
             lazy_result = dask.delayed(make_windows_parallel)(ind, pos)
-            self.window_results.append(lazy_result)
+            window_results.append(lazy_result)
 
-        pca_mat = dask.compute(*self.window_results)
+        pca_mat = dask.compute(*window_results)
         pca_mat = np.array(pca_mat) #it comes out as a tuple, make it array
         
         self.pos_vec = pos_vec
@@ -282,8 +282,7 @@ class ImageWindowing:
     def _return_win_image_processed(self, img_window):
         #Real image slice, returns it back with image processed
 
-        if self.filter != 'None':
-            img_window *= self.filter_mat  # Apply filter
+
         if self.mode == 'fft': # Apply FFT if needed
             img_window = np.fft.fftshift(np.fft.fft2(img_window))
             if self.fft_mode == 'amp':
@@ -292,13 +291,16 @@ class ImageWindowing:
                 img_window = np.angle(img_window)
             elif self.fft_mode == 'complex':
                 img_window = np.array(img_window, dtype = np.complex64)
-        
+
         #Zoom and interpolate if needed
         if self.zoom_factor == 1 and self.interpol_factor == 1:
             return img_window
         else:
             img_window = self.zoom(img_window, self.zoom_factor)  # Zoom it
             img_window = self.rescale_win(img_window, self.interpol_factor)  # Rescale
+
+        if self.filter != 'None':
+            img_window *= self.filter_mat  # Apply filter
 
         return img_window
 
