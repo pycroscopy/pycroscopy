@@ -208,7 +208,7 @@ class ImageWindowing:
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
             print("position values x {} and y {}".format(new_x_vals, new_y_vals))
-        windows_reshaped = pca_mat.reshape(len(new_y_vals), len(new_x_vals),
+        windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
             print('Reshaped windows size is {}'.format(windows_reshaped.shape))
