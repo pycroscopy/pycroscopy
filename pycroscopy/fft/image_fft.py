@@ -9,6 +9,7 @@ author: Gerd Duscher, UTK
 import numpy as np
 from scipy import ndimage
 from skimage.feature import peak_local_max, blob_log
+import sys
 import sidpy
 
 get_slope = sidpy.base.num_utils.get_slope
