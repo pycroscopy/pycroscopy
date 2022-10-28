@@ -202,13 +202,15 @@ class ImageWindowing:
         self.pos_vec = pos_vec
 
         # Get the positions and make them dimensions
-        new_x_vals = np.linspace(dataset._axes[image_dims[0]].values.min(),
+        new_y_vals = np.linspace(dataset._axes[image_dims[0]].values.min(),
                                  dataset._axes[image_dims[0]].values.max(), len(np.unique(pos_vec[:, 0])))
 
-        new_y_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
+        new_x_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
-            print("position values x {} and y {}".format(new_x_vals, new_y_vals))
+            print("position values x {} and y {}".format(new_y_vals, new_x_vals))
+        
+        self.pca_mat = pca_mat
         windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
@@ -243,11 +245,12 @@ class ImageWindowing:
 
         window_extent_y = (dataset._axes[image_dims[1]].values.max() -
                            dataset._axes[image_dims[1]].values.min()) * window_size_fraction_y
-
+        window_units = dataset._axes[image_dims[0]].units
         if self.mode =='fft':
             #to check if this is correct
             z_dimx = np.linspace(0, 1.0/(window_extent_x / self.zoom_factor), data_set.shape[2])
             z_dimy = np.linspace(0, 1.0/(window_extent_y / self.zoom_factor), data_set.shape[3])
+            window_units = dataset._axes[image_dims[0]].units + '^-1'
         else:
             z_dimx = np.linspace(0, window_extent_x/self.zoom_factor, data_set.shape[2])
             z_dimy = np.linspace(0, window_extent_y/self.zoom_factor, data_set.shape[3])
@@ -266,12 +269,12 @@ class ImageWindowing:
 
         data_set.set_dimension(2, sidpy.Dimension(z_dimx,
                                                   name='WindowX',
-                                                  units='m', quantity='kx',
+                                                  units=window_units, quantity='kx',
                                                   dimension_type='spectral'))
 
         data_set.set_dimension(3, sidpy.Dimension(z_dimy,
                                                   name='WindowY',
-                                                  units='m', quantity='ky',
+                                                  units=window_units, quantity='ky',
                                                   dimension_type='spectral'))
 
         # append metadata
