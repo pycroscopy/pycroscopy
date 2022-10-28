@@ -11,7 +11,7 @@ import sidpy
 from scipy.ndimage import gaussian_filter
 
 from pycroscopy.image import image_registration
-
+import sys
 
 if sys.version_info.major == 3:
     unicode = str
