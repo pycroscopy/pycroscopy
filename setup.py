@@ -23,6 +23,7 @@ requirements = ['numpy>=1.13.0',
                 'ipython',
                 'simpleitk',
                 'sidpy>=0.0.6',
+                'pysptools'
                 ]
 
 setup(

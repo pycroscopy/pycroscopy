@@ -7,6 +7,7 @@ Created on January, 23 2021
 import unittest
 import numpy as np
 
+import sys
 import sidpy
 from scipy.ndimage import gaussian_filter
 
