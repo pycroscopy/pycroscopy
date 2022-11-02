@@ -70,24 +70,24 @@ class ImageWindowing:
         # Based on the zoom and interpolation factors we need to figure out the final size of the window
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
         #Setup the filter for the window
-        self.filter = 'None'
-        self.filter_mat = np.ones((self.window_size_final_x, self.window_size_final_y))
+        if 'filter' in parms_dict.keys():
+            if parms_dict['filter'] not in ['blackman', 'hamming']:
+                raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
+            else:
+                self.filter = parms_dict['filter']
+                if self.filter == 'hamming':
+                    filter_x = hamming(self.window_size_final_x)
+                    filter_y = hamming(self.window_size_final_y)
+                    self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
+                elif self.filter == 'blackman':
+                    filter_x = blackman(self.window_size_final_x)
+                    filter_y = blackman(self.window_size_final_y)
+                    self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
+        else:
+            self.filter = 'None'
 
         if self.mode=='fft':
             #load FFT options
-            if 'filter' in parms_dict.keys():
-                if parms_dict['filter'] not in ['blackman', 'hamming']:
-                    raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
-                else:
-                    self.filter = parms_dict['filter']
-                    if self.filter=='hamming':
-                        filter_x = hamming(self.window_size_final_x)
-                        filter_y = hamming(self.window_size_final_y)
-                        self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
-                    elif self.filter=='blackman':
-                        filter_x = blackman(self.window_size_final_x)
-                        filter_y = blackman(self.window_size_final_y)
-                        self.filter_mat = np.sqrt(np.outer(filter_x,filter_y))
             if 'fft_mode' in parms_dict.keys():
                 if parms_dict['fft_mode'] not in ['abs', 'phase', 'complex']:
                     raise ValueError("Parameter 'fft_mode' must be \
@@ -138,6 +138,7 @@ class ImageWindowing:
 
         # This is the windowing function. Will generate the windows (but not the FFT)
         num_dimensions = dataset.ndim
+        self.dataset = dataset
         if dim_slice is None:
             if num_dimensions > 2:
                 raise ValueError('You have specified windowing on a sidpy dataset '
@@ -201,14 +202,16 @@ class ImageWindowing:
         self.pos_vec = pos_vec
 
         # Get the positions and make them dimensions
-        new_x_vals = np.linspace(dataset._axes[image_dims[0]].values.min(),
+        new_y_vals = np.linspace(dataset._axes[image_dims[0]].values.min(),
                                  dataset._axes[image_dims[0]].values.max(), len(np.unique(pos_vec[:, 0])))
 
-        new_y_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
+        new_x_vals = np.linspace(dataset._axes[image_dims[1]].values.min(),
                                  dataset._axes[image_dims[1]].values.max(), len(np.unique(pos_vec[:, 1])))
         if self.verbose:
-            print("position values x {} and y {}".format(new_x_vals, new_y_vals))
-        windows_reshaped = pca_mat.reshape(len(new_y_vals), len(new_x_vals),
+            print("position values x {} and y {}".format(new_y_vals, new_x_vals))
+        
+        self.pca_mat = pca_mat
+        windows_reshaped = pca_mat.reshape(len(new_x_vals), len(new_y_vals),
                                            self.window_size_final_x, self.window_size_final_y)
         if self.verbose:
             print('Reshaped windows size is {}'.format(windows_reshaped.shape))
@@ -242,11 +245,12 @@ class ImageWindowing:
 
         window_extent_y = (dataset._axes[image_dims[1]].values.max() -
                            dataset._axes[image_dims[1]].values.min()) * window_size_fraction_y
-
+        window_units = dataset._axes[image_dims[0]].units
         if self.mode =='fft':
             #to check if this is correct
             z_dimx = np.linspace(0, 1.0/(window_extent_x / self.zoom_factor), data_set.shape[2])
             z_dimy = np.linspace(0, 1.0/(window_extent_y / self.zoom_factor), data_set.shape[3])
+            window_units = dataset._axes[image_dims[0]].units + '^-1'
         else:
             z_dimx = np.linspace(0, window_extent_x/self.zoom_factor, data_set.shape[2])
             z_dimy = np.linspace(0, window_extent_y/self.zoom_factor, data_set.shape[3])
@@ -265,12 +269,12 @@ class ImageWindowing:
 
         data_set.set_dimension(2, sidpy.Dimension(z_dimx,
                                                   name='WindowX',
-                                                  units='m', quantity='kx',
+                                                  units=window_units, quantity='kx',
                                                   dimension_type='spectral'))
 
         data_set.set_dimension(3, sidpy.Dimension(z_dimy,
                                                   name='WindowY',
-                                                  units='m', quantity='ky',
+                                                  units=window_units, quantity='ky',
                                                   dimension_type='spectral'))
 
         # append metadata
@@ -281,8 +285,7 @@ class ImageWindowing:
     def _return_win_image_processed(self, img_window):
         #Real image slice, returns it back with image processed
 
-        if self.filter != 'None':
-            img_window *= self.filter_mat  # Apply filter
+
         if self.mode == 'fft': # Apply FFT if needed
             img_window = np.fft.fftshift(np.fft.fft2(img_window))
             if self.fft_mode == 'amp':
@@ -291,13 +294,16 @@ class ImageWindowing:
                 img_window = np.angle(img_window)
             elif self.fft_mode == 'complex':
                 img_window = np.array(img_window, dtype = np.complex64)
-        
+
         #Zoom and interpolate if needed
         if self.zoom_factor == 1 and self.interpol_factor == 1:
             return img_window
         else:
             img_window = self.zoom(img_window, self.zoom_factor)  # Zoom it
             img_window = self.rescale_win(img_window, self.interpol_factor)  # Rescale
+
+        if self.filter != 'None':
+            img_window *= self.filter_mat  # Apply filter
 
         return img_window
 
@@ -338,6 +344,18 @@ class ImageWindowing:
             
         return complex_rescaled_image
 
+    def clean_image(self, n_comps = 4):
+        self.mode = 'image'
+        self.interpol_factor = 1
+        self.zoom_factor = 1
+        self.window_size_final_x = self.window_size_x
+        self.window_size_final_y = self.window_size_y
+        new_windows = self.MakeWindows(self.dataset)
+        
+        from ..learn.ml import MatrixFactor
+        svd_results = MatrixFactor(new_windows, method='svd', n_components = n_comps)
+
+        return svd_results
 
 
 
