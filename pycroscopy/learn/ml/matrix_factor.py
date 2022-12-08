@@ -94,9 +94,11 @@ class MatrixFactor:
             nnls = amp.FCLS()
             a1 = nfindr.NFINDR(np.array(self.data_2d), self.ncomp) #Find endmembers
             components = a1[0]
-            pos_dim_sizes = [self.data_2d._axes[ind].shape for ind in self.data_2d.get_dimensions_by_type('spatial')]
-            data_amap = np.array(self.data_2d).reshape(pos_dim_sizes + self.data_2d.shape[-1])
+            pos_dim_sizes = [self.data._axes[ind].shape[0] for ind in self.data.get_dimensions_by_type('spatial')]
+            pos_dim_sizes.append(self.data_2d.shape[-1])
+            data_amap = np.array(self.data_2d).reshape(pos_dim_sizes)
             abundances = nnls.map(data_amap, components) #Find abundances
+            abundances = abundances.reshape(-1, self.ncomp)
 
         if abundances is None and components is None:
 
