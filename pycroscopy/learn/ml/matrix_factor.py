@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.decomposition import NMF, PCA, FastICA, KernelPCA
 from pysptools.eea import nfindr
-
+import pysptools.abundance_maps as amp
 
 class MatrixFactor:
     def __init__(self, data, method='nmf', n_components=2, return_fit=False,
@@ -80,6 +80,13 @@ class MatrixFactor:
             X_kpca = kpca.fit(np.array(self.data_2d).T)
             abundances = X_kpca.fit_transform(np.array(self.data_2d))
             components = X_kpca.eigenvectors_.T
+        elif self.method == 'nfindr':
+            nnls = amp.FCLS()
+            a1 = nfindr.NFINDR(np.array(self.data_2d), self.ncomp) #Find endmembers
+            components = a1[0]
+            pos_dim_sizes = [self.data_2d._axes[ind].shape for ind in self.data_2d.get_dimensions_by_type('spatial')]
+            data_amap = np.array(self.data_2d).reshape(pos_dim_sizes + self.data_2d.shape[-1])
+            abundances = nnls.map(data_amap, components) #Find abundances
 
         # Getting the fit dataset i.e., abundances*components and unfolding it into the original shape
         self.fit_dset = self.data_2d.like_data(np.matmul(abundances, components),
