@@ -9,6 +9,7 @@ from sklearn.decomposition import NMF, PCA, FastICA, KernelPCA
 from pysptools.eea import nfindr
 import pysptools.abundance_maps as amp
 
+
 class MatrixFactor:
     def __init__(self, data, method='nmf', n_components=2, return_fit=False,
                  ) -> None:
@@ -92,12 +93,13 @@ class MatrixFactor:
             components = X_kpca.eigenvectors_.T
         elif self.method == 'nfindr':
             nnls = amp.FCLS()
-            a1 = nfindr.NFINDR(np.array(self.data_2d), self.ncomp) #Find endmembers
+            a1 = nfindr.NFINDR(np.array(self.data_2d), self.ncomp)  # Find endmembers
             components = a1[0]
-            pos_dim_sizes = [self.data._axes[ind].shape[0] for ind in self.data.get_dimensions_by_type('spatial')]
-            pos_dim_sizes.append(self.data_2d.shape[-1])
-            data_amap = np.array(self.data_2d).reshape(pos_dim_sizes)
-            abundances = nnls.map(data_amap, components) #Find abundances
+
+            data_spec_fold = self.data.fold(method='spec')  # This will fold all the spectral dimensions into 1
+
+            data_amap = np.array(data_spec_fold)
+            abundances = nnls.map(data_amap, components)  # Finding abundances
             abundances = abundances.reshape(-1, self.ncomp)
 
         if abundances is None and components is None:
