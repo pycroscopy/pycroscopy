@@ -60,34 +60,34 @@ class TestImageWindowing(unittest.TestCase):
         #test two dimensional windowing works
         sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(10,7)))
         parms_dict = {}
-        parms_dict['window_step_x'] = 3
-        parms_dict['window_step_y'] = 3
+        parms_dict['window_step_x'] = 2
+        parms_dict['window_step_y'] = 2
         parms_dict['window_size_x'] = 3
-        parms_dict['window_size_y'] = 6
+        parms_dict['window_size_y'] = 7
         iw = ImageWindowing(parms_dict)
         windows = iw.MakeWindows(sidpy_dset_image)
-        assert windows.shape == (1, 3, 3, 6)
+        assert windows.shape == (1, 5, 3, 7)
 
     def test_three_dim_case(self):
         #test that spectral image works
-        sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(10, 7, 4)))
+        sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(11, 3, 7)))
         parms_dict = {}
         parms_dict['window_step_x'] = 2
         parms_dict['window_step_y'] = 2
         parms_dict['window_size_x'] = 3
-        parms_dict['window_size_y'] = 4
+        parms_dict['window_size_y'] = 3
         iw = ImageWindowing(parms_dict)
         windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
-        assert windows.shape == (2, 4, 3, 4)
+        assert windows.shape == (1, 5, 3, 3)
 
     def test_fft_works(self):
         #test that we can fft
-        data_mat = np.random.uniform(size=(10, 7, 4))
+        data_mat = np.random.uniform(size=(10, 10, 4))
         sidpy_dset_image = gen_sidpy_dset(data_mat)
         parms_dict = {}
         parms_dict['window_step_x'] = 2
         parms_dict['window_step_y'] = 2
-        parms_dict['window_size_x'] = 3
+        parms_dict['window_size_x'] = 4
         parms_dict['window_size_y'] = 4
         parms_dict['mode'] = 'fft'
 
@@ -96,7 +96,7 @@ class TestImageWindowing(unittest.TestCase):
             parms_dict['fft_mode'] = fft_mode
             iw = ImageWindowing(parms_dict)
             windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
-            assert windows.shape == (2, 4, 3, 4)
+            assert windows.shape == (4, 4, 4, 4)
             assert windows.metadata['fft_mode'] == fft_mode
 
 
