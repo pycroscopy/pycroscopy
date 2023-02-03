@@ -81,11 +81,12 @@ class LocalCrystallography_n:
     def determine_border_indices(self, border_prop=None, border_ind=None):
         """This method will find the indices of all the non-border and border atoms so it will not screw up
         the local crystallography analysis. Basically we find atoms nearest the edge and then move the
-        border*image_size px in, and if the atom is caught in that space, it gets marked as a border px"""
+        border*image_size px in, and if the atom is caught in that space, it gets marked as a border px
 
-        """
         Parameters
         ----------
+        Requires either border_prop or border_ind, ignores border_ind when both are provided
+
         border_prop: float or List[float, float] 
             proportion of the image size to be used as the border
             when given float, uses the same value for x and y axes
@@ -95,7 +96,10 @@ class LocalCrystallography_n:
             when given int, uses the same value for x and y axes
             When given list, the first item is used for x-axis or the y-axis
         
-        Requires either border_prop or border_ind, ignores border_ind when both are provided
+        Returns: None
+        ----------
+            Stores border_pixel_inds and nonborder_pixel_ind as the attributes to the dataset
+
         """
 
         if border_prop is not None:
@@ -140,19 +144,21 @@ class LocalCrystallography_n:
 
         return g.ravel() + offset
 
-    # def compute_neighborhood_indices(self, num_neighbors=8):
-    #     """
-    #     Computes the local neighbors, returning the indices for each atom
-    #
-    #     Input: - num_neighbors (int) (Default = 8): Number of neighbors
-    #
-    #     Output: (None), results are stored as matrix of size (num_atoms, num_neighbors) in neighbor_indices.
-    #     """
-    #     atom_positions = self.dset.structures[self.struct].get_positions()[:, 0:2]
-    #     atom_types = self.dset.structures[self.struct].get_atomic_numbers()
-    #     # finds indices of the neighbors
-    #     tree = spatial.cKDTree(atom_positions)
-    #     dists, neighbors = tree.query(atom_positions, k=num_neighbors + 1)
-    #     self.dset.neighbor_indices = neighbors[:, 1::]  # Indices of the neighbors
-    #     # atomic numbers of the neighboring atoms
-    #     self.dset.neighborhood_atom_types = atom_types[self.dset.neighbor_indices]
+    def compute_neighborhood_indices(self, num_neighbors=8):
+        """
+        Computes the local neighbors, returning the indices and atom types for the neighborhood atoms
+
+        Parameters
+        ----------
+            num_neighbors (int) (Default = 8): Number of neighbors
+
+            Returns: (None), results are stored as neighbor_indices and neighborhood_atom_types attributes.
+        """
+        atom_positions = self.dset.structures[self.struct].get_positions()[:, 0:2]
+        atom_types = self.dset.structures[self.struct].get_atomic_numbers()
+        # finds indices of the neighbors
+        tree = spatial.cKDTree(atom_positions)
+        dists, neighbors = tree.query(atom_positions, k=num_neighbors + 1)
+        self.dset.neighbor_indices = neighbors[:, 1::]  # Indices of the neighbors
+        # atomic numbers of the neighboring atoms
+        self.dset.neighborhood_atom_types = atom_types[self.dset.neighbor_indices]
