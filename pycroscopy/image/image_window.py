@@ -22,8 +22,8 @@ class ImageWindowing:
             Keys:
             - 'window_size_x' (integer) (required): size of the window across the x-axis
             - 'window_size_y' (integer) (required): size of the window across the y-axis
-            - 'window_step_x' (integer) (required): step size of the window across the x-axis. Sometimes referred to as 'strides'
-            - 'window_step_y' (integer) (required): step size of the window across the y-axis. Sometimes referred to as 'strides'
+            - 'window_step_x' (integer) (required): step size of the window across the x-axis. Must divide into the image size in the x axis
+            - 'window_step_y' (integer) (required): step size of the window across the y-axis. Must divide into the image size in the y axis
             - 'mode' (string) (Optional, default is 'image'): One of 'image' or 'fft' which defines the processing to be performed for each window.
                 The choice of 'fft' will perform 2D fast Fourier transforms on each image whereas 'image' will not perform any operation on the window
             - 'fft_mode' (string) (Optional, default is 'abs'): If mode is 'fft', choose whether to look at amplitude or phase. Options are 'abs', 'phase' and 'complex'.
@@ -101,7 +101,7 @@ class ImageWindowing:
             print('ImageWindowing Object created with parameters {}'.format(parms_dict))
 
         self.window_parms = parms_dict
-
+        self.window_dataset = None
         return
 
     def _get_window_size(self):
@@ -117,6 +117,53 @@ class ImageWindowing:
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
         #print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
         return zoomed_interpolated.shape[0],zoomed_interpolated.shape[1]
+    
+    def do_PCA_window_cleaning(self, num_comps = None):
+        """
+        This function performs PCA cleaning
+        Inputs: 
+            - num_comps: (int) (Default = None). Number of components to keep in reconstruction. 
+            By default, num_comps is 0.5*(window_size_x * window_size_y)
+        """
+        #Here we assume that the windowing has been done
+
+        if self.window_dataset is None:
+            raise ValueError("Windowing has not been done. Please perform windowing first before calling this function")
+        if (self.image_shape[0] - self.window_size_x) % self.window_step_x or (self.image_shape[1] - self.window_size_y) % self.window_step_y:
+            raise ValueError("Cannot perform image cleaning. Your image windowing parameters do not cover the whole image without breaks. \
+            Choose window size and step combinations that divide equally into the x and y shape of the image")
+
+        assert self.window_size_x == self.window_size_final_x, "Cannot use zoom and interpolation for PCA image cleaning, rerun without these"
+        assert self.window_size_y == self.window_size_final_y, "Cannot use zoom and interpolation for PCA image cleaning, rerun without these"
+        
+        windows_2d = self.window_dataset.fold(method='spaspec')
+        u, s, vh = np.linalg.svd(np.array(windows_2d), full_matrices=False)
+        
+        #component 20 is good enough
+        if num_comps is None:
+            num_comps = len(s)//2 #choose half the components as default
+        
+        s[num_comps:] = 0
+
+        recon = np.dot(u * s, vh)
+        recon_4d = recon.reshape(self.window_dataset.shape)
+
+        recon_image = np.zeros(self.image_shape)
+        window_size = [self.window_size_final_x, self.window_size_final_y]
+        m=0
+        for xind in range(recon_4d.shape[0]):
+            for yind in range(recon_4d.shape[1]):
+                cur_slice = recon_4d[xind,yind,:,:]
+                pos =self.pos_vec[m]
+                start_stop = [slice(x, x + y, 1) for x, y in zip(pos, window_size)]
+                recon_image[tuple(start_stop)] = cur_slice
+                m+=1
+
+        self.recon_image = recon_image
+        
+        #Need to return as a sidpy dataset
+
+        return recon_image
 
     def MakeWindows(self, dataset, dim_slice=None):
         '''
@@ -169,10 +216,20 @@ class ImageWindowing:
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
         window_size_final = [self.window_size_final_x, self.window_size_final_y]
+        division_factor_x = self.window_size_x - self.window_step_x
+        division_factor_y = self.window_size_y - self.window_step_y
+        if self.window_size_x == self.window_step_x: division_factor_x = self.window_size_x
+        if self.window_size_y == self.window_step_y: division_factor_y = self.window_size_y
+        
+        assert self.image_shape[0]%division_factor_y ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
+        without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
+        assert self.image_shape[1]%division_factor_x==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
+        without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
 
         dim_vec = []
         for i in range(2):
             dim_vec.append(np.arange(0, self.image_shape[i] - window_size[i], window_step[i]))
+            dim_vec[i] = np.append(dim_vec[i], self.image_shape[i] - window_size[i])
 
         if self.verbose:
             print("dim vec is {}".format(dim_vec))
@@ -183,6 +240,7 @@ class ImageWindowing:
 
         pca_mat = np.zeros(shape=(pos_vec.shape[0], np.prod(window_size_final)), dtype=np.complex64)
         pos_vec = np.int32(pos_vec)
+        self.pos_vec = pos_vec
 
         def make_windows_parallel(ind, pos):
             start_stop = [slice(x, x + y, 1) for x, y in zip(pos, window_size)]
@@ -279,7 +337,7 @@ class ImageWindowing:
 
         # append metadata
         data_set.metadata = self._merge_dictionaries(dataset.metadata, self.window_parms)
-
+        self.window_dataset = data_set
         return data_set
 
     def _return_win_image_processed(self, img_window):
