@@ -62,11 +62,11 @@ class TestImageWindowing(unittest.TestCase):
         parms_dict = {}
         parms_dict['window_step_x'] = 2
         parms_dict['window_step_y'] = 2
-        parms_dict['window_size_x'] = 3
+        parms_dict['window_size_x'] = 4
         parms_dict['window_size_y'] = 7
         iw = ImageWindowing(parms_dict)
         windows = iw.MakeWindows(sidpy_dset_image)
-        assert windows.shape == (1, 5, 3, 7)
+        assert windows.shape == (1, 4, 4, 7)
 
     def test_zoom_interpolationj(self):
         #test two dimensional windowing works
