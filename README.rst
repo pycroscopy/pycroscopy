@@ -14,7 +14,7 @@ pycroscopy
     :target: https://pypi.org/project/pyCroscopy/
     :alt: PyPI
     
-.. image:: https://codecov.io/gh/pycroscopy/pycroscopy/branch/master/graph/badge.svg?token=HXGZMKzJqb
+.. image:: https://codecov.io/gh/pycroscopy/pycroscopy/branch/main/graph/badge.svg?token=HXGZMKzJqb
     :target: https://codecov.io/gh/pycroscopy/pycroscopy
     :alt: coverage
     
