@@ -89,15 +89,19 @@ class TestImageWindowing(unittest.TestCase):
         parms_dict['window_step_y'] = 2
         parms_dict['window_size_x'] = 4
         parms_dict['window_size_y'] = 4
-        parms_dict['mode'] = 'fft'
+        parms_dict['fft_mode'] = 'abs'
 
         #check that both modes work
-        for fft_mode in ['abs', 'phase']:
-            parms_dict['fft_mode'] = fft_mode
-            iw = ImageWindowing(parms_dict)
-            windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
-            assert windows.shape == (4, 4, 4, 4)
-            assert windows.metadata['fft_mode'] == fft_mode
+        for mode in ['fft', 'image']:
+            parms_dict['mode'] = mode
+            for fft_mode in ['abs', 'phase']:
+                parms_dict['fft_mode'] = fft_mode
+                for parms_dict['filter'] in ['hamming', 'blackman']:
+                    iw = ImageWindowing(parms_dict)
+                    windows = iw.MakeWindows(sidpy_dset_image, dim_slice=2)
+                    assert windows.shape == (4, 4, 4, 4)
+                    assert windows.metadata['fft_mode'] == fft_mode
+                    assert windows.metadata['mode'] == mode
 
 
 
