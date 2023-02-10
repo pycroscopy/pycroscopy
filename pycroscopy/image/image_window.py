@@ -110,12 +110,10 @@ class ImageWindowing:
         '''
 
         image_test = np.random.uniform(size=(self.window_size_x, self.window_size_y))
-        #print('image test is shape {}'.format(image_test.shape))
         image_zoomed = self.zoom(image_test, self.zoom_factor)
-        #print('image zoomed is shape {}'.format(image_zoomed.shape))
+
         #interpolate it
         zoomed_interpolated = rescale(image_zoomed, self.interpol_factor)
-        #print('image zoomed interpol is shape {}'.format(zoomed_interpolated.shape))
         return zoomed_interpolated.shape[0],zoomed_interpolated.shape[1]
     
     def do_PCA_window_cleaning(self, num_comps = None):
@@ -129,17 +127,13 @@ class ImageWindowing:
 
         if self.window_dataset is None:
             raise ValueError("Windowing has not been done. Please perform windowing first before calling this function")
-        if (self.image_shape[0] - self.window_size_x) % self.window_step_x or (self.image_shape[1] - self.window_size_y) % self.window_step_y:
-            raise ValueError("Cannot perform image cleaning. Your image windowing parameters do not cover the whole image without breaks. \
-            Choose window size and step combinations that divide equally into the x and y shape of the image")
 
         assert self.window_size_x == self.window_size_final_x, "Cannot use zoom and interpolation for PCA image cleaning, rerun without these"
         assert self.window_size_y == self.window_size_final_y, "Cannot use zoom and interpolation for PCA image cleaning, rerun without these"
         
         windows_2d = self.window_dataset.fold(method='spaspec')
-        u, s, vh = np.linalg.svd(np.array(windows_2d), full_matrices=False)
+        u, s, vh = np.linalg.svd(np.array(windows_2d), full_matrices=False )
         
-        #component 20 is good enough
         if num_comps is None:
             num_comps = len(s)//2 #choose half the components as default
         
@@ -161,7 +155,7 @@ class ImageWindowing:
 
         self.recon_image = recon_image
         
-        #Need to return as a sidpy dataset
+        #TODO: Need to return as a sidpy dataset
 
         return recon_image
 
@@ -216,14 +210,14 @@ class ImageWindowing:
         window_step = [self.window_step_x, self.window_step_y]
         window_size = [self.window_size_x, self.window_size_y]
         window_size_final = [self.window_size_final_x, self.window_size_final_y]
-        division_factor_x = self.window_size_x - self.window_step_x
-        division_factor_y = self.window_size_y - self.window_step_y
+        #division_factor_x = self.window_size_x - self.window_step_x
+        #division_factor_y = self.window_size_y - self.window_step_y
         if self.window_size_x == self.window_step_x: division_factor_x = self.window_size_x
         if self.window_size_y == self.window_step_y: division_factor_y = self.window_size_y
         
-        assert self.image_shape[0]%division_factor_y ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
+        assert np.mod(self.image_shape[0] - self.window_size_x, self.window_step_x) ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
         without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
-        assert self.image_shape[1]%division_factor_x==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
+        assert np.mod(self.image_shape[1] - self.window_size_y, self.window_step_y) ==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
         without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
 
         dim_vec = []
@@ -402,6 +396,8 @@ class ImageWindowing:
             
         return complex_rescaled_image
 
+    #
+    '''
     def clean_image(self, n_comps = 4):
         self.mode = 'image'
         self.interpol_factor = 1
@@ -413,7 +409,7 @@ class ImageWindowing:
         from ..learn.ml import MatrixFactor
         svd_results = MatrixFactor(new_windows, method='svd', n_components = n_comps)
 
-        return svd_results
+        return svd_results'''
 
 
 
