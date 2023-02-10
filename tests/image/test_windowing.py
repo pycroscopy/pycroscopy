@@ -68,6 +68,21 @@ class TestImageWindowing(unittest.TestCase):
         windows = iw.MakeWindows(sidpy_dset_image)
         assert windows.shape == (1, 5, 3, 7)
 
+    def test_zoom_interpolationj(self):
+        #test two dimensional windowing works
+        sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(10,8)))
+        parms_dict = {}
+        parms_dict['window_step_x'] = 2
+        parms_dict['window_step_y'] = 2
+        parms_dict['window_size_x'] = 4
+        parms_dict['window_size_y'] = 4
+        parms_dict['zoom_factor'] = 3
+        parms_dict['interpol_factor'] = 2
+
+        iw = ImageWindowing(parms_dict)
+        windows = iw.MakeWindows(sidpy_dset_image)
+        assert windows.shape == (3, 4, 2, 2)
+
     def test_three_dim_case(self):
         #test that spectral image works
         sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(11, 3, 7)))
@@ -102,6 +117,32 @@ class TestImageWindowing(unittest.TestCase):
                     assert windows.shape == (4, 4, 4, 4)
                     assert windows.metadata['fft_mode'] == fft_mode
                     assert windows.metadata['mode'] == mode
+
+    def test_window_cleaning(self):
+        sidpy_dset_image = gen_sidpy_dset(np.random.uniform(size=(10,10)))
+        parms_dict = {}
+        parms_dict['window_step_x'] = 5
+        parms_dict['window_step_y'] = 5
+        parms_dict['window_size_x'] = 5
+        parms_dict['window_size_y'] = 5
+        iw = ImageWindowing(parms_dict)
+        self.assertRaises(ValueError, iw.do_PCA_window_cleaning)
+        windows = iw.MakeWindows(sidpy_dset_image)
+        parms_dict['zoom_factor'] = 4
+        parms_dict['interpol_factor'] = 2
+        iw = ImageWindowing(parms_dict)
+        windows = iw.MakeWindows(sidpy_dset_image)
+        self.assertRaises(AssertionError, iw.do_PCA_window_cleaning)
+        parms_dict['zoom_factor'] = 1
+        parms_dict['interpol_factor'] = 1
+        iw = ImageWindowing(parms_dict)
+        windows = iw.MakeWindows(sidpy_dset_image)
+        recon_image = iw.do_PCA_window_cleaning(num_comps = 5)
+        assert recon_image.shape == (10, 10)
+
+        
+
+
 
 
 
