@@ -14,6 +14,10 @@ pycroscopy
     :target: https://pypi.org/project/pyCroscopy/
     :alt: PyPI
     
+.. image:: https://codecov.io/gh/pycroscopy/pycroscopy/branch/main/graph/badge.svg?token=341d76b7-fe51-4ea9-9e24-b79b6ef7ad78
+    :target: https://codecov.io/gh/pycroscopy/pycroscopy
+    :alt: coverage
+    
 .. image:: https://img.shields.io/conda/vn/conda-forge/pycroscopy.svg
     :target: https://github.com/conda-forge/pycroscopy-feedstock
     :alt: conda-forge
