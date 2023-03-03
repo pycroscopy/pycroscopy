@@ -14,9 +14,10 @@ from sklearn.cluster import KMeans
 from scipy.spatial import cKDTree
 import scipy.optimize as optimization
 
+import ase
+
 import sidpy
 from tqdm import trange
-import sidpy
 
 get_slope = sidpy.base.num_utils.get_slope
 
@@ -34,6 +35,8 @@ def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
 
 def find_atoms(image, atom_size=0.1, threshold=-1.):
     """ Find atoms is a simple wrapper for blob_log in skimage.feature
+
+    The atoms found are stored as a ase.Atoms object in the structure attribute of the image
 
     Parameters
     ----------
@@ -61,13 +64,21 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
 
 
     scale_x = get_slope(image.dim_0)
+    scale_y = get_slope(image.dim_1)
     im = np.array(image-image.min())
     im = im/im.max()
     if threshold < 0.:
         threshold = np.std(im)
     atoms = blob_log(im, max_sigma=atom_size/scale_x, threshold=threshold)
-
-    return atoms
+    atoms_out = atoms
+    atoms[:,2] = 0.
+    print('keys', image.structures.keys)
+    image.structures['found_atoms'] = ase.Atoms(positions=atoms, cell=(1, 1, 0))
+    image.structures['found_atoms'].info.update({'image':{'name': image.title,
+                                                 'scale': [scale_x, scale_y],
+                                                 'threshold': threshold,
+                                                 'atom_size': atom_size}})
+    return atoms_out
 
 
 def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=7):
@@ -123,14 +134,18 @@ def gauss_difference(params, area):
     return (area - gauss).flatten()
 
 
-def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
+def atom_refine(image, atoms= None, radius=3, max_int=0, min_int=0, max_dist=4):
     """Fits a Gaussian in a blob of an image
+    
+    If atoms variable is not provided as numpy area or list, the atoms have to be provided as structure attribute of image.
+    This can be the default image.structure['found_atoms] or a string of the key in that structure dictionary.
+    Structure attribute of image will be updated with refined atoms properties.
 
     Parameters
     ----------
     image: np.array or sidpy Dataset
-    atoms: list or np.array
-        positions of atoms
+    atoms: list or np.array or None
+        positions of atoms 
     radius: float
         radius of circular mask to define fitting of Gaussian
     max_int: float
@@ -145,6 +160,15 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
     sym: dict
         dictionary containing new atom positions and other output such as intensity of the fitted Gaussian
     """
+
+    if atoms is None:
+        if 'found_atoms' in image.structure:
+            atoms = image.structure['found_atoms'].positions[:,2]
+    if isinstance(atoms, str):
+        if atoms in image.structure:
+            atoms = image.structure[atoms].positions[:,2]
+    if not isinstance(atoms, np.array):
+        ValueError('atom positions must be provided as a numpy array in atoms or provided as a name in structure attribute of image')
     rr = int(radius + 0.5)  # atom radius
     print('using radius ', rr, 'pixels')
 
@@ -154,8 +178,9 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
 
     guess = [rr * 2, 0.0, 0.0, 1]
 
+    
     sym = {'number_of_atoms': len(atoms)}
-
+    
     volume = []
     position = []
     intensities = []
@@ -211,6 +236,11 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
         gauss_width.append(pout[0])
         gauss_amplitude.append(pout[3])
 
+    scale_x = get_slope(image.dim_0)
+    scale_y = get_slope(image.dim_1)    
+    image.structures['refined_atoms'] = ase.atoms(positions=atoms, cell=(image.shape[0], image.shape[1], 0))
+    image.structures['refined_atoms'].info.update({'image':{'name': image.title, 'scale': [scale_x, scale_y]}})
+
     sym['inside'] = position
     sym['intensity_area'] = intensities
     sym['maximum_area'] = maximum_area
@@ -219,7 +249,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
     sym['gauss_amplitude'] = gauss_amplitude
     sym['gauss_intensity'] = gauss_intensity
     sym['gauss_volume'] = volume
-
+    image.structures['refined_atoms'].info.update({'refined_atom_properties': sym})
     return sym
 
 
