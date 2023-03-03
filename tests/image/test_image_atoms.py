@@ -57,3 +57,28 @@ class TestUtilityFunctions(unittest.TestCase):
             if list(found_atoms[i, :2]) in atoms_placed:
                 matches += 1
         self.assertEqual(64, matches)
+
+    def test_atoms_clustering(self):
+        image, atoms_placed = make_test_data()
+        
+        with self.assertRaises(TypeError):
+            image_atoms.atoms_clustering(image , image)
+
+        found_atoms = image_atoms.find_atoms(image)
+
+        clusters, distances, indices = image_atoms.atoms_clustering(image.structures['found_atoms'], found_atoms)
+
+        self.assertEqual(clusters.shape[0], 64)
+
+
+    def test_atom_refine(self):
+        image, atoms_placed = make_test_data()
+        
+        found_atoms = image_atoms.find_atoms(image)
+        
+        sym = image_atoms.atom_refine(image)
+        self.assertEqual(len(sym['intensity_area']), 64) 
+
+    
+
+    

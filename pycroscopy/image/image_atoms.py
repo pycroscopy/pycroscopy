@@ -86,7 +86,7 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
 
     Parameters
     ----------
-    atoms: list or np.array (Nx2)
+    atoms: ase.atoms object
         list of all atoms
     mid_atoms: list or np.array (Nx2)
         atoms to be evaluated
@@ -99,9 +99,14 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
     -------
     clusters, distances, indices: numpy arrays
     """
+    if not isinstance(atoms, ase.Atoms):
+        raise TypeError('Atoms have to be in ase.Atoms format')
+    
+    if not isinstance(np.array(mid_atoms), np.ndarray):
+        raise TypeError('Mid_Atoms have to be in numpy array or list format')
 
     # get distances
-    nn_tree = cKDTree(np.array(atoms)[:, 0:2])
+    nn_tree = cKDTree(atoms.positions[:, 0:2])
 
     distances, indices = nn_tree.query(np.array(mid_atoms)[:, 0:2], nearest_neighbours)
 
@@ -162,12 +167,12 @@ def atom_refine(image, atoms= None, radius=3, max_int=0, min_int=0, max_dist=4):
     """
 
     if atoms is None:
-        if 'found_atoms' in image.structure:
-            atoms = image.structure['found_atoms'].positions[:,2]
+        if 'found_atoms' in image.structures:
+            atoms = image.structures['found_atoms'].positions[:,:2]
     if isinstance(atoms, str):
-        if atoms in image.structure:
-            atoms = image.structure[atoms].positions[:,2]
-    if not isinstance(atoms, np.array):
+        if atoms in image.structures:
+            atoms = image.structures[atoms].positions[:,:2]
+    if not isinstance(atoms, np.ndarray):
         ValueError('atom positions must be provided as a numpy array in atoms or provided as a name in structure attribute of image')
     rr = int(radius + 0.5)  # atom radius
     print('using radius ', rr, 'pixels')
@@ -191,7 +196,7 @@ def atom_refine(image, atoms= None, radius=3, max_int=0, min_int=0, max_dist=4):
     gauss_intensity = []
 
     for i in trange(len(atoms)):
-        x, y = atoms[i][0:2]
+        x, y = atoms[i, 0:2]
         x = int(x)
         y = int(y)
 
@@ -238,7 +243,9 @@ def atom_refine(image, atoms= None, radius=3, max_int=0, min_int=0, max_dist=4):
 
     scale_x = get_slope(image.dim_0)
     scale_y = get_slope(image.dim_1)    
-    image.structures['refined_atoms'] = ase.atoms(positions=atoms, cell=(image.shape[0], image.shape[1], 0))
+    atoms_3d = np.zeros([atoms.shape[0],3])
+    atoms_3d[:,:2] = atoms
+    image.structures['refined_atoms'] = ase.Atoms(positions=atoms_3d, cell=(image.shape[0], image.shape[1], 0))
     image.structures['refined_atoms'].info.update({'image':{'name': image.title, 'scale': [scale_x, scale_y]}})
 
     sym['inside'] = position
