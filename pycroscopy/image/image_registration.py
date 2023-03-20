@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm import trange
+from tqdm.auto import trange
 import skimage
 import scipy.ndimage as ndimage
 import sidpy
@@ -8,7 +8,7 @@ _SimpleITK_present = True
 
 try:
     import SimpleITK as sitk
-except BaseException:
+except ModuleNotFoundError:
     _SimpleITK_present = False
 if not _SimpleITK_present:
     print('SimpleITK not installed; Registration Functions for Image Stacks not available')
@@ -51,7 +51,7 @@ def complete_registration(main_dataset, storage_channel=None):
 
     print('Non-Rigid_Registration')
 
-    if  _SimpleITK_present:
+    if _SimpleITK_present:
         non_rigid_registered = demon_registration(rigid_registered_dataset)
     else:
         non_rigid_registered = None
@@ -113,8 +113,6 @@ def demon_registration(dataset, verbose=False):
     resampler.SetInterpolator(sitk.sitkBSpline)
     resampler.SetDefaultPixelValue(0)
 
-    done = 0
-
     for i in trange(nimages):
 
         moving = sitk.GetImageFromArray(dataset[i])
@@ -125,11 +123,11 @@ def demon_registration(dataset, verbose=False):
         out = resampler.Execute(moving)
         dem_reg[i, :, :] = sitk.GetArrayFromImage(out)
 
-    print(':-)')
+    # print(':-)')
     print('You have successfully completed Diffeomorphic Demons Registration')
 
-    demon_registered = sidpy.Dataset.from_array(dem_reg)
-
+    demon_registered = dataset.like_array(dem_reg)
+    demon_registered.data_type = 'image_stack'
     delattr(demon_registered, 'a')
     delattr(demon_registered, 'b')
     delattr(demon_registered, 'c')
@@ -144,6 +142,7 @@ def demon_registration(dataset, verbose=False):
     demon_registered.set_dimension(2, axis)
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
+
 
     demon_registered.metadata = {'analysis': 'non-rigid demon registration'}
     if 'input_crop' in dataset.metadata:
@@ -160,7 +159,7 @@ def rigid_registration(dataset):
     """
     Rigid registration of image stack with sub-pixel accuracy
 
-    Uses phase_cross_correlation from skimage.registration
+    Uses phase_cross_correlation from 'skimage.registration'
     (we determine drift from one image to next)
 
     Parameters
@@ -215,10 +214,9 @@ def rigid_registration(dataset):
         if skimage.__version__[:4] == '0.16':
             shift = skimage.register_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
         else:
-            shift = skimage.registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
-
+            shift = skimage.registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000,
+                                                                 space='fourier')
         fft_fixed = fft_moving
-
         relative_drift.append(shift[0])
 
     rig_reg, drift = rig_reg_drift(dataset, relative_drift)

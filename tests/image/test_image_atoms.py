@@ -7,10 +7,12 @@ Created on January 23 2021
 import unittest
 import numpy as np
 
-import sidpy
+
 from scipy.ndimage import gaussian_filter
 
 import sys
+# sys.path.insert(0, "../../../sidpy/")
+import sidpy
 sys.path.insert(0, "../../")
 
 from pycroscopy.image import image_atoms

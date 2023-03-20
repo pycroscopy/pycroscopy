@@ -78,16 +78,14 @@ def polygon_sort2(corners, points):
     """
 
     # calculate centroid of the polygon
-    n = len(corners)  # of corners
-    cx = float(sum(x for x, y in points[corners])) / n
-    cy = float(sum(y for x, y in points[corners])) / n
+    center = np.average(corners, axis=0)
 
     # create a new list of corners which includes angles
     # angles from the positive x axis
     corners_with_angles = []
     for i in corners:
         x, y = points[i]
-        an = (np.atan2(y - cy, x - cx) + 2.0 * np.pi) % (2. * np.pi)
+        an = (np.atan2(y - center[1], x - center[0]) + 2.0 * np.pi) % (2. * np.pi)
         corners_with_angles.append([i, np.degrees(an)])
 
     # sort it using the angles
@@ -136,14 +134,12 @@ def inner_angles(vertices, rotational_invariant=False, verbose=False):
 def polygon_sort(corners):
     """sort polygon vertices according to angle"""
     # calculate centroid of the polygon
-    n = len(corners)  # of corners
-    cx = float(sum(x for x, y in corners)) / n
-    cy = float(sum(y for x, y in corners)) / n
+    center = np.average(corners, axis=0)
 
     # create a new list of corners which includes angles
     corners_with_angles = []
     for x, y in corners:
-        an = (np.atan2(y - cy, x - cx) + 2.0 * np.pi) % (2.0 * np.pi)
+        an = (np.atan2(y - center[1], x - center[0]) + 2.0 * np.pi) % (2.0 * np.pi)
         corners_with_angles.append((x, y, np.degrees(an)))
 
     # sort it using the angles
@@ -185,13 +181,12 @@ def polygon_angles(corners):
 
     angles = []
     # calculate centroid of the polygon
-    n = len(corners)  # of corners
-    cx = float(sum(x for x, y in corners)) / n
-    cy = float(sum(y for x, y in corners)) / n
+    center = np.average(corners, axis=0)
+
     # create a new list of angles
     # print (cx, cy)
     for x, y in corners:
-        an = (np.atan2(y - cy, x - cx) + 2.0 * np.pi) % (2.0 * np.pi)
+        an = (np.arctan2(y - center[1], x - center[0]) + 2.0 * np.pi) % (2.0 * np.pi)
         angles.append((np.degrees(an)))
 
     return angles
@@ -231,39 +226,60 @@ def circum_center(vertex_pos, tol=1e-3):
         The radius of the circumsphere
     """
     
-    if vertex_pos.shape[1] < 3:
-        ax = vertex_pos[0, 0]
-        ay = vertex_pos[0, 1]
-        bx = vertex_pos[1, 0]
-        by = vertex_pos[1, 1]
-        cx = vertex_pos[2, 0]
-        cy = vertex_pos[2, 1]
-        d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by))
-        ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d
-        uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d
-
-        circum_center =np.array([ux, uy]) 
-        circum_radius = np.linalg.norm(circum_center-vertex_pos[0])
-        
-        return np.array(circum_center), circum_radius
-    dis_ij = scipy.spatial.distance.pdist(np.array(vertex_pos), 'euclidean')
-    sq_12, sq_13, sq_14, sq_23, sq_24, sq_34 = np.power(dis_ij, 2)
-
-    matrix_c = np.array([[0, 1, 1, 1, 1], [1, 0, sq_12, sq_13, sq_14], [1, sq_12, 0, sq_23, sq_24],
-                         [1, sq_13, sq_23, 0, sq_34], [1, sq_14, sq_24, sq_34, 0]])
-
+    # Make Cayley-Menger Matrix
+    number_vertices = len(vertex_pos)
+    matrix_c = np.identity(number_vertices+1)*-1+1
+    distances = scipy.spatial.distance.pdist(np.asarray(vertex_pos, dtype=float), metric='sqeuclidean')
+    matrix_c[1:, 1:] = scipy.spatial.distance.squareform(distances)
     det_matrix_c = (np.linalg.det(matrix_c))
+    if abs(det_matrix_c) < tol:
+        return np.array(vertex_pos[0]*0), 0
+    matrix = -2 * np.linalg.inv(matrix_c)
 
-    if det_matrix_c < tol:
-        return np.array([0, 0, 0]), 0
+    center = vertex_pos[0, :]*0
+    for i in range(number_vertices):
+        center += matrix[0, i+1] * vertex_pos[i, :]
+    center /= np.sum(matrix[0, 1:])
+
+    circum_radius = np.sqrt(matrix[0, 0]) / 2
+
+    return np.array(center), circum_radius
+
+
+def interstitial_sphere_center(vertex_pos, atom_radii, optimize=True):
+    """
+        Function finds center and radius of the largest interstitial sphere of a simplex.
+        Which is the center of the cirumsphere if all atoms have the same radius,
+        but differs for differently sized atoms.
+        In the last case, the circumsphere center is used as starting point for refinement.
+
+        Parameters
+        -----------------
+        vertex_pos : numpy array
+            The position of vertices of a tetrahedron
+        atom_radii : float
+            bond radii of atoms
+        optimize: boolean
+            whether atom bond lengths are optimized or not
+        Returns
+        ----------
+        new_center : numpy array
+            The center of the largest interstitial sphere
+        radius : float
+            The radius of the largest interstitial sphere
+        """
+    center, radius = circum_center(vertex_pos, tol=1e-4)
+
+    def distance_deviation(sphere_center):
+        return np.std(np.linalg.norm(vertex_pos - sphere_center, axis=1) - atom_radii)
+
+    if np.std(atom_radii) == 0 or not optimize:
+        return center, radius-atom_radii[0]
     else:
-        matrix = -2 * np.linalg.inv(matrix_c)
-        circum_center = (matrix[0, 1] * vertex_pos[0, :] + matrix[0, 2] * vertex_pos[1, :] +
-                         matrix[0, 3] * vertex_pos[2, :] +
-                         matrix[0, 4] * vertex_pos[3, :]) / (matrix[0, 1] + matrix[0, 2] + matrix[0, 3] + matrix[0, 4])
-        circum_radius = np.sqrt(matrix[0, 0]) / 2
+        center_new = scipy.optimize.minimize(distance_deviation, center)
+        return center_new.x, np.linalg.norm(vertex_pos[0]-center_new.x)-atom_radii[0]
 
-    return np.array(circum_center), circum_radius
+
 
 def voronoi_volumes(points):
     """

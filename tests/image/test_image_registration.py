@@ -7,15 +7,9 @@ Created on January, 23 2021
 import unittest
 import numpy as np
 
-import sys
 import sidpy
-from scipy.ndimage import gaussian_filter
 
 from pycroscopy.image import image_registration
-import sys
-
-if sys.version_info.major == 3:
-    unicode = str
 
 
 def make_test_data():
@@ -40,24 +34,26 @@ class TestUtilityFunctions(unittest.TestCase):
         image_stack = make_test_data()
 
         with self.assertRaises(TypeError):
-            image_registration.rigid_registration(np.array(image_stack))
+            image_registration.rigid_registration(image_stack)
         with self.assertRaises(TypeError):
             image_stack.data_type = 'image'
             image_registration.rigid_registration(image_stack)
         image_stack.data_type = 'image_stack'
 
         registered = image_registration.rigid_registration(image_stack)
-
+        
         self.assertIsInstance(registered, sidpy.Dataset)
         self.assertIsInstance(registered.metadata, dict)
         self.assertTrue('drift' in registered.metadata)
-        self.assertTrue(np.allclose(registered.metadata['drift'], [[ 0., -1.], [ 0., -1.], [-1., -1.], [0.,  0.],
-                                                                  [-1., 0.], [0., 0.]]))
+        self.assertTrue(np.allclose(registered.metadata['drift'], [[0., -1.], [0., -1.], [-1., -1.], [0.,  0.],
+                                                                   [-1., 0.], [0., 0.]]))
 
         self.assertTrue(np.allclose(registered.metadata['input_crop'], [1, 64, 1, 64]))
         self.assertTrue(registered.shape[0] == 5)
         self.assertTrue(registered.shape[1] == 63)
         self.assertTrue(registered._axes[0].dimension_type.name == 'TEMPORAL')
+
+        self.assertTrue(registered.data_type.name == 'IMAGE_STACK')
 
     def test_demon_registration(self):
         image_stack = make_test_data()
@@ -67,11 +63,13 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertIsInstance(demon_registered, sidpy.Dataset)
         self.assertTrue(demon_registered.shape[0] == 5)
         self.assertTrue(demon_registered.shape[1] == 63)
+        self.assertTrue(demon_registered.data_type.name == 'IMAGE_STACK')
 
     def test_complete_registration(self):
         image_stack = make_test_data()
         non_rigid_registered, rigid_registered_dataset = image_registration.complete_registration(image_stack)
         self.assertIsInstance(non_rigid_registered, sidpy.Dataset)
+
 
 if __name__ == '__main__':
     unittest.main()
