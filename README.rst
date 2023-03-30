@@ -31,7 +31,7 @@ pycroscopy
    :alt: DOI
    
 .. image:: https://colab.research.google.com/assets/colab-badge.svg
-   :target: https://github.com/pycroscopy/pycroscopy/blob/51e14e67e31b4fd7930c7579cfe3283e7cf4dfb6/jupyter_notebooks/Intro_to_Pycroscopy.ipynb
+   :target: https://colab.research.google.com/github/pycroscopy/pycroscopy/jupyter_notebooks/Intro_to_Pycroscopy.ipynb
    :alt: Notebook
 
 pycroscopy is a `python <http://www.python.org/>`_ package for generic (domain-agnostic) microscopy data anlaysis. More specialized or domain-specific analysis routines are contained within some of the other packages within the pycroscopy ecosystem.
