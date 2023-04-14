@@ -31,3 +31,30 @@ def crop_image(dataset, corners):
     selected_dset.source = dataset.title
     selected_dset.metadata ={'crop_dimension': selection, 'original_dimensions': dataset.shape}
     return selected_dset
+
+def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
+    #TODO: lots of cleanup in this function required...
+    new_sid_dset = sid_dset.copy()
+    
+    #check the spatial dimensions, flatten along each row
+    if flatten_axis == 'row':
+        num_pts = sid_dset.shape[0] #this is hard coded, it shouldn't be
+    elif flatten_axis == 'col':
+        num_pts = sid_dset.shape[1] #this is hard coded, but it shouldn't be
+    else:
+        raise ValueError("Gave flatten axis of {} but only 'row', 'col' are allowed".format(flatten_axis))
+    
+    data_flat = np.zeros(sid_dset.shape) #again this should be the spatial (2 dimensional) part only
+    print(sid_dset.shape, num_pts)
+    for line in range(num_pts):
+        if flatten_axis=='row':
+            line_data = np.array(sid_dset[:])[line,:]
+        elif flatten_axis=='col':
+            line_data = np.array(sid_dset[:])[:,line]
+        p = np.polyfit(np.arange(len(line_data)), line_data,1)
+        lin_est = np.polyval(p,np.arange(len(line_data)))
+        new_line = line_data - lin_est
+        data_flat[line] = new_line
+    new_sid_dset[:] = data_flat 
+    
+    return new_sid_dset
