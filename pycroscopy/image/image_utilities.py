@@ -41,14 +41,33 @@ def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     
     selection = np.stack([np.min(corners[:2])+0.5, np.max(corners[2:])+0.5]).astype(int)
 
-<<<<<<< HEAD
-    selected_dset = dataset.like_data(dataset[selection[0,0]:selection[1,0],selection[0,1]:selection[1,1]])
-    selected_dset.title = 'cropped_' + dataset.title
-    selected_dset.source = dataset.title
-    selected_dset.metadata ={'crop_dimension': selection, 'original_dimensions': dataset.shape}
-    return selected_dset
+    cropped_dset = dataset.like_data(dataset[selection[0, 0]:selection[1, 0], selection[0, 1]:selection[1, 1]])
+    cropped_dset.title = 'cropped_' + dataset.title
+    cropped_dset.source = dataset.title
+    cropped_dset.metadata = {'crop_dimension': selection, 'original_dimensions': dataset.shape}
+    
+    return cropped_dset
 
 def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
+    """
+    Flattens an image according to the method chosen. Used heavily for AFM/STM images
+
+    Parameters
+    ----------
+    dataset: sidpy.Dataset
+        An instance of sidpy.Dataset representing the image to be flattened.
+    order: integer, 
+        Optional, default = 1. Ordfor the polynomial fit.
+    flatten_axis: string, 
+        Optional, default = 'row'. Axis along which to flatten the image.
+    method: string, 
+        Optional, default = 'line_fit'. Method to use for flattening the image.
+
+    Returns
+    -------
+    sidpy.Dataset
+        A new instance of sidpy.Dataset representing the flattened image.
+    """
     #TODO: lots of cleanup in this function required...
     new_sid_dset = sid_dset.copy()
     assert len(new_sid_dset._axes) == 2, "Dataset must be 2-D for this function"
@@ -82,11 +101,3 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     new_sid_dset[:] = data_flat 
     
     return new_sid_dset
-=======
-    cropped_dset = dataset.like_data(dataset[selection[0, 0]:selection[1, 0], selection[0, 1]:selection[1, 1]])
-    cropped_dset.title = 'cropped_' + dataset.title
-    cropped_dset.source = dataset.title
-    cropped_dset.metadata = {'crop_dimension': selection, 'original_dimensions': dataset.shape}
-    
-    return cropped_dset
->>>>>>> 27a6021ee58da81cf910d80c8a661fa3a5765391
