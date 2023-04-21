@@ -33,7 +33,7 @@ Here is a brief overview of various technologies and packages that comprise the 
   * `sidpy <pycroscopy.github.io/sidpy/>`_ – core engineering tools to support scientific packages and file I/O packages
   * **Abstract models** to represent data:
 
-    * `USID – Universal Spectroscopy and Imaging and Data model <pycroscopy.github.io/usid/about.html>`_ – General model for representing data with or without N-dimensional forms
+    * `USID – Universal Spectroscopy and Imaging and Data model <https://pycroscopy.github.io/USID/index.html>`_ – General model for representing data with or without N-dimensional forms
     * `NSID – N-Dimensional Spectroscopy and Imaging Data model <https://pycroscopy.github.io/pyNSID/nsid.html>`_ – Model for data with a clear N-dimensional form
   * **Interfaces to reading and writing** pycroscopy formatted data into `Hierarchical Data Format Files (HDF5) <http://extremecomputingtraining.anl.gov/files/2015/03/HDF5-Intro-aug7-130.pdf>`_:
 

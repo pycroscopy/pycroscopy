@@ -29,8 +29,12 @@ pycroscopy
 .. image:: https://zenodo.org/badge/61456133.svg
    :target: https://zenodo.org/badge/latestdoi/61456133
    :alt: DOI
+   
+.. image:: https://colab.research.google.com/assets/colab-badge.svg
+   :target: https://colab.research.google.com/github/pycroscopy/pycroscopy/blob/main/jupyter_notebooks/Intro_to_Pycroscopy.ipynb
+   :alt: Notebook
 
-pycroscopy is a `python <http://www.python.org/>`_ package for image processing and scientific analysis of imaging modalities such as multi-frequency scanning probe microscopy, scanning tunneling spectroscopy, x-ray diffraction microscopy, and transmission electron microscopy. pycroscopy uses a data-centric model wherein the raw data collected from the microscope, results from analysis and processing routines are all written to standardized hierarchical data format (HDF5) files for traceability, reproducibility, and provenance.
+pycroscopy is a `python <http://www.python.org/>`_ package for generic (domain-agnostic) microscopy data anlaysis. More specialized or domain-specific analysis routines are contained within some of the other packages within the pycroscopy ecosystem.
 
 Please visit our `homepage <https://pycroscopy.github.io/pycroscopy/about.html>`_ for more information and installation instructions.
 

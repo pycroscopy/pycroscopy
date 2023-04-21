@@ -25,7 +25,7 @@ Reimagined Package
     * `SciFiReaders <https://pycroscopy.github.io/SciFiReaders/about.html>`_
       provides ``Readers`` to extract data and metadata from scientific data files into python objects in memory.
       This is unlike ``Translators`` that were part of pycroscopy that wrote the extracted data into
-      `USID – Universal Spectroscopy and Imaging and Data <pycroscopy.github.io/usid/about.html>`_
+      `USID – Universal Spectroscopy and Imaging and Data <https://pycroscopy.github.io/USID/index.html>`_
       formatted HDF5 files.
     * Input and output data are exchanged in the form of ``sidpy.Dataset`` objects
       rather than HDF5 Datasets in a file
