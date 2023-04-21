@@ -35,7 +35,8 @@ def crop_image(dataset, corners):
 def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     #TODO: lots of cleanup in this function required...
     new_sid_dset = sid_dset.copy()
-    
+    assert len(new_sid_dset._axes) == 2, "Dataset must be 2-D for this function"
+    assert new_sid_dset.data_type == sidpy.DataType.IMAGE, "Dataset must IMAGE for this function"
     #check the spatial dimensions, flatten along each row
     if flatten_axis == 'row':
         num_pts = sid_dset.shape[0] #this is hard coded, it shouldn't be
@@ -46,15 +47,22 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     
     data_flat = np.zeros(sid_dset.shape) #again this should be the spatial (2 dimensional) part only
     print(sid_dset.shape, num_pts)
-    for line in range(num_pts):
-        if flatten_axis=='row':
-            line_data = np.array(sid_dset[:])[line,:]
-        elif flatten_axis=='col':
-            line_data = np.array(sid_dset[:])[:,line]
-        p = np.polyfit(np.arange(len(line_data)), line_data,1)
-        lin_est = np.polyval(p,np.arange(len(line_data)))
-        new_line = line_data - lin_est
-        data_flat[line] = new_line
+    if method == 'line_fit':
+        for line in range(num_pts):
+            if flatten_axis=='row':
+                line_data = np.array(sid_dset[:])[line,:]
+            elif flatten_axis=='col':
+                line_data = np.array(sid_dset[:])[:,line]
+            p = np.polyfit(np.arange(len(line_data)), line_data,order)
+            lin_est = np.polyval(p,np.arange(len(line_data)))
+            new_line = line_data - lin_est
+            data_flat[line] = new_line
+    elif method == 'plane_fit':
+        #TODO: implement plane fit
+        pass
+    else:
+        raise ValueError("Gave method of {} but only 'line_fit', 'plane_fit' are allowed".format(method))
+   
     new_sid_dset[:] = data_flat 
     
     return new_sid_dset
