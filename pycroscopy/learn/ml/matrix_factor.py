@@ -67,7 +67,8 @@ class MatrixFactor:
         Sidpy dataset after fit operation. Fit will calculate according to the method chosen.
 
         """
-
+        abundances, components = None, None
+        
         if self.method == 'svd':
             u, s, vh = np.linalg.svd(np.array(self.data_2d), full_matrices=False, compute_uv=True)
             abundances, components = None, None
@@ -95,9 +96,7 @@ class MatrixFactor:
             nnls = amp.FCLS()
             a1 = nfindr.NFINDR(np.array(self.data_2d), self.ncomp)  # Find endmembers
             components = a1[0]
-
             data_spec_fold = self.data.fold(method='spec')  # This will fold all the spectral dimensions into 1
-
             data_amap = np.array(data_spec_fold)
             abundances = nnls.map(data_amap, components)  # Finding abundances
             abundances = abundances.reshape(-1, self.ncomp)

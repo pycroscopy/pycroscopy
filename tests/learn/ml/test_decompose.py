@@ -2,14 +2,13 @@ import sys
 import pytest
 from numpy.testing import assert_equal, assert_
 import numpy as np
-
-sys.path.append("C:/Users/4sv/PycharmProjects/sidpy")
+import unittest
 import sidpy as sid
 
 sys.path.append("../../../")
 
 from pycroscopy.learn import TensorFactor
-
+from pycroscopy.learn.ml import MatrixFactor
 
 def return_Vt(t, *parms):
     V, b, c = parms
@@ -90,3 +89,14 @@ def test_rank_output(in_dim, rank, decomp_type):
     tf = TensorFactor(x, rank=rank, decomposition_type=decomp_type)
     _, weights = tf.do_fit()
     assert_equal(weights.shape[-1], rank)
+
+class TestMatrixFactor(unittest.TestCase):
+
+    def test_four_dim_case(self):
+        #test two dimensional windowing works
+        sidpy_dset = return_4D_mat()
+        for n_components in [2,3,5]:
+            for method in ['nfindr', 'ica', 'pca', 'kernelpca', 'svd']:
+                mfactor = MatrixFactor(sidpy_dset, method = 'nfindr',n_components = 4 ) #perform the decomposition
+                output = mfactor.do_fit() #initialize
+                assert len(output)==2, "do_fit failed, Didn't receive abundances and components."
