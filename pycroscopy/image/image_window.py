@@ -339,6 +339,7 @@ class ImageWindowing:
 
 
         if self.mode == 'fft': # Apply FFT if needed
+            img_window = np.array(img_window)
             img_window = np.fft.fftshift(np.fft.fft2(img_window))
             if self.fft_mode == 'amp':
                 img_window = np.abs(img_window,)

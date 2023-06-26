@@ -23,7 +23,8 @@ requirements = ['numpy>=1.13.0',
                 'ipython',
                 'simpleitk',
                 'sidpy>=0.0.6',
-                'pysptools'
+                'pysptools',
+                'cvxopt>=1.2.7'
                 ]
 
 setup(

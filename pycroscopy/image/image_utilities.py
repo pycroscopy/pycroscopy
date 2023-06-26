@@ -1,7 +1,6 @@
 import numpy as np
 import sidpy
 
-
 def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     """
     Crops an image according to the corners given in the format of matplotlib.widget.RectangleSelector.
