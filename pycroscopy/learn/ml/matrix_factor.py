@@ -119,7 +119,9 @@ class MatrixFactor:
             # Getting the fit dataset i.e., abundances*components and unfolding it into the original shape
             self.fit_dset = self.data_2d.like_data(np.matmul(abundances, components),
                                                    title_suffix='_factorized').unfold()
-
+            self.abundances = abundances
+            self.components = components
+            
             # Now we need to prepare an abundance dataset and a component dataset and make sure their spatial dimensions
             # are unfolded
             abundances_dset = self.data_2d.like_data(abundances, title='abundances',
@@ -169,6 +171,7 @@ class MatrixFactor:
             self.components = components_dset.unfold()
             self.components.data_type = sidpy.DataType.LINE_PLOT_FAMILY  # Check this again
             self.results_computed = True
+            
 
             if self.return_fit:
                 return self.abundances, self.components, self.fit_dset

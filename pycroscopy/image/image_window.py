@@ -215,10 +215,10 @@ class ImageWindowing:
         if self.window_size_x == self.window_step_x: division_factor_x = self.window_size_x
         if self.window_size_y == self.window_step_y: division_factor_y = self.window_size_y
         
-        assert np.mod(self.image_shape[0] - self.window_size_x, self.window_step_x) ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
-        without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
-        assert np.mod(self.image_shape[1] - self.window_size_y, self.window_step_y) ==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
-        without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
+        #assert np.mod(self.image_shape[0] - self.window_size_x, self.window_step_x) ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
+        #without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
+        #assert np.mod(self.image_shape[1] - self.window_size_y, self.window_step_y) ==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
+        #without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
 
         dim_vec = []
         for i in range(2):
