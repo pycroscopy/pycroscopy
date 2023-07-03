@@ -15,7 +15,8 @@ def clean_svd(im, pixel_size=1, source_size=5):
     patch_size = int(source_size/pixel_size)
     if patch_size < 3:
         patch_size = 3
-    patches = image.extract_patches_2d(im, (patch_size, patch_size))
+    
+    patches = image.extract_patches_2d(np.array(im), (patch_size, patch_size))
     patches = patches.reshape(patches.shape[0], patches.shape[1]*patches.shape[2])
 
     num_components = 32
