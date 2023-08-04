@@ -3,7 +3,7 @@
 import numpy as np
 import sidpy
 from sidpy.base.num_utils import build_ind_val_matrices
-from scipy.signal.windows import hamming, blackman
+from scipy.signal.windows import hamming, hann, blackman
 from skimage.transform import rescale
 import dask
 
@@ -30,7 +30,7 @@ class ImageWindowing:
             - 'interpol_factor' (float) (Optional, default is 1.0): Interpolation factor for windows to increase or decrease size of the windows.
             - 'zoom_factor' (integer or list of ints) (Optional, default is 1): Zoom the window by this factor, typically done for 'fft' mode to observe higher frequencies clearly
                             If passing a list of ints, this will determine the degree of cropping per axis
-            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hamming'.
+            - 'filter' (string) (Optional, default is None): Filtering to use for the image window. Options are 'blackman', 'hamming', 'hann'.
             The filter is applied to each window before 'mode'.
         - verbose : (Optional) Boolean
             Verbose flag. Default is False.
@@ -71,8 +71,8 @@ class ImageWindowing:
         self.window_size_final_x, self.window_size_final_y = self._get_window_size()
         #Setup the filter for the window
         if 'filter' in parms_dict.keys():
-            if parms_dict['filter'] not in ['blackman', 'hamming']:
-                raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman'")
+            if parms_dict['filter'] not in ['blackman', 'hamming','hann']:
+                raise ValueError("Parameter 'filter' must be one of 'hamming', 'blackman', 'hann'")
             else:
                 self.filter = parms_dict['filter']
                 if self.filter == 'hamming':
@@ -82,6 +82,10 @@ class ImageWindowing:
                 elif self.filter == 'blackman':
                     filter_x = blackman(self.window_size_final_x)
                     filter_y = blackman(self.window_size_final_y)
+                    self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
+                elif self.filter == 'hanning':
+                    filter_x = hann(self.window_size_final_x)
+                    filter_y = hann(self.window_size_final_y)
                     self.filter_mat = np.sqrt(np.outer(filter_x, filter_y))
         else:
             self.filter = 'None'
@@ -215,10 +219,10 @@ class ImageWindowing:
         if self.window_size_x == self.window_step_x: division_factor_x = self.window_size_x
         if self.window_size_y == self.window_step_y: division_factor_y = self.window_size_y
         
-        assert np.mod(self.image_shape[0] - self.window_size_x, self.window_step_x) ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
-        without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
-        assert np.mod(self.image_shape[1] - self.window_size_y, self.window_step_y) ==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
-        without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
+        #assert np.mod(self.image_shape[0] - self.window_size_x, self.window_step_x) ==0, "Image shape along y is {} but window size is {}, window step is ({}) are not divisible \
+        #without remainder, change your window size or window step".format(self.image_shape[0], self.window_size_x, self.window_step_x)
+        #assert np.mod(self.image_shape[1] - self.window_size_y, self.window_step_y) ==0, "Image shape along x is {} but window size is {}, and window step is ({}) are not divisible \
+        #without remainder, change your window size or window step".format(self.image_shape[1], self.window_size_y, self.window_step_y)
 
         dim_vec = []
         for i in range(2):
