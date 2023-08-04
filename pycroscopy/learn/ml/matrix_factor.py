@@ -172,10 +172,10 @@ class MatrixFactor:
             self.components.data_type = sidpy.DataType.LINE_PLOT_FAMILY  # Check this again
 
             #Let's save the processing steps done also
-            kw_args_list = [(key,val) for key,val in kwargs]
+            kw_args_list = [(key,val) for key, val in kwargs.items()]
             mf_metadata = {'method':self.method, 'arguments':kw_args_list, 'n_components': self.ncomp, 'return_fit': self.return_fit}
             
-            for data_set in [self.abundances,self.components, self.return_fit]:
+            for data_set in [self.abundances,self.components, self.fit_dset]:
                 data_set.metadata['Matrix_Factorization'] = mf_metadata
 
             self.results_computed = True
