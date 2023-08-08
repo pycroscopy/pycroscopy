@@ -130,18 +130,25 @@ def demon_registration(dataset, verbose=False):
 
     demon_registered = sidpy.Dataset.from_array(dem_reg)
 
-    delattr(demon_registered, 'a')
-    delattr(demon_registered, 'b')
-    delattr(demon_registered, 'c')
+    # delattr(demon_registered, 'a')
+    # delattr(demon_registered, 'b')
+    # delattr(demon_registered, 'c')
+    demon_registered.del_dimension(0)
+    demon_registered.del_dimension(1)
+    demon_registered.del_dimension(2)
+    
     axis = dataset._axes[0]
-    axis.name = 'frame'
+    # axis.name = 'frame'
     demon_registered.set_dimension(0, axis)
+    demon_registered.rename_dimension(0, 'frame')
     axis = dataset._axes[1]
-    axis.name = 'x'
+    # axis.name = 'x'
     demon_registered.set_dimension(1, axis)
+    demon_registered.rename_dimension(0, 'x')
     axis = dataset._axes[2]
-    axis.name = 'y'
+    # axis.name = 'y'
     demon_registered.set_dimension(2, axis)
+    demon_registered.rename_dimension(2, 'y')
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
 
@@ -230,16 +237,22 @@ def rigid_registration(dataset):
     rigid_registered.source = dataset.title
     rigid_registered.metadata = {'analysis': 'rigid sub-pixel registration', 'drift': drift,
                                  'input_crop': input_crop, 'input_shape': dataset.shape[1:]}
-    if hasattr(rigid_registered, 'z'):
-        del rigid_registered.z
-    if hasattr(rigid_registered, 'x'):
-        del rigid_registered.x
-    if hasattr(rigid_registered, 'y'):
-        del rigid_registered.y
-    rigid_registered._axes = {}
+    #if hasattr(rigid_registered, 'a'):
+    #    del rigid_registered.a
+    #if hasattr(rigid_registered, 'b'):
+    #    del rigid_registered.b
+    #if hasattr(rigid_registered, 'c'):
+    #    del rigid_registered.c
+    #rigid_registered._axes = {}
+
+    rigid_registered.del_dimension(0)
+    rigid_registered.del_dimension(1)
+    rigid_registered.del_dimension(2)
+
     rigid_registered.set_dimension(0, dataset._axes[frame_dim[0]])
     rigid_registered.set_dimension(1, dataset._axes[spatial_dim[0]][input_crop[0]:input_crop[1]])
     rigid_registered.set_dimension(2, dataset._axes[spatial_dim[1]][input_crop[2]:input_crop[3]])
+
     return rigid_registered
 
 
