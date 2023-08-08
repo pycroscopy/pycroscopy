@@ -22,7 +22,7 @@ requirements = ['numpy>=1.13.0',
                 'ipywidgets>=5.2.2',
                 'ipython',
                 'simpleitk',
-                'sidpy>=0.0.6',
+                'sidpy>=0.12.1',
                 'pysptools',
                 'cvxopt>=1.2.7'
                 ]
