@@ -130,9 +130,13 @@ def demon_registration(dataset, verbose=False):
 
     demon_registered = sidpy.Dataset.from_array(dem_reg)
 
-    delattr(demon_registered, 'a')
-    delattr(demon_registered, 'b')
-    delattr(demon_registered, 'c')
+    # delattr(demon_registered, 'a')
+    # delattr(demon_registered, 'b')
+    # delattr(demon_registered, 'c')
+    demon_registered.del_dimension(0)
+    demon_registered.del_dimension(1)
+    demon_registered.del_dimension(2)
+    
     axis = dataset._axes[0]
     # axis.name = 'frame'
     demon_registered.set_dimension(0, axis)
