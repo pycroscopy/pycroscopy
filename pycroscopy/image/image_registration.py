@@ -130,25 +130,21 @@ def demon_registration(dataset, verbose=False):
 
     demon_registered = sidpy.Dataset.from_array(dem_reg)
 
-    # delattr(demon_registered, 'a')
-    # delattr(demon_registered, 'b')
-    # delattr(demon_registered, 'c')
     demon_registered.del_dimension(0)
     demon_registered.del_dimension(1)
     demon_registered.del_dimension(2)
-    
+    print(dataset._axes)
     axis = dataset._axes[0]
-    # axis.name = 'frame'
     demon_registered.set_dimension(0, axis)
-    demon_registered.rename_dimension(0, 'frame')
+    demon_registered.rename_dimension(0, dataset.dim_0.name)
     axis = dataset._axes[1]
-    # axis.name = 'x'
+
     demon_registered.set_dimension(1, axis)
-    demon_registered.rename_dimension(0, 'x')
+    demon_registered.rename_dimension(0,  dataset.dim_1.name)
     axis = dataset._axes[2]
-    # axis.name = 'y'
+
     demon_registered.set_dimension(2, axis)
-    demon_registered.rename_dimension(2, 'y')
+    demon_registered.rename_dimension(2,  dataset.dim_2.name)
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
 
