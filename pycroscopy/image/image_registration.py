@@ -128,27 +128,8 @@ def demon_registration(dataset, verbose=False):
     print(':-)')
     print('You have successfully completed Diffeomorphic Demons Registration')
 
-    demon_registered = sidpy.Dataset.from_array(dem_reg)
-
-    # delattr(demon_registered, 'a')
-    # delattr(demon_registered, 'b')
-    # delattr(demon_registered, 'c')
-    demon_registered.del_dimension(0)
-    demon_registered.del_dimension(1)
-    demon_registered.del_dimension(2)
-    
-    axis = dataset._axes[0]
-    # axis.name = 'frame'
-    demon_registered.set_dimension(0, axis)
-    demon_registered.rename_dimension(0, 'frame')
-    axis = dataset._axes[1]
-    # axis.name = 'x'
-    demon_registered.set_dimension(1, axis)
-    demon_registered.rename_dimension(0, 'x')
-    axis = dataset._axes[2]
-    # axis.name = 'y'
-    demon_registered.set_dimension(2, axis)
-    demon_registered.rename_dimension(2, 'y')
+    #demon_registered = sidpy.Dataset.from_array(dem_reg)
+    demon_registered = dataset.like_data(dem_reg)
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
 
@@ -157,6 +138,8 @@ def demon_registration(dataset, verbose=False):
         demon_registered.metadata['input_crop'] = dataset.metadata['input_crop']
     if 'input_shape' in dataset.metadata:
         demon_registered.metadata['input_shape'] = dataset.metadata['input_shape']
+    demon_registered.metadata['input_dataset'] = dataset.source
+
     return demon_registered
 
 
