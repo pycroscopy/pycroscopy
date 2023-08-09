@@ -133,14 +133,14 @@ def demon_registration(dataset, verbose=False):
     demon_registered.del_dimension(0)
     demon_registered.del_dimension(1)
     demon_registered.del_dimension(2)
-    print(dataset._axes)
+
     axis = dataset._axes[0]
     demon_registered.set_dimension(0, axis)
     demon_registered.rename_dimension(0, dataset.dim_0.name)
+    
     axis = dataset._axes[1]
-
     demon_registered.set_dimension(1, axis)
-    demon_registered.rename_dimension(0,  dataset.dim_1.name)
+    demon_registered.rename_dimension(1,  dataset.dim_1.name)
     axis = dataset._axes[2]
 
     demon_registered.set_dimension(2, axis)
