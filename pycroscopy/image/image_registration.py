@@ -129,22 +129,26 @@ def demon_registration(dataset, verbose=False):
     print('You have successfully completed Diffeomorphic Demons Registration')
 
     demon_registered = sidpy.Dataset.from_array(dem_reg)
-
+    
+    '''
     demon_registered.del_dimension(0)
     demon_registered.del_dimension(1)
     demon_registered.del_dimension(2)
 
     axis = dataset._axes[0]
     demon_registered.set_dimension(0, axis)
-    demon_registered.rename_dimension(0, dataset.dim_0.name)
+    demon_registered.rename_dimension(0, 'frame')
     
     axis = dataset._axes[1]
     demon_registered.set_dimension(1, axis)
-    demon_registered.rename_dimension(1,  dataset.dim_1.name)
+    demon_registered.rename_dimension(1,  'y')
+    
     axis = dataset._axes[2]
-
+   
     demon_registered.set_dimension(2, axis)
-    demon_registered.rename_dimension(2,  dataset.dim_2.name)
+    demon_registered.rename_dimension(2, 'x')
+    '''
+
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
 
