@@ -25,7 +25,8 @@ requirements = ['numpy>=1.13.0',
                 'sidpy>=0.12.1',
                 'pysptools',
                 'cvxopt>=1.2.7',
-                'SciFiReaders>=0.10.0'
+                'SciFiReaders>=0.10.0',
+                'pywget'
                 ]
 
 setup(
