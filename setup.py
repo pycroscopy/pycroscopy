@@ -26,7 +26,8 @@ requirements = ['numpy>=1.13.0',
                 'pysptools',
                 'cvxopt>=1.2.7',
                 'SciFiReaders>=0.10.0',
-                'pywget'
+                'pywget',
+                'pyTEMlib>=0.2023.8.0'
                 ]
 
 setup(
