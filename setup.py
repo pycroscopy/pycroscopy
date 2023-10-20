@@ -24,7 +24,8 @@ requirements = ['numpy>=1.13.0',
                 'simpleitk',
                 'sidpy>=0.12.1',
                 'pysptools',
-                'cvxopt>=1.2.7'
+                'cvxopt>=1.2.7',
+                'SciFiReaders>=0.10.0'
                 ]
 
 setup(
