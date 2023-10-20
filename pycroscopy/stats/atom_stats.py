@@ -99,6 +99,9 @@ class LocalCrystallography:
 
         # do a fit of each atom using a gaussian
         opt_fits = []
+        lb = (0,0,0,0,0,0)
+        ub = (1000,self.window_size,self.window_size, self.window_size, self.window_size, 1000)
+        #print('using the right one')
         for k1 in range(0, num_atoms):
 
             ax = self.atom_positions[k1, 0]
@@ -120,7 +123,7 @@ class LocalCrystallography:
                 guess_surface = guess.reshape(self.window_size, self.window_size)
 
                 try:
-                    popt, pcov = opt.curve_fit(self.gauss_oval_2D, (x_mat, y_mat), ROI.ravel(), p0=initial_guess)
+                    popt, pcov = opt.curve_fit(self.gauss_oval_2D, (x_mat, y_mat), ROI.ravel(), p0=initial_guess, bounds = (lb,ub))
 
                 except RuntimeError:
 
