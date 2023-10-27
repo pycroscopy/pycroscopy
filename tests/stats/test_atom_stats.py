@@ -33,6 +33,7 @@ def return_atoms_LR(sidpy_dset, atom_size=0.09, threshold = 0.03):
     """
    
     dataset = sidpy_dset
+    print("dataset shape is {}".format(dataset.shape))
     if dataset.ndim >2:
         image = dataset.sum(axis=0)
     else:
@@ -51,13 +52,13 @@ def return_atoms_LR(sidpy_dset, atom_size=0.09, threshold = 0.03):
     extent = LR_dataset.get_extent([0,1])
    
     # ------- Input ------
-    
+    print("LR dataset shape is {}".format(LR_dataset.shape))
     # ----------------------
     scale_x = ft.get_slope(image.dim_1)
     blobs =  skimage.feature.blob_log(LR_dataset, max_sigma=atom_size/scale_x, threshold=threshold)
  
     
-    return blobs
+    return blobs[:,:2]
 
 
 
@@ -78,6 +79,7 @@ class TestUtilityFunctions(unittest.TestCase):
     def test_local_crystallography(self):
         #Find atoms
         atoms_found = return_atoms_LR(dataset, atom_size = 0.09, threshold = 0.03)
+        print("Atom found shape is {}".format(atoms_found.shape))
         updated_image = np.array(dataset).T
         atom_types = np.zeros((atoms_found.shape[0]))
         #atom_types[len(atom_types)//2:] = 1
@@ -89,7 +91,7 @@ class TestUtilityFunctions(unittest.TestCase):
 
         atom_stats.compute_neighborhood(num_neighbors = 6);
 
-        print(atoms_found)
+        print("Atom positions shape is {}".format(atom_stats.atom_positions.shape))
         #Do PCA and KMeans
         pca_results = atom_stats.compute_pca_of_neighbors()
         km_results = atom_stats.compute_kmeans_neighbors()
