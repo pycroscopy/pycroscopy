@@ -126,8 +126,8 @@ class LocalCrystallography:
                     popt, pcov = opt.curve_fit(self.gauss_oval_2D, (x_mat, y_mat), ROI.ravel(), p0=initial_guess, bounds = (lb,ub))
 
                 except RuntimeError:
-
-                    popt = guess
+                    amp_guess = self.image_source[int(ax),int(ay)]
+                    popt = [amp_guess, ax, ay, 2., 2., 0.001]
                     pcov = [np.nan, np.nan, np.nan, np.nan, np.nan]
                     print('Failed Fit')
 
@@ -139,6 +139,13 @@ class LocalCrystallography:
                 else:
                     atomic_positions_corrections[k1, 0] = 0.0
                     atomic_positions_corrections[k1, 1] = 0.0
+
+                opt_fits.append((popt, pcov))
+            else:
+                amp_guess = self.image_source[int(ax),int(ay)]
+                popt = [amp_guess, ax, ay, 2., 2., 0.001]
+                pcov = [np.nan, np.nan, np.nan, np.nan, np.nan]
+
                 opt_fits.append((popt, pcov))
 
         atomic_positions_corrected = self.atom_positions + atomic_positions_corrections
