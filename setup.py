@@ -28,7 +28,7 @@ requirements = ['numpy>=1.13.0',
                 'SciFiReaders>=0.10.0',
                 'pywget',
                 'pyTEMlib>=0.2023.8.0',
-                'ipympl>=0.9.3'
+                'ipympl'
                 ]
 
 setup(
