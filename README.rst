@@ -6,7 +6,7 @@ pycroscopy
     :target: http://pepy.tech/project/pycroscopy
     :alt: Downloads
 
-.. image:: https://github.com/pycroscopy/pycroscopy/workflows/build/badge.svg?branch=phoenix
+.. image:: https://github.com/pycroscopy/pycroscopy/workflows/build/badge.svg?branch=main
     :target: https://github.com/pycroscopy/pycroscopy/actions?query=workflow%3Abuild
     :alt: GitHub Actions
     
