@@ -12,7 +12,7 @@ with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
 
 # TODO: Move requirements to requirements.txt
 requirements = ['numpy>=1.13.0',
-                'scipy>=0.17.1<=1.10.1',
+                'scipy>=0.17,<1.10.2',
                 'scikit-image>=0.12.3',
                 'scikit-learn>=0.17.1',
                 'matplotlib>=2.0.0',
