@@ -1,5 +1,6 @@
 import numpy as np
 import sidpy
+from skimage.restoration import inpaint
 
 def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     """
@@ -100,3 +101,21 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     new_sid_dset[:] = data_flat 
     
     return new_sid_dset
+
+
+def inpaint_image(sid_dset):
+    """Inpaints a sparse image, given a mask.
+
+    Args:
+        sid_dset (_type_): _description_
+        sid_dset (dict) : with mask [0,1] same shape as sid_dset
+    """
+    topo_data = np.array(sid_dset)
+    mask_data = sid_dset.metadata["mask"]
+    mask = np.copy(mask_data)
+    mask != 1
+    
+    inpainted_data = inpaint.inpaint_biharmonic(np.array(sid_dset), mask)
+    return inpainted_data
+    
+    
