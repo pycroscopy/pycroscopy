@@ -142,7 +142,7 @@ def inpaint_image(sid_dset, mask = None, channel = None):
     data_set.data_type = 'image'  # supported
 
     data_set.units = sid_dset.units
-    data_set.quantity = sid_dset.units.quantity
+    data_set.quantity = sid_dset.quantity
 
     data_set.set_dimension(0, sid_dset.get_dimension_by_number(image_dims[0])[0])
     data_set.set_dimension(1, sid_dset.get_dimension_by_number(image_dims[0]))
