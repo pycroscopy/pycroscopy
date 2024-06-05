@@ -103,19 +103,39 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     return new_sid_dset
 
 
-def inpaint_image(sid_dset):
+def inpaint_image(sid_dset, mask = None, channel = None):
     """Inpaints a sparse image, given a mask.
 
     Args:
-        sid_dset (_type_): _description_
-        sid_dset (dict) : with mask [0,1] same shape as sid_dset
+        sid_dset (_type_): sidpy Dataset with two dimensions being of spatial or reciprocal type
+        mask (np.ndarry) : mask [0,1] same shape as sid_dset. If providing a sidpy dataset and mask is in the metadata dict, 
+        then this entry is optional
+        channel (int): (optional) for multi-channel datasets, provide the channel to in-paint
     """
-    topo_data = np.array(sid_dset)
-    mask_data = sid_dset.metadata["mask"]
-    mask = np.copy(mask_data)
-    mask != 1
-    
-    inpainted_data = inpaint.inpaint_biharmonic(np.array(sid_dset), mask)
+    if len(sid_dset.shape)==2:
+        image_data = np.array(sid_dset).squeeze()
+    elif len(sid_dset.shape)==3:
+        image_dims = []
+        selection = []
+        for dim, axis in sid_dset._axes.items():
+            if axis.dimension_type in [sid.DimensionType.SPATIAL, sid.DimensionType.RECIPROCAL]:
+                selection.append(slice(None))
+                image_dims.append(dim)
+            else:
+                if channel is None:
+                    channel=0
+                selection.append(slice(channel, channel+1))
+
+        image_data = np.array(sid_dset[tuple(selection)]).squeeze()
+    if mask is None:
+        mask_data = sid_dset.metadata["mask"]
+        mask = np.copy(mask_data)
+        mask[mask==1] = -1
+        mask[mask==0] = 1
+        mask[mask==-1] = 0
+        
+  
+    inpainted_data = inpaint.inpaint_biharmonic(image_data, mask)
     return inpainted_data
     
     
