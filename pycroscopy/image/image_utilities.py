@@ -118,7 +118,7 @@ def inpaint_image(sid_dset, mask = None, channel = None):
         image_dims = []
         selection = []
         for dim, axis in sid_dset._axes.items():
-            if axis.dimension_type in [sid.DimensionType.SPATIAL, sid.DimensionType.RECIPROCAL]:
+            if axis.dimension_type in [sidpy.DimensionType.SPATIAL, sidpy.DimensionType.RECIPROCAL]:
                 selection.append(slice(None))
                 image_dims.append(dim)
             else:
