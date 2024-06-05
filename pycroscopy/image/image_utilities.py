@@ -152,6 +152,6 @@ def inpaint_image(sid_dset, mask = None, channel = None):
     skimage_version = skimage.__version__
     data_set.metadata["inpainting"] = 'Biharmonic method from Skimage {}'.format(skimage_version)
 
-    return inpainted_data
+    return data_set
     
     
