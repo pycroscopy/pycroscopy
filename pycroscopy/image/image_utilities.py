@@ -136,6 +136,22 @@ def inpaint_image(sid_dset, mask = None, channel = None):
         
   
     inpainted_data = inpaint.inpaint_biharmonic(image_data, mask)
+    
+    #convert this into a sidpy dataset
+    data_set = sidpy.Dataset.from_array(inpainted_data, name='inpainted_image')
+    data_set.data_type = 'image'  # supported
+
+    data_set.units = sid_dset.units
+    data_set.quantity = sid_dset.units.quantity
+
+    data_set.set_dimension(0, sid_dset.get_dimension_by_number(image_dims[0])[0])
+    data_set.set_dimension(1, sid_dset.get_dimension_by_number(image_dims[0]))
+
+    data_set.metadata["mask"] = mask
+    import skimage
+    skimage_version = skimage.__version__
+    data_set.metadata["inpainting"] = 'Biharmonic method from Skimage {}'.format(skimage_version)
+
     return inpainted_data
     
     
