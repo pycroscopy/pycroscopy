@@ -16,6 +16,10 @@ from scipy import spatial
 # import ase
 # from ase import Atom, Atoms
 
+# simple helper function for intersecting lists
+def intersection(list1, list2):
+    list_intersected = [value for value in list1 if value in list2]
+    return list_intersected
 
 class LocalCrystallography_n:
     def __init__(self, dataset, struct=None, window_size=25, border=0.03,
@@ -74,7 +78,7 @@ class LocalCrystallography_n:
                                 'type :{}'.format(type(window_size)))
 
         self.border = border  # border is percentage of width to chop off
-        self.determine_border_indices(border=border)
+        self.determine_border_indices(border_prop=border)
         self.neighborhood_results = None
         self.comp = comp  # composition, usually this is the amount of atom B in the binary mixture.
 
@@ -107,7 +111,7 @@ class LocalCrystallography_n:
                 b_p = [border_prop, border_prop]
             elif isinstance(border_prop, list):
                 b_p = border_prop
-            b_inds = [b_p[0] * self.dset.shape[1], border_ind * self.dset.shape[0]]
+            b_inds = [b_p[0] * self.dset.shape[1], b_p[1] * self.dset.shape[0]]
 
         if border_prop is None and border_ind is not None:
             if isinstance(border_ind, int):
@@ -156,9 +160,13 @@ class LocalCrystallography_n:
         """
         atom_positions = self.dset.structures[self.struct].get_positions()[:, 0:2]
         atom_types = self.dset.structures[self.struct].get_atomic_numbers()
+        self.dset.atom_types = atom_types
+        self.dset.num_atoms = len(atom_position)
         # finds indices of the neighbors
         tree = spatial.cKDTree(atom_positions)
         dists, neighbors = tree.query(atom_positions, k=num_neighbors + 1)
         self.dset.neighbor_indices = neighbors[:, 1::]  # Indices of the neighbors
         # atomic numbers of the neighboring atoms
         self.dset.neighborhood_atom_types = atom_types[self.dset.neighbor_indices]
+        
+        return
