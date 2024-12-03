@@ -1,0 +1,239 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation &mdash; pycroscopy 0.63.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+
+  
+      <script src="_static/documentation_options.js?v=5bb3c584"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorials on Basics" href="external_guides.html" />
+    <link rel="prev" title="Getting Started" href="getting_started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pycroscopy
+              <img src="_static/logo_v01.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">Pycroscopy Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ecosystem.html">Pycroscopy Ecosystem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers_conferences.html">Papers / Conferences</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#preparing-for-pycroscopy">Preparing for pycroscopy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#compatibility">Compatibility</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#installing-pycroscopy">Installing pycroscopy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pip-installation">pip installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conda-installation">conda installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-the-legacy-version">Installing the legacy version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#installing-from-a-specific-branch-advanced-users-only">Installing from a specific branch (advanced users <strong>ONLY</strong>)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#updating-pycroscopy">Updating pycroscopy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#updating-via-pip">Updating via pip</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#updating-via-conda">Updating via conda</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="external_guides.html">Tutorials on Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribution_guidelines.html">Guidelines for Contribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact us</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pycroscopy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading">¶</a></h1>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>Note that only the legacy version of pycroscopy can be installed at this time.
+We are currently working on the thoroughly reimagined version of pycroscopy.</p>
+</div>
+<section id="preparing-for-pycroscopy">
+<h2>Preparing for pycroscopy<a class="headerlink" href="#preparing-for-pycroscopy" title="Link to this heading">¶</a></h2>
+<p><a class="reference external" href="https://github.com/pycroscopy/pycroscopy">Pycroscopy</a> requires many commonly used scientific and numeric python packages such as numpy, h5py etc.
+To simplify the installation process, we recommend the installation of Anaconda which contains most of the prerequisite packages,
+<a class="reference external" href="https://conda.io/docs/">conda</a> - a package / environment manager,
+as well as an <a class="reference external" href="https://en.wikipedia.org/wiki/Integrated_development_environment">interactive development environment</a> - <a class="reference external" href="https://www.coursera.org/learn/python-programming-introduction/lecture/ywcuv/introduction-to-the-spyder-ide">Spyder</a>.</p>
+<p>Do you already have Anaconda installed?</p>
+<ul class="simple">
+<li><p>No? <a class="reference external" href="https://www.anaconda.com/download/">Download and install Anaconda</a> for Python 3.6</p></li>
+<li><p>Yes? Is your Anaconda based on python 3.6+?</p>
+<ul>
+<li><p>No? Uninstall existing Python / Anaconda distribution(s). Restart computer afterwards.</p></li>
+<li><p>Yes? Proceed to install pycroscopy</p></li>
+</ul>
+</li>
+</ul>
+<section id="compatibility">
+<h3>Compatibility<a class="headerlink" href="#compatibility" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Pycroscopy is expected to only work on Python 3.6+.</p></li>
+<li><p>We currently do not support 32 bit architectures</p></li>
+</ul>
+</section>
+</section>
+<section id="installing-pycroscopy">
+<h2>Installing pycroscopy<a class="headerlink" href="#installing-pycroscopy" title="Link to this heading">¶</a></h2>
+<p>Once the appropriate Anaconda distribution has been successfully installed, pycroscopy can be installed easily either via the python package index (pypi / pip) or conda-forge (conda).</p>
+<section id="pip-installation">
+<h3>pip installation<a class="headerlink" href="#pip-installation" title="Link to this heading">¶</a></h3>
+<p>Open a terminal (mac / linux) or command prompt (windows - be sure to install in a location where you have write access.  Don’t install as administrator unless you are required to do so.) and type:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pycroscopy
+</pre></div>
+</div>
+</section>
+<section id="conda-installation">
+<h3>conda installation<a class="headerlink" href="#conda-installation" title="Link to this heading">¶</a></h3>
+<p>First, open a terminal / command window. Add <cite>conda-forge</cite> to your channels with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>config<span class="w"> </span>--append<span class="w"> </span>channels<span class="w"> </span>conda-forge
+</pre></div>
+</div>
+<p>Once the <cite>conda-forge</cite> channel has been enabled, <cite>pycroscopy</cite> can be installed with:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>pycroscopy
+</pre></div>
+</div>
+</section>
+<section id="installing-the-legacy-version">
+<h3>Installing the legacy version<a class="headerlink" href="#installing-the-legacy-version" title="Link to this heading">¶</a></h3>
+<p>The upcoming version of pycroscopy will not share any code or capabilities with the legacy version.
+In order to install the last legacy version of pycroscopy before this major revision, please use the following commands in a terminal:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="nv">pycroscopy</span><span class="o">==</span><span class="m">0</span>.60.7
+</pre></div>
+</div>
+</section>
+<section id="installing-from-a-specific-branch-advanced-users-only">
+<h3>Installing from a specific branch (advanced users <strong>ONLY</strong>)<a class="headerlink" href="#installing-from-a-specific-branch-advanced-users-only" title="Link to this heading">¶</a></h3>
+<p>Here, we are installing pycroscopy from the latest development branch. Note that we do not recommend installing pycroscopy this way.</p>
+<p>Before you can install pycroscopy, you need to install git.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>install<span class="w"> </span>git
+</pre></div>
+</div>
+<p>Once git has installed, you can install a specific branch of pycroscopy (<code class="docutils literal notranslate"><span class="pre">dev</span></code> in this case):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>git+https://github.com/pycroscopy/pycroscopy@dev
+</pre></div>
+</div>
+</section>
+</section>
+<section id="updating-pycroscopy">
+<h2>Updating pycroscopy<a class="headerlink" href="#updating-pycroscopy" title="Link to this heading">¶</a></h2>
+<p>We recommend periodically updating your anaconda distribution.  To fully update run the following commands in a terminal / command window.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>upgrade<span class="w"> </span>anaconda
+conda<span class="w"> </span>update<span class="w"> </span>--all
+</pre></div>
+</div>
+<p>If you installed pycroscopy via conda, the last command should update pycroscopy as well.</p>
+<section id="updating-via-pip">
+<h3>Updating via pip<a class="headerlink" href="#updating-via-pip" title="Link to this heading">¶</a></h3>
+<p>If you already have pycroscopy installed and want to update to the latest version, use the following command in a terminal / command window:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-U<span class="w"> </span>--no-deps<span class="w"> </span>pycroscopy
+</pre></div>
+</div>
+<p>If it does not work try reinstalling the package:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>uninstall<span class="w"> </span>pycroscopy
+pip<span class="w"> </span>install<span class="w"> </span>pycroscopy
+</pre></div>
+</div>
+</section>
+<section id="updating-via-conda">
+<h3>Updating via conda<a class="headerlink" href="#updating-via-conda" title="Link to this heading">¶</a></h3>
+<p>If you installed pycroscopy via <cite>conda</cite>, open a terminal / command window and type:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>update<span class="w"> </span>pycroscopy
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="getting_started.html" class="btn btn-neutral float-left" title="Getting Started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="external_guides.html" class="btn btn-neutral float-right" title="Tutorials on Basics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Pycroscopy Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

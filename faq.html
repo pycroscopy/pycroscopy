@@ -1,0 +1,292 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frequently asked questions &mdash; pycroscopy 0.63.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+
+  
+      <script src="_static/documentation_options.js?v=5bb3c584"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Guidelines for Contribution" href="contribution_guidelines.html" />
+    <link rel="prev" title="Tutorials on Basics" href="external_guides.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pycroscopy
+              <img src="_static/logo_v01.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">Pycroscopy Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ecosystem.html">Pycroscopy Ecosystem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers_conferences.html">Papers / Conferences</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_guides.html">Tutorials on Basics</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Frequently asked questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#pycroscopy-ecosystem-philosophy">Pycroscopy Ecosystem Philosophy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#is-pycroscopy-only-for-the-scientific-imaging-and-material-science-communities">Is pycroscopy only for the scientific imaging and material science communities?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#who-uses-pycroscopy">Who uses pycroscopy?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-is-pycroscopy-different-from-imagej-imagesxm-wsxm-gwyddion-or-xarray">How is pycroscopy different from ImageJ, ImageSXM, WSxM, Gwyddion, or xarray?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#using-pycroscopy">Using pycroscopy</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#why-doesn-t-pycroscopy-use-graphical-user-interfaces">Why doesn’t pycroscopy use graphical user interfaces?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#what-do-i-do-when-something-is-broken">What do I do when something is broken?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#do-i-still-need-to-use-standard-software-for-plotting-figures-for-papers">Do I still need to use standard software for plotting figures for papers?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#how-can-i-reference-pycroscopy">How can I reference pycroscopy?</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-pycroscopy-read-data-files-from-instrument-x">Can Pycroscopy read data files from instrument X?</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#becoming-a-part-of-the-effort">Becoming a part of the effort</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#i-would-like-to-help-but-i-don-t-know-programming">I would like to help but I don’t know programming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#i-would-like-to-help-and-i-am-ok-at-programming">I would like to help and I am OK at programming</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#can-you-add-my-code-to-pycroscopy">Can you add my code to pycroscopy?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contribution_guidelines.html">Guidelines for Contribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact us</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pycroscopy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Frequently asked questions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/faq.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="frequently-asked-questions">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Frequently asked questions</a><a class="headerlink" href="#frequently-asked-questions" title="Link to this heading">¶</a></h1>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#frequently-asked-questions" id="id1">Frequently asked questions</a></p>
+<ul>
+<li><p><a class="reference internal" href="#pycroscopy-ecosystem-philosophy" id="id2">Pycroscopy Ecosystem Philosophy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#is-pycroscopy-only-for-the-scientific-imaging-and-material-science-communities" id="id3">Is pycroscopy only for the scientific imaging and material science communities?</a></p></li>
+<li><p><a class="reference internal" href="#who-uses-pycroscopy" id="id4">Who uses pycroscopy?</a></p></li>
+<li><p><a class="reference internal" href="#how-is-pycroscopy-different-from-imagej-imagesxm-wsxm-gwyddion-or-xarray" id="id5">How is pycroscopy different from ImageJ, ImageSXM, WSxM, Gwyddion, or xarray?</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#using-pycroscopy" id="id6">Using pycroscopy</a></p>
+<ul>
+<li><p><a class="reference internal" href="#why-doesn-t-pycroscopy-use-graphical-user-interfaces" id="id7">Why doesn’t pycroscopy use graphical user interfaces?</a></p></li>
+<li><p><a class="reference internal" href="#what-do-i-do-when-something-is-broken" id="id8">What do I do when something is broken?</a></p></li>
+<li><p><a class="reference internal" href="#do-i-still-need-to-use-standard-software-for-plotting-figures-for-papers" id="id9">Do I still need to use standard software for plotting figures for papers?</a></p></li>
+<li><p><a class="reference internal" href="#how-can-i-reference-pycroscopy" id="id10">How can I reference pycroscopy?</a></p></li>
+<li><p><a class="reference internal" href="#can-pycroscopy-read-data-files-from-instrument-x" id="id11">Can Pycroscopy read data files from instrument X?</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#becoming-a-part-of-the-effort" id="id12">Becoming a part of the effort</a></p>
+<ul>
+<li><p><a class="reference internal" href="#i-would-like-to-help-but-i-don-t-know-programming" id="id13">I would like to help but I don’t know programming</a></p></li>
+<li><p><a class="reference internal" href="#i-would-like-to-help-and-i-am-ok-at-programming" id="id14">I would like to help and I am OK at programming</a></p></li>
+<li><p><a class="reference internal" href="#can-you-add-my-code-to-pycroscopy" id="id15">Can you add my code to pycroscopy?</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="pycroscopy-ecosystem-philosophy">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">Pycroscopy Ecosystem Philosophy</a><a class="headerlink" href="#pycroscopy-ecosystem-philosophy" title="Link to this heading">¶</a></h2>
+<section id="is-pycroscopy-only-for-the-scientific-imaging-and-material-science-communities">
+<h3><a class="toc-backref" href="#id3" role="doc-backlink">Is pycroscopy only for the scientific imaging and material science communities?</a><a class="headerlink" href="#is-pycroscopy-only-for-the-scientific-imaging-and-material-science-communities" title="Link to this heading">¶</a></h3>
+<p><strong>Not at all</strong>. We have ensured that the basic data and file formatting paradigm is general enough
+that it can be extended to any other scientific domain so long as each experiment involves <code class="docutils literal notranslate"><span class="pre">N</span></code> identical measurements of <code class="docutils literal notranslate"><span class="pre">S</span></code> values.</p>
+<p>Note that one of the major strengths of pycroscopy is that it can be <strong>science- and instrument-agnostic</strong>. For example, some of our scientific analysis algorithms such as curve-fitting for spectra, image denoising are written in a general enough manner that they can easily find applications in scientific domains beyond imaging and microscopy.</p>
+<p>Our data and file format as well as programming framework can easily be extended to or adopted by other scientific domains such as neutron science, nuclear sciences, etc.</p>
+<p>We are eager to hear about the many research domains that find our data format and package useful. Please send us an email at <a class="reference external" href="mailto:pycroscopy&#37;&#52;&#48;gmail&#46;com">pycroscopy<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</section>
+<section id="who-uses-pycroscopy">
+<h3><a class="toc-backref" href="#id4" role="doc-backlink">Who uses pycroscopy?</a><a class="headerlink" href="#who-uses-pycroscopy" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="http://ifim.ornl.gov">The Institute for Functional Imaging of Materials (IFIM)</a> at <a class="reference external" href="www.ornl.gov">Oak Ridge National Laboratory</a> uses pycroscopy exclusively for in-house research as well as supporting the numerous users who visit IFIM to use their state-of-art scanning probe microscopy techniques.</p></li>
+<li><p>Synchrotron Radiation Research at Lund University</p></li>
+<li><p>Nuclear Engineering and Health Physics, Idaho State University</p></li>
+<li><p>Prof. David Ginger’s group at Department of Chemistry, University of Washington</p></li>
+<li><p>Idaho National Laboratory</p></li>
+<li><p>Central Michigan University</p></li>
+<li><p>Iowa State University</p></li>
+<li><p>George Western University</p></li>
+<li><p>Brown University</p></li>
+<li><p>University of Mons</p></li>
+<li><p>and many more groups in universities and national labs.</p></li>
+<li><p>Please get in touch with us if you would like your group / university to be added here.</p></li>
+</ul>
+</section>
+<section id="how-is-pycroscopy-different-from-imagej-imagesxm-wsxm-gwyddion-or-xarray">
+<h3><a class="toc-backref" href="#id5" role="doc-backlink">How is pycroscopy different from ImageJ, ImageSXM, WSxM, Gwyddion, or xarray?</a><a class="headerlink" href="#how-is-pycroscopy-different-from-imagej-imagesxm-wsxm-gwyddion-or-xarray" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><strong>Data sizes and dimensionality</strong>: <a class="reference external" href="https://imagej.nih.gov/ij/">ImageJ</a>, <a class="reference external" href="https://fiji.sc">FIJI</a>, <a class="reference external" href="https://www.liverpool.ac.uk/~sdb/ImageSXM/">ImageSXM</a>,
+<a class="reference external" href="http://www.wsxm.es/download.html">WSxM</a>, <a class="reference external" href="https://spectrafox.com">SpectraFox</a>, and <a class="reference external" href="http://www.freesbi.ch/en/openfovea">OpenFovea</a> are all excellent
+software packages for dealing with conventional and popular microscopy data such as 2D images or a handful of (simple) spectra that are at best 1- 100 MB in size. We think that pycroscopy is
+complementary to these  other software and packages. Pycroscopy was built from scratch to handle <strong>arbitrarily large datasets</strong> (gigabytes / terabytes) of
+datasets which regularly have a large number of position or spectroscopic dimensions (we have had absolutely no problem dealing with datasets with more than
+9 unique dimensions - see <a class="reference external" href="https://pycroscopy.github.io/pycroscopy/auto_examples/dev_tutorials/plot_tutorial_03_multidimensional_data.html#sphx-glr-auto-examples-dev-tutorials-plot-tutorial-03-multidimensional-data-py">Band Excitation Polarization Switching + First Order Reversal Curve probing</a>).</p></li>
+<li><p><strong>Data centric</strong>: In addition, Pycroscopy takes a data centric approach aimed towards open science wherein all the data starting from the raw measurement from
+the instrument, all the way to the final data that is plotted in the resulting scientific publication, are contained in the same file. The processing steps applied
+to the data are completely transparent and traceable.</p></li>
+<li><p><strong>Data Processing framework</strong>: Most of the aforementioned packages are a collection of several popularly used algorithms applied to data. Again, most of these are applied to small datasets in memory.
+Perhaps more importantly, the algorithms are tied to a specific scientific domain / application. In contrast, the universal data format used by pycroscopy allows the development of a
+single version of an algorithm that can be applied to any data.</p></li>
+<li><p><strong>Scalable</strong>: Furthermore, pycroscopy was developed from the ground up to run on laptops while aiming towards compatibility with supercomputers. Nearly all the aforementioned
+software are applicable to laptops only. Supercomputer / cloud computing scaling in pycroscopy will arrive in the later part of 2018.</p></li>
+<li><p><strong>Flexibility / Customizable</strong>: Like ImageJ / FIJI, it is far easier to add features to pycroscopy when compared to  WSxM or Gwyddion</p></li>
+<li><p><strong>User Interface</strong>: Pycroscopy relies on Jupyter notebooks + interactive widgets instead of graphical interface used in most other alternatives.</p></li>
+<li><p><strong>Other complimentary software</strong>:</p>
+<ul>
+<li><p><a class="reference external" href="http://gxsm.sourceforge.net">GXSM</a> is another software package that focuses more on the data acquisition from instruments rather than advanced data analysis.</p></li>
+<li><p><a class="reference external" href="https://github.com/pydata/xarray">xarray</a> has many similar and more advanced features for handling scientific multidimensional data compared to pycroscopy. However, while pycroscopy is a file-based package, xarray enables the features for data in memory only. We see xarray as a package that is complementary to pycroscopy.</p></li>
+</ul>
+</li>
+<li><p>For simple data operations such as flattening, finding maximum, etc. on 2D images or spectra, ImageJ / Gwyddion / WSxM may be better alternatives to pycroscopy.</p></li>
+</ul>
+</section>
+</section>
+<section id="using-pycroscopy">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Using pycroscopy</a><a class="headerlink" href="#using-pycroscopy" title="Link to this heading">¶</a></h2>
+<section id="why-doesn-t-pycroscopy-use-graphical-user-interfaces">
+<h3><a class="toc-backref" href="#id7" role="doc-backlink">Why doesn’t pycroscopy use graphical user interfaces?</a><a class="headerlink" href="#why-doesn-t-pycroscopy-use-graphical-user-interfaces" title="Link to this heading">¶</a></h3>
+<p>Traditional graphical interfaces are rather time consuming to develop. Instead, we provide jupyter widgets to interact with data wherever possible. Here are some great examples that use jupyter widgets to simplify interaction with the data:</p>
+<ul class="simple">
+<li><p><a class="reference external" href="http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/BE_Processing.ipynb">Band Excitation jupyter notebook</a> developed by The Institute for Functional Imaging of Materials for supporting its users</p></li>
+<li><p><a class="reference external" href="http://nbviewer.jupyter.org/github/pycroscopy/pycroscopy/blob/master/jupyter_notebooks/Image_Cleaning_Atom_Finding.ipynb">Image cleaning and atom finding notebook</a></p></li>
+</ul>
+</section>
+<section id="what-do-i-do-when-something-is-broken">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">What do I do when something is broken?</a><a class="headerlink" href="#what-do-i-do-when-something-is-broken" title="Link to this heading">¶</a></h3>
+<p>Often, others may have encountered the same problem and may have brought up a similar issue. Try searching on google and trying out some suggested solutions.
+If this does not work, get in touch with us on our <a class="reference external" href="https://groups.google.com/forum/#!forum/pycroscopy">Google group</a>.
+If something is indeed broken, please raise an <code class="docutils literal notranslate"><span class="pre">issue</span></code> <a class="reference external" href="https://github.com/pycroscopy/pycroscopy/issues">here</a> and one of us will work with you to resolve the problem.</p>
+</section>
+<section id="do-i-still-need-to-use-standard-software-for-plotting-figures-for-papers">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Do I still need to use standard software for plotting figures for papers?</a><a class="headerlink" href="#do-i-still-need-to-use-standard-software-for-plotting-figures-for-papers" title="Link to this heading">¶</a></h3>
+<p>Not at all. Python has an excellent set of libraries for generating even complicated figures for journal papers. Pycroscopy has <a class="reference external" href="https://pycroscopy.github.io/pycroscopy/auto_examples/user_tutorials/plot_utils.html#sphx-glr-auto-examples-user-tutorials-plot-utils-py">several functions</a> that make it easier to quickly generate publication-ready figures. There are <a class="reference external" href="https://pycroscopy.github.io/pycroscopy/papers_conferences.html#journal-papers-using-pycroscopy">several publications</a> that have only used pycroscopy and matplotlib to generate figures for papers. If you are still not convinced, you can always export your data to text / csv files and use conventional softwares like <a class="reference external" href="https://www.originlab.com">Origin Pro</a>.</p>
+</section>
+<section id="how-can-i-reference-pycroscopy">
+<h3><a class="toc-backref" href="#id10" role="doc-backlink">How can I reference pycroscopy?</a><a class="headerlink" href="#how-can-i-reference-pycroscopy" title="Link to this heading">¶</a></h3>
+<p>Please reference our <a class="reference external" href="https://arxiv.org/abs/1903.09515">Arxiv</a> paper for now.
+This manuscript was submitted to Advanced Structural and Chemical Imaging recently and is currently being peer-reviewed.</p>
+</section>
+<section id="can-pycroscopy-read-data-files-from-instrument-x">
+<h3><a class="toc-backref" href="#id11" role="doc-backlink">Can Pycroscopy read data files from instrument X?</a><a class="headerlink" href="#can-pycroscopy-read-data-files-from-instrument-x" title="Link to this heading">¶</a></h3>
+<p>Pycroscopy has numerous translators that extract the data and metadata (e.g. - instrument / imaging parameters) from some
+popular file formats and store the information in HDF5 files.
+You can find a list of available <a class="reference external" href="./translators.html">translators here</a>.</p>
+</section>
+</section>
+<section id="becoming-a-part-of-the-effort">
+<h2><a class="toc-backref" href="#id12" role="doc-backlink">Becoming a part of the effort</a><a class="headerlink" href="#becoming-a-part-of-the-effort" title="Link to this heading">¶</a></h2>
+<section id="i-would-like-to-help-but-i-don-t-know-programming">
+<h3><a class="toc-backref" href="#id13" role="doc-backlink">I would like to help but I don’t know programming</a><a class="headerlink" href="#i-would-like-to-help-but-i-don-t-know-programming" title="Link to this heading">¶</a></h3>
+<p>Your contributions are very valuable to the imaging and scientific community at large. You can help even if you DON’T know how to program!</p>
+<ul class="simple">
+<li><p>You can spread the word - tell anyone who you think may benefit from using pycroscopy.</p></li>
+<li><p>Tell us what you think of our documentation or share your own.</p></li>
+<li><p>Let us know what you would like to see in pycroscopy.</p></li>
+<li><p>Put us in touch with others working on similar efforts so that we can join forces.</p></li>
+<li><p>Guide us in <a class="reference external" href="./translators.html">developing data translators</a></p></li>
+</ul>
+</section>
+<section id="i-would-like-to-help-and-i-am-ok-at-programming">
+<h3><a class="toc-backref" href="#id14" role="doc-backlink">I would like to help and I am OK at programming</a><a class="headerlink" href="#i-would-like-to-help-and-i-am-ok-at-programming" title="Link to this heading">¶</a></h3>
+<p>Chances are that you are far better at python than you might think! Interesting tidbit - The (first version of the) first module of pycroscopy was written less than a week after we learnt how to write code in python. We weren’t great programmers when we began but we would like to think that we have gotten a lot better since then.</p>
+<p>You can contribute in numerous ways including but not limited to:</p>
+<ul class="simple">
+<li><p>Writing <code class="docutils literal notranslate"><span class="pre">translators</span></code> to convert data from proprietary formats to the pycroscopy format</p></li>
+<li><p>Writing image processing, signal processing code, functional fitting, etc.</p></li>
+</ul>
+<p>Send us an email at <a class="reference external" href="mailto:pycroscopy&#37;&#52;&#48;gmail&#46;com">pycroscopy<span>&#64;</span>gmail<span>&#46;</span>com</a> or a message on our <a class="reference external" href="https://pycroscopy.slack.com/">slack group</a>.</p>
+</section>
+<section id="can-you-add-my-code-to-pycroscopy">
+<h3><a class="toc-backref" href="#id15" role="doc-backlink">Can you add my code to pycroscopy?</a><a class="headerlink" href="#can-you-add-my-code-to-pycroscopy" title="Link to this heading">¶</a></h3>
+<p>Please see our <a class="reference external" href="./contribution_guidelines.html">guidelines for contributing code</a></p>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="external_guides.html" class="btn btn-neutral float-left" title="Tutorials on Basics" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contribution_guidelines.html" class="btn btn-neutral float-right" title="Guidelines for Contribution" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Pycroscopy Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

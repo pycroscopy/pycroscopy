@@ -1,0 +1,512 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>What’s New &mdash; pycroscopy 0.63.3 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery.css?v=d2d258e8" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-binder.css?v=f4aeca0c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-dataframe.css?v=2082cf3c" />
+      <link rel="stylesheet" type="text/css" href="_static/sg_gallery-rendered-html.css?v=1277b6f3" />
+
+  
+      <script src="_static/documentation_options.js?v=5bb3c584"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            pycroscopy
+              <img src="_static/logo_v01.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">Pycroscopy Package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ecosystem.html">Pycroscopy Ecosystem</a></li>
+<li class="toctree-l1"><a class="reference internal" href="papers_conferences.html">Papers / Conferences</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting_started.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="external_guides.html">Tutorials on Basics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently asked questions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contribution_guidelines.html">Guidelines for Contribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contact.html">Contact us</a></li>
+<li class="toctree-l1"><a class="reference internal" href="credits.html">Credits</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">API Reference</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pycroscopy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">What’s New</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/whats_new.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="what-s-new">
+<h1>What’s New<a class="headerlink" href="#what-s-new" title="Link to this heading">¶</a></h1>
+<div class="admonition attention">
+<p class="admonition-title">Attention</p>
+<p>This page is not up to date. Please visit the github project for latest information</p>
+</div>
+<section id="id1">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/181">Jun 28 2018:</a><a class="headerlink" href="#id1" title="Link to this heading">¶</a></h2>
+<p>Moved <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code> into separate package - <a class="reference external" href="https://pycroscopy.github.io/pyUSID/about.html">pyUSID</a>
+pyUSID will be the engineering package that supports science-focused packages such as pycroscopy similar to how scipy depends on numpy.
+All references to pycroscopy.core within the pycroscopy package are now referencing pyusid instead.
+The current release of pycroscopy imports pyUSID and makes it available as <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code> so that existing imports in user-code do not break.
+In the next release of pycroscopy, this implicit import will be removed and the following modules would have to be imported directly from <code class="docutils literal notranslate"><span class="pre">pyUSID</span></code>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hdf_utils</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">write_utils</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dtype_utils</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">io_utils</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">PycroDataset</span></code> - renamed to <code class="docutils literal notranslate"><span class="pre">USIDataset</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Translator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ImageTranslator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NumpyTranslator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">Process</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">parallel_compute()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plot_utils</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">jupyter_utils</span></code></p></li>
+</ul>
+<p>Thus, imports and usages of such modules as:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pycroscopy</span> <span class="k">as</span> <span class="nn">px</span>
+<span class="n">px</span><span class="o">.</span><span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_map</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">px</span><span class="o">.</span><span class="n">hdf_utils</span><span class="o">.</span><span class="n">print_tree</span><span class="p">(</span><span class="n">h5_file</span><span class="p">)</span>
+<span class="n">px</span><span class="o">.</span><span class="n">PycroDataset</span><span class="p">(</span><span class="n">h5_dset</span><span class="p">)</span>
+<span class="c1"># Other non-core classes:</span>
+<span class="n">px</span><span class="o">.</span><span class="n">processing</span><span class="o">.</span><span class="n">SignalFilter</span><span class="p">(</span><span class="n">h5_main</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>would need to be changed to:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Now import pyUSID along with pycroscopy</span>
+<span class="kn">import</span> <span class="nn">pyUSID</span> <span class="k">as</span> <span class="nn">usid</span>
+<span class="kn">import</span> <span class="nn">pycroscopy</span> <span class="k">as</span> <span class="nn">px</span>
+<span class="c1"># functions and classes still work the same way</span>
+<span class="c1"># just use usid instead of px for anything that was in core (see list above).</span>
+<span class="n">usid</span><span class="o">.</span><span class="n">plot_utils</span><span class="o">.</span><span class="n">plot_map</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">usid</span><span class="o">.</span><span class="n">hdf_utils</span><span class="o">.</span><span class="n">print_tree</span><span class="p">(</span><span class="n">h5_file</span><span class="p">)</span>
+<span class="c1"># The only difference is the renaming of the PycroDataset to USIDataset:</span>
+<span class="n">usid</span><span class="o">.</span><span class="n">USIDataset</span><span class="p">(</span><span class="n">h5_dset</span><span class="p">)</span>
+<span class="c1"># Other classes and functions outside .core are addressed just as before:</span>
+<span class="n">px</span><span class="o">.</span><span class="n">processing</span><span class="o">.</span><span class="n">SignalFilter</span><span class="p">(</span><span class="n">h5_main</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="id2">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/180">Jun 19 2018:</a><a class="headerlink" href="#id2" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/Liambcollins">&#64;Liambcollins</a> for bug-fixes to <code class="docutils literal notranslate"><span class="pre">GTuneTranslator</span></code></p></li>
+</ul>
+</section>
+<section id="id3">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/177">Jun 18 2018:</a><a class="headerlink" href="#id3" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/Liambcollins">&#64;Liambcollins</a> for bug-fixes to <code class="docutils literal notranslate"><span class="pre">GLineTranslator</span></code></p></li>
+</ul>
+</section>
+<section id="id5">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/175">Jun 15 2018:</a><a class="headerlink" href="#id5" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/ramav87">&#64;ramav87</a> for bug-fixes in BEPS related translators and notebooks</p></li>
+</ul>
+</section>
+<section id="id6">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/173">Jun 14 2018:</a><a class="headerlink" href="#id6" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/ealopez">&#64;ealopez</a> for adding AFM simulations</p></li>
+<li><p>Thanks to <a class="reference external" href="https://github.com/nmosto">&#64;nmosto</a> for guides for python novices</p></li>
+</ul>
+</section>
+<section id="id7">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/172">Jun 13 2018:</a><a class="headerlink" href="#id7" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/str-eat">&#64;str-eat</a> for implementing a PycroDataset to csv exporter</p></li>
+</ul>
+</section>
+<section id="id8">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/166">Jun 04 2018:</a><a class="headerlink" href="#id8" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/donpatrice">&#64;donpatrice</a> for fixing a UTF8 isue with the <code class="docutils literal notranslate"><span class="pre">NanonisTranslator</span></code></p></li>
+</ul>
+</section>
+<section id="id9">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/162">Jun 01 2018:</a><a class="headerlink" href="#id9" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>First skeleton <code class="docutils literal notranslate"><span class="pre">GwyddionTranslator</span></code> being worked on by <a class="reference external" href="https://github.com/str-eat">&#64;str-eat</a></p></li>
+<li><p>Added guidelines for contributing code</p></li>
+</ul>
+</section>
+<section id="id11">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/162">May 31 2018:</a><a class="headerlink" href="#id11" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>All <code class="docutils literal notranslate"><span class="pre">Translators</span></code> now use absolute paths</p></li>
+<li><p>Improved examples and documentation</p></li>
+</ul>
+</section>
+<section id="id12">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/162">May 30 2018:</a><a class="headerlink" href="#id12" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Thanks to <a class="reference external" href="https://github.com/carlodri">&#64;carlodri</a> for donating his utility to read Gwyddion Simple File (gsf) reader</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">gwyfile</span></code> to the requirements of pycroscopy</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NumpyTranslator</span></code> now accepts extra datasets and keyword arguments that will be passed on to <code class="docutils literal notranslate"><span class="pre">hdf_utils.write_main_dataset()</span></code></p></li>
+</ul>
+</section>
+<section id="id13">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/158">May 26 2018:</a><a class="headerlink" href="#id13" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Implemented a general function for reading sections of binary files</p></li>
+<li><p>First version of the <code class="docutils literal notranslate"><span class="pre">BrukerTranslator</span></code> for translating Bruker Icon and other AFM files</p></li>
+</ul>
+</section>
+<section id="id14">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/153">May 03 2018:</a><a class="headerlink" href="#id14" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">plot_utils.plot_map()</span></code> now accepts the extent or the tick values</p></li>
+<li><p>Fixed bug in <code class="docutils literal notranslate"><span class="pre">hdf_utils.write_reduced_spec_dsets()</span></code> and <code class="docutils literal notranslate"><span class="pre">analysis.BESHOFitter</span></code></p></li>
+<li><p>General improvements to the <code class="docutils literal notranslate"><span class="pre">analysis.Fitter</span></code> class</p></li>
+<li><p>Documentation updates</p></li>
+</ul>
+</section>
+<section id="id15">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/151">May 02 2018:</a><a class="headerlink" href="#id15" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed bug in <code class="docutils literal notranslate"><span class="pre">svd_rebuild()</span></code></p></li>
+</ul>
+</section>
+<section id="id16">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/149">May 01 2018:</a><a class="headerlink" href="#id16" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Minor corrections to documentation formatting</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.get_auxillary_datasets()</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.get_auxiliary_datasets()</span></code></p></li>
+<li><p>Example on parallel computing rewritten to focus on <code class="docutils literal notranslate"><span class="pre">pycroscopy.parallel_compute()</span></code></p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">setUp()</span></code> and <code class="docutils literal notranslate"><span class="pre">tearDown()</span></code> to unit testing classes for <code class="docutils literal notranslate"><span class="pre">hdf_utils</span></code> and <code class="docutils literal notranslate"><span class="pre">PycroDataset</span></code></p></li>
+<li><p>Fixed bug in the sorting capability of <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.reshape_to_n_dims()</span></code></p></li>
+<li><p>Added logo to website</p></li>
+</ul>
+</section>
+<section id="id17">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/148">Apr 29 2018 2:</a><a class="headerlink" href="#id17" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Centralized verification of slice dictionary in <code class="docutils literal notranslate"><span class="pre">pycroscopy.PycroDataset</span></code></p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">slice_dict</span></code> kwarg in <code class="docutils literal notranslate"><span class="pre">pycroscopy.PycroDataset.slice()</span></code> now the first required argument</p></li>
+<li><p>Lots of minor formatting changes to examples.</p></li>
+<li><p>Removed jupyter notebooks from which the examples were generated.</p></li>
+</ul>
+</section>
+<section id="id18">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/147">Apr 29 2018 1:</a><a class="headerlink" href="#id18" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed errors in broken examples</p></li>
+<li><p>Replaced example BE datasets with ones where the central datasets now have <code class="docutils literal notranslate"><span class="pre">quantity</span></code> and <code class="docutils literal notranslate"><span class="pre">units</span></code> attributes to make them <code class="docutils literal notranslate"><span class="pre">Main</span> <span class="pre">datasets</span></code></p></li>
+<li><p>Replaced example STS dataset with a zip file which will download a lot faster for examples. Corrected the example on NumpyTranslator</p></li>
+</ul>
+</section>
+<section id="id19">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/146">Apr 28 2018 2:</a><a class="headerlink" href="#id19" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed unit tests for python 2. assertWarns() only applied to python 3 now</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">from</span> <span class="pre">future</span></code> import statement to all modules in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code></p></li>
+</ul>
+</section>
+<section id="id20">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/143">Apr 28 2018 1:</a><a class="headerlink" href="#id20" title="Link to this heading">¶</a></h2>
+<p><strong>(Massive) merge of (skunkworks) branch unity_dev into master``</strong></p>
+<ul>
+<li><p>Added unit tests for all (feasible) modules in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code></p></li>
+<li><p>Added examples for every single function or class in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code> (<strong>10</strong> cookbooks in total!)</p></li>
+<li><p>Added a primer to h5py and HDF5</p></li>
+<li><p>Added document with instructions on converting unit tests to examples of functions.</p></li>
+<li><p>Added web page with links to external tutorials</p></li>
+<li><p>Added web page describing contents of package, organization,</p></li>
+<li><p>Added web page with FAQs</p></li>
+<li><p>Moved a simplified (non ptychography version of) ImageTranslator to <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code></p></li>
+<li><p>Package reconfigured to use <code class="docutils literal notranslate"><span class="pre">pytests</span></code> instead of <code class="docutils literal notranslate"><span class="pre">Nose</span></code></p></li>
+<li><p>Converted last few <code class="docutils literal notranslate"><span class="pre">assert</span></code> statements into descriptive <code class="docutils literal notranslate"><span class="pre">Errors</span></code></p></li>
+<li><p>Legacy HDF writing classes and functions <strong>deprecated now</strong> and will be removed in a future release:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">hdf_writer</span></code> and <code class="docutils literal notranslate"><span class="pre">virtual_data</span></code> modules moved out of <code class="docutils literal notranslate"><span class="pre">pycroscopy.core.io</span></code> and back into <code class="docutils literal notranslate"><span class="pre">pycroscopy.io</span></code>.</p></li>
+<li><p>Moved functions in <code class="docutils literal notranslate"><span class="pre">pycroscopy.write_utils</span></code> using above deprecated classes into <code class="docutils literal notranslate"><span class="pre">pycroscopy.io.write_utils</span></code>. These functions are also deprecated</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.translators.BEODFTranslator</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.analysis.BESHOFitter</span></code>, and <code class="docutils literal notranslate"><span class="pre">pycroscopy.BELoopFitter</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SignalFilter</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.translators.GIVTranslator</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.analysis.GIVBayesian</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.gmode_utils</span></code>, etc.
+now do <strong>not</strong> use deprecated classes as proof that even the most complex classes can easily be transitioned to using
+functions in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core.io.hdf_utils</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.core.io.write_utils</span></code></p></li>
+<li><p>Unit tests for modules in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core.io</span></code> rewritten to not use deprecated functions or classes.</p></li>
+<li><p>Deprecated classes only being used in translators, two analyses modules and two process modules</p></li>
+<li><p>Removed old examples and tutorials, especially on deprecated classes</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Upgrades to <code class="docutils literal notranslate"><span class="pre">pycroscopy.Process</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.Process</span></code> now has a new function - <code class="docutils literal notranslate"><span class="pre">test()</span></code> that allows much easier in-place testing of processes before applying to the entire dataset</p></li>
+<li><p><cite>pycroscopy.processing.Cluster`</cite>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Decomposition</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SVD</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SignalFilter</span></code>,
+<code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.GIVBayesian</span></code> all implement the new <code class="docutils literal notranslate"><span class="pre">test()</span></code> functionality - return results as correct N-dimensional datasets in expected datatypes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Cluster</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Decomposition</span></code> now use a user-configured sklearn objects as inputs instead of creating an estimator object</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">SVD</span></code>, <code class="docutils literal notranslate"><span class="pre">Cluster</span></code>, <code class="docutils literal notranslate"><span class="pre">Decomposition</span></code> now correctly write results as <code class="docutils literal notranslate"><span class="pre">Main</span></code> datasets</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>More robust <code class="docutils literal notranslate"><span class="pre">pycroscopy.gmode_utils</span></code> functions</p></li>
+<li><p>Updates to <code class="docutils literal notranslate"><span class="pre">pycroscopy.plot_utils</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">plot_complex_loop_stack</span></code> merged into <code class="docutils literal notranslate"><span class="pre">plot_complex_spectra()</span></code></p></li>
+<li><p>new function that provides best row / column configuration for (identical) subplots: <code class="docutils literal notranslate"><span class="pre">get_plot_grid_size()</span></code></p></li>
+<li><p>moved clustering related utilities into <code class="docutils literal notranslate"><span class="pre">pycroscopy.viz.cluster_utils</span></code> &lt;– significantly revised many functions in there</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">plot_map_stack()</span></code> accepts x, y labels. <code class="docutils literal notranslate"><span class="pre">plot_map()</span></code> accepts X and Y vectors instead of sizes for more granular control</p></li>
+<li><p>All compound functions now pass kwargs to underlying functions wherever possible</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Updates to <code class="docutils literal notranslate"><span class="pre">pycroscopy.write_utils</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.write_utils.AncillaryDescriptor</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.jupyter_utils.VizDimension</span></code> merged and significantly simplified to <code class="docutils literal notranslate"><span class="pre">pycroscopy.write_utils.Dimension</span></code></p></li>
+<li><p>Swapped all usages of <code class="docutils literal notranslate"><span class="pre">AncillaryDescriptor</span></code> with <code class="docutils literal notranslate"><span class="pre">Dimension</span></code> in the entire package</p></li>
+<li><p>More robust handling of attributes with numpy strings as values</p></li>
+<li><p>Added new functions to simplify building of matrices for ancillary datasets - <code class="docutils literal notranslate"><span class="pre">build_ind_val_matrices()</span></code></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Updates to <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Functions updated to using the new <code class="docutils literal notranslate"><span class="pre">Dimension</span></code> objects</p></li>
+<li><p>Added a few new functions such as <code class="docutils literal notranslate"><span class="pre">write_book_keeping_attrs()</span></code>, <code class="docutils literal notranslate"><span class="pre">create_indexed_group()</span></code>, <code class="docutils literal notranslate"><span class="pre">create_results_group()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">write_main_dataset()</span></code> can now write empty datasets, use different prefixes for ancillary dataset names, etc.</p></li>
+<li><p>Centralized the writing of book-keeping attributes to <code class="docutils literal notranslate"><span class="pre">write_book_keeping_attrs()</span></code></p></li>
+<li><p>generalized certain functions such as <code class="docutils literal notranslate"><span class="pre">copy_attributes</span></code>, <code class="docutils literal notranslate"><span class="pre">write_simple_attributes()</span></code> so that they can be applied to any HDF5 object</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">write_main_dataset()</span></code> and <code class="docutils literal notranslate"><span class="pre">create_empty_dataset()</span></code> now validate the <code class="docutils literal notranslate"><span class="pre">dtype</span></code> correctly</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">print_tree()</span></code> now prints cleaner versions of the tree, only <code class="docutils literal notranslate"><span class="pre">Main</span> <span class="pre">datasets</span></code> if requested.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">write_book_keeping_attrs()</span></code> now writes the operating system version and pycroscopy version in addition to the timestamp and machine ID</p></li>
+<li><p>Region references functions such as <code class="docutils literal notranslate"><span class="pre">copy_region_refs()</span></code> now more robust</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>bug fixes to BE translation, visualization, plotting</p></li>
+</ul>
+</section>
+<section id="id21">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/138">Mar 27 2018:</a><a class="headerlink" href="#id21" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Small changes to make pycroscopy available on <code class="docutils literal notranslate"><span class="pre">Conda</span> <span class="pre">forge</span></code>. Thanks to &#64;carlodri !</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.translators.NanonisTranslator</span></code> added to translate Nanonis data files</p></li>
+</ul>
+</section>
+<section id="id22">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/133">Mar 2 2018:</a><a class="headerlink" href="#id22" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Fixed decode error in <code class="docutils literal notranslate"><span class="pre">pycroscopy.translators.IgorTranslator</span></code> relevant for new versions of Asylum Research microscope software versions</p></li>
+</ul>
+</section>
+<section id="mar-3-2018-on-unity-dev-and-not-on-master">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/131">Mar 3 2018:</a> (on <code class="docutils literal notranslate"><span class="pre">unity_dev</span></code> and not on <code class="docutils literal notranslate"><span class="pre">master</span></code>)<a class="headerlink" href="#mar-3-2018-on-unity-dev-and-not-on-master" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.plot_utils.plot_map</span></code> now accepts X and Y vectors</p></li>
+<li><p>Lots of small bug fixes</p></li>
+<li><p>More checks for more robust code in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code></p></li>
+<li><p>New handy function - <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.get_region()</span></code> - directly returns the referenced data as a numpy array</p></li>
+<li><p>Added two new examples on <code class="docutils literal notranslate"><span class="pre">pycroscopy.io_utils</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.dtype_utils</span></code></p></li>
+</ul>
+</section>
+<section id="feb-18-2018-on-unity-dev-and-not-on-master">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/131">Feb 18 2018:</a> (on <code class="docutils literal notranslate"><span class="pre">unity_dev</span></code> and not on <code class="docutils literal notranslate"><span class="pre">master</span></code>)<a class="headerlink" href="#feb-18-2018-on-unity-dev-and-not-on-master" title="Link to this heading">¶</a></h2>
+<p><strong>Massive restructuring and overhaul of code:</strong></p>
+<ul>
+<li><p>Renamed <code class="docutils literal notranslate"><span class="pre">pycroscopy.ioHDF</span></code> to <code class="docutils literal notranslate"><span class="pre">pycroscopy.HDFWriter</span></code></p></li>
+<li><p>Renamed <code class="docutils literal notranslate"><span class="pre">pycroscopy.MicroDataset</span></code> and <cite>pycroscopy.MicroDataGroup`</cite> to <code class="docutils literal notranslate"><span class="pre">pycroscopy.VirtualDataset</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.VirtualGroup</span></code></p></li>
+<li><p>Data type manipulation functions moved out of <code class="docutils literal notranslate"><span class="pre">pycroscopy.io_utils</span></code> into <code class="docutils literal notranslate"><span class="pre">pycroscopy.dtype_utils</span></code></p></li>
+<li><p>Moved core foundational / science agnostic / engineering elements of pycroscopy into a new subpackage - <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code>.
+Rule for move - nothing in <code class="docutils literal notranslate"><span class="pre">.core</span></code> should import anything out of <code class="docutils literal notranslate"><span class="pre">.core</span></code>. This may be spun off as its own package at a later stage if deemed appropriate.
+Contents of <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code>:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">core.io</span></code> - <code class="docutils literal notranslate"><span class="pre">HDFWriter</span></code>, <code class="docutils literal notranslate"><span class="pre">VirtualData</span></code>, <code class="docutils literal notranslate"><span class="pre">hdf_utils</span></code>, <code class="docutils literal notranslate"><span class="pre">write_utils</span></code>, <code class="docutils literal notranslate"><span class="pre">io_utils</span></code>, <code class="docutils literal notranslate"><span class="pre">dtype_utils</span></code>, <code class="docutils literal notranslate"><span class="pre">Translator</span></code>, <code class="docutils literal notranslate"><span class="pre">NumpyTranslator</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">core.processing</span></code> - <code class="docutils literal notranslate"><span class="pre">Process</span></code>, <code class="docutils literal notranslate"><span class="pre">parallel_compute()</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">core.viz</span></code> - <code class="docutils literal notranslate"><span class="pre">plot_utils</span></code>, <code class="docutils literal notranslate"><span class="pre">jupyter_utils</span></code></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Started adding a lot of type and value checks for safer and more robust file reading/writing. Expect a lot of descriptive
+Exceptions that will help in identifying problems easier and sooner.</p></li>
+<li><p>Implemented modular and standalone functions in <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils</span></code> that form a (much simpler and more robust) feature-equivalent alternative to
+<code class="docutils literal notranslate"><span class="pre">pycroscopy.HDFWriter</span></code> + <code class="docutils literal notranslate"><span class="pre">pyroscopy.VirtualData</span></code>. <code class="docutils literal notranslate"><span class="pre">pycroscopy.HDFWriter</span></code> + <code class="docutils literal notranslate"><span class="pre">pyroscopy.VirtualData</span></code> <strong>will be phased out in the near future</strong>.</p>
+<blockquote>
+<div><ul>
+<li><p>First implementation of what may be one of the most popular and important functions - <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.write_main_dataset()</span></code> -</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Thoroughly checks and validates all inputs. Only if these pass,</p></li>
+<li><p>Writes the a dataset containing the central data</p></li>
+<li><p>Creates / reuses <code class="docutils literal notranslate"><span class="pre">ancillary</span> <span class="pre">datasets</span></code></p></li>
+<li><p>links <code class="docutils literal notranslate"><span class="pre">Ancillary</span> <span class="pre">datasets</span></code> to create a <code class="docutils literal notranslate"><span class="pre">Main</span> <span class="pre">dataset</span></code></p></li>
+<li><p>writes <code class="docutils literal notranslate"><span class="pre">quantity</span></code> and <code class="docutils literal notranslate"><span class="pre">units</span></code> attributes - <strong>now mandatory</strong></p></li>
+<li><p>Also writes any other attributes</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Other notable functions include <code class="docutils literal notranslate"><span class="pre">write_simple_attrs()</span></code>, <code class="docutils literal notranslate"><span class="pre">write_region_references</span></code>, <code class="docutils literal notranslate"><span class="pre">write_ind_val_dsets()</span></code></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.NumpyTranslator</span></code> now simply calls <code class="docutils literal notranslate"><span class="pre">pycroscopy.hdf_utils.write_main_dataset()</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.Translator.simple_write()</span></code> removed. Translators can extend <code class="docutils literal notranslate"><span class="pre">NumpyTranslator</span></code> instead.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p>Added first batch of unit tests for modules in <code class="docutils literal notranslate"><span class="pre">pycroscopy.core</span></code>.</p></li>
+<li><p>More robust <code class="docutils literal notranslate"><span class="pre">pycroscopy.parallel_compute()</span></code> via type checking</p></li>
+<li><p>Added a new class called <code class="docutils literal notranslate"><span class="pre">pycroscopy.AuxillaryDescriptor</span></code> to describe Position and spectroscopic dimensions.
+All major functions like <code class="docutils literal notranslate"><span class="pre">write_main_dataset()</span></code> and <code class="docutils literal notranslate"><span class="pre">write_ind_val_dsets()</span></code> to use this descriptor</p></li>
+</ul>
+</section>
+<section id="jan-16-2018-on-unity-dev-and-not-on-master">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/129">Jan 16 2018:</a> (on <code class="docutils literal notranslate"><span class="pre">unity_dev</span></code> and not on <code class="docutils literal notranslate"><span class="pre">master</span></code>)<a class="headerlink" href="#jan-16-2018-on-unity-dev-and-not-on-master" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Cluster</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Decomposition</span></code> now extend <code class="docutils literal notranslate"><span class="pre">pycroscopy.Process</span></code></p></li>
+<li><p>More robust HDF functions for checking the existence of prior results groups.</p></li>
+<li><p>Fixed important bugs for better python2 compatibility (HDF I/O, plotting, etc.)</p></li>
+<li><p>More FFT signal filtering functions</p></li>
+<li><p>Several bug fixes to <code class="docutils literal notranslate"><span class="pre">pycroscopy.viz.plot_utils</span></code></p></li>
+<li><p>Simplifications to the <code class="docutils literal notranslate"><span class="pre">image</span> <span class="pre">cleaning</span></code> and <code class="docutils literal notranslate"><span class="pre">GIV</span></code> notebooks to use the new capabilities of <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SVD</span></code>, <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Cluster</span></code></p></li>
+</ul>
+</section>
+<section id="id23">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/127">Dec 7 2017:</a><a class="headerlink" href="#id23" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>New function (<code class="docutils literal notranslate"><span class="pre">visualize()</span></code>) added to <code class="docutils literal notranslate"><span class="pre">pycroscopy.PycroDataset</span></code> to facilitate interactive visualization of data in for any dataset (&lt; 4 dimensions)</p></li>
+<li><p>Significantly more customizable plotting functions in <code class="docutils literal notranslate"><span class="pre">pycroscopy.plot_utils</span></code></p></li>
+<li><p>Improved <code class="docutils literal notranslate"><span class="pre">pycroscopy.Process</span></code> that provides the framework for:</p>
+<ul>
+<li><p>checking for prior instances of a process run on the same dataset with the same parameters</p></li>
+<li><p>resuming an aborted process / computation</p></li>
+</ul>
+</li>
+<li><p>Reorganized <code class="docutils literal notranslate"><span class="pre">doSVD()</span></code> into a new Process called <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SVD</span></code>  to take advantage of above advancements.</p>
+<ul>
+<li><p>The same changes will be rolled out to <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Cluster</span></code> and <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.Decomposition</span></code> soon</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="id24">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/126">Nov 17 2017:</a><a class="headerlink" href="#id24" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Significant improvements and bug fixes to Bayesian Inference for G-mode IV.</p></li>
+</ul>
+</section>
+<section id="id25">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/125">Nov 11 2017:</a><a class="headerlink" href="#id25" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>New robust class for Bayesian Inference on G-mode IV data - <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.GIVBayesian</span></code></p></li>
+<li><p>Utilities for reading files from Nanois controllers</p></li>
+<li><p>New robust class for FFT Signal Filtering on any data including G-mode - <code class="docutils literal notranslate"><span class="pre">pycroscopy.processing.SignalFilter</span></code></p></li>
+<li><p>FFT filtering rewritten and simplified to use objects</p></li>
+</ul>
+</section>
+<section id="id26">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/124">Oct 9 2017:</a><a class="headerlink" href="#id26" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">pycroscopy.PycroDataset</span></code> - a class that simplifies handling, reshaping, and interpretation of <code class="docutils literal notranslate"><span class="pre">Main</span></code> datasets.</p></li>
+</ul>
+</section>
+<section id="id27">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/123">Sep 6 2017:</a><a class="headerlink" href="#id27" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">pycroscopy.Process</span></code> - New class that provides a framework for data processing in Pycroscopy.</p></li>
+</ul>
+</section>
+<section id="id28">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/122">Sep 5 2017:</a><a class="headerlink" href="#id28" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Improved the example on parallel computing</p></li>
+</ul>
+</section>
+<section id="id29">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/118">Aug 31 2017:</a><a class="headerlink" href="#id29" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>New plot function - <code class="docutils literal notranslate"><span class="pre">single_img_cbar_plot()</span></code> (now merged into <code class="docutils literal notranslate"><span class="pre">plot_map()</span></code>) for nicer 2D image plots with color-bars.</p></li>
+</ul>
+</section>
+<section id="id30">
+<h2><a class="reference external" href="https://github.com/pycroscopy/pycroscopy/pull/117">Aug 29 2017:</a><a class="headerlink" href="#id30" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>Improvements to Bayesian Inference on G-mode IV data including resistance compensation.</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2016, Pycroscopy Contributors.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
