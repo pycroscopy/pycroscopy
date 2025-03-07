@@ -24,3 +24,17 @@ If you use pycroscopy for research, we would appreciate if you could cite our [A
 3. **Denoising with Autoencoders** - [![Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pycroscopy/pycroscopy/blob/main/jupyter_notebooks/PycroscopyDenosingAutoencoder.ipynb)
 
 ## More examples in the [jupyter_notebooks](jupyter_notebooks/) folder.
+## List of Workshops Held
+
+### 2020  
+- **[AISTEM Workshop 2020](https://github.com/pycroscopy/AISTEM_WORKSHOP_2020)**
+
+
+### 2019  
+- **[CNMS ML in MS Workshop 2019](https://github.com/pycroscopy/CNMS_ML_in_MS_Workshop_2019)** 
+
+
+### 2018  
+- **[CNMS ML in MS Workshop 2018](https://github.com/pycroscopy/CNMS_ML_in_MS_Workshop_2018)** 
+
+- **[MM 2018 Workshop](https://github.com/pycroscopy/MM_2018_Workshop)** 
