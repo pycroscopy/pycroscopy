@@ -1,11 +1,15 @@
 from codecs import open
 import os
-
 from setuptools import setup, find_packages
 
 here = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(here, 'README.rst')) as f:
-    long_description = f.read()
+readme_file = os.path.join(here, 'README.md')
+
+if os.path.exists(readme_file):
+    with open(readme_file, encoding='utf-8') as f:
+        long_description = f.read()
+else:
+    long_description = ""
 
 with open(os.path.join(here, 'pycroscopy/__version__.py')) as f:
     __version__ = f.read().split("'")[1]
@@ -36,6 +40,7 @@ setup(
     version=__version__,
     description='Python library for scientific analysis of microscopy data',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
@@ -68,32 +73,8 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     platforms=['Linux', 'Mac OSX', 'Windows 10/8.1/8/7'],
-    # package_data={'sample':['dataset_1.dat']}
     test_suite='pytest',
     extras_require={},
-    # dependency='',
-    # dependency_links=[''],
     include_package_data=True,
-
-    # If there are data files included in your packages that need to be
-    # installed, specify them here.  If using Python 2.6 or less, then these
-    # have to be included in MANIFEST.in as well.
-    # package_data={
-    #     'sample': ['package_data.dat'],
-    # },
-
-    # Although 'package_data' is the preferred approach, in some case you may
-    # need to place data files outside of your packages. See:
-    # http://docs.python.org/3.4/distutils/setupscript.html#installing-additional-files # noqa
-    # In this case, 'data_file' will be installed into '<sys.prefix>/my_data'
-    # data_files=[('my_data', ['data/data_file'])],
-
-    # To provide executable scripts, use entry points in preference to the
-    # "scripts" keyword. Entry points provide cross-platform support and allow
-    # pip to create the appropriate form of executable for the target platform.
-    # entry_points={
-    #     'console_scripts': [
-    #         'sample=sample:main',
-    #     ],
-    # },
 )
+
