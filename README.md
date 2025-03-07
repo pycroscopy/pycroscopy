@@ -26,6 +26,22 @@ If you use pycroscopy for research, we would appreciate if you could cite our [A
 ## More examples in the [jupyter_notebooks](jupyter_notebooks/) folder.
 ## List of Workshops Held
 
+### 2024
+- **[Machine Learning in Scanning Transmission Electron Microscopy Workshop 2024, University of Tennessee, Knoville, TN](https://github.com/gduscher/MLSTEM2024)**
+
+### 2023
+- **[ML-ElectronMicroscopy-school-2023](https://github.com/SergeiVKalinin/ML-ElectronMicroscopy-2023)**
+
+- **[AutomatedExperiment_Summer2023](https://github.com/SergeiVKalinin/AutomatedExperiment_Summer2023)**
+
+### 2022
+- **[FerroSchool Winter 2022 in Calgary](https://github.com/pycroscopy/ferroschool)**
+
+### 2021
+- **[Notebooks for MRS2021 tutorial](https://github.com/pycroscopy/MRS2021)**
+- **[SPM_ML_School_2021](https://github.com/pycroscopy/SPM_ML_School_2021)**
+
+
 ### 2020  
 - **[AISTEM Workshop 2020](https://github.com/pycroscopy/AISTEM_WORKSHOP_2020)**
 
