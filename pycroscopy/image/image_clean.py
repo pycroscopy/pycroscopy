@@ -4,6 +4,7 @@ from tqdm import trange, tqdm
 from sklearn.feature_extraction import image
 from sklearn.utils.extmath import randomized_svd
 
+
 # Image cleaning functions
 
 def clean_svd(im, pixel_size=1, source_size=5):
@@ -32,6 +33,35 @@ def clean_svd(im, pixel_size=1, source_size=5):
     out_dataset.data_type = 'image'
     return out_dataset
 
+def background_correction(image, value=12):
+    """Background correction of an image with difference of Gaussians
+    
+    Parameters
+    ----------  
+    image: numpy array or sidpy.Dataset
+        2D image to be corrected
+    value: int
+        value for the difference of Gaussians, larger values result in more smoothing   
+
+    Returns
+    -------
+    bgd_corr: numpy array or sidpy.Dataset
+        background corrected image
+    """
+    
+    if image.ndim != 2:
+       raise ValueError('Input image must be 2D')
+
+    bgd_corr =skimage.filters.difference_of_gaussians(np.array(image), 1, int(value))
+    if isinstance(image, sidpy.Dataset):
+        bgd_corr = image.like_data(bgd_corr)
+        bgd_corr.title = 'Background Corrected ' + image.title
+        bgd_corr.source = image.title
+        bgd_corr.metadata = image.metadata.copy()
+        if 'analysis' not in bgd_corr.metadata:
+            bgd_corr.metadata['analysis'] = {}     
+        bgd_corr.metadata['analysis']['background_correction'] = {'value': value, 'input_dataset': image.source}
+    return bgd_corr
 
 # Deconvolution
 
