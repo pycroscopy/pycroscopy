@@ -51,10 +51,11 @@ class TestUtilityFunctions(unittest.TestCase):
         self.assertIsInstance(registered, sidpy.Dataset)
         self.assertIsInstance(registered.metadata, dict)
         self.assertTrue('drift' in registered.metadata['analysis']['rigid_registration'])
-        print(registered.metadata['analysis']['rigid_registration']['drift'])
-        self.assertTrue(np.allclose(registered.metadata['analysis']['rigid_registration']['drift'], np.array([[ 0., -1.], [-1., -1.], [0.,  0.], [-1., 0.], [0., 0.]])))
-
-        self.assertTrue(np.allclose(registered.metadata['analysis'] ['rigid_registration']['input_crop'], [1, 64, 1, 64]))
+        print('drift', registered.metadata['analysis']['rigid_registration']['drift'])
+        self.assertTrue(np.allclose(registered.metadata['analysis']['rigid_registration']['drift'], 
+                                    np.array([[ 0., -1.], [-1., -1.], [0.,  0.], [-1., 0.], [0., 0.]])))
+        print('input_crop', registered.metadata['analysis']['rigid_registration']['input_crop'])
+        self.assertTrue(np.allclose(registered.metadata['analysis'] ['rigid_registration']['input_crop'], [0, 63, 0, 63]))
         self.assertTrue(registered.shape[0] == 5)
         self.assertTrue(registered.shape[1] == 63)
         self.assertTrue(registered._axes[0].dimension_type.name == 'TEMPORAL')

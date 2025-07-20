@@ -10,7 +10,8 @@ import unittest
 import numpy as np
 import sidpy
 import SciFiReaders 
-from pycroscopy.stats.atom_stats import LocalCrystallography as lc
+from pycroscopy.stats.atom_stats import LocalCrystallography
+from pycroscopy.image.image_clean import decon_lr, make_gauss
 import urllib
 
 import skimage
@@ -42,16 +43,17 @@ def return_atoms_LR(sidpy_dset, atom_size=0.09, threshold = 0.03):
     image_dimensions = image.get_image_dims(return_axis=True)
     scale_x = image_dimensions[0].slope
     gauss_diameter = atom_size/scale_x
-    # gauss_probe = pyTEMlib.probe_tools.make_gauss(image.shape[0], image.shape[1], gauss_diameter)
+    gauss_probe = make_gauss(image.shape[0], image.shape[1], gauss_diameter)
     
-    LR_dataset = it.decon_lr(image, gauss_probe, verbose=False)
+    LR_dataset = decon_lr(image, gauss_probe, verbose=False)
     
     extent = LR_dataset.get_extent([0,1])
    
     # ------- Input ------
     print("LR dataset shape is {}".format(LR_dataset.shape))
     # ----------------------
-    scale_x = ft.get_slope(image.dim_1)
+    image_dimensions = image.get_image_dims(return_axis=True)
+    scale_x = image_dimensions[0].slope
     blobs =  skimage.feature.blob_log(LR_dataset, max_sigma=atom_size/scale_x, threshold=threshold)
  
     
@@ -81,16 +83,16 @@ class TestUtilityFunctions(unittest.TestCase):
         atom_types = np.zeros((atoms_found.shape[0]))
         #atom_types[len(atom_types)//2:] = 1
 
-        atom_stats = lc(updated_image, atom_positions = atoms_found, atom_descriptors = {'Mo':0}, 
+        atom_stats = LocalCrystallography(updated_image, atom_positions = atoms_found, atom_descriptors = {'Mo':0}, 
                     window_size = 30, atom_types = atom_types, comp = '0')
 
         atom_stats.refine_atomic_positions()
 
-        atom_stats.compute_neighborhood(num_neighbors = 6);
+        atom_stats.compute_neighborhood(num_neighbors = 3);
 
         print("Atom positions shape is {}".format(atom_stats.atom_positions.shape))
         #Do PCA and KMeans
         pca_results = atom_stats.compute_pca_of_neighbors()
-        km_results = atom_stats.compute_kmeans_neighbors()
+        km_results = atom_stats.compute_kmeans_neighbors(num_clusters=2)
 
         os.remove(data_file_name)

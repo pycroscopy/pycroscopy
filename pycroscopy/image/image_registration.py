@@ -215,6 +215,8 @@ def rigid_registration(dataset: sidpy.Dataset, normalization: typing.Optional[st
     rigid_registered.source = dataset.title
     rigid_registered.metadata['analysis'] = {'rigid_registration': {'drift': drift,
                                  'input_crop': input_crop, 'input_shape': dataset.shape[1:]}}
+    
+    
     if 'experiment' in dataset.metadata:
         rigid_registered.metadata['experiment'] = dataset.metadata['experiment'].copy()
     rigid_registered.set_dimension(0, sidpy.Dimension(np.arange(rigid_registered.shape[0]), 

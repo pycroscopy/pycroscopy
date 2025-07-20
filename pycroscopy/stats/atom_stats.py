@@ -251,8 +251,8 @@ class LocalCrystallography:
                         for k2 in range(0, num_neighbors):
                             x1 = self.atom_positions[self.neighbor_indices[k1, k2 + 1], 0]
                             y1 = self.atom_positions[self.neighbor_indices[k1, k2 + 1], 1]
-                            d_vec[0, k2] = np.abs((x0 - x1) + 1j * (
-                                        y0 - y1))  # array of distances from each atom to its nearest neighbors
+                            d_vec[0, k2] = np.abs((x0 - x1) + 1j * (y0 - y1))  # array of distances from each atom
+                                                                               # to its nearest neighbors
                             a_vec[0, k2] = np.angle(
                                 (x0 - x1) + 1j * (y0 - y1))  # array of angles from each atom to its nearest neighbors
                             xd_vec[0, k2] = (x0 - x1)
