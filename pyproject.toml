@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycroscopy"
+dynamic = ["version"]
+description = "Python library for scientific analysis of microscopy data"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Pycroscopy contributors", email = "pycroscopy@gmail.com"}
+]
+keywords = [
+    "EELS", "STEM", "TEM", "XRD", "AFM", "SPM", "STS", "band excitation", "BE", "BEPS", 
+    "Raman", "NanoIR", "electron microscopy", "scanning probe", "x-rays", 
+    "atomic force microscopy", "SIMS", "energy", "spectroscopy", "imaging", "microscopy", 
+    "spectra", "characterization", "spectrogram", "hyperspectral", "multidimensional", 
+    "data format", "universal", "clustering", "decomposition", "curve fitting", 
+    "data analysis", "PCA", "SVD", "NMF", "DBSCAN", "kMeans", "machine learning", 
+    "bayesian inference", "fft filtering", "signal processing", "image cleaning", 
+    "denoising", "model", "msa", "quantification"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Cython",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Information Analysis"
+]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "scikit-image",
+    "scikit-learn",
+    "matplotlib",
+    "torch",
+    "tensorly",
+    "tqdm",
+    "ipywidgets",
+    "ipython",
+    "simpleitk",
+    "sidpy",
+    "pysptools",
+    "cvxopt",
+    "SciFiReaders",
+    "ipympl"
+]
+
+[project.urls]
+Homepage = "https://pycroscopy.github.io/pycroscopy/about.html"
+Repository = "https://github.com/pycroscopy/pycroscopy"
+Documentation = "https://pycroscopy.github.io/pycroscopy/"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-runner"]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["*.tests", "*.tests.*", "tests.*", "tests"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pycroscopy.version.__version__"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

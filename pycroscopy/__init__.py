@@ -16,13 +16,12 @@ Submodules
     :toctree: _autosummary
 """
 
-from . import corr
-from . import fft
+
 from . import image
 from . import learn
 from . import viz
 from . import signal
 from . import stats
 
-from .__version__ import version as __version__
-from .__version__ import time as __time__
+from .version import __version__
+from .version import __time__

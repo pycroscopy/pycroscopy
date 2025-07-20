@@ -13,10 +13,7 @@ import SciFiReaders as sr
 
 from pycroscopy.stats.atom_stats import LocalCrystallography as lc
 import pywget
-import pyTEMlib
-import pyTEMlib.file_tools as ft     # File input/ output library
-import pyTEMlib.image_tools as it
-import pyTEMlib.probe_tools
+
 import skimage
 import os
 
@@ -45,7 +42,7 @@ def return_atoms_LR(sidpy_dset, atom_size=0.09, threshold = 0.03):
     
     scale_x = ft.get_slope(image.dim_0)
     gauss_diameter = atom_size/scale_x
-    gauss_probe = pyTEMlib.probe_tools.make_gauss(image.shape[0], image.shape[1], gauss_diameter)
+    # gauss_probe = pyTEMlib.probe_tools.make_gauss(image.shape[0], image.shape[1], gauss_diameter)
     
     LR_dataset = it.decon_lr(image, gauss_probe, verbose=False)
     
