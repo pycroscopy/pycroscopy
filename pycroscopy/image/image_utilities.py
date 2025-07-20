@@ -219,7 +219,7 @@ def cartesian2polar(x, y, grid, r, t, order=3):
     new_ix = ix(new_x.ravel())
     new_iy = iy(new_y.ravel())
 
-    return ndimage.map_coordinates(grid, np.array([new_ix, new_iy]), order=order).reshape(new_x.shape)
+    return scipy.ndimage.map_coordinates(grid, np.array([new_ix, new_iy]), order=order).reshape(new_x.shape)
 
 
 def warp(diff, center):
