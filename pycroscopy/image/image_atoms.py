@@ -59,8 +59,9 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
     if not isinstance(threshold, float):
         raise TypeError('threshold parameter has to be a float number')
 
+    image_dimensions = image.get_image_dims(return_axis=True)
 
-    scale_x = get_slope(image.dim_0)
+    scale_x = image_dimensions[0].slope
     im = np.array(image-image.min())
     im = im/im.max()
     if threshold < 0.:

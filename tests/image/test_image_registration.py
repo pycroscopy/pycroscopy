@@ -28,9 +28,9 @@ def make_test_data():
 
     image = sidpy.Dataset.from_array(im)
     image.data_type = 'Image_stack'
-    image.dim_0.dimension_type = 'spatial'
-    image.dim_1.dimension_type = 'spatial'
-    image.dim_2.dimension_type = 'temporal'
+    image.set_dimension(0, sidpy.Dimension(np.arange(64), name='x', units='nm', dimension_type='SPATIAL', quantity='length'))
+    image.set_dimension(1, sidpy.Dimension(np.arange(64), name='y', units='nm', dimension_type='SPATIAL', quantity='length'))
+    image.set_dimension(2, sidpy.Dimension(np.arange(5), name='z', units='s', dimension_type='TEMPORAL', quantity='frame'))
 
     return image
 
@@ -39,7 +39,7 @@ class TestUtilityFunctions(unittest.TestCase):
     def test_rigid_registration(self):
         image_stack = make_test_data()
 
-        with self.assertRaises(TypeError):
+        with self.assertRaises(AttributeError):
             image_registration.rigid_registration(np.array(image_stack))
         with self.assertRaises(TypeError):
             image_stack.data_type = 'image'
@@ -50,11 +50,11 @@ class TestUtilityFunctions(unittest.TestCase):
 
         self.assertIsInstance(registered, sidpy.Dataset)
         self.assertIsInstance(registered.metadata, dict)
-        self.assertTrue('drift' in registered.metadata)
-        self.assertTrue(np.allclose(registered.metadata['drift'], [[ 0., -1.], [ 0., -1.], [-1., -1.], [0.,  0.],
-                                                                  [-1., 0.], [0., 0.]]))
+        self.assertTrue('drift' in registered.metadata['analysis']['rigid_registration'])
+        print(registered.metadata['analysis']['rigid_registration']['drift'])
+        self.assertTrue(np.allclose(registered.metadata['analysis']['rigid_registration']['drift'], np.array([[ 0., -1.], [-1., -1.], [0.,  0.], [-1., 0.], [0., 0.]])))
 
-        self.assertTrue(np.allclose(registered.metadata['input_crop'], [1, 64, 1, 64]))
+        self.assertTrue(np.allclose(registered.metadata['analysis'] ['rigid_registration']['input_crop'], [1, 64, 1, 64]))
         self.assertTrue(registered.shape[0] == 5)
         self.assertTrue(registered.shape[1] == 63)
         self.assertTrue(registered._axes[0].dimension_type.name == 'TEMPORAL')

@@ -4,9 +4,11 @@ from tqdm import trange, tqdm
 from sklearn.feature_extraction import image
 from sklearn.utils.extmath import randomized_svd
 
+# Image cleaning functions
 
 def clean_svd(im, pixel_size=1, source_size=5):
     """De-noising of image by using first component of single value decomposition"""
+    
     if not isinstance(im, sidpy.Dataset):
         raise TypeError('We need a sidpy.Dataset')
     if im.data_type.name != 'IMAGE':
@@ -88,7 +90,8 @@ def decon_lr(o_image, resolution=0.1,  verbose=False):
     if len(o_image) < 1:
         return o_image
 
-    scale_x = sidpy.base.num_utils.get_slope(o_image.dim_0)
+    image_dimensions = o_image.get_image_dims(return_axis=True)
+    scale_x = image_dimensions[0].slope
     gauss_diameter = resolution/scale_x
     probe = make_gauss(o_image.shape[0], o_image.shape[1], gauss_diameter)
 
@@ -102,8 +105,8 @@ def decon_lr(o_image, resolution=0.1,  verbose=False):
 
     response_ft = np.fft.fft2(probe_c)
 
-    dx = o_image.x[1]-o_image.x[0]
-    dk = 1.0 / float(o_image.x[-1])  # last value of x axis is field of view
+    dx = scale_x
+    dk = 1.0 / float(image_dimensions[0][-1])  # last value of x axis is field of view
     screen_width = 1 / dx
 
     aperture = np.ones(o_image.shape, dtype=np.complex64)

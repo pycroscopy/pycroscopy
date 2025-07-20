@@ -9,10 +9,9 @@ sys.path.insert(0, "../../")
 import unittest
 import numpy as np
 import sidpy
-import SciFiReaders as sr
-
+import SciFiReaders 
 from pycroscopy.stats.atom_stats import LocalCrystallography as lc
-import pywget
+import urllib
 
 import skimage
 import os
@@ -40,7 +39,8 @@ def return_atoms_LR(sidpy_dset, atom_size=0.09, threshold = 0.03):
     out_tags = {}
     image.metadata['experiment']= {'convergence_angle': 30, 'acceleration_voltage': 200000.}
     
-    scale_x = ft.get_slope(image.dim_0)
+    image_dimensions = image.get_image_dims(return_axis=True)
+    scale_x = image_dimensions[0].slope
     gauss_diameter = atom_size/scale_x
     # gauss_probe = pyTEMlib.probe_tools.make_gauss(image.shape[0], image.shape[1], gauss_diameter)
     
@@ -63,9 +63,9 @@ data_file_name = r'my_image_mos2.tiff'
 if os.path.exists(data_file_name): 
     os.remove(data_file_name)
 
-pywget.download(url='https://github.com/pycroscopy/SciFiDatasets/raw/main/data/generic/highres2.tif', out = data_file_name)
+urllib.request.urlretrieve(r'https://github.com/pycroscopy/SciFiDatasets/raw/main/data/generic/highres2.tif', data_file_name)
 
-ir = sr.ImageReader(data_file_name)
+ir = SciFiReaders.ImageReader(data_file_name)
 img_data = ir.read()
 if len(img_data.shape)==3:
     img_data = img_data[:,:,0]
