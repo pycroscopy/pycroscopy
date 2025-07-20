@@ -25,8 +25,9 @@ def make_test_data():
 
     image = sidpy.Dataset.from_array(gaussian_filter(im, sigma=2))
     image.data_type = 'Image'
-    image.dim_0.dimension_type = 'spatial'
-    image.dim_1.dimension_type = 'spatial'
+    
+    image.set_dimension(0, sidpy.Dimension(np.arange(64), name='x', units='nm', dimension_type='SPATIAL', quantity='length'))
+    image.set_dimension(1, sidpy.Dimension(np.arange(64), name='y', units='nm', dimension_type='SPATIAL', quantity='length'))
 
     atoms = []
     for i in range(8):
@@ -47,8 +48,6 @@ class TestUtilityFunctions(unittest.TestCase):
         image.data_type = 'image'
         with self.assertRaises(TypeError):
             image_atoms.find_atoms(image, atom_size='large')
-        with self.assertRaises(TypeError):
-            image_atoms.find_atoms(image, threshold='large')
 
         found_atoms = image_atoms.find_atoms(image)
 

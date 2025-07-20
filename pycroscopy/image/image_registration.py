@@ -1,25 +1,35 @@
+"""
+image_registration.py
+by Gerd Duscher, UTK
+part of pycroscopy.image
+MIT license except where stated differently
+"""
+
 import numpy as np
-from tqdm import trange
 import skimage
-import scipy.ndimage as ndimage
-import sidpy
+import scipy
+import typing 
+
+from tqdm.auto import trange
+
 
 _SimpleITK_present = True
 
 try:
-    import SimpleITK as sitk
+    import SimpleITK
 except BaseException:
     _SimpleITK_present = False
 if not _SimpleITK_present:
     print('SimpleITK not installed; Registration Functions for Image Stacks not available')
+
+import sidpy
 
 
 #####################################################
 # Registration Functions
 #####################################################
 
-
-def complete_registration(main_dataset, storage_channel=None):
+def complete_registration(main_dataset: sidpy.Dataset) -> typing.Tuple[sidpy.Dataset, sidpy.Dataset]:
     """Rigid and then non-rigid (demon) registration
 
     Performs rigid and then non-rigid registration, please see individual functions:
@@ -30,8 +40,6 @@ def complete_registration(main_dataset, storage_channel=None):
     ----------
     main_dataset: sidpy.Dataset
         dataset of data_type 'IMAGE_STACK' to be registered
-    storage_channel: h5py.Group
-        optional - location in hdf5 file to store datasets
 
     Returns
     -------
@@ -40,25 +48,18 @@ def complete_registration(main_dataset, storage_channel=None):
 
     """
 
-    if not isinstance(main_dataset, sidpy.Dataset):
-        raise TypeError('We need a sidpy.Dataset')
     if main_dataset.data_type.name != 'IMAGE_STACK':
         raise TypeError('Registration makes only sense for an image stack')
 
-    print('Rigid_Registration')
-
     rigid_registered_dataset = rigid_registration(main_dataset)
 
-    print('Non-Rigid_Registration')
-
-    if  _SimpleITK_present:
-        non_rigid_registered = demon_registration(rigid_registered_dataset)
-    else:
-        non_rigid_registered = None
+    rigid_registered_dataset.data_type = 'IMAGE_STACK'
+    
+    non_rigid_registered = demon_registration(rigid_registered_dataset)
     return non_rigid_registered, rigid_registered_dataset
 
 
-def demon_registration(dataset, verbose=False):
+def demon_registration(dataset: sidpy.Dataset, verbose: bool=False) -> sidpy.Dataset:
     """
     Diffeomorphic Demon Non-Rigid Registration
 
@@ -84,172 +85,158 @@ def demon_registration(dataset, verbose=False):
     dem_reg = demon_reg(stack_dataset, verbose=False)
     """
 
-    if not isinstance(dataset, sidpy.Dataset):
-        raise TypeError('We need a sidpy.Dataset')
     if dataset.data_type.name != 'IMAGE_STACK':
         raise TypeError('Registration makes only sense for an image stack')
-    if dataset._axes[0].dimension_type.name != 'TEMPORAL':
-        raise TypeError('Need images stacked on axis 0')
+
     dem_reg = np.zeros(dataset.shape)
     nimages = dataset.shape[0]
     if verbose:
         print(nimages)
     # create fixed image by summing over rigid registration
-    if not _SimpleITK_present:
-        return
+
     fixed_np = np.average(np.array(dataset), axis=0)
 
-    fixed = sitk.GetImageFromArray(fixed_np)
-    fixed = sitk.DiscreteGaussian(fixed, 2.0)
+    if not _SimpleITK_present:
+        print('This feature is not available: \n Please install simpleITK with: conda install simpleitk -c simpleitk')
 
-    # demons = sITK.SymmetricForcesDemonsRegistrationFilter()
-    demons = sitk.DiffeomorphicDemonsRegistrationFilter()
+    fixed = SimpleITK.GetImageFromArray(fixed_np)
+    fixed = SimpleITK.DiscreteGaussian(fixed, 2.0)
+
+    demons = SimpleITK.DiffeomorphicDemonsRegistrationFilter()
 
     demons.SetNumberOfIterations(200)
     demons.SetStandardDeviations(1.0)
 
-    resampler = sitk.ResampleImageFilter()
+    resampler = SimpleITK.ResampleImageFilter()
     resampler.SetReferenceImage(fixed)
-    resampler.SetInterpolator(sitk.sitkBSpline)
+    resampler.SetInterpolator(SimpleITK.sitkBSpline)
     resampler.SetDefaultPixelValue(0)
 
-    done = 0
-
     for i in trange(nimages):
-
-        moving = sitk.GetImageFromArray(dataset[i])
-        moving_f = sitk.DiscreteGaussian(moving, 2.0)
+        moving = SimpleITK.GetImageFromArray(dataset[i])
+        moving_f = SimpleITK.DiscreteGaussian(moving, 2.0)
         displacement_field = demons.Execute(fixed, moving_f)
-        out_tx = sitk.DisplacementFieldTransform(displacement_field)
+        out_tx = SimpleITK.DisplacementFieldTransform(displacement_field)
         resampler.SetTransform(out_tx)
         out = resampler.Execute(moving)
-        dem_reg[i, :, :] = sitk.GetArrayFromImage(out)
+        dem_reg[i, :, :] = SimpleITK.GetArrayFromImage(out)
 
     print(':-)')
     print('You have successfully completed Diffeomorphic Demons Registration')
 
-    demon_registered = sidpy.Dataset.from_array(dem_reg)
-
-    demon_registered.del_dimension()
-
-    axis = dataset._axes[0]
-    demon_registered.set_dimension(0, axis)
-    
-    axis = dataset._axes[1]
-    demon_registered.set_dimension(1, axis)
-    
-    axis = dataset._axes[2]
-    demon_registered.set_dimension(2, axis)
-
+    demon_registered = dataset.like_data(dem_reg)
     demon_registered.title = 'Non-Rigid Registration'
     demon_registered.source = dataset.title
-    demon_registered.data_type = dataset.data_type
 
-    demon_registered.metadata = {'analysis': 'non-rigid demon registration'}
-    if 'input_crop' in dataset.metadata:
-        demon_registered.metadata['input_crop'] = dataset.metadata['input_crop']
-    if 'input_shape' in dataset.metadata:
-        demon_registered.metadata['input_shape'] = dataset.metadata['input_shape']
+    demon_registered.metadata =dataset.metadata.copy()
+    if 'analysis' not in demon_registered.metadata:
+        demon_registered.metadata['analysis'] = {}
+    demon_registered.metadata['analysis']['non_rigid_demon_registration'] = {'package': 'simpleITK',
+                                                                             'method': 'DiscreteGaussian',
+                                                                             'variance': 2,
+                                                                             'input_dataset': dataset.source}
+    demon_registered.data_type = 'IMAGE_STACK'
     return demon_registered
 
 
-###############################
-# Rigid Registration New 05/09/2020
-
-def rigid_registration(dataset):
+# ##############################
+# Rigid Registration New 05/09/2024
+# ##############################
+def rigid_registration(dataset: sidpy.Dataset, normalization: typing.Optional[str] = None) -> sidpy.Dataset:
     """
-    Rigid registration of image stack with sub-pixel accuracy
+    Rigid registration of image stack with pixel accuracy
 
-    Uses phase_cross_correlation from skimage.registration
+    Uses simple cross_correlation
     (we determine drift from one image to next)
 
     Parameters
     ----------
     dataset: sidpy.Dataset
         sidpy dataset with image_stack dataset
+    normalization: str or None
+        if 'phase' then phase cross correlation is used, otherwise
+        normalized cross correlation is used
 
     Returns
     -------
     rigid_registered: sidpy.Dataset
         Registered Stack and drift (with respect to center image)
     """
-
-    if not isinstance(dataset, sidpy.Dataset):
-        raise TypeError('We need a sidpy.Dataset')
+    
     if dataset.data_type.name != 'IMAGE_STACK':
         raise TypeError('Registration makes only sense for an image stack')
 
-    frame_dim = []
-    spatial_dim = []
-    selection = []
+    if isinstance (normalization, str):
+        if normalization.lower() != 'phase':
+            normalization = None
+    else:
+        normalization = None
+    image_dimensions = dataset.get_image_dims(return_axis=True)
+    scale_x = image_dimensions[0].slope
+    if dataset.get_dimensions_by_type('TEMPORAL')[0] != 0:
+        x = image_dimensions[0]
+        y = image_dimensions[1]
+        z = dataset.get_dimensions_by_type('TEMPORAL', return_axis=True)[0]
+        metadata = dataset.metadata.copy()
+        original_metadata = dataset.original_metadata.copy()
+        arr = np.rollaxis(np.array(dataset), 2, 0)
+        dataset = sidpy.Dataset.from_array(arr, title=dataset.title, data_type='IMAGE_STACK',
+                                           quantity=dataset.quantity, units=dataset.units)
+        dataset.set_dimension(0, sidpy.Dimension(z.values, name='frame', units='frame', quantity='time',       
+                                                  dimension_type='temporal'))
+        dataset.set_dimension(1, x)
+        dataset.set_dimension(2, y)
+        dataset.metadata = metadata
+        dataset.original_metadata = original_metadata
 
-    for i, axis in dataset._axes.items():
-        if axis.dimension_type.name == 'SPATIAL':
-            spatial_dim.append(i)
-            selection.append(slice(None))
-        else:
-            frame_dim.append(i)
-            selection.append(slice(0, 1))
-
-    if len(spatial_dim) != 2:
-        print('need two spatial dimensions')
-    if len(frame_dim) != 1:
-        print('need one frame dimensions')
-
-    nopix = dataset.shape[spatial_dim[0]]
-    nopiy = dataset.shape[spatial_dim[1]]
-    nimages = dataset.shape[frame_dim[0]]
-
-    print('Stack contains ', nimages, ' images, each with', nopix, ' pixels in x-direction and ', nopiy,
-          ' pixels in y-direction')
-
-    fixed = np.array(dataset[tuple(selection)].squeeze())
-    fft_fixed = np.fft.fft2(fixed)
-
+    stack_dim = dataset.get_dimensions_by_type('TEMPORAL', return_axis=True)[0]
+    image_dim = dataset.get_image_dims(return_axis=True)
+    if len(image_dim) != 2:
+        raise ValueError('need at least two SPATIAL dimension for an image stack')
+    
     relative_drift = [[0., 0.]]
-
-    for i in trange(nimages):
-        selection[frame_dim[0]] = slice(i, i+1)
-        moving = np.array(dataset[tuple(selection)].squeeze())
-        fft_moving = np.fft.fft2(moving)
-        if skimage.__version__[:4] == '0.16':
-            shift = skimage.register_translation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
-        else:
-            shift = skimage.registration.phase_cross_correlation(fft_fixed, fft_moving, upsample_factor=1000, space='fourier')
-
-        fft_fixed = fft_moving
-
-        relative_drift.append(shift[0])
-
+    im1 = np.fft.fft2(np.array(dataset[0]))
+    for i in range(1, len(stack_dim)):
+        im2 = np.fft.fft2(np.array(dataset[i]))
+        shift, error, _ = skimage.registration.phase_cross_correlation(im1, im2, normalization=normalization, space='fourier')
+        print(shift)
+        im1 = im2.copy()
+        relative_drift.append(shift)    
+    
     rig_reg, drift = rig_reg_drift(dataset, relative_drift)
-
     crop_reg, input_crop = crop_image_stack(rig_reg, drift)
-
-    rigid_registered = dataset.like_data(crop_reg)
-    rigid_registered.title = 'Rigid Registration'
+    
+    rigid_registered = sidpy.Dataset.from_array(crop_reg, 
+                                                title='Rigid Registration', 
+                                                data_type='IMAGE_STACK',
+                                                quantity=dataset.quantity,
+                                                units=dataset.units)
+    rigid_registered.title = 'Rigid_Registration'
     rigid_registered.source = dataset.title
-    rigid_registered.metadata = {'analysis': 'rigid sub-pixel registration', 'drift': drift,
-                                 'input_crop': input_crop, 'input_shape': dataset.shape[1:]}
-    #if hasattr(rigid_registered, 'a'):
-    #    del rigid_registered.a
-    #if hasattr(rigid_registered, 'b'):
-    #    del rigid_registered.b
-    #if hasattr(rigid_registered, 'c'):
-    #    del rigid_registered.c
-    #rigid_registered._axes = {}
+    rigid_registered.metadata['analysis'] = {'rigid_registration': {'drift': drift,
+                                 'input_crop': input_crop, 'input_shape': dataset.shape[1:]}}
+    
+    
+    if 'experiment' in dataset.metadata:
+        rigid_registered.metadata['experiment'] = dataset.metadata['experiment'].copy()
+    rigid_registered.set_dimension(0, sidpy.Dimension(np.arange(rigid_registered.shape[0]), 
+                                          name='frame', units='frame', quantity='time',
+                                          dimension_type='temporal'))
+    
+    array_x = image_dim[0].values[input_crop[0]:input_crop[1]]
+    rigid_registered.set_dimension(1, sidpy.Dimension(array_x, name='x',
+                                                      units='nm', quantity='Length',
+                                                      dimension_type='spatial'))
+    array_y =image_dim[1].values[input_crop[2]:input_crop[3]]
+    rigid_registered.set_dimension(2, sidpy.Dimension(array_y, name='y',
+                                                      units='nm', quantity='Length',
+                                                      dimension_type='spatial'))
+    rigid_registered.data_type = 'IMAGE_STACK'
+    return rigid_registered.rechunk({0: 'auto', 1: -1, 2: -1})
 
-    rigid_registered.del_dimension(0)
-    rigid_registered.del_dimension(1)
-    rigid_registered.del_dimension(2)
 
-    rigid_registered.set_dimension(0, dataset._axes[frame_dim[0]])
-    rigid_registered.set_dimension(1, dataset._axes[spatial_dim[0]][input_crop[0]:input_crop[1]])
-    rigid_registered.set_dimension(2, dataset._axes[spatial_dim[1]][input_crop[2]:input_crop[3]])
-
-    return rigid_registered
-
-
-def rig_reg_drift(dset, rel_drift):
+def rig_reg_drift(dset: sidpy.Dataset,
+                  rel_drift: typing.Union[typing.List[typing.List[float]], np.ndarray]) -> typing.Tuple[np.ndarray, np.ndarray]:
     """ Shifting images on top of each other
 
     Uses relative drift to shift images on top of each other,
@@ -291,9 +278,9 @@ def rig_reg_drift(dset, rel_drift):
 
     # absolute drift
     drift = np.array(rel_drift).copy()
-
+    
     drift[0] = [0, 0]
-    for i in range(drift.shape[0]):
+    for i in range(1, drift.shape[0]):
         drift[i] = drift[i - 1] + rel_drift[i]
     center_drift = drift[int(drift.shape[0] / 2)]
     drift = drift - center_drift
@@ -301,11 +288,13 @@ def rig_reg_drift(dset, rel_drift):
     for i in range(rig_reg.shape[0]):
         selection[frame_dim[0]] = slice(i, i+1)
         # Now we shift
-        rig_reg[i, :, :] = ndimage.shift(dset[tuple(selection)].squeeze(), [drift[i, 0], drift[i, 1]], order=3)
+        rig_reg[i, :, :] = scipy.ndimage.shift(dset[tuple(selection)].squeeze().compute(),
+                                         [drift[i, 0], drift[i, 1]], order=3)
     return rig_reg, drift
 
 
-def crop_image_stack(rig_reg, drift):
+
+def crop_image_stack(rig_reg: np.ndarray, drift: typing.Union[np.ndarray, list]) -> typing.Tuple[np.ndarray, list[int]]:
     """Crop images in stack according to drift
 
     This function is used by rigid_registration routine
@@ -319,10 +308,9 @@ def crop_image_stack(rig_reg, drift):
     -------
     numpy array
     """
+    xpmax = int(rig_reg.shape[1] - -np.floor(np.min(np.array(drift)[:, 0])))
+    xpmin = int(np.ceil(np.max(np.array(drift)[:, 0])))
+    ypmax = int(rig_reg.shape[1] - -np.floor(np.min(np.array(drift)[:, 1])))
+    ypmin = int(np.ceil(np.max(np.array(drift)[:, 1])))
 
-    xpmin = int(-np.floor(np.min(np.array(drift)[:, 0])))
-    xpmax = int(rig_reg.shape[1] - np.ceil(np.max(np.array(drift)[:, 0])))
-    ypmin = int(-np.floor(np.min(np.array(drift)[:, 1])))
-    ypmax = int(rig_reg.shape[2] - np.ceil(np.max(np.array(drift)[:, 1])))
-
-    return rig_reg[:, xpmin:xpmax, ypmin:ypmax], [xpmin, xpmax, ypmin, ypmax]
+    return rig_reg[:, xpmin:xpmax, ypmin:ypmax:], [xpmin, xpmax, ypmin, ypmax]
