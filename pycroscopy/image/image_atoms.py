@@ -1,24 +1,26 @@
-"""
-Voronoi analysis of atom positions
+""" Atom detection
 
-author Gerd and Rama
+All atom detection is done here
+Everything is in unit of pixel!!
 
-part of pycroscopy
+Author: Gerd Duscher
+
+part of pycroscopy.image
+
+the core pycroscopy package
 """
 
 import numpy as np
 import sys
 
-from skimage.feature import blob_log
-from sklearn.cluster import KMeans
-from scipy.spatial import cKDTree
-import scipy.optimize as optimization
+import skimage
+import sklearn
+import scipy
 
 import sidpy
 from tqdm import trange
 import sidpy
 
-get_slope = sidpy.base.num_utils.get_slope
 
 
 def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
@@ -31,8 +33,22 @@ def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
 
     return probe
 
+import numpy as np
+import sys
 
-def find_atoms(image, atom_size=0.1, threshold=-1.):
+# from skimage.feature import peak_local_max
+import skimage
+
+from sklearn.cluster import KMeans
+from scipy.spatial import cKDTree
+import scipy.optimize as optimization
+
+
+import sidpy
+from tqdm.auto import trange
+
+
+def find_atoms(image, atom_size=0.1, threshold=0.):
     """ Find atoms is a simple wrapper for blob_log in skimage.feature
 
     Parameters
@@ -59,14 +75,14 @@ def find_atoms(image, atom_size=0.1, threshold=-1.):
     if not isinstance(threshold, float):
         raise TypeError('threshold parameter has to be a float number')
 
-    image_dimensions = image.get_image_dims(return_axis=True)
-
-    scale_x = image_dimensions[0].slope
+    scale_x = np.unique(np.gradient(image.dim_0.values))[0]
     im = np.array(image-image.min())
     im = im/im.max()
-    if threshold < 0.:
+    if threshold <= 0.:
         threshold = np.std(im)
-    atoms = blob_log(im, max_sigma=atom_size/scale_x, threshold=threshold)
+    atoms = skimage.feature.blob_log(im, max_sigma=atom_size/scale_x, threshold=threshold)
+
+    
 
     return atoms
 
@@ -91,12 +107,12 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
     """
 
     # get distances
-    nn_tree = cKDTree(np.array(atoms)[:, 0:2])
+    nn_tree = scipy.spatial.cKDTree(np.array(atoms)[:, 0:2])
 
     distances, indices = nn_tree.query(np.array(mid_atoms)[:, 0:2], nearest_neighbours)
 
     # Clustering
-    k_means = KMeans(n_clusters=number_of_clusters, random_state=0)  # Fixing the RNG in kmeans
+    k_means = sklearn.cluster.KMeans(n_clusters=number_of_clusters, random_state=0)  # Fixing the RNG in kmeans
     k_means.fit(distances)
     clusters = k_means.predict(distances)
 
@@ -106,7 +122,7 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
 def gauss_difference(params, area):
     """
     Difference between part of an image and a Gaussian
-    This function is used in atom refine function of pycroscopy
+    This function is used int he atom refine function of pyTEMlib
 
     Parameters
     ----------
@@ -120,7 +136,8 @@ def gauss_difference(params, area):
     numpy array: flattened array of difference
 
     """
-    gauss = make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2], intensity=params[3])
+    gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2],
+                                   intensity=params[3])
     return (area - gauss).flatten()
 
 
@@ -175,11 +192,11 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
 
         append = False
 
-        if (x - rr) < 0 or y - rr < 0 or x + rr + 1 > image.shape[0] or y + rr + 1 > image.shape[1]:
+        if (x - rr) < 0 or y - rr < 0 or x + rr + 1 > image.shape[0] or y + rr + 1 > image.shape[1]:  # atom not found
             position.append(-1)
             intensities.append(-1.)
             maximum_area.append(-1.)
-        else:
+        else:  # atom found
             position.append(1)
             intensities.append((area * mask).sum())
             maximum_area.append((area * mask).max())
@@ -196,7 +213,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
             if (x - rr) < 0 or y - rr < 0 or x + rr + 1 > image.shape[0] or y + rr + 1 > image.shape[1]:
                 pass
             else:
-                [pout, _] = optimization.leastsq(gauss_difference, guess, args=area)
+                [pout, _] = scipy.optimize.leastsq(gauss_difference, guess, args=area)
 
             if (abs(pout[1]) > max_dist) or (abs(pout[2]) > max_dist):
                 pout = [0, 0, 0, 0]
@@ -207,7 +224,8 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
         if all(v == 0 for v in pout):
             gauss_intensity.append(0.)
         else:
-            gauss = make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2], intensity=pout[3])
+            gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
+                                           intensity=pout[3])
             gauss_intensity.append((gauss * mask).sum())
         gauss_width.append(pout[0])
         gauss_amplitude.append(pout[3])
