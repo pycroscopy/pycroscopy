@@ -99,8 +99,151 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
         raise ValueError("Gave method of {} but only 'line_fit', 'plane_fit' are allowed".format(method))
    
     new_sid_dset[:] = data_flat 
+
+def rebin(im, binning=2):
+    """
+    rebin an image by the number of pixels in x and y direction given by binning
+
+    Parameter
+    ---------
+    image: numpy array in 2 dimensions or sidpy.Dataset of data_type 'Image'
+
+    Returns
+    -------
+    binned image as numpy array or sidpy.Dataset
+    """
+    if len(im.shape) == 2:
+        rebinned_image = np.array(im).reshape((im.shape[0]//binning, binning, im.shape[1]//binning, binning)).mean(axis=3).mean(1)
+        if isinstance(im, sidpy.Dataset):
+            rebinned_image = im.like_data(rebinned_image)
+            rebinned_image.title = 'rebinned_' + im.title
+            rebinned_image.data_type = 'image'
+            im_dims = im.get_image_dims(return_axis=True)
+
+            rebinned_image.set_dimension(0, sidpy.Dimension(np.arange(rebinned_image.shape[0])/im_dims[0].slope, name='x', units=im_dims[0].units, 
+                                                            dimension_type=im_dims[0].dimension_type, quantity=im_dims[0].quantity))
+            rebinned_image.set_dimension(1, sidpy.Dimension(np.arange(rebinned_image.shape[1])/im_dims[1].slope, name='y', units=im_dims[1].units, 
+                                                            dimension_type=im_dims[1].dimension_type, quantity=im_dims[1].quantity))
+            return rebinned_image
+    else:
+        raise TypeError('not a 2D image')
+
+
+def cart2pol(points):
+    """Cartesian to polar coordinate conversion
+
+    Parameters
+    ---------
+    points: float or numpy array
+        points to be converted (Nx2)
+
+    Returns
+    -------
+    rho: float or numpy array
+        distance
+    phi: float or numpy array
+        angle
+    """
+
+    rho = np.linalg.norm(points[:, 0:2], axis=1)
+    phi = np.arctan2(points[:, 1], points[:, 0])
     
-    return new_sid_dset
+    return rho, phi
+
+
+def pol2cart(rho, phi):
+    """Polar to Cartesian coordinate conversion
+
+    Parameters
+    ----------
+    rho: float or numpy array
+        distance
+    phi: float or numpy array
+        angle
+
+    Returns
+    -------
+    x: float or numpy array
+        x coordinates of converted points(Nx2)
+    """
+
+    x = rho * np.cos(phi)
+    y = rho * np.sin(phi)
+    return x, y
+
+
+def xy2polar(points, rounding=1e-3):
+    """ Conversion from carthesian to polar coordinates
+
+    the angles and distances are sorted by r and then phi
+    The indices of this sort is also returned
+
+    Parameters
+    ----------
+    points: numpy array
+        number of points in axis 0 first two elements in axis 1 are x and y
+    rounding: int
+        optional rounding in significant digits
+
+    Returns
+    -------
+    r, phi, sorted_indices
+    """
+
+    r, phi = cart2pol(points)
+
+    phi = phi  # %np.pi # only positive angles
+    r = (np.floor(r/rounding))*rounding  # Remove rounding error differences
+
+    sorted_indices = np.lexsort((phi, r))  # sort first by r and then by phi
+    r = r[sorted_indices]
+    phi = phi[sorted_indices]
+
+    return r, phi, sorted_indices
+
+
+def cartesian2polar(x, y, grid, r, t, order=3):
+    """Transform cartesian grid to polar grid
+
+    Used by warp
+    """
+
+    rr, tt = np.meshgrid(r, t)
+
+    new_x = rr*np.cos(tt)
+    new_y = rr*np.sin(tt)
+
+    ix = interp1d(x, np.arange(len(x)))
+    iy = interp1d(y, np.arange(len(y)))
+
+    new_ix = ix(new_x.ravel())
+    new_iy = iy(new_y.ravel())
+
+    return ndimage.map_coordinates(grid, np.array([new_ix, new_iy]), order=order).reshape(new_x.shape)
+
+
+def warp(diff, center):
+    """Takes a diffraction pattern (as a sidpy dataset)and warps it to a polar grid"""
+
+    # Define original polar grid
+    nx = np.shape(diff)[0]
+    ny = np.shape(diff)[1]
+
+    # Define center pixel
+    pix2nm = np.gradient(diff.u.values)[0]
+
+    x = np.linspace(1, nx, nx, endpoint=True)-center[0]
+    y = np.linspace(1, ny, ny, endpoint=True)-center[1]
+    z = diff
+
+    # Define new polar grid
+    nr = int(min([center[0], center[1], diff.shape[0]-center[0], diff.shape[1]-center[1]])-1)
+    nt = 360 * 3
+
+    r = np.linspace(1, nr, nr)
+    t = np.linspace(0., np.pi, nt, endpoint=False)
+
+    return cartesian2polar(x, y, z, r, t, order=3).T
 
 
 def inpaint_image(sid_dset, mask = None, channel = None):
