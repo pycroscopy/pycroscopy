@@ -11,7 +11,7 @@ import scipy
 import itertools
 import sidpy
 import sklearn
-
+import collections 
 
 def fourier_transform(dset: sidpy.Dataset) -> sidpy.Dataset:
     """
@@ -197,7 +197,7 @@ def diffractogram_spots(dset: sidpy.Dataset,
         # Find the most dense cluster of midpoints
         dbscan = sklearn.cluster.DBSCAN(eps=eps, min_samples=2)
         labels = dbscan.fit_predict(midpoints)
-        cluster_counter = Counter(labels)
+        cluster_counter = collections.Counter(labels)
         largest_cluster_label = max(cluster_counter, key=cluster_counter.get)
         largest_cluster_points = midpoints[labels == largest_cluster_label]
 
