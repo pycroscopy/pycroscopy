@@ -20,17 +20,18 @@ import skimage
 
 import matplotlib.patches as patches
 
-import pyTEMlib.crystal_tools
 from tqdm.auto import tqdm, trange
 
-from .graph_viz import *
 QT_available = False
 
 ###########################################################################
 # utility functions
 ###########################################################################
 
-def interstitial_sphere_center(vertex_pos, atom_radii, optimize=True):
+import typing 
+import numpy as np
+
+def interstitial_sphere_center(vertex_pos: np.ndarray, atom_radii: np.ndarray, optimize: bool = True) -> typing.Tuple[np.ndarray, float]:
     """
         Function finds center and radius of the largest interstitial sphere of a simplex.
         Which is the center of the cirumsphere if all atoms have the same radius,
@@ -64,7 +65,7 @@ def interstitial_sphere_center(vertex_pos, atom_radii, optimize=True):
         return center_new.x, np.linalg.norm(vertex_pos[0]-center_new.x)-atom_radii[0]
 
 
-def circum_center(vertex_pos, tol=1e-4):
+def circum_center(vertex_pos: np.ndarray, tol: float = 1e-4) -> tuple[np.ndarray, float]:
     """
     Function finds the center and the radius of the circumsphere of every simplex.
     Reference:
@@ -132,64 +133,6 @@ def voronoi_volumes(atoms):
     return vol
 
 
-def get_bond_radii(atoms, bond_type='bond'):
-    """ get all bond radii from Kirkland 
-    Parameter:
-    ----------
-    atoms ase.Atoms object
-        structure information in ase format
-    type: str
-        type of bond 'covalent' or 'metallic'
-    """
-    
-    r_a = []
-    for atom in atoms:
-        if atom.symbol == 'X':
-            r_a.append(1.2)
-        else:
-            if bond_type == 'covalent':
-                r_a.append(pyTEMlib.crystal_tools.electronFF[atom.symbol]['bond_length'][0])
-            else:
-                r_a.append(pyTEMlib.crystal_tools.electronFF[atom.symbol]['bond_length'][1])
-    if atoms.info is None:
-        atoms.info = {}
-    atoms.info['bond_radii'] = r_a
-    return r_a
-
-
-def set_bond_radii(atoms, bond_type='bond'):
-    """ set certain or all bond-radii taken from Kirkland 
-    
-    Bond_radii are also stored in atoms.info
-    
-    Parameter:
-    ----------
-    atoms ase.Atoms object
-        structure information in ase format
-    type: str
-        type of bond 'covalent' or 'metallic'
-    Return:
-    -------
-    r_a: list
-        list of atomic bond-radii 
-        
-    """
-    if atoms.info is None:
-        atoms.info = {}
-    if 'bond_radii' in atoms.info:
-        r_a = atoms.info['bond_radii']
-    else:
-        r_a = np.ones(len(atoms))
-        
-    for atom in atoms:
-        if bond_type == 'covalent':
-            r_a[atom.index] = (pyTEMlib.crystal_tools.electronFF[atom.symbol]['bond_length'][0])
-        else:
-            r_a[atom.index] = (pyTEMlib.crystal_tools.electronFF[atom.symbol]['bond_length'][1])
-    atoms.info['bond_radii'] = r_a
-    return r_a
-
-
 def get_voronoi(tetrahedra, atoms, bond_radii=None, optimize=True):
     """
     Find Voronoi vertices and keep track of associated tetrahedrons and interstitial radii
@@ -231,10 +174,9 @@ def get_voronoi(tetrahedra, atoms, bond_radii=None, optimize=True):
         bond_radii = [bond_radii]*len(atoms)
     elif 'bond_radii' in atoms.info:
         bond_radii = atoms.info['bond_radii']
-    
     else:
-        bond_radii = get_bond_radii(atoms)
-        
+        raise TypeError('We need bond radii to find interstitials')
+    
     voronoi_vertices = []
     voronoi_tetrahedrons = []
     r_vv = []
@@ -746,60 +688,7 @@ def get_base_atoms(graph, origins, base, tolerance=3):
          sublattices.append(indices[distances < tolerance]) 
     return sublattices
 
-def analyze_atomic_structure(dataset, crystal, start_atom_index, tolerance=1.5):
-    """ Analyze atomic structure of a crystal and return sublattices of atoms
-
-    Parameters
-    ----------
-    dataset: pyTEMlib.Dataset
-        dataset containing the atomic structure information
-    crystal: ase.Atoms
-        crystal structure to analyze
-    start_atom_index: int
-        index of the starting atom for the breadth-first search
-    tolerance: float
-        tolerance for determining the allowed variation in atom positions
-    Returns
-    -------
-    sublattices: list of numpy arrays
-        list of indices of atoms in the graph that are close to each base atom
-    """
-    if 'atoms' not in dataset.metadata:
-        TypeError('dataset.metadata needs to contain atoms information')
-        
-    graph = dataset.metadata['atoms']['positions']
-    
-    layer = pyTEMlib.crystal_tools.get_projection(crystal)
-    gamma = np.radians(layer.cell.angles()[2])
-    rotation_angle = np.radians(crystal.info['experimental']['angle']
-)
-    length = (layer.cell.lengths() /10/dataset.x.slope)[:2]
-    print(length, rotation_angle, gamma)
-    a = np.array([np.cos(rotation_angle)*length[0], np.sin(rotation_angle)*length[0]])
-    b = np.array([np.cos(rotation_angle+gamma)*length[1], np.sin(rotation_angle+gamma)*length[1]])
-    base = layer.get_scaled_positions()
-    base[:, :2] = np.dot(base[:, :2],[a,b])
-    projection_tags = {'lattice_vector': {'a': a, 'b': b},
-                       'allowed_variation': tolerance,
-                       'distance_unit_cell':  np.max(length)*1.04,
-                       'start_atom_index': start_atom_index,
-                       'base': base}
-    layer.info['projection'] = projection_tags
-
-    origins, ideal = pyTEMlib.graph_tools.breadth_first_search(graph[:,:2], start_atom_index, layer)
-    print(len(origins), 'origins found')
-    dataset.metadata['atoms']['projection'] = layer
-    sublattices = pyTEMlib.graph_tools.get_base_atoms(graph[:, :2], origins, base[:, :2], tolerance=3)
-    
-    dataset.metadata['atoms']['origins'] = origins
-    dataset.metadata['atoms']['ideal_origins'] = ideal
-    dataset.metadata['atoms']['sublattices'] = sublattices
-    dataset.metadata['atoms']['projection_tags'] = projection_tags
-    
-    return sublattices
-
-
-def breadth_first_search_felxible(graph, initial_node_index, lattice_parameter, tolerance=1):
+def breadth_first_search_flexible(graph, initial_node_index, lattice_parameter, tolerance=1):
     """ breadth first search of atoms viewed as a graph
         This is a rotational invariant search of atoms in a lattice, and returns the angles of unit cells.
         We only use the ideal lattice parameter to determine the lattice.  
@@ -1109,12 +998,9 @@ def undistort_stack_sitk(distortion_matrix, image_stack):
 
     nimages = image_stack.shape[0]
 
-    if QT_available:
-        progress = pyTEMlib.sidpy_tools.ProgressDialog("Correct Scan Distortions", nimages)
 
-    for i in range(nimages):
-        if QT_available:
-            progress.setValue(i)
+    for i in trange(nimages):
+        
         out = resampler.Execute(sitk.GetImageFromArray(image_stack[i]))
         interpolated[i] = sitk.GetArrayFromImage(out)
 
