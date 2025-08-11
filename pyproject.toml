@@ -57,7 +57,8 @@ dependencies = [
     "pysptools",
     "cvxopt",
     "SciFiReaders",
-    "ipympl"
+    "ipympl",
+    "simpleitk",
 ]
 
 [project.urls]
