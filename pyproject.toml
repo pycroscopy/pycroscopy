@@ -39,7 +39,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Physics",
     "Topic :: Scientific/Engineering :: Information Analysis"
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "scipy",
@@ -57,8 +57,7 @@ dependencies = [
     "pysptools",
     "cvxopt",
     "SciFiReaders",
-    "ipympl",
-    "simpleitk",
+    "ipympl"
 ]
 
 [project.urls]
