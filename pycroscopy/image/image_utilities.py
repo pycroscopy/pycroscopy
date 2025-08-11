@@ -1,6 +1,12 @@
+"""
+image_utilities part of image package of pycroscopy
+
+"""
 import numpy as np
-import sidpy
+import scipy
 from skimage.restoration import inpaint
+
+import sidpy
 
 def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     """
@@ -31,23 +37,25 @@ def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
         raise ValueError('Input dataset is not an instance of sidpy.Dataset')
     if not dataset.data_type.name == 'IMAGE':
         raise ValueError('Only image datasets are supported at this point')
-    
+
     if corners.shape != (4,):
         raise ValueError(f'Input corners parameter should have shape (4,) but got shape {corners.shape}')
     if corners[2]-corners[0] <= 0 or corners[3]-corners[1] <= 0:
         raise ValueError('Invalid input corners parameter')
-    
+
     pixel_size = np.array([dataset.x[1]-dataset.x[0], dataset.y[1]-dataset.y[0]])
     corners /= pixel_size
-    
+
     selection = np.stack([np.min(corners[:2])+0.5, np.max(corners[2:])+0.5]).astype(int)
 
-    cropped_dset = dataset.like_data(dataset[selection[0, 0]:selection[1, 0], selection[0, 1]:selection[1, 1]])
+    cropped_dset = dataset.like_data(dataset[selection[0, 0]:selection[1, 0],
+                                             selection[0, 1]:selection[1, 1]])
     cropped_dset.title = 'cropped_' + dataset.title
     cropped_dset.source = dataset.title
     cropped_dset.metadata = {'crop_dimension': selection, 'original_dimensions': dataset.shape}
-    
+
     return cropped_dset
+
 
 def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     """
@@ -75,12 +83,12 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
     assert new_sid_dset.data_type == sidpy.DataType.IMAGE, "Dataset must IMAGE for this function"
     #check the spatial dimensions, flatten along each row
     if flatten_axis == 'row':
-        num_pts = sid_dset.shape[0] #this is hard coded, it shouldn't be
+        num_pts = sid_dset.shape[0]  # this is hard coded, it shouldn't be
     elif flatten_axis == 'col':
-        num_pts = sid_dset.shape[1] #this is hard coded, but it shouldn't be
+        num_pts = sid_dset.shape[1]  # this is hard coded, but it shouldn't be
     else:
-        raise ValueError("Gave flatten axis of {} but only 'row', 'col' are allowed".format(flatten_axis))
-    
+        raise ValueError(f"Gave flatten axis of {flatten_axis} but only 'row', 'col' are allowed")
+
     data_flat = np.zeros(sid_dset.shape) #again this should be the spatial (2 dimensional) part only
     print(sid_dset.shape, num_pts)
     if method == 'line_fit':
@@ -97,9 +105,10 @@ def flatten_image(sid_dset, order=1, flatten_axis = 'row', method = 'line_fit'):
         #TODO: implement plane fit
         pass
     else:
-        raise ValueError("Gave method of {} but only 'line_fit', 'plane_fit' are allowed".format(method))
-   
-    new_sid_dset[:] = data_flat 
+        raise ValueError("Gave method of {method} but only 'line_fit', 'plane_fit' are allowed")
+
+    new_sid_dset[:] = data_flat
+
 
 def rebin(im, binning=2):
     """
@@ -114,17 +123,23 @@ def rebin(im, binning=2):
     binned image as numpy array or sidpy.Dataset
     """
     if len(im.shape) == 2:
-        rebinned_image = np.array(im).reshape((im.shape[0]//binning, binning, im.shape[1]//binning, binning)).mean(axis=3).mean(1)
+        rebinned_image = np.array(im).reshape((im.shape[0]//binning,
+                                               binning, im.shape[1]//binning,
+                                               binning)).mean(axis=3).mean(1)
         if isinstance(im, sidpy.Dataset):
             rebinned_image = im.like_data(rebinned_image)
             rebinned_image.title = 'rebinned_' + im.title
             rebinned_image.data_type = 'image'
             im_dims = im.get_image_dims(return_axis=True)
 
-            rebinned_image.set_dimension(0, sidpy.Dimension(np.arange(rebinned_image.shape[0])/im_dims[0].slope, name='x', units=im_dims[0].units, 
-                                                            dimension_type=im_dims[0].dimension_type, quantity=im_dims[0].quantity))
-            rebinned_image.set_dimension(1, sidpy.Dimension(np.arange(rebinned_image.shape[1])/im_dims[1].slope, name='y', units=im_dims[1].units, 
-                                                            dimension_type=im_dims[1].dimension_type, quantity=im_dims[1].quantity))
+            rebinned_image.set_dimension(0, sidpy.Dimension(np.arange(rebinned_image.shape[0])/im_dims[0].slope,
+                                                            name='x', units=im_dims[0].units,
+                                                            dimension_type=im_dims[0].dimension_type,
+                                                            quantity=im_dims[0].quantity))
+            rebinned_image.set_dimension(1, sidpy.Dimension(np.arange(rebinned_image.shape[1])/im_dims[1].slope,
+                                                            name='y', units=im_dims[1].units,
+                                                            dimension_type=im_dims[1].dimension_type,
+                                                            quantity=im_dims[1].quantity))
             return rebinned_image
     else:
         raise TypeError('not a 2D image')
@@ -148,7 +163,7 @@ def cart2pol(points):
 
     rho = np.linalg.norm(points[:, 0:2], axis=1)
     phi = np.arctan2(points[:, 1], points[:, 0])
-    
+
     return rho, phi
 
 
@@ -193,7 +208,6 @@ def xy2polar(points, rounding=1e-3):
 
     r, phi = cart2pol(points)
 
-    phi = phi  # %np.pi # only positive angles
     r = (np.floor(r/rounding))*rounding  # Remove rounding error differences
 
     sorted_indices = np.lexsort((phi, r))  # sort first by r and then by phi
@@ -214,13 +228,14 @@ def cartesian2polar(x, y, grid, r, t, order=3):
     new_x = rr*np.cos(tt)
     new_y = rr*np.sin(tt)
 
-    ix = interp1d(x, np.arange(len(x)))
-    iy = interp1d(y, np.arange(len(y)))
+    ix = scipy.interpolate.interp1d(x, np.arange(len(x)))
+    iy = scipy.interpolate.interp1d(y, np.arange(len(y)))
 
     new_ix = ix(new_x.ravel())
     new_iy = iy(new_y.ravel())
 
-    return scipy.ndimage.map_coordinates(grid, np.array([new_ix, new_iy]), order=order).reshape(new_x.shape)
+    return scipy.ndimage.map_coordinates(grid, np.array([new_ix, new_iy]),
+                                         order=order).reshape(new_x.shape)
 
 
 def warp(diff, center):
@@ -229,9 +244,6 @@ def warp(diff, center):
     # Define original polar grid
     nx = np.shape(diff)[0]
     ny = np.shape(diff)[1]
-
-    # Define center pixel
-    pix2nm = np.gradient(diff.u.values)[0]
 
     x = np.linspace(1, nx, nx, endpoint=True)-center[0]
     y = np.linspace(1, ny, ny, endpoint=True)-center[1]
@@ -251,10 +263,13 @@ def inpaint_image(sid_dset, mask = None, channel = None):
     """Inpaints a sparse image, given a mask.
 
     Args:
-        sid_dset (_type_): sidpy Dataset with two dimensions being of spatial or reciprocal type
-        mask (np.ndarry) : mask [0,1] same shape as sid_dset. If providing a sidpy dataset and mask is in the metadata dict, 
-        then this entry is optional
-        channel (int): (optional) for multi-channel datasets, provide the channel to in-paint
+        sid_dset (_type_): sidpy Dataset 
+            with two dimensions being of spatial or reciprocal type
+        mask (np.ndarry) : mask [0,1] same shape as sid_dset. 
+            If providing a sidpy dataset and mask is in the metadata dict, 
+            then this entry is optional
+        channel (int): (optional) for multi-channel datasets, 
+            provide the channel to in-paint
     """
     if len(sid_dset.shape)==2:
         image_data = np.array(sid_dset).squeeze()
@@ -277,10 +292,9 @@ def inpaint_image(sid_dset, mask = None, channel = None):
         mask[mask==1] = -1
         mask[mask==0] = 1
         mask[mask==-1] = 0
-        
-  
+
     inpainted_data = inpaint.inpaint_biharmonic(image_data, mask)
-    
+
     #convert this into a sidpy dataset
     data_set = sidpy.Dataset.from_array(inpainted_data, name='inpainted_image')
     data_set.data_type = 'image'  # supported
@@ -292,10 +306,4 @@ def inpaint_image(sid_dset, mask = None, channel = None):
     data_set.set_dimension(1, sid_dset.get_dimension_by_number(image_dims[1])[0])
 
     data_set.metadata["mask"] = mask
-    import skimage
-    skimage_version = skimage.__version__
-    data_set.metadata["inpainting"] = 'Biharmonic method from Skimage {}'.format(skimage_version)
-
     return data_set
-    
-    
