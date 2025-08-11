@@ -6,17 +6,19 @@ author: Gerd Duscher, UTK
 
 """
 
+import itertools
+import collections
+
 import numpy as np
 import scipy
-import itertools
-import sidpy
 import sklearn
-import collections 
+
+import sidpy
 
 def fourier_transform(dset: sidpy.Dataset) -> sidpy.Dataset:
     """
-        Reads information into dictionary 'tags', performs 'FFT', and provides a smoothed FT and reciprocal
-        and intensity limits for visualization.
+        Reads information into dictionary 'tags', performs 'FFT', and provides 
+        a smoothed FT and reciprocal and intensity limits for visualization.
 
         Parameters
         ----------
@@ -48,10 +50,8 @@ def fourier_transform(dset: sidpy.Dataset) -> sidpy.Dataset:
             if i in image_dims:
                 selection.append(slice(None))
             if len(stack_dim) == 0:
-                stack_dims = i
                 selection.append(slice(None))
             elif i in stack_dim:
-                stack_dims = i
                 selection.append(slice(None))
             else:
                 selection.append(slice(0, 1))
@@ -61,10 +61,10 @@ def fourier_transform(dset: sidpy.Dataset) -> sidpy.Dataset:
     elif dset.data_type.name == 'IMAGE':
         new_image = np.array(dset)
     else:
-        return
+        return None
 
     new_image = new_image - new_image.min()
-    
+
     fft_transform = (np.fft.fftshift(np.fft.fft2(np.array(new_image))))
 
     image_dims = dset.get_image_dims(return_axis=True)
@@ -80,11 +80,11 @@ def fourier_transform(dset: sidpy.Dataset) -> sidpy.Dataset:
     fft_dset.modality = 'fft'
 
     fft_dset.set_dimension(0, sidpy.Dimension(np.fft.fftshift(np.fft.fftfreq(new_image.shape[0],
-                                                                             d=dset.x[1]-dset.x[0])),
+                                                                            d=dset.x[1]-dset.x[0])),
                                               name='u', units=units_x, dimension_type='RECIPROCAL',
                                               quantity='reciprocal_length'))
     fft_dset.set_dimension(1, sidpy.Dimension(np.fft.fftshift(np.fft.fftfreq(new_image.shape[1],
-                                                                             d=dset.y[1]- dset.y[0])),
+                                                                            d=dset.y[1]- dset.y[0])),
                                               name='v', units=units_y, dimension_type='RECIPROCAL',
                                               quantity='reciprocal_length'))
     return fft_dset
@@ -128,9 +128,9 @@ def power_spectrum(dset: sidpy.Dataset, smoothing: int=3) -> sidpy.Dataset:
     minimum_intensity = np.array(power_spec)[np.where(mask == 2)].min() * 0.95
     maximum_intensity = np.array(power_spec)[np.where(mask == 2)].max() * 1.05
     power_spec.metadata = {'fft': {'smoothing': smoothing,
-                                   'minimum_intensity': minimum_intensity, 'maximum_intensity': maximum_intensity}}
+                                   'minimum_intensity': minimum_intensity, 
+                                   'maximum_intensity': maximum_intensity}}
     power_spec.title = 'power spectrum ' + power_spec.source
-
     return power_spec
 
 
@@ -167,15 +167,17 @@ def diffractogram_spots(dset: sidpy.Dataset,
     try:
         spots_random = scipy.features.blob_log(data, max_sigma=5, threshold=spot_threshold)
     except ValueError:
-        spots_random = scipy.features.peak_local_max(np.array(data.T), min_distance=3, threshold_rel=spot_threshold)
+        spots_random = scipy.features.peak_local_max(np.array(data.T),
+                                                     min_distance=3,
+                                                     threshold_rel=spot_threshold)
         spots_random = np.hstack(spots_random, np.zeros((spots_random.shape[0], 1)))
-            
-    print(f'Found {spots_random.shape[0]} reflections')
+
+    # print(f'Found {spots_random.shape[0]} reflections')
 
     # Needed for conversion from pixel to Reciprocal space
     image_dims = dset.get_image_dims(return_axis=True)
     rec_scale = np.array([image_dims[0].slope, image_dims[1].slope])
-    
+
     spots_random[:, :2] = spots_random[:, :2]*rec_scale+[dset.u.values[0], dset.v.values[0]]
     # sort reflections
     spots_random[:, 2] = np.linalg.norm(spots_random[:, 0:2], axis=1)
@@ -261,7 +263,8 @@ def rotational_symmetry_diffractogram(spots: np.ndarray) -> list[int]:
     rotation_symmetry = []
     for n in [2, 3, 4, 6]:
         cc = np.array(
-            [[np.cos(2 * np.pi / n), np.sin(2 * np.pi / n), 0], [-np.sin(2 * np.pi / n), np.cos(2 * np.pi / n), 0],
+            [[np.cos(2 * np.pi / n), np.sin(2 * np.pi / n), 0],
+             [-np.sin(2 * np.pi / n), np.cos(2 * np.pi / n), 0],
              [0, 0, 1]])
         sym_spots = np.dot(spots, cc)
         dif = []
