@@ -11,7 +11,7 @@ import numpy as np
 import scipy
 import skimage
 
-import simpleitk
+import SimpleITK 
 
 from tqdm.auto import trange
 
@@ -223,19 +223,19 @@ def undistort_sitk(image_data, distortion_matrix):
     image: numpy array MXN
       
     """
-    resampler = simpleitk.ResampleImageFilter()
-    resampler.SetReferenceImage(simpleitk.GetImageFromArray(image_data))
-    resampler.SetInterpolator(simpleitk.sitkBSpline)
+    resampler = SimpleITK.ResampleImageFilter()
+    resampler.SetReferenceImage(SimpleITK.GetImageFromArray(image_data))
+    resampler.SetInterpolator(SimpleITK.sitkBSpline)
     resampler.SetDefaultPixelValue(0)
 
     distortion_matrix2 = distortion_matrix[:, :image_data.shape[0], :image_data.shape[1]]
 
-    displ2 = simpleitk.Compose([simpleitk.GetImageFromArray(-distortion_matrix2[1]),
-                           simpleitk.GetImageFromArray(-distortion_matrix2[0])])
-    out_tx = simpleitk.DisplacementFieldTransform(displ2)
+    displ2 = SimpleITK.Compose([SimpleITK.GetImageFromArray(-distortion_matrix2[1]),
+                           SimpleITK.GetImageFromArray(-distortion_matrix2[0])])
+    out_tx = SimpleITK.DisplacementFieldTransform(displ2)
     resampler.SetTransform(out_tx)
-    out = resampler.Execute(simpleitk.GetImageFromArray(image_data))
-    return simpleitk.GetArrayFromImage(out)
+    out = resampler.Execute(SimpleITK.GetImageFromArray(image_data))
+    return SimpleITK.GetArrayFromImage(out)
 
 
 def undistort_stack_sitk(distortion_matrix, image_stack):
@@ -248,20 +248,20 @@ def undistort_stack_sitk(distortion_matrix, image_stack):
     output:
     image M, N
     """
-    resampler = simpleitk.ResampleImageFilter()
-    resampler.SetReferenceImage(simpleitk.GetImageFromArray(image_stack[0]))
-    resampler.SetInterpolator(simpleitk.sitkBSpline)
+    resampler = SimpleITK.ResampleImageFilter()
+    resampler.SetReferenceImage(SimpleITK.GetImageFromArray(image_stack[0]))
+    resampler.SetInterpolator(SimpleITK.sitkBSpline)
     resampler.SetDefaultPixelValue(0)
 
-    displ2 = simpleitk.Compose([simpleitk.GetImageFromArray(-distortion_matrix[1]),
-                           simpleitk.GetImageFromArray(-distortion_matrix[0])])
-    out_tx = simpleitk.DisplacementFieldTransform(displ2)
+    displ2 = SimpleITK.Compose([SimpleITK.GetImageFromArray(-distortion_matrix[1]),
+                           SimpleITK.GetImageFromArray(-distortion_matrix[0])])
+    out_tx = SimpleITK.DisplacementFieldTransform(displ2)
     resampler.SetTransform(out_tx)
     interpolated = np.zeros(image_stack.shape)
     nimages = image_stack.shape[0]
     for i in trange(nimages):
-        out = resampler.Execute(simpleitk.GetImageFromArray(image_stack[i]))
-        interpolated[i] = simpleitk.GetArrayFromImage(out)
+        out = resampler.Execute(SimpleITK.GetImageFromArray(image_stack[i]))
+        interpolated[i] = SimpleITK.GetArrayFromImage(out)
     return interpolated
 
 
