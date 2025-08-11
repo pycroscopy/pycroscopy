@@ -1,7 +1,7 @@
 name: build
 
 env:
-  PYTHON_MAIN_VERSION: 3.9
+  PYTHON_MAIN_VERSION: "3.10"
 
 on:
   pull_request:
@@ -19,7 +19,7 @@ jobs:
     strategy:
       max-parallel: 5
       matrix:
-        python-version: ["3.11", "3.10", "3.9"]
+        python-version: ["3.11", "3.10"]
 
     steps:
     - uses: actions/checkout@v4
