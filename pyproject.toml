@@ -53,6 +53,7 @@ dependencies = [
     "ipython",
     "simpleitk",
     "sidpy",
+    "ase",
     "pysptools",
     "cvxopt",
     "SciFiReaders",

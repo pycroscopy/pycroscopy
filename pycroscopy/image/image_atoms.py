@@ -9,22 +9,39 @@ part of pycroscopy.image
 
 the core pycroscopy package
 """
-
 import numpy as np
-import sys
 
 import skimage
 import sklearn
 import scipy
 
 import sidpy
-from tqdm import trange
-import sidpy
+from tqdm.auto import trange
 
 
-
-def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
-    """Make a Gaussian shaped probe """
+def make_gauss(size_x: [int, float], size_y: [int, float], width: float = 1.0, x0: float = 0.0,
+               y0: float = 0.0, intensity: float = 1.0) -> np.ndarray:
+    """
+    Generates a 2D Gaussian-shaped probe array.
+    Parameters
+    ----------
+    size_x : int or float
+        The size of the probe along the x-axis.
+    size_y : int or float
+        The size of the probe along the y-axis.
+    width : float, optional
+        The standard deviation (spread) of the Gaussian (default is 1.0).
+    x0 : float, optional
+        The x-coordinate of the Gaussian center (default is 0.0).
+    y0 : float, optional
+        The y-coordinate of the Gaussian center (default is 0.0).
+    intensity : float, optional
+        The total intensity (sum) of the probe (default is 1.0).
+    Returns
+    -------
+    probe : numpy.ndarray
+        A 2D array representing the normalized Gaussian probe.
+    """
     size_x = size_x/2
     size_y = size_y/2
     x, y = np.mgrid[-size_x:size_x, -size_y:size_y]
@@ -33,23 +50,12 @@ def make_gauss(size_x, size_y, width=1.0, x0=0.0, y0=0.0, intensity=1.0):
 
     return probe
 
-import numpy as np
-import sys
 
-# from skimage.feature import peak_local_max
-import skimage
-
-from sklearn.cluster import KMeans
-from scipy.spatial import cKDTree
-import scipy.optimize as optimization
-
-
-import sidpy
-from tqdm.auto import trange
-
-
-def find_atoms(image, atom_size=0.1, threshold=0.):
+def find_atoms(image: sidpy.Dataset, atom_size: float = 0.1, threshold: float = 0.) -> np.ndarray:
     """ Find atoms is a simple wrapper for blob_log in skimage.feature
+
+    threshold for blob finder is usually between 0.001 and 1.0, 
+    note: for threshold <= 0 we use the RMS contrast
 
     Parameters
     ----------
@@ -58,7 +64,7 @@ def find_atoms(image, atom_size=0.1, threshold=0.):
     atom_size: float
         visible size of atom blob diameter in nm gives minimal distance between found blobs
     threshold: float
-        threshold for blob finder; (usually between 0.001 and 1.0) for threshold <= 0 we use the RMS contrast
+        threshold for blob finder; 
 
     Returns
     -------
@@ -82,12 +88,11 @@ def find_atoms(image, atom_size=0.1, threshold=0.):
         threshold = np.std(im)
     atoms = skimage.feature.blob_log(im, max_sigma=atom_size/scale_x, threshold=threshold)
 
-    
-
     return atoms
 
 
-def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=7):
+def atoms_clustering(atoms: np.ndarray, mid_atoms: np.ndarray,
+                     number_of_clusters: int = 3, nearest_neighbours: int = 7) -> tuple:
     """ A wrapper for sklearn.cluster kmeans clustering of atoms.
 
     Parameters
@@ -107,22 +112,22 @@ def atoms_clustering(atoms, mid_atoms, number_of_clusters=3, nearest_neighbours=
     """
 
     # get distances
-    nn_tree = scipy.spatial.cKDTree(np.array(atoms)[:, 0:2])
+    nn_tree = scipy.spatial.KDTree(np.array(atoms)[:, 0:2])
 
     distances, indices = nn_tree.query(np.array(mid_atoms)[:, 0:2], nearest_neighbours)
 
     # Clustering
-    k_means = sklearn.cluster.KMeans(n_clusters=number_of_clusters, random_state=0)  # Fixing the RNG in kmeans
+    k_means = sklearn.cluster.KMeans(n_clusters=number_of_clusters, random_state=0)
     k_means.fit(distances)
     clusters = k_means.predict(distances)
 
     return clusters, distances, indices
 
 
-def gauss_difference(params, area):
+def gauss_difference(params: list[float], area: np.ndarray) -> np.ndarray:
     """
     Difference between part of an image and a Gaussian
-    This function is used int he atom refine function of pyTEMlib
+    This function is used int the atom refine function of pyTEMlib
 
     Parameters
     ----------
@@ -136,12 +141,13 @@ def gauss_difference(params, area):
     numpy array: flattened array of difference
 
     """
-    gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1], y0=params[2],
-                                   intensity=params[3])
+    gauss = make_gauss(area.shape[0], area.shape[1], width=params[0], x0=params[1],
+                       y0=params[2], intensity=params[3])
     return (area - gauss).flatten()
 
 
-def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
+def atom_refine(image: [np.ndarray, sidpy.Dataset], atoms: [np.ndarray, list], radius: float,
+                max_int: float = 0, min_int: float = 0, max_dist: float = 4) -> dict:
     """Fits a Gaussian in a blob of an image
 
     Parameters
@@ -152,16 +158,16 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
     radius: float
         radius of circular mask to define fitting of Gaussian
     max_int: float
-        optional - maximum intensity to be considered for fitting (to exclude contaminated areas for example)
+        optional - maximum intensity to be considered for fitting (to exclude contaminated areas)
     min_int: float
-        optional - minimum intensity to be considered for fitting (to exclude contaminated holes for example)
+        optional - minimum intensity to be considered for fitting (to exclude contaminated holes )
     max_dist: float
         optional - maximum distance of movement of Gaussian during fitting
 
     Returns
     -------
     sym: dict
-        dictionary containing new atom positions and other output such as intensity of the fitted Gaussian
+        dictionary containing new atom positions and other output such as intensity of Gaussian
     """
     rr = int(radius + 0.5)  # atom radius
     print('using radius ', rr, 'pixels')
@@ -192,7 +198,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
 
         append = False
 
-        if (x - rr) < 0 or y - rr < 0 or x + rr + 1 > image.shape[0] or y + rr + 1 > image.shape[1]:  # atom not found
+        if x-rr<0 or y-rr < 0 or x+rr+1 > image.shape[0] or y+rr+1 > image.shape[1]:
             position.append(-1)
             intensities.append(-1.)
             maximum_area.append(-1.)
@@ -210,7 +216,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
 
         pout = [0, 0, 0, 0]
         if append:
-            if (x - rr) < 0 or y - rr < 0 or x + rr + 1 > image.shape[0] or y + rr + 1 > image.shape[1]:
+            if x-rr < 0 or y-rr < 0 or x+rr+1 > image.shape[0] or y+rr+1 > image.shape[1]:
                 pass
             else:
                 [pout, _] = scipy.optimize.leastsq(gauss_difference, guess, args=area)
@@ -224,7 +230,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
         if all(v == 0 for v in pout):
             gauss_intensity.append(0.)
         else:
-            gauss = probe_tools.make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
+            gauss = make_gauss(area.shape[0], area.shape[1], width=pout[0], x0=pout[1], y0=pout[2],
                                            intensity=pout[3])
             gauss_intensity.append((gauss * mask).sum())
         gauss_width.append(pout[0])
@@ -242,7 +248,7 @@ def atom_refine(image, atoms, radius, max_int=0, min_int=0, max_dist=4):
     return sym
 
 
-def intensity_area(image, atoms, radius):
+def intensity_area(image: np.ndarray, atoms: np.ndarray, radius: float) -> list[float]:
     """
     integrated intensity of atoms in an image with a mask around each atom of radius radius
     """
@@ -253,9 +259,9 @@ def intensity_area(image, atoms, radius):
     x, y = np.meshgrid(pixels, pixels)
     mask = np.array((x ** 2 + y ** 2) < rr ** 2)
     intensities = []
-    for i in range(len(atoms)):
-        x = int(atoms[i][1])
-        y = int(atoms[i][0])
+    for atom in atoms:
+        x = int(atom[1])
+        y = int(atom[0])
         area = image[x - rr:x + rr + 1, y - rr:y + rr + 1]
         if area.shape == mask.shape:
             intensities.append((area * mask).sum())

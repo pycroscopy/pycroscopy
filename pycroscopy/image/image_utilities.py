@@ -4,15 +4,16 @@ from skimage.restoration import inpaint
 
 def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     """
-    Crops an image according to the corners given in the format of matplotlib.widget.RectangleSelector.
+    Crops an image according to the corners given in the format of 
+    matplotlib.widget.RectangleSelector.
 
     Parameters
     ----------
     dataset: sidpy.Dataset
         An instance of sidpy.Dataset representing the image to be cropped.
     corners: np.ndarray
-        A 1D array of length 4 containing the corners of the rectangular region to be cropped.
-        The order of the corners should be (x1, y1, x2, y2).
+        A 1D array of length 4 containing the corners of the rectangular region 
+        to be cropped. The order of the corners should be (x1, y1, x2, y2).
 
     Returns
     -------
@@ -22,8 +23,8 @@ def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
     Raises
     ------
     ValueError
-        If dataset is not an instance of sidpy.Dataset or if dataset is not an image dataset.
-        If corners parameter is not of correct shape or size.
+        If dataset is not an instance of sidpy.Dataset or if dataset is not an image 
+        dataset. If corners parameter is not of correct shape or size.
 
     """
     if not isinstance(dataset, sidpy.Dataset):
@@ -32,7 +33,7 @@ def crop_image(dataset: sidpy.Dataset, corners: np.ndarray) -> sidpy.Dataset:
         raise ValueError('Only image datasets are supported at this point')
     
     if corners.shape != (4,):
-        raise ValueError('Input corners parameter should have shape (4,) but got shape {0}'.format(corners.shape))
+        raise ValueError(f'Input corners parameter should have shape (4,) but got shape {corners.shape}')
     if corners[2]-corners[0] <= 0 or corners[3]-corners[1] <= 0:
         raise ValueError('Invalid input corners parameter')
     
