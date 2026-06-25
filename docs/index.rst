@@ -24,6 +24,7 @@ Documentation Index
     papers_conferences
     getting_started
     install
+    dataerai
     external_guides
     faq
     contribution_guidelines
